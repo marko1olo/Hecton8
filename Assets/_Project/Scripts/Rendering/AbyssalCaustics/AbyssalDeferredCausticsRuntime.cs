@@ -1951,6 +1951,9 @@ namespace Hecton8.Rendering
             ResetVaultEpochState();
             _isInitialized = false;
             _dataVault = null;
+            _playerRuntimeContext = null;
+            _weatherService = null;
+            _celestialLightReadModel = null;
         }
 
         private void ReleaseAllVaultHandles(IDataVault vault)

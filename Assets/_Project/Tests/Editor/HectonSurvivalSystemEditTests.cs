@@ -491,7 +491,10 @@ public sealed class HectonSurvivalSystemEditTests
         string wristSource = File.ReadAllText(WristHologramHudRuntimePath);
         string suitProcessBody = ExtractMethodBody(suitSource, "private void ProcessSurvivalVitalsSignal(in SurvivalVitalsChangedSignal signal)");
         string suitFiniteUnitBody = ExtractMethodBody(suitSource, "private static bool TryResolveFiniteUnit01(float value, out float safeValue)");
+        string wristInjectO2Body = ExtractMethodBody(wristSource, "public void InjectO2Signal(in O2LevelChangedSignal signal)");
         string wristDrainBody = ExtractMethodBody(wristSource, "private void DrainGlobalSignalSnapshots()");
+        string wristUiStateBody = ExtractMethodBody(wristSource, "private void RefreshUiStateStoreInputs()");
+        string wristBuildBody = ExtractMethodBody(wristSource, "private WristHudFrameBuildInput BuildFrameInput(");
 
         StringAssert.Contains("TryResolveFiniteUnit01(signal.Oxygen01, out float oxygen01)", suitProcessBody);
         StringAssert.Contains("HandleOxygenChanged(oxygen01);", suitProcessBody);
@@ -509,6 +512,14 @@ public sealed class HectonSurvivalSystemEditTests
         StringAssert.Contains("_latestVitals.Power01 = FiniteSaturate(signal.Energy01);", wristDrainBody);
         StringAssert.Contains("_latestVitals.Health01 = FiniteSaturate(signal.Integrity01);", wristDrainBody);
         StringAssert.DoesNotContain("_latestVitals.Oxygen01 = math.saturate(signal.Oxygen01);", wristDrainBody);
+        StringAssert.Contains("vitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);", wristInjectO2Body);
+        StringAssert.DoesNotContain("vitals.Oxygen01 = math.saturate(signal.Oxygen01);", wristInjectO2Body);
+        StringAssert.Contains("_latestVitals.Oxygen01 = FiniteSaturate(oxygen);", wristUiStateBody);
+        StringAssert.Contains("_latestVitals.DepthMeters = FiniteNonNegative(depth);", wristUiStateBody);
+        StringAssert.Contains("_latestVitals.SafeDepthMeters = math.max(1f, FiniteNonNegative(safeDepth));", wristUiStateBody);
+        StringAssert.Contains("Oxygen01 = FiniteSaturate(_latestVitals.Oxygen01)", wristBuildBody);
+        StringAssert.Contains("DepthMeters = FiniteNonNegative(_latestVitals.DepthMeters)", wristBuildBody);
+        StringAssert.Contains("SafeDepthMeters = math.max(1f, FiniteNonNegative(_latestVitals.SafeDepthMeters))", wristBuildBody);
     }
 
     [Test]

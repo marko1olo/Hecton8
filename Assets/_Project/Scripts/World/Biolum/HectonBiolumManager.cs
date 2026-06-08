@@ -312,6 +312,7 @@ namespace Hecton8.Biolum
         private bool _disposed = false;
         private double _fallbackCelestialTimeSeconds;
         private ICelestialRuntimeSnapshotReadModel _cachedCelestialSnapshot;
+        private ICelestialLightReadabilityReadModel _cachedCelestialLight;
 
         #if UNITY_EDITOR
         [SerializeField] private bool _debugLogUpdates = false;
@@ -1923,6 +1924,7 @@ namespace Hecton8.Biolum
             _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
             _cachedPlayerContext = GlobalRegistry.Player;
             _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            _cachedCelestialLight = GlobalRegistry.CelestialLightReadabilityReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1972,6 +1974,7 @@ namespace Hecton8.Biolum
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
                     _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+                    _cachedCelestialLight = GlobalRegistry.CelestialLightReadabilityReadModel;
                     break;
             }
         }

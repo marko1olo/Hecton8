@@ -424,7 +424,7 @@ namespace Hecton8.UI
         public void InjectO2Signal(in O2LevelChangedSignal signal)
         {
             PlayerVitalsSignal vitals = _latestVitals;
-            vitals.Oxygen01 = math.saturate(signal.Oxygen01);
+            vitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);
             vitals.Flags |= signal.Flags;
             InjectVitalsSignal(in vitals);
         }
@@ -1179,11 +1179,11 @@ namespace Hecton8.UI
             float power = UIStateStore.ReadValueOrDefault(UIValueSlotId.Power01, _latestVitals.Power01);
             float depth = UIStateStore.ReadValueOrDefault(UIValueSlotId.DepthMeters, _latestVitals.DepthMeters);
             float safeDepth = UIStateStore.ReadValueOrDefault(UIValueSlotId.SafeDepthMeters, _latestVitals.SafeDepthMeters <= 0f ? 200f : _latestVitals.SafeDepthMeters);
-            _latestVitals.Oxygen01 = math.saturate(oxygen);
-            _latestVitals.Health01 = math.saturate(health);
-            _latestVitals.Power01 = math.saturate(power);
-            _latestVitals.DepthMeters = math.max(0f, depth);
-            _latestVitals.SafeDepthMeters = math.max(1f, safeDepth);
+            _latestVitals.Oxygen01 = FiniteSaturate(oxygen);
+            _latestVitals.Health01 = FiniteSaturate(health);
+            _latestVitals.Power01 = FiniteSaturate(power);
+            _latestVitals.DepthMeters = FiniteNonNegative(depth);
+            _latestVitals.SafeDepthMeters = math.max(1f, FiniteNonNegative(safeDepth));
 
             UIStateData pda = UIStateStore.GetPDAState();
             if (pda.Version != 0u)
@@ -1303,13 +1303,13 @@ namespace Hecton8.UI
                 WristUp = NormalizeSafe(wristUp, new float3(0f, 1f, 0f)),
                 WristForward = NormalizeSafe(wristForward, new float3(0f, 0f, 1f)),
                 VisorPosition = visorPosition,
-                Oxygen01 = math.saturate(_latestVitals.Oxygen01),
-                Health01 = math.saturate(_latestVitals.Health01),
-                Power01 = math.saturate(_latestVitals.Power01),
-                DepthMeters = math.max(0f, _latestVitals.DepthMeters),
-                SafeDepthMeters = math.max(1f, _latestVitals.SafeDepthMeters),
-                Radiation01 = math.saturate(_latestVitals.Radiation01),
-                Toxemia01 = math.saturate(_latestVitals.Toxemia01),
+                Oxygen01 = FiniteSaturate(_latestVitals.Oxygen01),
+                Health01 = FiniteSaturate(_latestVitals.Health01),
+                Power01 = FiniteSaturate(_latestVitals.Power01),
+                DepthMeters = FiniteNonNegative(_latestVitals.DepthMeters),
+                SafeDepthMeters = math.max(1f, FiniteNonNegative(_latestVitals.SafeDepthMeters)),
+                Radiation01 = FiniteSaturate(_latestVitals.Radiation01),
+                Toxemia01 = FiniteSaturate(_latestVitals.Toxemia01),
                 InventoryLoad01 = UIStateStore.ReadValueOrDefault(UIValueSlotId.InventoryLoad01, 0f),
                 HologramDistance = hologramDistanceFromWrist,
                 TextScale = textScale,
