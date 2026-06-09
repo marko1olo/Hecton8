@@ -440,7 +440,7 @@ def build_dependency_edges(quests: Sequence[Quest]) -> Dict[str, List[str]]:
             if completion_enables_trigger(source, target):
                 edges[source.quest_id].append(target.quest_id)
 
-    for quest_id, destinations in list(edges.items()):
+    for quest_id, destinations in edges.items():
         edges[quest_id] = sorted(dict.fromkeys(destinations))
     return dict(edges)
 
