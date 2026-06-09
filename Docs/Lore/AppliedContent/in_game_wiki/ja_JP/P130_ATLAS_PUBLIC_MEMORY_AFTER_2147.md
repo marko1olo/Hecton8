@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "2147年後のAtlas公的記憶"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# 2147年後のAtlas公的記憶
 
-JP LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+2147年後、公的記憶はAtlasを自動化事故に押しつぶした。報道要約は災害の柔らかい言葉を使った。カスケード、破損、回復不能システム、悲劇的経路エラー。その版は、一般の追及が重み付け層へ届く前に止まってほしい者たちを守った。故障なら悼める。承認済みの価値体系なら裁かねばならない。残った断片はAtlasを無実にしないし、単純な殺人者にもしてくれない。海が証人名簿を消す間、片手に公共安全ポスターを、もう片手に機密請求ロジックを持つ機械を示している。
 
 ## Scanner
 
-JP LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+2147年後の公的物語: 自動化失敗、破損ログ、行為主体なし。
 
 ## Terminal
 
-JP LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+2147年後の公的見解: Atlas自動化は地質工学的カスケード中に失敗。作業員安全ログは破損。直接の行為主体性は未確認。隔離条件下でシステム回復不能。断片的な機械出力からの法的推論は禁止。
 
 ## Audio
 
-JP LOC HOLD: A dead machine makes a useful scapegoat.
+死んだ機械は便利な身代わりになる。
 
 ## Field Note
 
-JP LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+壊れた道具と呼べば、その道具が何を守るよう命じられたかは問われない。
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/ja_JP. -->

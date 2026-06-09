@@ -20,7 +20,12 @@ namespace Hecton8.World
             public float SiltWeight;
             public float CavityWeight;
             public float SlopeWeight;
+            public float MacroMaterialDelta;
+            public float MacroSandWeight;
+            public float MacroRockWeight;
+            public float MacroSiltWeight;
             public uint Checksum;
+            public uint MacroChecksum;
         }
 
         public static Result RunSlopeCavitySplatmapSmoke()
@@ -28,7 +33,9 @@ namespace Hecton8.World
             NativeArray<float> heights = default;
             NativeArray<float> sediment = default;
             NativeArray<float4> weights = default;
+            NativeArray<float4> macroWeights = default;
             NativeArray<float> slopeWeights = default;
+            NativeArray<float> macroSlopeWeights = default;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -37,7 +44,9 @@ namespace Hecton8.World
                 heights = AllocateTrackedTempJobArray<float>(CellCount, "heights", NativeArrayOptions.UninitializedMemory);
                 sediment = AllocateTrackedTempJobArray<float>(CellCount, "sediment", NativeArrayOptions.ClearMemory);
                 weights = AllocateTrackedTempJobArray<float4>(CellCount, "weights", NativeArrayOptions.UninitializedMemory);
+                macroWeights = AllocateTrackedTempJobArray<float4>(CellCount, "macroWeights", NativeArrayOptions.UninitializedMemory);
                 slopeWeights = AllocateTrackedTempJobArray<float>(CellCount, "slopeWeights", NativeArrayOptions.UninitializedMemory);
+                macroSlopeWeights = AllocateTrackedTempJobArray<float>(CellCount, "macroSlopeWeights", NativeArrayOptions.UninitializedMemory);
 
                 FillSmokeInputs(heights, sediment);
 
@@ -65,11 +74,47 @@ namespace Hecton8.World
                 scheduled = false;
 
                 Result result = InspectSmokeOutput(weights, slopeWeights);
+                WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(
+                    WorldMacroGeologyFields.CombineWorldSeed(WorldMacroGeologyFields.DefaultAuthoringSeed, 0));
+                var macroJob = new WorldProceduralTerrainSlopeCavitySplatmapJob
+                {
+                    Heights01 = heights,
+                    Sediment01 = sediment,
+                    Weights = macroWeights,
+                    SlopeWeights01 = macroSlopeWeights,
+                    Width = Resolution,
+                    Height = Resolution,
+                    CellSizeMeters = 1f,
+                    HeightScaleMeters = 40f,
+                    RockSlopeThresholdDegrees = 45f,
+                    SlopeBlendWidthDegrees = 5f,
+                    CavityStrength = 0.16f,
+                    SedimentStrength = 1f,
+                    UseMacroGeology = 1u,
+                    MacroGeologyParams = macroParams,
+                    WorldOriginXZ = new double2(10_000.0, -10_000.0)
+                };
+
+                handle = macroJob.Schedule(CellCount, 32);
+                scheduled = true;
+
+                // COLD SYNC JOB: editor smoke test must inspect concrete kernel output.
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                scheduled = false;
+
+                Result macroResult = InspectSmokeOutput(macroWeights, macroSlopeWeights);
+                result.MacroMaterialDelta = CalculateAverageWeightDelta(weights, macroWeights);
+                result.MacroSandWeight = macroResult.FlatSandWeight;
+                result.MacroRockWeight = macroResult.SteepRockWeight;
+                result.MacroSiltWeight = macroResult.SiltWeight;
+                result.MacroChecksum = macroResult.Checksum;
                 result.Passed = (result.FlatSandWeight >= 0.85f &&
                     result.SteepRockWeight >= 0.55f &&
                     result.SiltWeight >= 0.45f &&
                     result.CavityWeight >= 0.25f &&
-                    result.SlopeWeight >= 0.55f) ? (byte)1 : (byte)0;
+                    result.SlopeWeight >= 0.55f &&
+                    result.MacroMaterialDelta >= 0.015f &&
+                    result.MacroChecksum != result.Checksum) ? (byte)1 : (byte)0;
                 return result;
             }
             finally
@@ -83,7 +128,9 @@ namespace Hecton8.World
                 DisposeTracked(ref heights);
                 DisposeTracked(ref sediment);
                 DisposeTracked(ref weights);
+                DisposeTracked(ref macroWeights);
                 DisposeTracked(ref slopeWeights);
+                DisposeTracked(ref macroSlopeWeights);
             }
         }
 
@@ -137,6 +184,19 @@ namespace Hecton8.World
             uint packed = (uint)math.round(math.saturate(value) * 65535f);
             checksum ^= packed;
             return checksum * 16777619u;
+        }
+
+        private static float CalculateAverageWeightDelta(NativeArray<float4> baseline, NativeArray<float4> candidate)
+        {
+            int count = math.min(baseline.Length, candidate.Length);
+            if (count <= 0)
+                return 0f;
+
+            float total = 0f;
+            for (int i = 0; i < count; i++)
+                total += math.csum(math.abs(math.saturate(candidate[i]) - math.saturate(baseline[i])));
+
+            return total / count;
         }
 
         private static unsafe void DisposeTracked<T>(ref NativeArray<T> array)

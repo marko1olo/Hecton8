@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Temps de trajet des paquets-sondes
 
-Le temps des paquets de sondes a rendu Aegir précieux avant de le rendre familier. Une machine étroite pouvait traverser, mesurer et rapporter pendant que les institutions humaines discutaient encore budgets et responsabilité. Quand Deep Reach vendait la confiance, les paquets étaient déjà vieux et les modèles de risque déjà polis. C'est le danger de l'exploration par machines d'abord : l'océan peut recevoir un prix sur une vérité périmée bien avant que quelqu'un comprenne ce qu'il coûte d'y travailler.
+Le temps de trajet des paquets-sondes est une force peu spectaculaire et très destructrice. Les premiers paquets Ran-Aegir n'étaient pas des mensonges. Ils portaient des lectures spectrales réelles, des estimations de masse, une chimie des glaces, une géométrie de relais et un espoir de hauts-fonds. Ils étaient simplement vieux quand on les a traités comme autorisation.
+
+L'échec de la colonie en devient plus net. HECTON-8 n'a pas été fondée sur un fantasme pur. Elle a été fondée sur des données qui avaient mieux survécu à la route qu'au temps. Quand les nouvelles lectures ont contredit la première promesse, l'ancienne portait déjà dette, contrats, matériel et plans humains.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/fr_FR. -->

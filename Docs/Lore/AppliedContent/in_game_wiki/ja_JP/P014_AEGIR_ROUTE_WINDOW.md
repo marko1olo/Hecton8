@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Aegir航路窓
 
-Aegir航路窓は、敵対する時計が一瞬だけ合う時刻だ。ガス巨星放射線、月影、嵐ノイズ、潮汐、リンク品質、上昇質量、Black Keel幾何。
-
-だから空は生存ループに入る。データは上がれても身体は上がるべきでないことがある。上昇に良い窓でもノイズが証拠を壊すことがある。
+Aegir航路窓は飾った天気予報ではない。放射線、月影、嵐のplume、潮汐せん断、音響リンク、Black Keelの幾何、tonne-window保管が短く噛み合う時間だ。データには開き、身体には閉じることがある。証拠コアが検疫を抜け、blue-debt試料が遅延を起こすこともある。救助はボタンではなく、生存、法、質量の交差だ。
 
 ## Scanner
 
-局所エフェメリス表。通信、潮汐、放射線、月影、キャリア幾何が一つの狭い上昇窓を共有。
+ローカルephemeris表。Aegir放射線、月影、嵐plume、潮汐せん断、音響リンク品質、Black Keel幾何、tonne-window保管が短く整列。
 
 ## Terminal
 
-AEGIR窓更新 // Kestrel影解消中。アップリンクノイズ低下。放射線カウント上昇。サービス峡谷の潮汐せん断増加。Black Keel回収幾何は上昇質量待ち。
+AEGIR WINDOW SOLVER // データuplink部分可。身体回収閉鎖。payload上昇条件付き。放射線surgeがdrift帯。moon relay shutter次ローカル周期で有効。Black Keel転送幾何は質量確定前に法的・検疫handshakeを要求。
 
 ## Audio
 
-晴れた空は安全な空じゃない。巨星を確認しろ。
+ここで空は風景ではない。扉のもう一つの錠だ。
 
 ## Field Note
 
-HECTON-8では天気は局所であり軌道でもある。
+信号に開いていても身体に開いているとは限らない。
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/ja_JP. -->

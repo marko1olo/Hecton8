@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "浅层附属舱 P-63 泵房"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# 浅层附属舱 P-63 泵房
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 只有在泵房修好后才有用。手动抽水会降低积水，露出旧工具柜，并让现场制造器保持在安全维修权限窗口内。
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+泵房进水口 // 堵塞但可维修。手动舱底排水路线可用。先排水，再切割。
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+P-63 维护 // 轻微进水已记录。手动舱底泵接受。进水口清空前，现场制造器仅开放垫圈、夹具和接触切割器队列。
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+转动泵，直到地板给出回应。先切割的话，工具柜会被你淹掉。
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+干燥的角落不是家。它只是十分钟的思考时间。拿下它。
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/zh_CN. -->

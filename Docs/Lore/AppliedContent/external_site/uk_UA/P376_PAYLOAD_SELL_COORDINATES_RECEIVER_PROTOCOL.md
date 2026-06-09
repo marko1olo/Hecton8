@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Протокол продажу координат payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Протокол продажу координат payload
 
-UK LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+Цей протокол не є простим продажем здобичі. Це передача досяжності. У Deep Reach уже достатньо паперу, щоб сперечатися про HECTON-8; їй бракує надійного шляху назад через пошкоджений басейн. Payload дає цей шлях, зв'язуючи координати з упевненістю, зберіганням доказів і класом salvage.
 
-## Scanner
-
-UK LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-UK LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-UK LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-UK LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Виплата реальна, і полегшення боргу теж реальне. Тому маршрут небезпечний, а не карикатурний. Відчайдушний оператор може закрити заставу й одночасно доставити шлях повернення колонії компанії, яка поховала часові записи. Штамп отримувача перетворює виживання на послугу.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/uk_UA. -->

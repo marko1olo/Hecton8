@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "שרשרת המקור של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# שרשרת המקור של Deep Reach
 
-HE LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach הייתה ישנה לפני ש-HECTON-8 טבע. היא למדה לדבר במבטאים של כל דומיין שנדרש לה: כבוד האמנה של Centauri, המשמעת האקטוארית של Sol Core, המעשיות של Barnard בחילוץ, הליכי המשמורת של Luyten. Aegir לא הייתה הקפיצה הראשונה של החברה. זה היה המקום שבו כלים ישנים פגשו סוף סוף אוקיינוס עמוק מספיק כדי להסתיר את המחיר. לכן האסון נראה מערכתי ולא מקרי.
 
 ## Scanner
 
-HE LOC HOLD: Old company. New disaster. Same charter language.
+צמת אמנות: מילים של Centauri, כסף של Sol, גופות של Aegir.
 
 ## Terminal
 
-HE LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach שילבה סעיפי אוטונומיה תואמי Centauri, מימון ביטוחי של Sol Core, חוב לוגיסטי של Barnard ומעטפות מאוחרות של פרויקט Aegir. Atlas אושרה כתשתית נתיב לפני שהפכה לעדה למוות המוני.
 
 ## Audio
 
-HE LOC HOLD: They brought the empire in filing cabinets.
+הם הביאו את האימפריה בארונות תיוק וקראו לזה התרחבות.
 
 ## Field Note
 
-HE LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach לא התחילה באסון. לכן היא שרדה אותו.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/he_IL. -->

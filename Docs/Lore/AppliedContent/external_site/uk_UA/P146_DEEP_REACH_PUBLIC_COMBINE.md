@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Public Combine"
+title: "Публічний комбінат Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Public Combine
+# Публічний комбінат Deep Reach
 
-UK LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+Публічний комбінат Deep Reach - перша маска й найміцніша. Йому не треба заперечувати, що він торкався HECTON-8. Він торкався перевезень, житлової логістики, маршрутних служб, страхових інтерфейсів, аварійної мови й адміністративного словника, який зробив колонію зрозумілою банкам раніше, ніж родинам.
 
-## Scanner
-
-UK LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-UK LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-UK LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-UK LOC HOLD: The seal is clean. The rooms under it are not.
+Ця широта є захистом. Коли катастрофа піднімається нагору, Deep Reach може вказати на публічний мандат і сказати, що обслуговувала інфраструктуру. Брудніші дієслова йдуть у дочірні структури: класифікувати, відкласти, стягнути, перестрахувати, відмовити, утилізувати. Комбінат лишає собі чистий іменник. Нижні кімнати лишають собі тіла.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/uk_UA. -->

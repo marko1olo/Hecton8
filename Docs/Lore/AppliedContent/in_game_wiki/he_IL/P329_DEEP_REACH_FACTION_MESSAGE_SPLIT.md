@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Faction Message Split"
+title: "פיצול הודעות הסיעות של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Faction Message Split
+# פיצול הודעות הסיעות של Deep Reach
 
-HE LOC HOLD: Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+הפיצול משאיר את Deep Reach מוסדית, לא נבל מצויר ואחיד. תאגיד יכול להוציא בו זמנית פקודות חילוץ, פקודות הסתרה ואזהרות טכניות כנות, כי כל משרד מגן על ספר חשבונות אחר.
 
 ## Scanner
 
-HE LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+שלושה מקורות של Deep Reach סותרים זה את זה: חילוץ רוצה קואורדינטות, משפטי רוצה שקט, והנדסה ישנה מזהירה שהאגן יענה.
 
 ## Terminal
 
-HE LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance מבקשת קואורדינטות לניווט. Asset Silence מורה על בלימת ראיות וללא הכרה פומבית. Legacy Engineering Node 4 חוזר על אזהרה מלפני הקריסה: לא להפריע לממסרי האגן התחתון בזמן צל Aegir. אלה אינם מורדים. אלה מחלקות שמגינות על הפסדים שונים.
 
 ## Audio
 
-HE LOC HOLD: A company can be one logo and three knives.
+לוגו אחד. שלושה קולות. אף אחד לא נקי.
 
 ## Field Note
 
-HE LOC HOLD: This is not redemption. It is pressure-source readability.
+להשתמש אחרי שהשחקן שמע לפחות שני טונים של Deep Reach. הפעימה היא עמימות עם שיניים: הוראות סותרות, בעלות משותפת, אין בעל ברית נקי.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/he_IL. -->

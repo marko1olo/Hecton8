@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Zestaw stempli zezwoleń trasy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Zestaw stempli zezwoleń trasy
 
-PL LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+Zestaw stempli zezwoleń trasy daje ruchowi język wizualny. Stemples PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY i WITNESS nie są oznakami rangi. To zezwolenia ciśnienia: kto mógł przejść przez właz, wziąć skafander, zwolnić crawlera albo wejść do śluzy utrzymania, gdy kolonia zawodziła. Stempel powinien zawsze łączyć się ze stanem fizycznym: otwarte, uszczelnione, odmówione, nadpisane, zalane albo później poprawione ręką maraudera. Dzięki temu gracz rekonstruuje ruch kolonii bez postaci tłumaczącej.
 
 ## Scanner
 
-PL LOC HOLD: A route stamp is stronger than a diary line.
+Stempel trasy jest silniejszy niż linia dziennika, bo dowodzi, kto mógł przejść przez granicę ciśnienia.
 
 ## Terminal
 
-PL LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: zezwolenie trasy musi połączyć jednego pracownika, jedne drzwi albo pojazd, jedną rodzinę załogi i jedną późniejszą sprzeczność. Stempel bez fizycznej granicy jest dekoracją. Stempel na włazie, stojaku skafandrów, szynie crawlera albo tagu windy staje się dowodem ruchu.
 
 ## Audio
 
-PL LOC HOLD: Access is biography under pressure.
+Dostęp to biografia pod ciśnieniem.
 
 ## Field Note
 
-PL LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Stemples: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Łączyć ze stanem włazu i obiektem pracy.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/pl_PL. -->

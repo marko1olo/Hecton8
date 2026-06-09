@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Factory Temple Entry Fragment"
+title: "Fragment d'entrée de l'usine-temple"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Factory Temple Entry Fragment
+# Fragment d'entrée de l'usine-temple
 
-FR LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+Ce fragment définit la grammaire visuelle de la zone finale. Le sentiment sacré est accidentel : des milliers de réparations répétées jusqu'à ce que machine, biologie et dégâts humains deviennent un seul motif.
 
 ## Scanner
 
-FR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Alliage, scellant coquillier, outil manuel et impulsion de réparation active s'enregistrent comme une seule surface.
 
 ## Terminal
 
-FR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER : catégories de maintenance effondrées. Cicatrices d'outil, coque de scellant, racines de câble, tissu filtrant et côtes d'actionneur enregistrés comme une seule surface de réparation. Les marques de chemin humaines ne sont plus privilégiées.
 
 ## Audio
 
-FR LOC HOLD: This is not a room. This is a habit.
+Ce n'est pas une pièce. C'est une habitude.
 
 ## Field Note
 
-FR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Règle visuelle : cela ressemble à un temple uniquement parce que l'industrie, le tissu et la répétition sont devenus rituel.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/fr_FR. -->

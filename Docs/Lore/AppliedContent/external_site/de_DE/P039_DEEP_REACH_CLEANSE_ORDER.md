@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep-Reach-Säuberungsbefehl"
+title: "Aktiver Deep-Reach-Säuberungsbefehl"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep-Reach-Säuberungsbefehl
+# Aktiver Deep-Reach-Säuberungsbefehl
 
-Verbindet Konzernlüge mit Gegenwartsdruck: Ressourcencustody, Atlas-Zugang, Beweisvernichtung.
+Der aktive Deep-Reach-Säuberungsbefehl macht Konzerndruck prozedural: lebende Proxys können Proben kaufen, Atlas-Routen öffnen und Haftungsbeweise löschen, während öffentliche Akten HECTON-8 weiter als verlorene Anlage beschreiben.
 
 ## Scanner
 
-Befehlsstapel: Ressource, Atlas-Zugang, Beweisvernichtung. Überlebende unter Asset-Kontrolle.
+Aktiver Befehl geborgen: zertifizierte Proben beschlagnahmen, Atlas-Kanal öffnen, Überlebende isolieren, Haftungsbeweis löschen.
 
 ## Terminal
 
-Proxy-Direktive: Auftragnehmer abstreitbar. Proben sichern. Atlas-Kanal bei akzeptablem Risiko öffnen. Haftungskorpus löschen.
+Proxy-Arbeitsauftrag DR-CLEANSE-19 bleibt aktiv. Abstreitbare Auftragnehmer erhalten zuerst Probenverwahrung, dann Atlas-Zugang, zuletzt Zeugenbergung. Wenn Black Keel oder das Anlagenbuch Haftung offenlegt, verschiebt die Löschwarteschlange Beweisarchive in cold delete und taggt Feldtote als Wetterschaden.
 
 ## Audio
 
-Deep Reach jagt dich nicht. Sie nutzen dich als billigere Sonde.
+Diese Stimme ist kein Rettungsverkehr. Sie bietet Säuberung an.
 
 ## Field Note
 
-Sie kamen nicht zurück, um sich zu entschuldigen.
+Das Entschuldigungsfeld ist leer.
 
 <!-- External Site; generated from P039_DEEP_REACH_CLEANSE_ORDER/de_DE. -->

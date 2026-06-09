@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Pressure Bunk Shift Routine"
+title: "耐圧寝台の勤務手順"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Pressure Bunk Shift Routine
+# 耐圧寝台の勤務手順
 
-JA LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+圧力寝台シフト手順は、告白ではなく習慣を通して HECTON-8 の沈んだ植民地を見せる。作業列のスレートには起床トーン、スーツシール確認、圧力メモ、食事水トークン、工具保管、下降割当が並ぶ。朝日がないステーションでは、その一覧が朝であり、勤務表であり、医療警告であり、帰還証明だった。
 
-## Scanner
+感情の力は、スレートが何も飾らないことにある。勇敢だったとは言わない。ポンプキーは食事前に返すと書く。03:52 にシールを確認すると書く。海は人間の体が時間を理解するかどうか気にしないため、睡眠は機械に分割されたと示す。
 
-JA LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-JA LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-JA LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-JA LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+スレートを追えば植民地は読める。同じ名前が寝台、鍵、水トークン、ルート印、未帰還として現れる。それは雑然ではない。最小の印で書かれた、圧力居住地の神経系である。
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/ja_JP. -->

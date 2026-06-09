@@ -68,7 +68,60 @@ namespace Hecton8.World
         {
             return requiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.None ||
                    requiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any ||
+                   requiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.AnyGeology ||
                    (requiredSubstrate & resolvedSubstrate) != 0;
+        }
+
+        internal static WorldProceduralPlacementRule.FloraSubstrateMask ResolveFloraSubstrateFromTerrainDetail(
+            WorldTerrainDetailEligibilityFlags eligibility,
+            WorldTerrainSurfaceMaterialClass dominantMaterial,
+            in WorldTerrainSurfaceMaterialWeights weights)
+        {
+            WorldProceduralPlacementRule.FloraSubstrateMask substrate = WorldProceduralPlacementRule.FloraSubstrateMask.None;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.SandScatter) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Sand;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.RockScatter) != 0 ||
+                (eligibility & WorldTerrainDetailEligibilityFlags.TalusBoulder) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.ReefScatter) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Reef;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.BrineDeposit) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Brine;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.SeepDeposit) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Seep;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.NoduleScatter) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Nodule;
+            if ((eligibility & WorldTerrainDetailEligibilityFlags.RubblePebble) != 0)
+                substrate |= WorldProceduralPlacementRule.FloraSubstrateMask.Rubble;
+
+            if (substrate != WorldProceduralPlacementRule.FloraSubstrateMask.None)
+                return substrate;
+
+            switch (dominantMaterial)
+            {
+                case WorldTerrainSurfaceMaterialClass.ShellSand:
+                case WorldTerrainSurfaceMaterialClass.ClaySilt:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Sand;
+                case WorldTerrainSurfaceMaterialClass.LimestoneShelf:
+                case WorldTerrainSurfaceMaterialClass.HardRock:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
+                case WorldTerrainSurfaceMaterialClass.BrineSaltCrust:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Brine;
+                case WorldTerrainSurfaceMaterialClass.ManganeseNodulePlain:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Nodule;
+                case WorldTerrainSurfaceMaterialClass.ReefRubble:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Reef |
+                           WorldProceduralPlacementRule.FloraSubstrateMask.Rubble;
+                case WorldTerrainSurfaceMaterialClass.SeepCrust:
+                    return WorldProceduralPlacementRule.FloraSubstrateMask.Seep |
+                           WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
+            }
+
+            float sand = math.saturate(weights.ShellSand + weights.ClaySilt + weights.ReefRubble * 0.35f);
+            float rock = math.saturate(weights.HardRock + weights.LimestoneShelf + weights.SeepCrust * 0.30f);
+            return sand >= rock
+                ? WorldProceduralPlacementRule.FloraSubstrateMask.Sand
+                : WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
         }
 
         internal static bool PassesClusterPatchEnvelope(

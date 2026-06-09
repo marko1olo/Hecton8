@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Finale Frage: Verkauf des Tatorts
 
-Der Tatortverkauf ist die Route des materiellen Erfolgs. Der Spieler überlebt, kann die Schuld löschen und sogar mit Geld gehen. Der Preis ist, dass Koloniebeweise zum Hebel für dasselbe Autoritätsnetz werden, das den Ort begrub, Rettungsmasse kürzte und Leichen als Vertragswetter behandelte.
+Der Verkauf des Tatorts ist die materielle Erfolgsachse. Der Operator kann überleben, Schuld löschen und mit Geld gehen, weil Keelmark/Recovery Compliance Koordinaten, Probenwert, XO-Beleg und Carrier-Verwahrungshash anerkennt. Die fehlende Anlage zählt: Ohne separates Zeugenpaket bleiben Arbeiternamen, Rettungsmassenrechnung und Deep-Reach-Haftung von der bezahlten Quittung fern.
 
 ## Scanner
 
-Koordinaten, XO-Beweis und eine saubere Gewahrsamskette können einen Ausgang kaufen. Sie verkaufen den Mordraum auch an jene zurück, die ihn bepreist haben.
+TATORT-VERKAUFSACHSE // Keelmark kann das Pfand gegen Atlas-Beckenkoordinaten, Blau-Schuld-Probe, XO-Zeugenbeleg und Carrier-Verwahrungshash schließen. Arbeiterbelege bleiben ohne separate Beurkundung von der Quittung fern.
 
 ## Terminal
 
-FINALE VERKAUFSACHSE: Atlas-Beckenkoordinaten, brauchbare Blauschuld-Probe, XO-Zeugenbeweis und Carrier-Gewahrsamshash können die Pfandlast des Operators löschen. Ohne getrennte notarielle Sicherung erhält Deep Reach einen saubereren Rückweg nach HECTON-8, als die toten Arbeiter je zur Rettung hatten.
+FINALE ACHSE / TATORT-VERKAUF
+Empfänger: Keelmark/Recovery Compliance.
+Akzeptiert: Atlas-Beckenkoordinaten, verwertbare Blau-Schuld-Probe, XO-Zeugenbeleg, Carrier-Verwahrungshash.
+Pfandeffekt: Operatorschuld nach Vertragstabelle gelöscht oder reduziert.
+Standardmäßig ausgelassen: Namensregister der Arbeiter, Rettungsmassenprüfung, öffentliches Zeugenpaket.
+Deep-Reach-Vorteil: Rückkehrgeometrie und Probenbewertung treffen ohne feindliche Verwahrungskette ein.
+Bekannter Verlust: Eine Grabkarte kann Eigentum werden, bevor sie Zeugnis wird.
 
 ## Audio
 
-Du kannst die Schuld mit einer Grabkarte zahlen. Das Ledger nennt es Arbeit.
+Du kannst die Grabkarte verkaufen. Die Quittung nennt es trotzdem Arbeit.
 
 ## Field Note
 
-Das ist kein Scherz-Fehlschlag. Es ist ein bezahltes Ende mit Quittung, gelöschter Pfandlast und schlechterer Zukunft für alle, die unten bleiben.
+Das ist ein bezahlter Ausstieg mit Quittung. Die gefährliche Zeile ist leer: kein Namensregister der Arbeiter angehängt.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/de_DE. -->

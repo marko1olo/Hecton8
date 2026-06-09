@@ -19,21 +19,21 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-Black Keel is the player's orbital lifeline, but it is not a rescue fantasy. It belongs to public claim-pool infrastructure: custody ledgers, insurance debt, recovery windows, quarantine rules and carrier-side authority. It can guide because guidance protects value. It can delay because delay protects value too.
+Black Keel is the player's orbital lifeline, but it is not the player's ship. Publicly, it belongs to the Aegir Reclamation Pool. Legally, Keelmark Mutual wraps it in insurance custody, debt accounting and recovery exposure. Secretly, older Deep Reach priority hooks can still bend payload order, quarantine language and route certificate handling.
 
-The carrier is more frightening than a villain because it can be correct. It may transmit a route, price an ascent, demand manifest proof, mask Deep Reach priorities or abandon a recovery attempt after the mass ledger goes bad. Black Keel can help without being on the player's side. Its mercy has accounting behind it.
+The ledger is cold because it is practical. A living body, a sealed evidence core, a contaminated blue-debt sample, a pressure-rated tool crate and a recoverable hull cut can all compete for the same tonne-window. Black Keel may guide the player because guidance protects value. It may delay pickup because delay protects value too. It may preserve a truth packet while refusing to make that truth public. The right way to use Black Keel is to treat every helpful sentence as a contract line with a pump running in the background.
 
 ## Scanner
 
-Claim-pool tender ledger. Public carrier custody, insurance debt, ascent mass penalties and hidden Deep Reach priority hooks.
+Claim-pool tender ledger. Aegir Reclamation Pool custody, Keelmark Mutual exposure, 4.8 tonne-window lien and masked Deep Reach priority hooks.
 
 ## Terminal
 
-BLACK KEEL LEDGER // Recovery service conditional. Claim clearance incomplete. Deep-priority route masked. Payload authority remains carrier-side. Contractor survival does not outrank insured cargo without updated ascent value.
+BLACK KEEL LEDGER // Contractor survival registered as recoverable biologic payload. Evidence core pending custody class. Blue-debt material requires containment review. Deep priority beneficiary masked. Tonne-window debt active until recovery value exceeds insured cargo exposure.
 
 ## Audio
 
-Black Keel is not your ship. It is the machine that knows what you owe.
+Black Keel can save you from the ocean and still sell every second of the lift.
 
 ## Field Note
 

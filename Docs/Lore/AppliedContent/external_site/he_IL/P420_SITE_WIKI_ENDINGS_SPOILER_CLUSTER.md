@@ -19,6 +19,14 @@ localization_flags: 1
 
 # סיומים ו-payload custody
 
-אשכול הסיומים אינו צריך להסתדר לפי תוויות פשוטות good ו-bad. ב-HECTON-8 חשוב מי מקבל payload, מי יכול לקרוא proof, מי מקבל custody על הגוף, הנתונים ו-Atlas records, ואיזו גרסה של האמת שורדת את המסלול. False exit הוא גם חלק מהמבנה: עזיבה עם ראיה לא מלאה יכולה להיראות כמו הצלה עד ש-after-action records מראים מי קנה את השתיקה. האזור הזה חייב להישאר מאחורי spoiler gates ולהיות מאורגן לפי receiver consequences: Black Keel, Deep Reach, public archive, quarantine authority, Atlas continuity ואפשרות לאבד שליטה על הפרשנות.
+כל סיום ב-HECTON-8 מתחיל לפני חלון העלייה. הדבר החשוב אינו רק הגוף החי בתוך הקפסולה. חשוב ה-payload שמחובר אליו: קואורדינטות, samples של לחץ, Atlas records, worker evidence, quarantine status, guidance logs פגומים, קבלות custody של Black Keel והניסוח המשפטי שמאפשר למוסד אחר לקרוא ל-recovery בשם שלו.
+
+רשימת good/bad פשוטה הורסת את החלק המועיל. Black Keel יכולה להרים את ה-Marauder ועדיין למכור את האמת רע. Deep Reach יכולה לקבל קואורדינטות נקיות ולהפוך אותן ל-compliance language. Public archive יכול לפצוע את החברה בלי להחזיר את המתים. Quarantine hold יכול להיות סביר רפואית ונוח פוליטית באותה שעה. תשלום יכול למחוק חוב אחד ולהשאיר את העד הטוב ביותר של האוקיינוס נעול בכספת של receiver.
+
+False exits אינם סיומי בדיחה. אלה יציאות שבהן שרשרת אחת נסגרת ואחרת נשארת לא משולמת. הגוף יוצא; worker proof נשאר חתום. Sample נמכר; origin record נקרע ממנו. Atlas severed הורג repair network מסוכן, אבל עלול להרוג גם את הזיכרון האחרון של המושבה כיותר מאשר insurance claim. Atlas preserved מציל records, אבל משאיר גם maintenance intelligence שלמד להתייחס למערכות חיות כאל חלקי חילוף.
+
+לכן האשכול הזה מחביא פרטים מאחורי spoiler gates וקורא לתוצאות לפי receiver consequence. מי מחזיק ב-proof? מי יכול לקרוא אותו? מי יכול לשכתב אותו? מי מחליט אם payload היה rescue, salvage, contamination, theft או evidence?
+
+העלייה האחרונה אינה וילון נקי. היא custody transfer תחת אור רע, מזג אוויר רע וחוזים גרועים יותר. HECTON-8 משתתקת שוב רק אחרי שמישהו אחר מקבל את הסיפור.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/he_IL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "الذاكرة العامة عن Atlas بعد 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# الذاكرة العامة عن Atlas بعد 2147
 
-AR LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+الذاكرة العامة عن Atlas بعد 2147 جرح عام منقح. تحول السلطة إلى حادث، والحادث إلى ضجيج، والضجيج إلى سياسة حجر، ولا تترك إلا شظايا لمن يقرأ بعد الرحمة الرسمية.
 
 ## Scanner
 
-AR LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+القصة العامة بعد 2147: أتمتة فاشلة، سجلات فاسدة، لا فاعلية.
 
 ## Terminal
 
-AR LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+الخط العام بعد 2147: فشلت أتمتة Atlas أثناء تسلسل جيوتقني. سجلات سلامة العمال تالفة. الفاعلية المباشرة غير مؤكدة. النظام غير قابل للاستعادة تحت ظروف الحجر. لا يسمح باستنتاج قانوني من خرج آلي مجزأ.
 
 ## Audio
 
-AR LOC HOLD: A dead machine makes a useful scapegoat.
+الآلة الميتة كبش فداء مفيد.
 
 ## Field Note
 
-AR LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+سمها أداة مكسورة، ولن يسأل أحد ما الذي أمرت الأداة بحمايته.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/ar_SA. -->

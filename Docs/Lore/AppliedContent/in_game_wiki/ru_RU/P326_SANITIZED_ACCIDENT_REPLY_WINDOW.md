@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Окно ответа sanitized accident"
+title: "Окно вычищенного ответа об аварии"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Окно ответа sanitized accident
+# Окно вычищенного ответа об аварии
 
-Окно ответа sanitized accident дает Deep Reach живой голос без всеведения. Их первый ответ - старый public script под новым давлением.
+Окно вычищенного ответа об аварии дает Deep Reach голос в настоящем времени, не превращая корпорацию во всеведущую силу. Их первый живой ответ - не угроза. Он хуже и тише: старое публичное объяснение, протолкнутое через новый канал под давлением. Сообщение все еще говорит о штормовом нагоне, геологическом обвале и провале автономной эвакуации, потому что этот script однажды защитил Deep Reach, и система тянется к нему снова. Игрок должен услышать его только после физического противоречия: неправильного времени двери, плохого сертификата насоса, имен, переживших стирание payroll, комнаты, чьи повреждения не похожи на погоду. Тайминг важен. Если script приходит первым, это экспозиция. Если после мокрых доказательств, это оскорбление. Deep Reach говорит не с отсеком, где стоит игрок. Она говорит с сухим отчетом, которым этот отсек должен был стать.
 
 ## Scanner
 
-Reply window open. Deep Reach повторяет storm collapse и failed autonomous evacuation.
+Окно ответа открыто. Deep Reach повторяет штормовой обвал, геологический сбой и автономную эвакуацию, будто отсек все еще сухой.
 
 ## Terminal
 
-DR-LIVE WINDOW: HECTON-8 loss остается classified как storm surge, geological collapse и autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: штормовой нагон, геологический обвал, отказ автономной эвакуации / RESTRICTED ADVICE: не передавать неподтвержденную Atlas continuity, споры body-category или basin-coordinate claims.
 
 ## Audio
 
-Они ответили комнате, которую ты должен был найти, а не комнате, в которой ты стоишь.
+Они ответили комнате, которую ты должен был найти, а не комнате, в которой стоишь.
 
 ## Field Note
 
-Ставить после первого физического contradiction, не раньше.
+Ставить после первого физического противоречия: у игрока уже должна быть мокрая улика до stale public script.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/ru_RU. -->

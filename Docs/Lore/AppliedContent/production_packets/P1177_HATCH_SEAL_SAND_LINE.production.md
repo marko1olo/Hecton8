@@ -10,11 +10,11 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_seal_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS180_FIRST_SEAL_TRACE_ARTICLES.md |
 | Speaker | Maintenance scanner, hatch seal note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter seal inspection |
-| Location / route | Shelter hatch, airlock threshold, service locker, or flood door frame |
+| Location / route | Shelter hatch, airlock entry lip, service locker, or flood door frame |
 | Unlock context | Player scans a hatch seal where a sand line breaks at the hinge side |
 | Evidence object | Hatch seal, sand line, hinge-side gap, latch edge |
 | Connected packets | P1159_AIRLOCK_FLOOR_TIDE_STAIN; P1175_GASKET_LIP_FLATTEN; P1169_BRACKET_SLOT_ELONGATION |
@@ -39,7 +39,7 @@ HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing.
 
 The sand line follows most of the seal, then breaks near the hinge. That break is the useful part: it marks where the frame changed contact or where water carried grit away.
 
-A continuous line and a broken line tell different stories.
+The hinge-side break is the part to inspect before the hatch is trusted.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CHECK HINGE GAP
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| ru_RU | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| ja_JP | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| zh_CN | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| fr_FR | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| es_ES | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| de_DE | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| pl_PL | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| uk_UA | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| ar_SA | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| id_ID | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| ko_KR | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| he_IL | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| pt_BR | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
-| nl_NL | draft_machine_or_llm | HATCH SEAL // Sand line breaks at hinge side. Check hinge gap before closing. |
+| ar_SA | draft_machine_or_llm | مانع فتحة // خط الرمل ينقطع عند جهة المفصل. افحص فجوة المفصل قبل الإغلاق. |
+| de_DE | draft_machine_or_llm | LUKENDICHTUNG // Sandlinie bricht an Scharnierseite. Scharnierspalt vor dem Schliessen pruefen. |
+| es_ES | draft_machine_or_llm | SELLO DE ESCOTILLA // La linea de arena se rompe en el lado de bisagra. Revisa la holgura de bisagra antes de cerrar. |
+| fr_FR | draft_machine_or_llm | JOINT DE TRAPPE // Ligne de sable rompue cote charniere. Verifier l'ecart de charniere avant fermeture. |
+| he_IL | draft_machine_or_llm | אטם צוהר // קו החול נשבר בצד הציר. בדוק את רווח הציר לפני סגירה. |
+| id_ID | draft_machine_or_llm | SEGEL PALKA // Garis pasir putus di sisi engsel. Periksa celah engsel sebelum menutup. |
+| ja_JP | draft_machine_or_llm | ハッチシール // ヒンジ側で砂線が途切れる。閉じる前にヒンジ隙間を確認。 |
+| ko_KR | draft_machine_or_llm | 해치 씰 // 모래 선이 힌지 쪽에서 끊어진다. 닫기 전에 힌지 틈을 확인한다. |
+| nl_NL | draft_machine_or_llm | LUIKAFDICHTING // Zandlijn breekt bij scharnierzijde. Controleer scharnierspleet voor sluiten. |
+| pl_PL | draft_machine_or_llm | USZCZELKA WLAZU // Linia piasku urywa sie po stronie zawiasu. Przed zamknieciem sprawdz szczeline zawiasu. |
+| pt_BR | draft_machine_or_llm | VEDACAO DA ESCOTILHA // Linha de areia quebra no lado da dobradica. Verifique a folga da dobradica antes de fechar. |
+| ru_RU | draft_machine_or_llm | УПЛОТНЕНИЕ ЛЮКА // Песчаная линия рвется у петли. Проверь зазор петли перед закрытием. |
+| uk_UA | draft_machine_or_llm | УЩІЛЬНЕННЯ ЛЮКА // Піщана лінія рветься біля петлі. Перевір зазор петлі перед закриттям. |
+| zh_CN | draft_machine_or_llm | 舱口密封 // 沙线在铰链侧断开。关闭前检查铰链间隙。 |

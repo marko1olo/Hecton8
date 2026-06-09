@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Tool Certification Board"
+title: "لوحة اعتماد الأدوات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Tool Certification Board
+# لوحة اعتماد الأدوات
 
-AR LOC HOLD: Tool certification boards show colony culture without mysticism: trust came from repeated technical checks and custody marks.
+تبدو لوحة اعتماد الأدوات طقسية فقط إذا قُرئت المستعمرة قراءة سيئة. لا يوجد هنا شيء صوفي. الأختام المتكررة، والأحرف الأولى بقلم الشحم، وعلامات الحجز الحمراء هي الطريقة التي حوّل بها العمال الخوف إلى إجراء قبل النزول. لم يكن رأس القاطع موثوقا لأنه بدا حادا. ولم تكن خرطوشة العازل موثوقة لأن الملصق قال ممتلئة. ولم يكن قفاز الضغط موثوقا حتى يوقّعه شخصان، وأحدهما قد يضطر إلى ارتداء القفاز التالي في الكومة.
+
+من ذلك صارت ثقافة. فنيو المضخات، ومثبتو الأختام، وغواصو المحلول الملحي، ومشغلو المfabricator، وكتبة المسارات، كلهم اعتمدوا على أدوات يمكن أن تقتل بصمت إذا كانت شبه صحيحة فقط. كان الطقس هو التكرار: زن، افحص، وقّع، أعد، أعد الفحص. وكان أيضا ضغطا اجتماعيا. مفتاح مضخة متأخر لا يتحول إلى خطاب أخلاقي. يتحول إلى علامة على اللوحة، وعدة نزول محتجزة، وعامل يُعاد للفحص، ثم جدال في المقصف إذا كلّف التأخير ماء.
+
+بالنسبة إلى المغير، اللوحة عملية قبل أن تكون جميلة. إنها تقول أي الأدوات وُثقت، وأي المسارات تأخرت، وأي التحذيرات لم تُمح قبل غرق الغرفة. لا تعامل التواقيع كزينة. قفاز بتوقيعين يمكن أن يربط عاملا بمسار. علامة مفتاح متأخر يمكن أن تصل لوح سرير بأمر مضخة. قاطع محتجز قد يفسر بقاء باب محكم واحد. الاعتماد هو الطريقة التي جعلت بها المستعمرة الثقة مرئية.
 
 ## Scanner
 
-AR LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
+لوحة اعتماد الأدوات // رأس القاطع أعيدت فهرسته، خرطوشة العازل وُزنت، قفاز الضغط موقّع من شخصين، ومفتاح المضخة موسوم بعودة متأخرة. كانت الثقة تُختم على الأدوات قبل النزول.
 
 ## Terminal
 
-AR LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
+لوحة الاعتماد: رأس القاطع مفحوص؛ خرطوشة العازل موزونة؛ قفاز الضغط بتوقيعين؛ مفتاح المضخة عاد متأخرا؛ عدة النزول محتجزة حتى إعادة الفحص. لا قاطع بتوقيع واحد تحت 80 م.
 
 ## Audio
 
-AR LOC HOLD: They did not pray before descent. They checked each other's tools.
+لم يصلّوا قبل النزول. كانوا يفحصون أدوات بعضهم.
 
 ## Field Note
 
-AR LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+رأس القاطع مفحوص. خرطوشة العازل موزونة. قفاز الضغط موقّع بيدين. مفتاح المضخة عاد متأخرا ولم يمح أحد التحذير.
 
 <!-- In-Game Wiki; generated from P358_TOOL_CERTIFICATION_RITUALS/ar_SA. -->

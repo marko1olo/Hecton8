@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "De culpa profesional a interés personal"
+title: "De Culpa Profesional a Implicación Personal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# De culpa profesional a interés personal
+# De Culpa Profesional a Implicación Personal
 
-La motivación del protagonista crece de la experiencia a la responsabilidad. HECTON-8 evita el melodrama familiar forzado: el antiguo trabajador de Deep Reach se implica porque entiende la maquinaria procedimental que hizo que el abandono pareciera completo.
+De Culpa Profesional a Implicación Personal cierra el dossier rechazando el melodrama fácil. El operador no necesita ser familiar de una víctima, responsable secreto del desastre ni elegido por la colonia. El motivo crece desde el trabajo.
 
-## Scanner
-
-El patrón de firma coincide con la vieja caché de procedimiento. Los nombres cambiaron. La sala falló de la misma manera. La experiencia ya no es distancia.
-
-## Terminal
-
-RESOLUCIÓN DE DOSIER / INTERÉS PROFESIONAL
-evidencia activadora: reconocimiento de procedimiento, etiquetas de trabajadores recuperadas, conflicto del receptor de reclamación
-motivo excluido: relación familiar, linaje de venganza, estado de testigo elegido
-motivo activo: antiguo trabajador de sistemas reconoce un abandono evitable y aún puede leer la máquina que lo archivó.
-
-## Audio
-
-Viniste por una reclamación. Te quedaste porque el papeleo conocía tus manos.
-
-## Field Note
-
-No es tu firma. Sigue siendo tu oficio. Por eso la sala no se quedará callada.
+Los viejos formularios, route stamps, revisiones selladas y conflictos de receptor son lo bastante familiares para doler. Muestran un abandono evitable escrito en un lenguaje de oficio que el operador alguna vez confió. Eso vuelve HECTON-8 personal de una forma más fría: cuando alguien puede leer cómo la máquina enterró una sala, marcharse añade otra línea a la misma máquina.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/es_ES. -->

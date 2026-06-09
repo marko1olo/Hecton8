@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "قواعد أجسام شظايا الصوت"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# قواعد أجسام شظايا الصوت
 
-AR LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+تحدد قواعد أجسام شظايا الصوت كيف تستخدم HECTON-8 الصوت من دون إغراق العالم بالمونولوجات. تحتاج كل شظية صوت إلى مصدر مادي، وحالة نص متضرر، وختم زمني، وتناقض. لا ينبغي للصوت أن يستبدل دليل البيئة؛ بل أن يشحذه، جاعلا الغرف والأجسام وسجلات المسار تتكلم معا.
 
 ## Scanner
 
-AR LOC HOLD: Voice is expensive. It must prove something the room also proves.
+الصوت مكلف. يجب أن يثبت شيئا تستطيع الغرفة إثباته أيضا بالمعدن أو الماء أو الختم الزمني أو الضرر.
 
 ## Terminal
 
-AR LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: لا مونولوجات عائمة. ينتمي الصوت إلى شريط هيدروفون، أو مسجل بدلة، أو ذاكرة طرفية، أو سماعة صيانة، أو شظية صندوق أسود. يجب أن يكون لكل سطر قابل للتشغيل مصدر، وحالة نص متضرر، وختم زمني للمسار، وتناقض يستطيع اللاعب فحصه.
 
 ## Audio
 
-AR LOC HOLD: If the room cannot prove me, cut the line.
+إذا لم تستطع الغرفة إثباتي، فاقطع السطر.
 
 ## Field Note
 
-AR LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+تحتاج شظايا الصوت إلى جسم مصدر، وضرر في النص، وختم زمني للمسار، وتناقض مادي واحد.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ar_SA. -->

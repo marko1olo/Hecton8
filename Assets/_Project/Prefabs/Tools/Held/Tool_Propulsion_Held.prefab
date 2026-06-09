@@ -55,10 +55,27 @@ MonoBehaviour:
   _swimContract: {fileID: 0}
   _transportFeelContract: {fileID: 8169143112576087304}
   speedMultiplier: 2.2
+  transportDragCoefficientMultiplier: 0.72
   transportPreset: {fileID: 11400000, guid: cf32272204a993640bc50b707b7849a4, type: 2}
   batteryDrainRate: 2
   minChargeToActivate: 0.05
+  misfireStressThreshold: 0.7
+  misfireIntervalMax: 2.6
+  misfireIntervalMin: 0.72
+  misfireStallDurationMin: 0.08
+  misfireStallDurationMax: 0.24
+  misfireDeviationMinDegrees: 5
+  misfireDeviationMaxDegrees: 10
+  empMisfireMinimumDuration: 1.5
   batteryMesh: {fileID: 0}
+  bailoutWreckPrefab: {fileID: 0}
+  primaryHeadlight: {fileID: 0}
+  secondaryHeadlight: {fileID: 0}
+  headlightVolumetricStrength: 1.15
+  headlightSpectrumGlitchStrength: 0.28
+  headlightAngleJitterMaxDegrees: 4.5
+  headlightIntensityJitter: 0.16
+  headlightGlitchFrequency: 4.8
   hudCanvasGroup: {fileID: 0}
   depthText: {fileID: 0}
   batteryText: {fileID: 0}
@@ -116,6 +133,10 @@ MonoBehaviour:
   swimSupportHandWeight: 0.84
   swimRootForwardBias: 0.018
   swimGuideForwardBias: 0.028
+  occupancyMode: 0
+  swimPresentationScale: 1
+  thrusterAudioScale: 1
+  cameraMotionScale: 1
   audioIdleSpeedFloor: 0.42
   audioVolumeBoost: 0.18
   audioPitchBoost: 0.22
@@ -208,7 +229,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 75735b8a2d1d4d04ebfa37216de048e7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

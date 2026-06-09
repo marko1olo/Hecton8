@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protokol Lokalisasi Nama Asli"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protokol Lokalisasi Nama Asli
 
-ID LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+Lokalisasi nama asli melindungi bukti pekerja dari kecelakaan interface. Pemain tidak boleh melihat nama tergencet, terbalik menjadi omong kosong, setengah diterjemahkan fallback, atau diganti sisa debug Inggris.
+
+Aturannya sederhana: identitas pribadi ditulis per locale, sementara sistem di sekitarnya diterjemahkan normal. Jika bahasa memerlukan bentuk pendek untuk lencana, bentuk itu ditulis dan di-bake, bukan diciptakan di runtime.
 
 ## Scanner
 
-ID LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Strip ini ditulis, bukan diterjemahkan langsung. Orang itu selamat di interface hanya jika interface berhenti berimprovisasi.
 
 ## Terminal
 
-ID LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+LOKALISASI NAMA // Nama pribadi, strip pendek, dan fragmen lencana di-bake per locale. Jabatan, departemen, izin rute, dan catatan sif dilokalkan di sekelilingnya. RTL dan CJK memerlukan bentuk pendek tertulis, pemenggalan aman, dan tanpa rekomposisi live di scanner, UI loker, terminal, atau wiki eksternal.
 
 ## Audio
 
-ID LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Nama yang merusak UI bukan penghormatan. Itu koloni menghapus pekerja dua kali.
 
 ## Field Note
 
-ID LOC HOLD: No live name translation. Preserve identity through baked strings.
+Jangan biarkan runtime fallback mengganti nama pekerja mati. Nama rusak adalah penghapusan lain.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/id_ID. -->

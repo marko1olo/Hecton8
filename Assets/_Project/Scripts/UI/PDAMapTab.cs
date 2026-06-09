@@ -27,7 +27,7 @@ namespace Hecton8.UI
     public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, ISlowTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const string SonarMapConstantsBufferName = "HectonSonarMapConstants";
-        private const double DefaultSeaLevelY = 14.02d;
+        private const double DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const int MaxThreatPings = 8;
         private const int MaxStatusChars = 64;
         private const float AcousticOverlayRadiusMeters = 160f;
@@ -185,6 +185,7 @@ namespace Hecton8.UI
         private IWorldSeedProvider _worldSeedProvider;
         private IPlayerRuntimeContext _playerContext;
         private IStreamingBackpressureService _streamingBackpressureService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private bool _hotSwapRegistered;
         private bool _coldSupportsSetConstantBuffer;
         private bool _coldSupportsComputeShaders;
@@ -290,6 +291,9 @@ namespace Hecton8.UI
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.StreamingBackpressureRuntime:
                     _streamingBackpressureService = currentService as IStreamingBackpressureService;
@@ -629,6 +633,7 @@ namespace Hecton8.UI
             _worldSeedProvider = null;
             _playerContext = null;
             _streamingBackpressureService = null;
+            _oceanKinematicsService = null;
             _uploadedHlodImpostorVersion = uint.MaxValue;
             _uploadedHlodImpostorCount = -1;
             _observedMarkerRevision = uint.MaxValue;
@@ -643,6 +648,7 @@ namespace Hecton8.UI
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
             _playerContext = GlobalRegistry.Player;
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -2106,9 +2112,39 @@ namespace Hecton8.UI
                 return 0f;
 
             double absoluteY = playerAup.ToAbsoluteDouble3().y;
+            double seaLevelY = ResolveFallbackSeaLevelY();
             return math.isfinite(absoluteY)
-                ? (float)math.max(0d, DefaultSeaLevelY - absoluteY)
+                ? (float)math.max(0d, seaLevelY - absoluteY)
                 : 0f;
+        }
+
+        private double ResolveFallbackSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelY(oceanKinematics.SeaLevel, out double oceanSeaLevelY))
+            {
+                return oceanSeaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out double seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)

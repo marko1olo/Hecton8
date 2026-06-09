@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian"
+title: "Pertanyaan Akhir: Pemutusan, Belas Kasih, Pencurian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian
+# Pertanyaan Akhir: Pemutusan, Belas Kasih, Pencurian
 
-Pemutusan memaksa pemain menentukan apa jadinya kontinuitas Atlas-laut. Jika hanya alat rusak, memotong adalah perbaikan. Jika sistem hidup, memotong adalah membunuh. Jika ia kesaksian, memotong mungkin menghancurkan bukti.
+Pemutusan memotong lapisan perbaikan Atlas-samudra, bukan satu sakelar. Ia dapat menghentikan logika kategori yang rusak dan menolak jalur pemulihan hidup bagi Deep Reach. Ia juga dapat membungkam vent micronode, mematahkan denyut shell sealant, memutus rute fauna bertanda, merusak buffer catatan pekerja, dan meninggalkan ruang tekanan tanpa sistem yang menjaganya tersegel. Muatan pemutusan membutuhkan pelestarian proof-hash karena tindakannya akan diperdebatkan setelah ruangan gelap.
 
 ## Scanner
 
-Memotong Atlas bukan tombol shutdown. Itu operasi tanpa anatomi bersih.
+SUMBU PEMUTUSAN // Pemotongan kontinuitas melintasi lapisan perbaikan Atlas: pintu tekanan, film konduktor, buffer catatan pekerja, rute fauna bertanda, vent micronode, jalur muatan. Status bukti mengubah label kustodi.
 
 ## Terminal
 
-SUMBU PEMUTUSAN: putus kontinuitas Atlas, isolasi ekologi tekanan, tolak routing payload Deep Reach, pertaruhkan runtuhnya cekungan, atau simpan hanya memori perbaikan parsial. Makna bergantung pada bukti yang dibawa ke ruang final.
+SUMBU AKHIR / PEMUTUSAN ATLAS
+Aksi: pemotongan kontinuitas melalui lapisan perbaikan Atlas-samudra.
+Terdampak: pintu tekanan, film konduktor hidup, vent micronode, denyut shell sealant, rute fauna bertanda, buffer catatan pekerja, jalur muatan.
+Efek penerima: rute Deep Reach ditolak kecuali jalur muatan terpisah bertahan.
+Risiko: ketidakstabilan cekungan, hilangnya rute perbaikan, cedera ekologi, kustodi diperdebatkan.
+Kerugian diketahui: potongan yang sama dapat menjadi penyelamatan, kerusakan, sabotase, atau pencurian tergantung status bukti.
 
 ## Audio
 
-Saklar bersih akan terasa penuh belas kasihan. Kau tidak mendapatkannya.
+Potongannya nyata. Labelnya datang belakangan.
 
 ## Field Note
 
-Tindakan yang sama bisa membebaskan pekerja terjebak, membunuh hidup laut-mesin, menolak Deep Reach, dan mencuri infrastruktur hidup dari dirinya sendiri.
+Satu potong dapat membebaskan catatan yang terjebak, menghentikan loop berbahaya, mematahkan perbaikan hidup, atau menolak jalan kembali Deep Reach. Konsol hanya menunjukkan tautan mana yang gelap.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/id_ID. -->

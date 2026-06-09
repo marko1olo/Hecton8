@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Mémoire de rumeurs du dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Mémoire de rumeurs du dossier
 
-FR LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+La mémoire de rumeurs du dossier rend le savoir de replay diégétique : le registre garde soupçon et conséquence sans donner un corps plus fort à la tentative suivante.
 
 ## Scanner
 
-FR LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MÉMOIRE DOSSIER // Rumeurs, avertissements, contexte contractuel et fins restent. Coque, oxygène, outils, cargaison et carte ne restent pas.
 
 ## Terminal
 
-FR LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+RÈGLE DE PERSISTANCE : le dossier peut garder familles de rumeurs, catégories de preuve, marqueurs de fin et avertissements de route entre campagnes. Il ne transporte ni équipement, ni ressources, ni géographie du seed, ni propriété de la vérité.
 
 ## Audio
 
-FR LOC HOLD: Your file remembers what your hands cannot carry.
+Le fichier se souvient de ce que tes mains ne peuvent pas porter.
 
 ## Field Note
 
-FR LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Que le savoir persiste. Que la pression reste.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/fr_FR. -->

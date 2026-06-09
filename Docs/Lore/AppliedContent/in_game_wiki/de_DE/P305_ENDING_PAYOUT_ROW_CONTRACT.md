@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Ending Payout Data Boundary"
+title: "Datengrenze der Endauszahlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Ending Payout Data Boundary
+# Datengrenze der Endauszahlung
 
-DE LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+Die Grenze hält Enden als Abwägungsakten, nicht als Siegpunkte. Die Auszahlung zählt, aber auch Verwahrung, öffentlicher Beweis, Quarantäne, Schuld und das Handlungsrecht des Empfängers nach Abreise des Spielers.
 
 ## Scanner
 
-DE LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Endzeile bindet Empfänger, Verwahrung, Beweisstatus, Auszahlung und ungelöste Folge.
 
 ## Terminal
 
-DE LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: Zeilen erfordern Payloadroute, Empfänger, Beweisstatus, materielle Auszahlung, rechtliche Folge, Quarantäneverzug und ungelöste Kosten. Credits schließen keinen Tatort.
 
 ## Audio
 
-DE LOC HOLD: Credits do not close a crime scene.
+Credits schließen keinen Tatort.
 
 ## Field Note
 
-DE LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit-Wert, Quarantäneverzögerung und Dossierflags werden erst erfasst, wenn Empfänger und Beweisstatus klar sind.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/de_DE. -->

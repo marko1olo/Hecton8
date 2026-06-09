@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Hold Signatures"
+title: "Tanda Tangan Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Hold Signatures
+# Tanda Tangan Quarantine Review Gate
 
-ID LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+Lapisan tanda tangan karantina membuat kesalahan Deep Reach bersifat prosedural. Great Tide menciptakan risiko kontaminasi dan tekanan yang nyata; kebohongannya adalah memakai risiko itu sebagai alasan untuk menahan orang dan catatan dalam kustodi lokal sementara tinjauan luar tertinggal. Laporan publik menyebut hasilnya karantina biologis/tekanan dan kegagalan otorisasi. Kartu gate yang dipulihkan menambahkan fakta yang lebih keras: ekstraksi ditahan oleh bahasa sertifikat bahkan di tempat perangkat rute belum gagal.
 
 ## Scanner
 
-ID LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Kartu tinjauan dipulihkan: extraction state HELD, bidang risiko BIO/PRESSURE-UNCERTAIN, sertifikat eksternal absen. Pelepasan rute diblokir gate code.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Antrean: Evacuation release. Tindakan: tahan ekstraksi sampai sertifikat pressure-biology dan tinjauan eksternal. Pengecualian: kapasitas shuttle independen tidak ditugaskan. Human tags tetap dalam kustodi lokal sampai gate bersih.
 
 ## Audio
 
-ID LOC HOLD: Pending review is still a locked door.
+Pintu itu masih punya daya. Gate menulis review pending, dan palka tetap merah.
 
 ## Field Note
 
-ID LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Taruh ini di dekat rute penyintas yang terkunci dan perangkat evakuasi yang masih punya baterai. Bidang hold membuat pintu yang berfungsi tertutup secara hukum.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/id_ID. -->

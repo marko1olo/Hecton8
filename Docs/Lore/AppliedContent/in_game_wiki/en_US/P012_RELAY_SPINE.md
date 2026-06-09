@@ -19,24 +19,24 @@ localization_flags: 0
 
 # Relay Spine
 
-The Relay Spine is the slow communications skeleton of human space: beam slots, packet buffers, custody stamps, retry schedules and legal receipt chains. It can move evidence, claims and orders across interstellar distance. It cannot move oxygen into a flooded compartment.
+The Relay Spine is how human space stays connected without pretending distance is gone. It is a chain of beam slots, packet buffers, custody hashes, retry schedules, notary spools and local weather permissions. The system can move orders, evidence, debt notices and proof-of-life bursts across interstellar distance. It cannot move oxygen into a flooded room.
 
-HECTON-8 uses that delay as pressure. A message may be valid, witnessed and impossible to act on in time. Black Keel can hear a local packet before Sol can understand the disaster. Luyten can preserve the custody hash before any crewed hull crosses the dark. The player learns that truth and rescue are separate logistics problems.
+HECTON-8 uses the Relay Spine as pressure, not background. A message may be readable and useless. A Deep Reach packet may arrive sanitized because the people who wrote the first version are dead. A Tau Ceti public ledger receipt might make evidence politically dangerous years after the Marauder needed rescue. Luyten can prove custody and still leave the player alone in the water. The relay makes truth durable. It does not make truth fast.
 
 ## Scanner
 
-Stale relay buffer. Outbound packet age exceeds local rescue relevance. Custody hash intact; response window dead.
+Stale relay buffer. Source clock valid, custody hash intact, retry queue exhausted. Message outran rescue mass and died in the waiting slot.
 
 ## Terminal
 
-RELAY SPINE // Packet queued through Aegir local, Luyten Junction and Sol archival path. Light-delay route accepted. Priority dispute unresolved. Human-response estimate: non-operational for current survival window.
+RELAY SPINE STATUS // No ansible lane. Packet custody valid through local Aegir buffer. Luyten receipt pending by light-delay class. Human response obsolete for compartment survival. Keep local action authority.
 
 ## Audio
 
-The relay is not broken. That is the problem. It is doing exactly what distance allows.
+A packet can be true, received, and still too late to matter.
 
 ## Field Note
 
-A message can be true and still arrive after you are bones.
+Delay does not make truth false. It makes truth lonely.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/en_US. -->

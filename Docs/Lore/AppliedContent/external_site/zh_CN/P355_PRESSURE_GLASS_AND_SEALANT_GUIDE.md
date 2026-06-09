@@ -19,22 +19,8 @@ localization_flags: 1
 
 # 压力玻璃与密封剂指南
 
-压力玻璃与密封剂指南把 HECTON-8 的生物机械恐怖扎进修复逻辑：Atlas 跟随裂纹、缆线、biofilms 和 pressure scars，因为破损系统本来就提供道路。
+压力玻璃最初是实用殖民材料：足够透明，可以做舷窗；足够坚韧，可以做压力门；也足够便宜，可以浇进服务接缝。多年水下环境改变了它的作用。潮汐把应力写进玻璃板。矿物让边缘发雾。生物膜学会了裂缝。Atlas化学抵达时，不必发明穿过殖民地的路线。破碎玻璃已经把路线画好了。
 
-## Scanner
-
-pressure-glass 裂纹被 Atlas chemistry 封住。只有 seal map 保持完整时，lens stock 才安全。
-
-## Terminal
-
-FIELD GUIDE: pressure glass 记录旧 tide stress。Atlas sealant 沿这些裂纹前进，因为裂纹已经描述了系统失效线。
-
-## Audio
-
-修复网络阅读裂纹，就像你阅读地图。
-
-## Field Note
-
-不要打磨漂亮边缘。跟随 fracture map，从 seal 的死亡侧切入。
+因此，一堆镜片库存可以同时有价值又危险。从密封的死亡侧切，玻璃就是salvage。打磨活边缘，修复网络就得到更干净的路径。在HECTON-8，密封剂不只是胶。它决定哪些故障可以闭合，哪些仍留在地图上，哪些会变成一扇门，让某个仍在试图修复错误身体的东西穿过。
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/zh_CN. -->

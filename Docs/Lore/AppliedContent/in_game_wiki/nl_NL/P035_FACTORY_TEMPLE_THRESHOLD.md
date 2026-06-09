@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Fabriek-tempeldrempel
 
-De drempel markeert de finale ruimtelijke grammatica: Deep Reach, kolonie, Atlas-6 en HECTON-8-oceaan worden één fysiek systeem.
+De Fabriek-tempeldrempel is de laatste onderste poortassemblage voorbij de Bodemfabriek. Het is geen mythische versmelting. Het is een werkende lastverdeling: Deep Reach-trussen dragen oude rompspanning, retourpijpen verplaatsen nog pekel en warmte, carbonaatgroei dicht gefaalde pakkingen, en Atlas-6 routeert continuïteit via contacten die nog antwoorden. De aflezing loopt via klemvolgorde, stroomsporen, kabelbusruis en tagpositie.
 
 ## Scanner
 
-De bodemstructuur is geen basis. Fabrieksromp, schrijnlogica en levend drukweefsel delen één lastpad.
+Onderpoortlezing: fabriekstruss, retourpijp, drukafdichting en Atlas-routeringsbus dragen dezelfde last. Er blijft geen schone grens tussen wand en deur over.
 
 ## Terminal
 
-Drempelwaarschuwing: industriële truss, biogene afdichting, xenon lattice-hitte en Atlas-routering delen structurele autoriteit.
+THRESHOLD LOAD NOTICE
+Truss: onder spanning
+Retourpijp: actief
+Drukafdichting: carbonaatovergroei
+Routeringsbus: ATLAS-6-continuïteitskanaal
+Menselijke toegang: niet geverifieerd
+Actie: klemvolgorde markeren voor je een naad opent
 
 ## Audio
 
-De oceaan begroef de fabriek niet. Hij maakte er een lichaam van.
+Noem het geen deur. Zoek welke lijn de druk houdt voordat je vraagt dat hij opengaat.
 
 ## Field Note
 
-Hier stopt de kaart met doen alsof ze kolonieruïne is.
+Het kaartlabel zegt drempel. Controleer de klemmen, niet het woord. De poort houdt omdat vier systemen dezelfde last nemen.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/nl_NL. -->

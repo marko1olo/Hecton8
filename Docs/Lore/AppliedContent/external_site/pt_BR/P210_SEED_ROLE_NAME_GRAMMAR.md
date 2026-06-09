@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Gramática de Nomes Seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Gramática de Nomes Seed-role
 
-PT LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+A Gramática de Nomes Seed-role define como HECTON-8 usa variação procedural sem perder textura humana autoral. O replay pode mudar onde a evidência de um trabalhador aparece, mas o nome deve continuar preso a trabalho, permissão, tarefa e objeto. Assim a colônia segue surpreendente entre runs enquanto preserva a sensação de que cada registro pertenceu a alguém cujo trabalho importava.
 
 ## Scanner
 
-PT LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Um seed pode mover a ordem das evidências. Ele não pode transformar um trabalhador em texto descartável.
 
 ## Terminal
 
-PT LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. A localização pode anotar termos de equipe para legibilidade, mas não deve reescrever identidade, apagar o trabalho nem separar o nome de um objeto concreto.
 
 ## Audio
 
-PT LOC HOLD: Random is not authorship. Bind the name to a job.
+Aleatório não é autoria. Prenda o nome a um trabalho.
 
 ## Field Note
 
-PT LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Cada identidade seed-role combina nome pessoal, família de equipe, permissão de rota, última tarefa e variante de objeto.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/pt_BR. -->

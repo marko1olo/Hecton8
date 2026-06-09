@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Набор доказательств релейного двора кабельного рифа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Cable Reef Relay Yard POI Kit
+# Набор доказательств релейного двора кабельного рифа
 
-RU LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+Релейный двор превращает отвращение в дисциплину инструмента. Кабельные оболочки лопнули, изоляция слезла, а сервисная пленка Atlas пересекла гнезда, которые не должны были делить поверхность. Чистый проход резаком может уничтожить единственный путь, который еще несет сигнал.
 
-## Scanner
-
-RU LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-RU LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-RU LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-RU LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Набор доказательств физический: ответ пингера, карта мертвой ветви, предупреждение о резке, релейная развилка и сервисная метка там, где живой материал забрал сломанный маршрут. Место должно казаться полезным прежде, чем покажется странным. Опасность в ремонте, который может спасти оператора и одновременно испортить запись претензии.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ru_RU. -->

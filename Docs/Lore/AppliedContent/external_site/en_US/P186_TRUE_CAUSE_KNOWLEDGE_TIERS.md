@@ -19,22 +19,22 @@ localization_flags: 0
 
 # True Cause Knowledge Tiers
 
-True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+True Cause Knowledge Tiers is the map of corporate knowing behind HECTON-8. The article separates evidence by office, not to excuse Deep Reach, but to make the crime more believable: ocean data, AI weighting, evacuation law, insurance conversion and recovery compliance all held different pieces of the same fatal chain. The horror is not a hidden order reading "kill the colony." The horror is a company built so every desk can see a partial truth, protect its metric, and pass the moral remainder downstream until rescue becomes a liability event.
 
 ## Scanner
 
-True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach knew the truth in slices: tide margins in one office, Atlas weighting in another, evacuation delay and claim conversion somewhere else.
 
 ## Terminal
 
-KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: tide teams logged margin loss; Risk accepted tail exposure; Atlas Safety weighted continuity above evacuation; Counsel held releases; Keelmark converted deaths into recoverable loss; Recovery Compliance requested payload before disclosure.
 
 ## Audio
 
-No one wrote murder. They wrote columns until rescue lost.
+No one had to write "let them die." The table already knew how.
 
 ## Field Note
 
-This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Distributed ignorance was not innocence. It was an architecture.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/en_US. -->

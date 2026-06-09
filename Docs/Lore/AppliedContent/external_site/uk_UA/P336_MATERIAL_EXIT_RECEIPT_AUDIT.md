@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Material Exit Receipt Audit"
+title: "Аудит квитанції матеріального виходу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Material Exit Receipt Audit
+# Аудит квитанції матеріального виходу
 
-UK LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
+Хибні виходи HECTON-8 не є фальшивими екранами поразки. Це реальні наслідки, які показують, що гравець вирішив цінувати: масу, доказ, імена, свободу або право визначити, кому належить історія після втечі.
 
 ## Scanner
 
-UK LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Квитанція виходу підтверджує вилучену масу. Ланцюг доказів зламаний; імена працівників не прийняті.
 
 ## Terminal
 
-UK LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+КВИТАНЦІЯ AFTER-ACTION: сальважну виплату видано за вилучувану масу й контрактний ризик. Правда координат не вирішена. Статус відповідальності Deep Reach не змінено. Реєстр імен працівників відхилено як доказ поза ланцюгом зберігання. Вихід дозволено; справа лишається власністю носія.
 
 ## Audio
 
-UK LOC HOLD: You got paid. That is not the same as getting out clean.
+Тобі заплатили. Це не означає, що ти вийшов чисто.
 
 ## Field Note
 
-UK LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Післядійний запис для оплаченого, але морально незавершеного виходу: винагорода закрита, evidence chain провалена, імена лишаються поза офіційним зберіганням.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/uk_UA. -->

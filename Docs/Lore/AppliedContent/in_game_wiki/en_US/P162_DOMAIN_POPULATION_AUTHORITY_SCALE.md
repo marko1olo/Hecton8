@@ -19,9 +19,9 @@ localization_flags: 0
 
 # Population And Authority Scale
 
-Population numbers stay approximate because the player does not need census opera. The useful question is simpler: who can act on you from far away? A crowded inner domain may only touch HECTON-8 as a certification line. A small depot may matter more because it controls packet custody. A dead frontier shell may matter most because it owns the hardware in the room.
+Population numbers stay approximate because census trivia does not decide who survives. The useful question is simpler: who can act on a body from far away? A crowded inner domain may only touch HECTON-8 as a certification line. A small depot may matter more because it controls packet custody. A dead frontier shell may matter most because it owns the hardware in the room.
 
-This is the scale the player feels. Sol can decide that an object belongs to someone. Centauri can make Deep Reach's old language look respectable. Barnard can normalize the work that traps Marauders. Tau Ceti can turn evidence into public pressure, too late for oxygen but not too late for consequence. Luyten can prove the message chain. Aegir is where the signatures become pressure, water, locked hatches and payable mass.
+This is the felt scale of authority. Sol can decide that an object belongs to someone. Centauri can make Deep Reach's old language look respectable. Barnard can normalize the work that traps Marauders. Tau Ceti can turn evidence into public pressure, too late for oxygen but not too late for consequence. Luyten can prove the message chain. Aegir is where the signatures become pressure, water, locked hatches and payable mass.
 
 ## Scanner
 

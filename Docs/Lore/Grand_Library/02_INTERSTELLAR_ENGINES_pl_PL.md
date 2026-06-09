@@ -1,45 +1,86 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# PROJEKT SILNIKÓW I LOGISTYKA MIĘDZYGWIEZDNA
+<!-- localization_status: draft_machine_or_llm_pl_PL -->
+# NAPEDY OKOLOSWIETLNE I LOGISTYKA TRAS
 
-> **Źródło:** Sylabus Techniczny, Stocznie Barnarda. Dokument 44-A. Lektura obowiązkowa dla wszystkich wyjeżdżających wykonawców.  
-> **Prelegent:** Silas Vane, Technik Napędu Pierwszej Klasy (w stanie spoczynku).  
-> **Uwaga recenzenta:** Niniejszy sylabus udostępniany jest wykonawcom po wybudzeniu z kriostazy. Nie zawiera żadnej zastrzeżonej telemetrii Deep Reach.
+> **Zrodlo:** biblioteka kontraktorow Black Keel, Elementarz mechaniki tras 02.  
+> **Dostep:** dopuszczone do wprowadzenia Marauderow. Usunieto zastrzezone czasy wiazek, geometrie odbiornikow i tabele oplat za depozyt.  
+> **Ostrzezenie:** ten artykul nie tlumaczy, jak opuscic HECTON-8. Tlumaczy, dlaczego nikt nie opuszcza go szybko.
 
 ---
 
-## 1. Fikcja Prędkości
+## 1. Pierwsze klamstwo to jeden silnik
 
-Pozwólcie, że wyjaśnię to, zanim wejdziecie do zimnej tuby: nie ma żadnego magicznego przycisku. Dorastaliście, oglądając filmy o wrotach skokowych i nadprzestrzeni. Wymażcie je z pamięci. W uniwersum nie istnieje napęd szybszy od światła. Nie ma ansibli do błyskawicznych pogaduszek z mamą. Nie ma bezodrzutowych pędników oszukujących zasadę zachowania pędu.
+Ludzie mowia "silnik miedzygwiezdny", bo wygodnie wyobrazic sobie jedna maszyne na rufie, jedno gardlo ognia, jeden decydujacy zaplon. Korytarz Ran-Aegir tak nie dziala.
 
-Ekspansja kosmiczna jest powolna, wyczerpująca i spala pieniądze na skalę, która przyprawia państwa narodowe o płacz. To dokładnie ten powód, dla którego głęboki kosmos należy do megakorporacji. Tylko podmiot z finansowym horyzontem mierzonym w stuleciach może pozwolić sobie na dwadzieścia lat czekania na zwrot z inwestycji.
+Silnikiem jest trasa.
 
-Kiedy opuścicie ten dok, będziecie podlegać fizyce, a nie poezji.
+Zaczyna sie, zanim kadlub dostanie nazwe: lasery startowe i dziala pelletowe w wewnetrznych stoczniach, floty holownikow przesuwajace bezwladna mase w odpowiedni cien, zegary ksiegowe rezerwujace okno hamowania dekady przed pobudka zalogi, przekazniki-swiadkowie poswiadczajace, ze plomba ladunku byla nienaruszona przy przekroczeniu okreslonej linii. Pokladowy naped statku to tylko czesc, ktora da sie wskazac palcem. Reszta jest rozrzucona po stacjach, starych dlugach, umowach utrzymaniowych, pojemnosci cieplnej, polityce orbitalnej i maszynach, ktore nigdy nie zobacza celu, ku ktoremu pchaja ladunek.
 
-## 2. Jak tam dotrzemy
+Dlatego kontrakt tranzytowy mniej przypomina bilet, a bardziej formularz sekcji zwlok napisany z wyprzedzeniem. Wymienia, jaka mase wolno przyspieszyc, gdzie wolno zrzucic cieplo, na jakie pakiety wolno odpowiedziec, jakie ciala wolno wybudzic i ktora wladza ma prawo posiadac opoznienie.
 
-Łańcuch logistyczny do Aegira opiera się na trzech twardych faktach inżynieryjnych:
+Prozni jest wszystko jedno. Rejestrom nie.
 
-### A. Pchnięcie wiązką peletów
-Pierwszymi rzeczami, które dotarły do Aegira, nie były statki, lecz autonomiczne sondy. Nie doczepiliśmy do nich rakiet. Zbudowaliśmy orbitalne sieci laserowe — kolosalne instalacje wiązek peletów w Węźle Luytena — i dosłownie wystrzeliliśmy je przez pustkę. Sondy są małe, bezzałogowe i na tyle tanie, że Korporacja może wrzucić tuzin w korytarz tranzytowy, zanim w ogóle dowie się, czy trasa jest bezpieczna. To właśnie jeden z takich jednorazowych zwiadowców po raz pierwszy wykrył sygnaturę Ksenonu-Omega.
+## 2. W liczbach nie ma skrotu
 
-### B. Latająca hipoteka
-Polecicie ciężkim frachtowcem kolonialnym klasy *Atlas*. Napędzany jest impulsowymi silnikami termojądrowo-elektrycznymi. Przewozi fabryki, platformy wiertnicze i was — śpiących w letargu, żebyście nie zjadali marży zysku. Podróż zajmuje lata.
+Ran i Aegir dziela lata swietlne oraz znacznie wieksza odleglosc w pieniadzu. Nie ma ukrytego kanalu dla rozkazu ratunkowego, prywatnego szeptu szybszego od pakietu alarmowego ani starej sztuczki czekajacej pod firmowa pieczecia. Kazda wiadomosc, kazde roszczenie, kazde przeprosiny podrozuja w tym samym twardym limicie co statek.
 
-Nie romantyzujcie statku. To dosłownie hipoteka z silnikami. Deep Reach nie spala masy reakcyjnej, aby ratować porzuconego technika. Wysyłają frachtowiec tylko wtedy, gdy matematyka udowodni, że ładunek jest wart więcej niż paliwo.
+To wazniejsze niz dowolny schemat silnika. Katastrofa na HECTON-8 moze zostac idealnie zarejestrowana, idealnie wyslana i nadal dotrzec jako stara wiadomosc. Odpowiedz moze byc szczera i nadal bezuzyteczna. Zanim rada zatwierdzi korekte trasy, ciala wymienione w raporcie moga byc koscmi, szlamem albo zlomem dluzej, niz zyje urzednik czytajacy pakiet.
 
-### C. Problem hamowania
-Przyspieszenie do prędkości bliskiej światłu jest proste; zatrzymanie się to koszmar. Kiedy wasz statek zbliży się do Aegira, nie zawróci po prostu i nie odpali silników. To marnowanie masy. Zamiast tego frachtowiec rozwija Żagle Magnetyczne (Magsails) — gigantyczne żagle ciągnące się przez setki kilometrów. Będziecie hamować o sam ośrodek międzygwiazdowy. W ostatnich, gwałtownych etapach wejścia na orbitę, statek użyje hamowania aerodynamicznego, odbijając się jak kamień od atmosfery gazowych gigantów lub szorując brzuchem przez powłokę burzową samego HECTON-8. Jeśli matematyka pomyli się o ułamek procenta, statek spłonie.
+Kolonie projektuje sie wokol tego okrucienstwa. Nie sa odwaznymi placowkami czekajacymi na pomoc z domu. Sa lokalnymi systemami zmuszonymi dzialac po tym, jak rozmowa stala sie historia.
 
-## 3. Doktryna ratunkowa (lub jej brak)
+Dlatego zainstalowano Atlas. Dlatego istnieja lokalne skarbce fabrykacyjne, prawni pelnomocnicy, zapieczetowane zapasy medyczne i brzydki maly sad Black Keel zlozony ze znacznikow roszczen i pingow depozytowych. Opoznienie nie jest usterka cywilizacji. Jest jej ksztaltem.
 
-Ponieważ prędkość światła jest twardym limitem, ratunek ze światów jądra jest fizycznie niemożliwy.
+## 3. Stos trasy
 
-Jeśli kaskada ciśnienia zniszczy sektor na HECTON-8, sygnał ratunkowy będzie potrzebował ponad dziesięciu lat, aby dotrzeć na Ziemię. Odpowiedź — jeśli w ogóle zadadzą sobie trud jej wysłania — potrzebuje kolejnych dziesięciu lat na dotarcie.
+Trasa okoloswietlna powstaje warstwami.
 
-Właśnie dlatego Deep Reach zainstalowało AI Atlas-6. Została zbudowana, aby być "Zarządcą Fabryki", utrzymując kolonię bez potrzeby dzwonienia do domu. Miała utrzymać włączone światła i działające pompy.
+Pierwsza warstwa to pchniecie: wiazki startowe, strumienie pelletow, orbitalne napedy masowe i holowniki fuzyjno-elektryczne, ktore przez lata zamieniaja ladunek w przyszle przybycie. Z bliska nie ma w tym nic heroicznego. Sa rusztowania, pyl, spalona oslona, serwis cewek i zalogi odliczajace do zaplonow, ktorych powtorzenia juz nie dozyja.
 
-Kiedy zejdziecie na powierzchnię oceanu, zostaniecie zrzuceni z orbitalnego nosiciela *Black Keel*. Polecicie w kapsule klasy "Styx". Zrozumcie jedno: Styx jest zaprojektowany w jedną stronę. Jego rama jest zbudowana tak, by odkształcać się pod ciśnieniem abisalnym, a awionika ma zostać zalana w momencie uderzenia o dno.
+Druga warstwa to wytrzymalosc: ofiarne plyty dziobowe, magnetyczne klatki polowe, przeslony termiczne, loza sensorow utwardzonych na promieniowanie, skarbce kriogeniczne i systemy naprowadzania dosc stare, by nie ufac niczemu eleganckiemu. Xenon-Omega pojawia sie tu jako material procesu cisnieniowego, nie jako cud. Uzywa sie go tam, gdzie wysokie pola, przelaczanie cieplne albo glebokie promieniowanie karza zwykle komponenty. Poprawia marginesy. Nie wybacza glupoty.
 
-Aby wrócić na orbitę, musicie znaleźć, naprawić lub wydrzeć z rąk martwej kolonii termochemiczne ładunki wznoszące.
+Trzecia warstwa to odbior. Statek trzeba zlapac. Zagle magnetyczne rozkwitaja ciemna geometria. Budza sie chwytacze pelletow. Macierze odbiorcze wydaja budzet cieplny, ktory mogly obiecac komus innemu. Holowniki wychodza, jesli kontrakt pozwala im wyjsc. Zbiorniki kwarantanny otwieraja sie, jesli kategoria ladunku na to pozwala. Statek, ktory minie swoj slot, nie staje sie romantyczny. Staje sie problemem z predkoscia.
 
-Nie jesteście odkrywcami. Nie jesteście pasażerami. Jesteście zużywalną masą na końcu bardzo długiej, bardzo powolnej liny rozciągniętej przez pustkę. Działajcie odpowiednio.
+Od srodka pasazer przezywa caly stos jako sen, alarmy, mdlosci, zle swiatlo i dokumenty czytane przez maszyny milymi glosami. Z zewnatrz jedna cywilizacja przeciaga druga przez waska dziure ksiegowa, starajac sie nie rozerwac ladunku.
+
+## 4. Przyspieszenie latwo sprzedac
+
+Przyspieszenie dobrze wyglada na obrazach. Wiazke startowa mozna pokazac jako niebiesko-biala chwale. Pioropusz fuzyjny sprawia, ze sponsorzy wierza, iz historia nadal wznosi sie pionowo. Budowniczowie statkow kochaja ten etap, bo sprzedaje mit odlotu: zostawic stary swiat, wejsc w czern, zostac nazwiskiem pogranicza.
+
+Pracujacy inzynierowie mowia o rzeczach nudniejszych. Cieplo. Zuzycie lozysk. Rozrzut pelletow. Wzery w oslonom. Dryf sensorow. Kara masowa za jeszcze jednego uspionego kontraktora. Kara prawna za wybudzenie go w zlej jurysdykcji. Dodatkowe miesiace przez zamek ladunkowy, ktorego nie wolno otworzyc bez trzech nieobecnych podpisow.
+
+Logistyka Deep Reach jest pelna takich szczegolow, bo szczegoly sa tansze od pogrzebow i tansze od pozwow. Nikt nie wysyla stosu trasy przez ciemnosc z romantyzmu. Wiezie prawa do rudy, szklo cisnieniowe, zapieczetowane dane pomiarowe, szpik zapasowy, nasiona maszyn, swiadkow roszczen, harmonogramy dlugow, zamrozona prace i ludzi, ktorych kontrakty opisuja jako mase operacyjna.
+
+To ostatnie okreslenie nie jest poetyckie. Tak ksiegowy trasy moze przesunac zywe cialo, nie udajac, ze cialo jest celem podrozy.
+
+## 5. Najdrozej jest sie zatrzymac
+
+Predkosc nie jest podbojem. Zatrzymanie jest.
+
+Aby dotrzec do Aegir, statek musi dostac pozwolenie, by stac sie wolny w konkretnym miejscu i czasie. Strona odbiorcza musi zarezerwowac pojemnosc cieplna, godziny holownikow, orbite postojowa, inspekcje medyczna, objetosc depozytu, kwarantanne danych i uwage prawna. Jesli brakuje jednego elementu, statek moze istniec, nadawac, byc pelny ludzi i nadal uslyszec rozkaz czekania.
+
+Oto prawda, ktora lamie nowych kontraktorow: wezwanie ratunkowe moze zostac uznane za prawdziwe i odrzucone. Nie dlatego, ze sluchacz jest zly. Dlatego, ze trasa niesie juz inne zobowiazania z nazwiskami, podpisami, klauzulami ubezpieczeniowymi i karami zdolnymi zrujnowac habitat.
+
+Zalogi Black Keel rozumieja to lepiej niz ktokolwiek na HECTON-8. Siedza dosc blisko oceanu, by slyszec skutki, i dosc daleko od stosu trasy, by nie moc zmienic rozkladu. Moga zapisac roszczenie. Przydzielic depozyt zlomowy. Potwierdzic, ze Marauder wszedl do wody z waznym lancuchem dlugu i dzialajacym skafandrem. Nie moga przywolac z fizyki zyczliwego statku.
+
+## 6. Dlaczego ratunek jest lokalny
+
+Kazdy powazny system kolonialny hoduje wlasna doktryne ratunkowa, a kazda doktryna staje sie brzydsza od broszury.
+
+Na HECTON-8 ratunek oznacza drzwi cisnieniowe, ktore jeszcze cykluja. Mokra drukarke zdolna zrobic uszczelke ze zepsutego wsadu. Atlas znajdujacy dosc nienaruszonego routingu, by odroznic pompe od trumny. Skafander Class-IV trzymajacy jedno cialo w cieple, podczas gdy stacja wokol zapomina, jak byc stacja. Tender zlomowy z prawem zapisania twojej smierci, a nie zapobiezenia jej.
+
+Marauder szybko sie tego uczy. Ocean nie jest odizolowany dlatego, ze wszyscy na zewnatrz nie wiedza. Jest odizolowany dlatego, ze prawidlowa odpowiedz na wiekszosc awarii nie moze dotrzec w tym samym zyciu co krzyk.
+
+Dlatego swiat gry jest pelen lokalnych odpowiedzi: skleconych boi, martwych przekaznikow, schowkow z latami do skafandrow, znacznikow-swiadkow trasy, tratw bateryjnych, map cisnienia, fragmentow czarnych skrzynek, zapieczetowanej cargo, ktora nadal mysli, ze jest w tranzycie. To nie dekoracje. To nieudane obietnice cywilizacji, ktore staly sie przedmiotami.
+
+## 7. Co mowi wrak
+
+Gracz moze czytac logistyke miedzygwiezdna bez otwierania podrecznika.
+
+Szukaj platkow ablacyjnych plyt dziobowych w starych ladowniach. Szukaj ceramiki przeslon odbiorczych przykrecanej do maszyn, ktore nigdy nie mialy juz latac. Szukaj blizn po chwytaczach pelletow na odlamkach wymienianych jako talizmany przez ludzi, ktorzy nie wierza w szczescie. Szukaj komponentow Xenon-Omega pod pieczecia depozytu, zawsze opisanych staranniej niz ludzie, ktorzy ich dotykaja. Szukaj numerow skrzyn kriogenicznych wydrapanych w kojach, bo ktos obudzil sie za wczesnie i chcial dowodu, ze lata naprawde minely.
+
+Przede wszystkim sluchaj roznicy miedzy silnikiem a ucieczka.
+
+Silnik przesuwa mase po trasie, za ktorej utrzymanie ktos zaplacil.
+
+Ucieczka wymaga, by trase obchodzilo, kim jestes.
+
+HECTON-8 zbudowano wedlug pierwszej zasady. Porzucono wedlug drugiej.

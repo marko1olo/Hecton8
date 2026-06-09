@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: High Custody Sample Contract Seed"
+title: "Semilla de contrato de muestra de alta custodia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: High Custody Sample Contract Seed
+# Semilla de contrato de muestra de alta custodia
 
-ES LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Muestra de Alta Custodia es una familia de contratos donde valor de recurso y manejo de prueba chocan pronto. Blue debt, residuo tejido-hierro, agua sellada y paquetes de filtro contaminados pagan más solo mientras contenedor, etiqueta, masa y custodia de ruta sigan intactos.
 
 ## Scanner
 
-ES LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Semilla de contrato: muestra de alta custodia. Pago mayor unido a contabilidad de masa, arrastre de cuarentena y contenedores certificados por receptor.
 
 ## Terminal
 
-ES LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: muestras de grado custodia activas, libro de masa estricto, demora de cuarentena elevada, sello receptor requerido, penalización de descarte de ruta activa.
 
 ## Audio
 
-ES LOC HOLD: A sample can weigh more after it enters the ledger.
+Una muestra pesa más después de que el libro la acepta.
 
 ## Field Note
 
-ES LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Nota de merodeador: pesa la bolsa antes de llamarla beneficio. El receptor puede facturar los gramos faltantes con más fuerza que el océano.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/es_ES. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Stack Limit Data Boundary"
+title: "Batas Data Limit Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Stack Limit Data Boundary
+# Batas Data Limit Stack
 
-ID LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+Batas ini menjaga inventaris tetap fisik. Item hanya bisa bertumpuk ketika kontainer, rating tekanan, massa, dan status kontaminasi dapat bertahan di rute yang sama tanpa berbohong kepada file save.
 
 ## Scanner
 
-ID LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Baris stack menolak tumpukan ikon: kelas wadah, rating tekanan, kontaminasi, dan massa menentukan jumlah.
 
 ## Terminal
 
-ID LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: jumlah stack membutuhkan tipe wadah, rating tekanan, tahap kontaminasi, kelas massa, tier peringatan, dan identitas save-stable. Peti bukan bejana tekanan.
 
 ## Audio
 
-ID LOC HOLD: A crate is not a pressure vessel.
+Peti bukan bejana tekanan.
 
 ## Field Note
 
-ID LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Limit stack tetap table-owned dan stabil untuk save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/id_ID. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Worker Name Pool Record"
+title: "Registro de nombres de trabajadores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Worker Name Pool Record
+# Registro de nombres de trabajadores
 
-ES LOC HOLD: The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.
+Un nombre de trabajador en HECTON-8 es una pequeña cadena de pruebas. Dice qué dominio mandó un cuerpo al océano, qué trabajo lo mantuvo útil, a qué ruta podía entrar legalmente y qué fragmento de placa sobrevivió en un casillero, una pinza de manifiesto o un tablero de turno.
+
+El pool de nombres permite que las partidas repetidas parezcan habitadas sin reescribir el canon. Una técnica de bombas puede aparecer junto a un registro de juntas en un seed y junto a un rechazo de medlock en otro, pero el Great Tide, la culpa de Deep Reach y la geografía de la estación no cambian. Cambia el orden del hallazgo, no el crimen.
+
+Los buenos nombres son concretos. No son bromas, coleccionables ni melodrama barato. Deben sonar a gente que esperaba salario, plus de presión, crédito de comida y otro turno. Cuando un Marauder lee el nombre antes de tomar las herramientas bajo él, la sala deja por un momento de ser contenedor y vuelve a ser lugar de trabajo.
 
 ## Scanner
 
-ES LOC HOLD: Names are evidence, not collectible flavor.
+TIRA DE NOMBRE // Franja de origen, permiso de ruta, rol de turno y cicatriz de placa coinciden en un trabajador. Lee el nombre antes de convertir el casillero en salvamento.
 
 ## Terminal
 
-ES LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+PROTOCOLO DE NOMBRES // Las identidades se forman con nombre personal estable, franja de origen, oficio de presión, letra de turno, fragmento de placa y permiso de ruta. El sistema puede variar orden y parejas por seed, pero no convertir personas en etiquetas de botín. Los nombres personales se autoran por idioma; rol, ruta y acceso llevan el significado mecánico.
 
 ## Audio
 
-ES LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+El nombre fue el primer objeto que la colonia intentó desmontar.
 
 ## Field Note
 
-ES LOC HOLD: Seed names must preserve identity without making family melodrama.
+Los nombres no son adorno. Un nombre dice quién tenía permiso para estar en una sala húmeda cuando la estación empezó a mentir.
 
 <!-- In-Game Wiki; generated from P166_WORKER_NAME_POOL_PROTOCOL/es_ES. -->

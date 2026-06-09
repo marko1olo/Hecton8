@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Quarantine Hold Signatures"
+title: "Assinaturas do Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Quarantine Hold Signatures
+# Assinaturas do Quarantine Review Gate
 
-PT LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+A camada de assinaturas de quarentena torna a culpa da Deep Reach procedural. A Great Tide criou risco real de contaminação e pressão; a mentira foi tratar esse risco como motivo para manter pessoas e registros sob custódia local enquanto a revisão externa atrasava. Relatórios públicos chamaram o resultado de quarentena biológica/de pressão e falha de autorização. Os cartões gate recuperados acrescentam um fato mais duro: a extração foi retida por linguagem de certificado mesmo onde o hardware de rota ainda não havia falhado.
 
 ## Scanner
 
-PT LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Cartão de revisão recuperado: extraction state HELD, campo BIO/PRESSURE-UNCERTAIN, certificado externo ausente. Liberação de rota bloqueada por gate code.
 
 ## Terminal
 
-PT LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Fila: Evacuation release. Ação: reter extração até certificado pressure-biology e revisão externa. Exceção: nenhuma capacidade de shuttle independente designada. Human tags ficam em custódia local até o gate limpar.
 
 ## Audio
 
-PT LOC HOLD: Pending review is still a locked door.
+A porta ainda tinha energia. O gate diz review pending, e a escotilha ficou vermelha.
 
 ## Field Note
 
-PT LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Ponha isso ao lado de rotas de sobreviventes travadas e hardware de evacuação com bateria restante. O campo hold fechou legalmente uma porta que funcionava.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/pt_BR. -->

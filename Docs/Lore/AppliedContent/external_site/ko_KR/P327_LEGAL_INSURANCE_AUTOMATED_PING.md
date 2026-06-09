@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Legal Insurance Automated Ping"
+title: "법률 보험 자동 Ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Legal Insurance Automated Ping
+# 법률 보험 자동 Ping
 
-KO LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+법률 보험 자동 Ping은 HECTON-8의 관료적 공포를 압축한 표현이다. 현재의 Deep Reach는 사람을 통하는 것만큼 효과적으로 자동화된 보험 custody 시스템을 통해 말할 수 있다. 시스템은 생존자를 구해야 하는지 묻기 전에 생존자가 무엇을 들고 있는지 묻는다.
 
 ## Scanner
 
-KO LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+자동 ping 수신. 구조 언어는 receiver proof, mass class, custody status로 대체되었다.
 
 ## Terminal
 
-KO LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / recovery-window assignment 전 필요: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-KO LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+그들이 처음 묻는 것은 당신이 살아 있는지가 아니다. 무엇을 들고 있느냐다.
 
 ## Field Note
 
-KO LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+경로 임계점의 짧은 bark 후보. 드물게 사용할 것. 잔혹함은 시스템이 먼저 묻는 것에 있다.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/ko_KR. -->

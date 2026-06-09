@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Anchor Worker Name Set A
 
-Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
+Anchor Worker Name Set A is the first human layer the player should start recognizing. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, and Pavel Sorn belong to shallow and industrial-shelf evidence. Their names should not arrive as biographies. They should arrive on a locker label, a pump tag, a route permission, a stained meal chit, a cracked tool case, then return later in a record that changes the meaning. Set A makes the colony feel lived-in before the deeper conspiracy is clear.
 
 ## Scanner
 
-Anchor names should reappear through work, not personal exposition.
+Early names must come back through work, not speeches. The shallow route teaches memory by repetition.
 
 ## Terminal
 
-ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: shallow and industrial-shelf recurrence. Each name should bind to one tool, one route permission, one damaged work object, and one later contradiction. These names are the player's first proof that the colony was a workplace before it became salvage.
 
 ## Audio
 

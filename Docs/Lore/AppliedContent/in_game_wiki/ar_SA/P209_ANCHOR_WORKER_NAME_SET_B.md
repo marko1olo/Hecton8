@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "مجموعة أسماء العمال المرساة B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# مجموعة أسماء العمال المرساة B
 
-AR LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+تحمل مجموعة أسماء العمال المرساة B السجل إلى طبقات أدلة أكثر ظلمة. يجب أن تظهر Nadiya Rook وTomas Eline وKeiko Madsen وHarun Vale وEstel Nwosu وDima Korr وSofia Leung وBram Kessel بعد أن يفهم اللاعب أن الأعطال تتكرر بتصميم. تنتمي سجلاتهم إلى عمل وادي المحلول الملحي، وحقول الآلات السحيقة، واستثناءات الفرز، وتناقضات إصلاح Atlas، وديون salvage. يجب أن تشعر Set B كلحظة تتحول فيها قصة مكان عمل مألوفة إلى اتهام لا تزال الأسماء ملتصقة به.
 
 ## Scanner
 
-AR LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+يجب أن تصل الأسماء الأعمق بعد أن يعرف اللاعب نمط الضرر. ثمنها أعلى لأن الماء بدأ يثبت الجريمة.
 
 ## Terminal
 
-AR LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: تكرار في وادي المحلول الملحي وحقول الآلات السحيقة. اربط هذه الأسماء ب witness hashes واحتجازات المسار واستثناءات الفرز وتناقضات إصلاح Atlas وآثار دين salvage. Set B هو المكان الذي يكف فيه دليل العامل عن كونه مأساة محلية ويصير سببا مؤسسيا.
 
 ## Audio
 
-AR LOC HOLD: A deep name costs more because the water has already proved what happened.
+الاسم العميق أغلى لأن الماء أثبت بالفعل ما حدث.
 
 ## Field Note
 
-AR LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+مراسي Set B: Nadiya Rook وTomas Eline وKeiko Madsen وHarun Vale وEstel Nwosu وDima Korr وSofia Leung وBram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/ar_SA. -->

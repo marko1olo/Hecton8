@@ -790,6 +790,9 @@ namespace Hecton8.Core
         ArtificialLightCritical = 1u << 6,
         BlackCrushGuard = 1u << 7,
         QualityReduced = 1u << 8,
+        LightPhaseDay = 1u << 9,
+        LightPhaseTwilight = 1u << 10,
+        LightPhaseNight = 1u << 11,
     }
 
     /// <summary>
@@ -5021,6 +5024,34 @@ namespace Hecton8.Core
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct TerrainArtifactIdentityDTO
+    {
+        public const uint FlagsMacroGeologyPresent = 1u << 0;
+        public const uint FlagsDefaultChunkRange = 1u << 1;
+        public const uint FlagsHeightPayloadPresent = 1u << 2;
+        public const uint FlagsMapMagicProvider = 1u << 3;
+
+        public uint AuthoringSeed;
+        public int RuntimeSeed;
+        public int WorldGenerationVersionId;
+        public uint MacroArtifactVersion;
+        public float ChunkSizeMeters;
+        public int ChunkMinX;
+        public int ChunkMinZ;
+        public int ChunkMaxX;
+        public int ChunkMaxZ;
+        public uint ChunkArtifactRangeHash;
+        public int CacheRevision;
+        public uint TerrainEntityHash;
+        public uint Flags;
+
+        public bool HasMacroIdentity =>
+            (Flags & FlagsMacroGeologyPresent) != 0u ||
+            MacroArtifactVersion != 0u ||
+            ChunkArtifactRangeHash != 0u;
+    }
+
     /// <summary>
     /// Read-only terrain heightmap payload route for physics/fluid jobs.
     /// </summary>
@@ -5565,6 +5596,11 @@ namespace Hecton8.Core
         /// Current water-surface level used by spawn and terrain validation code.
         /// </summary>
         float WaterSurfaceLevel { get; }
+
+        /// <summary>
+        /// Reports the stable terrain artifact identity currently serving height samples.
+        /// </summary>
+        bool TryGetTerrainArtifactIdentity(out TerrainArtifactIdentityDTO identity);
 
         /// <summary>
         /// Samples runtime-space terrain height at X/Z.

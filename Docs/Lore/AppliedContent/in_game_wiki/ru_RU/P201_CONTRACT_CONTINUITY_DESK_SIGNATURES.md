@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Contract Continuity Desk Signatures"
+title: "Подписи стола контрактной непрерывности"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Contract Continuity Desk Signatures
+# Подписи стола контрактной непрерывности
 
-RU LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+Подписи стола контрактной непрерывности показывают, как стартовая работа игрока становится юридическим давлением еще до того, как игрок понимает море. Ловушка не состоит из одной злой фразы. Она собирается из рутинных подписей, достаточно скучных, чтобы пройти незаметно: слияние залога Aegir Reclamation Pool, пункт восстановления Black Keel, кислородное приложение, уведомление о риске черного списка и удержание груза. Каждая подпись мала. Вместе они делают отказ дорогим, молчание выгодным, а спасение условным. Это нижнее офисное лицо Deep Reach: не трон, а столы, которые превращают выживание в нарушение договора.
 
 ## Scanner
 
-RU LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Стартовая контрактная ловушка собрана из нижних подписей: слияние залога, кислородное приложение, риск черного списка и удержание груза.
 
 ## Terminal
 
-RU LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Эдда Малк, Contract Continuity Desk. Объединить условия залога Aegir Reclamation Pool с пунктами восстановления Black Keel. Приложить кислородный кредит, уведомление о риске черного списка и удержание груза. Эскалация не требуется, если оператор принимает.
 
 ## Audio
 
-RU LOC HOLD: Nobody says trap. They say continuity.
+Подпись может стать гермодверью, если после нее запирается каждый пункт.
 
 ## Field Note
 
-RU LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Никто не ставит штамп «ловушка». Ставят штамп «непрерывность».
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ru_RU. -->

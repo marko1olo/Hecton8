@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Keelmark損失デスク"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Keelmark損失デスク
 
-JP LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmarkは算術の部屋だ。災害を保険、争議、販売、無視が可能な損失クラスへ翻訳する。危険なのは劇的な残酷さではなく、人をunrecoverable exposureという分類の中に消せる静けさである。
 
 ## Scanner
 
-JP LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+損失表を発見: 機材、労働、不都合な証言に別の列。
 
 ## Terminal
 
-JP LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+KEELMARK損失デスク: 保険側トリアージは公開声明が死者を名指す前に、貨物損失、居住損失、労働障害、証人曝露、回収可能物質クラスを割り当てる。
 
 ## Audio
 
-JP LOC HOLD: The ledger is dry because the room was not.
+彼らは名前より先に行方不明を数えた。
 
 ## Field Note
 
-JP LOC HOLD: A loss category is a grave with better stationery.
+損失デスクは悼まない。請求可能な不在を決める。
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/ja_JP. -->

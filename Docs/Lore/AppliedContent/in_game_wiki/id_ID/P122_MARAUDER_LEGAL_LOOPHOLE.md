@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Celah Hukum Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Celah Hukum Marauder
 
-ID LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Marauder bukan suku dengan satu bendera. Mereka kontraktor, kru berutang, penyelam bangkai, dan mekanik putus asa yang bekerja di celah yang dibangun oleh keterlambatan. Koloni mati masih punya pemilik, tetapi kepemilikan tidak menambal lambung, memompa brine, atau menarik perekam dari dek servis yang remuk. Deep Reach membutuhkan kru yang bisa disangkal. Domain membutuhkan bukti yang tidak harus mereka ambil sendiri. Kru membutuhkan kertas yang cukup untuk selamat dari patroli berikutnya.
 
 ## Scanner
 
-ID LOC HOLD: License valid in one lane, criminal in the next.
+Lisensi sah di satu jalur, bisa jadi dakwaan di jalur berikutnya.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor di bawah custody Aegir Reclamation Pool; penyusup yang ditoleransi dalam bahasa aset Deep Reach; raider yang bisa dituntut dalam ringkasan bersih Sol; emergency responder hanya jika catatan yang dipulihkan tidak mempermalukan orang penting.
 
 ## Audio
 
-ID LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Pemotong yang sama bisa menjadi alat, kejahatan, atau satu-satunya perangkat penyelamat yang tersisa.
 
 ## Field Note
 
-ID LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder hanya jabatan selama pengadilan yang tepat bisa mengambil untung.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/id_ID. -->

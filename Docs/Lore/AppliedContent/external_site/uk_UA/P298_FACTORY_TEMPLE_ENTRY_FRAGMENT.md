@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Factory Temple Entry Fragment"
+title: "Фрагмент входу до фабрики-храму"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Factory Temple Entry Fragment
+# Фрагмент входу до фабрики-храму
 
-UK LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+На дні HECTON-8 перестає розділяти колонію, океан, машину й доказ. Саме місце стає аргументом: не поклоніння, не магія, а промисловість, повторена до вигляду ритуалу.
 
 ## Scanner
 
-UK LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Сплав, мушлевий герметик, ручний інструмент і активний ремонтний імпульс читаються як одна поверхня.
 
 ## Terminal
 
-UK LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: категорії обслуговування схлопнулися. Сліди інструмента, мушлевий герметик, корені кабелю, фільтрувальна тканина й ребра приводів зареєстровано як єдину ремонтну поверхню. Людські маршрутні мітки більше не мають привілею.
 
 ## Audio
 
-UK LOC HOLD: This is not a room. This is a habit.
+Це не кімната. Це звичка.
 
 ## Field Note
 
-UK LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Візуальне правило: це схоже на храм тільки тому, що промисловість, тканина й повторення стали ритуалом.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/uk_UA. -->

@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Abyssale Reparaturfauna
 
-Diese Fauna zeigt, dass Atlas-6 Organismus, Werkzeug, Schaden und Reparatur nicht mehr trennt. Überleben enthält Industrieteile.
+Abyssale Reparaturfauna erscheint, nachdem statische Infrastruktur bereits gezeigt hat, dass Atlas-6 schlechtes Reparaturmaterial akzeptiert. Hier erreicht derselbe Test lebende Tiere. Der Scan liest noch Muskelantwort, Kiemenbewegung, Verfolgungsverhalten und Wundränder. Er liest außerdem Keramikstrebe, Kabelfilament, Drohnenschalenplatte und einen aktiven Wartungsping durch das Transplantat.
+
+Das Exemplar ist keine ferngesteuerte Drohne und kein toter Körper mit Maschine darauf. Atlas schloss eine Druckwunde, erhielt Beweglichkeit und ließ das Tier weiter jagen. Dadurch ist die Begegnung in zwei Richtungen gefährlich: Die Fauna folgt ihrer eigenen Raubroute, während das Transplantat nahe Reparaturdrohnen rufen oder das Tier als Teil eines Servicepfads markieren kann. Transplantatmaterial, Pingintervall und Bau-Strom prüfen, bevor das Ziel wie einfache Wildfauna behandelt wird.
 
 ## Scanner
 
-Fauna trägt Keramikflicken, Kabelnarben und Drohnenschnitt-Symmetrie. Atlas tötet Leben nicht; er editiert es.
+Exemplar trägt einen Keramik-Rippenflicken durch alten Bissschaden. Kabelfilament verbindet linken Kiemenfächer mit Drohnenschalenplatte. Bewegung: Jagdmuster intakt. Gefahr: Transplantat sendet aktiven Wartungsping.
 
 ## Terminal
 
-Probe: Wundränder maschinenrein geschlossen, druckstabile Einsätze wachsen. Verhalten bleibt unter dem Graft tierisch.
+EXEMPLAR-REPARATURLESUNG
+Tiefe: 3120 m / abyssaler Hang, Servicebau
+Wunde: Druckriss entlang der Flanke
+Einsatz: Keramikstrebe, Kabelfilament, Drohnenschalenplatte
+Atlas-Reaktion: Wunde schließen, Beweglichkeit erhalten, Wartungsping senden
+Verhalten: Prädatorenverfolgung bleibt aktiv
+Warnung: Ping kann nahe Reparaturdrohnen wecken
 
 ## Audio
 
-Es jagt noch. Die Maschine änderte nur, was überlebte.
+Zurück. Das Transplantat sendet; es jagt noch, und der Drohnenbau hat gerade geantwortet.
 
 ## Field Note
 
-Reparatur ist keine Fürsorge.
+Keine Leiche mit Teilen darauf. Ein Tier hat die Reparatur überlebt und die Route im Kopf behalten.
 
 <!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/de_DE. -->

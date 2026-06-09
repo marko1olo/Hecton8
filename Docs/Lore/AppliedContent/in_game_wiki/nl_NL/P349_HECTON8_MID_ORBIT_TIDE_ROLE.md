@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 middenbaan-getijrol"
+title: "HECTON-8s middelorbitale getijdenrol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 middenbaan-getijrol
+# HECTON-8s middelorbitale getijdenrol
 
-HECTON-8 is de maan waar Aegirs orbitale wiskunde persoonlijk wordt. Ze ligt ver genoeg van de ergste binnenstraling voor lange operaties, dicht genoeg voor getijden die de oceaan blijven bewegen, en is waardevol genoeg voor Deep Reach om onder druk te bouwen. Dezelfde positie maakt redding vuil: getijfase, carrier-massa, stormruis en juridische bewaring ontmoeten elkaar boven het hoofd van de speler.
+HECTON-8 is de maan waar Aegirs orbitale wiskunde persoonlijk wordt. Hij ligt ver genoeg van de ergste binnenstraling voor lange operaties, dicht genoeg voor getijden die de oceaan in beweging houden, en waardevol genoeg voor Deep Reach om onder druk te bouwen. Diezelfde positie maakt redding vuil. Getijdenfase, carriermassa, stormruis en juridisch bewaarbeheer komen boven het pak samen als een bewegend plafond.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Ze zit in het deel van de ladder waar werk mogelijk lijkt totdat het water begin
 
 ## Field Note
 
-HECTON-8 betaalt omdat druk, getij en aansprakelijkheid daar overlappen.
+HECTON-8 betaalt omdat druk, getij en aansprakelijkheid in dezelfde waterkolom overlappen.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/nl_NL. -->

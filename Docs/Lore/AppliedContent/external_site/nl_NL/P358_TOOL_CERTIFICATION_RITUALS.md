@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Tool Certification Board"
+title: "Gereedschapscertificatiebord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Tool Certification Board
+# Gereedschapscertificatiebord
 
-NL LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Het Gereedschapscertificatiebord legt een cultuur vast die merken meer vertrouwde dan toespraken. Snijkop opnieuw geïndexeerd. Sealantpatroon gewogen. Drukhandschoen dubbel getekend. Pompsleutel laat. Afdalingskit vastgehouden. Elke regel is bot omdat botte procedure mensen in leven hield waar een bijna correct stuk gereedschap stil kon doden.
 
-## Scanner
+Het bord lijkt ritueel omdat gevaarlijk werk dezelfde bewegingen herhaalt tot angst ergens heen kan. Wegen, controleren, tekenen, terugbrengen, opnieuw controleren. De tweede handtekening was geen versiering; zij maakte vertrouwen verantwoordelijk. Als een handschoen onder druk faalde, zei het merk wie keek, wie haastte en wie hem toch naar beneden probeerde te sturen.
 
-NL LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-NL LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-NL LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-NL LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Dit is werkersgeloof zonder mystiek. De kolonie bad niet boven snijders. Zij liet een andere vermoeide persoon kijken naar rand, afdichting, gewicht en sleutelteruggave. Overleven werd gemeenschappelijk omdat elk stuk gereedschap iemands naam droeg voordat het de route raakte.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/nl_NL. -->

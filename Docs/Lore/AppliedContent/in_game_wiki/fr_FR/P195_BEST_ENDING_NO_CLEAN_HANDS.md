@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Meilleure fin : pas de mains propres"
+title: "Meilleure route : résidu visible"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Meilleure fin : pas de mains propres
+# Meilleure route : résidu visible
 
-Pas de mains propres est la règle de ton final. HECTON-8 récompense compréhension, préparation et travail de témoin, pas pureté. La meilleure fin doit faire sentir au joueur sa compétence et son implication en même temps.
+Résidu visible est le standard de la route la plus forte. La fin doit sauver quelque chose de concret sans transformer HECTON-8 en écran de récompense : dossier public, routage Deep Reach refusé, bassin préservé, opérateur libéré, noms de travailleurs ou proof-hash Atlas. Le dossier doit aussi garder ouverts les champs de garde du récepteur, responsabilité, noms manquants, dommage du bassin, état Atlas et résidu de dette.
 
 ## Scanner
 
-La meilleure fin doit sauver quelque chose de réel sans prétendre que l'innocence a survécu à la descente.
+RÈGLE DE MEILLEURE ROUTE // Sauver un résultat concret : garde de l'opérateur, dossier public, charge refusée, bassin vivant, paquet de noms travailleurs ou proof-hash Atlas. Garder les champs de dommage ouverts.
 
 ## Terminal
 
-RÈGLE PAS DE MAINS PROPRES : la meilleure fin connue exige agency, preuve, conséquence et résidu. Si chaque partie blessée est satisfaite, la fin a oublié HECTON-8.
+STANDARD DE DOSSIER DE FIN
+Objet ou état sauvé requis : sortie de l'opérateur, dossier public, charge Deep Reach refusée, écologie de bassin préservée, paquet de noms travailleurs ou proof-hash Atlas.
+Champs ouverts requis : garde du récepteur, chaîne de responsabilité, noms manquants, dommage du bassin, état Atlas, résidu de dette.
+Dossier invalide : tous les coûts cachés derrière paiement, secours ou clôture corporative.
+Usage : montrer ce qui a changé et ce qui a encore une partie déposante.
 
 ## Audio
 
-Si cela paraît propre, cela a oublié où tu es.
+Si chaque ligne se ferme, le dossier ment.
 
 ## Field Note
 
-Une route forte peut révéler la vérité, refuser Deep Reach, préserver une part de l'écologie et libérer le joueur, mais le coût doit rester visible.
+Si chaque ligne se ferme, la fin a caché la pièce.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/fr_FR. -->

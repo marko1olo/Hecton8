@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Aegir-Routenfenster
 
-Auf HECTON-8 ist der Himmel Teil des Dungeons. Der Gasriese setzt Strahlungswetter, Monde werfen Schatten, Tiden arbeiten durch Canyons und Schächte.
-
-Der Spieler lernt, wann eine Nachricht klettert, wann ein Körper steigen kann und wann offener Himmel eine Falle ist.
+HECTON-8 ist ein Ozeanmond, aber der Himmel gehört zum Dungeon. Aegirs Strahlungswetter, Mondschatten, Relais-Shutter, Sturm plume, Gezeiten und Carriergeometrie entscheiden, ob Signal, Körper, Probe oder Beweiskern gehen können. Entscheidend ist Trennung: Datenfenster ist kein Rettungsfenster, Rettungsfenster kein kontaminiertes Cargo-Fenster. Black Keel rechnet, fragt aber nach Tonne-Window-Besitz, Quarantäne und Deep-Reach-Klauseln.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/de_DE. -->

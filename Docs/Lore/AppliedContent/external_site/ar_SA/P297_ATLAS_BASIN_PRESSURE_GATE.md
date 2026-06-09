@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Basin Pressure Gate"
+title: "بوابة ضغط حوض Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Basin Pressure Gate
+# بوابة ضغط حوض Atlas
 
-AR LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+يحافظ النزول الأخير على الخيال العلمي الصلب تحت الرعب. ينفتح القاع عبر تصنيفات الضغط والسلطة المتضررة وإثباتات الحمل وآلة لا تزال تثق بمفاتيح على هيئة Deep Reach أكثر من مطالب حي.
 
 ## Scanner
 
-AR LOC HOLD: Basin gate requires pressure proof and authority response.
+تطلب بوابة الحوض إثبات ضغط وسلطة مسار وجسدا تستطيع تصنيفه.
 
 ## Terminal
 
-AR LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: إثبات الضغط غير مكتمل. درجة البدلة مقبولة تحت عتبة النزول. مشبك السلطة يتعرف على نمط Deep Reach ملغى، لا على المطالب الحالي. يتطلب التجاوز اليدوي حملا محليا واختيار مستقبل وpayload شاهد.
 
 ## Audio
 
-AR LOC HOLD: It knows the old key. It does not know you.
+إنها تعرف المفتاح القديم. لا تعرفك.
 
 ## Field Note
 
-AR LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+يجب أن يقرأ العتبة الأخيرة كبوابة خدمة إلى مصنع حي، لا كبوابة خيال.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/ar_SA. -->

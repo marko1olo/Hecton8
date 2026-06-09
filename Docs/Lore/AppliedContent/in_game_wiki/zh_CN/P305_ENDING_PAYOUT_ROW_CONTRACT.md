@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Ending Payout Data Boundary"
+title: "结局支付数据边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Ending Payout Data Boundary
+# 结局支付数据边界
 
-CN LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+结局支付数据边界把结局保持为取舍记录，而不是胜利分数。支付很重要，但监管、公开证据、隔离、债务，以及玩家离开后接收器的行动权同样重要。
 
 ## Scanner
 
-CN LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+结局行绑定接收器、监管、证据状态、支付和未解决后果。
 
 ## Terminal
 
-CN LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT：行需要 payload 路线、接收器、证据状态、物资支付、法律后果、隔离延迟和未解决成本。信用点不能关闭犯罪现场。
 
 ## Audio
 
-ZH LOC HOLD: Credits do not close a crime scene.
+信用点不能关闭犯罪现场。
 
 ## Field Note
 
-CN LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+只有 receiver 和 evidence state 清楚后，才记录 credit value、quarantine delay 和 dossier flags。
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/zh_CN. -->

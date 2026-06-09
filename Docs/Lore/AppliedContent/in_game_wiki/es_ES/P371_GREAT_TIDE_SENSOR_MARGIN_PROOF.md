@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Traza de margen de la Gran Marea"
+title: "Rastro del margen de marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Traza de margen de la Gran Marea
+# Rastro del margen de marea
 
-La traza demuestra dos cosas a la vez: la Gran Marea fue real y el margen letal era visible antes de que el informe lo admitiera. Deep Reach no ordenó subir al agua. Aceptó una ventana de ruta cuando el envolvente de presión de la colonia ya no tenía holgura, y luego publicó la cascade sin el visto bueno.
+Este sensor no convierte la Gran Marea en una falsificación. Fija el momento. La reserva de diseño de la colonia falló antes de que Deep Reach admitiera el riesgo en el informe público. La autoridad de ruta mantuvo la ventana abierta por excepción comercial y luego publicó la cadena de cascada sin esa excepción.
 
 ## Scanner
 
-Sensor de marea recuperado. El cizallamiento máximo superó el diseño colonial, pero la ruptura del margen de aviso quedó registrada antes del sello público de la cascade.
+Sensor de marea recuperado. El pico de cizalla es real; la ruptura de margen aparece dieciséis minutos antes del reloj público de cascada de Deep Reach.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Umbral de riesgo de cola aceptado por autoridad de ruta. Nota de operador retirada de la cadena pública del incidente. Traza cruda conservada en memoria brine-buffer.
+MATRIZ DE MAREA // CRESTA NORTE P-63. Margen residual bajo el suelo de parada. Ventana de ruta mantenida por excepción comercial. La cadena pública del incidente omite la nota de excepción. Suma brine-buffer intacta.
 
 ## Audio
 
-El océano no mintió. El informe sí.
+La marea rompió el corredor. La mentira empieza con el reloj.
 
 ## Field Note
 
-Nota de merodeador: no busques un discurso de villano. Busca la línea que alguien borró.
+Nota de saqueador: conserva el rastro bruto. Una línea de margen borrada vale más que cualquier discurso.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/es_ES. -->

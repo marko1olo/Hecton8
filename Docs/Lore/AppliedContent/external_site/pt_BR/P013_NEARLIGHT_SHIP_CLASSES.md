@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Classes de nave quase-luz
 
-HECTON-8 não precisa de FTL para parecer vasto. Sondas podiam ser perdidas, naves semente levavam instruções, Atlas movia massa cara.
+Uma nave quase-luz em HECTON-8 não é motor milagroso embrulhado num casco. É a ponta visível de uma economia de rota. Arrays de feixe gastam energia antes da partida. Pellet lanes alimentam massa de reação com disciplina brutal. Gargantas fusion-electric, gelo de escudo, radiadores e cryo impedem a carga de virar um erro brilhante. Magsails, peles aerobrake e janelas receiver decidem se a nave pode parar.
 
-Chegar é tão importante quanto partir. Velocidade precisa ser perdida com velas magnéticas e geometria de gigantes gasosos. Por isso a reivindicação pode ser humana enquanto o jogador fica sozinho na água.
+É por isso que a tabela de classes serve ao jogador. Needleprobe explica por que Aegir foi conhecido antes de ser seguro. Seed ship explica máquinas chegando antes da comunidade. Atlas explica a dívida e os compromissos da colônia. Tender explica limites da Black Keel: ela trabalha o claim Aegir, não reescreve distância interestelar.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/pt_BR. -->

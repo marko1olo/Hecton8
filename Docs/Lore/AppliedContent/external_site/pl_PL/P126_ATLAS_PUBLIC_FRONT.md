@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Publiczna fasada Atlasa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Publiczna fasada Atlasa
 
-PL LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+Publiczna fasada wyjaśnia, dlaczego HECTON-8 początkowo nie bał się Atlasa. Był użytecznym strażnikiem na długo przed tym, jak stał się dowodem zbrodni priorytetów: mitem infrastruktury zbudowanym z prawdziwych ratunków i użytym do ukrycia tych, którzy wybrali wartości pod spodem.
 
 ## Scanner
 
-PL LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Publiczny Atlas: ciągłość, trasy bezpieczeństwa, władza przez opóźnienie świetlne.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+PUBLICZNY OPIS ATLASA: Atlas-6 nadzoruje ciśnienie habitatów, przepustowość fabryki, triaż tras medycznych, priorytety filtrów i dowodzenie awaryjne przy opóźnieniu łączności. W dokumentach publicznych nazwano go gubernatorem ciągłości: maszyną, której wolno utrzymać kolonię przy życiu, zanim ludzka władza pokona dystans światła.
 
 ## Audio
 
-PL LOC HOLD: A guardian is easier to sell than a claim machine.
+Ludzie ufali Atlasowi, bo na początku naprawdę zamykał drzwi przed morzem.
 
 ## Field Note
 
-PL LOC HOLD: The lie works because the front was partly true.
+Broszura nie była kłamstwem. Kłamstwem było to, czego w niej nie zapisano.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/pl_PL. -->

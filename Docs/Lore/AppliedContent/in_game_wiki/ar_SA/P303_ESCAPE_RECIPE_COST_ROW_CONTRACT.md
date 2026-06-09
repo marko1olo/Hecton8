@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Escape Recipe Cost Boundary"
+title: "حد تكلفة وصفة الهروب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Escape Recipe Cost Boundary
+# حد تكلفة وصفة الهروب
 
-AR LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+يبقي هذا الحد سلسلة الخروج ميكانيكية لا تعسفية. لكل جزء صعود تاريخ ضغط ومالك ومتطلبات دليل، لذلك يبدو الهروب كإصلاح تحت القانون لا كرموز مهمة في قائمة.
 
 ## Scanner
 
-AR LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+يربط صف وصفة الهروب فئة المكون ودرجة الضغط وإثبات المسار وحالة السلطة.
 
 ## Terminal
 
-AR LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: يجب أن تسمي التكاليف المؤهلة المرحل والختم والتوجيه وطاقة الصعود والمصافحة القانونية وسلطة payload وخطر المستقبل. الطريق إلى الأعلى له أجزاء؛ والأجزاء لها مالكون.
 
 ## Audio
 
-AR LOC HOLD: The way up has parts. The parts have owners.
+الطريق إلى الأعلى له أجزاء. والأجزاء لها مالكون.
 
 ## Field Note
 
-AR LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+تأتي نطاقات الضغط من قواعد الاحتواء؛ التكاليف الدقيقة تخص جداول الوصفات.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ar_SA. -->

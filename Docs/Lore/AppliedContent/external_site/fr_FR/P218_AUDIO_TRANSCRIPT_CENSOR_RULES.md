@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Bandes de dommage de transcription audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Bandes de dommage de transcription audio
 
-FR LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Un journal vocal de HECTON-8 n'est pas complet parce qu'il contient du son. Sa transcription doit montrer ses blessures.
 
-## Scanner
+Les bandes de dommage rendent ces blessures honnêtes. Elles peuvent marquer le bruit, la perte de paquets, la censure légale, la distorsion de pression, une mauvaise séparation de voix, une traduction automatique ratée ou une coupe ultérieure. Sans cette couche, chaque enregistrement cassé devient soit une clarté fausse, soit un mystère artificiel. Avec elle, le joueur voit la différence entre ce que le monde a perdu et ce que quelqu'un a choisi d'enlever.
 
-FR LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+La règle est stricte, car le jeu repose sur la preuve. Le dommage peut cacher des noms, des numéros et des charges à spoiler. Il peut créer du soupçon. Il peut rendre une route dangereuse avant même que le joueur voie la porte. Mais la transcription restante doit encore porter l'action : n'ouvre pas le sas, reviens par l'échelle de service, compte l'oxygène à la main, ignore le voyant vert, laisse la ligne officielle visible.
 
-## Terminal
-
-FR LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-FR LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-FR LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Pour la localisation et l'accessibilité, la bande fait partie du contenu. Une transcription traduite doit préserver le rôle du locuteur, la pression du timing et les avertissements lisibles. La censure n'est atmosphérique que si le joueur peut encore agir. Sinon, ce n'est qu'une interface cassée qui prétend être du lore.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/fr_FR. -->

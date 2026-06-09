@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 식민지와 노동자
 
-회수된 worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags, vent-forge rejects가 일을 통해 이름을 보존한다.
+노동자 dossier 허브: HECTON-8은 shift boards, maintenance debts, pressure calls, handoff marks, Deep Reach가 손실 범주로 납작하게 만들려 한 기록으로 사람을 기억한다.
 
 ## Scanner
 
-WORKER INDEX // 루트에 묶인 다섯 이름 기록. Pump, relay, brine, triage, forge. hardware를 벗기기 전에 tag chain 보존.
+WORKER INDEX // pump boards, relay trays, brine stamps, triage tags, vent-forge rejects가 사람을 route evidence로 보존한다.
 
 ## Terminal
 
-KEELMARK LOSS DESK: route, claim, custody, pressure work에 묶인 name tags는 보존.
+KEELMARK LOSS DESK: pressure decision, delay, custody claim, repair route를 설명하는 name tags는 보존한다.
 
 ## Audio
 
-Mara Venn, pump chief: 펌프가 깨끗하게 노래하면 기록해라. 노래가 멈추면 위로 뛰어라.
+pump card의 이름은 배경이 아니다. 문이 열린 채 남은 이유다.
 
 ## Field Note
 
-가족이 아니다. 일이다. pump card의 이름이 문이 열린 이유를 말한다.
+가족 미끼가 아니다. 일, 압력, 서명, 실수. 죽은 자들은 그렇게 아직 다툰다.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ko_KR. -->

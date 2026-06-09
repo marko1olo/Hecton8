@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "Black Keel tonne-window-bewaring"
+title: "Black Keel tonne-window custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel tonne-window-bewaring
+# Black Keel tonne-window custody
 
-Een Keelmark-bon verklaart waarom Black Keel in massa spreekt voordat het in redding spreekt. De carrier draait op tonne-window-bewaring: een juridisch slot gekoppeld aan fysieke payload, verzekeringsblootstelling en een fase van de routeklok. Een levend lichaam, een verzegelde bewijskern, een snede Xenon-Omega-procesmateriaal en een kist herstelbare romp concurreren om hetzelfde venster als het contract ze op dezelfde regel zet. Het systeem is koud, maar niet willekeurig. Het vertelt de speler wat de grens waardeert en welke keuze als eerste naar huis reist.
+De tonne-window is frontierwreedheid in zuivere vorm. Het klinkt als boekhouding omdat het boekhouding is, maar wat geteld wordt is fysiek: massa door een smal recoveryvenster. Black Keel lift niet alles uit de oceaan, alleen wat route, verzekering, quarantaine en custody toestaan.
+
+Elke payloadkeuze wordt scherper. Een levende contractor heeft waarde, maar een bewijskern tegen Deep Reach ook. Xenon-Omega kan meer waard zijn dan gewone salvage en tegelijk quarantaine vergiftigen. Recoverable hull kan een verzekeraar sneller tevredenstellen dan een worker dossier gerechtigheid brengt.
 
 ## Scanner
 
-BEWAARLIJN // Geaccepteerde tonne-window-massa kan salvage, bewijs, lichaam of schuldobject zijn. Een gehoord pakket geeft geen liftprioriteit; het wijst aansprakelijkheid toe.
+Keelmark-receipt. Eén tonne-window koppelt payloadmassa, routefase, verzekeringsexposure, quarantaineklasse en recoveryprioriteit aan één carrierslot.
 
 ## Terminal
 
-KEELMARK-MASSABON // Het venster verleent bewaring aan een slot, geen genade aan een persoon. Overmassa-payloads schuiven naar de volgende passage tenzij claimwaarde, quarantaineklasse en carriergeometrie samen vrijgeven.
+TONNE-WINDOW CUSTODY // 4.8 tonne-window lien actief. Levende contractor, verzegelde bewijskern, Xenon-Omega-procescut en recoverable hull crate delen recoveryklasse tenzij custody proof herprioriteert. Human status alleen onvoldoende voor full-window override.
 
 ## Audio
 
-Black Keel-schuldaudio: ik kan bewijs, metaal of jou dragen. Het grootboek vraagt welke de boot solvabel houdt.
+Black Keel spreekt in tonnen omdat tonnen zijn wat het venster kan dragen.
 
 ## Field Note
 
-Als de carrier geaccepteerde massa zegt, zegt hij geen geaccepteerde persoon. Bind je bewijs aan je pak voordat het grootboek je laat kiezen.
+Een tonne-window is geen geld. Het is toestemming voor massa om te vertrekken.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Beweiskit Flachannex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Shallow Annex P-63 POI Kit
+# Beweiskit Flachannex P-63
 
-DE LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Der Flachannex P-63 ist der erste Ort, an dem Überlebensverfahren und Haftungsbeleg auf demselben Tisch liegen. Der Operator stellt eine Pumpe wieder her, dichtet eine Schutzblase ab, liest ein Unfallpaket und findet eine Routennotiz, die nicht zu den Schäden draußen passt.
 
 ## Scanner
 
-DE LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+POI-Beweiskit: P-63 enthält eine funktionierende Schutzblase, eine Pumpenreparatur und den ersten offiziellen Widerspruch.
 
 ## Terminal
 
-DE LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+P-63-KIT: Bilgepumpe, Dichtungsschale, Schneidkontakt, Pinger-Leitung, Unfallpaket, versiegelte Routennotiz, Trockenschrank, manuelle Überbrückungsklemme.
 
 ## Audio
 
-DE LOC HOLD: First room with air. First room with a lie.
+Erster Raum mit Luft. Erster Raum mit einer Lüge.
 
 ## Field Note
 
-DE LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Marauder-Notiz: Halte die Pumpe am Laufen, bevor du das Paket liest. Ein toter Schutzraum liefert schlechte Beweise.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/de_DE. -->

@@ -22,6 +22,27 @@ Settings owns user preference state, validation, persistence, apply staging, and
 
 Feature owners declare allowed ranges. Settings stores and applies validated values at approved phases. Runtime systems consume immutable settings snapshots or typed change events.
 
+## Current Runtime Source Route
+
+Current static anchors:
+
+- `Assets/_Project/Scripts/UI/SettingsManager.cs`
+- `Assets/_Project/Scripts/UI/SettingsPanel.cs`
+- `Assets/_Project/Scripts/UI/SettingsLivePreview.cs`
+- `Assets/_Project/Scripts/UI/SettingsComparisonView.cs`
+- `Assets/_Project/Scripts/Input/UserOptionsPersistence.cs`
+- `Assets/_Project/Scripts/UI/SETTINGS_SYSTEM_GUIDE.md`
+
+Current source facts:
+
+- `UserOptionsPersistence` owns `Application.persistentDataPath/options.h8cfg`; settings must not be documented as PlayerPrefs or Easy Save 3.
+- `SettingsManager.QualityLevel` is a saved user preference in the current `0..6` range and maps through `HomeostasisBrain.SetUserGlobalQualityWeightPreference`; it is not final runtime quality truth.
+- `SettingsManager.GraphicsPreset` is a `0..3` UI grouping. `SettingsComparisonView` compares persisted graphics preset intent, not raw Unity quality level.
+- FOV is applied to a resolved camera and can be deferred across scene load if the camera owner is not ready.
+- Bloom and Motion Blur have a concrete URP `VolumeProfile` route. Ambient Occlusion is persisted and exposed in UI, but Unity 6000 URP SSAO is a renderer feature in this stack; no active doc may claim AO is applied through `VolumeProfile.TryGet`.
+- `SettingsPanel` stages UI values and only commits through Apply/reset; Cancel restores the last committed state and live-preview snapshot.
+- Historical settings progress/manual-wiring notes were moved to `Docs/DEPRECATED/SettingsUiHistoricalGuides_20260609/` with their Unity `.meta` files. The active settings implementation guide is `Assets/_Project/Scripts/UI/SETTINGS_SYSTEM_GUIDE.md`.
+
 ## Setting Contract
 
 Each setting must define:

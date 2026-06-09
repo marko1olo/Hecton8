@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Capsule Blackbox Audio 01"
+title: "Аудіо чорної скриньки капсули 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Capsule Blackbox Audio 01
+# Аудіо чорної скриньки капсули 01
 
-UK LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+Аудіо чорної скриньки капсули 01 це перший чесний технічний артефакт HECTON-8. Він переосмислює виживання як борг: посадку куплено витратою повернення. Запис дає гравцям фізично зрозумілу причину океанської пастки ще до появи корпоративної таємниці.
 
 ## Scanner
 
-UK LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+Перша чорна скринька не каже, що ти розбився. Вона каже, що капсула вижила, витративши обладнання, яке мало підняти її назад.
 
 ## Terminal
 
-UK LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; удар спуску поглинуто; ascent sleeve витрачено; recovery ring не замкнувся; буй ненадійний; frames 12-19 втрачені під час pressure shear. Ручний підйом не рекомендовано без зовнішньої заміни sleeve.
 
 ## Audio
 
-UK LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Подія чорної скриньки. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-UK LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: нижня crush-frame тріснула; ascent sleeve пропалений; recovery ring no-lock; буй досі повторює мертвий запит на підйом.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/uk_UA. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistensi Dossier Penjarah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistensi Dossier Penjarah
 
-ID LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+Persistensi Dossier Penjarah menetapkan kontrak replay HECTON-8: pemain mewarisi konteks, bukan kekuatan. Dossier membuat percobaan berikutnya lebih cepat membaca kesalahan lama, lebih awal mengenali jebakan kontrak, dan memahami akhir mana yang belum lengkap tanpa mengubah memori menjadi keunggulan mekanis yang merusak tekanan bertahan hidup.
 
 ## Scanner
 
-ID LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Gulungan dossier. Kamu menyimpan pengetahuan, bukan kekuatan super.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTENSI DOSSIER: catatan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi buku besar publik disimpan. Kekuatan perlengkapan, kebenaran dunia, dan keadaan tekanan lokal direset per seed.
 
 ## Audio
 
-ID LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+Percobaan berikutnya dimulai dengan bekas luka di file, bukan otot di setelan.
 
 ## Field Note
 
-ID LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Dossier mengingat bukti dan peringatan; ia tidak membuat tekanan menjadi pemaaf.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/id_ID. -->

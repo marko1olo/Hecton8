@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "بروتوكول بيع إحداثيات payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# بروتوكول بيع إحداثيات payload
 
-AR LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+هذا البروتوكول ليس بيعا بسيطا لغنيمة. إنه نقل للقدرة على الوصول. لدى Deep Reach ما يكفي من الورق لتجادل حول HECTON-8؛ ما ينقصها هو طريق موثوق للعودة عبر الحوض المتضرر. يوفر payload ذلك الطريق بربط الإحداثيات بالثقة وحيازة الأدلة وفئة salvage.
 
-## Scanner
-
-AR LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-AR LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-AR LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-AR LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+الدفع حقيقي، وتخفيف الدين حقيقي أيضا. لهذا يكون المسار خطرا لا هزليا. يستطيع مشغل يائس أن يمحو رهنا ويقدم في الوقت نفسه طريق العودة إلى المستعمرة للشركة التي دفنت سجلات الوقت. ختم المستقبل يحول النجاة إلى خدمة.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/ar_SA. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Podpisy Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Podpisy Return Action Queue
 
-PL LOC HOLD: Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.
+Podpisy Return Action Queue łączą dawną sprawę HECTON-8 z presją obecną w 2190 roku. Kolejka nie jest archiwum historycznym. Obsługuje opóźnione pakiety podczas aktywnych okien Aegir i szereguje, co Black Keel albo właściciel przekaźnika ma zrobić pierwsze. W odzyskanym pasku payload custody, coordinate receipt i quarantine handshake stoją przed contractor recovery. Dzięki temu Deep Reach pozostaje groźny bez dowódcy w pokoju: niższe biuro nadal może sterować oknem ratunkowym, decydując, która akcja jest dość czysta do wykonania.
 
 ## Scanner
 
-PL LOC HOLD: The old crime has a live queue.
+Otrzymano live return strip: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 otwarte przez dwanaście minut.
 
 ## Terminal
 
-PL LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Działanie: nadać priorytet payload custody, coordinate receipt i quarantine handshake przed contractor recovery. Carrier clause: Black Keel może opóźnić pickup, dopóki custody state nie będzie clean.
 
 ## Audio
 
-PL LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+Kolejka Keene jest aktywna. Rescue stoi za payload custody, chyba że zmienimy handshake.
 
 ## Field Note
 
-PL LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+To nie jest stary papier. Stempel kolejki jest świeży: opóźniony pakiet, carrier clause, payload-first order. Sprawdź język recovery Black Keel, zanim zaufasz odbiorowi.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/pl_PL. -->

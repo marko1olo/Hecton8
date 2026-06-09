@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane: evac cert"
+title: "Нур Халдейн: эвакуационный сертификат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane: evac cert
+# Нур Халдейн: эвакуационный сертификат
 
-RU LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+«Нур Халдейн: эвакуационный сертификат» — статья-доказательство Deep Reach о соблюдении процедуры как смертельном объекте. Халдейн не кричащий злодей. Она подпись юрисконсульта, которая сохраняет эвакуацию юридически защитимой, пока физический маршрут отказывает.
 
-## Scanner
+Ее стоп построен из правдоподобных требований: баро-биологический карантин, опека перевозчика, внешний пересмотр маршрута, приемка последующего порта, цепочка ответственности. Ни одно из этих слов не абсурдно. В этом смысл. Система может быть права внутри собственной рамки и все равно убивать ожиданием.
 
-Certification hold. N. Haldane удерживала маршрут законным, пока маршрут умирал.
-
-## Terminal
-
-HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-Дверь запер не страх. Ее запер compliance.
-
-## Field Note
-
-Это бумажная подпись, которую игрок должен ненавидеть.
+Статья дает игрокам способ читать старые двери колонии и маршрутные панели. Запертый эвакуационный путь — не только сломанная машина. Это может быть юридическое решение, все еще ожидающее пересмотра. Noir HECTON-8 рождается из задержки: никому не нужно говорить «пусть умрут», если сертификат может достаточно долго говорить «еще нет».
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/ru_RU. -->

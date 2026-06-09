@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Vie du plateau photique
 
-La vie du plateau photique est la base écologique d'ouverture de HECTON-8. Ce n'est pas un aquarium sûr, ni un océan mort qui attend l'arrivée de l'horreur. Les 0-250 mètres supérieurs reçoivent encore lumière, variations thermiques et rythme du ciel ; la vie native écrit donc le premier langage de route en couleur : tapis d'oxygène sur la pierre, brouteurs transparents ouvrant des voies dans les algues, pressureweed penché avant la houle, algues de route dessinant les courants autour des débris. Cette beauté compte. Elle donne au joueur une raison de comprendre pourquoi Deep Reach voulait cette lune et pourquoi un Marauder échoué peut se battre pour la lire, pas seulement pour la piller. Le plateau enseigne aussi la règle centrale : lisible ne veut pas dire inoffensif. Un tapis lumineux peut garder de l'eau respirable et cacher un joint contaminé. Un banc de brouteurs de verre peut marquer un passage sûr ou disparaître parce que quelque chose de plus grand est passé. Le pressureweed peut prévenir d'une météo, d'un déplacement de prédateur ou d'une impulsion de pression venue de l'infrastructure. Avant les récifs de câbles, avant les cicatrices de réparation, avant qu'Atlas transforme la vie en logique de maintenance, la lune montre ce qu'elle faisait seule.
+La vie du plateau photique est la base écologique de l'eau supérieure de HECTON-8. La bande de surface reçoit encore lumière, variations thermiques et rythme du ciel ; la vie native laisse donc des preuves de route lisibles avant l'apparition de la logique de réparation Atlas plus bas : tapis d'oxygène, voies de brouteurs de verre, flexion de pressureweed et algues de route autour des débris. Le plateau explique pourquoi Deep Reach voulait cette lune sans la rendre inoffensive. Chaque indice utile porte un chemin de panne. Le tapis qui donne un souffle peut cacher une contamination ; la voie d'algues qui marque un courant de retour peut se déplacer sous le limon de tempête ou la pression d'un prédateur.
 
 ## Scanner
 
-BIOTE DU PLATEAU PHOTIQUE // Tapis vivants, brouteurs de verre, pressureweed et algues de route confirmés. L'eau claire donne oxygène et indices de trajet ; elle ne pardonne ni météo mauvaise, ni prédateurs, ni ligne de retour perdue.
+SCAN DU PLATEAU PHOTIQUE // Tapis d'oxygène sur lèvre de basalte. Voie fraîche de brouteur de verre dans la pousse verte. Pressureweed plié vers l'ouest avant la houle. Algues de route marquant le courant vers la ligne d'abri. Dangers : passage de prédateur peu profond, limon de tempête, ligne de retour lâche.
 
 ## Terminal
 
-RELEVE DU PLATEAU : écologie photique native hors dominance de réparation Atlas. Echantillons de base : tapis d'oxygène, trace de brouteur transparent, ligne de flexion de pressureweed, sillage d'algues de route. Comparer aux croissances de récif-câble et aux tissus de cicatrice avant récolte.
+RELEVÉ DE BASE DU PLATEAU
+Profondeur : 0-250 m
+Échantillon A : tapis d'oxygène / nourri aux minéraux / poche respirable faible volume
+Échantillon B : voie de brouteur de verre / coupe fraîche / dispersion par prédateur inconnue
+Échantillon C : flexion de pressureweed / pli ouest avant houle
+Échantillon D : algues de route / courant vers la ligne d'abri
+Comparer à : natte racine-câble, tissu de cicatrice de réparation, biofilm de porte de pression
 
 ## Audio
 
-La première eau vivante n'est pas une grâce. C'est une ligne de base dans laquelle on peut nager.
+Je vois le courant de retour. Attache-toi avant de suivre la couleur.
 
 ## Field Note
 
-La première couleur n'est pas une grâce. C'est la lune qui montre à quoi ressemblait le normal avant que les machines l'apprennent.
+L'eau claire est utile avant d'être sûre. Compte couleur du tapis, voies de brouteurs, pli de weed et tension de ligne avant de lui faire confiance.
 
 <!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/fr_FR. -->

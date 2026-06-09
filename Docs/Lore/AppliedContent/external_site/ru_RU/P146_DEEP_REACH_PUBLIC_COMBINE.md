@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Public Combine"
+title: "Публичный комбинат Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Public Combine
+# Публичный комбинат Deep Reach
 
-RU LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+Публичный комбинат Deep Reach - первая маска и самая прочная. Ему не нужно отрицать, что он касался HECTON-8. Он касался всего: перевозок, жилищной логистики, маршрутных служб, страховых интерфейсов, аварийного языка и административного словаря, который сделал колонию понятной банкам раньше, чем семьям.
 
-## Scanner
-
-RU LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-RU LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-RU LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-RU LOC HOLD: The seal is clean. The rooms under it are not.
+Широта и есть защита. Когда катастрофа поднимается к поверхности, Deep Reach может указать на публичный мандат и сказать: мы обслуживали инфраструктуру. Более грязные глаголы уводятся в дочерние структуры: классифицировать, отложить, взыскать, перестраховать, отказать, утилизировать. Комбинат оставляет себе чистое существительное. Нижние комнаты оставляют себе тела.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/ru_RU. -->

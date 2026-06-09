@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Photic Shelf Survival Act"
+title: "Шлюз фотического шельфа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Photic Shelf Survival Act
+# Шлюз фотического шельфа
 
-RU LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Фотический шельф учит объектами, а не комфортом. Оператор узнает, какие корпуса насосов еще держат воздух, какие заплаты дают минуты и какие яркие организмы забивают инструмент. Atlas впервые появляется как ремонтный остаток: полезный, местами неправильный и достаточно близкий, чтобы трогать.
 
 ## Scanner
 
-RU LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Маршрутный шлюз: фотический шельф. Кислородные карманы, насосные, первые резы и мелкий ремонтный остаток Atlas читаются в дневной воде.
 
 ## Terminal
 
-RU LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+МАРШРУТ КАМПАНИИ // ФОТИЧЕСКИЙ ШЕЛЬФ. Нужно: перезапуск насоса, заплата уплотнения, рез кабеля, ping сканера. Оборудование подъема недоступно; потраченные ячейки направлены в системы выживания. Остаток Atlas классифицирован как полезный с предупреждением о загрязнении.
 
 ## Audio
 
-RU LOC HOLD: The shallow water is not safe. It is only readable.
+Мелкая вода не безопасна. Она читаема.
 
 ## Field Note
 
-RU LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Заметка мародера: дневной свет помогает. Он не делает треснутую кислородную линию щедрой.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ru_RU. -->

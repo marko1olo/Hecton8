@@ -42,7 +42,7 @@ Runtime layer: Narrative
 
 Surface targets: public article, wiki procedure note, PDA archive rule, scanner evidence hint, terminal sorting note, evidence caption
 
-Spoiler level: public order visible at level 1; exact route proof and final consequence held behind later gates.
+Spoiler level: public order visible at level 1; exact route proof and final consequence held behind later evidence records.
 
 Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
@@ -78,137 +78,122 @@ Localization status: English authority row; non-English draft rows require futur
 
 **Website article seed:**
 
-Public HECTON-8 archives use a proof order because packet labels are cheap to rewrite and physical damage is not. The first fact is the object: cracked tag, salt bloom, scorched adhesive, cut seal, pressure warp, tool scrape, stamped plate, or missing corner. The second fact is custody: who touched the object before the public name appeared. The third fact is witness stability: a hash, signature, terminal echo, scanner route, or black-box fragment that survives more than one office.
+Public HECTON-8 archives use proof order because packet labels are easy to rewrite and physical damage is not. Start with the object: cracked tag, salt bloom, scorched adhesive, cut seal, pressure warp, tool scrape, stamped plate, missing corner. Then read custody: who handled the object before the public name appeared. Then read witness stability: hash, signature, relay receipt, scanner route, terminal receipt, or black-box fragment that survives more than one office.
 
-Only after those facts does the archive read the clean labels. Receiver fields, claimant-safe summaries, quarantine notes, legal holds, and wiki categories are filing language. They can help a reader search. They can also hide a route. A good archive does not ask which label sounds official first. It asks which mark would still exist if the label were removed.
+Only after that should the archive read clean labels. Receiver fields, claimant-safe summaries, quarantine notes, legal holds, aliases, and wiki categories are filing language. They help search. They can also hide a route. A good archive does not ask which line sounds official first. It asks which mark would still be there if the label were stripped off.
 
 **Wiki article seed:**
 
-Proof order is the evidence procedure used to rank packet facts before public classification. Typical order: object mark, custody sequence, witness hash, timestamp route, physical route alias, office label, claimant-safe summary, legal hold, public category. The order is not a verdict. It prevents the wiki from treating a clean category as stronger than object-level proof.
+Proof order: an evidence procedure used to rank packet facts before public classification. Typical order: object mark, custody sequence, witness hash, relay timestamp, route alias, office label, claimant-safe summary, quarantine tag, legal hold, public category. The order is not a verdict. It keeps a clean category from outranking object-level proof.
 
-**PDA / codex entry:**
+**PDA/codex seed:**
 
-Archive rule: read the object first. A receiver label is a statement by an office. A custody stamp is a scar left by handling. A witness hash is a second scar if it repeats. If the label and the scar disagree, keep both and follow the scar until another proof route fails it.
+Archive rule: read the object before the label. A receiver field is office language. A custody stamp is handling history. A witness hash matters only if it survives another office. If label and mark disagree, keep both and follow the mark until another evidence route breaks it.
 
-**Scanner entry:**
+**Scanner seed:**
 
-Proof order prompt. Object mark and custody stamp outrank public category. Confidence: partial. Required next evidence: witness hash, relay timestamp, route alias, or terminal receipt.
+PROOF ORDER // Object mark and custody stamp outrank public category. Confidence: partial. Required next evidence: witness hash, relay timestamp, route alias, terminal receipt, or physical mismatch.
 
-**Terminal note:**
+**Terminal seed:**
 
 PUBLIC ARCHIVE PROOF ORDER
-
 1. Object mark.
-
 2. Custody sequence.
-
 3. Witness hash.
-
-4. Route timestamp.
-
-5. Office label.
-
-6. Claimant-safe summary.
-
-7. Legal hold.
-
+4. Relay timestamp.
+5. Route alias.
+6. Office label.
+7. Claimant-safe summary.
+8. Quarantine / legal hold.
 Do not sort by the cleanest line.
 
-**Evidence caption:**
+**Evidence caption seed:**
 
-Proof-order card. The archive lists object marks before public labels so a rewritten category cannot become stronger than the evidence it names.
+Proof-order card. The archive lists object marks before public labels so a rewritten category cannot outrank the evidence it names.
 
-**Spoiler policy:**
+**Spoiler policy seed:**
 
-Proof-order language may appear early. Final receiver, protected claimant, Atlas consequence, exact route branch, and legal result stay masked until later proof gates.
-
-**String-pool key plan:**
-
-Use hashed LocIDs in the Narrative layer. Keep scanner labels short and procedural. Keep article/codex text longer but tied to this packet ID. Runtime must not parse this Markdown.
-
-## Future Integration Notes
-
-Proposed LocID rows:
-
-| LocID | Layer | Category | Purpose |
-|---|---|---|---|
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_TITLE | Narrative | codex_title | Canonical title string |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_WEBSITE | Narrative | website_article | Public article seed |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_WIKI | Narrative | wiki_article | Wiki note |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_PDA | Narrative | pda_codex | PDA note |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner tag |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal note |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_CAPTION | Narrative | evidence_caption | Evidence caption |
-| LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_SPOILER | Narrative | spoiler_policy | Spoiler policy |
-
-P500 relation: receiver ambiguity is read after object and custody proof.
-
-P503 relation: Marauder counter-index notes preserve route marks when public labels are too clean.
-
-P504 relation: payload aliases can sit between timestamp proof and office label proof.
-
-P505 relation: quarantine and legal holds remain separate after the earlier proof order is preserved.
-
-Runtime boundary: future runtime systems must consume baked string-pool rows or binary source data only, never this Markdown.
+Proof-order language may appear early. Final receiver, protected claimant, Atlas consequence, exact route branch, legal result, and ending branch stay hidden until later evidence records open.
 
 ## Locale Rows
 
+Live locale text is source-owned by:
+
+`Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json::P506_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE.localized`
+
+Do not maintain duplicate translated prose in this production brief. Edit the packet JSON, then regenerate or resync this brief.
+
 ### en_US
 Status: source_authority
-Text: Read the object before the label. A cracked seal, custody stamp, witness hash, relay timestamp, and route alias carry more weight than a public category or receiver field. Public labels help search, but labels can be rewritten. Keep office wording, claimant-safe summaries, quarantine tags, and legal holds behind the physical proof order until another evidence route contradicts it.
+Title: Public Archive Proof Order
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_en_US_PRIMARY`
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: اقرأ الجسم قبل الوسم. الختم المكسور وختم الحيازة وبصمة الشاهد ووقت الترحيل واسم المسار تحمل وزنا اكبر من فئة عامة او خانة مستلم. الوسوم العامة تساعد في البحث لكنها قد تعاد كتابتها. ابق صياغة المكتب وملخصات حماية المطالب ووسوم الحجر والحجز القانوني خلف ترتيب الدليل المادي حتى يظهر مسار دليل آخر يخالفه.
+Title: ترتيب الإثبات في الأرشيف العام
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ar_SA_PRIMARY`
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Lies das Objekt vor dem Label. Gebrochenes Siegel, Verwahrungsstempel, Zeugenhash, Relaiszeit und Routenalias wiegen mehr als oeffentliche Kategorie oder Empfaengerfeld. Oeffentliche Labels helfen beim Suchen, koennen aber umgeschrieben werden. Halte Amtswortlaut, claimant-safe Zusammenfassung, Quarantaene-Tag und Rechtsvermerk hinter der physischen Beweisfolge, bis eine andere Spur widerspricht.
+Title: Beweisreihenfolge im öffentlichen Archiv
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_de_DE_PRIMARY`
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Lee el objeto antes de la etiqueta. Un sello roto, marca de custodia, hash testigo, hora de relevo y alias de ruta pesan mas que una categoria publica o campo receptor. Las etiquetas publicas ayudan a buscar, pero pueden reescribirse. Deja texto de oficina, resumen seguro para reclamante, cuarentena y retencion legal detras del orden fisico de prueba hasta que otra ruta lo contradiga.
+Title: Orden de prueba del archivo público
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_es_ES_PRIMARY`
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Lisez l'objet avant l'etiquette. Sceau fendu, cachet de garde, hash temoin, heure de relais et alias de route pesent plus qu'une categorie publique ou un champ receveur. Les etiquettes aident la recherche, mais se reecrivent. Gardez langage d'office, resume protege, quarantaine et retenue legale derriere l'ordre de preuve physique jusqu'a contradiction.
+Title: Ordre de preuve de l'archive publique
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_fr_FR_PRIMARY`
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: קראו את החפץ לפני התווית. חותם סדוק, חותמת משמורת, גיבוב עד, זמן ממסר וכינוי מסלול שוקלים יותר מקטגוריה ציבורית או שדה מקבל. תוויות ציבוריות עוזרות לחיפוש, אבל אפשר לשכתב אותן. שמרו ניסוח משרד, תקציר מוגן, סימון הסגר ועיכוב משפטי מאחורי סדר ההוכחה הפיזי עד שמסלול ראיה אחר סותר אותו.
+Title: סדר הוכחה בארכיון הציבורי
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_he_IL_PRIMARY`
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Baca objek sebelum label. Segel retak, cap kustodi, hash saksi, waktu relai, dan alias rute lebih kuat daripada kategori publik atau kolom penerima. Label publik membantu pencarian, tetapi dapat ditulis ulang. Simpan bahasa kantor, ringkasan aman-klaiman, tag karantina, dan tahanan legal di belakang urutan bukti fisik sampai jalur bukti lain membantahnya.
+Title: Urutan Bukti Arsip Publik
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_id_ID_PRIMARY`
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: ラベルより先に物体を読む。割れた封印、保管印、証人ハッシュ、中継時刻、ルート別名は、公開カテゴリや受信者欄より重い。公開ラベルは検索に役立つが書き換えられる。事務所文、請求者保護要約、隔離タグ、法的保留は、別の証拠ルートが否定するまで物理的な証明順の後ろに置く。
+Title: 公開アーカイブ証拠順
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ja_JP_PRIMARY`
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: 라벨보다 물체를 먼저 읽어라. 금 간 봉인, 보관 도장, 증인 해시, 중계 시각, 경로 별칭은 공개 분류나 수신자 칸보다 무겁다. 공개 라벨은 검색에 유용하지만 다시 쓰일 수 있다. 사무실 문구, 청구인 보호 요약, 격리 표식, 법적 보류는 다른 증거 경로가 반박할 때까지 물리 증명 순서 뒤에 둔다.
+Title: 공개 기록 증거 순서
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ko_KR_PRIMARY`
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Lees het object voor het label. Gebroken zegel, bewaarstempel, getuigehash, relaytijd en routealias wegen zwaarder dan publieke categorie of ontvangersveld. Publieke labels helpen zoeken, maar kunnen herschreven worden. Houd kantoortaal, claimant-safe samenvatting, quarantainetag en juridische hold achter de fysieke bewijsvolgorde tot een andere bewijsroute spreekt.
+Title: Bewijsvolgorde in het publieke archief
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_nl_NL_PRIMARY`
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Czytaj obiekt przed etykieta. Peknieta pieczec, znak depozytu, hash swiadka, czas przekazu i alias trasy sa mocniejsze niz publiczna kategoria albo pole odbiorcy. Publiczne etykiety pomagaja szukac, ale mozna je przepisac. Trzymaj jezyk biura, bezpieczne streszczenie roszczenia, kwarantanne i blokade prawna za fizycznym porzadkiem dowodu do chwili sprzeciwu innej trasy.
+Title: Porządek dowodów w publicznym archiwum
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_pl_PL_PRIMARY`
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Leia o objeto antes do rotulo. Selo rachado, carimbo de custodia, hash de testemunha, horario de rele e alias de rota pesam mais que categoria publica ou campo receptor. Rotulos publicos ajudam a busca, mas podem ser reescritos. Mantenha texto de escritorio, resumo seguro de reclamante, tag de quarentena e retencao legal atras da ordem fisica de prova ate outra rota contradizer.
+Title: Ordem de prova do arquivo público
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_pt_BR_PRIMARY`
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Читай объект раньше метки. Треснувшая пломба, печать хранения, хэш свидетеля, время ретрансляции и псевдоним маршрута весят больше, чем публичная категория или поле получателя. Публичные метки помогают искать, но их можно переписать. Держи офисную формулировку, безопасное резюме заявителя, карантин и юридическое удержание позади физического порядка доказательств, пока другая цепь не спорит с ним.
+Title: Порядок доказательств публичного архива
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_ru_RU_PRIMARY`
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Читай об'єкт раніше за мітку. Тріснута пломба, печатка зберігання, хеш свідка, час ретрансляції і псевдонім маршруту важать більше, ніж публічна категорія або поле отримувача. Публічні мітки допомагають шукати, але їх можна переписати. Тримай офісну фразу, безпечне резюме заявника, карантин і юридичне утримання позаду фізичного порядку доказів, доки інший шлях не заперечить.
+Title: Порядок доказів публічного архіву
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_uk_UA_PRIMARY`
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: 先读物件，再读标签。破裂封签、保管印、见证哈希、中继时间和路线别名，比公开类别或接收方字段更重。公开标签有助检索，但可以被改写。办公室措辞、索赔人安全摘要、隔离标记和法律保留，都应排在实体证据顺序之后，直到另一条证据路线提出反证。
+Title: 公共档案证据顺序
+String pool key: `LORE_EVIDENCE_PUBLIC_ARCHIVE_PROOF_ORDER_BRIDGE_zh_CN_PRIMARY`

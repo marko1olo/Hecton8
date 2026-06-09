@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Предупреждение abyssal machine field"
+title: "Предупреждение машинного поля бездны"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Предупреждение abyssal machine field
+# Предупреждение машинного поля бездны
 
-Перед final basin мир перестает выглядеть заброшенным и начинает выглядеть как машина, слишком большая, чтобы показать все тело.
+Перед финальным бассейном HECTON-8 перестает выглядеть заброшенной и начинает выглядеть как машина, слишком большая, чтобы показать все тело. Предупреждение остается тихим, потому что ужас здесь не погоня. Ужас — масштаб.
 
 ## Scanner
 
-Machine field warning: silt motion не совпадает с current.
+Ил движется против течения. Фильтрующие тела перестраиваются под огнями.
 
 ## Terminal
 
-ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ПРЕДУПРЕЖДЕНИЕ МАРШРУТА: движение ила в машинном поле бездны превышает модель течений. Фильтрующие тела и погребенные ребра приводов регистрируются как движущаяся инфраструктура. Держать дистанцию; не якориться в мягкий пол.
 
 ## Audio
 
-Дно не неподвижно.
+Пол не стоит на месте.
 
 ## Field Note
 
-Late-game warning должен быть quiet and objective, не boss buildup.
+Позднее предупреждение: тихий объективный страх. Финальное поле — это просыпающаяся инфраструктура, а не разгон к боссу.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/ru_RU. -->

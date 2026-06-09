@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Locker Name Protocol"
+title: "Protocolo de nombre en casillero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Locker Name Protocol
+# Protocolo de nombre en casillero
 
-ES LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Un casillero es personal porque se usó, no porque explique una vida entera. La mejor evidencia es práctica: una placa gastada en un borde, cinta sobre un sello agrietado, etiqueta de ruta, nota de corrección en taquigrafía obrera, nombre que payroll borró después. Esos objetos permiten al Marauder restaurar personas por marcas de uso y tareas inconclusas. La colonia no necesita melodrama para sentirse humana. Necesita rastros pequeños que la limpieza corporativa no logró raspar.
 
 ## Scanner
 
-ES LOC HOLD: A locker is personal without needing a family plot.
+RASTRO DE CASILLERO // Placa de nombre, desgaste de herramienta, pressure tape, nota de corrección, etiqueta de ruta. Evidencia personal sin trama familiar.
 
 ## Terminal
 
-ES LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+REGLA DE CASILLERO: preservar nombres que Deep Reach retiró de payroll. Un casillero debe unir placa, rol, permiso de ruta, hábito de reparación y lo inconcluso que quedó dentro.
 
 ## Audio
 
-ES LOC HOLD: The company deleted the employee. The rust kept the label.
+La compañía borró al empleado. El óxido conservó la etiqueta.
 
 ## Field Note
 
-ES LOC HOLD: The smallest human trace should survive corporate cleanup.
+El rastro humano más pequeño debe sobrevivir a la limpieza corporativa.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/es_ES. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Triage Ledger Prop Variants
 
-Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Triage Ledger Prop Variants define medical evidence as process evidence. HECTON-8 uses ledgers to connect injury, pressure failure, route denial, equipment state, and witness gaps. This keeps the horror systemic: the player is not just reading that people were hurt, but how the colony converted harm into routing decisions.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Medical evidence should expose delay and routing, not decorate the room with suf
 
 ## Terminal
 
-TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state, certification delay, or missing witness chain. Pain alone is not enough. The prop must show who could move, who was held, and which system made delay look procedural.
 
 ## Audio
 

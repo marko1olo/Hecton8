@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "جدول نماذج طواقم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# جدول نماذج طواقم الضغط
 
-AR LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.
+يجعل جدول نماذج طواقم الضغط أدلة المستعمرة عملية قبل أن تصبح عاطفية. يجب أن يقود عامل Pump اللاعب نحو الماء والصمامات وقفزات الضغط وأكاذيب الصيانة. ينتمي عامل Seal إلى الأبواب ورقع البدن وطقوس الأقفال والغرف التي بقيت جافة أكثر مما ينبغي. تفعل Relay وBrine Map وVent Forge وTriage وPressure Botany وPayload Witness الشيء نفسه مع الإشارات والمسارات والتصنيع والتأخير الطبي ونجاة الغذاء والشيء الذي لم ترد Deep Reach تسميته. يبقي الجدول الحزن مربوطا بأنظمة يستطيع اللاعب لمسها.
 
 ## Scanner
 
-AR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+الطواقم أفعال قبل أن تكون خلفيات شخصية: تضخ، تغلق، ترحل، ترسم، تصنع، تفرز، تزرع، تشهد.
 
 ## Terminal
 
-AR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump وSeal وRelay وBrine Map وVent Forge وTriage وPressure Botany وPayload Witness. ترتبط كل هوية عامل بعائلة طاقم قبل التفاصيل الشخصية. هكذا تبقى الأدلة مربوطة بالآلات والمسارات وفشل الضغط وثقافة الطعام وقانون الإنقاذ وسلسلة payload النهائية.
 
 ## Audio
 
-AR LOC HOLD: Job first. Memory second. That is how the colony survives.
+العمل أولا. الذاكرة ثانيا. هكذا تنجو المستعمرة على الورق.
 
 ## Field Note
 
-AR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+يقرأ العامل الميت بوضوح أكبر عندما تبقى الغرفة بحاجة إلى العمل الذي كان يعرفه.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ar_SA. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "ערכת שמות עובדי עוגן A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# ערכת שמות עובדי עוגן A
 
-HE LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+ערכת שמות עובדי עוגן A מגדירה את שמות המושבה החוזרים המוקדמים של HECTON-8. שמונת העובדים האלה אינם טריוויה של לור; הם ידיות זיכרון. השחקן פוגש אותם קודם דרך חפצים ועבודה, ואז רואה בהדרגה איך אותם שמות חוצים רשומות תחזוקה, הרשאות, דוחות נזק ושברי שמע. Set A שומרת את השעות הראשונות אנושיות בלי לעצור את המשחק להסבר.
 
 ## Scanner
 
-HE LOC HOLD: Anchor names should reappear through work, not personal exposition.
+שמות מוקדמים צריכים לחזור דרך עבודה, לא דרך נאומים. הנתיב הרדוד מלמד זיכרון בחזרה.
 
 ## Terminal
 
-HE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: חזרה ברדודים ובמדף התעשייתי. כל שם צריך להיקשר לכלי אחד, הרשאת נתיב אחת, חפץ עבודה פגום אחד וסתירה מאוחרת אחת. השמות האלה הם ההוכחה הראשונה של השחקן שהמושבה הייתה מקום עבודה לפני שהפכה לשלל חילוץ.
 
 ## Audio
 
-HE LOC HOLD: Do not mourn the name until the tool tells you why.
+אל תתאבל על השם עד שהכלי יספר לך למה.
 
 ## Field Note
 
-HE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+עוגני Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/he_IL. -->

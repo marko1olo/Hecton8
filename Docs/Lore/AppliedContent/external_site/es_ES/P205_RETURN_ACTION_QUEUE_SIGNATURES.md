@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Firmas de la cola de acción de retorno"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Firmas de la cola de acción de retorno
 
-ES LOC HOLD: Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+Los registros Return Action Queue son el borde público de la presión actual de Deep Reach. El desastre de 2147 dejó logs, pero la cola de 2190 sigue moviendo cláusulas por ventanas de relé: enviar coordenadas, certificar payload custody, limpiar lenguaje de cuarentena y después hablar de recuperación. El paquete no afirma que Black Keel sea inútil ni que Deep Reach pueda rescatar a nadie al instante. Muestra lo contrario: naves locales, paquetes legales retrasados y controles de custodia son lo bastante lentos para que el orden de prioridad se vuelva soporte vital.
 
 ## Scanner
 
-ES LOC HOLD: The old crime has a live queue.
+Return strip activo recibido: prioridad payload custody HIGH, contractor recovery BELOW-CLEARANCE, ventana Aegir 04 abierta doce minutos.
 
 ## Terminal
 
-ES LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Ventana: Aegir live relay. Acción: priorizar payload custody, coordinate receipt y quarantine handshake antes de contractor recovery. Cláusula carrier: Black Keel puede retrasar pickup hasta que custody state quede limpio.
 
 ## Audio
 
-ES LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+La cola de Keene está viva. El rescate queda detrás de payload custody salvo que cambiemos el handshake.
 
 ## Field Note
 
-ES LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Esto no es papel viejo. El sello de cola es reciente: paquete retrasado, cláusula carrier, orden payload-first. Revisa el lenguaje de recuperación de Black Keel antes de fiarte de la recogida.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/es_ES. -->

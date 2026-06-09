@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Конфликт signoff и witness"
+title: "Конфликт свидетеля и подписи"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Конфликт signoff и witness
+# Конфликт свидетеля и подписи
 
-Evidence конфликта signoff ломает ложь Deep Reach через records, room damage и worker traces.
+Конфликт свидетеля и подписи - момент, когда официальная история Deep Reach перестает быть просто неполной и становится ложной. Публичная подпись подает HECTON-8 как приливную катастрофу без рабочего противоречия до задержки эвакуации. Локальные хеши свидетелей говорят другое: юрист эвакуации, Atlas Safety и route operations были в одной комнате обзора, когда потеря запаса, бедствие рабочих и время маршрута уже были видны. Конфликт дает игроку сильную форму доказательства. Недостаточно найти плохую подпись; подпись нужно поставить рядом с логами дверей, поврежденными часами и штампами имен, пока алиби не ломается.
 
 ## Scanner
 
-Signoff records должны противоречить worker witness hashes и поврежденному evacuation hardware.
+Подпись утверждает, что в обзоре эвакуации не было живого противоречия. Хеши свидетелей говорят, что противоречие стояло в комнате.
 
 ## Terminal
 
-CONFLICT: Varnek margin accepted до закрытия field alarms; Arendt weighting preserved Atlas lanes; Haldane hold задержал external evacuation; worker witness hash сообщает, что pump access все еще occupied.
+WITNESS CONFLICT: публичная подпись отмечает приливный отказ как единственную причину. Локальный хеш свидетеля помещает юриста эвакуации, Atlas Safety и route operations в комнату обзора до удержания выпуска. Сверить лог двери, штамп имени и сломанные маршрутные часы.
 
 ## Audio
 
-Подписи сходятся. Тела - нет.
+В отчете сказано, что никто не мог знать. Лог двери не согласен.
 
 ## Field Note
 
-Противоречие сильнее villain confession, потому что игрок видит, как room и stamp не сходятся.
+Подпись чиста только до тех пор, пока комната не вспоминает, кто стоял рядом.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/ru_RU. -->

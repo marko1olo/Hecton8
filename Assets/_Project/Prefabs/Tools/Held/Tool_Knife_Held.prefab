@@ -52,6 +52,7 @@ MonoBehaviour:
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
+  _transportFeelContract: {fileID: 0}
   range: 2.15
   radius: 0.28
   damage: 32
@@ -161,7 +162,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 6cf124a1a4752624eb5b25ce2ddec7bc, type: 2}
+  - {fileID: 2100000, guid: c9aee906ef1cf14438f96348fbbad5ae, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

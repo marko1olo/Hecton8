@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Quarantäne-Hold: abgestandene Luft
 
-Quarantäne-Hold ist der leiseste falsche Ausstieg. Er braucht keinen Bösewicht im Raum. Das Formular sagt lebend geborgen, der Luftzähler sagt Ration aktiv, und die nächste Tür öffnet erst nach Kontaminationsprüfung, claimant-Anfechtung und Versicherungsprüfung.
+Quarantäne-Hold ist der leiseste falsche Ausstieg. Er braucht keine Drohungen, sichtbaren Wachen oder dramatischen Verrat. Das System muss den Auftragnehmer nur lebend bergen, den Zeugen versiegeln, die Luft dosieren und den nächsten Schritt von Prüfungen abhängig machen, die niemand schnell beendet.
 
-Das Ergebnis ist grausam, weil es verteidigbar ist. Niemand hat den Zeugen getötet. Niemand hat die Probe zerstört. Das System lässt nur jede Aussage länger warten, als Körper je warten konnten. Der Spieler überlebt den Ozean und betritt einen versiegelten Korridor aus Verfahren.
+Seine Grausamkeit ist Zeile für Zeile verteidigbar. Niemand hat die Probe zerstört. Niemand hat den Zeugen hingerichtet. Niemand hat gesagt, die Wahrheit sei falsch. Das Verfahren machte nur jeden Atemzug bedingt und jeden Satz wartend, bis den Toten nicht mehr zu helfen war.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/de_DE. -->

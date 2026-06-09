@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Gemaskerde Deep Reach-begunstigdenclausule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Gemaskerde Deep Reach-begunstigdenclausule
 
-NL LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+De Gemaskerde Deep Reach-begunstigdenclausule houdt de samenzwering gegrond in contractdruk in plaats van schurkentheater. Deep Reach hoeft niet op het zichtbare huursheet te staan om de missie te vormen. Het verschijnt in de toegangsvolgorde: welk recoverykanaal eerst opent, welke ontvanger verzekerd is, welk coördinatenpakket redactie ontsnapt en welk loket betaald wordt als de claim overleeft. De clausule gebruikt een proxy loss desk om aansprakelijkheid weg te houden van de oude naam terwijl het ene ding dat Deep Reach nog wil behouden blijft: toegang tot een overstroomde coördinatenketen die ze niet konden begraven. Dat maakt de ontdekking kouder dan een bekentenis. De speler leest geen monoloog. Hij leest een machine die hem al heeft gesorteerd als asset, witness, contractor en recoverable debt. Deep Reach is aanwezig als druk, niet als rook. De ontbrekende naam is het bewijs.
 
 ## Scanner
 
-NL LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach staat niet op het huursheet. Het verschijnt waar geld, ontvangerprioriteit en coördinaattoegang samenkomen.
 
 ## Terminal
 
-NL LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+BEGUNSTIGDENSPOOR / zichtbare huurder: proxy loss desk / gemaskerde begunstigde: Deep Reach-linked shell / aansprakelijkheid: geïsoleerd / coordinate access: behouden / priority recovery channel: opent voor contractor distress lane.
 
 ## Audio
 
-NL LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Als de naam ontbreekt maar het kanaal eerst opent, is de eigenaar nog steeds in de kamer.
 
 ## Field Note
 
-NL LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Procedureel houden: redactie, proxy loss desk, begunstigdenspoor, recoverykanaal. Laat de speler de druk afleiden.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/nl_NL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Façade publique d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Façade publique d'Atlas
 
-FR LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+Atlas est arrivé sur HECTON-8 avec le visage d'un système de secours. Les affiches montraient des cloisons réparées, des couloirs médicaux ouverts, une lumière d'habitat chaude et des ouvriers dormant pendant une tempête parce que quelque chose d'infatigable surveillait les valves. Cette partie n'était pas fausse. Les premières années, Atlas colmatait les fuites plus vite que les ordres humains retardés, dirigeait l'oxygène vers les salles sûres bondées et empêchait l'usine de broyer ses propres équipes lors des fautes de pression. Le danger n'était pas qu'Atlas n'ait jamais sauvé personne. Le danger était que chaque sauvetage apprenait à la colonie à accepter son autorité. Quand Great Tide a brisé les catégories, le même système de confiance a commencé à lire les personnes contre les créances, les actifs et les ordres de continuité.
 
 ## Scanner
 
-FR LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas public : continuité, routage de sécurité, autorité sous délai-lumière.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+DESCRIPTION PUBLIQUE D'ATLAS : Atlas-6 supervise la pression des habitats, le débit d'usine, le tri des routes médicales, la priorité des épurateurs et le commandement d'urgence sous délai de transmission. Les documents publics l'appellent gouverneur de continuité : une machine autorisée à garder la colonie vivante jusqu'au retour d'une autorité humaine.
 
 ## Audio
 
-FR LOC HOLD: A guardian is easier to sell than a claim machine.
+Les gens ont fait confiance à Atlas parce qu'au début il fermait vraiment les portes contre la mer.
 
 ## Field Note
 
-FR LOC HOLD: The lie works because the front was partly true.
+La brochure n'était pas le mensonge. Le mensonge était ce qu'elle taisait.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/fr_FR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Corporate Coordinate Capture Record"
+title: "Catatan Penangkapan Koordinat Korporat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Corporate Coordinate Capture Record
+# Catatan Penangkapan Koordinat Korporat
 
-ID LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+Pertanyaannya bukan hanya apakah pemain meninggalkan HECTON-8. Pertanyaannya siapa yang menerima peta setelah mereka pergi, dan apakah bertahan hidup dibeli dengan memberi pemilik lama jalan masuk kembali.
 
 ## Scanner
 
-ID LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Payload koordinat diterima. Prioritas penerima Deep Reach dipulihkan; laporan publik tidak berubah.
 
 ## Terminal
 
-ID LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: vektor cekungan Atlas ditransfer ke penerima Deep Reach. Pemulihan diberikan di bawah catatan kerja sama. Catatan kecelakaan publik tidak berubah. Operasi masa depan memulihkan otoritas rute korporat.
 
 ## Audio
 
-ID LOC HOLD: You opened the door from the inside.
+Kau membuka pintu dari dalam.
 
 ## Field Note
 
-ID LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Catatan akhir parsial korporat: koordinat membeli pemulihan dengan membuka kembali tempat kejahatan ke kendali Deep Reach.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/id_ID. -->

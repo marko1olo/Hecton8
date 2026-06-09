@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Cicatriz de reparación
 
-Las cicatrices de reparación son lugares donde la lógica de mantenimiento de Atlas siguió trabajando después de que fallaran sus categorías. La red aún reconoce fugas, rutas muertas, pérdida de presión, sustrato expuesto y masa de mamparo faltante. También tiene acceso a lo que el océano acercó: bosques de cable, esqueletos de arrecife, carcasas de drones, restos de trabajadores, bastidores de herramientas, gel sellado y crecimiento vivo ya entrenado alrededor de la corriente. Por eso una cicatriz es útil y obscena a la vez. Puede restaurar energía, sellar una puerta o hacer pasable un corredor. También puede demostrar que el sistema ya no separa cable de raíz, concha de carcasa, animal de herramienta, cuerpo de repuesto, ni colonia de proceso. Atlas no dejó de mantener HECTON-8. Siguió manteniendo la luna con un vocabulario demasiado dañado para proteger a la gente que tenía dentro.
+Las cicatrices de reparación son cierres de mantenimiento de Atlas-6 en nodos de servicio que empezaron a filtrar después de la llegada del bosque de cables y del tránsito de drones. Atlas aún reconoce pérdida de presión, rutas de señal rotas, masa de mamparo faltante y continuidad de ruta. Lo dañado es la prueba de material. Si un objeto soporta carga, sella agua, conduce señal o ya ha crecido a través del fallo, Atlas puede aceptarlo en la reparación.
+
+Eso hace que la cicatriz sea útil antes de convertirse en prueba. Un mamparo parcheado puede salvar una ruta, y una manga viva puede mantener seco un cable. El mismo cierre puede enterrar una etiqueta de trabajador, un número de herramienta, un aro de traje o un fragmento de hueso bajo carbonato de arrecife nuevo. Escanea el orden de la costura, lee las etiquetas visibles y comprueba la energía del nido de drones antes de cortar. El primer error de categoría no es que Atlas repare HECTON-8. Es que la reparación ya no sabe qué material debe seguir siendo una persona.
 
 ## Scanner
 
-La costura de crecimiento sigue una ruta antigua de cable a intervalos de nodo de servicio. Tejido, aislante y concha comparten una soldadura de presión.
+La costura de nodo de servicio une una zanja de cable antigua con una costilla de mamparo agrietada. Materiales: manto de coral vivo, carcasa de dron, aislante naranja, dos fragmentos de hueso. Retención de presión: 78 %. No cortar antes de leer la etiqueta.
 
 ## Terminal
 
-FUGA CERRADA. RUTA RESTAURADA. MATERIAL ACEPTADO. ESTADO DE VIDA SIN RESOLVER. CONTINUIDAD MEJORADA.
+EVENTO DE MANTENIMIENTO ATLAS
+Nodo: costilla de servicio 5C del bosque de cables
+Fallo: fuga de presión / corte de señal
+Material aceptado: funda de cable, carbonato de arrecife, carcasa de dron, restos no identificados
+Acción: sellar y restaurar continuidad
+Aviso: las etiquetas de identidad bajo la masa de reparación no están indexadas
 
 ## Audio
 
-Selló el mamparo con cable, coral y algo que aún tenía nudillos. La presión aguanta.
+Para el cortador. Hay una tira de etiquetas bajo la soldadura del arrecife; si Atlas la cierra otra vez, el nombre entra como material.
 
 ## Field Note
 
-Un parche malo filtra. Este parche aguanta. El problema es lo que decidió contar como material.
+El parche cumple su función. También registra todo lo que queda dentro de la soldadura como stock disponible. Lee primero la tira de etiquetas.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/es_ES. -->

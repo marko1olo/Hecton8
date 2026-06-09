@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "약탈자 dossier 지속성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# 약탈자 dossier 지속성
 
-KO LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+약탈자 dossier는 salvage 시도 사이에 살아남는 캠페인 기억이다. 엔딩, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 그리고 플레이어가 이미 공개하거나 숨긴 선택의 결과를 보존한다. 슈트의 힘, 안전한 압력, 정리된 방, 더 친절한 바다는 넘겨주지 않는다. 지식은 결정을 바꾼다. 깊이를 무해하게 만들지는 않는다.
 
 ## Scanner
 
-KO LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+dossier 스풀. 남는 것은 지식이지 초능력이 아니다.
 
 ## Terminal
 
-KO LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIER 지속 항목: 엔딩 기록, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 공개 원장 결과 보존. 장비 출력, 세계 진실, 현지 압력 상태는 시드마다 초기화.
 
 ## Audio
 
-KO LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+다음 잠수는 슈트의 근육이 아니라 파일의 흉터에서 시작된다.
 
 ## Field Note
 
-KO LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+dossier는 증거와 경고를 기억한다. 압력을 관대하게 만들지는 않는다.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ko_KR. -->

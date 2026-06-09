@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Korporative Erfassung: saubere Rettung"
+title: "Corporate Capture: saubere Rettung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Korporative Erfassung: saubere Rettung
+# Corporate Capture: saubere Rettung
 
-Korporative Erfassung funktioniert, weil sie wie Hilfe beginnt. Das Signal ist sauber, die Abholung professionell, der Raum hat Luft. Dann wird die Reihenfolge sichtbar: erst Koordinaten, dann XO-custody, dann Atlas-Zugang, Auftragnehmerwohl nach Prüfung.
+Corporate Capture ist beängstigend, weil es kompetent ist. Das Rettungsteam wirkt nicht wie Plünderer. Es hat Verfahren, saubere Oberflächen, medizinische Sprache und ein plausibles Recht, custody zu verlangen. Darum kann die Falle ohne Schuss schließen.
 
-Der Ozean hört auf, den Spieler zu erdrücken, aber Deep Reach beginnt, die Geschichte zu konservieren. Aussage wird unter Kontaminationssprache versiegelt, payload-custody bewegt sich vor medizinischem Debrief, und jeder Name, den der Spieler trug, wird zum Haftungsschirm. Das ist kein Tod. Es ist Überleben in der Maschine, die Stille brauchte.
+Die Reihenfolge sagt die Wahrheit. Koordinaten werden vor dem Puls abgefragt. XO-custody und Atlas-Zugriff bewegen sich vor der Aussage. Der Auftragnehmer lebt, aber die Geschichte wird unter Kontaminationsprüfung versiegelt, und jeder mitgebrachte Name wird zum Haftungsschirm. Das ist nicht Tod. Es ist Überleben innerhalb der Institution, die Stille brauchte.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/de_DE. -->

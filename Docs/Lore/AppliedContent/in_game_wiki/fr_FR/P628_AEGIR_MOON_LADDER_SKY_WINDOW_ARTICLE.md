@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Fenêtre céleste de l’échelle lunaire d’Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Fenêtre céleste de l’échelle lunaire d’Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+L’échelle lunaire d’Aegir est une information de route. Les balises lunaires indiquent qualité du signal, pression de marée, ombre relais et risque de fenêtre de transfer sans simulation orbitale en direct.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+BALISE LUNE // Bruit relais en baisse. Fenêtre utilisable si la bande d’orage tient.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+NOTE ÉPHÉMÉRIDE // Bande de fenêtre HECTON-8 favorable. Ombre relais Kestrel montante. Fenêtre forte de paquet courte.
 
 ## Audio
 
-Read the sky, then send.
+Ne fixe pas le ciel. Lis-le, puis envoie.
 
 ## Field Note
 
-Pretty moons are weights.
+Les jolies lunes sont quand même des poids sur la ligne.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/fr_FR. -->

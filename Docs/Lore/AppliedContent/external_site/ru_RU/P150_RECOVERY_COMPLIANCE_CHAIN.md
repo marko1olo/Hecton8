@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Цепочка Recovery Compliance"
+title: "Цепочка recovery compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Цепочка Recovery Compliance
+# Цепочка recovery compliance
 
-Цепочка Recovery Compliance - современный маршрут давления Deep Reach.
+Recovery Compliance - фраза, которая делает финал холоднее. Она звучит упорядоченно, потому что действительно упорядочена. Подрядчикам нужен допуск, доказательствам нужна опека, salvage требует титула, маршрутным страховщикам нужны записи, а публичным офисам нужны слова, которые не признают вину.
 
-## Scanner
-
-Текущая угроза - compliance chain, а не злодей на экране.
-
-## Terminal
-
-2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-Тебя не спасают. Тебя классифицируют.
-
-## Field Note
-
-Задержка не делает приказ безвредным.
+Ужас в том, что цепочка может включать живых людей и все равно не стать спасением. Выживший может быть witness material. Костюм давления может быть return mass. Признание может быть data payload. Цепочка может вывести человека наружу и все равно служить офису, который оставил его внизу.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ru_RU. -->

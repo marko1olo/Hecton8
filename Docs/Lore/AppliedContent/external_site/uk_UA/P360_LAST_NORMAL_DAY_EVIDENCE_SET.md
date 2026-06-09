@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Last Normal Day Evidence Set"
+title: "Набір доказів останнього нормального дня"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Last Normal Day Evidence Set
+# Набір доказів останнього нормального дня
 
-UK LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+Набір доказів останнього нормального дня - польовий спосіб читати затоплену колонію HECTON-8. Він збирає малі ознаки переривання: незабрану табличку шафки, непідписану правку, відкрите завдання насоса, затиснутий жетон їжі, маршрутний годинник, що все ще чекає. Жоден із цих предметів не знає, що став доказом.
 
-## Scanner
+Сила тут у стриманості. Кімнаті не потрібен прощальний запис і ідеально поставлена трагедія. Досить показати, що нормальна процедура ще жила, коли відмова перейшла поріг. Люди рахували воду, повертали інструменти, виправляли дошки і чекали обіду. Ця звичайна безперервність робить розрив страшнішим.
 
-UK LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-UK LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-UK LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-UK LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Набір несе і провину. Офіційна мова аварії часто згладжує кімнату; фізичні суперечності знову роблять її шорсткою. Сертифікат насоса, рахунок зміни, категорія тіла, розбіжність дверного годинника: разом вони можуть перетворити рівне закриття на питання, якого хтось уникав. Для HECTON-8 останній нормальний день - мить, коли routine ще вірить, що продовжиться.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/uk_UA. -->

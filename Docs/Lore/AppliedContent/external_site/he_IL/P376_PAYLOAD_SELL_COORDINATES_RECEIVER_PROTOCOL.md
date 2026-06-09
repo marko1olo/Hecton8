@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "פרוטוקול מכירת קואורדינטות payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# פרוטוקול מכירת קואורדינטות payload
 
-HE LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+הפרוטוקול הזה אינו מכירה פשוטה של שלל. זו העברה של הגעה. ל-Deep Reach כבר יש מספיק נייר כדי להתווכח על HECTON-8; חסרה לה דרך אמינה חזרה דרך האגן הפגוע. ה-payload מספק את הדרך הזאת כשהוא קושר קואורדינטות לאמון, למשמורת ראיות ולדרגת salvage.
 
-## Scanner
-
-HE LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-HE LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-HE LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+התשלום אמיתי, וגם ההקלה בחוב אמיתית. לכן המסלול מסוכן ולא מצויר. מפעיל נואש יכול לסלק שעבוד ובו בזמן למסור לחברה שקברה את רשומות הזמן את דרך החזרה למושבה. חותמת המקבל הופכת הישרדות לשירות.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/he_IL. -->

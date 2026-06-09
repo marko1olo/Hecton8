@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Photic Shelf Survival Act"
+title: "유광 대륙붕 생존 게이트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Photic Shelf Survival Act
+# 유광 대륙붕 생존 게이트
 
-KO LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+유광 대륙붕은 편안함이 아니라 물건으로 가르친다. 오퍼레이터는 어떤 펌프 하우징이 아직 공기를 잡고, 어떤 패치가 몇 분을 사고, 어떤 밝은 생물이 도구를 더럽히는지 배운다. Atlas는 먼저 수리 잔여물로 나타난다. 유용하고, 곳곳이 틀렸고, 만질 만큼 가깝다.
 
 ## Scanner
 
-KO LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+경로 게이트: 유광 대륙붕. 산소 포켓, 펌프실, 첫 절단, 얕은 Atlas 수리 잔여물이 낮 물속에서 읽힌다.
 
 ## Terminal
 
-KO LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+캠페인 경로 // 유광 대륙붕. 필요: 펌프 재시동, 실 패치, 케이블 절단, 스캐너 ping. 상승 장비 사용 불가. 소모 셀은 생존 시스템으로 라우팅됨. Atlas 잔여물은 오염 주의와 함께 유용 분류.
 
 ## Audio
 
-KO LOC HOLD: The shallow water is not safe. It is only readable.
+얕은 물은 안전하지 않다. 읽을 수 있을 뿐이다.
 
 ## Field Note
 
-KO LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+약탈자 메모: 낮빛은 도움이 된다. 갈라진 산소 라인을 너그럽게 만들지는 않는다.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ko_KR. -->

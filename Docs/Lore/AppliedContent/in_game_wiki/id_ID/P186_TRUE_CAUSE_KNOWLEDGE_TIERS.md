@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Tingkat Pengetahuan Penyebab Sejati"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Tingkat Pengetahuan Penyebab Sejati
 
-ID LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+Tingkat Pengetahuan Penyebab Sejati menentukan bentuk kesalahan Deep Reach tanpa meratakan setiap orang di dalam perusahaan menjadi monster yang sama. Tidak ada satu kantor pun yang memiliki seluruh bencana. Pengamat lapangan melihat perilaku pasang yang abnormal dan margin sensor runtuh. Kantor risiko menerjemahkannya menjadi paparan ekor yang dapat diterima. Atlas Safety melindungi skor kontinuitas. Penasihat evakuasi menunda wewenang pelepasan. Keelmark dan meja pemulihan menyiapkan bahasa klaim yang bisa mengubah kematian, kargo, dan diam menjadi kerugian terkelola. Setiap tingkat bisa berkata bahwa ia tidak cukup tahu untuk menghentikan bencana sendirian. Bersama-sama, mereka cukup tahu untuk membiarkan HECTON-8 tenggelam perlahan dan legal.
 
 ## Scanner
 
-ID LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach mengetahui kebenaran dalam potongan: margin pasang di satu kantor, pembobotan Atlas di kantor lain, penundaan evakuasi dan konversi klaim di tempat berbeda.
 
 ## Terminal
 
-ID LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: tim pasang mencatat hilangnya margin; Risk menerima paparan ekor; Atlas Safety menimbang kontinuitas di atas evakuasi; penasihat menahan pelepasan; Keelmark mengubah kematian menjadi kerugian yang dapat dipulihkan; Recovery Compliance meminta muatan sebelum pengungkapan.
 
 ## Audio
 
-ID LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Tidak ada yang perlu menulis "biarkan mereka mati." Tabelnya sudah tahu caranya.
 
 ## Field Note
 
-ID LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Ketidaktahuan terdistribusi bukanlah kepolosan. Itu arsitektur.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/id_ID. -->

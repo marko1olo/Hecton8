@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "نافذة سماء سلم أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# نافذة سماء سلم أقمار Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+سلم أقمار Aegir معلومات طريق. وسوم الأقمار تعلم جودة الإشارة، ضغط المد، ظل المرحل، وخطر نافذة transfer من دون طلب محاكاة مدارية حية.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+وسم قمر // ضجيج المرحل ينخفض. النافذة صالحة إذا تماسكت حزمة العاصفة.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+ملاحظة تقويم مداري // نطاق نافذة HECTON-8 ملائم. ظل مرحل Kestrel يرتفع. نافذة الحزمة القوية قصيرة.
 
 ## Audio
 
-Read the sky, then send.
+لا تحدق في السماء. اقرأها، ثم أرسل.
 
 ## Field Note
 
-Pretty moons are weights.
+الأقمار الجميلة تظل أثقالا على الخط.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/ar_SA. -->

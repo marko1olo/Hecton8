@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Blackout Window Signal Decay
 
-HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+HECTON-8's silence is part astronomy, part damaged infrastructure, part corporate automation. Aegir's shadow, drowned relays, carrier timing, and legal queues turn communication into weather: something the player plans around, fears, repairs, and sometimes exploits.
 
 ## Scanner
 
-Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Signal window collapsing: wet relay spine, Aegir shadow, stale carrier geometry, legal queue still retrying.
 
 ## Terminal
 
-BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: uplink loss above tolerance. Voice channel suspended. Text fragments may arrive through repaired acoustic spine nodes. Orbital carrier geometry will refresh after Aegir magnetic shadow clears. Automated lien and custody timers continue without operator contact.
 
 ## Audio
 
-When the sky closes, the paperwork keeps breathing.
+The sky goes quiet first. The debt notices keep knocking.
 
 ## Field Note
 
-Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Tie blackout windows to route pacing: less voice, more fragment reading, stronger value for repaired relays and local beacons.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/en_US. -->

@@ -7,6 +7,8 @@ This folder is not an internal rationale archive.
 
 Local reader: run `python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent` from the project root, then open `http://127.0.0.1:8788/reader.html`.
 
+Simple pre-wiki reader: open `http://127.0.0.1:8788/prewiki.html` after the same local server is running. It is the lighter article/language/surface preview for reading generated wiki/site pages without controller panels.
+
 ## Freshness Boundary
 
 Local counts and release-set lists in this README are static documentation snapshots unless a timestamped command output or audit artifact says otherwise. Use `Publication_Surface_Index.csv`, `Publication_Cluster_Index.csv`, release-set manifests, and the scoped graph/route/binding CSV inventories as the current source/export inventory. None of those files is runtime, publication, localization-review, or placement proof by itself.

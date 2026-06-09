@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Sanitized Accident Reply Window"
+title: "نافذة رد الحادث المنقحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Sanitized Accident Reply Window
+# نافذة رد الحادث المنقحة
 
-AR LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+نافذة رد الحادث المنقحة تمنح Deep Reach صوتا حاضرا من دون أن تجعل الشركة كلية المعرفة. أول رد حي ليس تهديدا. إنه أسوأ بطريقة أهدأ: تفسير عام قديم يُدفع عبر قناة جديدة تحت الضغط. ما تزال الرسالة تقول مد عاصفة وانهيار جيولوجي وفشل إخلاء ذاتي لأن ذلك النص حمى Deep Reach مرة، والنظام يمد يده إليه من جديد. يجب أن يسمعه اللاعب فقط بعد العثور على تناقض مادي: وقت باب خاطئ، شهادة مضخة سيئة، أسماء نجت من محو payroll، وغرفة لا تطابق أضرارها الطقس. التوقيت مهم. إذا وصل النص أولا فهو شرح. إذا وصل بعد الدليل المبلل فهو إهانة. Deep Reach لا يتحدث إلى الغرفة التي يقف فيها اللاعب. إنه يتحدث إلى التقرير الجاف الذي احتاج أن تصبحه الغرفة.
 
 ## Scanner
 
-AR LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+نافذة الرد مفتوحة. يكرر Deep Reach انهيار العاصفة والفشل الجيولوجي وفشل الإخلاء الذاتي كأن الغرفة لا تزال جافة.
 
 ## Terminal
 
-AR LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: مد عاصفة، انهيار جيولوجي، فشل إخلاء ذاتي / RESTRICTED ADVICE: لا ترسل Atlas continuity غير موثقة أو body-category disputes أو basin-coordinate claims.
 
 ## Audio
 
-AR LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+أجابوا الغرفة التي كان يفترض أن تجدها، لا الغرفة التي تقف فيها.
 
 ## Field Note
 
-AR LOC HOLD: Place after first physical contradiction, not before.
+توضع بعد أول تناقض مادي: يجب أن يملك اللاعب دليلا مبللا قبل سماع النص العام القديم.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/ar_SA. -->

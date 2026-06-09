@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Quarantine Legal Handshake Assembly
 
-Quarantine Legal Handshake Assembly makes extraction deliberately dirty: a working engine can still deliver the survivor into corporate custody, delayed public truth or unresolved quarantine.
+The Quarantine Legal Handshake Assembly is the final component because HECTON-8's escape route ends in authority, not in vacuum. The capsule may be mechanically ready, but recovery still needs a receiver willing to name the arrival.
 
-## Scanner
+The socket loads the facts that decide that name: receiver key, quarantine state, payload custody, debt lien and public-ledger delay. Each route accepts a different version of the same capsule. Keelmark wants mass and lien. Recovery Compliance wants coordinates and contamination state. The public ledger wants proof that can survive time and dispute.
 
-Handshake socket. The capsule can be mechanically ready and still belong to the wrong receiver.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates and quarantine status. Public ledger accepts proof after delay. Unkeyed launch defaults to custody dispute.
-
-## Audio
-
-Who answers decides what rescue means.
-
-## Field Note
-
-The last component is not metal. It is the name of the system allowed to call you recovered.
+That makes extraction deliberately uncomfortable. The cleanest launch can still deliver the survivor into a claim office, a locked medical hold, or a slow public case. Repairing the handshake does not free the capsule from politics. It lets the Marauder choose which politics gets the first hand on the hatch.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/en_US. -->

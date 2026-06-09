@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Протокол нативної локалізації імен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Протокол нативної локалізації імен
 
-UA LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+Нативна локалізація імен захищає шар робочих доказів від аварії інтерфейсу. Гравець не має бачити стиснуте ім'я, перевернуте безглуздя, напівпереклад fallback-кодом або англійський debug-залишок.
+
+Правило просте: особистість авториться для локалі, а системи навколо перекладаються нормально. Іменна смуга лишається навмисним артефактом. Якщо мові потрібна коротка форма для бейджа, її пишуть і bake-ять заздалегідь.
 
 ## Scanner
 
-UA LOC HOLD: Worker names need localization policy before they become UI bugs.
+ЛОК ІМЕНІ // Ця смуга написана вручну, а не перекладена наживо. Людина переживе інтерфейс лише якщо інтерфейс перестане імпровізувати.
 
 ## Terminal
 
-UA LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+ЛОКАЛІЗАЦІЯ ІМЕН // Особові імена, короткі смуги й фрагменти бейджів bake-яться для кожної локалі. Посади, відділи, маршрутні дозволи й нотатки зміни перекладаються довкола них. RTL і CJK потребують авторських коротких форм, безпечних переносів і заборони live-рекомпозиції в сканері, UI шафок, терміналах і зовнішній wiki.
 
 ## Audio
 
-UA LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Ім'я, що ламає UI, не є повагою. Це колонія видаляє працівника вдруге.
 
 ## Field Note
 
-UA LOC HOLD: No live name translation. Preserve identity through baked strings.
+Не дозволяй runtime fallback перейменовувати мертвого працівника. Зламане ім'я - ще одна форма стирання.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/uk_UA. -->

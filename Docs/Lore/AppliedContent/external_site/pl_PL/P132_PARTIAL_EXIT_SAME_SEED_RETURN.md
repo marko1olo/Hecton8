@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Częściowe wyjście: powrót do tego samego seedu"
+title: "Wyjście częściowe: powrót do tego samego seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Częściowe wyjście: powrót do tego samego seedu
+# Wyjście częściowe: powrót do tego samego seed
 
-Częściowe wyjście chroni długą kampanię przed fałszywym zamknięciem. Black Keel może podnieść operatora na ograniczone okno, załatać skafander, zapisać odzyskane pakiety i sprzedać pauzę jako opiekę. Świat pod spodem nie przełącza się na czystszą wersję.
+Wyjście częściowe jest zaworem ciśnienia dla długiej opowieści survivalowej. Kontraktor zdobywa okno pickup, ma zszyte rany, naprawiony sprzęt i słyszy rzadki dźwięk powietrza nieprzefiltrowanego przez umierający skafander. Ta ulga jest prawdziwa, dlatego powrót boli.
 
-Gdy gracz wraca, ten sam seed wciąż tam jest. Schody solankowe mają tę samą pułapkę, ten sam przekaźnik ma ten sam zły kąt, a ten sam dowód pozostaje groźny. Ten finał daje ulgę bez rozgrzeszenia: powietrze w płucach, więcej długu w kontrakcie i brak wymazania tego, co znaleziono.
+Black Keel zapisuje pauzę jako opiekę i utrzymanie lien. Ten sam world seed pozostaje aktywny, te same dowody są nierozwiązane, a ten sam ocean czeka ze wszystkimi odkrytymi trasami. Wyjście częściowe nie jest miłosierdziem systemu. To konserwacja aktywa, od którego nadal oczekuje się zejścia.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/pl_PL. -->

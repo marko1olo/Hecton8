@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Сталість досьє мародера"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Сталість досьє мародера
 
-UA LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+Досьє мародера — це пам'ять кампанії, що переживає спроби збору. Воно зберігає фінали, знайдені типи контрактів, родини чуток, категорії доказів, маршрутні попередження й наслідки того, що гравець уже оприлюднив або приховав. Воно не переносить силу костюма, безпечний тиск, очищені кімнати чи лагідніший океан. Знання змінює рішення. Воно не робить глибину нешкідливою.
 
 ## Scanner
 
-UK LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Котушка досьє. Ти зберігаєш знання, а не надсили.
 
 ## Terminal
 
-UK LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+СТАЛІСТЬ ДОСЬЄ: записи фіналів, знайдені типи контрактів, родини чуток, категорії доказів, попередження маршрутів і наслідки публічного реєстру зберігаються. Сила спорядження, правда світу й локальний стан тиску скидаються для кожного seed.
 
 ## Audio
 
-UK LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+Наступний захід починається зі шрамів у файлі, а не з м'язів у костюмі.
 
 ## Field Note
 
-UA LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Досьє пам'ятає докази й попередження; воно не робить тиск милосердним.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/uk_UA. -->

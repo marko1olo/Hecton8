@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Пакет хибного публічного звіту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Пакет хибного публічного звіту
 
-UA LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Пакет хибного публічного звіту - версія HECTON-8, яку Deep Reach могла безпечно показати світам. Вона не вигадує фальшивий океан. Великий приплив був справжнім, затримка ретрансляції була справжньою, карантинна невизначеність була справжньою, і тому звіт витримує поверхневе читання. Брехня живе в пропусках. Вона прибирає прийняті запаси ризику, затримане повноваження на евакуацію, ваги безперервності Atlas, страхову конвертацію й тиск зберігання відновлення. Гравець має читати це як фінальний корпоративний хід: залишити достатньо фізики, щоб звучати тверезо, і вирізати достатньо рішень, щоб стерти провину.
 
 ## Scanner
 
-UA LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Публічний звіт спрацював тому, що залишив справжній океан і прибрав людські рішення всередині нього.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: втрата HECTON-8 списана на винятковий припливний каскад, затримку ретрансляції й карантинну невизначеність. Опущено: прийняті запаси ризику, утримання випуску евакуації, override безперервності Atlas, конвертація претензії й запит відновлення спершу вантажу.
 
 ## Audio
 
-UA LOC HOLD: They did not fake the storm. They buried the choice.
+Вони сказали правду про воду і збрехали про руки.
 
 ## Field Note
 
-UA LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Найкраща брехня не заперечувала приплив. Вона використала приплив як прикриття.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/uk_UA. -->

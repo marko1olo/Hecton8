@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Драбина хибних кінцівок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Драбина хибних кінцівок
 
-UA LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 може мати багато шляхів назовні, не перетворюючи правду на шум. Досьє має сортувати хибні або часткові наслідки в кілька читабельних родин: взяти material і піти, вибратися лише для того, щоб тебе втягнуло назад, потрапити в корпоративне зберігання або карантин, або злити досить ledger-правди, щоб поранити машину, але не зупинити її. Кожен вихід реальний. Жоден не є дном.
 
 ## Scanner
 
-UA LOC HOLD: Four major false families before the deep Atlas resolutions.
+ДРАБИНА КІНЦІВОК // Матеріальна виплата, часткове повернення, корпоративне захоплення або карантин, витік публічного ledger. Чотири хибні родини до глибоких відповідей Atlas.
 
 ## Terminal
 
-UA LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+МАСШТАБ ДОСЬЄ: позначати багато виходів, але групувати їх у чіткі родини. Матеріальна виплата, частковий вихід/повернення, корпоративне захоплення/карантин і витік публічного ledger лежать нижче payload-рішень у басейні Atlas.
 
 ## Audio
 
-UA LOC HOLD: The dossier can mark many exits before it marks an answer.
+Досьє може позначити вихід раніше, ніж відповідь.
 
 ## Field Note
 
-UA LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Досить кінцівок, щоб винагородити стилі. Недосить, щоб здешевити правду.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/uk_UA. -->

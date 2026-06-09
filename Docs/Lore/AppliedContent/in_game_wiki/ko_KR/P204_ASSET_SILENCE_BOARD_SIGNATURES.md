@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Asset Silence Board 서명"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Asset Silence Board 서명
 
-KO LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Asset Silence Board 기록은 작업자 장부와 공개 보고 사이에 놓인다. 그것은 손실을 만들지 않는다. 손실 중 어떤 부분이 이동할 수 있는지 결정한다. redaction vote는 load class, locker count, claim value를 보이게 남기면서 witness names와 경로 첨부를 음소거할 수 있다. 그래서 이 서명은 사물함, redaction cards, packet mute flags 옆에 있어야 한다. Brigit Senn의 서명은 그녀를 숨은 지휘관으로 만들지 않는다. relay review 후 회수 가능한 인간 사실을 asset-risk categories로 바꾼 하위 사무소를 식별한다.
 
 ## Scanner
 
-KO LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+redaction vote 카드 회수됨: 작업자 이름 필드 음소거, asset-risk category는 표시, locker count 유지. 패킷 가시성은 custody approval 필요.
 
 ## Terminal
 
-KO LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: relay review 후 witness-name attachment를 asset-risk silence category로 이동. load class, locker count, claim value 유지. Release는 custody owner approval 필요.
 
 ## Audio
 
-KO LOC HOLD: Erase the route and the body becomes cargo math.
+보드는 상자 수를 남겼다. 이름을 잘랐다.
 
 ## Field Note
 
-KO LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+이름은 사라졌고 사물함 태그는 남았다. Asset Silence Board가 표결한 것은 패킷 가시성이지 작업자의 존재가 아니다.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ko_KR. -->

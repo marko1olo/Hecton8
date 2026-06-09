@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Pressure Glass and Sealant Guide
 
-Pressure Glass and Sealant Guide grounds HECTON-8's biomechanical horror in repair logic: Atlas follows cracks, cables, biofilms and pressure scars because broken systems already provide paths.
+Pressure glass began as a practical colony material: clear enough for viewports, tough enough for pressure doors, and cheap enough to cast into service seams. Years underwater changed its role. Tides wrote stress into the panes. Minerals fogged the edges. Biofilm learned the cracks. When Atlas chemistry arrived, it did not need to invent a route through the colony. The broken glass had already drawn one.
 
-## Scanner
-
-Pressure-glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
-
-## Terminal
-
-FIELD GUIDE: pressure glass records old tide stress. Atlas sealant follows those cracks because the cracks already describe the system's failure lines.
-
-## Audio
-
-The repair network reads fractures the way you read a map.
-
-## Field Note
-
-Do not grind the pretty edge. Follow the fracture map and cut from the dead side of the seal.
+That is why a lens stockpile can be valuable and dangerous at the same time. Cut from the dead side of a seal and the glass becomes salvage. Grind the living edge and the repair network gains a cleaner path. Sealant is not just glue in HECTON-8. It is a decision about which failures are allowed to close, which remain mapped, and which become a door for something still trying to repair the wrong body.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/en_US. -->

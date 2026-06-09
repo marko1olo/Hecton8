@@ -376,6 +376,7 @@ namespace Hecton8.Biolum
             ReleaseVaultHandlesOnly();
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
+            ClearCachedRuntimeReferences();
 
             ResetFloraShaderGlobals();
         }
@@ -392,6 +393,7 @@ namespace Hecton8.Biolum
             HectonFloatingOrigin.UnregisterListener(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
+            ClearCachedRuntimeReferences();
 
             ResetFloraShaderGlobals();
             Dispose();
@@ -806,7 +808,7 @@ namespace Hecton8.Biolum
 
         private void UpdateCelestialBiolumStateFromSnapshot(float safeDeltaTime, out double celestialTime)
         {
-            ICelestialRuntimeSnapshotReadModel readModel = _cachedCelestialSnapshot;
+            ICelestialRuntimeSnapshotReadModel readModel = ResolveCelestialRuntimeSnapshotReadModel();
             CelestialRuntimeSnapshot snapshot = readModel != null ? readModel.RuntimeSnapshot : default;
             bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
             valid = valid &&
@@ -818,7 +820,7 @@ namespace Hecton8.Biolum
                 (((snapshot.Flags & (uint)CelestialRuntimeFlags.EclipseActive) != 0u) ||
                  snapshot.EclipseOcclusion01 > 0.05f);
             Vector3 cameraPosition = GetCameraPosition();
-            ICelestialLightReadabilityReadModel lightReadModel = _cachedCelestialLight;
+            ICelestialLightReadabilityReadModel lightReadModel = ResolveCelestialLightReadModel();
             CelestialLightReadabilitySnapshot light = lightReadModel != null
                 ? lightReadModel.LightReadabilitySnapshot
                 : default;
@@ -1648,7 +1650,7 @@ namespace Hecton8.Biolum
             if (!force && _cachedCameraAupFrame == frame)
                 return;
 
-            _cachedCameraPosition = _cachedCameraTransform != null ? _cachedCameraTransform.position : Vector3.zero;
+            _cachedCameraPosition = IsTransformUsable(_cachedCameraTransform) ? _cachedCameraTransform.position : Vector3.zero;
             if (!TryBuildAupFromRuntimeOrigin(_cachedCameraPosition, out _cachedCameraAup))
                 _cachedCameraAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
 
@@ -1657,17 +1659,19 @@ namespace Hecton8.Biolum
 
         private bool TryCacheCameraReferenceCachedOnly()
         {
-            if (_cachedCameraTransform != null)
+            if (IsTransformUsable(_cachedCameraTransform))
                 return true;
 
+            InvalidateCachedCameraReference();
             return TryCacheCameraReferenceFromPlayerContext();
         }
 
         private bool TryCacheCameraReferenceCold()
         {
-            if (_cachedCameraTransform != null)
+            if (IsTransformUsable(_cachedCameraTransform))
                 return true;
 
+            InvalidateCachedCameraReference();
             if (TryCacheCameraReferenceFromPlayerContext())
                 return true;
 
@@ -1679,17 +1683,20 @@ namespace Hecton8.Biolum
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                IPlayerRuntimeContext playerContext = ResolvePlayerContext();
                 Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-                if (playerCamera == null)
+                if (!IsCameraUsable(playerCamera))
                     playerTransform.TryGetComponent(out playerCamera);
 
-                if (playerCamera != null)
+                if (IsCameraUsable(playerCamera))
                 {
                     _cachedCamera = playerCamera;
                     _cachedCameraTransform = playerCamera.transform;
                     return true;
                 }
+
+                if (!IsTransformUsable(playerTransform))
+                    return false;
 
                 _cachedCameraTransform = playerTransform;
                 _cachedCamera = null;
@@ -1701,12 +1708,12 @@ namespace Hecton8.Biolum
 
         private bool TryCacheCameraReferenceFromPlayerContext()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (playerContext == null)
                 return false;
 
             Camera playerCamera = playerContext.PlayerCamera;
-            if (playerCamera != null)
+            if (IsCameraUsable(playerCamera))
             {
                 _cachedCamera = playerCamera;
                 _cachedCameraTransform = playerCamera.transform;
@@ -1714,7 +1721,7 @@ namespace Hecton8.Biolum
             }
 
             Transform playerTransform = playerContext.PlayerTransform;
-            if (playerTransform == null)
+            if (!IsTransformUsable(playerTransform))
                 return false;
 
             _cachedCamera = null;
@@ -1935,9 +1942,9 @@ namespace Hecton8.Biolum
             _dataVault = currentVault;
             _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
             _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
-            _cachedPlayerContext = GlobalRegistry.Player;
-            _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
-            _cachedCelestialLight = GlobalRegistry.CelestialLightReadabilityReadModel;
+            CachePlayerContext(GlobalRegistry.Player);
+            CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel);
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1979,17 +1986,144 @@ namespace Hecton8.Biolum
                     _cachedFluid = currentService as IAbyssalFlowGpuReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                    _cachedCamera = null;
-                    _cachedCameraTransform = null;
-                    _cachedCameraPosition = Vector3.zero;
-                    _cachedCameraAupFrame = -1;
+                    CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
-                    _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
-                    _cachedCelestialLight = GlobalRegistry.CelestialLightReadabilityReadModel;
+                    CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel);
+                    CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
                     break;
             }
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                if (!ReferenceEquals(_cachedPlayerContext, playerContext))
+                    InvalidateCachedCameraReference();
+
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+            InvalidateCachedCameraReference();
+        }
+
+        private ICelestialRuntimeSnapshotReadModel ResolveCelestialRuntimeSnapshotReadModel()
+        {
+            ICelestialRuntimeSnapshotReadModel readModel = _cachedCelestialSnapshot;
+            if (!IsCelestialRuntimeSnapshotReadModelUsable(readModel))
+            {
+                readModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+                CacheCelestialRuntimeSnapshotReadModel(readModel);
+            }
+
+            return _cachedCelestialSnapshot;
+        }
+
+        private ICelestialLightReadabilityReadModel ResolveCelestialLightReadModel()
+        {
+            ICelestialLightReadabilityReadModel readModel = _cachedCelestialLight;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                readModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+                CacheCelestialLightReadModel(readModel);
+            }
+
+            return _cachedCelestialLight;
+        }
+
+        private void CacheCelestialRuntimeSnapshotReadModel(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (IsCelestialRuntimeSnapshotReadModelUsable(readModel))
+            {
+                _cachedCelestialSnapshot = readModel;
+                return;
+            }
+
+            ICelestialRuntimeSnapshotReadModel fallback = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            _cachedCelestialSnapshot = IsCelestialRuntimeSnapshotReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _cachedCelestialLight = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _cachedCelestialLight = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearCachedRuntimeReferences()
+        {
+            _cachedPlayerContext = null;
+            _cachedCelestialSnapshot = null;
+            _cachedCelestialLight = null;
+            InvalidateCachedCameraReference();
+        }
+
+        private void InvalidateCachedCameraReference()
+        {
+            _cachedCamera = null;
+            _cachedCameraTransform = null;
+            _cachedCameraPosition = Vector3.zero;
+            _cachedCameraAupFrame = -1;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsCameraUsable(Camera camera)
+        {
+            return camera != null && (!Application.isPlaying || camera.isActiveAndEnabled);
+        }
+
+        private static bool IsTransformUsable(Transform transform)
+        {
+            return transform != null && (!Application.isPlaying || transform.gameObject.activeInHierarchy);
+        }
+
+        private static bool IsCelestialRuntimeSnapshotReadModelUsable(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private bool TryRegisterService()
@@ -2085,8 +2219,7 @@ namespace Hecton8.Biolum
             TryUnregisterHotSwapListener();
             TryUnregisterLateFrameTick();
             ReleaseRuntimeResources();
-            _cachedCelestialSnapshot = null;
-            _cachedCelestialLight = null;
+            ClearCachedRuntimeReferences();
             _disposed = true;
         }
 

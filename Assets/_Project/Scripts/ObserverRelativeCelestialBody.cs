@@ -176,6 +176,7 @@ namespace Hecton8.Celestial
                 HectonFloatingOrigin.UnregisterListener(this);
                 TryUnregister();
                 TryUnregisterHotSwapListener();
+                ClearRuntimeRegistryReferences();
             }
 #if UNITY_EDITOR
             else
@@ -193,6 +194,7 @@ namespace Hecton8.Celestial
             TryUnregister();
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
+            ClearRuntimeRegistryReferences();
         }
 
         /// <summary>
@@ -328,17 +330,14 @@ namespace Hecton8.Celestial
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
             {
-                if (_usingRegisteredAtmosphere || atmosphereManager == null)
-                {
-                    atmosphereManager = currentService as HectonAtmosphereManager;
-                    _usingRegisteredAtmosphere = atmosphereManager != null;
-                }
+                if (_usingRegisteredAtmosphere || !IsAtmosphereManagerUsable(atmosphereManager))
+                    CacheAtmosphereManager(currentService as HectonAtmosphereManager, registeredOwner: true);
 
                 return;
             }
@@ -709,8 +708,8 @@ namespace Hecton8.Celestial
 
         private void ResolveAtmosphereManager()
         {
-            if (atmosphereManager == null && !Application.isPlaying)
-                atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
+            if (!Application.isPlaying && !IsAtmosphereManagerUsable(atmosphereManager))
+                CacheAtmosphereManager(Hecton8.Core.GlobalRegistry.Atmosphere, registeredOwner: true);
         }
 
         private void CacheRuntimeRegistryServicesCold()
@@ -718,13 +717,10 @@ namespace Hecton8.Celestial
             if (!Application.isPlaying)
                 return;
 
-            if (atmosphereManager == null || _usingRegisteredAtmosphere)
-            {
-                atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
-                _usingRegisteredAtmosphere = atmosphereManager != null;
-            }
+            if (_usingRegisteredAtmosphere || !IsAtmosphereManagerUsable(atmosphereManager))
+                CacheAtmosphereManager(Hecton8.Core.GlobalRegistry.Atmosphere, registeredOwner: true);
 
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
         }
 
         private Vector3 ResolveObserverWorldPosition(bool allowReferenceCaching = true)
@@ -741,8 +737,11 @@ namespace Hecton8.Celestial
             }
 #endif
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (!IsPlayerCameraUsable(playerCamera))
+                playerCamera = null;
+
             if (allowReferenceCaching && playerCamera != null)
                 observerTransform = playerCamera.transform;
 
@@ -750,7 +749,7 @@ namespace Hecton8.Celestial
                 return playerCamera.transform.position;
 
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform != null)
+            if (IsTransformUsable(playerTransform))
                 return playerTransform.position;
 
             return observerTransform != null
@@ -784,8 +783,9 @@ namespace Hecton8.Celestial
 
         private float ResolveTimeSeconds()
         {
-            if (timeSourceMode == CelestialTimeSourceMode.AtmosphereCycle && atmosphereManager != null)
-                return (float)atmosphereManager.ElapsedCycleTimeSeconds;
+            HectonAtmosphereManager resolvedAtmosphere = ResolveAtmosphereManagerForRead();
+            if (timeSourceMode == CelestialTimeSourceMode.AtmosphereCycle && resolvedAtmosphere != null)
+                return (float)resolvedAtmosphere.ElapsedCycleTimeSeconds;
 
             if (Application.isPlaying)
                 return ResolveRuntimePresentationClockSeconds();
@@ -800,6 +800,87 @@ namespace Hecton8.Celestial
         private static float ResolveRuntimePresentationClockSeconds()
         {
             return Time.timeSinceLevelLoad;
+        }
+
+        private void CacheAtmosphereManager(HectonAtmosphereManager manager, bool registeredOwner)
+        {
+            if (IsAtmosphereManagerUsable(manager))
+            {
+                atmosphereManager = manager;
+                _usingRegisteredAtmosphere = registeredOwner;
+                return;
+            }
+
+            if (_usingRegisteredAtmosphere || registeredOwner)
+            {
+                atmosphereManager = null;
+                _usingRegisteredAtmosphere = false;
+            }
+        }
+
+        private HectonAtmosphereManager ResolveAtmosphereManagerForRead()
+        {
+            if (IsAtmosphereManagerUsable(atmosphereManager))
+                return atmosphereManager;
+
+            if (_usingRegisteredAtmosphere)
+            {
+                atmosphereManager = null;
+                _usingRegisteredAtmosphere = false;
+            }
+
+            return null;
+        }
+
+        private static bool IsAtmosphereManagerUsable(HectonAtmosphereManager manager)
+        {
+            return manager != null && (!Application.isPlaying || manager.isActiveAndEnabled);
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = IsPlayerContextUsable(playerContext) ? playerContext : null;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                _cachedPlayerContext = null;
+
+            return _cachedPlayerContext;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsPlayerCameraUsable(Camera camera)
+        {
+            return camera != null &&
+                   camera.enabled &&
+                   camera.gameObject.activeInHierarchy;
+        }
+
+        private static bool IsTransformUsable(Transform target)
+        {
+            return target != null && target.gameObject.activeInHierarchy;
+        }
+
+        private void ClearRuntimeRegistryReferences()
+        {
+            _cachedPlayerContext = null;
+            if (_usingRegisteredAtmosphere)
+            {
+                atmosphereManager = null;
+                _usingRegisteredAtmosphere = false;
+            }
         }
 
 #if UNITY_EDITOR

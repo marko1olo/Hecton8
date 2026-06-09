@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pompkamer van Ondiep Annex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pompkamer van Ondiep Annex P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+Ondiep Annex P-63 is de eerste kamer die weer nuttig kan worden. Het is geen beloningskamer maar een vermoeide machine: handmatige bilgekruk, vastzittende klephals, koud-sealant klemspoor en een fabricator die alleen laag-risico reparaties accepteert tot het water onder de inlaatlijn zakt.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+De kamer leert de eerste regel van salvage op HECTON-8: lucht komt uit reparatie, niet uit geluk. Een werkende pomp ruimt enkeldiep water op, legt oude gereedschapskasten bloot en geeft een fysieke reden om de annex nog een paar minuten te vertrouwen. De terminal noemt de taak nog steeds kleine waterindringing. De muren zeggen iets anders.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/nl_NL. -->

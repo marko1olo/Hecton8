@@ -118,7 +118,7 @@ namespace Hecton8.EditorTools
             {
                 SliceBinding binding = SliceBindings[i];
                 if (!entries.TryGetValue(binding.SourceId, out AlphaCandidateEntry entry) ||
-                    !TryLoadReadableSource(entry.alphaCandidate, out Texture2D source, out bool restoreReadableOnExit))
+                    !TryLoadReadableSource(entry.alphaCandidate, out Texture2D source, out bool destroySourceOnExit))
                 {
                     throw new InvalidOperationException($"Missing Batch34 visor trauma alpha source for slice {binding.Slice} sourceId={binding.SourceId}");
                 }
@@ -134,8 +134,8 @@ namespace Hecton8.EditorTools
                 }
                 finally
                 {
-                    if (restoreReadableOnExit)
-                        RestoreReadable(entry.alphaCandidate);
+                    if (destroySourceOnExit && source != null)
+                        UnityEngine.Object.DestroyImmediate(source);
                 }
             }
 
@@ -143,43 +143,43 @@ namespace Hecton8.EditorTools
             return decalArray;
         }
 
-        private static bool TryLoadReadableSource(string assetPath, out Texture2D texture, out bool restoreReadableOnExit)
+        private static bool TryLoadReadableSource(string assetPath, out Texture2D texture, out bool destroySourceOnExit)
         {
             texture = null;
-            restoreReadableOnExit = false;
+            destroySourceOnExit = false;
             string normalized = NormalizeAssetPath(assetPath);
-            if (!IsProjectAssetPath(normalized) || !File.Exists(ResolveProjectFilePath(normalized)))
+            string projectFilePath = ResolveProjectFilePath(normalized);
+            if (!IsProjectAssetPath(normalized) || !File.Exists(projectFilePath))
                 return false;
 
-            TextureImporter importer = AssetImporter.GetAtPath(normalized) as TextureImporter;
-            if (importer == null)
-                return false;
-
-            bool madeReadable = false;
-            if (!importer.isReadable)
+            byte[] bytes;
+            try
             {
-                importer.isReadable = true;
-                importer.SaveAndReimport();
-                madeReadable = true;
-                restoreReadableOnExit = true;
+                bytes = File.ReadAllBytes(projectFilePath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError($"[Batch34VisorTraumaDecalArrayIntegrator] Failed to read alpha source bytes: path={normalized}\n{exception}");
+                return false;
             }
 
-            texture = AssetDatabase.LoadAssetAtPath<Texture2D>(normalized);
-            if (texture == null && madeReadable)
-                RestoreReadable(normalized);
+            texture = new Texture2D(2, 2, TextureFormat.RGBA32, false, false)
+            {
+                name = Path.GetFileNameWithoutExtension(normalized),
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Trilinear
+            };
 
-            return texture != null;
-        }
+            if (!ImageConversion.LoadImage(texture, bytes, false))
+            {
+                Debug.LogError($"[Batch34VisorTraumaDecalArrayIntegrator] Failed to decode alpha source image: path={normalized}");
+                UnityEngine.Object.DestroyImmediate(texture);
+                texture = null;
+                return false;
+            }
 
-        private static void RestoreReadable(string assetPath)
-        {
-            string normalized = NormalizeAssetPath(assetPath);
-            TextureImporter importer = AssetImporter.GetAtPath(normalized) as TextureImporter;
-            if (importer == null || !importer.isReadable)
-                return;
-
-            importer.isReadable = false;
-            importer.SaveAndReimport();
+            destroySourceOnExit = true;
+            return texture.isReadable;
         }
 
         private static Texture2DArray SaveTextureArray(Texture2DArray decalArray)

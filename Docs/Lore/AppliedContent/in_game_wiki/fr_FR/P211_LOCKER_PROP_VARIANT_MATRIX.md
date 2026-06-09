@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Matrice de variantes de props de casier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Matrice de variantes de props de casier
 
-FR LOC HOLD: Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.
+La Matrice de variantes de props de casier garde les preuves ouvrières physiques. Un bon casier dit au joueur ce que faisait l'ouvrier, où il avait le droit d'aller et ce que la colonie ou les récupérateurs ultérieurs ont tenté de retirer. L'usure d'outil pointe vers la famille d'équipe. Un tag de route pointe vers portes, ascenseurs, combinaisons ou baies de crawler. Le ruban de pression et les autocollants de service montrent une maintenance ordinaire sous risque anormal. Les cicatrices d'effacement de paie et les marques de préservation maraudeur montrent la seconde vie de la preuve après que Deep Reach a tenté de transformer une personne en ligne de coût. Le résultat doit rester intime sans devenir du fouillis décoratif.
 
 ## Scanner
 
-FR LOC HOLD: A locker should show work, route access and what got erased.
+Un casier doit montrer le travail, l'accès de route et ce que quelqu'un a tenté d'effacer. Les souvenirs ne viennent qu'après la lecture du métier.
 
 ## Terminal
 
-FR LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX : chaque casier écrit a besoin de trois indices lisibles : travail, route et dommage. La mémoire décorative est secondaire. Un casier peut contenir un jeton familial ou une blague privée, mais seulement après qu'un outil, une trace d'autorisation ou une cicatrice d'effacement indique comment cette personne touchait la colonie.
 
 ## Audio
 
-FR LOC HOLD: The locker is not a shrine. It is a failed work order.
+Le casier n'est pas un sanctuaire. C'est un ordre de travail raté.
 
 ## Field Note
 
-FR LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Variantes : usure d'outil, tag d'autorisation de route, ruban de pression, autocollant de service, cicatrice d'effacement paie, marque de préservation maraudeur.
 
 <!-- In-Game Wiki; generated from P211_LOCKER_PROP_VARIANT_MATRIX/fr_FR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pumpenraum des Flachannex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pumpenraum des Flachannex P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+Der Flachannex P-63 ist der erste Raum, der wieder brauchbar werden kann. Er ist keine Belohnungskammer, sondern eine müde Maschine: manuelle Bilgenkurbel, festsitzender Ventilhals, Kalt-Dichtmittelklemme und ein Feldfabrikator, der nur risikoarme Reparaturen akzeptiert, bis das Wasser unter die Einlasslinie fällt.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+Der Raum lehrt die erste Regel der Bergung auf HECTON-8: Luft kommt aus Reparatur, nicht aus Glück. Eine funktionierende Pumpe räumt knöcheltiefes Wasser weg, legt alte Werkzeugschränke frei und gibt einen körperlichen Grund, dem Annex noch ein paar Minuten zu trauen. Das Terminal nennt die Aufgabe weiter geringen Wassereintritt. Die Wände sagen etwas anderes.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/de_DE. -->

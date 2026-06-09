@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Próg fabryki-świątyni
 
-Próg wyznacza finalną gramatykę miejsca: Deep Reach, kolonia, Atlas-6 i ocean stają się jednym układem fizycznym.
+Próg fabryki-świątyni to ostatni dolny zespół bramy za Fabryką dna. To nie jest mityczne zlanie. To działający podział obciążenia: kratownice Deep Reach niosą stare naprężenie kadłuba, rury powrotne nadal prowadzą solankę i ciepło, narost węglanowy uszczelnia martwe uszczelki, a Atlas-6 prowadzi ciągłość przez styki, które jeszcze odpowiadają. Czyta się go po kolejności obejm, śladach przepływu, szumie magistrali kablowej i położeniu etykiet.
 
 ## Scanner
 
-Struktura dna nie jest bazą. Kadłub fabryki, logika świątyni i żywa tkanka ciśnienia niosą ten sam ciężar.
+Odczyt dolnej bramy: kratownica fabryki, rura powrotna, uszczelnienie ciśnieniowe i magistrala routingu Atlas niosą ten sam ciężar. Nie ma już czystej granicy ściana/drzwi.
 
 ## Terminal
 
-Ostrzeżenie: kratownica przemysłowa, biogenne uszczelnienie, ciepło xenon lattice i routing Atlas dzielą władzę struktury.
+THRESHOLD LOAD NOTICE
+Kratownica: naprężona
+Rura powrotna: aktywna
+Uszczelnienie ciśnienia: narost węglanowy
+Magistrala routingu: kanał ciągłości ATLAS-6
+Dostęp ludzi: niezweryfikowany
+Działanie: oznacz kolejność obejm przed otwarciem jakiegokolwiek szwu
 
 ## Audio
 
-Ocean nie pogrzebał fabryki. Zrobił z niej ciało.
+Nie nazywaj tego drzwiami. Najpierw znajdź linię, która trzyma ciśnienie, zanim każesz jej się otworzyć.
 
 ## Field Note
 
-Tu mapa przestaje udawać ruiny kolonii.
+Etykieta mapy mówi: próg. Sprawdzaj obejmy, nie słowo. Brama trzyma, bo cztery systemy biorą ten sam ciężar.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/pl_PL. -->

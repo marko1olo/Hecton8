@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Набор route permission stamps"
+title: "Набор штампов маршрутного допуска"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Набор route permission stamps
+# Набор штампов маршрутного допуска
 
-RU LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Набор штампов маршрутного допуска определяет реквизит доступа для HECTON-8. Штампы связывают личность рабочего с физическими границами: дверями, машинами, костюмами, лифтами и маршрутными досками. Поскольку каждый штамп позже может противоречить реестру или аудиофрагменту, доступ становится биографией под давлением и главным способом читать последнее движение колонии.
 
 ## Scanner
 
-Route stamp сильнее строки из дневника.
+Маршрутный штамп сильнее строки дневника, потому что доказывает, кого пропустили через напорную границу.
 
 ## Terminal
 
-STAMP RULE: route permission связывает одного worker, одну door или vehicle, одну job family и одно later contradiction.
+STAMP RULE: маршрутный допуск должен связывать одного рабочего, одну дверь или машину, одну бригадную семью и одно позднее противоречие. Штамп без физической границы это декор. Штамп на люке, стойке костюмов, рельсе crawler или бирке лифта становится уликой движения.
 
 ## Audio
 
-Access это biography under pressure.
+Доступ это биография под давлением.
 
 ## Field Note
 
-Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Связывать с hatch state и job object.
+Штампы: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Сочетать с состоянием люка и рабочим предметом.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/ru_RU. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Severance Record"
+title: "Registro de seccionamiento de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Severance Record
+# Registro de seccionamiento de Atlas
 
-ES LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+El Registro de seccionamiento de Atlas no es un recibo de apagado. Anota un corte de continuidad en la capa de reparación dañada de Atlas y sigue respuesta de micronodos de respiradero, pérdida de pulsos de sellante, roturas de rutas de fauna marcada y enrutamiento denegado a Deep Reach. El mismo corte puede liberar rastros de trabajadores atrapados, herir la ecología de presión o convertir infraestructura viva en problema de propiedad para un receptor.
 
 ## Scanner
 
-ES LOC HOLD: Continuity cut. Damage not contained.
+REGISTRO DE SECCIONAMIENTO DE ATLAS // Continuidad cortada en capa de reparación dañada. Respuesta de micronodos bajando; estabilidad de cuenca y custodia sin resolver.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+REGISTRO DE FINAL / SECCIONAMIENTO DE ATLAS
+Acción: corte de continuidad en la capa de reparación de Atlas.
+Sistemas afectados: micronodos de respiradero, pulsos de sellante de concha, rutas de fauna marcada, reparación de metal dañado.
+Denegado: enrutamiento de carga de Deep Reach por la capa viva de Atlas.
+Sin resolver: estabilidad de cuenca, ecología superviviente, rastros de trabajadores atrapados.
+Pérdida conocida: el registro no decide si el corte liberó, mató o robó.
 
 ## Audio
 
-ES LOC HOLD: Stopping the machine does not sort what it had become.
+El enlace calló. La cuenca no respondió si eso era piedad.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Un nodo seccionado puede ser piedad, robo o daño. El registro solo sabe qué enlaces callaron.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/es_ES. -->

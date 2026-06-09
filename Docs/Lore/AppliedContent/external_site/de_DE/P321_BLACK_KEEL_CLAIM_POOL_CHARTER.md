@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black-Keel-Claim-Pool-Charta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Black Keel Claim-Pool Charter
+# Black-Keel-Claim-Pool-Charta
 
-DE LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel ist HECTON-8s Hard-Sci-Fi-Antwort auf das Fluchtschiffproblem. Der Spieler hat Zugriff auf ein orbitales Asset, aber Zugriff ist kein Eigentum und Nähe ist keine Rettung. Der Carrier ist Schuldeninfrastruktur: nützlich genug, um Flucht vorstellbar zu machen, beschränkt genug, um jede Rückkehrroute mit Claims, Quarantäne und Rückholwert zu verknüpfen.
 
 ## Scanner
 
-DE LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Die Black Keel ist nicht dein Schiff. Sie ist ein Claim-Pool-Rückholasset mit deinem Namen im Schuldbuch.
 
 ## Terminal
 
-DE LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+CHARTA-AUSZUG / BLACK KEEL: autonomer Salvage-Carrier / Verwahrung: Aegir Reclamation Pool / Auftragnehmertransport: erlaubt / Rumpfeigentum: verweigert / Rettungspriorität: nachrangig zu insured receiver state, Quarantäne-Handshake und claim value.
 
 ## Audio
 
-DE LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Der Carrier kam nicht für dich. Er kam für einen Claim mit deinem Namen daran.
 
 ## Field Note
 
-DE LOC HOLD: Use this on the first contract or carrier-status screen.
+Für den ersten Carrier-Statusbildschirm: Zugriff gewährt, Eigentum verweigert, Rettungspriorität bedingt, Lien aktiv.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/de_DE. -->

@@ -142,7 +142,7 @@ namespace Hecton8.Graphics.Culling
             }
 
             s_active = this;
-            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             if (_dataVault != null)
                 EnsureInitialized(_dataVault);
@@ -747,7 +747,7 @@ namespace Hecton8.Graphics.Culling
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
             {
-                _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+                CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
             }
         }
 
@@ -1351,9 +1351,19 @@ namespace Hecton8.Graphics.Culling
         private float3 ResolveDirectionalLight()
         {
             ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
-            CelestialLightReadabilitySnapshot light = readModel != null
-                ? readModel.LightReadabilitySnapshot
-                : default;
+            CelestialLightReadabilitySnapshot light = default;
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                light = readModel.LightReadabilitySnapshot;
+            }
+            else
+            {
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _celestialLightReadModel;
+                if (IsCelestialLightReadModelUsable(readModel))
+                    light = readModel.LightReadabilitySnapshot;
+            }
+
             if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u &&
                 math.all(math.isfinite(light.SunDirection)) &&
                 math.lengthsq(light.SunDirection) > 0.000001f)
@@ -1365,6 +1375,29 @@ namespace Hecton8.Graphics.Culling
             if (!math.all(math.isfinite(value)) || math.lengthsq(value) < 0.000001f)
                 value = new float3(-0.35f, -0.72f, -0.25f);
             return math.normalizesafe(value, new float3(-0.35f, -0.72f, -0.25f));
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _celestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _celestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static float3 ResolveFiniteDirection(Vector3 value, float3 fallback)

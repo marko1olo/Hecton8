@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 im mittleren Tide-Orbit"
+title: "HECTON-8s mittelorbitale Gezeitenrolle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 im mittleren Tide-Orbit
+# HECTON-8s mittelorbitale Gezeitenrolle
 
-HECTON-8 ist der Mond, auf dem Aegirs Orbitalmathematik persönlich wird. Er ist weit genug von der schlimmsten inneren Strahlung entfernt, nah genug für lebendige Tiden und wertvoll genug für Deep Reach, unter Druck zu bauen.
+HECTON-8 ist der Mond, auf dem Aegirs Orbitalmathematik persönlich wird. Er liegt weit genug von der schlimmsten inneren Strahlung entfernt für lange Operationen, nah genug für Gezeiten, die den Ozean in Bewegung halten, und wertvoll genug, dass Deep Reach unter Druck baute. Dieselbe Position macht Rettung schmutzig. Gezeitenphase, Trägermasse, Sturmrauschen und Rechtsgewahrsam treffen über dem Anzug als bewegliche Decke zusammen.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Er sitzt in dem Teil der Leiter, wo Arbeit möglich aussieht, bis das Wasser zu 
 
 ## Field Note
 
-HECTON-8 zahlt, weil Druck, Tide und Haftung dort überlappen.
+HECTON-8 zahlt, weil Druck, Gezeit und Haftung in derselben Wassersäule überlappen.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/de_DE. -->

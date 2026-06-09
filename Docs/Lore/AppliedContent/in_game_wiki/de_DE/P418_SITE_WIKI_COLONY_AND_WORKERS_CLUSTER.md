@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kolonie und Arbeiter
 
-Geborgener worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags und vent-forge rejects bewahren Namen durch Arbeit.
+Arbeiter-Dossier-Hub: HECTON-8 erinnert Menschen durch shift boards, maintenance debts, pressure calls, handoff marks und Aufzeichnungen, die Deep Reach zu Verlustkategorien glätten wollte.
 
 ## Scanner
 
-WORKER INDEX // Fünf routengebundene Namensakten. Pump, relay, brine, triage, forge. Tag chain vor Hardwareentnahme bewahren.
+WORKER INDEX // Pump boards, relay trays, brine stamps, triage tags und vent-forge rejects bewahren Menschen als route evidence.
 
 ## Terminal
 
-KEELMARK LOSS DESK: name tags bewahren, wenn sie mit route, claim, custody oder pressure work verbunden sind.
+KEELMARK LOSS DESK: name tags behalten, wenn sie pressure decision, delay, custody claim oder repair route erklären.
 
 ## Audio
 
-Mara Venn, pump chief: Wenn die Pumpe sauber singt, protokolliere es. Wenn sie aufhört zu singen, lauf nach oben.
+Ein Name auf einer pump card ist kein Schmuck. Er erklärt, warum die Tür offen blieb.
 
 ## Field Note
 
-Keine Familie. Arbeit. Ein Name auf einer pump card erklärt, warum eine Tür offen blieb.
+Kein Familienköder. Arbeit, Druck, Unterschriften, Fehler. So streiten die Toten weiter.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/de_DE. -->

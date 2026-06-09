@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Blackout Window Signal Decay"
+title: "Dégradation du signal en fenêtre noire"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Blackout Window Signal Decay
+# Dégradation du signal en fenêtre noire
 
-FR LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+La dégradation du signal donne une forme physique à la rareté des communications. Le joueur reçoit de rares fenêtres, des fragments de paquets coupés et des relais acoustiques sous-marins plutôt qu'un guidage orbital constant.
 
 ## Scanner
 
-FR LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Fenêtre de signal en effondrement : colonne de relais noyée, ombre d'Aegir, géométrie de transporteur périmée, file juridique toujours en relance.
 
 ## Terminal
 
-FR LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW : perte d'uplink au-dessus de la tolérance. Canal vocal suspendu. Des fragments texte peuvent arriver par les noeuds acoustiques réparés de la colonne. La géométrie du transporteur orbital sera rafraîchie après dissipation de l'ombre magnétique d'Aegir. Les minuteurs automatisés de privilège et de garde continuent sans contact opérateur.
 
 ## Audio
 
-FR LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Le ciel se tait d'abord. Les avis de dette continuent de frapper.
 
 ## Field Note
 
-FR LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Lier les fenêtres noires au rythme des routes : moins de voix, plus de lecture de fragments, plus de valeur pour les relais réparés et les balises locales.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/fr_FR. -->

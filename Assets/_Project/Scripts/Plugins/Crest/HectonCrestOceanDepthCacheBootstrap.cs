@@ -53,7 +53,7 @@ namespace Hecton8.World
         private const float WaterLevelChangeThreshold = 0.05f;
         private const float MinimumCameraHeightAboveSeaLevel = 8f;
         private const float MinimumCoverageMeters = 256f;
-        private const float DefaultWaterLevel = 14.02f;
+        private const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const int DefaultDepthCacheResolution = 512;
         private const int DefaultCaptureLayerMask = 0;
         private const int RuntimeCameraBufferSize = 8;
@@ -843,8 +843,7 @@ namespace Hecton8.World
         private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
         {
             if (IsFinite(candidateWaterLevel) &&
-                math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;

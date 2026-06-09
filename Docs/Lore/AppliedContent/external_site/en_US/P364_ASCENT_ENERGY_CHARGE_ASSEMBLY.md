@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Ascent Energy Charge Assembly
 
-Ascent Energy Charge Assembly ties resource economy to narrative consequence: blue debt and vent-forged hardware decide escape reliability, evidence custody and compromise.
+The Ascent Energy Charge Assembly is where HECTON-8's salvage economy stops being abstract. The same pressure-grown material that buys carrier attention can also become the impulse charge that lifts a capsule out of the sea.
 
-## Scanner
+That trade is dangerous because blue debt is not magic fuel. It is Xenon-Omega process material with pressure history, contamination state, containment behavior and legal value. A vent-forged heat cell can provide controlled energy. A raw sample can shatter, poison the custody record, or turn a valid recovery into disputed cargo.
 
-Energy cradle scored by pressure pulse. A cheap charge makes a clean coffin.
-
-## Terminal
-
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator and custody stamp required. Raw fuel rejected. Uncertified blue debt fractures under launch impulse and voids recovery claim.
-
-## Audio
-
-You can sell the lift or ride it. Not both.
-
-## Field Note
-
-Every gram in the cradle is escape, evidence or blue-debt payout. The capsule does not forgive greed.
+A complete charge therefore contains hardware and claim language in the same cradle: heat cell, insulator, impulse sleeve, mass record and signed custody stamp. Keep it intact and the capsule has certified lift. Break it for payout and the ocean may still let the engine fire, but nobody above it has to accept what arrives.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/en_US. -->

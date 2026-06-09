@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Recipe Tier Pressure Bands"
+title: "Drukbanden voor receptniveaus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Recipe Tier Pressure Bands
+# Drukbanden voor receptniveaus
 
-NL LOC HOLD: Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
+Drukbanden voor receptniveaus vormen de grammatica achter crafting in HECTON-8. De kolonie scheidde recepten niet op gemak, maar op wat druk met een onderdeel zou doen nadat de speler de werkbank had verlaten. Tier 0 houdt de speler in de ondiepte in leven met patches, handafdichtingen en berging die eerlijk faalt. Tier 1 hoort bij geclassificeerde reparaties: pompkameronderdelen, oude industriële voorraad en certificatiemerken die bewijzen dat het object onder belasting moest werken. Tier 2 gaat naar drukhardware, waar pekelspoeling, schachtkuur en akoestisch bewijs bepalen of een component veilig is of alleen de vorm van een component heeft. Tier 3 hoort bij opstijging, Atlas-interfaces en abyssale bevoegdheid: het recept heeft materialen nodig, maar ook ontvangerstatus, wettelijke bewaring en insluitingsbewijs. Zo blijft crafting verbonden aan routelogica. De vraag is nooit alleen wat je bezit. Het is waar het is geweest, welke druk het overleeft en wie het resultaat accepteert.
 
 ## Scanner
 
-NL LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Een HECTON-8-recept is een diepteargument, geen boodschappenlijst. Het onderdeel telt pas als het de drukband overleeft die het claimt.
 
 ## Terminal
 
-NL LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+RECEPTBANDEN / T0 overlevingspatch: ondiepe berging, handafdichting, geen bewaring / T1 geclassificeerde reparatie: industriële plankdelen, pompkamercertificaat / T2 drukhardware: pekelspoeling, schachtkuur, akoestisch bewijs / T3 opstijging of Atlas: abyssale bron, wettelijke ontvanger, insluitingsbewijs.
 
 ## Audio
 
-NL LOC HOLD: A recipe is a depth permission form with bolts.
+Een recept is een dieptevergunning met bouten.
 
 ## Field Note
 
-NL LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+Receptniveau moet passen bij drukclassificatie, routekosten en bewaarrisico. Een goedkope bout in de verkeerde band is niet goedkoop; het is een toekomstig lek.
 
 <!-- In-Game Wiki; generated from P171_RECIPE_TIER_PRESSURE_BANDS/nl_NL. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Ending Payout Data Boundary"
+title: "גבול נתוני תשלום סוף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Ending Payout Data Boundary
+# גבול נתוני תשלום סוף
 
-HE LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+סיומי HECTON-8 רושמים מי קיבל את הראיה, איזו משמורת השיג, מה שילם ואיזו עלות נשארה לא פתורה. מספר יכול לסגור שורת חוזה. הוא לא יכול לסגור את האוקיינוס.
 
 ## Scanner
 
-HE LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+שורת סוף קושרת מקלט, משמורת, מצב ראיות, תשלום ותוצאה לא פתורה.
 
 ## Terminal
 
-HE LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: שורות דורשות מסלול payload, מקלט, מצב ראיות, תשלום חומרי, תוצאה משפטית, עיכוב הסגר ועלות לא פתורה. קרדיטים אינם סוגרים זירת פשע.
 
 ## Audio
 
-HE LOC HOLD: Credits do not close a crime scene.
+קרדיטים אינם סוגרים זירת פשע.
 
 ## Field Note
 
-HE LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+ערך קרדיטים, עיכוב הסגר ודגלי תיק נרשמים רק אחרי שמקלט ומצב ראיות ברורים.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/he_IL. -->

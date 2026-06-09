@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Payload Authority Last Check"
+title: "ペイロード権限最終確認"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Payload Authority Last Check
+# ペイロード権限最終確認
 
-JA LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+HECTON-8 の結末は、プレイヤーが生き残るかだけではない。証拠を誰が受け取り、証人が去ったあとその受信者が海に何を許されるかだ。
 
 ## Scanner
 
-JA LOC HOLD: Payload check: receiver changes meaning, not only reward.
+ペイロード確認: 受信先選択は報酬だけでなく所有権を変える。
 
 ## Terminal
 
-JA LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: 受信先、質量、証拠保管、生態系への影響、帰還後責任を選択。受信先選択は、出発後に誰が証拠で行動できるかを定義する。
 
 ## Audio
 
-JA LOC HOLD: What leaves will own what remains.
+外へ出るものが、残るものを所有する。
 
 ## Field Note
 
-JA LOC HOLD: Use immediately before irreversible ending route selection.
+不可逆のエンディングルート選択の直前に使う。
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/ja_JP. -->

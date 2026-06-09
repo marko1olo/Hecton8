@@ -408,6 +408,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5811674931265784657}
   - component: {fileID: 1881482921440711839}
+  - component: {fileID: 926184733105418083}
   - component: {fileID: 8503459892740325226}
   - component: {fileID: 631104235710018481}
   - component: {fileID: 631104235710018482}
@@ -506,6 +507,30 @@ MonoBehaviour:
     _destroyResourcesInOnDisable: 0
     _forceBatchMode: 0
     _forceNoGPU: 0
+--- !u!114 &926184733105418083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ac91634ead74dee870905940cd8a94c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldWaterLevelCalibrationAuthoring
+  authoringSeed: 880031
+  runtimeSeed: 0
+  calibrationArtifactRelativePath: Docs/GeneratedAssets/Terrain/MacroGeology/WorldWaterLevelCalibration_Extent30000m_Res192.json
+  calibratedWaterLevelY: 14.02
+  fallbackWaterLevelY: 14.02
+  calibrationTravelMeters: 1000
+  oceanRenderer: {fileID: 1881482921440711839}
+  crestRootOverride: {fileID: 0}
+  applyOnEnable: 1
+  applyInEditMode: 1
+  _debugResolvedWaterLevelY: 14.02
+  _debugCalibrationFlags: 0
 --- !u!114 &8503459892740325226
 MonoBehaviour:
   m_ObjectHideFlags: 0

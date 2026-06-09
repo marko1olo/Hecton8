@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Payload Sell Coordinates Receiver Protocol
 
-The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+The coordinate sale protocol treats HECTON-8 as recoverable property. It converts the final payload into a receiver packet Deep Reach can use: basin vector, confidence grid, proof digest and salvage access class. The sender receives money and lien relief. Deep Reach receives the approach map and a cleaner path back into the claim.
 
 ## Scanner
 
-Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Coordinate sale route armed. Basin vector, confidence map and proof digest route to Deep Reach Recovery Compliance.
 
 ## Terminal
 
-PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+PAYLOAD RECEIVER // COORDINATE SALE. Receiver: Deep Reach Recovery Compliance. Transmit basin vector, confidence grid, XO proof digest, salvage access class. Return payout receipt, lien reduction, recovery priority stamp. Transfer access map on receipt lock.
 
 ## Audio
 
-This is the cleanest way out if you stop reading after the amount.
+Payout cleared. Map transferred. Worker ledger still open.
 
 ## Field Note
 
-Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Marauder note: if the first line is the amount, read the second. The second line is access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/en_US. -->

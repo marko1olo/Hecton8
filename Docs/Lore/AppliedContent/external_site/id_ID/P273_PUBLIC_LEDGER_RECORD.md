@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Public Ledger Record"
+title: "Catatan Ledger Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Public Ledger Record
+# Catatan Ledger Publik
 
-ID LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Catatan akhir ini melacak saat bukti keluar dari kustodi pribadi. Yang penting adalah kolom tanda terima: siapa memberi cap pada paket, koordinat mana yang disamarkan, tingkat bukti apa yang diterima, dan berapa lama Deep Reach punya waktu sebelum paket balasan.
 
 ## Scanner
 
-ID LOC HOLD: Witness hash escaped claimant custody.
+CATATAN LEDGER PUBLIK // Hash saksi keluar dari kustodi pribadi lewat rute paket Tau/Luyten. Tingkat bukti publik ditetapkan; jeda respons Deep Reach dilampirkan.
 
 ## Terminal
 
-ID LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+CATATAN AKHIR / LEDGER PUBLIK
+Rute: paket Tau/Luyten tertunda.
+Payload: hash saksi, strip kustodi, tingkat bukti dengan koordinat disamarkan, cap waktu penerima.
+Kendali setelah relai: dilepas.
+Respons Deep Reach: paket balasan ditunda oleh tanda terima publik.
+Kehilangan diketahui: pengirim tidak memilih pembaca pertama atau rantai pengajuan berikutnya.
 
 ## Audio
 
-ID LOC HOLD: Truth can leave your hands and still matter.
+Ledger memberi cap. Kamu tidak memilih pembaca pertama.
 
 ## Field Note
 
-ID LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Jika tanda terimanya publik, berkas bertahan karena lepas dari tanganmu. Periksa redaksi koordinat sebelum merayakan cap.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/id_ID. -->

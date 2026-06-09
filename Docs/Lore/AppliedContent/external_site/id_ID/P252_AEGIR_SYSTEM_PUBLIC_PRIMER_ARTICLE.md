@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Primer Publik Sistem Aegir
 
-Aegir adalah sistem inang di sekitar HECTON-8, dan ia penting dalam setiap arti praktis. Tangga bulannya membentuk pasang surut dan jendela pendekatan. Geometri relay-nya membuat bukti bergerak lebih cepat daripada massa penyelamatan. Orbit pengangkutnya membuat Black Keel hadir, tetapi tidak langsung membantu. Tidak ada mesin ajaib, tidak ada penyelamatan ansible, dan tidak ada tombol darurat bersih. Versi publik Aegir harus terasa cukup terjangkau untuk menjadi kejam: terhubung, terjadwal, diberi harga, dan tetap terlalu lambat bagi orang yang terperangkap di bawah.
+Aegir penting karena membuat langit praktis. Sistem di sekitar HECTON-8 bukan peta bintang dekoratif; ia mesin bulan, jendela, cuaca radiasi, bayangan relai, bahaya ice-scatter, dan geometri transfer carrier. Pesan dapat keluar dalam jendela sinyal sempit sementara tubuh tetap mustahil dipulihkan. Sampel bisa berharga dan tetap melewatkan timing karantina. Black Keel bisa hadir di sistem namun tidak berada di atasmu seperti yang diinginkan penyelam takut.
 
-## Scanner
+Begitulah HECTON-8 tetap hard-sci-fi tanpa menjadi PR sekolah. Pemain tidak perlu kuliah mekanika orbit untuk merasakan Aegir. Mereka merasakannya saat sinyal lolos tapi lift tidak, saat noise badai merusak relai, saat bayangan bulan mengubah uplink aman menjadi slot mati, saat jendela pasang menentukan apakah rute canyon dapat selamat.
 
-Aegir bukan latar. Ia jadwal dengan gravitasi, radiasi, pasang surut, jeda relay, dan jendela massa mahal.
-
-## Terminal
-
-TINGKAT ARTIKEL PUBLIK / SISTEM AEGIR
-diizinkan: sistem inang, peran bulan HECTON-8, jendela pasang, geometri relay, jeda pengangkut, bahasa rute tanpa FTL
-dikunci: routing payload final, prioritas receiver tersembunyi, kunci ephemeris akhir yang tepat
-catatan editor: jelaskan jeda tanpa membuat latar terasa tak terjangkau.
-
-## Audio
-
-Sistem ini cukup dekat untuk menjawab. Itulah bagian kejamnya. Ia tidak cukup dekat untuk mengangkat tubuh sesuai perintah.
-
-## Field Note
-
-Jangan hanya menyebut Aegir jauh lalu berhenti. Sebutkan apa yang dilakukan jarak: memberi harga pada pengangkatan, menunda tubuh, dan membiarkan bukti mendahului penyelamatan.
+Aegir juga alasan frontier tidak kosong. Bulan lain membawa peran relai, klaim dingin, beacon mati, bekas lalu lintas, dan tekanan karantina. HECTON-8 adalah krisis yang dimainkan, bukan seluruh sistem. Tangga yang lebih luas membuat penyelamatan mahal, salvage legal, bukti terlambat, dan tiap jendela pulang terasa diperoleh.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/id_ID. -->

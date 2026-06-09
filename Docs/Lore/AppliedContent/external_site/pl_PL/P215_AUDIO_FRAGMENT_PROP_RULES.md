@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Reguły rekwizytów fragmentów audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Reguły rekwizytów fragmentów audio
 
-PL LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Reguły rekwizytów fragmentów audio definiują, jak HECTON-8 używa głosu bez zalewania świata monologami. Każdy fragment audio potrzebuje fizycznego źródła, stanu uszkodzonego transkryptu, znacznika czasu i sprzeczności. Głos nie powinien zastępować dowodu środowiskowego; powinien go wyostrzać, zmuszając pomieszczenia, rekwizyty i zapisy tras do wspólnego mówienia.
 
 ## Scanner
 
-PL LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Głos jest kosztowny. Musi dowodzić czegoś, co pomieszczenie może także dowieść metalem, wodą, znacznikiem czasu albo uszkodzeniem.
 
 ## Terminal
 
-PL LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: żadnych wolno wiszących monologów. Głos należy do paska hydrofonu, rejestratora skafandra, cache terminala, słuchawki utrzymania albo fragmentu czarnej skrzynki. Każda odtwarzalna linia musi mieć źródło, stan uszkodzonego transkryptu, znacznik czasu trasy i jedną sprzeczność, którą gracz może obejrzeć.
 
 ## Audio
 
-PL LOC HOLD: If the room cannot prove me, cut the line.
+Jeśli pomieszczenie nie może mnie dowieść, wytnij linię.
 
 ## Field Note
 
-PL LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Fragmenty audio potrzebują rekwizytu źródłowego, uszkodzenia transkryptu, znacznika czasu trasy i jednej fizycznej sprzeczności.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/pl_PL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "عدة أدلة كاتدرائية مضخات وادي الملح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# عدة أدلة كاتدرائية مضخات وادي الملح
 
-AR LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+تعطي كاتدرائية المضخات للمستوى المتوسط وظيفة واضحة. على المشغل عبور الجسور، تثبيت جيب ملحي، قراءة زجاج الكثافة ومقارنة ساعة حجز المسار بدفتر طابور العمال. لا شيء من هذه الأشياء للزينة؛ كل واحد يغير إن كان التأخير يبدو طقسا أو إهمالا أو حماية مطالبة.
 
-## Scanner
-
-AR LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-AR LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-AR LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-AR LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+يبقى الدليل أقوى عندما يحترم المحيط. المد العظيم كسر الجدران وحرك الماء. الغرفة لا تنكر ذلك. إنها تعرض ما فعله الجدول حول الفيضان: هامش مقبول، بدء مضخة متأخر، مسار محجوز، طابور مزدحم. يصبح المكان معلما لأن الآلة ما زالت تتذكر ترتيب العمل.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ar_SA. -->

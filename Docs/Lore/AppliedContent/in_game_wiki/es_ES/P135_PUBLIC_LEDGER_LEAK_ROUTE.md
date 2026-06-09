@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fuga al registro público"
+title: "Filtración al registro público"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fuga al registro público
+# Filtración al registro público
 
-La Fuga al registro público es un final de verdad parcial. El jugador envía pruebas suficientes para dificultar el borrado, pero no suficientes para controlar Atlas, la represalia de Deep Reach o lo que las instituciones públicas harán con el paquete.
+La filtración al registro público es una ruta de verdad parcial. El paquete sale por una estrecha ventana relay con suficiente witness hash para encarecer la negación y demasiados huecos para ser seguro. Deep Reach ya no puede borrar simplemente la reclamación, pero nadie en HECTON-8 decide quién usará después la herida. Aseguradoras, tribunales cívicos, dominios rivales, pools Marauder y oficinas corporativas leerán la misma prueba de formas distintas. La publicación salva la verdad de un entierro limpio. No vuelve amable a la verdad.
 
 ## Scanner
 
-Witness hash aceptado. La verdad parcial sale antes que la custody completa.
+Witness hash aceptado. La verdad parcial sale antes de la custody completa.
 
 ## Terminal
 
-RUTA DE REGISTRO PÚBLICO: packet notary de Tau Ceti aceptó witness hash; payload incompleto; desafío claimant probable; ventana de represalia Deep Reach empieza tras acuse relay.
+RUTA DE REGISTRO PÚBLICO: Tau Ceti packet notary aceptó witness hash; payload incompleto; desafío claimant probable; ventana de represalia Deep Reach empieza tras acuse relay.
 
 ## Audio
 
-La verdad sale primero. Quizá no te guste quién la lee.
+La verdad sale primero. El control no sale con ella.
 
 ## Field Note
 

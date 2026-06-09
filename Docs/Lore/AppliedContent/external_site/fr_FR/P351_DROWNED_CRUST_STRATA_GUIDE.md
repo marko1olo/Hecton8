@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guide des strates de croûte noyée
 
-Le Guide des strates de croûte noyée donne au fond marin de HECTON-8 une impression de construit brisé : terrain, salvage routes et échantillons minéraux viennent tous de la même histoire de pression stratifiée.
+La croûte de HECTON-8 ne se comporte pas comme un fond marin intact. La colonie l'a coupée, chauffée, scellée, chargée de verre de pression, puis abandonnée à un océan qui a continué de travailler après l'arrêt des paies. Un même mur peut porter des traces d'outil d'un forage de service, une corniche pâle d'effondrement glaciaire, une bande minérale vert-noir née d'un suintement, et une couture fine où Atlas a plus tard trouvé un passage.
 
-## Scanner
-
-Les strates noyées exposent anciennes marques de coupe, coutures de pressure-glass et bandes minérales qui ne cèdent jamais deux fois dans le même sens.
-
-## Terminal
-
-FIELD GUIDE : la croûte noyée de HECTON-8 est roche de colonie empilée, mémoire de glace effondrée, pressure glass et extraction scars sous brine mouvante. Les lignes de fracture priment sur les surfaces propres.
-
-## Audio
-
-La carte n'est pas le terrain. C'est une pile de noyades.
-
-## Field Note
-
-Si une bande sonne creux, ne fais pas confiance à la face plane. Marque la fracture, prends l'échantillon, laisse le mur tenir.
+Pour une équipe salvage, les strates sont de la navigation. Une face plate peut sonner creux. Un beau bord minéral peut être la seule chose qui tienne encore un canyon de service. Bien lire la route, c'est prendre l'échantillon sans apprendre au mur à tomber. La croûte noyée compte donc sur le terrain : le fond n'est pas un décor. C'est l'archive, la route, et parfois le piège.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/fr_FR. -->

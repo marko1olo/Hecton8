@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sanitized Accident Reply Window"
+title: "نافذة رد الحادث المنقحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Sanitized Accident Reply Window
+# نافذة رد الحادث المنقحة
 
-AR LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+تظهر نافذة رد الحادث المنقحة كيف يكذب Deep Reach قبل أن يبدأ أحد بالصراخ. الكذبة إجرائية ومألوفة وقديمة: خط خسارة عام يصطدم بدليل مادي. يعمل رعب الشركات في HECTON-8 بأقوى صوره عندما تكون الإجابة الرسمية أنظف من المكان الذي أنتجها.
 
 ## Scanner
 
-AR LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+نافذة الرد مفتوحة. يكرر Deep Reach انهيار العاصفة والفشل الجيولوجي وفشل الإخلاء الذاتي كأن الغرفة لا تزال جافة.
 
 ## Terminal
 
-AR LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: مد عاصفة، انهيار جيولوجي، فشل إخلاء ذاتي / RESTRICTED ADVICE: لا ترسل Atlas continuity غير موثقة أو body-category disputes أو basin-coordinate claims.
 
 ## Audio
 
-AR LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+أجابوا الغرفة التي كان يفترض أن تجدها، لا الغرفة التي تقف فيها.
 
 ## Field Note
 
-AR LOC HOLD: Place after first physical contradiction, not before.
+توضع بعد أول تناقض مادي: يجب أن يملك اللاعب دليلا مبللا قبل سماع النص العام القديم.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/ar_SA. -->

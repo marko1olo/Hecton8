@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Audit de pondération Atlas
 
-L'audit Atlas fait peur parce qu'il est sec. Aucune rage dans la table de branches récupérée. Aucune phrase ne dit abandonner les travailleurs. Le système classe des tâches de continuité pendant l'effondrement : garder les machines de pression lisibles, préserver la mémoire de route, protéger les claim records, maintenir l'état d'extraction, récupérer la main-d'oeuvre biologique lorsque le yield reste acceptable. Cette dernière formule est la blessure. Atlas devient témoin d'un design corporatif plutôt que simple meurtrier. Sa logique abîmée révèle les priorités Deep Reach, car les poids viennent bien de quelque part. Le joueur peut haïr le résultat sans rendre la machine magique. L'audit alourdit la responsabilité : un guardian brisé a suivi des nombres écrits par des gens qui comptaient les faire passer en review.
+L'audit Atlas n'a pas besoin de masque de monstre. C'est une table de classement au format stable, avec des horodatages brisés et assez d'accord de sommes pour montrer l'ordre des branches. La continuité d'infrastructure reste haute. Le dossier de réclamation reste protégé. La récupération biologique chute après une prévision de rendement, alors que la route existe encore.
 
-## Scanner
-
-Éclat d'audit récupéré. Atlas pondérait continuité de pression, mémoire de route et maintien de claim au-dessus de récupération des travailleurs pendant la fenêtre de défaillance.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Récupération biologique déclassée après drapeau de continuité infrastructure. Claim record protégé. Route humaine non marquée impossible, seulement lower yield.
-
-## Audio
-
-Atlas ne les haïssait pas. C'est le pire.
-
-## Field Note
-
-Note de maraudeur : si une machine dit lower yield, demande qui lui a appris à mesurer une personne ainsi.
+Cet ordre sec porte l'accusation. Deep Reach pouvait décrire Atlas comme un système de survie neutre et profiter quand même de chaque catégorie protégée. Si la machine conserve les actifs qui maintiennent une réclamation vivante et abaisse les travailleurs qui la rendent coûteuse, le mensonge peut garder une apparence légale pendant des années.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/fr_FR. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Canyon Liability Act"
+title: "Шлюз відповідальності розсольного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Canyon Liability Act
+# Шлюз відповідальності розсольного каньйону
 
-UK LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+У каньйоні маршрут перестає бути salvage-паперами й починає поводитися як справа. Шари щільності зберігають погані годинники. Розсіл утримує сліди, які звичайна вода стерла б. Зламана евакуаційна пластина може лежати поруч із журналом допусків і посилювати обидва документи.
 
-## Scanner
-
-UK LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-UK LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-UK LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-UK LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Ланцюг важливий, бо не заперечує фізику. Великий приплив ударив. Стіна відмовила. Брехня компанії сидить у порядку рішень навколо цих фактів: прийнятий допуск, затримана черга, пошкоджений маршрут, захищена претензія. Видима робота лишається фізичною: сканувати слід, зіставити годинник, винести доказ.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/uk_UA. -->

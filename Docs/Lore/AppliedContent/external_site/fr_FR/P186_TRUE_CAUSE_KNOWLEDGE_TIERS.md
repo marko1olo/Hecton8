@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Niveaux de connaissance de la cause réelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Niveaux de connaissance de la cause réelle
 
-FR LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+Les niveaux de connaissance de la cause réelle cartographient le savoir corporatif derrière HECTON-8. L'article sépare les preuves par bureau non pour excuser Deep Reach, mais pour rendre le crime plus crédible : données océaniques, pondération IA, droit d'évacuation, conversion assurantielle et conformité de récupération détenaient des morceaux différents de la même chaîne fatale. L'horreur n'est pas un ordre caché disant « tuer la colonie ». L'horreur est une compagnie construite pour que chaque bureau voie une vérité partielle, protège sa métrique et transmette le reste moral en aval jusqu'à ce que le secours devienne un événement de responsabilité.
 
 ## Scanner
 
-FR LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach connaissait la vérité par fragments : marges de marée dans un bureau, pondération Atlas dans un autre, délai d'évacuation et conversion des réclamations ailleurs.
 
 ## Terminal
 
-FR LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS : équipes marée signalent perte de marge ; Risk accepte exposition de queue ; Atlas Safety pondère continuité au-dessus de l'évacuation ; conseil retient les libérations ; Keelmark convertit les morts en perte récupérable ; Recovery Compliance demande la charge avant divulgation.
 
 ## Audio
 
-FR LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Personne n'a dû écrire « laissez-les mourir ». Le tableau savait déjà comment faire.
 
 ## Field Note
 
-FR LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+L'ignorance distribuée n'était pas l'innocence. C'était une architecture.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/fr_FR. -->

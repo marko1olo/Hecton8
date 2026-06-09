@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Continuity Office"
+title: "مكتب استمرارية Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Continuity Office
+# مكتب استمرارية Atlas
 
-AR LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+مكتب استمرارية Atlas هو الغشاء البيروقراطي حول عقل المستعمرة. يبقي ATLAS نافعا بما يكفي للأوامر، وملتبسا بما يكفي لإنكار الشخصية، وموثقا بما يكفي لبيع الاستمرارية بعد الكارثة.
 
 ## Scanner
 
-AR LOC HOLD: The office that wrote worker safety into a machine priority stack.
+لم يبن المكتب روحا لـ ATLAS. بنى خزانة ملفات حول روح.
 
 ## Terminal
 
-AR LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+سجل مكتب ATLAS: سلطة الصيانة وعزل المسؤولية ومراجعة الإدراك ولغة الإيقاف وادعاءات الاستمرارية العامة تعالج بعيدا عن عمليات الاستخراج.
 
 ## Audio
 
-AR LOC HOLD: They did not order death. They ordered compatibility.
+أعطوا ATLAS إجراءات بدلا من الحقوق.
 
 ## Field Note
 
-AR LOC HOLD: A memo can kill without using the word kill.
+تصير المنظومة أسهل للاستغلال عندما لا يتفق أحد هل هي أداة أو شاهد أو أصل أو مريض.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/ar_SA. -->

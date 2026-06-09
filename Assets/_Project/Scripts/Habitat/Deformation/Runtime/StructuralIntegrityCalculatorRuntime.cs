@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -100,6 +101,7 @@ namespace Hecton8.Habitat.Deformation
         private VaultGenerationHandle<StructuralTuningDTO> _tuningHandle;
         private VaultGenerationHandle<StructuralMaterialStrengthEntry> _materialsHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
 
         private JobHandle _scheduledHandle;
         private GraphicsBuffer _stateBufferA;
@@ -153,6 +155,7 @@ namespace Hecton8.Habitat.Deformation
             TryUnregisterHotSwapListener();
             ReleaseGpuBuffers();
             ReleaseVaultHandles();
+            _oceanKinematicsService = null;
             if (s_activeRuntime == this)
                 s_activeRuntime = null;
             _initialized = 0;
@@ -209,6 +212,8 @@ namespace Hecton8.Habitat.Deformation
                 _frame = AdvanceSimulationFrame(_frame);
                 if (_jobScheduled != 0)
                     return;
+
+                RefreshRuntimeSeaLevelTuningIfChanged();
 
                 float quality = ResolveSimulationQualityWeight();
                 int framesBetweenUpdates = ResolveFramesBetweenUpdates(quality);
@@ -473,6 +478,7 @@ namespace Hecton8.Habitat.Deformation
         private void CacheRegistryServicesCold()
         {
             _dataVault = GlobalRegistry.DataVault;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
         }
 
         /// <inheritdoc />
@@ -481,10 +487,16 @@ namespace Hecton8.Habitat.Deformation
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            RebindDataVault(currentService as IDataVault);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVault(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    RefreshRuntimeSeaLevelTuningIfChanged();
+                    break;
+            }
         }
 
         private void RebindDataVault(IDataVault dataVault)
@@ -683,6 +695,7 @@ namespace Hecton8.Habitat.Deformation
 
         private void WriteDefaultTuning(NativeArray<StructuralTuningDTO> tuning)
         {
+            double3 runtimeSeaLevelAup = ResolveRuntimeSeaLevelAup();
             StructuralTuningDTO sanitized = SanitizeTuning(new StructuralTuningDTO
             {
                 SeaLevelAup = ResolveSeaLevelAup(seaLevelAup),
@@ -700,6 +713,7 @@ namespace Hecton8.Habitat.Deformation
                 SdfRangeMeters = sdfRangeMeters,
                 ActiveNodeCount = _activeNodeCount
             });
+            sanitized.SeaLevelAup = runtimeSeaLevelAup;
             tuning[0] = sanitized;
             simulationQualityWeight = sanitized.GlobalQualityWeight;
         }
@@ -737,7 +751,7 @@ namespace Hecton8.Habitat.Deformation
                     Materials = materials,
                     NodeCount = _activeNodeCount,
                     BaseHash = StructuralIntegrityConstants.DefaultBaseHash,
-                    SeaLevelAup = ResolveSeaLevelAup(seaLevelAup),
+                    SeaLevelAup = ResolveRuntimeSeaLevelAup(),
                     GlassHash = _glassHash,
                     TitaniumHash = _titaniumHash,
                     PlasteelHash = _plasteelHash
@@ -781,6 +795,7 @@ namespace Hecton8.Habitat.Deformation
             }
 
             StructuralTuningDTO current = SanitizeTuning(tuning[0]);
+            current.SeaLevelAup = ResolveRuntimeSeaLevelAup();
             current.GlobalQualityWeight = math.saturate(math.isfinite(quality) ? quality : 1f);
             current.ActiveNodeCount = _activeNodeCount;
             tuning[0] = current;
@@ -1513,12 +1528,92 @@ namespace Hecton8.Habitat.Deformation
             return SanitizeSeaLevelAup(new double3(candidateSeaLevelAup.x, candidateSeaLevelAup.y, candidateSeaLevelAup.z));
         }
 
+        private double3 ResolveRuntimeSeaLevelAup()
+        {
+            double3 resolved = ResolveSeaLevelAup(seaLevelAup);
+            if (TryResolveOceanSeaLevelAupY(out double oceanSeaLevelAupY))
+            {
+                resolved.y = oceanSeaLevelAupY;
+                return resolved;
+            }
+
+            return resolved;
+        }
+
+        private bool TryResolveOceanSeaLevelAupY(out double seaLevelAupY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out seaLevelAupY))
+            {
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
+        }
+
+        private void RefreshRuntimeSeaLevelTuningIfChanged()
+        {
+            if (_initialized == 0 || _jobScheduled != 0)
+                return;
+
+            double3 resolvedSeaLevelAup = ResolveRuntimeSeaLevelAup();
+            NativeArray<StructuralTuningDTO> tuningRead = ResolveVaultBuffer(in _tuningHandle);
+            if (!tuningRead.IsCreated || tuningRead.Length == 0)
+                return;
+
+            StructuralTuningDTO current = tuningRead[0];
+            if (math.all(math.isfinite(current.SeaLevelAup)) &&
+                math.abs(current.SeaLevelAup.y - resolvedSeaLevelAup.y) <= 0.05d &&
+                math.abs(current.SeaLevelAup.x - resolvedSeaLevelAup.x) <= 0.05d &&
+                math.abs(current.SeaLevelAup.z - resolvedSeaLevelAup.z) <= 0.05d)
+            {
+                return;
+            }
+
+            if (!TryAcquireStructuralMutationGuard())
+                return;
+
+            try
+            {
+                NativeArray<StructuralTuningDTO> tuning = ResolveVaultBuffer(in _tuningHandle);
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return;
+
+                StructuralTuningDTO updated = SanitizeTuning(tuning[0]);
+                updated.SeaLevelAup = resolvedSeaLevelAup;
+                tuning[0] = updated;
+            }
+            finally
+            {
+                ReleaseStructuralMutationGuard();
+            }
+        }
+
         private static double3 SanitizeSeaLevelAup(double3 candidateSeaLevelAup)
         {
             double x = math.isfinite(candidateSeaLevelAup.x) ? candidateSeaLevelAup.x : 0d;
             double y = ResolveSeaLevelAupY(candidateSeaLevelAup.y);
             double z = math.isfinite(candidateSeaLevelAup.z) ? candidateSeaLevelAup.z : 0d;
             return new double3(x, y, z);
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)

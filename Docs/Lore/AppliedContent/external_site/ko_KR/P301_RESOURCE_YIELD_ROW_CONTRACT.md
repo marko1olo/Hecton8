@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Resource Yield Data Boundary"
+title: "자원 산출 데이터 경계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Resource Yield Data Boundary
+# 자원 산출 데이터 경계
 
-KO LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+HECTON-8의 자원 가치는 라벨이 아니라 사슬이다. 표는 숫자를 소유하지만, fiction은 그 숫자가 존재하는 이유를 소유한다. 누가 샘플을 채취했는지, 어떤 압력에서였는지, 어떤 보관 도장이 있는지, 그 광맥을 경로가 얼마나 더 안전하게 벗길 수 있는지.
 
 ## Scanner
 
-KO LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+산출 행은 느슨한 가치를 거부한다. 등급, 압력대, 보관, 고갈, hash가 맞아야 한다.
 
 ## Terminal
 
-KO LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: packet hash, 자원 등급, 압력대, 보관 등급, 희귀도 곡선, 고갈 동작 없이는 어떤 숫자도 수락되지 않는다. 압력 이력이 없는 샘플은 가치가 아니라 증거다.
 
 ## Audio
 
-KO LOC HOLD: A sample without pressure history is not a value.
+압력 이력 없는 샘플은 가치가 아니다.
 
 ## Field Note
 
-KO LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+압력대, 보관 등급, 고갈 동작, packet hash가 일치할 때까지 산출 숫자는 임시다.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ko_KR. -->

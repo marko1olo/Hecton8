@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Public Ledger Aftershock Record"
+title: "公共账册余震记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Public Ledger Aftershock Record
+# 公共账册余震记录
 
-ZH LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+公共账册余震记录避免让真相变成干净的胜利按钮。公开打破抹除，但玩家失去对恐慌、利用、报复，以及陌生人会用证据建造什么的控制。
 
 ## Scanner
 
-ZH LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+账册镜像已接受。证据不再可移除；后果不再可操控。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK：证据已释放到 Deep Reach 监管之外。工人姓名、Atlas 矢量碎片和责任标签镜像至公共接收器。玩家对解释的权限终止。
 
 ## Audio
 
-ZH LOC HOLD: Truth left the room. It did not ask where to go next.
+真相离开了房间。它没有问下一站去哪。
 
 ## Field Note
 
-ZH LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+公共真相记录：镜像证据阻止抹除，但终止玩家对解释和报复的控制。
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/zh_CN. -->

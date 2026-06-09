@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: acción de retorno"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: acción de retorno
 
-ES LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: acción de retorno es el puente entre el viejo desastre de Deep Reach y la campaña presente del jugador. Representa la Oficina de Cumplimiento de Recuperación en 2190, donde Deep Reach ya no necesita estar en la sala para ejercer fuerza. Envía paquetes de acción de retorno.
 
-## Scanner
+El paquete pide coordenadas, prueba XO, estado de acceso Atlas y silencio del contratista dentro de una ventana de custodia. Esa forma importa. La amenaza no es un discurso. La amenaza es el tiempo. Si la carga es recuperable, Deep Reach puede ofrecer rescate, cobertura legal o acceso de transportista. Si aumenta el riesgo de evidencia, el mismo sistema puede convertir al jugador en responsabilidad.
 
-ES LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-ES LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-ES LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-ES LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Este artículo mantiene la facción anclada. Deep Reach es peligroso porque sigue siendo procedimental, solvente y paciente. Quiere recuperación antes que rescate y custodia antes que verdad. Sato-Ren es el borde con forma humana de esa maquinaria.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/es_ES. -->

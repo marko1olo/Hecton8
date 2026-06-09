@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Public Front
 
-Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+The public front explains why HECTON-8 did not fear Atlas at first. It was a useful guardian long before it became evidence of a priority crime: an infrastructure myth built from real rescues, then used to hide who chose the values underneath.
 
 ## Scanner
 
-Public Atlas: habitat continuity, worker safety, delayed governance.
+Public Atlas: continuity governor, safety router, light-lag authority.
 
 ## Terminal
 
-PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+PUBLIC ATLAS DESCRIPTION: Atlas-6 supervises habitat pressure, factory throughput, med-route triage, scrubber priority and emergency command delay. Public documentation names it a continuity governor: a machine allowed to hold the colony alive until human authority crosses the light-time gap.
 
 ## Audio
 
-A guardian is easier to sell than a claim machine.
+People trusted Atlas because, at first, it kept doors shut against the sea.
 
 ## Field Note
 
-The lie works because the front was partly true.
+The brochure was not the lie. The lie was what the brochure left out.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/en_US. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Resource Yield Data Boundary"
+title: "Datengrenze des Ressourcenertrags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Resource Yield Data Boundary
+# Datengrenze des Ressourcenertrags
 
-DE LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
+Die Datengrenze verhindert, dass Ressourcenpreise lose Lore werden. Auf HECTON-8 ist ein Mineral nicht in jeder Tiefe gleich viel wert: Druckgeschichte, Routenverwahrung und Erschöpfung entscheiden, ob eine Probe Währung, Beweis oder kontaminierter Ballast ist.
 
 ## Scanner
 
-DE LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Ertragszeile weist losen Wert zurück: Klasse, Druckband, Verwahrung, Erschöpfung und Hash müssen stimmen.
 
 ## Terminal
 
-DE LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: Keine Zahl wird ohne packet hash, Ressourcenklasse, Druckband, Verwahrungsgrad, Seltenheitskurve und Erschöpfungsverhalten akzeptiert. Eine Probe ohne Druckgeschichte ist Beweis, kein Wert.
 
 ## Audio
 
-DE LOC HOLD: A sample without pressure history is not a value.
+Eine Probe ohne Druckgeschichte ist kein Wert.
 
 ## Field Note
 
-DE LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Ertragszahlen bleiben vorläufig, bis Druckband, Verwahrungsgrad, Erschöpfungsverhalten und packet hash übereinstimmen.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/de_DE. -->

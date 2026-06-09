@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Resource Yield Data Boundary"
+title: "Límite de datos de rendimiento de recurso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Resource Yield Data Boundary
+# Límite de datos de rendimiento de recurso
 
-ES LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
+El límite impide que los precios de recursos sean lore suelto. En HECTON-8, un mineral no vale lo mismo a cualquier profundidad: historial de presión, custodia de ruta y agotamiento deciden si la muestra es moneda, prueba o lastre contaminado.
 
 ## Scanner
 
-ES LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+La fila de rendimiento rechaza valor suelto: clase, banda de presión, custodia, agotamiento y hash deben coincidir.
 
 ## Terminal
 
-ES LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: ningún número se acepta sin packet hash, clase de recurso, banda de presión, grado de custodia, curva de rareza y comportamiento de agotamiento. Una muestra sin historial de presión es evidencia, no valor.
 
 ## Audio
 
-ES LOC HOLD: A sample without pressure history is not a value.
+Una muestra sin historial de presión no tiene valor.
 
 ## Field Note
 
-ES LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Los números de yield siguen provisionales hasta que pressure band, custody grade, depletion behavior y packet hash coinciden.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/es_ES. -->

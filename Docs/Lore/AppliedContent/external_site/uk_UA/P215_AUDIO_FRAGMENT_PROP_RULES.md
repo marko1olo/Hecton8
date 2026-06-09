@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Правила реквізиту аудіофрагментів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Правила реквізиту аудіофрагментів
 
-UA LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Правила реквізиту аудіофрагментів визначають, як HECTON-8 використовує голос, не затоплюючи світ монологами. Кожному аудіофрагменту потрібні фізичне джерело, стан пошкодженої розшифровки, мітка часу й суперечність. Голос не має замінювати environmental evidence; він має загострювати її, змушуючи кімнати, предмети й маршрутні записи говорити разом.
 
 ## Scanner
 
-UA LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Голос дорогий. Він має доводити те, що кімната теж може довести металом, водою, часом або пошкодженням.
 
 ## Terminal
 
-UA LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: жодних монологів у повітрі. Голос належить гідрофонній стрічці, костюмному реєстратору, термінальному кешу, ремонтній слухавці або фрагменту чорної скриньки. Кожен відтворюваний рядок має мати джерело, стан пошкодженої розшифровки, маршрутну мітку часу й одну суперечність, яку гравець може оглянути.
 
 ## Audio
 
-UA LOC HOLD: If the room cannot prove me, cut the line.
+Якщо кімната не може мене довести, виріж рядок.
 
 ## Field Note
 
-UA LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Аудіофрагментам потрібні предмет-джерело, пошкодження розшифровки, маршрутна мітка часу й одна фізична суперечність.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/uk_UA. -->

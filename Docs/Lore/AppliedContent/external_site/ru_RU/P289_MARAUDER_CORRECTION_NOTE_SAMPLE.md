@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Marauder Correction Note Sample"
+title: "Образец мародерской правки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Marauder Correction Note Sample
+# Образец мародерской правки
 
-RU LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Мародерские записи работают в HECTON-8 как сильные поверхности доказательств: они спорят с официальными системами, но не превращаются во всезнающий лор. Этот образец держит подозрение через практические отметки: время, сертификаты, неверную категорию и задержку в очереди допуска. Он не решает дело за игрока. Он учит читать ложь, поданную как техобслуживание.
 
 ## Scanner
 
-RU LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Жирным карандашом поверх акта об аварии: не погода, не паника, а задержка допуска с телами в ведомости.
 
 ## Terminal
 
-RU LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+МАРОДЕРСКАЯ ПРАВКА / ОФИЦИАЛЬНАЯ ПРИЧИНА: ОТКЛОНЕНА / ДО ЗАЯВЛЕНИЯ ПРОВЕРИТЬ: сертификат насоса, смену, категорию тел, рассинхрон часов двери, очередь допуска спасработ.
 
 ## Audio
 
-RU LOC HOLD: Someone else smelled the paperwork rot.
+Кто-то учуял гниль в бумагах еще до того, как отсек высох.
 
 ## Field Note
 
-RU LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+НЕ ПОГОДА. ЗАДЕРЖКА ДОПУСКА. Проверить сертификат насоса, смену, категорию тел. Часы двери спешат на шесть минут относительно штампа заявления.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ru_RU. -->

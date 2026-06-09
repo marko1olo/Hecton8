@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "署名と証人の矛盾"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# 署名と証人の矛盾
 
-JP LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+署名と証人の矛盾は、Deep Reach の公式話法が単に不完全なのではなく、虚偽になり始める瞬間である。公開署名は HECTON-8 を、避難遅延前に行動可能な矛盾がなかった潮汐災害として提示する。現地証人ハッシュは別のことを言う。避難法務、Atlas Safety、経路運用は、余裕喪失、作業員の危難、経路時刻がすでに見えていた時点で同じ審査室にいた。矛盾はプレイヤーに強い証拠の形を与える。悪い署名を見つけるだけでは足りない。署名をドアログ、壊れた時計、名前スタンプの横に置き、アリバイが壊れるまで読む必要がある。
 
 ## Scanner
 
-JP LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+署名は、避難審査に生きた矛盾はなかったと言う。証人ハッシュは、その矛盾が部屋にいたと言う。
 
 ## Terminal
 
-JP LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: 公開署名は潮汐失敗を唯一原因と記録。現地証人ハッシュは、避難法務、Atlas Safety、経路運用を解放保留前の審査室に配置。ドアログ、名前スタンプ、壊れた経路時計を比較せよ。
 
 ## Audio
 
-JP LOC HOLD: The signatures line up. The bodies do not.
+報告書は、誰も知り得なかったと言う。ドアログは反対している。
 
 ## Field Note
 
-JP LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+署名が清潔でいられるのは、部屋が隣に立っていた者を思い出すまでだ。
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/ja_JP. -->

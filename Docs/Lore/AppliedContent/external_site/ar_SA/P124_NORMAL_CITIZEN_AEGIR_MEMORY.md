@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "ذاكرة المواطن العادي عن إيغير"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# ذاكرة المواطن العادي عن إيغير
 
-AR LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+الذاكرة العامة في HECTON-8 رقيقة عمدا. لا يحتاج فضاء البشر إلى الجهل؛ يكفي أن يكون متعبا وبعيدا ومدربا على قبول ملخصات الخسارة. إيغير مشهور بما يكفي ليؤثر في الأسعار والسياسة، لكنه ليس حيا بما يكفي ليفرض إنقاذا. العودة إلى المحيط تفتح الفجوة بين الذاكرة العامة والدليل الخاص.
 
 ## Scanner
 
-AR LOC HOLD: Public memory: old disaster, distant resource, no faces.
+بقايا أرشيف عام: سمع الجميع عن إيغير، لكن شبه لا أحد يتذكر اسما.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: حدث فقدان HECTON-8، عام 2147. الأسباب الرسمية: سلسلة عواصف، فشل إخلاء، فساد أتمتة، حجر بيولوجي، قياسات غير موثوقة. الحالة الحالية: مطالبة خامدة، مؤشر التأمين ما زال نشطا، والسفر المدني غير منصوح به.
 
 ## Audio
 
-AR LOC HOLD: Most people know the place as a line under insurance rates.
+معظم الناس يعرفون إيغير كسطر تحت معدل التأمين.
 
 ## Field Note
 
-AR LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+تصبح الكارثة عادية حين تدخل في الفاتورة.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/ar_SA. -->

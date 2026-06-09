@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Conhecimento do dossiê, não poder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Conhecimento do dossiê, não poder
 
-PT LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.
+Se o dossiê carrega poder, HECTON-8 deixa de ser sobre pressão. O mar vira uma tarefa já resolvida. A persistência certa é mais estranha e mais dura: o jogador reconhece uma mentira mais cedo, sabe qual cláusula do contrato deve doer, vê por que um pagamento limpo não é limpo, e ainda desce com um corpo frágil para um seed novo. Sabedoria pode sobreviver. Segurança não.
 
 ## Scanner
 
-PT LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Sem oxigênio herdado, rating de casco, armas, inventário, autoridade de rota ou atalho mágico. O dossiê guarda avisos, não músculo.
 
 ## Terminal
 
-PT LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+LIMITE DURO: dados persistentes do dossiê podem desbloquear avisos, famílias de rumores, variantes de claim e contexto de finais. Não devem preservar poder de equipamento, inventário de recursos, posse da verdade do mundo ou permissão de rota.
 
 ## Audio
 
-PT LOC HOLD: Memory does not reinforce a cracked hull.
+Memória não reforça um casco rachado.
 
 ## Field Note
 
-PT LOC HOLD: The player can become wiser. The ocean should not become smaller.
+O jogador pode ficar mais sábio. O oceano não deve ficar menor.
 
 <!-- In-Game Wiki; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/pt_BR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Gramática de nombres seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Gramática de nombres seed-role
 
-ES LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+La Gramática de nombres seed-role define cómo HECTON-8 usa variación procedural sin perder textura humana autoral. La rejugada puede cambiar dónde aparece la evidencia de un trabajador, pero el nombre debe seguir unido a trabajo, permiso, tarea y objeto. Así la colonia sigue siendo sorprendente entre partidas mientras conserva la sensación de que cada registro perteneció a alguien cuyo oficio importaba.
 
 ## Scanner
 
-ES LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Un seed puede mover el orden de la evidencia. No puede convertir a un trabajador en texto desechable.
 
 ## Terminal
 
-ES LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. La localización puede anotar términos de cuadrilla para legibilidad, pero no debe reescribir la identidad, borrar el oficio ni separar el nombre de un objeto concreto.
 
 ## Audio
 
-ES LOC HOLD: Random is not authorship. Bind the name to a job.
+Azar no es autoría. Ata el nombre a un trabajo.
 
 ## Field Note
 
-ES LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Cada identidad seed-role combina nombre personal, familia de cuadrilla, permiso de ruta, última tarea y variante de objeto.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/es_ES. -->

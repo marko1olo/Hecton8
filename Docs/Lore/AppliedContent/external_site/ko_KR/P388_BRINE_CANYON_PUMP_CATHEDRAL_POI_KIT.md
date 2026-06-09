@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "브라인 캐니언 펌프 대성당 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# 브라인 캐니언 펌프 대성당 증거 키트
 
-KO LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+펌프 대성당은 중간 깊이의 규모에 일을 준다. 오퍼레이터는 갠트리를 건너고, 브라인 포켓을 안정화하고, 밀도 유리를 읽고, 경로 보류 시계를 작업자 대기 장부와 비교해야 한다. 장식품은 없다. 각각은 지연이 날씨인지, 과실인지, 청구 보호인지 바꾼다.
 
-## Scanner
-
-KO LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-KO LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-KO LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-KO LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+증거는 바다를 존중할 때 더 강하다. Great Tide는 벽을 부수고 물을 움직였다. 방은 그것을 부정하지 않는다. 홍수 주변에서 일정표가 무엇을 했는지 보여 준다. 승인된 마진, 늦은 펌프 시작, 보류된 경로, 붐비는 대기열. POI가 랜드마크가 되는 이유는 기계가 아직 작업 순서를 기억하기 때문이다.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ko_KR. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "قواعد أسماء seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# قواعد أسماء seed-role
 
-AR LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+تحدد قواعد أسماء seed-role كيف تستخدم HECTON-8 التنوع الإجرائي من دون فقدان ملمسها البشري المؤلف. يمكن للإعادة أن تغير مكان ظهور دليل العامل، لكن الاسم يجب أن يبقى مربوطا بالعمل والتصريح والمهمة والجسم. هكذا تبقى المستعمرة مفاجئة بين الجولات مع الحفاظ على الإحساس بأن كل سجل كان يخص شخصا كان عمله مهما.
 
 ## Scanner
 
-AR LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+يمكن لل seed أن يحرك ترتيب الأدلة. لا يمكنه أن يحول العامل إلى نص قابل للرمي.
 
 ## Terminal
 
-AR LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. يجوز للتوطين أن يشرح مصطلحات الطاقم للقراءة، لكنه لا يجوز أن يعيد كتابة الهوية، أو يمحو العمل، أو يفصل الاسم عن جسم ملموس.
 
 ## Audio
 
-AR LOC HOLD: Random is not authorship. Bind the name to a job.
+العشوائية ليست تأليفا. اربط الاسم بعمل.
 
 ## Field Note
 
-AR LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+تجمع كل هوية seed-role بين اسم شخصي، وعائلة طاقم، وتصريح مسار، ومهمة أخيرة، ومتغير جسم.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/ar_SA. -->

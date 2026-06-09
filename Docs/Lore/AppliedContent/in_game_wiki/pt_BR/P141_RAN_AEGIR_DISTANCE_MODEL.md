@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Modelo de distância Ran-Aegir
 
-O modelo Ran-Aegir dá a HECTON-8 uma escala que o jogador sente. Aegir é perto o bastante para sondas, frete, hardware seed e assentamento apoiado por dívida até 2190. Ainda é longe o bastante para uma câmara inundada não esperar misericórdia dos mundos internos. Distância aparece como atraso, custody, combustível, frenagem e propriedade.
+O modelo Ran-Aegir dá a HECTON-8 uma escala sentida dentro do traje. Em 2190, Aegir está perto o bastante para sondas, carga, lei de rota, assentamento por dívida e apetite corporativo. Continua longe demais para um compartimento alagado esperar bondade dos mundos internos. A distância vira pressão por atraso de relé, janelas de lançamento, propelente de frenagem, custódia de transportadora, exclusões de seguro e um fato simples: massa chega mais devagar que ordens.
 
 ## Scanner
 
-Placa de rota: Aegir é alcançável por infraestrutura e inalcançável por simpatia.
+A placa de rota confirma Aegir ao alcance da infraestrutura, não ao alcance do resgate emergencial.
 
 ## Terminal
 
-MODELO DE ROTA: Ran/Aegir é tratado como alvo classe dez anos-luz de Sol. Texto de jogo usa Aegir; catálogos secos usam RAN-B:H8. Efeméride exata segue trabalho de tabela de rota.
+MODELO DE ROTA: Ran/Aegir é tratado como destino de classe dez anos-luz a partir de Sol. As superfícies públicas dizem Aegir. Catálogos secos de navegação mantêm RAN-B:H8. A efeméride exata fica presa às tabelas; a verdade operacional é atraso, massa de frenagem, custódia de relé e risco de propriedade.
 
 ## Audio
 
-Dez anos-luz é pouco numa carta estelar. É grande o bastante para falir um resgate.
+Um sinal cruza o escuro. Uma nave paga cada metro.
 
 ## Field Note
 
-Distância aproximada é pressão, não decoração. Dez anos-luz ainda podem matar uma sala.
+Dez anos-luz são pouco no catálogo e brutais para um resgate.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pt_BR. -->

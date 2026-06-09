@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Chaîne de fragments du mémo de responsabilité"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Chaîne de fragments du mémo de responsabilité
 
-FR LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+La chaîne de fragments du mémo de responsabilité apprend au joueur à lire les preuves de Deep Reach. Aucun mémo ne contient tout le crime ; chaque bureau a conservé la phrase qui rendait sa propre action procédurale. Une table de risque admet que la marge de marée échouait. Une note d'évacuation transforme le délai en discipline de canal. Un override Atlas rend la continuité plus sûre que la fuite. Un fragment Keelmark convertit les travailleurs disparus en perte récupérable. Le joueur doit croiser le papier avec les pièces noyées, les horloges de route brisées et les noms des travailleurs. La chaîne devient lisible seulement quand les fragments cessent de défendre leurs bureaux et commencent à se contredire.
 
 ## Scanner
 
-FR LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Le mémo de responsabilité a survécu en fragments parce que chaque bureau a gardé le paragraphe qui le protégeait lui-même.
 
 ## Terminal
 
-FR LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN : table des marges de risque / note de libération d'évacuation / override de continuité Atlas / conversion de perte Keelmark / demande de garde de récupération. Croiser heure de route, dégâts de salle et noms des travailleurs avant d'accepter le résumé public.
 
 ## Audio
 
-FR LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Ils n'ont pas caché la vérité dans un coffre. Ils l'ont classée en morceaux.
 
 ## Field Note
 
-FR LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Un mémo déchiré est honnête aux endroits où il ne voulait pas l'être.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/fr_FR. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Public Combine"
+title: "הקומביין הציבורי Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Public Combine
+# הקומביין הציבורי Deep Reach
 
-HE LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+הפנים הציבוריות של Deep Reach רחבות מספיק להיראות מועילות ויבשות מספיק להיראות חפות. הן בונות לוחות נתיב, שירותי מגורים, לוגיסטיקת לחץ ותוכניות רציפות בניחוח אזרחי. בשכבה זו המושבה כמעט לא רואה נבל אחד. היא רואה ניירת, חותמות תחזוקה, סיסמאות מבוקרות ושם שיכול לטעון לתשתית כשהעבודה רווחית ולמרחק כשהעבודה נעשית ראיה.
 
 ## Scanner
 
-HE LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+לוח צ'רטר ציבורי: מפעיל תשתית, לא נתבע כרייה.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+רשומת קומביין ציבורי: Deep Reach מופיעה כתשתית נתיבים, תעשיית אוקיינוס, לוגיסטיקת מגורי לחץ ושירותי רציפות. העבודה נושאת האחריות מחולקת לשולחנות חברות, שפת ביטוח, קבלני משמורת ומשרדי recovery.
 
 ## Audio
 
-HE LOC HOLD: A clean title is the cheapest pressure suit.
+השלט על הדלת אומר שירות. המנעולים מאחוריו אומרים בעלות.
 
 ## Field Note
 
-HE LOC HOLD: The seal is clean. The rooms under it are not.
+השם הנקי אינו שקר. הוא החדר שבו הלכלוך מתויק במקום אחר.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/he_IL. -->

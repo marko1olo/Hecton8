@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Tool Certification Board"
+title: "Quadro de certificação de ferramentas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Tool Certification Board
+# Quadro de certificação de ferramentas
 
-PT-BR LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+O Quadro de Certificação de Ferramentas registra uma cultura que confiava mais em marcas do que em discursos. Cabeça de cortador reindexada. Cartucho de selante pesado. Luva de pressão com dupla assinatura. Chave de bomba atrasada. Kit de descida retido. Cada linha é direta porque procedimento direto mantinha gente viva onde uma ferramenta quase correta podia matar em silêncio.
 
-## Scanner
+O quadro parece ritualístico porque trabalho perigoso repete os mesmos movimentos até o medo ter para onde ir. Pesar, checar, assinar, devolver, rechecar. A segunda assinatura não era decoração; tornava a confiança responsável. Se uma luva falhasse sob pressão, a marca no quadro dizia quem viu, quem apressou e quem tentou mandá-la para baixo mesmo assim.
 
-PT-BR LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-PT-BR LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-PT-BR LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-PT-BR LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+É fé de trabalhador sem misticismo. A colônia não rezava sobre cortadores. Fazia outra pessoa cansada olhar a borda, o selo, o peso e a devolução da chave. A sobrevivência se tornou comunal porque cada ferramenta carregava o nome de outra pessoa antes de tocar a rota.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/pt_BR. -->

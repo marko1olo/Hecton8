@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Assemblage de colonne relais acoustique
 
-L'Assemblage de colonne relais acoustique ancre la boucle d'évasion de HECTON-8 dans l'ingénierie de salvage : le son doit survivre à la pression, à la géométrie de route et à la custody avant que l'orbite y croie.
+L'assemblage de colonne relais acoustique est la première pièce de la chaîne d'évasion de HECTON-8 qui transforme la survie en signal mesurable. Ce n'est ni un mât radio ni une prière de détresse. C'est une pressure-code spine faite de nervures céramiques, gaine de câble, floats de ballast et timing de pinger.
 
-## Scanner
+Le problème est la confiance. L'eau de HECTON-8 porte bruit d'impact, coups de pompe, brine scatter et échos de route. Black Keel reçoit plus de sons qu'il ne peut accepter sans risque. Une capsule qui veut une récupération doit prouver que son tap appartient à une route, une horloge et une chaîne de custody, pas à un panneau libre frappant un cadre noyé.
 
-Colonne acoustique brisée. Elle peut frapper un pressure-code dans l'eau ; l'orbite l'entend encore comme du custody noise endommagé.
-
-## Terminal
-
-ASCENT RELAY : restaurer la colonne acoustique bas débit avant la recovery window. High-gain mast perdue. Emergency buoy peu fiable. Le récepteur Black Keel n'accepte le pressure-code qu'après route proof.
-
-## Audio
-
-Si le Keel nous entend, il entend une plaie qui tape sur un tuyau.
-
-## Field Note
-
-Le premier appel de la capsule n'est pas une voix. Ce sont des nervures céramiques, une peau de câble, des pinger floats et assez de discipline de timing pour que l'océan te répète correctement.
+Réparer la colonne donne à la capsule d'ascension une voix étroite: coordonnées, survival state, clock match, checksum. C'est assez pour commencer une conversation de récupération, pas pour garantir un sauvetage. L'océan peut encore courber le signal. Le carrier peut encore classer le paquet comme damaged claim noise. Le composant obtient la première écoute; il ne gagne pas le dossier.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/fr_FR. -->

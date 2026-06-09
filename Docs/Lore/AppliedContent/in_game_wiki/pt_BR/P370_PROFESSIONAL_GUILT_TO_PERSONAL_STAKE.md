@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Da Culpa Profissional ao Interesse Pessoal"
+title: "De Culpa Profissional a Interesse Pessoal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Da Culpa Profissional ao Interesse Pessoal
+# De Culpa Profissional a Interesse Pessoal
 
-A culpa profissional vira interesse pessoal sem transformar o protagonista na causa da catástrofe. O jogador não precisa de um irmão perdido, de uma linhagem de vingança ou de um papel secreto de testemunha escolhida. A pressão é mais fria e mais adulta. Ele reconhece o procedimento. Sabe por que um campo de testemunha importa, por que um selo de rota segura pode mentir, por que uma transportadora pode ouvi-lo e ainda assim não içá-lo para fora. HECTON-8 se torna pessoal porque a velha linguagem da Deep Reach não é abstrata para ele. É trabalho em que já precisou confiar, trabalho perto do qual já atuou, e agora esse trabalho está preso a nomes recuperados de salas afogadas. O arco não é confissão. É recusa: quando o jogador consegue ler a máquina do abandono, deixá-la enterrada vira outra forma de participação.
+A culpa profissional vira interesse pessoal sem tornar o operador a causa da catástrofe. A pressão é mais estreita e mais difícil de afastar. Ele reconhece o formulário, a route-safe omission, o campo de checagem selado e a linguagem receptora que transforma uma sala em claim encerrado.
+
+Não precisa de vingança familiar. Não precisa de cargo de comando oculto. As tags recuperadas prendem nomes a um procedimento em que o operador já confiou como trabalho. Quando esse padrão fica legível, deixá-lo enterrado vira outra omission arquivada na mesma máquina. O interesse não é linhagem. É conhecimento de ofício encontrando evidência de salas afogadas.
 
 ## Scanner
 
-O padrão de assinatura combina com o cache antigo de procedimento. Os nomes mudaram. A sala falhou do mesmo jeito. Especialização já não é distância.
+PROCEDURE MATCH // Sequência antiga aparece em novo registro de falha. Nomes mudaram; mesma route-safe omission. Expertise não é mais distância.
 
 ## Terminal
 
-RESOLUÇÃO DE DOSSIÊ / INTERESSE PROFISSIONAL
-evidência gatilho: reconhecimento de procedimento, etiquetas de trabalhadores recuperadas, conflito do recebedor da reivindicação
-motivo excluído: relação familiar, linhagem de vingança, status de testemunha escolhida
-motivo ativo: ex-trabalhador de sistemas reconhece abandono evitável e ainda consegue ler a máquina que o arquivou.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Você veio por uma reivindicação. Ficou porque a papelada conhecia suas mãos.
+Você veio por um claim. O formulário usou suas mãos antigas.
 
 ## Field Note
 
-Não é sua assinatura. Ainda é seu ofício. Por isso a sala não vai ficar quieta.
+Não é sua assinatura. Ainda é seu ofício. Por isso a sala não ficará enterrada.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pt_BR. -->

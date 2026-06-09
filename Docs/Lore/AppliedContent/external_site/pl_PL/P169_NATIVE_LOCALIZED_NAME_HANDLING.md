@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protokół natywnej lokalizacji imion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protokół natywnej lokalizacji imion
 
-PL LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+Protokół określa, jak HECTON-8 zachowuje tożsamość w 15 językach. Imiona, paski identyfikatorów i wersje kompaktowe są autorskie per locale; stanowiska, działy, zmiany, trasy i etykiety tłumaczy się osobno. Imię jest obiektem dowodu, nie żywym stringiem.
 
 ## Scanner
 
-PL LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Ten pasek jest napisany, nie tłumaczony na żywo. Osoba przetrwa interfejs tylko wtedy, gdy interfejs przestanie improwizować.
 
 ## Terminal
 
-PL LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+LOKALIZACJA IMION // Imiona, krótkie paski i fragmenty identyfikatora są baked per locale. Stanowiska, działy, zgody tras i notatki zmian tłumaczą się wokół nich. RTL i CJK wymagają autorskich skrótów, bezpiecznych łamań i braku live recomposition w skanerze, UI szafek, terminalach i wiki.
 
 ## Audio
 
-PL LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Imię łamiące UI nie jest szacunkiem. To kolonia usuwająca pracownika po raz drugi.
 
 ## Field Note
 
-PL LOC HOLD: No live name translation. Preserve identity through baked strings.
+Nie pozwól, by runtime fallback przemianował martwego pracownika. Zepsute imię to kolejne wymazanie.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/pl_PL. -->

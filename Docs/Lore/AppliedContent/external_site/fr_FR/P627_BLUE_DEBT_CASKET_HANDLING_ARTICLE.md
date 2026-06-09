@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Manipulation de cassette de dette bleue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Manipulation de cassette de dette bleue
 
-Blue debt value depends on pressure, temperature, custody and silence.
+La dette bleue ne devient pas utile quand on la trouve. Elle le devient si elle reste dans l’état qui lui donnait de la valeur. Une cassette de pression scellée est à la fois conteneur, avertissement et reçu; elle empêche le résidu Xenon-Omega, la trame née sous pression ou le substrat contaminé de devenir bruit, poudre, perte de preuve ou signal audible par le mauvais système.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+Le premier choix sûr n'est pas vendre, fabriquer ou cacher. C'est stabiliser. Une cassette avec une bande froide intacte peut bouger. Une cassette au joint chaud rend la preuve suspecte. Une mauvaise manipulation transforme le paiement en contamination, en bruit et en risque de route.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/fr_FR. -->

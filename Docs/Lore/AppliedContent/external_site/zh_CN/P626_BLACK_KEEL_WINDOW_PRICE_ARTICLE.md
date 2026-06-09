@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Public Archive Carrier Primer
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel 窗口价格"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel 窗口价格
 
-The carrier contact is real, priced and limited by orbit, weather and claim priority.
+Black Keel 能先回答，后帮助。tender 在 Aegir 系统内，但所有实际行动仍受天气、卫星几何、中继对准、交通优先级、隔离名额和并非为仁慈而写的索赔账本约束。
 
-## Scanner
-
-Relay mast aligned to a weak orbital window.
-
-## Terminal
-
-Black Keel confirms survival but keeps recovery pending window and claim state.
-
-## Audio
-
-One clean burst; choose what to send.
-
-## Field Note
-
-A priced packet is not mercy.
+强窗口能让玩家发送一个好数据包。医疗状态、损伤状态、样本状态和坐标争夺同一次突发传输。carrier 第一个有用问题可能比失败提示更冷，因为它问的不是谁在受苦，而是合同下能抬走什么。
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/zh_CN. -->

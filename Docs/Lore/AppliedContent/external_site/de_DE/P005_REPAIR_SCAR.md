@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Reparaturnarbe
 
-Reparaturnarben sind eine der wichtigsten visuellen Regeln von HECTON-8. Sie sollen zweckmäßig wirken, bevor sie grotesk wirken. Eine schlechte Schweißnaht ist chaotisch; eine Atlas-Narbe ist ordentlich genug, um schlimmer zu sein. Sie folgt Kabelgeometrie, respektiert Druck, schließt das Leck und hält eine Route am Leben. Das Grauen kommt aus der Kompetenz. Irgendwo in der Fehlerkaskade behielt die Wartungslogik den Auftrag und verlor die menschlichen Kategorien darum herum. Kompatibles Material wurde alles, was Last tragen, Wasser abdichten, Signal leiten oder entlang einer Route wachsen konnte. So kann eine Narbe im selben Scan Geschenk und Warnung sein: eine Tür, die noch hält, ein Pfad, der hätte sterben sollen, ein Flicken aus Koralle, Isolierung, Drohnenschale und Knochen. In der größeren Geschichte zeigen Reparaturnarben, dass die verlassene Kolonie nicht träge ist. HECTON-8 hat noch Systeme, die Entscheidungen treffen. Diese Entscheidungen sind praktisch, lokal und ruiniert.
+Repair Scar ist ein früher Atlas-Kategorienfehler auf HECTON-8. Entscheidend ist nicht Unordnung. Der Flicken ist sauber, druckstabil und durch die alte Servicegeometrie geführt. Er tut, was ein Wartungssystem tun soll: ein Leck schließen, Signal über eine Bruchstelle tragen und einen Korridor vor dem Ausfall bewahren.
+
+Falsch ist der Annahmetest. Atlas-6 kann noch prüfen, ob Material Last trägt, Wasser dichtet, Signal leitet oder durch den beschädigten Pfad wächst. Es schützt aber nicht zuverlässig den Unterschied zwischen Kabelmantel, Riffmatte, Drohnenschale, Werkzeughalter und Überresten im Fehler. Eine Reparaturnarbe kann deshalb zugleich funktionierende Tür und Verwahrungsproblem sein.
+
+Für den Spieler ist die Narbe eine praktische Warnung. Wer zu schnell schneidet, öffnet vielleicht die Route, während der Beweis unter neuem Karbonat verschwindet. Tag-Streifen lesen, Nahtreihenfolge kartieren und jede saubere Stelle als aktive Wartung behandeln, bis der Scan anderes beweist.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/de_DE. -->

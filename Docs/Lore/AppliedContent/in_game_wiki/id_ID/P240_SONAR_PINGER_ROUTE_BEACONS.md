@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Sonar Pinger Route Beacons"
+title: "Beacon Rute Sonar Pinger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sonar Pinger Route Beacons
+# Beacon Rute Sonar Pinger
 
-ID LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+Sonar pinger itu murah, tetapi tidak pernah berhenti berguna. Ia membuat garis pulang, menandai peti bukti, memisahkan gema palsu dari dinding nyata, dan menyimpan rute hilang sebagai suara. Pada saat yang sama ia memberi tahu samudra posisimu. Jadi ia alat keselamatan, penanda utang, dan kadang umpan.
 
 ## Scanner
 
-ID LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Pelampung pinger menandai geometri pulang, membuka gema palsu, dan menarik perhatian penyelamat maupun hidup yang tak diinginkan.
 
 ## Terminal
 
-ID LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-ID LOC HOLD: One ping is a promise. Two pings are a bill.
+Satu ping adalah janji. Dua ping adalah tagihan.
 
 ## Field Note
 
-ID LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+Pinger adalah alat jujur pertama: ia menyuarakan jarak, utang, rute hilang, dan risiko makhluk.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/id_ID. -->

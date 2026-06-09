@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Resource Yield Data Boundary"
+title: "Граница данных ресурсной отдачи"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Resource Yield Data Boundary
+# Граница данных ресурсной отдачи
 
-RU LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+Ценность ресурса в HECTON-8 — цепочка, а не ярлык. Таблица владеет числом, но fiction объясняет, почему число существует: кто взял образец, под каким давлением, с каким штампом хранения и сколько этой жилы маршрут еще может безопасно снять.
 
 ## Scanner
 
-RU LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Строка отдачи отвергает голую цену: класс, давление, хранение, истощение и hash должны совпасть.
 
 ## Terminal
 
-RU LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+КОНТРАКТ РЕСУРСНОЙ ОТДАЧИ: число не принимается без packet hash, класса ресурса, диапазона давления, ранга хранения, кривой редкости и поведения истощения. Образец без истории давления — доказательство, а не ценность.
 
 ## Audio
 
-Проба без истории давления не имеет честной цены.
+Образец без истории давления не имеет цены.
 
 ## Field Note
 
-RU LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Числа yield остаются предварительными, пока pressure band, custody grade, depletion behavior и packet hash не согласованы.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ru_RU. -->

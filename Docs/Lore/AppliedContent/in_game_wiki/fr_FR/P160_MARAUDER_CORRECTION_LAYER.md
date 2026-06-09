@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Couche de correction Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Couche de correction Marauder
 
-FR LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+La couche de correction Marauder est l'endroit où l'ancien langage corpo perd son autorité. Deep Reach écrit variance, custody, hold, asset, exposure. Les Marauders écrivent ce dont un plongeur a besoin avant le prochain souffle : le CO2 ralentit les mains, la brine cache la marche, le seal tape lâche au coude, ne fais pas confiance à l'écoutille propre. Ces notes doivent sentir une culture qui se reconstruit chez des gens formés par le système puis forcés à haïr son vocabulaire.
 
 ## Scanner
 
-FR LOC HOLD: Marauders turn corporate language back into survival facts.
+COUCHE CORRECTION // Étiquette corpo : temporary atmospheric variance. Note Marauder : le CO2 mange le jugement d'abord.
 
 ## Terminal
 
-FR LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+RÈGLE D'ANNOTATION : retraduire la langue Deep Reach en faits de survie. Notes courtes, pratiques, en colère et utiles sous pression.
 
 ## Audio
 
-FR LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Une bonne note n'a pas l'air brillante. Elle garde quelqu'un vivant.
 
 ## Field Note
 
-FR LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Le joueur doit sentir l'ancienne langue Deep Reach traduite en compte de corps.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/fr_FR. -->

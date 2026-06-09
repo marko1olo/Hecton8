@@ -19,22 +19,22 @@ localization_flags: 1
 
 # HECTON-8: Der Druckanspruch
 
-P-63-Routennotizen zeigen den Anfang als Bergungsarbeit unter Schulddruck. Die nützlichen Fakten sind mechanisch: verbrauchte Aufstiegskapazität, geflutete Avionik, beschädigte Dichtungen, Scannerantworten und Amtssprache, die Dellen nicht erklären kann.
+HECTON-8 beginnt mit einem verschuldeten Marauder, den Black Keel durch eine claim window nach P-63 wirft, wo jede Reparatur, jeder Scan und jede versiegelte Tür Überleben in Beweis verwandelt.
 
 ## Scanner
 
-Marauder-Aufnahme. Black-Keel-Vertrag verbindet P-63, beschädigten Bathydrop, 4.8 tonne-window-Pfand und einen Unfallbericht, der nicht zum Metall passt.
+Öffentlicher Startartikel: Vertrag vor Mythos, Black-Keel-Fenster, beschädigter bathydrop, helle P-63-Schwelle, Deep-Reach-Auslassungen, erste Atlas-Spur.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // H8-ANSPRUCH. Vertragsfenster: Aegir-Relais offen. Arbeit: Druckdichtungen herstellen, P-63 scannen, Fracht bergen, Beweise sichern, vor Schließung der Empfängergeometrie zurückkehren.
+SITE LONGFORM: spielbare Route über Druckarbeit, Beweis-custody, keine Sofortrettung, keinen Familienhaken und physische proof verkaufen.
 
 ## Audio
 
-Black-Keel-Relais: "Fenster eng. Repariere die Fallschale, lies die Druckspuren und bring den Beweis mit der Fracht zurück."
+Auf HECTON-8 verkauft dir niemand Rettung. Sie verkaufen dir eine claim und lassen das Wasser den Rest entscheiden.
 
 ## Field Note
 
-Marauder-Notiz: Licht auf P-63 ist keine Sicherheit. Zähle Luft, repariere Dichtungen vor Fracht und misstraue jedem Bericht, der die Dellen nicht erklären kann.
+Wenn die Akten ruhig klingen, lies das Metall. Die erste Wahrheit von HECTON-8 liegt zwischen Vertragszeile und gebrochenem seal.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/de_DE. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guia de Estratos da Crosta Afogada"
+title: "Guia de estratos da crosta afogada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Estratos da Crosta Afogada
+# Guia de estratos da crosta afogada
 
-A crosta afogada é a história legível de HECTON-8: cortes antigos da colônia, prateleiras de colapso de gelo, costuras de pressure-glass e faixas minerais mostram onde uma rota segura, cisalha ou falha ao toque.
+A crosta afogada é a história legível de HECTON-8. Cortes coloniais antigos, prateleiras de colapso de gelo, costuras de vidro de pressão e faixas minerais mostram onde uma rota aguenta, cisalha ou falha ao toque. Equipes salvage a leem como um livro-caixa danificado: o que foi construído, o que caiu e o que o oceano vem moendo desde então.
 
 ## Scanner
 

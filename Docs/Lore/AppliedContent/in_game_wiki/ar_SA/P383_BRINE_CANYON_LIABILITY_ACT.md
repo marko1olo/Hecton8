@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Canyon Liability Act"
+title: "بوابة مسؤولية وادي المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Canyon Liability Act
+# بوابة مسؤولية وادي المحلول الملحي
 
-AR LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+وادي المحلول الملحي يحول الوقت إلى دليل. الحساسات والساعات وحالات الطوابير وصفائح المسار المكسورة تظهر أن الفيضان كان حقيقيا وأن الخطر المقبول كان حقيقيا أيضا. يتوقف المشغل عن جمع الشائعات ويبدأ بحمل سلسلة وثائق تستطيع النجاة من مراجعة المستقبل.
 
 ## Scanner
 
-AR LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+بوابة مسار: وادي المحلول الملحي. طبقات الكثافة والساعات المتضررة والهوامش المقبولة تصبح أدلة مادية للمسؤولية.
 
 ## Terminal
 
-AR LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+مسار حملة // وادي المحلول الملحي. مطلوب: مقارنة أثر الهامش، طابور الإخلاء، كسر المسار وساعة الضغط. حدث المد العظيم مؤكد. الاستثناء التجاري وأوزان Atlas محل نزاع.
 
 ## Audio
 
-AR LOC HOLD: The ocean did not lie. The timetable did.
+المحيط كسر الجدار. الجدول كسر الناس.
 
 ## Field Note
 
-AR LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+ملاحظة نهب: لا تجادل المد. جادل ختم الوقت الذي دفع أحدهم لحذفه.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/ar_SA. -->

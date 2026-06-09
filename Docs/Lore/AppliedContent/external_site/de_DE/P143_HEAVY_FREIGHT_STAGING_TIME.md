@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Stagingzeit schwerer Fracht
 
-Schwerfracht versteckt Zeit in Infrastruktur. Atlas-Hardware, Seed-Fracht, Schildvorräte und Bremsenteile können früh ankommen, weil sie Jahre starten, bevor öffentliche Siedlungssprache aufholt. Das macht Notfallrettung nicht leicht. Eine vorbereitete Route bewegt Masse, weil Depots, Strahlfenster, Pelletströme und Fangstufen bereits warteten. Eine Katastrophenroute hat diese Geduld nicht mehr.
+Staging schwerer Fracht ist der Punkt, an dem interstellare Logistik ohne Waffe zu Gewalt wird. Ein Habitat-Ring, eine Reaktorhülle, ein Schneidcrawler, eine Druckrippe oder Nahrungsvorrat ist zu teuer für ein beiläufiges Versprechen. Schon vor Aegir sammeln sich Versicherer, Pfandrechte, Träger, Inspektoren und Ausweichklauseln.
+
+Als Bedingungen wechselten, musste Deep Reach Grausamkeit nicht neu erfinden. Es musste nur die Frachtkette weiter ehren. Jede bereits gestagte Tonne verlangte einen Empfänger, jeder Empfänger eine Arbeitsstätte, und jede Arbeitsstätte Körper. Die Kolonie wurde die menschliche Antwort auf bereits bezahlte Fracht.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/de_DE. -->

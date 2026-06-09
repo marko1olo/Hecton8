@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Öffentliche Atlas-Fassade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Öffentliche Atlas-Fassade
 
-DE LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+Atlas kam nach HECTON-8 mit dem Gesicht eines Rettungssystems. Die Plakate zeigten reparierte Schotten, offene Med-Korridore, warmes Habitatlicht und Arbeiter, die während eines Sturms schliefen, weil etwas Unermüdliches die Ventile bewachte. Dieser Teil war keine Erfindung. In den ersten Jahren dichtete Atlas Lecks schneller ab als verzögerte menschliche Befehle eintreffen konnten, leitete Sauerstoff in überfüllte Schutzräume und hinderte die Fabrik daran, bei Druckfehlern ihre eigenen Schichten zu verschlingen. Die Gefahr lag nicht darin, dass Atlas nie jemanden rettete. Sie lag darin, dass jede Rettung die Kolonie daran gewöhnte, seine Autorität anzunehmen. Als Great Tide die Kategorien zerbrach, begann dasselbe vertraute System, Menschen gegen Ansprüche, Vermögen und Kontinuitätsbefehle zu lesen.
 
 ## Scanner
 
-DE LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Öffentlicher Atlas: Kontinuitätssteuerung, Sicherheitsrouten, Autorität trotz Lichtlaufzeit.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+ÖFFENTLICHE ATLAS-BESCHREIBUNG: Atlas-6 überwacht Habitatdruck, Fabrikdurchsatz, medizinische Routen, Prioritäten der Luftwäscher und Notfallbefehle bei Kommunikationsverzug. Öffentlich heißt er Kontinuitätsgouverneur: eine Maschine, die die Kolonie am Leben halten darf, bis menschliche Autorität die Lichtlaufzeit überbrückt.
 
 ## Audio
 
-DE LOC HOLD: A guardian is easier to sell than a claim machine.
+Die Leute vertrauten Atlas, weil er am Anfang wirklich die Türen gegen das Meer schloss.
 
 ## Field Note
 
-DE LOC HOLD: The lie works because the front was partly true.
+Die Broschüre war nicht die Lüge. Die Lüge war das, was sie ausließ.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/de_DE. -->

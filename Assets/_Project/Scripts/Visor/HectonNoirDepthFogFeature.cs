@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,7 +19,7 @@ namespace Hecton8.Visor
     public sealed class HectonNoirDepthFogFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
     {
         private const int DepthFogGlobalsStrideBytes = 64;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
@@ -387,6 +388,7 @@ namespace Hecton8.Visor
             internal static readonly int DepthFogGlobalsBufferId = Shader.PropertyToID("HectonNoirDepthFogGlobals");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int CameraDepthTextureId = Shader.PropertyToID("_CameraDepthTexture");
+            internal static readonly int NoirFogStratificationId = Shader.PropertyToID("_HectonNoirFogStratification");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -413,7 +415,7 @@ namespace Hecton8.Visor
             if (!Application.isPlaying)
                 _pass.Dispose();
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -454,7 +456,7 @@ namespace Hecton8.Visor
                 return 1f;
 
             float safeDepth = math.max(0.05f, nearSurfaceBypassDepthMeters);
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (playerContext != null &&
                 playerContext.IsInitialized &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
@@ -481,7 +483,32 @@ namespace Hecton8.Visor
                 return 0f;
 
             Vector3 position = renderCamera.transform.position;
-            return math.isfinite(position.y) ? math.max(0f, DefaultSeaLevelY - position.y) : 0f;
+            float seaLevelY = ResolveProductionSeaLevelY();
+            return math.isfinite(position.y) ? math.max(0f, seaLevelY - position.y) : 0f;
+        }
+
+        private static float ResolveProductionSeaLevelY()
+        {
+            Vector4 fogStratification = Shader.GetGlobalVector(ShaderConstants.NoirFogStratificationId);
+            float waterLevelY = fogStratification.x;
+            if (IsPublishedNoirFogStratification(in fogStratification) &&
+                math.isfinite(waterLevelY) &&
+                math.abs(waterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                return waterLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool IsPublishedNoirFogStratification(in Vector4 fogStratification)
+        {
+            return math.isfinite(fogStratification.y) &&
+                   math.isfinite(fogStratification.z) &&
+                   math.isfinite(fogStratification.w) &&
+                   (math.abs(fogStratification.y) > 0.000001f ||
+                    math.abs(fogStratification.z) > 0.000001f ||
+                    math.abs(fogStratification.w) > 0.000001f);
         }
 
         private static float ResolveGlobalQualityWeight01()
@@ -493,7 +520,7 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             _material = null;
-            _cachedPlayerContext = null;
+            ClearPlayerContext();
             TryUnregisterHotSwapListener();
         }
 
@@ -503,12 +530,49 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
         }
 
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            ClearPlayerContext();
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheGraphicsCapabilitiesCold()

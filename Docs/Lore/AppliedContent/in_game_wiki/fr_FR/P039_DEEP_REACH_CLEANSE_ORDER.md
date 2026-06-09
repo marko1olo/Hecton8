@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ordre de purge Deep Reach"
+title: "Ordre de nettoyage actif Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ordre de purge Deep Reach
+# Ordre de nettoyage actif Deep Reach
 
-Cet ordre fait de Deep Reach un antagoniste actuel: purge et extraction actives, pas simple passé.
+L'ordre de nettoyage actif Deep Reach est un ordre de travail présent, pas une note d'archive. Il montre la garde des ressources, l'accès Atlas et la suppression des preuves planifiés par des contractants proxy après le blocage d'évacuation.
 
 ## Scanner
 
-Pile d'ordres: ressource, accès Atlas, suppression preuves. Sauvetage sous contrôle d'actif.
+Ordre actif récupéré: saisir les échantillons certifiés, ouvrir le canal Atlas, isoler les survivants, supprimer les preuves de responsabilité.
 
 ## Terminal
 
-Directive proxy: contractant niable. Préserver échantillons. Ouvrir canal Atlas si risque local acceptable. Purger corpus responsabilité.
+L'ordre proxy DR-CLEANSE-19 reste actif. Les contractants niables prennent d'abord la garde des échantillons, puis l'accès Atlas, puis la récupération des témoins. Si Black Keel ou le registre du site expose la responsabilité, la file de purge envoie les archives de preuve en cold delete et retague les morts de terrain en pertes météo.
 
 ## Audio
 
-Deep Reach ne te chasse pas. Ils t'utilisent comme sonde bon marché.
+Cette voix n'est pas du trafic de secours. C'est une offre de nettoyage.
 
 ## Field Note
 
-Ils ne sont pas revenus pour s'excuser.
+Le champ d'excuse est vide.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/fr_FR. -->

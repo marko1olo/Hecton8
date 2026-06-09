@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Последняя проверка payload authority"
+title: "Последняя проверка полномочий payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Последняя проверка payload authority
+# Последняя проверка полномочий payload
 
-Payload Authority Last Check дает финальному UI hard question.
+Последняя проверка дает финальному UI жесткий вопрос. Игрок выбирает не сундук с наградой, а того, кто получит массу, доказательство, имена, координаты и разрешение действовать.
 
 ## Scanner
 
-Payload check: receiver changes meaning, not only reward.
+Проверка payload: выбор приемника меняет владельца, а не только награду.
 
 ## Terminal
 
-PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+ПРОВЕРКА ПОЛНОМОЧИЙ PAYLOAD: выбрать приемник, массу, хранение доказательств, экологическое последствие и послевозвратную ответственность. Выбор приемника определяет, кто сможет действовать на основании доказательства после ухода.
 
 ## Audio
 
@@ -35,6 +35,6 @@ PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological con
 
 ## Field Note
 
-Использовать прямо перед irreversible ending route selection.
+Использовать прямо перед необратимым выбором маршрута концовки.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/ru_RU. -->

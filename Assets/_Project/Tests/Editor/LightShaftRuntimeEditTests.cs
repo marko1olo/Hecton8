@@ -638,7 +638,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(featureSource, Does.Contain("ResolveGlobalQualityWeight01()"));
             Assert.That(featureSource, Does.Contain("HomeostasisBrain.GlobalQualityWeight"));
             Assert.That(featureSource, Does.Contain("ResolveSurfaceFogWeight01("));
-            Assert.That(featureSource, Does.Contain("Smooth01(playerMovement.CurrentDepth / safeDepth)"));
+            Assert.That(featureSource, Does.Contain("Smooth01(math.max(0f, movementState.DepthMeters) / safeDepth)"));
+            Assert.That(featureSource, Does.Contain("IPlayerRuntimeContext playerContext = ResolvePlayerContext();"));
+            Assert.That(featureSource, Does.Not.Contain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;"));
             Assert.That(addPassesBlock, Does.Not.Contain("ShouldBypassForSurfaceReadability("));
             Assert.That(shaderSource, Does.Contain("x=quality, y=surface fog weight"));
             Assert.That(shaderSource, Does.Contain("qualityCurve = quality01 * quality01 * (3.0 - 2.0 * quality01)"));

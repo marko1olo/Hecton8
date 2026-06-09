@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "档案传闻记忆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# 档案传闻记忆
 
-CN LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+档案传闻记忆把重玩知识变成世界内记录：它保存怀疑和后果，但不把更强的身体交给下一轮。
 
 ## Scanner
 
-CN LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+档案记忆 // 传闻、警告、合约背景和结局记录会保留。船壳、氧气、工具、货物和地图不会。
 
 ## Terminal
 
-CN LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+持久化规则：档案可以跨战役保留传闻族、证据类别、结局标记和路线警告。它不得保留装备、资源、seed 地形或对真相的所有权。
 
 ## Audio
 
-CN LOC HOLD: Your file remembers what your hands cannot carry.
+文件记得双手带不走的东西。
 
 ## Field Note
 
-CN LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+让知识留下。让压力继续。
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/zh_CN. -->

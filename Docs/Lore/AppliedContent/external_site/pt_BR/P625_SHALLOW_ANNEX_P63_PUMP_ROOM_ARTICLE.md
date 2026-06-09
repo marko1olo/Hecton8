@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Sala de bombas do anexo raso P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Sala de bombas do anexo raso P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+O anexo raso P-63 é o primeiro cômodo que pode voltar a ser útil. Não é sala de recompensa, mas uma máquina cansada: manivela de porão, garganta de válvula presa, marca de selante frio e um fabricador que só aceita reparos de baixo risco até a água cair abaixo da linha de entrada.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+A sala ensina a primeira regra do salvage em HECTON-8: ar vem de reparo, não de sorte. Uma bomba funcionando limpa a inundação até o tornozelo, expõe armários antigos de ferramentas e dá uma razão física para confiar no anexo por mais alguns minutos. O terminal ainda chama a tarefa de intrusão menor de água. As paredes discordam.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/pt_BR. -->

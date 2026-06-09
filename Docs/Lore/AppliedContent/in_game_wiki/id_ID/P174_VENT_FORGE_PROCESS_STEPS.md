@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Vent Forge Process Steps"
+title: "Langkah Proses Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Vent Forge Process Steps
+# Langkah Proses Vent Forge
 
-ID LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Langkah Proses Vent Forge mengubah crafting HECTON-8 menjadi ritual industri yang tetap terasa fisik. Pemain tidak membawa tungku fantasi di saku. Forge adalah tempat laut, vent geotermal, dan hardware koloni yang rusak sejenak sepakat. Blank pertama-tama dipurge agar brine lama tidak mendidih di dalamnya. Lalu diklem sebelum pulse naik, dipanaskan saat tekanan meningkat, disegel pada jeda singkat, dan di-quench dalam arus balik dingin. Acoustic ring terakhir bukan hiasan; ia membuktikan komponen membawa satu tubuh bersih, bukan retakan tersembunyi. Ini memberi crafting ritme yang bisa didukung dunia lewat VFX, audio, dan UI. Panas penting, tetapi timing lebih penting. Jendela yang terlewat tidak menghasilkan fail state misterius. Ia menghasilkan scrap melengkung, bloom garam, atau komponen retak tekanan yang memberi tahu pemain apa yang salah.
 
 ## Scanner
 
-ID LOC HOLD: Vent forging should feel like using the planet against itself.
+Vent forging bukan metalurgi sihir. Ini meminjam panas, tekanan, dan timing planet tanpa membiarkan planet menyimpan komponennya.
 
 ## Terminal
 
-ID LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+LANGKAH VENT FORGE / 01 purge brine dari blank / 02 clamp sebelum pulse / 03 preheat saat vent naik / 04 seal saat jeda tekanan / 05 quench di arus dingin / 06 sertifikasi lewat acoustic ring / gagal: scrap melengkung, bloom garam, atau komponen retak tekanan.
 
 ## Audio
 
-ID LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Bulan ini tungkunya. Kau hanya diizinkan meminjamnya.
 
 ## Field Note
 
-ID LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Proses harus terbaca sebagai purge, clamp, preheat, seal, quench, ring-test. Risikonya bukan api; risikonya melewatkan jeda tekanan.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/id_ID. -->

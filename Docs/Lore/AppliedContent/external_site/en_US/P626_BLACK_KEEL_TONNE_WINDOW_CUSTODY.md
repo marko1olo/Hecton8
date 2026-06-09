@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Black Keel Tonne-Window Custody
 
-The phrase tonne-window sounds like cargo math until a Marauder reads it while counting breaths. Black Keel does not ask for mass because its crew forgot fear. It asks because every kilogram that leaves HECTON-8 becomes custody. A body becomes quarantine custody. A sealed drive becomes evidence custody. A crate of alloy becomes salvage custody. A bag of Xenon-Omega process material becomes debt custody, claim custody and sometimes hazard custody at the same time. Keelmark writes those categories before the carrier moves, because the carrier belongs to a chain of owners that can survive embarrassment but not an unpriced payload. That is why the first answer from orbit can feel cruel. The ship can acknowledge a signal and still refuse the lift. The window might hold proof but not a diver. It might hold a diver if the proof is left behind. It might accept salvage that pays the lien while the body waits for a cleaner quarantine line. Nobody has to laugh for this to hurt. The pain comes from a mature frontier doing exactly what it was built to do: preserve the carrier, preserve the claim, preserve the paper trail, and leave the person to make a mass decision inside the water.
+The tonne-window is one of HECTON-8's cleanest expressions of frontier cruelty. It sounds like accounting because it is accounting, but the thing being counted is physical: mass through a narrow recovery window. Black Keel cannot lift everything from the ocean. It can lift what the route, insurance, quarantine and custody record allow it to lift.
 
-## Scanner
+That makes every payload choice sharper. A living contractor has value, but so does a sealed evidence core that can damage Deep Reach. A Xenon-Omega process cut may be worth more than a crate of ordinary salvage, but it can also poison the quarantine class. Recoverable hull may satisfy an insurer faster than a worker dossier satisfies justice. The carrier does not need to lie to be frightening. It only needs to apply the table.
 
-CUSTODY LINE // Accepted tonne-window mass may be salvage, evidence, body or debt object. A heard packet does not assign lift priority; it assigns liability.
-
-## Terminal
-
-KEELMARK MASS RECEIPT // Window grants custody to a slot, not mercy to a person. Overmass payloads roll to next pass unless claim value, quarantine class and carrier geometry clear together.
-
-## Audio
-
-Black Keel debt audio: I can carry proof, metal or you. The ledger will ask which one keeps the ship solvent.
-
-## Field Note
-
-When the carrier says accepted mass, it is not saying accepted person. Tie your proof to your suit before the ledger asks you to choose.
+For the player, tonne-window custody is the moment the ending pressure becomes concrete. What goes home first: the body, the proof, the sample, the tool, the coordinates, or the story? Black Keel will help calculate the lift. It will not decide that mercy outranks the contract unless the player forces a better custody case into the machine.
 
 <!-- External Site; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/en_US. -->

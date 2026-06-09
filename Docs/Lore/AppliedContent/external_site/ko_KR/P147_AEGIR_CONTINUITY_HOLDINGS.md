@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-KO LOC HOLD: Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant.
+Aegir Continuity Holdings는 연속성이 보살핌처럼 들리게 한다. 실제로는 항로 임대가 노동자보다 오래 살고, 손상된 거주지가 자산으로 남으며, 익사한 작업장이 여전히 옵션을 만든다는 뜻이다.
 
-## Scanner
-
-KO LOC HOLD: The dirty project needs a clean owner with no face.
-
-## Terminal
-
-KO LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
-
-## Audio
-
-KO LOC HOLD: No one works there. Everyone signs through it.
-
-## Field Note
-
-KO LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+이 껍데기는 Deep Reach가 기다릴 수 있게 하므로 중요하다. 공적 분노는 식고, 증거는 낡고, 계약은 굴러가며, 홀딩 회사는 다음 원정이 합법적으로 회수할 수 있는 것을 받을 준비를 유지한다.
 
 <!-- External Site; generated from P147_AEGIR_CONTINUITY_HOLDINGS/ko_KR. -->

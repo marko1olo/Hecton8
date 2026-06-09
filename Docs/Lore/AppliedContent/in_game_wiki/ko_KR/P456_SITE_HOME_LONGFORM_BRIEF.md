@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: 압력 청구"
+title: "HECTON-8: 압력 아래의 클레임"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: 압력 청구
+# HECTON-8: 압력 아래의 클레임
 
-P-63 기록은 시작을 구조가 아니라 부채 아래의 salvage 작업으로 둔다. 유용한 사실은 기계적이다. 소모된 상승 능력, 침수된 항전 장치, 손상된 실, 스캐너 반응, 찌그러짐을 설명하지 못하는 공식 문구.
+HECTON-8은 빚에 묶인 Marauder가 Black Keel claim window를 통해 P-63에 떨어지며 시작되고, 모든 수리와 scan과 봉인문은 생존을 증거로 바꾼다.
 
 ## Scanner
 
-Marauder 인수 기록. Black Keel 계약은 P-63, 손상된 bathydrop, 4.8 tonne-window 담보, 금속 흔적과 맞지 않는 사고 기록을 묶는다.
+공개 홈 기사: 신화보다 계약, Black Keel claim window, 손상 bathydrop, 밝은 P-63 shelf, Deep Reach 누락, 첫 Atlas 수리 흔적.
 
 ## Terminal
 
-공개 아카이브 노드 // H8 청구. Aegir 중계 창 개방. 작업: 압력 실 복구, P-63 스캔, 화물 회수, 증거 보존, 수신 기하가 닫히기 전 귀환.
+SITE LONGFORM: 압력 작업, 증거 custody, 즉시 rescue 없음, family hook 없음, 물리적 proof를 통해 플레이 루트를 제시한다.
 
 ## Audio
 
-Black Keel 중계: "창이 좁다. 하강 껍질을 고치고 압력 흔적을 읽어 화물과 함께 증거를 가져와라."
+HECTON-8에서 누구도 구조를 팔지 않는다. claim을 팔고 나머지는 물이 결정하게 둔다.
 
 ## Field Note
 
-Marauder 메모: P-63의 빛은 안전이 아니다. 공기를 세고, 화물보다 실을 먼저 고치며, 찌그러짐을 설명 못 하는 기록을 믿지 마라.
+서류가 차분하게 들린다면 금속을 읽어라. HECTON-8의 첫 진실은 계약 문장과 부러진 seal 사이에 있다.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ko_KR. -->

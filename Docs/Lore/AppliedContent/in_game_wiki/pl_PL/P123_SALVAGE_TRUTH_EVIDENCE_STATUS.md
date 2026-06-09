@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Status dowodowy prawdy z odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Status dowodowy prawdy z odzysku
 
-PL LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+Prawda na Aegirze jest fizyczna. To rejestrator na wpół wtopiony w grodź, kamera hełmu z solą w stykach, drzwi ciśnieniowe otwarte z niewłaściwej strony. Samo znalezienie nie czyni z tego sprawiedliwości. Deep Reach może nazwać to danymi wyceny. Ubezpieczyciele mogą nazwać to skażeniem. Biuro trasy może uznać materiał za niedopuszczalny, jeśli pęknie łańcuch przechowania. Praca polega nie tylko na wydobyciu dowodu, lecz także na niedopuszczeniu, by stał się ładunkiem.
 
 ## Scanner
 
-PL LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Pakiet czarnej skrzynki: prawda, dopóki nie dotknie jej biuro roszczeń.
 
 ## Terminal
 
-PL LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: surowy odzysk domyślnie staje się materiałem roszczeniowym. Dowód publiczny wymaga nienaruszonego hasha źródła, znacznika ciśnienia i czasu, pakietu świadka, notariusza przekaźnikowego poza kontrolą roszczącego oraz ścieżki przechowania odpornej na utratę statku, solankę i ręczne edycje.
 
 ## Audio
 
-PL LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Zwłoki są dowodem dopiero wtedy, gdy komuś nie uda się ich źle zarchiwizować.
 
 ## Field Note
 
-PL LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Fakt z głębin jest groźny tylko wtedy, gdy zachowa świadków.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/pl_PL. -->

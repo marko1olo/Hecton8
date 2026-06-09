@@ -19,22 +19,22 @@ localization_flags: 0
 
 # HECTON-8: The Pressure Claim
 
-Recovered P-63 route notes frame the opening as salvage work under debt, not rescue. The first useful facts are mechanical: spent ascent capacity, flooded avionics, seal damage, scanner returns, and official language that cannot explain the dents.
+HECTON-8 begins with a debt-bound Marauder dropped through a Black Keel claim window onto P-63, where every repair, scan and sealed door turns survival into evidence.
 
 ## Scanner
 
-Marauder intake record. Black Keel contract links P-63, a damaged bathydrop, a 4.8 tonne-window lien, and an accident file that does not match the metal.
+Public home article: contract-first premise, Black Keel claim window, damaged bathydrop, P-63 bright shelf, Deep Reach omissions, Atlas repair trace.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // H8 CLAIM SUMMARY. Contract window: Aegir relay open. Required work: restore pressure seals, scan P-63, recover cargo, preserve evidence, return before receiver geometry closes.
+SITE LONGFORM: sell the playable route through pressure work, evidence custody, no instant rescue, no family hook, and physical proof before mythology.
 
 ## Audio
 
-Black Keel relay excerpt: "Window is narrow. Fix the drop shell, read the pressure marks, and bring back proof with the cargo."
+No one sells you a rescue on HECTON-8. They sell you a claim and let the water decide the rest.
 
 ## Field Note
 
-Marauder note: daylight on P-63 is not safety. Count air, fix seals before chasing cargo, and distrust any file that cannot explain the dents.
+If the paperwork sounds calm, read the metal. HECTON-8 hides its first truth in the gap between a contract line and a broken seal.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/en_US. -->

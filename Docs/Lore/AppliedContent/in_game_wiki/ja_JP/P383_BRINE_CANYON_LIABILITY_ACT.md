@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Brine Canyon Liability Act"
+title: "塩水峡谷責任ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Brine Canyon Liability Act
+# 塩水峡谷責任ゲート
 
-JA LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+塩水峡谷は時間を証拠に変える。センサー、時計、キュー状態、壊れたルートプレートは、洪水が実在し、受理されたリスクも実在したことを示す。オペレーターは噂集めをやめ、受領者審査に耐える文書の鎖を運び始める。
 
 ## Scanner
 
-JA LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+ルートゲート: 塩水峡谷。密度層、損傷時計、受理済みマージンが物理的責任証拠になる。
 
 ## Terminal
 
-JA LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+キャンペーンルート // 塩水峡谷。必要: マージン痕跡、避難キュー、ルート破断、圧力時計を比較。大潮イベント確認。商業例外とAtlas重み付けは係争中。
 
 ## Audio
 
-JA LOC HOLD: The ocean did not lie. The timetable did.
+海が壁を壊した。時刻表が人を壊した。
 
 ## Field Note
 
-JA LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+略奪者メモ: 潮と争うな。誰かが消すために金を払った時刻印と争え。
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/ja_JP. -->

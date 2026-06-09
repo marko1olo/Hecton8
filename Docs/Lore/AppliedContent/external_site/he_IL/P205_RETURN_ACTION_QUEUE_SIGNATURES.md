@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "חתימות Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# חתימות Return Action Queue
 
-HE LOC HOLD: Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+רשומות Return Action Queue הן הקצה הציבורי של לחץ Deep Reach הנוכחי. אסון 2147 השאיר יומנים, אבל התור של 2190 עדיין מזיז סעיפים דרך חלונות ממסר: שלח קואורדינטות, אשר payload custody, נקה שפת הסגר, ואז דון ב-recovery. החבילה לא טוענת ש-Black Keel חסרת תועלת או ש-Deep Reach יכולה להציל מישהו מיד. היא מראה את ההפך: ספינות מקומיות, חבילות משפטיות מעוכבות ובדיקות custody איטיות מספיק כדי שסדר עדיפויות יהפוך לתמיכת חיים.
 
 ## Scanner
 
-HE LOC HOLD: The old crime has a live queue.
+live return strip התקבל: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 פתוח לשתים עשרה דקות.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Action: prioritize payload custody, coordinate receipt and quarantine handshake before contractor recovery. Carrier clause: Black Keel may delay pickup until custody state is clean.
 
 ## Audio
 
-HE LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+התור של Keene חי. חילוץ יושב מאחורי payload custody אלא אם נשנה את ה-handshake.
 
 ## Field Note
 
-HE LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+זה לא נייר ישן. חותמת התור טרייה: חבילה מעוכבת, carrier clause, פקודת payload-first. בדוק את שפת recovery של Black Keel לפני שאתה סומך על האיסוף.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/he_IL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomie falscher Enden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomie falscher Enden
 
-DE LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 behandelt falsche und teilweise Enden als reale Ergebnisse, nicht als Täuschungen. Eine Materialauszahlung kann Credits auslösen. Ein Teil-Ausgang kann den Spieler mit erhaltenem Dossierwissen in denselben Seed zurückschicken. Konzernübernahme und Quarantäne-Hold können schlechte Nutzlasten oder gefährliche Beweisrouten bestrafen. Tiefere Enden verlangen öffentliche Beweise, eine Lösung des Atlas-Zustands und die Entscheidung, welche Art Rettung der Spieler zu kaufen bereit ist.
 
 ## Scanner
 
-DE LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Endtafel. Manche Ausgänge sind echt genug, um zu zählen, und falsch genug, um weh zu tun.
 
 ## Terminal
 
-DE LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+END-FAMILIEN: Materialauszahlung; Teil-Ausgang und Rückkehr in denselben Seed; Konzernübernahme; Quarantäne-Hold; Freigabe des öffentlichen Ledgers; Atlas-Beckenlösung. Ergebnisakten müssen Nutzlast, Beweis und Schuldenzustand getrennt halten.
 
 ## Audio
 
-DE LOC HOLD: Leaving is not the same as finishing.
+Aus dem Wasser zu kommen heißt nicht, die Arbeit zu beenden.
 
 ## Field Note
 
-DE LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Ein falsches Ende ist kein Trick. Es ist ein gültiger Handel, dem die Wahrheit fehlt.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/de_DE. -->

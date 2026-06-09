@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Contract Approach Act Gate"
+title: "שער גישה חוזית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Contract Approach Act Gate
+# שער גישה חוזית
 
-HE LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+שלב הגישה החוזית מציב את לחץ הקמפיין בלי להעמיד פנים שהאוקיינוס כבר הסביר את עצמו. לוח Black Keel מקצה העברת תביעה, תזמון bathydrop, חשיפת שעבוד וחוב כלים לפני שהמפעיל מגיע למים פתוחים. המסלול מתחיל כעבודה בתשלום בתנאים רעים.
 
-## Scanner
-
-HE LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-HE LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-HE LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-HE LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+הפרט החשוב הוא שארית Deep Reach בפרופיל המפעיל. זה לא חיבור משפחתי ולא תואר גבורה. זו התאמה נוהלית: שפת גישה, קיצורי תחזוקה והרגלי תשתית פינוי שעדיין מתאימים למערכות מושבה נטושות. השער הראשון אומר שהירידה היא עבודה; השורה השנייה אומרת שלעבודה כבר יש תיק.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/he_IL. -->

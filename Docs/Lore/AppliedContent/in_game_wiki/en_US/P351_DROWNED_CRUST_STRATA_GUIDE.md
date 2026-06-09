@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Drowned Crust Strata Guide
 
-The drowned crust is HECTON-8's readable history: old colony cuts, ice-collapse shelves, pressure-glass seams and mineral bands show where a route can hold, shear or fail under touch.
+The drowned crust is HECTON-8's readable history. Old colony cuts, ice-collapse shelves, pressure-glass seams, and mineral bands show where a route can hold, shear, or fail under touch. Salvage crews read it like a damaged ledger: what was built, what fell, and what the ocean has been grinding ever since.
 
 ## Scanner
 

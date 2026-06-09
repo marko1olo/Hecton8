@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Last Normal Day Evidence Set"
+title: "ערכת ראיות היום הרגיל האחרון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Last Normal Day Evidence Set
+# ערכת ראיות היום הרגיל האחרון
 
-HE LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+ערכת ראיות היום הרגיל האחרון היא דרך שטח לקרוא את המושבה הטבועה של HECTON-8. היא אוספת סימני הפרעה קטנים: לוחית ארונית שלא נאספה, תיקון לא חתום, משימת משאבה פתוחה, אסימון ארוחה מהודק, שעון נתיב שעדיין ממתין. אף אחד מהחפצים האלה לא יודע שהוא הפך לראיה.
 
-## Scanner
+הכוח הוא באיפוק. החדר אינו צריך הקלטת פרידה או טרגדיה מסודרת היטב. הוא צריך רק להראות שהנוהל הרגיל עדיין חי כאשר הכשל עבר את הסף. אנשים ספרו מים, החזירו כלים, תיקנו לוחות וציפו לארוחה. הרצף הרגיל הזה הופך את השבר לכבד יותר.
 
-HE LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-HE LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-HE LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-HE LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+הערכה נושאת גם אשמה. ניסוח תאונה רשמי מחליק לעיתים את החדר; הסתירות הפיזיות מחספסות אותו מחדש. תעודת משאבה, ספירת משמרת, קטגוריית גוף, אי התאמת שעון-דלת: יחד הן יכולות להפוך סגירה שטוחה לשאלה שמישהו ניסה לא לשאול. ב-HECTON-8, היום הרגיל האחרון הוא הרגע שבו routine עדיין מאמינה שתמשיך.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/he_IL. -->

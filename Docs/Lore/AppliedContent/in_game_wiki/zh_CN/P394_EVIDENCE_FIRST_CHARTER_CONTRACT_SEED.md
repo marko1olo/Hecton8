@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Evidence First Charter Contract Seed"
+title: "证据优先宪章合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Evidence First Charter Contract Seed
+# 证据优先宪章合同种子
 
-ZH LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+证据优先宪章是一组降低散件打捞付款、为证据保留更多航路容量的合同。事故包、舱门状态条、pinger日志和公证盒会在航路开始失效时排在重部件前面。
 
 ## Scanner
 
-ZH LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+合同种子：证据优先宪章。材料付款更低，公证容量更大，证据保存冲突更硬。
 
 ## Terminal
 
-ZH LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE：材料付款降低，公证盒容量提高，证据柜优先启用，salvage拆取惩罚启用，Deep Reach receiver施压可能。
 
 ## Audio
 
-ZH LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+最干净的记录付款晚，惹怒人早。
 
 ## Field Note
 
-ZH LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+掠夺者备注：证据柜不会免除债务。它只是不让债务决定哪份证据先死。
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/zh_CN. -->

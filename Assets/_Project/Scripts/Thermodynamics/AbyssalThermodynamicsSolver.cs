@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -92,6 +93,7 @@ namespace Hecton8.Thermodynamics
         private VaultGenerationHandle<ThermalResidualSlot64> _solverResidualSamples;
         private VaultGenerationHandle<int> _solverDumpLatch;
 
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private JobHandle _pendingHandle;
         private JobHandle _sampleReadHandle;
         private bool _hasPendingJob;
@@ -136,6 +138,7 @@ namespace Hecton8.Thermodynamics
             EnsureNative();
             RegisterRuntime();
             TryRegisterHotSwapListener();
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             ActiveRuntimeInstance = this;
         }
 
@@ -148,6 +151,7 @@ namespace Hecton8.Thermodynamics
                 HectonFloatingOrigin.UnregisterListener(this);
 
             _registeredOrigin = false;
+            _oceanKinematicsService = null;
 
             ReleaseVisualBuffers();
 
@@ -164,6 +168,7 @@ namespace Hecton8.Thermodynamics
             _vault = null;
             _nativeReady = false;
             _lastInitializedResolution = 0;
+            _oceanKinematicsService = null;
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -179,6 +184,12 @@ namespace Hecton8.Thermodynamics
                 TryUnregisterRuntimeLanes();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 

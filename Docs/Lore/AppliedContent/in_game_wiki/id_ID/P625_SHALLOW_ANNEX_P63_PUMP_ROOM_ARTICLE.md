@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Ruang Pompa Aneks Dangkal P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Ruang Pompa Aneks Dangkal P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 baru berguna setelah ruang pompanya diperbaiki. Pemompaan manual menurunkan banjir, membuka loker alat lama, dan menjaga fabricator lapangan tetap dalam jendela otoritas perbaikan aman.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+INTAKE RUANG POMPA // Tersumbat tapi bisa diservis. Rute bilge manual tersedia. Keringkan dulu, potong kemudian.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+PERAWATAN P-63 // Intrusi air kecil tercatat. Bilge manual diterima. Fabricator lapangan terkunci ke antrean gasket, clamp, dan contact-cutter sampai intake bersih.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Putar pompa sampai lantai menjawab. Kalau kamu memotong dulu, loker alat akan banjir.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Sudut kering bukan rumah. Itu sepuluh menit untuk berpikir. Ambil.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/id_ID. -->

@@ -19,22 +19,8 @@ localization_flags: 1
 
 # دليل تاريخ ضغط الدين الأزرق
 
-Xenon-Omega، الذي يسميه عمال salvage باسم blue debt، يربط جيولوجيا HECTON-8 بـ computation وdebt law والسبب الذي يجعل Deep Reach تريد مطالبة غارقة مرة أخرى.
+الدين الأزرق ليس حجرا كريما ولا خاما سحريا. إنه الاسم الميداني لركيزة مستقرة الضغط تحمل Xenon-Omega: بنية معدنية لا تصبح ثمينة إلا بعد أن يضغطها المحيط ويسخنها ويبردها ويجرحها كهربائيا بالترتيب الصحيح. قد تكون العينة اللامعة بلا قيمة. وقد تدفع كتلة باهتة ومختومة ثمن شهر من الأكسجين إذا كان تاريخ ضغطها نظيفا وبقي انحراف إشارتها صامتا.
 
-## Scanner
-
-تم وسم عينة blue debt. تحقق من pressure history وcontainment stage وsignal drift قبل export.
-
-## Terminal
-
-MARAUDER NOTE: blue debt لغة salvage عامية لـ Xenon-Omega-bearing pressure-stable substrate. قيمته لأن extreme computation وenergy isolation تحبانه، لا لأنه يتوهج.
-
-## Audio
-
-الدين الأزرق هو ما يسميه الناس بعد وصول الفاتورة.
-
-## Field Note
-
-اللون ليس grade. الحاوية الصامتة ذات custody نظيفة تدفع؛ والحاوية التي تغني تشتري لك drone wake.
+لذلك تصبح كل لقطة من الدين الأزرق مادة قانونية فور العثور عليها. Atlas تريد الانحراف. Deep Reach تريد تاريخ المطالبة. فرق salvage تريد حاوية لا تغني بصوت يكفي لإيقاظ الطائرات المسيرة. المورد خطير لأنه يقع عند تقاطع الجيولوجيا والحوسبة والحيازة والدين. يثبت أن HECTON-8 لم يكن مجرد مستعمرة غارقة. كان دفتر حساب مدفونا يكتب الضغط أرقامه.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ar_SA. -->

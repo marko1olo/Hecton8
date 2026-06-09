@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Compliance-keten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Compliance-keten
 
-NL LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+De Recovery Compliance-keten verandert een rampsite in een gecontroleerd assetveld. Hij kan toegang, snijden, monstername, getuigenverzameling, dataverzegeling en terugkeermassa autoriseren. Hij kan ook blijven vragen of een levende persoon bewijs, aansprakelijkheid, vracht of obstakel is.
 
 ## Scanner
 
-NL LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Recovery-order geaccepteerd. Reddingstaal niet aanwezig in de keten.
 
 ## Terminal
 
-NL LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+RECOVERY-KETEN: actie na incident loopt via vrijgave van contractanten, bewaring van bewijs, salvage-rechten, getuigenafhandeling, routeverzekering en publieke formulering zonder erkenning. Redden is niet het sturende werkwoord.
 
 ## Audio
 
-NL LOC HOLD: You are not rescued. You are classified.
+Ze kwamen om recovery na te leven. Dat is niet hetzelfde als terugkomen voor ons.
 
 ## Field Note
 
-NL LOC HOLD: Delay does not make an order harmless.
+Compliance komt met handschoenen, zegels en geen belofte dat iemand nog persoon is.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/nl_NL. -->

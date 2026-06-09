@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Regels voor Marauder-correctiemarkeringen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Regels voor Marauder-correctiemarkeringen
 
-NL LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Regels voor Marauder-correctiemarkeringen leggen uit hoe HECTON-8 latere salvagers oud bewijs laat aanraken zonder canon te breken. Correctiemarkeringen voegen een levende laag toe bovenop bedrijfspapier: naam bewaren, categorie betwisten, route waarschuwen, monster prijzen, getuige verbergen of schuld markeren. Ze laten replaybewijs voelen alsof andere claimarbeiders het hebben behandeld, terwijl elke handgeschreven wijziging functioneel blijft.
 
 ## Scanner
 
-NL LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Een correctiemarkering kan een naam redden, een claim vergiftigen of de volgende duiker waarschuwen dat de officiële categorie liegt.
 
 ## Terminal
 
-NL LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: Marauder-markeringen moeten bewijsinterpretatie, routerisico of uitbetalingsdruk veranderen. Geldige markeringen bewaren een arbeidersnaam, betwisten een verzekeringscategorie, waarschuwen voor een route, prijzen een monster, verbergen een getuige of markeren schuld. Lege graffiti breekt de bewijsketen.
 
 ## Audio
 
-NL LOC HOLD: Somebody came before you and still failed to leave clean.
+Iemand kwam voor jou en kon nog steeds niet schoon vertrekken.
 
 ## Field Note
 
-NL LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Markeringen: naam bewaren, categorie betwisten, route waarschuwen, monster prijzen, getuige verbergen, schuld markeren. Handschrift moet de lezing veranderen, niet de prop versieren.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/nl_NL. -->

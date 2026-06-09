@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "物资结算账本"
+title: "材料结算账本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 物资结算账本
+# 材料结算账本
 
-物资结算账本记录类似Stalker的假成功路线：玩家能获利，却在道德上未解决地离开HECTON-8。
+材料结算账本定义一条已付款离站路径。交出认证材料后可以带着结清账户离开 HECTON-8，但若证据档案没有带出，事件记录仍会被隔离。
 
 ## Scanner
 
-blue debt样本认证。可结算。真相可选。Deep Reach偏爱这种顺序。
+blue debt 样本已认证：质量、纯度、压力日志、保管链。款项能比证据更早结清。
 
 ## Terminal
 
-结算计划：样本质量、纯度、压力历史与保管链通过。证据档案未解决。
+封箱与样本账本匹配、下降压力历史无缺口、Deep Reach 报价码接受保管链时，结算开启。材料结案把信用转入托管，并把 Atlas 档案标为不可计费残留。
 
 ## Audio
 
-账户清了。水没有。
+账户清了。水留着收据。
 
 ## Field Note
 
-成功合同仍可能是失败人生。
+干净转账也可能是一种掩埋。
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/zh_CN. -->

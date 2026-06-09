@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "بذور موظفي المكاتب الفرعية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# بذور موظفي المكاتب الفرعية
 
-AR LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+تحدد بذور موظفي المكاتب الفرعية كيف يجب أن تظهر أسماء Deep Reach الدنيا في لور HECTON-8. الهدف ليس اختراع قائمة أشرار أخرى؛ بل جعل البيروقراطية مقروءة وبشرية. يجب أن يواجه اللاعب أحرفاً أولى على مذكرات تالفة، وأختام مكاتب متكررة، وتجزئات شهود، وتواقيع متناقضة، حتى تكف Deep Reach عن كونها شعاراً وتصبح مبنى مليئاً بأشخاص دُربوا على حماية الشيء الخطأ. تحافظ هذه البذور أيضاً على اتساق المقالات القادمة: الأسماء ترتبط بالوظائف، والوظائف بالأدلة، والأدلة بالغرف التي يستطيع اللاعب فهمها.
 
 ## Scanner
 
-AR LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+تكتسب أسماء Deep Reach الدنيا أهميتها لأن الكارثة حملتها أيدٍ وأحرف أولى وصناديق وارد، لا شعار شركة مجرد.
 
 ## Terminal
 
-AR LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: استقبال هامش المخاطر / مستشار طابور الإخلاء / محلل استمرارية Atlas / موثق حزم / كاتب حيازة الاسترداد. استخدم الأسماء كمرتكزات توقيع وتعارضات شهود وأدلة غرف، لا كسلم أوامر بسيط.
 
 ## Audio
 
-AR LOC HOLD: A clerk can damage a life without owning the whole disaster.
+كانت للمكاتب أسماء. لذلك تؤلم الورقة.
 
 ## Field Note
 
-AR LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+تصير الشركة حقيقية عندما يكون خلف الختم شخص متعب.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/ar_SA. -->

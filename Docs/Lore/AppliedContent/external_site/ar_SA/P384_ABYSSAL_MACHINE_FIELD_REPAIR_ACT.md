@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Abyssal Machine Field Repair Act"
+title: "بوابة حقل الآلة السحيق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Abyssal Machine Field Repair Act
+# بوابة حقل الآلة السحيق
 
-AR LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+حقل الآلة السحيق يحول الخوف إلى إجراء. الأفلام الموصلة والأعضاء الصوتية وأحواض الخدمة ليست زينة. إنها مكونات يجب على المشغل أن يمرر عبرها تحت الضغط وفقدان الطاقة وجداول ملكية ملوثة.
 
-## Scanner
-
-AR LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-AR LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-AR LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-AR LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+تعمل هذه المرحلة لأن كل إصلاح مفيد وقذر قانونيا. جسر حي يمكن أن يعيد بابا. الجسر نفسه قد يجعل الباب بيولوجيا، ويجعل الإصلاح حدث Atlas، ويصعب تصنيف المطالبة. الطريق إلى الأمام مبني من الشيء الذي يجعل الأوراق أسوأ.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ar_SA. -->

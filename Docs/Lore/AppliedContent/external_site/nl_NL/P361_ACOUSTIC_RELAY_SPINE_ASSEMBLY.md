@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Akoestische relaisspine-assemblage
 
-De Akoestische relaisspine-assemblage verankert HECTON-8's escape loop in salvage-engineering: geluid moet druk, routegeometrie en custody overleven voordat de baan het gelooft.
+De akoestische relaisspine-assemblage is het eerste stuk van HECTON-8s ontsnappingsketen dat overleven in een meetbaar signaal verandert. Het is geen radiomast en geen noodgebed. Het is een pressure-code spine van keramische ribben, cable jacket, ballast floats en pinger timing.
 
-## Scanner
+Het probleem is vertrouwen. HECTON-8s water draagt inslagruis, pompklop, brine scatter en route-echo's. Black Keel ontvangt meer geluid dan veilig kan worden aanvaard. Een capsule die recovery wil, moet bewijzen dat zijn tap bij een route, klok en custody chain hoort, niet bij een los paneel dat tegen een overstroomd frame slaat.
 
-Gebroken akoestische spine. Hij kan pressure-code door water tikken; de baan hoort het nog steeds als beschadigd custody noise.
-
-## Terminal
-
-ASCENT RELAY: herstel laagbandige akoestische spine vóór recovery window. High-gain mast verloren. Emergency buoy onbetrouwbaar. Black Keel-ontvanger accepteert pressure-code pas na route proof.
-
-## Audio
-
-Als de Keel ons hoort, hoort hij een wond op een pijp tikken.
-
-## Field Note
-
-De eerste roep van de capsule is geen stem. Het zijn keramische ribben, kabelhuid, pinger floats en genoeg timingdiscipline om de oceaan je correct te laten herhalen.
+Reparatie geeft de opstijgcapsule een smalle stem: coördinaten, survival state, clock match, checksum. Dat is genoeg om een recovery-gesprek te beginnen, niet om redding te garanderen. De oceaan kan het signaal nog buigen. De carrier kan het packet nog als damaged claim noise behandelen. De component krijgt de eerste beluistering; hij wint de zaak niet.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/nl_NL. -->

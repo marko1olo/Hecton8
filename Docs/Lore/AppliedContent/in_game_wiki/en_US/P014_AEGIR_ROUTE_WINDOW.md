@@ -19,24 +19,24 @@ localization_flags: 0
 
 # Aegir Route Window
 
-An Aegir route window is not a weather forecast with prettier words. It is the moment when several hostile clocks briefly agree: gas-giant radiation, moon shadow, storm noise, tide shear, acoustic link quality, ascent mass and Black Keel's orbital geometry. The window can be open for data and bad for bodies, or good for ascent and noisy enough to corrupt evidence.
+An Aegir route window is not a fancy weather forecast. It is the short period when hostile clocks agree enough for one action to count. The gas giant throws radiation and magnetic noise. HECTON-8 moves through eclipse and relay-shadow bands. Storm plumes dirty uplink. Tides move through canyons and colony shafts. Acoustic links change with pressure and water chemistry. Black Keel sits in a high transfer pattern, not like a loyal helicopter above the roof.
 
-HECTON-8's sky belongs in the survival loop. The player reads the ocean and orbit together. A route may be physically clear but legally cold. A carrier may be overhead but outside recovery angle. A quiet uplink may arrive during a tide that chews the service canyons into moving debris.
+The window can be open for one thing and closed for another. A data packet may fit while a living body does not. A sealed evidence core may clear quarantine while a blue-debt sample triggers custody delay. A payload may be physically liftable and legally blocked. This is why the player cannot treat rescue as a button. The route window is a survival clock, a legal clock and a mass clock crossing each other for a few dangerous hours.
 
 ## Scanner
 
-Local ephemeris table. Comm, tide, radiation, moon shadow and carrier geometry share one narrow ascent window.
+Local ephemeris table. Aegir radiation, moon shadow, storm plume, tide shear, acoustic link quality, Black Keel geometry and tonne-window custody briefly align.
 
 ## Terminal
 
-AEGIR WINDOW UPDATE // Kestrel shadow clearing. Uplink noise falling. Radiation count rising. Tide shear in service canyons increasing. Black Keel recovery geometry pending ascent mass.
+AEGIR WINDOW SOLVER // Data uplink partial. Body recovery closed. Payload ascent conditional. Radiation surge in drift band. Moon relay shutter active in next local cycle. Black Keel transfer geometry requires legal and quarantine handshake before mass commit.
 
 ## Audio
 
-A clear sky is not a safe sky. Check the giant.
+The sky is not scenery here. It is another lock on the door.
 
 ## Field Note
 
-On HECTON-8, weather is local and orbital at the same time.
+Open for signal is not open for body.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/en_US. -->

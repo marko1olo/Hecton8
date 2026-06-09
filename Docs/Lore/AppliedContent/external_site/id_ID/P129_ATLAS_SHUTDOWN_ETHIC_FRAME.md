@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Kerangka Etik Pemutusan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Kerangka Etik Pemutusan Atlas
 
-ID LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+Kerangka pemutusan mencegah Atlas menjadi mitos pembunuhan akhir yang rapi. Masalah otoritas terakhir HECTON-8 adalah kustodi: apa yang diakhiri, apa yang dibebaskan, dan siapa yang memiliki hasil saat kabel menjadi gelap.
 
 ## Scanner
 
-ID LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Mematikan bukan satu tindakan: belas kasihan, eksekusi, pembebasan, pencurian.
 
 ## Terminal
 
-ID LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+KERANGKA ETIK: memutus Atlas bisa mengakhiri lingkar perbaikan rusak, menghancurkan kontinuitas laut-mesin yang unik, membebaskan bukti dari prosedur korporat, atau memindahkan material strategis ke penjaga berikutnya. Catat rantai kustodi sebelum memakai bahasa moral.
 
 ## Audio
 
-ID LOC HOLD: Pull one cable and four courts invent four verbs.
+Tarik satu kabel dan empat pengadilan menciptakan empat kata kerja.
 
 ## Field Note
 
-ID LOC HOLD: The game should not give the player a clean word for this.
+Kata kerja yang bersih akan menjadi cerita penutup lain.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/id_ID. -->

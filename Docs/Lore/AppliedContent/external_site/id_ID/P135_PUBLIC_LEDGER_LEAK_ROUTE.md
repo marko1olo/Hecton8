@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Kebocoran Ledger Publik
 
-Kebocoran ledger publik bukan fantasi whistleblower sempurna. Itu paket yang pergi lewat jendela relay sempit dengan witness hash, custody yang cukup untuk sulit disangkal, dan terlalu banyak bagian hilang untuk aman. Tau Ceti bisa membuat catatan itu publik jauh setelah ia bisa menyelamatkan siapa pun di air.
+Kebocoran ledger publik bukan fantasi pelapor sempurna. Itu paket rusak yang pergi sebelum custody penuh, membawa cukup bukti untuk membuat penyangkalan mahal dan cukup konteks hilang untuk membuat setiap pembaca berbahaya. Tau Ceti mungkin membuat catatan itu publik jauh setelah ia bisa menyelamatkan siapa pun di air.
 
-Penundaan itu intinya. Deep Reach tidak bisa sekadar menghapus claim, tetapi pemain juga tidak bisa menentukan siapa yang memakainya berikutnya. Asuransi, rival, pengadilan sipil, pool Marauder, dan kantor korporat akan membaca luka yang sama dengan cara berbeda. Ending ini membuat kebenaran lebih sulit dikubur dan lebih sulit dimiliki.
+Penundaan itu intinya. Deep Reach kehilangan cover-up paling bersih, tetapi saksi juga kehilangan kepemilikan. Catatan yang sama bisa menjadi tuntutan, tuas, matematika asuransi, propaganda domain, atau kontrak baru. Rute ini membuat kebenaran lebih sulit dikubur dan lebih sulit dimiliki.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/id_ID. -->

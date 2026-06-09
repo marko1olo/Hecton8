@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Quarantine Relay Fragment"
+title: "Фрагмент карантинного реле"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Quarantine Relay Fragment
+# Фрагмент карантинного реле
 
-RU LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+Фрагмент карантинного реле - маленькая концовка с зубами. Он доказывает, что HECTON-8 может спасти человека от давления и все равно не вернуть ему статус человека. В одном административном выдохе пакет держит две истины: извлечение принято, выпуск запрещен. Тело извлечено. Лицо удержано. Строка проверки воздуха старше спасательной квитанции, а значит карантинный вердикт ждал еще до того, как кто-то открыл люк. Для геймплея и лора этот фрагмент важен тем, что делает спасение морально неполным. Сухой пол - еще не свобода. Медицинская пломба - еще не выпуск. Колония может сохранить нужное ей как улику, образец, имущество заявителя или инвентарь свидетелей, а живого человека оставить внутри системы, которая его сломала.
 
 ## Scanner
 
-RU LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Один и тот же пакет реле разрешает эвакуацию и запрещает выпуск. Океан отпускает тело раньше, чем колония отпускает человека.
 
 ## Terminal
 
-RU LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+УДЕРЖАНИЕ РЕЛЕ QRF-17 / ИЗВЛЕЧЕНИЕ: ПРИНЯТО / ВЫПУСК: ЗАПРЕЩЕН / ПРИЧИНЫ: спорная цепочка образцов, устаревшая проверка воздуха, активный спор заявителя, временный статус свидетеля.
 
 ## Audio
 
-RU LOC HOLD: You are out of the water. You are not out of custody.
+Удержание реле. Извлечение принято. Выпуск запрещен. Ты выбрался из воды, но не из-под надзора.
 
 ## Field Note
 
-RU LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Два штампа: ТЕЛО ИЗВЛЕЧЕНО, ЛИЦО УДЕРЖАНО. Проверка воздуха старше спасательной квитанции; спор заявителя открыт.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/ru_RU. -->

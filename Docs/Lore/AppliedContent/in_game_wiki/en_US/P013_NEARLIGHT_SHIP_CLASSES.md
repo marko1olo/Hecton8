@@ -19,24 +19,26 @@ localization_flags: 0
 
 # Nearlight Ship Classes
 
-Nearlight ships built the human sphere without breaking physics. Needleprobes arrived first because they were cheap enough to lose. Seed ships followed with machines, genomes and instructions. Atlas-class freight carriers moved factories, sleepers, debt contracts and heavy shielding. System tenders and claim-pool carriers like Black Keel worked after arrival, inside the local gravity well.
+Nearlight ships built the human sphere by accepting that physics would not be charmed. Needleprobes went first because they were narrow, shielded and cheap enough to lose. Seed ships followed with machines, genomes, route instructions and construction habits that could survive years of cold staging. Atlas-class freight carriers moved the expensive mass: factory cores, sleeper bays, shield ice, radiators, drilling systems and contracts that were already older than some crews when they woke.
 
-The class table matters because it separates ownership from rescue. Aegir can be claimed by human law while still being hard to reach with bodies. A carrier can hold orbit and price a salvage window without being able to pull a Marauder through kilometers of storm water. Interstellar travel exists here as schedule, mass and liability.
+The ship class matters because each class has a different way to fail. A needleprobe can die usefully. A seed ship can arrive without witnesses. A sleeper transport can preserve bodies while turning their labor into custody. A system tender can work inside Aegir and still be unable to cross from core space on command. A claim-pool carrier like Black Keel is not freedom with engines; it is a recovery machine that counts mass, quarantine, insurance and evidence in the same ledger.
+
+No class in the table breaks light. Beam sails, pellet lanes, fusion-electric throats, shield ice, magsails and receiver windows make travel possible, not casual. Arrival is the cruel half. If nobody owns braking, nobody arrives as useful mass.
 
 ## Scanner
 
-Transit manifest lists needleprobe, seed ship, Atlas freight carrier, sleeper transport, system tender and claim-pool carrier.
+Transit manifest lists needleprobe, seed ship, Atlas-class freight carrier, sleeper transport, system tender and claim-pool carrier. No FTL class present.
 
 ## Terminal
 
-TRANSIT CLASS TABLE // No FTL lane registered. All classes require launch infrastructure, shielding mass, braking plan, route custody and debt authority. Local rescue capability not implied by interstellar ownership.
+SHIP CLASS TABLE // Needleprobe expendable. Seed ship automated. Atlas freight mass-rated. Sleeper transport biologic custody. System tender in-domain. Claim-pool carrier lien-bound. All classes require braking ownership.
 
 ## Audio
 
-A ship can cross stars and still be useless to a flooded room.
+The ships did not make distance small. They made distance billable.
 
 ## Field Note
 
-Ships are not freedom. Ships are schedules with engines.
+A ship is a route with a hull around the expensive part.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/en_US. -->

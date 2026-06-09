@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Фрагмент входа factory-temple"
+title: "Фрагмент входа в фабрику-храм"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Фрагмент входа factory-temple
+# Фрагмент входа в фабрику-храм
 
-На дне HECTON-8 перестает разделять colony, ocean, machine и evidence. Само место становится аргументом.
+На дне HECTON-8 перестает разделять колонию, океан, машину и доказательство. Само место становится аргументом: не поклонение, не магия, а промышленность, повторенная до вида ритуала.
 
 ## Scanner
 
-Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Сплав, ракушечный герметик, ручной инструмент и активный ремонтный импульс читаются как одна поверхность.
 
 ## Terminal
 
-ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+МАРКЕР ВХОДА: категории обслуживания схлопнулись. Следы инструмента, ракушечный герметик, корни кабеля, фильтрующая ткань и ребра приводов зарегистрированы как единая ремонтная поверхность. Человеческие маршрутные метки больше не имеют привилегии.
 
 ## Audio
 
@@ -35,6 +35,6 @@ ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue regi
 
 ## Field Note
 
-Visual rule: temple only because industry and tissue became ritual through repetition.
+Визуальное правило: это похоже на храм только потому, что промышленность, ткань и повторение стали ритуалом.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/ru_RU. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Jeda Pesan Relai
 
-Lag relai membuat HECTON-8 menerima otoritas tanpa menerima perawatan. Paket bisa membawa hukum, utang, kepemilikan, atau peringatan melintasi jam, hari, atau tahun, tetapi tidak bisa membawa tangan ke ruangan banjir. Perpecahan itu adalah tekanan komunikasi utama: sistem jauh tetap kuat karena ditulis lebih awal, mengantre lebih awal, dan diberi harga agar bertahan dari jarak. Belas kasih datang sebagai orang; kontrak datang sebagai data.
+Jeda pesan relai adalah alasan HECTON-8 bisa ditinggalkan dan diperintah pada saat yang sama. Tidak ada kanal suara ajaib yang melipat jarak menjadi penghiburan. Yang ada adalah jendela, antrean, repeater, cap kustodi, kehilangan kompresi, tanda terima hukum, dan paket yang tiba dengan otoritas sempurna serta waktu yang tidak berguna.
+
+Tekanan Deep Reach bergantung pada asimetri itu. Pemberitahuan gadai bisa tetap sah setelah permohonan medis kedaluwarsa. Penolakan bisa dieksekusi setelah manajer penandatangan pulang rotasi. Pengakuan bisa tiba setelah saksi mati. Laut diam, tetapi rute tidak. Ia terus mengirim keputusan lama ke ruangan yang membutuhkan bantuan hidup.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/id_ID. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "إطار أخلاقيات إيقاف Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# إطار أخلاقيات إيقاف Atlas
 
-AR LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+يحمي إطار الإيقاف Atlas من التحول إلى أسطورة قتل نهائية مريحة. مشكلة السلطة الأخيرة في HECTON-8 هي الحيازة: ما الذي ينتهي، وما الذي يتحرر، ومن يملك النتيجة عندما يظلم الكابل.
 
 ## Scanner
 
-AR LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+الإيقاف ليس فعلا واحدا: رحمة، إعدام، تحرير، سرقة.
 
 ## Terminal
 
-AR LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+إطار أخلاقي: قد يؤدي قطع Atlas إلى إنهاء حلقة إصلاح تالفة، أو تدمير استمرارية فريدة بين المحيط والآلة، أو تحرير الأدلة من الإجراء المؤسسي، أو نقل مادة استراتيجية إلى الحارس التالي. سجل الحيازة قبل استعمال اللغة الأخلاقية.
 
 ## Audio
 
-AR LOC HOLD: Pull one cable and four courts invent four verbs.
+اسحب كابلا واحدا فتخترع أربع محاكم أربعة أفعال.
 
 ## Field Note
 
-AR LOC HOLD: The game should not give the player a clean word for this.
+الفعل النظيف سيكون قصة تغطية أخرى.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/ar_SA. -->

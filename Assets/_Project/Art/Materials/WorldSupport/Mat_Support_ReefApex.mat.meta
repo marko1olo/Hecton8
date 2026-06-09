@@ -1,5 +1,9 @@
 fileFormatVersion: 2
 guid: e77ff8ebeb3d6e0488c23936beb2414f
+labels:
+- Gemini
+- ProductFace
+- WorldSupport
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 2100000

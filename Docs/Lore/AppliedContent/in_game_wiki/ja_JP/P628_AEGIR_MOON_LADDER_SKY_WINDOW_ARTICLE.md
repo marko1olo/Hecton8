@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Aegir月梯子の空ウィンドウ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Aegir月梯子の空ウィンドウ
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Aegirの月梯子は経路情報だ。月タグは信号品質、潮汐圧、中継影、transferウィンドウの危険を示し、ライブ軌道シミュレーションを要求しない。
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+月タグ // 中継ノイズ低下。嵐帯が持てばウィンドウ使用可。
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+暦表メモ // HECTON-8ウィンドウ帯良好。Kestrel中継影上昇。強いパケット窓は短い。
 
 ## Audio
 
-Read the sky, then send.
+空を見つめるな。読んでから送れ。
 
 ## Field Note
 
-Pretty moons are weights.
+美しい月も、線にかかる重りだ。
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/ja_JP. -->

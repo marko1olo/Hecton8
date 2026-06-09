@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "שכבות ידע של הסיבה האמיתית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# שכבות ידע של הסיבה האמיתית
 
-HE LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+שכבות ידע של הסיבה האמיתית הן מפת הידע התאגידי מאחורי HECTON-8. המאמר מפריד ראיות לפי משרדים לא כדי לפטור את Deep Reach, אלא כדי להפוך את הפשע לאמין יותר: נתוני אוקיינוס, שקלול בינה מלאכותית, חוק פינוי, המרה ביטוחית וציות שחזור החזיקו חלקים שונים של אותה שרשרת קטלנית. האימה אינה פקודה נסתרת שאומרת „הרגו את המושבה”. האימה היא חברה שנבנתה כך שכל שולחן יראה אמת חלקית, יגן על המדד שלו ויעביר את השארית המוסרית הלאה, עד שחילוץ יהפוך לאירוע אחריות.
 
 ## Scanner
 
-HE LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach ידעה את האמת בפרוסות: שולי גאות במשרד אחד, שקלול Atlas באחר, עיכוב פינוי והמרת תביעות במקום אחר.
 
 ## Terminal
 
-HE LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: צוותי גאות תיעדו אובדן שוליים; Risk קיבל חשיפת קצה; Atlas Safety שקללה רציפות מעל פינוי; ייעוץ משפטי החזיק שחרורים; Keelmark המיר מוות להפסד בר-השבה; Recovery Compliance דרש מטען לפני גילוי.
 
 ## Audio
 
-HE LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+איש לא היה צריך לכתוב „תנו להם למות”. הטבלה כבר ידעה איך.
 
 ## Field Note
 
-HE LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+בורות מבוזרת לא הייתה חפות. היא הייתה ארכיטקטורה.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/he_IL. -->

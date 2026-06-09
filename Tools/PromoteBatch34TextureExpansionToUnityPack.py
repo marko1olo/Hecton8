@@ -97,7 +97,7 @@ def usage_flags(entry: dict) -> dict[str, bool]:
     is_glass = family.startswith("glass")
     is_fabric = family.startswith("fabric") or family.startswith("suit")
     return {
-        "heldToolAllowed": bool(source_type == "TRIM_SHEET" and (is_rubber or is_glass or is_fabric)),
+        "heldToolAllowed": bool((source_type == "TRIM_SHEET" and (is_rubber or is_glass or is_fabric)) or family == "glass_lens"),
         "stationPropAllowed": bool(is_hard or is_rubber or is_glass or is_fabric),
         "salvageAllowed": bool(is_hard),
         "worldPanelAllowed": bool(is_hard or family in {"rubber_trim", "fabric_insulation", "suit_fabric"}),
@@ -202,7 +202,7 @@ def promote(args: argparse.Namespace) -> int:
     assets: list[dict] = []
     for entry in selected:
         intake_entry = intake_by_id[str(entry["id"])]
-        maps = intake_entry.get("maps", {}) or {}
+        maps = entry.get("maps", {}) or intake_entry.get("maps", {}) or {}
         asset_id = asset_safe_id(entry)
         asset_dir = TILES_ROOT / asset_id
         base_path = asset_dir / f"TX_B34_{asset_id}_BaseColor.jpg"
@@ -238,6 +238,11 @@ def promote(args: argparse.Namespace) -> int:
             "provisionalPbrMaps": True,
             "sourceType": entry["sourceType"],
             "sourceFamily": entry["family"],
+            "regenTargetId": entry.get("regenTargetId", ""),
+            "regenTargetVariant": entry.get("regenTargetVariant", ""),
+            "regenTargetDecision": entry.get("regenTargetDecision", ""),
+            "regenTargetManifest": entry.get("regenTargetManifest", ""),
+            "regenBroadSeamlessAccepted": bool(entry.get("regenBroadSeamlessAccepted", False)),
             "width": width,
             "height": height,
             "baseMode": mode,

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Польовий довідник процесу vent-forge"
+title: "Польовий довідник vent-forge процесу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Польовий довідник процесу vent-forge
+# Польовий довідник vent-forge процесу
 
-Vent forges - природно-індустріальні реактори. Вони перетворюють тепло, brine і pressure history на корисні ceramics, sealants і charge materials, залишаючи кожен зразок прив'язаним до його теплового шляху.
+Vent-forge - природно-промисловий реактор. Він перетворює тепло, brine, історію тиску і повільне охолодження на кераміку, герметики й зарядні матеріали. Зразок корисний тільки якщо його тепловий шлях переживе вилучення.
 
 ## Scanner
 
-Vent-forge chemistry активна. Якість залежить від pressure history, heat pulse і повільного охолодження, а не від блиску зразка.
+Vent-forge хімія активна. Якість залежить від історії тиску, теплового імпульсу й повільного охолодження, а не від блиску зразка.
 
 ## Terminal
 
-FIELD GUIDE: vent forges варять sulfides, noble-gas pockets, ceramics і sealant precursors. Шлях зразка через heat, brine і pressure важливіший за його назву.
+ПОЛЬОВИЙ ДОВІДНИК: vent-forge варить сульфіди, кишені благородних газів, керамічні зерна і прекурсори герметика. Шлях зразка через тепло, brine і тиск важливіший за його назву.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Vent не зробив руду. Він зробив процес, який ти
 
 ## Field Note
 
-Не піднімай свіжу партію просто в холодну воду. Дай vent завершити anneal, інакше shell піде тріщинами.
+Не витягуй свіжу партію прямо в холодну воду. Дай vent завершити відпал, інакше оболонка піде сіткою тріщин.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/uk_UA. -->

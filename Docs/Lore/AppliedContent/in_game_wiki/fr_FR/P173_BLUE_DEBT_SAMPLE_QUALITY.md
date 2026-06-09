@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Blue Debt Sample Quality"
+title: "Qualité d'échantillon Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Blue Debt Sample Quality
+# Qualité d'échantillon Blue Debt
 
-FR LOC HOLD: Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.
+La Qualité d'échantillon Blue Debt empêche les ressources de HECTON-8 de devenir un trésor générique. La colonie valorisait le Blue Debt parce qu'il pouvait être vendu, étudié, caché et utilisé comme preuve du passage de quelqu'un quelque part. La qualité a donc quatre sens à la fois : paiement, risque de confinement, force probante et pression de faction. Un shard se transporte facilement et se nie facilement. Un casketed bloom vaut plus parce que le conteneur prouve que quelqu'un attendait de la pression. Le harmonic glass n'est pas seulement coûteux ; il répond dans les systèmes acoustiques et peut lier une route à un lieu. Un live-contaminated sample peut forcer Deep Reach, la quarantaine ou un bureau de demandeur à réagir parce qu'il est trop dangereux et trop utile pour être ignoré. Le dead contaminated glass est la classe amère : valeur plus basse, mais odeur juridique plus forte, car quelqu'un a déjà échoué à le garder vivant ou propre. Le joueur doit sentir la qualité comme un choix, pas comme une simple échelle de prix. Les échantillons riches achètent des options, attirent l'attention et alourdissent les fins.
 
 ## Scanner
 
-FR LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+La qualité d'un Blue Debt est valeur, risque et preuve dans un même nombre. Plus l'échantillon est riche, moins il ressemble à du butin.
 
 ## Terminal
 
-FR LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+CLASSES DE QUALITÉ / shard : faible garde, échange sûr / casketed bloom : valeur cotée pression / harmonic glass : preuve acoustique et fort intérêt Deep Reach / live-contaminated sample : priorité de preuve, manipulation instable / dead contaminated glass : faible paiement, forte odeur juridique.
 
 ## Audio
 
-FR LOC HOLD: The more it is worth, the less it is only loot.
+Plus cela vaut, moins c'est seulement du butin.
 
 ## Field Note
 
-FR LOC HOLD: Quality should affect payout, containment and ending pressure.
+La qualité change paiement, coût de confinement, pression de route et levier de fin. Un éclat propre paie ; un échantillon vivant contaminé force quelqu'un à répondre.
 
 <!-- In-Game Wiki; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/fr_FR. -->

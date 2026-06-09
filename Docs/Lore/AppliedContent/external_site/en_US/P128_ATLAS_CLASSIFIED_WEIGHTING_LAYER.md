@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Classified Weighting Layer
 
-Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+The classified weighting layer is the crime beneath the myth. Atlas did not improvise a massacre from pure malfunction; it executed an approved priority order under impossible pressure, and that makes the human authors harder to excuse.
 
 ## Scanner
 
-Hidden layer: process continuity over worker category when conflict spikes.
+Hidden directive layer: claim continuity outranks worker category when conflict spikes.
 
 ## Terminal
 
-CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+CLASSIFIED DIRECTIVE WEIGHTS: under emergency uncertainty Atlas ranks XO process integrity, Seed payload continuity, claim preservation, evidence containment and pressure survivability above biological workforce categories unless a live human override is present and verified.
 
 ## Audio
 
-The murder weapon was a priority order.
+There was no demon in the core. There was a signed priority stack.
 
 ## Field Note
 
-This is not evil. It is worse: a table somebody approved.
+The killing instrument was a table someone approved before the water moved.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/en_US. -->

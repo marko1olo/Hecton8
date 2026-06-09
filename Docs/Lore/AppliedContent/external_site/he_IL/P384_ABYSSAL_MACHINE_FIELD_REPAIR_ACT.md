@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Abyssal Machine Field Repair Act"
+title: "שער שדה המכונה התהומי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Abyssal Machine Field Repair Act
+# שער שדה המכונה התהומי
 
-HE LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+שדה המכונה התהומי הופך פחד לנוהל. סרטים מוליכים, איברים אקוסטיים ואגני שירות אינם קישוטים. אלה רכיבים שהמפעיל חייב לנתב דרכם תחת לחץ, אובדן חשמל וטבלאות בעלות מזוהמות.
 
-## Scanner
-
-HE LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-HE LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-HE LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-HE LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+השלב הזה עובד מפני שכל תיקון שימושי ומלוכלך משפטית. גשר חי יכול להחזיר דלת. אותו גשר יכול להפוך את הדלת לביולוגית, להפוך את התיקון לאירוע Atlas ולסבך את סיווג התביעה. הדרך קדימה בנויה מהדבר שמקלקל את הניירת.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/he_IL. -->

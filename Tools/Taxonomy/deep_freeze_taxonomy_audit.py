@@ -123,6 +123,15 @@ def fnv1a_utf16le(value: str) -> int:
 
 
 def load_json(path: Path) -> Any:
+    if not path.exists():
+        return {
+            "status": "MISSING",
+            "path": rel(path),
+            "passed": False,
+            "summary": {},
+            "graphAudit": {},
+            "failures": ["missing"],
+        }
     with path.open("r", encoding="utf-8-sig") as handle:
         return json.load(handle)
 
@@ -394,12 +403,20 @@ def check_text_reports() -> dict[str, Any]:
         "<IIIIIHHII",
     )
     stale_hits: list[str] = []
+    missing_reports: list[str] = []
     for path in (STATUS_FILE, RATIONALE_FILE, LOG_FILE):
+        if not path.exists():
+            missing_reports.append(rel(path))
+            continue
         text = path.read_text(encoding="utf-8")
         for pattern in stale_patterns:
             if pattern in text:
                 stale_hits.append(f"{rel(path)}:{pattern}")
-    return {"staleHits": stale_hits, "passed": not stale_hits}
+    return {
+        "staleHits": stale_hits,
+        "missingReports": missing_reports,
+        "passed": not stale_hits and not missing_reports,
+    }
 
 
 def static_string(node: ast.AST, constants: dict[str, str]) -> str | None:

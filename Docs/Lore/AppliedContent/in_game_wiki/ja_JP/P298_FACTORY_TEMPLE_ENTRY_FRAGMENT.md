@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Factory Temple Entry Fragment"
+title: "工場神殿入口断片"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Factory Temple Entry Fragment
+# 工場神殿入口断片
 
-JA LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+工場神殿入口断片は最終ゾーンの視覚文法を定義する。聖性の感覚は偶然だ。何千回もの修理が繰り返され、機械、生物、人間の損傷が一つの模様になった。
 
 ## Scanner
 
-JA LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+合金、貝殻状シーラント、手工具、稼働中の修理パルスが一つの表面として登録される。
 
 ## Terminal
 
-JA LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: 保守カテゴリ崩壊。工具傷、シーラント殻、ケーブル根、フィルター組織、アクチュエータ肋骨が単一の修理表面として登録。人間の経路標識はもはや優先されない。
 
 ## Audio
 
-JA LOC HOLD: This is not a room. This is a habit.
+これは部屋ではない。習慣だ。
 
 ## Field Note
 
-JA LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+視覚ルール: 神殿のように見えるのは、産業、組織、反復が儀式になったからだけ。
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/ja_JP. -->

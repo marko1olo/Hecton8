@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Worker Locker Nameplate Sample"
+title: "作業員ロッカー銘板サンプル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Worker Locker Nameplate Sample
+# 作業員ロッカー銘板サンプル
 
-JA LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+作業員ロッカー銘板サンプルは、一つのロッカーを濃縮された人間記録へ変える。Ren Okoye はルートアクセス、工具認証、食券、抹消痕を通じて残る。この物体は HECTON-8 の証拠スタイルを示す。給与記憶が壊れた後も、仕事が身元を保存する。
 
 ## Scanner
 
-JA LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye の銘板は名前を残した。給与行を消す方が、仕事を消すより簡単だったからだ。
 
 ## Terminal
 
-JA LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-JA LOC HOLD: Name retained. Payline erased.
+名前は残った。給与行は消えた。仕事はまだ結びついている。
 
 ## Field Note
 
-JA LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / テープ下に食券。給与ストライプは削られ、手袋サイズ印はまだ見える。
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ja_JP. -->

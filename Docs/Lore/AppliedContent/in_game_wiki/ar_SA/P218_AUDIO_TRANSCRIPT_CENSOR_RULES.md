@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "أشرطة تلف نصوص الصوت"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# أشرطة تلف نصوص الصوت
 
-AR LOC HOLD: Audio Transcript Censor Rules balance noir redaction with accessibility and localization.
+أشرطة تلف النص هي الندوب المرئية للصوت المتضرر. تحدد ما فقده المسجل، وما كبته كاتب الحزمة، وما عجزت الترجمة الرديئة عن حله، وما قد يكون عامل لاحق قد قصه. الشريط ليس زينة. إنه يخبر اللاعب بقدر الثقة الذي يستحقه النص.
+
+النص التالف الجيد يبقى مقروءا حيث يتوقف البقاء عليه. يمكنه أن يخفي اسما أو إحداثية أو رقم حمولة أو بند دين أو آخر ثانية من صرخة. لكنه لا يستطيع إخفاء تحذير الباب أو انقلاب المسار أو تغير الضغط أو دور المتكلم أو الفعل اللازم لفهم الدليل. إذا حول التلف الدليل إلى ضجيج، فالدليل غير جاهز بعد.
+
+تستخدم HECTON-8 هذه الأشرطة كقاعدة صدق. ترجمة نظيفة فوق صوت مسحوق أمر مريب. سطر مطموس بجانب مسجل سليم يسأل: من رقابه؟ الثانية نفسها المفقودة في عدة سجلات قد تشير إلى منظف آلي. يجب أن يتعلم اللاعب قراءة شكل الغياب: كلمات مقطوعة، قفزات زمن، أقواس ثقة، انزياح متكلم، ندوب ترجمة، وعلامات كاتب الحزمة.
+
+هذا يحمي الإتاحة أيضا. الضرر داخل العالم لا يجب أن يعاقب اللاعبين الذين يحتاجون إلى الترجمة. يمكن للشريط أن يظهر الشك، لكن التحذير يبقى مقروءا. قد تكون المستعمرة فشلت في الظلام؛ الواجهة لا ينبغي أن تفعل ذلك.
 
 ## Scanner
 
-AR LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+شريط تلف النص // في التسجيل فجوات مادية أو إجرائية. يجوز للتنقيح أن يخفي أسماء أو معرفات حمولة أو طوابع وقت. لا يجوز أن يخفي التحذير الأساسي أو دور المتكلم أو الفعل الحرج للمسار.
 
 ## Terminal
 
-AR LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
+بوابة الإتاحة // قد يكون الصوت التالف ناقصا. إذا كان النص الباقي لا يوضح ما حدث أو ما تغير أو ما هو الخطر، فلا تنشره كدليل.
 
 ## Audio
 
-AR LOC HOLD: Static may hide the name. It cannot hide the alarm.
+قد يبتلع التشويش الاسم. لا يحق له أن يبتلع الإنذار.
 
 ## Field Note
 
-AR LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+أخف الاسم إن اضطررت. اترك الإنذار حيث يستطيع إنسان حي قراءته.
 
 <!-- In-Game Wiki; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ar_SA. -->

@@ -1,4 +1,6 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
 
 namespace Hecton8.World
 {
@@ -65,9 +67,553 @@ namespace Hecton8.World
             MaterialRegion;
     }
 
-    public static class WorldTerrainDetailContracts
+    [System.Flags]
+    public enum WorldTerrainDetailEligibilityFlags : uint
+    {
+        None = 0u,
+        SandScatter = 1u << 0,
+        RockScatter = 1u << 1,
+        NoduleScatter = 1u << 2,
+        ReefScatter = 1u << 3,
+        BrineDeposit = 1u << 4,
+        SeepDeposit = 1u << 5,
+        TalusBoulder = 1u << 6,
+        RubblePebble = 1u << 7,
+        DecalOverlay = 1u << 8,
+        DetailNormal = 1u << 9,
+        VoxelAnchor = 1u << 10,
+        CaveMouthCandidate = 1u << 11
+    }
+
+    public enum WorldTerrainSurfaceMaterialClass : byte
+    {
+        Unknown = 0,
+        ShellSand = 1,
+        LimestoneShelf = 2,
+        ClaySilt = 3,
+        HardRock = 4,
+        BrineSaltCrust = 5,
+        ManganeseNodulePlain = 6,
+        ReefRubble = 7,
+        SeepCrust = 8
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WorldTerrainSurfaceMaterialWeights
+    {
+        public float ShellSand;
+        public float LimestoneShelf;
+        public float ClaySilt;
+        public float HardRock;
+        public float BrineSaltCrust;
+        public float ManganeseNodulePlain;
+        public float ReefRubble;
+        public float SeepCrust;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WorldTerrainDetailRuntimeSample
+    {
+        public WorldMacroGeologySample Macro;
+        public WorldTerrainMesoDetailSample Meso;
+        public WorldTerrainSurfaceMaterialWeights MaterialWeights;
+        public WorldTerrainSurfaceMaterialClass DominantMaterial;
+        public WorldTerrainDetailEligibilityFlags EligibilityFlags;
+        public float4 PackedMaterialControl;
+        public uint MacroArtifactVersion;
+        public uint SurfaceMaterialContractVersion;
+        public uint MesoDetailContractVersion;
+        public uint DetailEligibilityContractVersion;
+
+        public bool IsValid =>
+            MacroArtifactVersion == WorldMacroGeologyFields.ArtifactVersion &&
+            SurfaceMaterialContractVersion == WorldTerrainSurfaceMaterialResolver.ContractVersion &&
+            MesoDetailContractVersion == WorldTerrainMesoDetailFields.ContractVersion &&
+            DetailEligibilityContractVersion == WorldTerrainDetailContracts.ContractVersion &&
+            math.isfinite(Macro.HeightMeters);
+    }
+
+    public static class WorldTerrainSurfaceMaterialResolver
     {
         public const uint ContractVersion = 1u;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static WorldTerrainSurfaceMaterialWeights Resolve(
+            in WorldMacroGeologySample sample,
+            float absoluteX,
+            float absoluteZ,
+            uint seed)
+        {
+            float slope = math.saturate(sample.Slope01);
+            float flat = 1f - slope;
+            float shallow = 1f - math.saturate((sample.DepthMeters - 40f) / 420f);
+            float upperWater = 1f - math.saturate((sample.DepthMeters - 500f) / 1250f);
+            float abyss = math.saturate((sample.DepthMeters - 1200f) / 2300f);
+            float trench = math.saturate(sample.TrenchMask);
+            float basin = math.saturate(sample.BasinMask);
+            float ridge = math.saturate(sample.RidgeMask);
+            float shelf = math.saturate(sample.ShelfMask);
+            float shelfBreak = math.saturate(sample.ShelfBreakMask);
+            float sediment = math.saturate(sample.SedimentMask);
+            float hardRock = math.saturate(sample.HardRockExposureMask);
+            float reef = math.saturate(sample.ReefEligibilityMask);
+            float nodule = math.saturate(sample.NodulePlainMask);
+            float seep = math.saturate(sample.SeepMask);
+            float erosion = math.saturate(sample.ErosionFlow01);
+            float terrace = math.saturate(sample.TerraceMask);
+            float slump = math.saturate(sample.SlumpScarMask);
+            float tributary = math.saturate(sample.TributaryCanyonMask);
+            float provinceJitter = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x51A7E531u, 900f);
+            float localPatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0xB34ACE21u, 240f);
+
+            WorldTerrainSurfaceMaterialWeights weights = new WorldTerrainSurfaceMaterialWeights
+            {
+                ShellSand = math.saturate((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + (localPatch - 0.42f) * 0.08f),
+                LimestoneShelf = math.saturate((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)),
+                ClaySilt = math.saturate((sediment * (0.58f + basin * 0.30f) * (1f - hardRock * 0.42f)) + (slump * 0.18f) + (flat * abyss * 0.16f)),
+                HardRock = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (slope * 0.36f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f) - (reef * 0.12f) - (seep * 0.16f)),
+                BrineSaltCrust = math.saturate((trench * (0.46f + abyss * 0.34f)) + (sample.DepthMeters > 2500f ? basin * 0.12f : 0f)),
+                ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f)),
+                ReefRubble = math.saturate(reef * shallow * upperWater * (0.82f + localPatch * 0.38f) * (1f - trench * 0.72f)),
+                SeepCrust = math.saturate(seep * (0.72f + tributary * 0.32f + erosion * 0.24f) * (1f - shelf * 0.24f))
+            };
+
+            return NormalizeOrFallback(weights, in sample);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static WorldTerrainSurfaceMaterialWeights ApplyMesoDetailBias(
+            WorldTerrainSurfaceMaterialWeights weights,
+            in WorldTerrainMesoDetailSample meso)
+        {
+            float talus = math.saturate(meso.TalusMask);
+            float rubble = math.saturate(meso.RubbleMask);
+            float reef = math.saturate(meso.ReefDetailMask);
+            float sediment = math.saturate(meso.SedimentMask);
+            float terrace = math.saturate(meso.TerraceMask);
+            float slump = math.saturate(meso.SlumpScarMask);
+            float tributary = math.saturate(meso.TributaryCanyonMask);
+            float anchor = math.saturate(meso.VoxelAnchorMask);
+
+            weights.HardRock = math.saturate(weights.HardRock + talus * 0.16f + anchor * 0.12f);
+            weights.LimestoneShelf = math.saturate(weights.LimestoneShelf + terrace * 0.10f);
+            weights.ClaySilt = math.saturate(weights.ClaySilt + sediment * 0.14f + slump * 0.10f + tributary * 0.06f);
+            weights.ShellSand = math.saturate(weights.ShellSand + rubble * 0.08f + (1f - sediment) * reef * 0.06f);
+            weights.ReefRubble = math.saturate(weights.ReefRubble + rubble * 0.18f + reef * 0.20f);
+            weights.SeepCrust = math.saturate(weights.SeepCrust + tributary * meso.SeepEligibilityMask * 0.12f);
+
+            return Normalize(weights);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float4 ResolvePackedControlRgba(in WorldTerrainSurfaceMaterialWeights weights)
+        {
+            float rock = math.saturate(
+                weights.HardRock +
+                weights.LimestoneShelf * 0.78f +
+                weights.ReefRubble * 0.30f +
+                weights.SeepCrust * 0.34f);
+            float sand = math.saturate(
+                weights.ShellSand +
+                weights.ReefRubble * 0.52f +
+                weights.LimestoneShelf * 0.18f);
+            float silt = math.saturate(
+                weights.ClaySilt +
+                weights.ManganeseNodulePlain * 0.62f +
+                weights.BrineSaltCrust * 0.22f);
+            float deposition = math.saturate(
+                weights.BrineSaltCrust * 0.62f +
+                weights.SeepCrust * 0.46f +
+                weights.ManganeseNodulePlain * 0.22f);
+
+            float total = math.max(0.0001f, rock + sand + silt + deposition);
+            return new float4(rock, sand, silt, deposition) / total;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static WorldTerrainSurfaceMaterialClass ResolveDominant(in WorldTerrainSurfaceMaterialWeights weights)
+        {
+            WorldTerrainSurfaceMaterialClass best = WorldTerrainSurfaceMaterialClass.ShellSand;
+            float value = weights.ShellSand;
+            SelectDominant(weights.LimestoneShelf, WorldTerrainSurfaceMaterialClass.LimestoneShelf, ref value, ref best);
+            SelectDominant(weights.ClaySilt, WorldTerrainSurfaceMaterialClass.ClaySilt, ref value, ref best);
+            SelectDominant(weights.HardRock, WorldTerrainSurfaceMaterialClass.HardRock, ref value, ref best);
+            SelectDominant(weights.BrineSaltCrust, WorldTerrainSurfaceMaterialClass.BrineSaltCrust, ref value, ref best);
+            SelectDominant(weights.ManganeseNodulePlain, WorldTerrainSurfaceMaterialClass.ManganeseNodulePlain, ref value, ref best);
+            SelectDominant(weights.ReefRubble, WorldTerrainSurfaceMaterialClass.ReefRubble, ref value, ref best);
+            SelectDominant(weights.SeepCrust, WorldTerrainSurfaceMaterialClass.SeepCrust, ref value, ref best);
+            return best;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SelectDominant(
+            float candidate,
+            WorldTerrainSurfaceMaterialClass material,
+            ref float bestValue,
+            ref WorldTerrainSurfaceMaterialClass best)
+        {
+            if (candidate <= bestValue)
+                return;
+
+            bestValue = candidate;
+            best = material;
+        }
+
+        private static WorldTerrainSurfaceMaterialWeights NormalizeOrFallback(
+            WorldTerrainSurfaceMaterialWeights weights,
+            in WorldMacroGeologySample sample)
+        {
+            float total =
+                weights.ShellSand +
+                weights.LimestoneShelf +
+                weights.ClaySilt +
+                weights.HardRock +
+                weights.BrineSaltCrust +
+                weights.ManganeseNodulePlain +
+                weights.ReefRubble +
+                weights.SeepCrust;
+
+            if (total <= 0.0001f || !math.isfinite(total))
+            {
+                float rock = math.saturate(sample.Slope01);
+                float silt = math.saturate((1f - rock) * sample.SedimentMask);
+                float sand = math.saturate((1f - rock) * (1f - silt));
+                total = math.max(0.0001f, sand + silt + rock);
+                return new WorldTerrainSurfaceMaterialWeights
+                {
+                    ShellSand = sand / total,
+                    ClaySilt = silt / total,
+                    HardRock = rock / total
+                };
+            }
+
+            float invTotal = 1f / total;
+            weights.ShellSand *= invTotal;
+            weights.LimestoneShelf *= invTotal;
+            weights.ClaySilt *= invTotal;
+            weights.HardRock *= invTotal;
+            weights.BrineSaltCrust *= invTotal;
+            weights.ManganeseNodulePlain *= invTotal;
+            weights.ReefRubble *= invTotal;
+            weights.SeepCrust *= invTotal;
+            return weights;
+        }
+
+        private static WorldTerrainSurfaceMaterialWeights Normalize(WorldTerrainSurfaceMaterialWeights weights)
+        {
+            float total =
+                weights.ShellSand +
+                weights.LimestoneShelf +
+                weights.ClaySilt +
+                weights.HardRock +
+                weights.BrineSaltCrust +
+                weights.ManganeseNodulePlain +
+                weights.ReefRubble +
+                weights.SeepCrust;
+
+            if (total <= 0.0001f || !math.isfinite(total))
+                return weights;
+
+            float invTotal = 1f / total;
+            weights.ShellSand *= invTotal;
+            weights.LimestoneShelf *= invTotal;
+            weights.ClaySilt *= invTotal;
+            weights.HardRock *= invTotal;
+            weights.BrineSaltCrust *= invTotal;
+            weights.ManganeseNodulePlain *= invTotal;
+            weights.ReefRubble *= invTotal;
+            weights.SeepCrust *= invTotal;
+            return weights;
+        }
+
+        private static float CoarseValueNoise01(float absoluteX, float absoluteZ, uint seed, float cellSizeMeters)
+        {
+            float invCell = 1f / math.max(1f, cellSizeMeters);
+            float sx = absoluteX * invCell;
+            float sz = absoluteZ * invCell;
+            float2 floorSample = math.floor(new float2(sx, sz));
+            int2 cell = (int2)floorSample;
+            float2 local = new float2(sx, sz) - floorSample;
+            float2 smooth = local * local * (3f - 2f * local);
+            float a = Hash01(cell.x, cell.y, seed);
+            float b = Hash01(cell.x + 1, cell.y, seed);
+            float c = Hash01(cell.x, cell.y + 1, seed);
+            float d = Hash01(cell.x + 1, cell.y + 1, seed);
+            return math.lerp(math.lerp(a, b, smooth.x), math.lerp(c, d, smooth.x), smooth.y);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Hash01(int x, int z, uint seed)
+        {
+            uint h = seed ^ 2166136261u;
+            h = Mix(h ^ unchecked((uint)x));
+            h = Mix(h ^ unchecked((uint)z));
+            return (h & 0x00FFFFFFu) / 16777215f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WorldTerrainMesoDetailParams
+    {
+        public uint Seed;
+        public float PreviewExtentMeters;
+        public float TerraceStrengthMeters;
+        public float SlumpStrengthMeters;
+        public float TributaryStrengthMeters;
+        public float TalusStrengthMeters;
+        public float RubbleStrengthMeters;
+        public float ReefStrengthMeters;
+        public float MaxMesoDeltaMeters;
+
+        public static WorldTerrainMesoDetailParams CreateDefault(uint seed)
+        {
+            return new WorldTerrainMesoDetailParams
+            {
+                Seed = seed,
+                PreviewExtentMeters = WorldTerrainDetailContracts.MesoMesoProofExtentMeters,
+                TerraceStrengthMeters = 0.10f,
+                SlumpStrengthMeters = 1f,
+                TributaryStrengthMeters = 1f,
+                TalusStrengthMeters = 1f,
+                RubbleStrengthMeters = 1f,
+                ReefStrengthMeters = 1f,
+                MaxMesoDeltaMeters = 70f
+            };
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WorldTerrainMesoDetailSample
+    {
+        public float BaseHeightMeters;
+        public float DetailedHeightMeters;
+        public float HeightDeltaMeters;
+        public float TerraceMask;
+        public float SlumpScarMask;
+        public float TributaryCanyonMask;
+        public float TalusMask;
+        public float RubbleMask;
+        public float ReefDetailMask;
+        public float SedimentMask;
+        public float ScatterRoughnessMask;
+        public float MicroHeightEligibilityMask;
+        public float VoxelAnchorMask;
+        public float SeepEligibilityMask;
+    }
+
+    public static class WorldTerrainMesoDetailFields
+    {
+        public const uint ContractVersion = 1u;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static WorldTerrainMesoDetailParams CreateDefaultParams(uint seed)
+        {
+            return WorldTerrainMesoDetailParams.CreateDefault(seed);
+        }
+
+        public static WorldTerrainMesoDetailSample Evaluate(
+            in WorldMacroGeologySample macro,
+            float absoluteX,
+            float absoluteZ,
+            in WorldTerrainMesoDetailParams parameters)
+        {
+            WorldTerrainMesoDetailParams p = Sanitize(parameters);
+            float extent = math.max(50f, p.PreviewExtentMeters);
+            float detailGate = math.saturate(math.pow(10000f / math.max(100f, extent), 0.45f));
+            float shelfBreak = math.saturate(macro.ShelfBreakMask);
+            float shelf = math.saturate(macro.ShelfMask);
+            float fault = math.saturate(macro.FaultMask);
+            float ridge = math.saturate(macro.RidgeMask);
+            float basin = math.saturate(macro.BasinMask);
+            float trench = math.saturate(macro.TrenchMask);
+            float slope = math.saturate(macro.Slope01);
+            float curvature = math.saturate(macro.Curvature01);
+            float depth = math.max(0f, macro.DepthMeters);
+
+            float sediment = math.saturate((1f - slope) * 0.54f + basin * 0.36f + shelf * 0.18f - ridge * 0.24f - trench * 0.18f);
+            float terracePatch = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x334EAA71u, 588f);
+            float terrace = math.saturate(shelfBreak * 0.45f + shelf * 0.12f + curvature * 0.16f - trench * 0.18f);
+            terrace *= 0.24f + math.smoothstep(0.22f, 0.82f, terracePatch) * 0.76f;
+
+            float slump = math.saturate(shelfBreak * 0.35f + slope * 0.35f + basin * 0.10f - ridge * 0.15f);
+            float tributary = math.saturate(fault * 0.22f + shelfBreak * 0.24f + curvature * 0.30f + sediment * 0.12f);
+            float talus = math.saturate(slope * 0.42f + ridge * 0.24f + fault * 0.18f - basin * 0.12f);
+            float rubble = math.saturate(shelf * 0.20f + shelfBreak * 0.22f + talus * 0.32f + curvature * 0.16f);
+            float reefDetail = math.saturate(shelf * 0.45f + (1f - slope) * 0.24f - trench * 0.40f);
+
+            float terraceStep = 18f + shelfBreak * 48f + ridge * 24f;
+            float terraceWarp = (ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x7D4B9143u, 910f) - 0.5f) * terraceStep * 0.42f;
+            float terraceHeight = macro.HeightMeters + terraceWarp;
+            float terraceLocal = terraceHeight / math.max(1f, terraceStep);
+            float terraceLevel = math.round(terraceLocal);
+            float terraceOffset = terraceLevel * terraceStep - terraceHeight;
+            float terraceDistance = math.abs(terraceOffset) / math.max(1f, terraceStep);
+            float terracePlate = 1f - math.smoothstep(0.16f, 0.54f, terraceDistance);
+            float terraceSoftEdge = 1f - math.smoothstep(0.42f, 0.64f, terraceDistance);
+            float terraceDelta = (terraceOffset - terraceWarp * 0.18f) *
+                terrace *
+                terracePlate *
+                terraceSoftEdge *
+                p.TerraceStrengthMeters *
+                detailGate;
+
+            float channelNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x58B9D13Du, 238f);
+            float channelWeave = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x9C31B8EFu, 769f);
+            float channelLines = math.smoothstep(0.56f, 0.94f, channelNoise) *
+                tributary *
+                (0.30f + math.smoothstep(0.12f, 0.84f, channelWeave) * 0.46f);
+            float channelDelta = -channelLines *
+                (2.4f + 11.0f * detailGate) *
+                p.TributaryStrengthMeters *
+                math.saturate(0.32f + shelfBreak * 0.72f + fault * 0.36f);
+
+            float slumpLobes = math.smoothstep(0.58f, 0.91f, ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x711CE4A9u, 476f)) * slump;
+            float slumpDelta = -slumpLobes * (5f + 34f * detailGate) * p.SlumpStrengthMeters;
+
+            float talusNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xA9C3EF17u, 100f);
+            float talusDelta = (talusNoise - 0.5f) * (4f + 16f * detailGate) * talus * p.TalusStrengthMeters;
+
+            float rubbleNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xC361A27Fu, 45f);
+            float rubbleDelta = (rubbleNoise - 0.5f) * (1.6f + 6.5f * detailGate) * rubble * p.RubbleStrengthMeters;
+
+            float reefNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x91D4C0DEu, 29f);
+            float reefDelta = (reefNoise - 0.5f) *
+                (0.8f + 3.8f * detailGate) *
+                reefDetail *
+                math.smoothstep(0f, 120f, 120f - depth) *
+                p.ReefStrengthMeters;
+
+            float maxDelta = math.max(0.5f, p.MaxMesoDeltaMeters);
+            if (extent < 512f)
+                maxDelta = math.min(maxDelta, 7f);
+            else if (extent < 1000f)
+                maxDelta = math.min(maxDelta, 24f);
+
+            float delta = math.clamp(
+                terraceDelta + channelDelta + slumpDelta + talusDelta + rubbleDelta + reefDelta,
+                -maxDelta,
+                maxDelta);
+
+            float roughness = math.saturate(talus * 0.30f + rubble * 0.26f + reefDetail * 0.18f + curvature * 0.16f + slope * 0.10f);
+
+            return new WorldTerrainMesoDetailSample
+            {
+                BaseHeightMeters = macro.HeightMeters,
+                DetailedHeightMeters = macro.HeightMeters + delta,
+                HeightDeltaMeters = delta,
+                TerraceMask = terrace,
+                SlumpScarMask = slump,
+                TributaryCanyonMask = tributary,
+                TalusMask = talus,
+                RubbleMask = rubble,
+                ReefDetailMask = reefDetail,
+                SedimentMask = sediment,
+                ScatterRoughnessMask = roughness,
+                MicroHeightEligibilityMask = math.saturate(roughness * 0.55f + reefDetail * 0.24f + rubble * 0.21f),
+                VoxelAnchorMask = math.saturate(macro.VoxelSeamMask * 0.45f + talus * 0.28f + ridge * 0.18f + curvature * 0.20f),
+                SeepEligibilityMask = math.saturate(macro.SeepMask * 0.58f + fault * 0.22f + tributary * 0.18f)
+            };
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static WorldTerrainDetailEligibilityFlags ResolveEligibilityFlags(
+            in WorldMacroGeologySample macro,
+            in WorldTerrainMesoDetailSample meso,
+            in WorldTerrainSurfaceMaterialWeights materialWeights)
+        {
+            WorldTerrainDetailEligibilityFlags flags = WorldTerrainDetailEligibilityFlags.None;
+            if (materialWeights.ShellSand > 0.24f || meso.SedimentMask > 0.56f)
+                flags |= WorldTerrainDetailEligibilityFlags.SandScatter;
+            if (materialWeights.HardRock > 0.24f || materialWeights.LimestoneShelf > 0.28f || meso.TalusMask > 0.36f)
+                flags |= WorldTerrainDetailEligibilityFlags.RockScatter;
+            if (materialWeights.ManganeseNodulePlain > 0.18f && macro.DepthMeters > 850f && macro.Slope01 < 0.48f)
+                flags |= WorldTerrainDetailEligibilityFlags.NoduleScatter;
+            if ((materialWeights.ReefRubble > 0.16f || meso.ReefDetailMask > 0.34f) && macro.DepthMeters < 220f)
+                flags |= WorldTerrainDetailEligibilityFlags.ReefScatter;
+            if (materialWeights.BrineSaltCrust > 0.16f)
+                flags |= WorldTerrainDetailEligibilityFlags.BrineDeposit;
+            if (materialWeights.SeepCrust > 0.14f || meso.SeepEligibilityMask > 0.42f)
+                flags |= WorldTerrainDetailEligibilityFlags.SeepDeposit;
+            if (meso.TalusMask > 0.42f)
+                flags |= WorldTerrainDetailEligibilityFlags.TalusBoulder;
+            if (meso.RubbleMask > 0.36f || meso.ReefDetailMask > 0.42f)
+                flags |= WorldTerrainDetailEligibilityFlags.RubblePebble;
+            if (meso.MicroHeightEligibilityMask > 0.30f)
+                flags |= WorldTerrainDetailEligibilityFlags.DetailNormal;
+            if (meso.ScatterRoughnessMask > 0.34f || materialWeights.BrineSaltCrust > 0.12f || materialWeights.SeepCrust > 0.12f)
+                flags |= WorldTerrainDetailEligibilityFlags.DecalOverlay;
+            if (meso.VoxelAnchorMask > 0.38f)
+                flags |= WorldTerrainDetailEligibilityFlags.VoxelAnchor;
+            if (meso.VoxelAnchorMask > 0.52f && macro.Slope01 > 0.42f && macro.HardRockExposureMask > 0.24f)
+                flags |= WorldTerrainDetailEligibilityFlags.CaveMouthCandidate;
+
+            return flags;
+        }
+
+        private static WorldTerrainMesoDetailParams Sanitize(WorldTerrainMesoDetailParams source)
+        {
+            source.PreviewExtentMeters = math.max(50f, source.PreviewExtentMeters);
+            source.TerraceStrengthMeters = math.max(0f, source.TerraceStrengthMeters);
+            source.SlumpStrengthMeters = math.max(0f, source.SlumpStrengthMeters);
+            source.TributaryStrengthMeters = math.max(0f, source.TributaryStrengthMeters);
+            source.TalusStrengthMeters = math.max(0f, source.TalusStrengthMeters);
+            source.RubbleStrengthMeters = math.max(0f, source.RubbleStrengthMeters);
+            source.ReefStrengthMeters = math.max(0f, source.ReefStrengthMeters);
+            source.MaxMesoDeltaMeters = math.max(0.5f, source.MaxMesoDeltaMeters);
+            return source;
+        }
+
+        private static float ValueNoise01(float absoluteX, float absoluteZ, uint seed, float cellSizeMeters)
+        {
+            float invCell = 1f / math.max(1f, cellSizeMeters);
+            float sx = absoluteX * invCell;
+            float sz = absoluteZ * invCell;
+            float2 floorSample = math.floor(new float2(sx, sz));
+            int2 cell = (int2)floorSample;
+            float2 local = new float2(sx, sz) - floorSample;
+            float2 smooth = local * local * (3f - 2f * local);
+            float a = Hash01(cell.x, cell.y, seed);
+            float b = Hash01(cell.x + 1, cell.y, seed);
+            float c = Hash01(cell.x, cell.y + 1, seed);
+            float d = Hash01(cell.x + 1, cell.y + 1, seed);
+            return math.lerp(math.lerp(a, b, smooth.x), math.lerp(c, d, smooth.x), smooth.y);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Hash01(int x, int z, uint seed)
+        {
+            uint h = seed ^ 2166136261u;
+            h = Mix(h ^ unchecked((uint)x));
+            h = Mix(h ^ unchecked((uint)z));
+            return (h & 0x00FFFFFFu) / 16777215f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Mix(uint value)
+        {
+            value ^= value >> 16;
+            value *= 0x7FEB352Du;
+            value ^= value >> 15;
+            value *= 0x846CA68Bu;
+            value ^= value >> 16;
+            return value;
+        }
+    }
+
+    public static class WorldTerrainDetailContracts
+    {
+        public const uint ContractVersion = 2u;
         public const float AuthoredProofExtentMeters = WorldMacroGeologyFields.MinimumWorldExtentMeters;
         public const float RuntimeChunkSizeMeters = WorldMacroGeologyFields.DefaultChunkSizeMeters;
         public const float SpawnProofExtentMeters = 10_000f;

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Варианты triage ledger props"
+title: "Варианты реквизита триажных реестров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Варианты triage ledger props
+# Варианты реквизита триажных реестров
 
-Варианты triage ledger props держат colony harm процедурным и читаемым.
+Варианты реквизита триажных реестров делают вред читаемым, не превращая комнаты в витрины страдания. Триажный реестр должен показывать, как травма проходила через бюрократию: шифр crush-status, кислородный долг, зачеркнутый route hold, состояние оборудования, заметка стабилизации Atlas и разрыв witness hash. Цель не в том, чтобы украсить колонию болью. Цель в том, чтобы доказать: у задержки был маршрут, а у маршрута были владельцы. Хороший триажный реквизит заставляет игрока спросить, почему одного рабочего учли, другого удержали, а третий исчез в языке сертификации.
 
 ## Scanner
 
-Medical evidence должен показывать delay и routing, а не украшать комнату страданием.
+Медицинская улика должна раскрывать задержку и маршрутизацию, а не украшать комнату страданием.
 
 ## Terminal
 
-TRIAGE PROP RULE: каждая ledger entry связывает injury с pressure, route denial, equipment state или certification delay.
+TRIAGE PROP RULE: каждая запись реестра должна связывать травму с давлением, отказом маршрута, состоянием оборудования, задержкой сертификации или разорванной цепью свидетеля. Одной боли недостаточно. Реквизит должен показывать, кто мог двигаться, кого удержали и какая система сделала задержку процедурной.
 
 ## Audio
 
-RU LOC HOLD: Pain is not proof until the route bears the mark.
+Боль не улика, пока маршрут не несет метку.
 
 ## Field Note
 
-Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Варианты: шифр crush-status, метка кислородного долга, зачеркнутый route hold, заметка стабилизации Atlas, разрыв witness hash.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/ru_RU. -->

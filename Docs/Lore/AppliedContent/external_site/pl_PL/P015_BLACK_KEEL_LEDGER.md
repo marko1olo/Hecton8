@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Rejestr Black Keel
 
-Black Keel nie jest przyjaznym statkiem do domu. To tender claim-pool, który czyta ciała, ładunki, kwarantannę, masę wznoszenia i ryzyko ubezpieczenia jako wpisy jednego rejestru.
-
-Nie musi nienawidzić gracza. Może grzecznie odpowiedzieć, przyjąć hash SOS i odmówić podjęcia, dopóki liczby się nie zmienią.
+Black Keel nie jest przyjaznym statkiem nad HECTON-8. To tender claim-pool: narzędzie pracy, rejestr, brama kwarantanny i maszyna ubezpieczeniowa. Może usłyszeć gracza, trasować pakiet, liczyć okno i podnieść masę. Może też uznać rdzeń dowodu, próbkę lub ubezpieczony kadłub za ważniejsze od osoby proszącej o pomoc. Nie jest złoczyńcą; jest niezawodny w kontrakcie i groźny, gdy kontrakt myli się z litością.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/pl_PL. -->

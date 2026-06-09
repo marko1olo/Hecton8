@@ -1,15 +1,15 @@
 ---
 packet_id: P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.public_truth_lost_control
-unlock_id: unlock.final_question_public_truth_lost_control
+article_id: final_axis.public_ledger_lost_control
+unlock_id: unlock.final_question_public_ledger_lost_control
 poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Question finale : vérité publique, contrôle perdu"
+title: "Question finale : registre public, contrôle perdu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Question finale : vérité publique, contrôle perdu
+# Question finale : registre public, contrôle perdu
 
-La route de vérité publique brise la couverture propre. Elle brise aussi la propriété des conséquences. Les preuves peuvent sauver des noms de l'effacement, déclencher une vraie pression de secours et inviter chaque prédateur doté d'un bureau juridique ou d'un canal de prière.
+La route du registre public échange la garde contre un reçu. Le paquet quitte le bassin avec hash témoin, chaîne de responsabilité, résumé d'état Atlas, coordonnées de dette bleue masquées et preuve de route de charge avant que Deep Reach puisse fermer seule l'archive. Cela protège des noms contre une suppression simple, mais remet aussi le fichier aux régulateurs, créanciers, réseaux de survivants, tribunaux de domaine, concurrents et tout destinataire assez rapide pour déposer d'abord.
 
 ## Scanner
 
-Publier les preuves empêche l'effacement. Cela donne aussi la découverte à tous ceux qui peuvent mal l'utiliser assez vite.
+AXE REGISTRE PUBLIC // Le notariat de paquet Tau/Luyten accepte un hash témoin avant garde complète. Deep Reach perd la clôture unique d'archive ; l'expéditeur perd l'ordre des destinataires.
 
 ## Terminal
 
-AXE DE VÉRITÉ PUBLIQUE : hash témoin, chaîne de responsabilité, état d'Atlas, coordonnées de dette bleue et route de payload peuvent quitter le contrôle Deep Reach. Après publication, l'opérateur ne contrôle plus les receveurs, le marché ni le premier arrivant.
+AXE FINAL / REGISTRE PUBLIC
+Déclencheur : hash témoin sorti de la garde HECTON-8 par burst notarial Tau/Luyten.
+Transporté : chaîne de responsabilité, résumé d'état Atlas, coordonnées de dette bleue masquées, preuve de route de charge.
+Bloqué : clôture d'archive propriétaire unique Deep Reach.
+Perdu : ordre des destinataires, interprétation du marché, contrôle de première arrivée.
+File de risque : sanctions, gels de route, pression de sauvetage, dépôts copiés, contre-paquets au faux rapport.
 
 ## Audio
 
-La vérité quitte ta main plus vite que le secours ne le pourra jamais.
+Le tampon sauve le fichier. Il ne choisit pas qui le lit.
 
 ## Field Note
 
-La vérité publique n'est pas une justice pure. Elle crée sanctions, cultes, enchères, procès, pression de secours et claims imitateurs.
+Un reçu public rend l'effacement coûteux. Il lance aussi bureaux de sanctions, gels de route, disputes de sauvetage, dépôts copiés et chasse aux coordonnées avant qu'un navire atteigne Aegir.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/fr_FR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guia de Processo de Campo de Forja de Vent"
+title: "Guia de processo de campo da forja-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Processo de Campo de Forja de Vent
+# Guia de processo de campo da forja-vent
 
-O Guia de Processo de Campo de Forja de Vent liga valor de recurso ao manejo em campo: importa não só o que foi encontrado, mas como pressure e cooling deixam isso sobreviver até recovery.
+Uma forja-vent não é baú de tesouro no fundo. É um reator lento feito de fluxo seep quente, densidade de salmoura, alimentação mineral esmagada e pressão que não perdoa pressa. O material útil muitas vezes fica entre depósito natural e lote industrial arruinado: grãos cerâmicos crescidos em gargantas minerais, precursores de selante cozidos em rachaduras, filmes carregados que só ficam estáveis se o resfriamento acontece na ordem certa.
 
-## Scanner
-
-Vent-forge chemistry ativa. Qualidade segue pressure history, heat pulse e resfriamento lento, não o brilho da amostra.
-
-## Terminal
-
-FIELD GUIDE: vent forges cozinham sulfides, noble-gas pockets, ceramics e sealant precursors. A rota de uma amostra por heat, brine e pressure importa mais que seu nome.
-
-## Audio
-
-O vent não fez minério. Fez um processo que você interrompeu.
-
-## Field Note
-
-Não levante um lote fresco direto para água fria. Deixe o vent terminar o anneal ou a shell vai craquelar.
+Isso torna o manuseio de campo parte do recurso. Puxe um lote fresco para água fria e a casca craquela. Vente calor rápido demais e uma amostra limpa vira pó. Espere demais e o vent escreve outra química sobre a camada desejada. Equipes salvage valorizam forjas-vent porque fazem HECTON-8 parecer trabalhada pelo próprio planeta: o oceano não apenas esconde materiais, ainda os fabrica.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/pt_BR. -->

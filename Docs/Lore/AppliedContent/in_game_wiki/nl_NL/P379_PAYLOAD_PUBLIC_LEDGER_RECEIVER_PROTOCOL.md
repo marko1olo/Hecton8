@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Payload-protocol openbaar grootboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Public Ledger Receiver Protocol
+# Payload-protocol openbaar grootboek
 
-NL LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Het openbare-grootboekprotocol stuurt bewijs naar een plek waar Deep Reach het niet stil kan bezitten. Het redigeert coördinaten, verzegelt attestatiehashes, voegt routebewaring en Atlas-wegingsdigest toe en gaat een vertraagd relay in. De afzender verliest controle bij acceptatie. Het pakket wordt moeilijker te kopen, moeilijker te begraven en langzamer te gebruiken.
 
 ## Scanner
 
-NL LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Openbare-grootboekroute actief. Coördinaten worden geredigeerd voor vertraagd relay; attestatie-hashstapel en aansprakelijkheidsketen verzegelen bij acceptatie.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PAYLOAD-ONTVANGER // OPENBAAR GROOTBOEK-LANE. Ontvanger: verdeeld openbaar grootboek, vertraagde Tau-lane. Accepteer incidentpakket met geredigeerde coördinaten, attestatiehashes, routebewaring, Atlas-wegingsdigest, ontvangerstijdstempel. Weiger private uitbetaling en directe recovery-claim. Terugroep eindigt bij relayacceptatie.
 
 ## Audio
 
-NL LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Grootboek nam het pakket. Coördinaten gemaskeerd. Terugroepvenster dicht.
 
 ## Field Note
 
-NL LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Plunderaarsnotitie: redigeer de route voordat het relay accepteert. Na acceptatie is het pakket niet meer van jou.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/nl_NL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Public Combine"
+title: "Öffentlicher Deep-Reach-Verbund"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Public Combine
+# Öffentlicher Deep-Reach-Verbund
 
-DE LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Deep Reachs öffentliche Verbundfläche ist breit genug, um nützlich zu wirken, und trocken genug, um unschuldig zu wirken. Sie baut Routenplatten, Habitatdienste, Drucklogistik und bürgerlich klingende Kontinuitätsprogramme. In dieser Schicht sieht die Kolonie selten einen einzelnen Täter. Sie sieht Briefpapier, Wartungssiegel, geprüfte Slogans und einen Namen, der Infrastruktur behauptet, wenn Arbeit profitabel ist, und Distanz, wenn Arbeit Beweis wird.
 
 ## Scanner
 
-DE LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Öffentliche Charterplatte: Infrastrukturbetreiber, nicht Förderbeklagter.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+ÖFFENTLICHER VERBUND: Deep Reach erscheint als Routeninfrastruktur, Ozeanindustrie, Druckhabitat-Logistik und Kontinuitätsdienst. Haftungstragende Arbeit wird über Tochterdesks, Versicherersprache, Gewahrsamsauftragnehmer und Recovery Offices verteilt.
 
 ## Audio
 
-DE LOC HOLD: A clean title is the cheapest pressure suit.
+Das Schild an der Tür sagt Versorgung. Die Schlösser dahinter sagen Eigentum.
 
 ## Field Note
 
-DE LOC HOLD: The seal is clean. The rooms under it are not.
+Der saubere Name ist keine Lüge. Er ist der Raum, in dem Schmutz anderswo abgelegt wird.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/de_DE. -->

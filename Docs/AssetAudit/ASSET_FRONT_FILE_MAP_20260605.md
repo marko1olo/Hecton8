@@ -126,6 +126,7 @@ CSV companion: `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv`.
 | mass-deletion dirty-set validator | `Tools/ValidateMassDeletionDirtySet.py`, `Tools/test_validate_mass_deletion_dirty_set.py` |
 | asset front file-map validator | `Tools/ValidateAssetFrontFileMap.py`, `Tools/test_validate_asset_front_file_map.py` |
 | asset static validator runner | `Tools/RunAssetStaticValidators.py`, `Tools/test_run_asset_static_validators.py` |
+| Aegir gas giant proof and source-contract validators | `Tools/BuildAegirGasGiantProofContactSheet.py`, `Tools/ValidateAegirGasGiantSourceContract.py`, `Tools/test_validate_aegir_gas_giant_source_contract.py` |
 | MapMagic erosion source-route validator | `Tools/ValidateMapMagicErosionSourceRoute.py`, `Tools/test_validate_mapmagic_erosion_source_route.py` |
 
 ## Rule

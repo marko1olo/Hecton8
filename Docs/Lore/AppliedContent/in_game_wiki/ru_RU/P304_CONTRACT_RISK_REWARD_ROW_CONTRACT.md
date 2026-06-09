@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Contract Risk Reward Boundary"
+title: "Граница риска и награды контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Contract Risk Reward Boundary
+# Граница риска и награды контракта
 
-RU LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+Граница переводит replay-давление в контрактные записи таблицы. Маршрут меняется потому, что изменились долг, шторм, хранение и пункты ответственности, а не потому, что мир забыл произошедшее.
 
 ## Scanner
 
-RU LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Строка контракта связывает удержание, штормовое окно, порядок хранения, потолок выплаты и вес пункта.
 
 ## Terminal
 
-RU LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+КОНТРАКТ РИСКА: строки требуют тяжесть удержания, потолок выплаты, штормовое окно, хранение образца, порядок доказательств и вес пункта Deep Reach. Контракт — первый хищник.
 
 ## Audio
 
-Контракт - первый хищник.
+Контракт — первый хищник.
 
 ## Field Note
 
-RU LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Изменения награды принадлежат строке контракта, а не импровизированному lore-тексту.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ru_RU. -->

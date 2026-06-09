@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier veldsystemenspecialist"
+title: "Dossier van de Veldsystemenspecialist"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier veldsystemenspecialist
+# Dossier van de Veldsystemenspecialist
 
-Het spelerpersonage van HECTON-8 gaat de oceaan in met een praktische litteken: voormalig Deep Reach-veldsysteemwerk, toegang tot evacuatie-infrastructuur, ingetrokken machtiging en genoeg proceduregeheugen om verdronken machines als bewijs te lezen. Nu is hij Marauder, geen bedrijfsofficier en geen passagiersheld. Een kapotte pomp, routestempel of aansprakelijkheidszin telt omdat de operator begrijpt hoe die systemen arbeiders moesten beschermen voordat ze papierwerk werden.
+Het Dossier van de Veldsystemenspecialist geeft HECTON-8s centrale operator een bruikbaar verleden zonder dat verleden te schoon te maken. Die was geen commandostaf en geen geheime architect van de ramp. Die werkte dicht bij systemen die evacuatieroutes, pompen, seals en relaiskamers eerlijk moesten houden.
 
-## Scanner
+Dat telt omdat de verlaten kolonie vol procedures zit, niet alleen wrakstukken. Een route-safe-stempel, clamp-rating of maintenance-zin kan sterker beschuldigen dan een dramatische opname. De operator weet hoe zulke dossiers eruitzien wanneer ze mensen beschermen, en hoe ze eruitzien wanneer een bedrijf bescherming tot papierwerk wil maken.
 
-Oude veldsystemenmachtiging. Geen commandostaf. Infrastructuurwerk met genoeg toegang om te herkennen waar een route werd begraven.
-
-## Terminal
-
-PERSONEELSSPOOR: veldsystemen, evacuatie-infrastructuur, route-safe-certificering. Machtiging ingetrokken na Aegir-stiltereview. Procedurecache past nog steeds bij de volgorde van de operator.
-
-## Audio
-
-Jij hebt de leugen nooit ondertekend. Je kende de grammatica waardoor hij door de keuring kwam.
-
-## Field Note
-
-De badge opende geen deuren meer. Hij wiste de volgorde van falen niet uit.
+Ingetrokken toegang maakt de geschiedenis scherper. De oude badge geeft geen controle meer, maar laat het vermogen achter om het dialect van falen te herkennen. HECTON-8 maakt van dat beroepsgeheugen motief: geen schuld aan het veroorzaken van de ramp, maar verantwoordelijkheid na het lezen hoe vermijdbare kamers werden weggearchiveerd.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/nl_NL. -->

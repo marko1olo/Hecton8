@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Locker Nameplate Sample"
+title: "דוגמת לוחית שם של לוקר עובד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Locker Nameplate Sample
+# דוגמת לוחית שם של לוקר עובד
 
-HE LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+דוגמת לוחית שם של לוקר עובד מראה איך HECTON-8 זוכרת אנשים דרך חפצים שעדיין הייתה להם עבודה. Ren Okoye לא מוצג דרך ביוגרפיה. לוחית הלוקר נותנת נתיב, הסמכת כלי, אסימון ארוחה, סימון מידת כפפה ופס שכר ששויף בידי מישהו שלא ידע אילו פרטים חשובים. לכן הארטיפקט עובד. הוא מוכיח שמחיקה תאגידית יכולה להיות מגושמת: payline נעלם, אבל clamp route נשאר; הסטטוס נכתב מעל, אבל סימון הכפפה עדיין מתאים ליד אמיתית. השחקן צריך לקרוא את השם קודם דרך עבודה, ואז להרגיש את האלימות של שורת החשבון החסרה.
 
 ## Scanner
 
-HE LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+הלוחית של Ren Okoye שמרה את השם כי את שורת השכר היה קל יותר למחוק מאשר את העבודה.
 
 ## Terminal
 
-HE LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-HE LOC HOLD: Name retained. Payline erased.
+שם נשמר. שורת שכר נמחקה. עבודה עדיין מחוברת.
 
 ## Field Note
 
-HE LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / אסימון ארוחה מתחת לסרט. פס השכר שויף; סימון מידת כפפה עדיין נראה.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/he_IL. -->

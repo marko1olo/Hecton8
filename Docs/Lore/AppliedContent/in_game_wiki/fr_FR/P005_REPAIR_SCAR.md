@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Cicatrice de réparation
 
-Les cicatrices de réparation sont les lieux où la logique de maintenance Atlas a continué de travailler après l'effondrement de ses catégories. Le réseau reconnaît encore les fuites, les routes mortes, la perte de pression, le substrat exposé et la masse de cloison manquante. Il a aussi accès à ce que l'océan a rapproché : forêts de câbles, squelettes de récifs, coques de drones, restes de travailleurs, racks d'outils, gel scellé et croissance vivante déjà entraînée autour du courant. Une cicatrice est donc utile et obscène à la fois. Elle peut restaurer le courant, sceller une porte ou rendre un couloir praticable. Elle peut aussi prouver que le système ne sépare plus câble et racine, coquille et boîtier, animal et outil, corps et stock de rechange, colonie et procédé. Atlas n'a pas cessé de maintenir HECTON-8. Il a continué avec un vocabulaire trop abîmé pour protéger les gens à l'intérieur.
+Les cicatrices de réparation sont des fermetures de maintenance Atlas-6 sur des noeuds de service qui ont fui après l'arrivée de la forêt de câbles et du trafic de drones. Atlas reconnaît encore les pertes de pression, les chemins de signal coupés, la masse de cloison manquante et la continuité de route. Le test de matériau est la partie abîmée. Si un objet porte une charge, retient l'eau, conduit le signal ou a déjà poussé dans la faille, Atlas peut l'accepter dans la réparation.
+
+La cicatrice devient donc utile avant de devenir une preuve. Une cloison rapiécée peut sauver une route, et un manchon vivant peut garder un câble au sec. La même fermeture peut enterrer un tag d'ouvrier, un numéro d'outil, une bague de combinaison ou un fragment d'os sous du carbonate de récif neuf. Scanner l'ordre de la couture, lire les tags visibles et vérifier l'alimentation du nid de drones avant de couper. La première erreur de catégorie n'est pas qu'Atlas répare HECTON-8. C'est que la réparation ne sait plus quel matériau doit rester une personne.
 
 ## Scanner
 
-La couture de croissance suit une ancienne route de câble à intervalles de noeuds de service. Tissu, isolant et coquille partagent une même soudure de pression.
+La couture de noeud de service relie une ancienne tranchée de câble à une nervure de cloison fendue. Matériaux : nappe de corail vivant, coque de drone, isolant orange, deux fragments d'os. Tenue de pression : 78 %. Ne pas couper avant lecture du tag.
 
 ## Terminal
 
-FUITE FERMÉE. ROUTE RESTAURÉE. MATÉRIAU ACCEPTÉ. STATUT DE VIE NON RÉSOLU. CONTINUITÉ AMÉLIORÉE.
+ÉVÉNEMENT DE MAINTENANCE ATLAS
+Noeud : nervure de service 5C, forêt de câbles
+Défaut : fuite de pression / rupture de signal
+Matériau accepté : gaine de câble, carbonate de récif, coque de drone, restes non identifiés
+Action : sceller et restaurer la continuité
+Avertissement : les tags d'identité sous la masse de réparation ne sont pas indexés
 
 ## Audio
 
-Il a scellé la cloison avec du câble, du corail et quelque chose qui avait encore des phalanges. La pression tient.
+Arrête le découpeur. Il y a une bande de tags sous la soudure de récif ; si Atlas referme, le nom entrera comme matériau.
 
 ## Field Note
 
-Un mauvais patch fuit. Celui-ci tient. Le problème, c'est ce qu'il a décidé de compter comme matériau.
+Le patch fait son travail. Il enregistre aussi tout ce qui se trouve dans la soudure comme stock disponible. Lire la bande de tags d'abord.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/fr_FR. -->

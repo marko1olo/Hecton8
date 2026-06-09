@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Kabelrif-symbiose
 
-Kabelriffen waarschuwen in middendiepte: leven gebruikt industrie als bot, schaduw, stroombreker en voedingslijn.
+Kabelriffen ontstaan waar middeldiepe servicegeulen levende groei een vaste vorm geven: stroomstammen, relaisparen, klemringen en oude kabelgoten. Sommige matten verminderen slijtage en kalmeren stroming rond een lijn. Sommige grazende fauna houdt slijm weg van blootliggende geleiders. Dezelfde sleeve kan ook gescheurde isolatie verbergen, warmte vasthouden of droneverkeer naar een route trekken die de duiker als stil had gemarkeerd.
+
+Behandel kabelrif als werkende infrastructuur tot de scan anders bewijst. Een groene sleeve kan het enige zijn dat een relais droog houdt; hij kan ook de fout bedekken die onder belasting faalt. Controleer signaalcontinuïteit, isolatiekleur, klemvolgorde en dronebeweging voordat je snijdt. Dit is de brug tussen het eerste reparatielitteken en latere reparatiefauna: levende groei volgt stroom voordat Atlas reparatie door levende lichamen gaat routeren.
 
 ## Scanner
 
-Flora groeit op stroomstammen en signaallijnen. Het rif gebruikt koloniebekabeling als skelet.
+Kabel-wortelmat grijpt de P63-stroomstam bij drie klemringen. Signaal loopt nog onder de groene sleeve. Isolatiefout zichtbaar aan onderrand. Gevaar: drone- en grazerverkeer volgt levende stroom.
 
 ## Terminal
 
-Onderhoud: kabelwortelmatten verminderen slijtage en bewaren signaal, maar trekken drones en grazende fauna aan.
+SERVICEGEUL-NOTITIE
+Lijn: P63-stroomstam / relaispaar C
+Conditie: biologische sleeve vermindert slijtage
+Fout: oranje isolatie bloot onder onderste mat
+Verkeer: grazers en onderhoudsdrones nabij levende stroom
+Actie: continuïteit scannen voor groei wordt gesneden
 
 ## Audio
 
-Een levend rif leerde de vorm van een servicegang.
+Het rif is geen decoratie. Het houdt dat relais droog, en de drones weten dat de stroom leeft.
 
 ## Field Note
 
-De eerste versmelting is nuttig voordat ze afschuwelijk wordt.
+Strip groene groei niet alleen omdat het er verkeerd uitziet. Als het de mantel droog houdt, markeer de fout en routeer eromheen.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/nl_NL. -->

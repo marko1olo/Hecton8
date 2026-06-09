@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Kit de provas do pátio de relés do recife de cabos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Cable Reef Relay Yard POI Kit
+# Kit de provas do pátio de relés do recife de cabos
 
-PT LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+O pátio de relés transforma nojo em disciplina de ferramenta. Capas de cabo se partiram, o isolamento descascou, e o filme de serviço Atlas cruzou soquetes que nunca deveriam dividir superfície. Um corte limpo pode arruinar o único caminho que ainda carrega sinal.
 
-## Scanner
-
-PT LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-PT LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-PT LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-PT LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+O kit de provas é físico: resposta de pinger, mapa de perna morta, aviso de corte, bifurcação de relé e a marca de serviço onde material vivo assumiu uma rota quebrada. O lugar precisa parecer útil antes de parecer estranho. O perigo é um reparo que pode salvar o operador enquanto contamina o registro de reivindicação.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/pt_BR. -->

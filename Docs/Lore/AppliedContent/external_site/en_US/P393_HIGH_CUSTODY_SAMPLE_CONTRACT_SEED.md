@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "High Custody Sample Contract Seed"
+title: "High-Custody Sample Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# High Custody Sample Contract Seed
+# High-Custody Sample Contract Seed
 
-Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+High-Custody Sample starts with a better price and a worse box. The board marks certain samples as receiver-certified: blue debt grit, tissue-iron flakes, sealed brine, filter packs and growth scrap that still carries route context. Each piece needs a container, mass check, seal state and custody tag before it becomes payable.
 
-## Scanner
-
-Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+The pressure is ordinary and ugly. A heavy sample slows a climb. A cracked seal can turn a payout into quarantine delay. A full clean locker can force the operator to choose between proof packet, repair part and certified material. The contract pays more because it makes ownership a load-bearing system.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/en_US. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Пороги відмови під тиском"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Пороги відмови під тиском
 
-UA LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+Пороги відмови під тиском роблять salvage у HECTON-8 фізичним, а не абстрактним. Контейнер безпечний не тому, що його назва зелена в інвентарі. Він безпечний тому, що оболонка, прокладка, затискач, клеймо перевірки й історія маршруту все ще згодні з глибиною довкола. Ці пороги також є правилом чесності для гравця. До того як відмова стане втратою, світ має говорити: ущільнення клацає, прокладка пливе, затискач тремтить, волосна тріщина блищить, сольовий наліт росте, акустичний відгук двоїться, або туман мертвого зразка каламутить скло. Кожен сигнал означає те саме на різних рівнях: матеріал перейшов із корисного об'єкта в локальну загрозу. Так крафт, UI і звук середовища отримують спільну мову попереджень. Гравця карають за ігнорування тиску, а не за нездатність прочитати приховану математику.
 
 ## Scanner
 
-UA LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Добрий зразок стає загрозою, коли переходить неправильну лінію тиску. Океану байдуже, що етикетка майже збіглася.
 
 ## Terminal
 
-UA LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+ВІДМОВА ТИСКУ / shallow-rated: клацання ущільнення і повзуча вода / industrial-rated: дрейф прокладки і тремтіння затискача / brine-rated: волосна тріщина і сольовий bloom / abyssal-rated: акустичний фантом, туман мертвого зразка / Atlas-rated: блокування опіки до структурної втрати.
 
 ## Audio
 
-UA LOC HOLD: Pressure does not care that the label was almost right.
+Тиску байдуже, що наліпка була майже правильною.
 
 ## Field Note
 
-UA LOC HOLD: Failure thresholds should be readable before they punish.
+Пороги відмови мають читатися до покарання: клацання, дрейф, волосна тріщина, сольовий наліт, туман мертвого зразка. Якщо гравець вчиться лише після втрати, світ шахраює.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/uk_UA. -->

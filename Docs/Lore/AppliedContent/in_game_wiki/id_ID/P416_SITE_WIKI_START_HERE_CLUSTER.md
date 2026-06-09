@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "Mulai di Sini: HECTON-8"
+title: "Mulai Di Sini: HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mulai di Sini: HECTON-8
+# Mulai Di Sini: HECTON-8
 
-Klaster awal: kontrak, peran pemain, tekanan bertahan HECTON-8, dan kontradiksi pertama dalam cerita Deep Reach.
+Mulai di sini: HECTON-8 bermula sebagai salvage contract di sekitar koloni tenggelam, Marauder berutang, dan cerita Deep Reach yang terlalu rapi.
 
 ## Scanner
 
-Hub publikasi: premis, peran pemain, batasan pertama, dan kebohongan pertama Deep Reach.
+Pintu publik: salvage contract, Marauder berutang, capsule rusak, kontradiksi Deep Reach, dan jejak perbaikan Atlas pertama.
 
 ## Terminal
 
-SITE NAV: masuk lewat kontrak, mantan spesialis Deep Reach, Marauder terlilit utang, kapsul rusak, tanpa kait keluarga, jejak perbaikan Atlas pertama.
+SITE NAV: mulai dari bahasa kontrak, survival tekanan, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-Kau datang untuk salvage. Samudra akan membuat alasan itu terlalu kecil.
+Catatan pertama bukan panggilan minta tolong. Itu claim.
 
 ## Field Note
 
-Navigasi spoiler-light mulai di sini: premis dulu, bukti kedua, akhir hanya setelah akses diperoleh.
+Baca dokumen dulu. Di HECTON-8, kebohongan bertahan karena setiap kalimat mengandung sesuatu yang benar.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/id_ID. -->

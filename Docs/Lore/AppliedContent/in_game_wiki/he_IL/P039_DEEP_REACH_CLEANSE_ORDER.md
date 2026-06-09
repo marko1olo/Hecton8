@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "פקודת ניקוי של Deep Reach"
+title: "פקודת ניקוי פעילה של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# פקודת ניקוי של Deep Reach
+# פקודת ניקוי פעילה של Deep Reach
 
-הפקודה הופכת את Deep Reach ליריב עכשווי: ניקוי וחילוץ פעילים, לא רק עבר.
+פקודת ניקוי פעילה של Deep Reach היא הזמנת עבודה נוכחית, לא הערת ארכיון. היא מראה custody של משאבים, גישת Atlas ומחיקת ראיות המתוזמנות דרך קבלני proxy אחרי עצירת הפינוי.
 
 ## Scanner
 
-מחסנית פקודות: משאב, גישת Atlas, מחיקת ראיות. חילוץ ניצולים מתחת לשליטה בנכס.
+פקודה פעילה שוחזרה: לתפוס דגימות מאושרות, לפתוח ערוץ Atlas, לבודד ניצולים, למחוק ראיית אחריות.
 
 ## Terminal
 
-הנחיית proxy: קבלן ניתן להכחשה. שמור דגימות. פתח ערוץ Atlas אם סיכון מקומי קביל. מחק corpus אחריות.
+הזמנת proxy DR-CLEANSE-19 נשארת פעילה. קבלנים ניתנים להכחשה מקבלים תחילה custody של דגימות, אחר כך גישת Atlas, ולבסוף שחזור עדים. אם Black Keel או ספר האתר חושף אחריות, תור purge מעביר ארכיוני ראיות ל-cold delete ומסמן מקרי מוות בשטח כאובדן מזג אוויר.
 
 ## Audio
 
-Deep Reach לא רודפת אחריך. היא משתמשת בך כגשוש זול.
+הקול הזה אינו תעבורת חילוץ. זו הצעת ניקוי.
 
 ## Field Note
 
-הם לא חזרו כדי להתנצל.
+שדה ההתנצלות ריק.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/he_IL. -->

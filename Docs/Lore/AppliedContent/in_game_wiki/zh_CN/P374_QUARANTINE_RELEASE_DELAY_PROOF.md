@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "隔离释放扣留"
+title: "检疫释放保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 隔离释放扣留
+# 检疫释放保留
 
-扣留记录并没有把隔离变成恶。它让时间可见。Deep Reach可以命名不确定性、延迟释放、保存保险位置，并把工人留在区域内，直到路线死亡。
+HECTON-8 上的污染是真实的。压力暴露、卤水化学和 Atlas 兼容生长，都可能让草率救援变得致命。保留板显示，这种真实危险如何变成掩护。Deep Reach 在出口路线锁定后调用检疫，接受可回收资产质量，并把工人释放压在线下。
 
 ## Scanner
 
-隔离扣留牌。出口路线已经锁定后，保护措辞才出现。
+已回收保留板。污染复核在出口路线已经锁定后开始，工人释放仍排在资产回收之下。
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY。hold until review。Recovery队列先接受资产质量，再释放工人。insurance ping仍活动。
+释放门 // 生物压力不确定。保留至委员会确认。资产质量先于工人释放进入回收队列。保险 ping 有效。
 
 ## Audio
 
-隔离可以救一个身体。它也可以让身体等到变成文书。
+检疫先为公司买到时间，然后才救任何人。
 
 ## Field Note
 
-Marauder笔记：protection这个词不能证明保护。看时钟。
+拾荒者记录：保护是时钟，不是词。检查它何时开始。
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/zh_CN. -->

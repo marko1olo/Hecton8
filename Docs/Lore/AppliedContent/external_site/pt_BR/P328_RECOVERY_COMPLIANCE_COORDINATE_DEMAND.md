@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Exigência de Coordenadas da Conformidade de Recuperação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Recovery Compliance Coordinate Demand
+# Exigência de Coordenadas da Conformidade de Recuperação
 
-PT LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Depois que a colônia desapareceu, a Deep Reach não voltou de mão estendida. Seu primeiro canal limpo pergunta onde está o ativo, quem pode provar propriedade e se a testemunha viva aceitará quarentena e revisão de gravame. Em HECTON-8, o resgate não é negado; ele é atrasado até virar alavanca.
 
 ## Scanner
 
-PT LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Pacote autenticado como Deep Reach Recovery Compliance: linguagem de resgate enrolada em exigências de coordenadas, custódia e contaminação.
 
 ## Terminal
 
-PT LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+AVISO RECOVERY COMPLIANCE DR-RC-8: transmita vetor de acesso Atlas, prova de custódia Xenon-Omega, status de contaminação biológica e coordenadas atuais da bacia. A recuperação médica permanece pendente até a reconciliação da cadeia de ativo, do gravame de salvamento e dos direitos de controle do local. Transmissão não autorizada pode rebaixar a prioridade do sobrevivente para retenção probatória.
 
 ## Audio
 
-PT LOC HOLD: They can say rescue without meaning rescue.
+Eles acharam um jeito de fazer resgate soar como mandado.
 
 ## Field Note
 
-PT LOC HOLD: Use near payload authority decisions and receiver selection.
+Colocar onde o jogador possa escolher o que transmite. A ameaça deve parecer processual, não teatral: nenhum discurso de vilão, só uma fila capaz de enterrar um corpo.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/pt_BR. -->

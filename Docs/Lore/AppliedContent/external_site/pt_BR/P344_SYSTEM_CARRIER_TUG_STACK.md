@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Pilha de carrier e rebocadores de sistema
 
-Black Keel deve parecer perto o bastante para ser culpada e distante o bastante para continuar inalcançável. Não é a nave de uma fantasia heroica de resgate. É uma pilha industrial alugada feita de casco carrier, berços de rebocador, racks de carga, software de custódia, trilhos de cápsula e um livro-caixa que nunca dorme. Isso a torna útil: recebe amostras, responde pacotes, segura órbita e joga hardware numa janela. Também a torna cruel: toda função útil está ligada a propriedade, timing e dívida. O jogador está preso sob uma máquina real, presente e estruturalmente indisposta a virar protetora.
+A Black Keel deve parecer perto o bastante para levar culpa e longe o bastante para continuar inalcançável. Não é a nave de uma fantasia de resgate heroico. É uma pilha industrial alugada, feita de casco transportador, berços de tug, racks de carga, software de custódia, trilhos de lançamento de cápsulas e um livro-caixa que nunca dorme.
+
+Isso a torna útil: ela pode receber amostras, responder pacotes, manter órbita, lançar cápsulas e empurrar hardware para uma janela estreita. Também a torna cruel: cada função útil está presa a propriedade, timing, linguagem de quarentena, margem térmica e dívida. Um corpo pode ficar encalhado sob uma máquina real, presente, ouvindo e estruturalmente indisposta a virar abrigo.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/pt_BR. -->

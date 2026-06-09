@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "זרעי חוזה מסוכנים יותר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# זרעי חוזה מסוכנים יותר
 
-HE LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+זרעי חוזה מסוכנים יותר הופכים replay לכלכלי ופרוצדורלי: החוזה משנה את דרישות האוקיינוס, לא את מה שהשחקן נושא.
 
 ## Scanner
 
-HE LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED חוזה // חלון גרוע יותר, יעד ראשון עמוק יותר, משמורת קשוחה יותר, דגימה נדירה יותר, הקלת lien גדולה יותר. אין כוח בירושה.
 
 ## Terminal
 
-HE LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+אפשרות SEED: הגדל תשלום על ידי קבלת תזמון מסלולי גרוע, מטרות ראשוניות עמוקות יותר, משמורת ראיות קשה יותר, הוכחת משאב נדירה או חשבון חזרה הדוק יותר. כוח ציוד ומלאי מתאפסים.
 
 ## Audio
 
-HE LOC HOLD: The board pays more when it expects less of you to return.
+הלוח משלם יותר כשהוא מצפה פחות שתחזור.
 
 ## Field Note
 
-HE LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Replay צריך לשאול על חמדנות, אומץ או טיפשות. לא grind.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/he_IL. -->

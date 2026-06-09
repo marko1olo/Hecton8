@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Deep Reach Public Combine"
+title: "הקומביין הציבורי Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Deep Reach Public Combine
+# הקומביין הציבורי Deep Reach
 
-HE LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+הקומביין הציבורי Deep Reach הוא המסכה הראשונה והעמידה ביותר. הוא לא צריך להכחיש שנגע ב-HECTON-8. הוא נגע בתחבורה, לוגיסטיקת מגורים, שירותי נתיב, ממשקי ביטוח, שפת חירום ואוצר המילים המנהלי שעשה את המושבה קריאה לבנקים לפני משפחות.
 
-## Scanner
-
-HE LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-HE LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-HE LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-HE LOC HOLD: The seal is clean. The rooms under it are not.
+הרוחב הזה הוא ההגנה. כשהאסון עולה לפני השטח, Deep Reach יכולה להצביע על מנדט ציבורי ולומר שתחזקה תשתית. הפעלים המלוכלכים יותר נדחפים לחברות בנות: לסווג, לדחות, להשיב, לבטח מחדש, לסרב, לסלק. הקומביין שומר את שם העצם הנקי. החדרים התחתונים שומרים את הגופים.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/he_IL. -->

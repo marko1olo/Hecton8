@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Capsule Blackbox Audio 01"
+title: "صوت الصندوق الأسود للكبسولة 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Capsule Blackbox Audio 01
+# صوت الصندوق الأسود للكبسولة 01
 
-AR LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+يحوّل صوت الصندوق الأسود للكبسولة 01 نجاة البداية إلى دين. لم تتحطم الكبسولة على HECTON-8 وتنتظر الإصلاح فقط. اختارت الحرق الوحيد الذي أبقى الراكب حيا، ودفعت ثمنه من ascent sleeve، العتاد نفسه الذي كان سيجعل العودة النظيفة ممكنة. يفيد الصندوق الأسود لأنه يربط حقيقة القصة بعائق مادي: crush-frame متشقق، sleeve محترق، recovery ring بلا قفل، pressure frames مفقودة، وعوامة تواصل طلب الصعود من عمق لم تعد تستطيع الهرب منه. اللاعب حي لأن الآلة أنفقت طريق العودة.
 
 ## Scanner
 
-AR LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+الصندوق الأسود الأول لا يقول إنك تحطمت. يقول إن الكبسولة نجت بإنفاق العتاد الذي كان يفترض أن يعيدها إلى الأعلى.
 
 ## Terminal
 
-AR LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; امتصاص صدمة الهبوط؛ ascent sleeve مستهلك؛ recovery ring فشل في الإغلاق؛ العوامة غير موثوقة؛ frames 12-19 سقطت أثناء pressure shear. لا ينصح بالصعود اليدوي من دون استبدال خارجي لل sleeve.
 
 ## Audio
 
-AR LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+حدث الصندوق الأسود. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-AR LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: crush-frame السفلي متشقق؛ ascent sleeve محترق؛ recovery ring no-lock؛ العوامة لا تزال تكرر طلب صعود ميتا.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ar_SA. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Contract Continuity Desk Signatures"
+title: "חתימות שולחן רציפות החוזה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Contract Continuity Desk Signatures
+# חתימות שולחן רציפות החוזה
 
-HE LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+חתימות שולחן רציפות החוזה מראות כיצד עבודת הפתיחה של השחקן הופכת ללחץ משפטי לפני שהשחקן מבין את הים. המלכודת אינה משפט זדוני אחד. היא מורכבת מחתימות שגרתיות שמשעממות מספיק כדי לעבור: מיזוג שעבוד של Aegir Reclamation Pool, סעיף שחזור Black Keel, נספח אשראי חמצן, הודעת סיכון רשימה שחורה והחזקת משמורת מטען. כל חתימה קטנה. יחד הן הופכות סירוב ליקר, שתיקה לרווחית וחילוץ למותנה. זהו הפנים המשרדי התחתון של Deep Reach: לא כס מלכות, אלא שולחנות שיכולים להפוך הישרדות להפרת חוזה.
 
 ## Scanner
 
-HE LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+מלכודת החוזה הפותח נבנית מחתימות תחתונות: מיזוג שעבוד, נספח חמצן, סיכון רשימה שחורה והחזקת משמורת מטען.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. למזג תנאי שעבוד Aegir Reclamation Pool עם סעיפי שחזור Black Keel. לצרף נספח אשראי חמצן, הודעת סיכון רשימה שחורה והחזקת משמורת מטען. אין צורך בהסלמה אם המפעיל מקבל.
 
 ## Audio
 
-HE LOC HOLD: Nobody says trap. They say continuity.
+חתימה יכולה להיות דלת לחץ כאשר כל סעיף אחריה ננעל.
 
 ## Field Note
 
-HE LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+איש לא חותם על מלכודת. חותמים על רציפות.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/he_IL. -->

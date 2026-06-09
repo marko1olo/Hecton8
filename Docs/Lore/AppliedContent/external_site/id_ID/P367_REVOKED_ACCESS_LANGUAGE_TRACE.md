@@ -19,26 +19,10 @@ localization_flags: 1
 
 # Jejak Bahasa Akses Dicabut
 
-Protagonis membaca kuncian Deep Reach sebagai bukti. Kredensial yang dicabut menutup akses, tetapi redaksinya masih menyingkap rute terkubur: hitungan terdegradasi, saksi pengganti, reklasifikasi pemeliharaan, dan bahasa pelestarian klaim.
+Jejak Bahasa Akses Dicabut dibangun di atas aturan sederhana HECTON-8: pintu terkunci masih bisa membocorkan dirinya. Sistem Deep Reach dirancang untuk menolak, mengklasifikasi, dan melindungi klaim dengan bahasa hati-hati. Saat credential lama gagal, bahasa itu tetap tinggal.
 
-## Scanner
+Petunjuk yang berguna bukan kata sandi. Itu frasa korporat dengan akibat fisik: maintenance reclassification, degraded counts, substitute checks, dan claim-preservation routes. Pengunjung biasa melihat penolakan. Mantan field systems worker melihat catatan tentang apa yang diperintahkan untuk disembunyikan oleh pintu.
 
-Kuncian tidak menulis dilarang. Ia menulis reklasifikasi pemeliharaan, penahanan kontinuitas, dan materi rute. Gaya lama Deep Reach: penolakan yang tetap menunjuk ke pintu terkubur.
-
-## Terminal
-
-RESPONS AKSES / ARSIP RUTE-AMAN
-kredensial: dicabut
-alasan: materi kontinuitas evakuasi dibatasi untuk staf Deep Reach bersertifikat
-istilah terlihat: hitungan terdegradasi, saksi pengganti, rute pelestarian klaim, reklasifikasi pemeliharaan
-catatan: personel lapangan lama hanya boleh melihat bahasa penolakan untuk rekonsiliasi insiden.
-
-## Audio
-
-Mereka tidak menghapus koridornya. Mereka membungkusnya dalam kosakata yang masih dipahami staf yang merasa bersalah.
-
-## Field Note
-
-Lencananya mati. Kuncian itu masih memakai dialek kantor yang mengubur rute.
+Ini menjaga penyelidikan tetap berakar pada kerja dan liabilitas. Operator tidak perlu kunci ajaib atau pengakuan penjahat. Lencana mati, layar penolakan, dan istilah maintenance yang salah sudah cukup untuk mulai mengikuti rute yang coba dikubur Deep Reach di bawah prosedur.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/id_ID. -->

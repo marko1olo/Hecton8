@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "부분 탈출: 동일 시드 귀환"
+title: "부분 탈출: 같은 Seed로 귀환"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 부분 탈출: 동일 시드 귀환
+# 부분 탈출: 같은 Seed로 귀환
 
-부분 탈출은 회복 창구이지 리셋이 아니다. 플레이어는 공기, 수리 시간, 물과의 거리를 얻은 뒤 같은 HECTON-8로 돌아간다. 같은 경로, 같은 흉터, 해결되지 않은 같은 증거가 기다린다. 지식은 계승된 힘이 아니라 압력으로 남는다.
+부분 탈출은 리셋이 아니다. Black Keel은 슈트 수리, 공기, 오염 제거, 원장 동기화를 위해 운영자를 올린 뒤, 연장된 lien 아래 같은 몸을 같은 바다로 다시 보낼 수 있다. 누군가 위에서 잠들었다고 아래 정거장이 깨끗해지는 것은 아니다. Brine Stair는 함정을 유지한다. relay는 나쁜 각도를 유지한다. 증거는 이빨을 유지한다. 이 결말은 용서 없는 안식을 준다. 가득 찬 폐, 고친 도구, 살아 있는 부채, 그리고 힘이 아니라 압력으로 돌아오는 지식.
 
 ## Scanner
 
-임시 회수 벡터 확인. 같은 바다는 같은 계약 아래 남아 있음.
+임시 pickup 확인. 같은 바다는 같은 계약 아래 남아 있다.
 
 ## Terminal
 
-부분 탈출 통지: Black Keel 임시 회수 수락; lien 연장 하 동일 시드 귀환 승인; 경로 경고, custody 기록, 열린 증거 패킷 유지; 지질과 세계 진실은 변경 없음.
+부분 탈출 통지: Black Keel 임시 pickup 수락; lien 연장 아래 같은 seed 귀환 승인; 경로 경고, custody 기록, 스캔 기억, 열린 증거 패킷 지속.
 
 ## Audio
 
-너는 압력을 떠났다. 계약은 네 자리를 데워 두었다.
+압력은 놓아준다. 계약은 의자를 따뜻하게 둔다.
 
 ## Field Note
 
-귀환 슬롯이 이미 청구됐다면 궤도에서의 한숨은 자유가 아니다.
+귀환 슬롯이 이미 청구되었다면 궤도의 숨 한 번은 자유가 아니다.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ko_KR. -->

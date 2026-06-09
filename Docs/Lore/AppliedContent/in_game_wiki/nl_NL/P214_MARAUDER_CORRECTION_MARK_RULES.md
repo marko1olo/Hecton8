@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Regels voor Marauder-correctiemarkeringen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Regels voor Marauder-correctiemarkeringen
 
-NL LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+Regels voor Marauder-correctiemarkeringen definiëren de tweede menselijke hand op koloniebewijs. Deep Reach schreef categorieën om arbeiders te begraven; latere claimcrews schreven over die categorieën heen om te overleven, te onderhandelen of elkaar te waarschuwen. Een correctiemarkering is alleen nuttig wanneer ze verandert wat de speler kan afleiden. Een omcirkelde naam kan iemand uit een verliescategorie redden. Een doorgestreepte routestempel kan een veilige deur verdacht maken. Een prijsmarkering kan een biologisch monster in een schuldobject veranderen. Een verborgen getuigenmarkering kan een stemfragment beschermen tot de speler de juiste context heeft. De markeringen moeten snel, praktisch en moe aanvoelen, niet theatraal. Ze zijn geen sfeergraffiti. Ze zijn werk van mensen die wisten dat het record vuil was en toch moesten eten.
 
 ## Scanner
 
-NL LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Een correctiemarkering kan een naam redden, een claim vergiftigen of de volgende duiker waarschuwen dat de officiële categorie liegt.
 
 ## Terminal
 
-NL LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: Marauder-markeringen moeten bewijsinterpretatie, routerisico of uitbetalingsdruk veranderen. Geldige markeringen bewaren een arbeidersnaam, betwisten een verzekeringscategorie, waarschuwen voor een route, prijzen een monster, verbergen een getuige of markeren schuld. Lege graffiti breekt de bewijsketen.
 
 ## Audio
 
-NL LOC HOLD: Somebody came before you and still failed to leave clean.
+Iemand kwam voor jou en kon nog steeds niet schoon vertrekken.
 
 ## Field Note
 
-NL LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Markeringen: naam bewaren, categorie betwisten, route waarschuwen, monster prijzen, getuige verbergen, schuld markeren. Handschrift moet de lezing veranderen, niet de prop versieren.
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/nl_NL. -->

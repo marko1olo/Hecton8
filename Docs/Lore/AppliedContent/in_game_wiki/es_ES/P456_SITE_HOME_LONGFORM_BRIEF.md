@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: reclamación bajo presión"
+title: "HECTON-8: la reclamación bajo presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: reclamación bajo presión
+# HECTON-8: la reclamación bajo presión
 
-Las notas de P-63 presentan el inicio como salvamento bajo deuda. Los datos útiles son mecánicos: capacidad de ascenso gastada, aviónica inundada, sellos dañados, retornos de escáner y lenguaje oficial incapaz de explicar las abolladuras.
+HECTON-8 empieza con un Marauder endeudado lanzado por una claim window de Black Keel hacia P-63, donde cada reparación, scan y puerta sellada convierte la supervivencia en prueba.
 
 ## Scanner
 
-Registro de entrada de saqueador. El contrato Black Keel une P-63, un bathydrop dañado, un gravamen de 4.8 tonne-window y un accidente que no coincide con el metal.
+Artículo público inicial: contrato antes que mito, ventana de Black Keel, bathydrop dañado, plataforma luminosa P-63, omisiones de Deep Reach y primera traza Atlas.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // RECLAMACIÓN H8. Ventana: relé Aegir abierto. Trabajo: restaurar sellos, escanear P-63, recuperar carga, custodiar pruebas y volver antes del cierre de recepción.
+SITE LONGFORM: presentar la ruta jugable mediante trabajo bajo presión, custody de pruebas, sin rescate instantáneo ni gancho familiar.
 
 ## Audio
 
-Relé Black Keel: "La ventana es estrecha. Repara la carcasa, lee las marcas de presión y trae prueba con la carga."
+En HECTON-8 nadie te vende un rescate. Te venden una claim y dejan que el agua decida el resto.
 
 ## Field Note
 
-Nota de saqueador: la luz en P-63 no es seguridad. Cuenta aire, arregla sellos antes que carga y desconfía de cualquier informe que no explique las abolladuras.
+Si el papeleo suena tranquilo, lee el metal. La primera verdad de HECTON-8 vive entre una línea de contrato y un seal roto.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/es_ES. -->

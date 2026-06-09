@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Conjunto de Carga de Energia de Subida"
+title: "Conjunto da Carga de Energia de Ascensão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de Carga de Energia de Subida
+# Conjunto da Carga de Energia de Ascensão
 
-A carga de subida transforma recursos profundos em troca mecânica e moral. Materiais de alta pressão podem erguer a cápsula, preservar evidências por custody ou virar pagamento que enfraquece a rota para casa.
+A carga de energia de ascensão converte os materiais profundos de HECTON-8 em um impulso de lançamento controlado. Não é uma pilha de combustível. É um berço de vent-forged heat cells, isolamento com histórico de pressão, mangas de impulso em estágios e marcas de custody que dizem ao receptor que tipo de material sobreviveu à queima.
+
+Blue debt fica valioso antes de ficar seguro. Uma amostra Xenon-Omega crescida sob pressão pode pagar uma conta de carrier, sustentar uma melhoria, provar o que a Deep Reach deixou funcionando, ou fraturar sob carga de lançamento se sua história foi tratada como loot solto. A carga precisa levar energia e papelada ao mesmo tempo: massa, estado de pressão, classe de contaminação e custody stamp.
+
+Por isso o conjunto cria uma decisão real de salvage. Desmonte o berço por pagamento e a cápsula perde sustentação certificada. Carregue material cru e o perfil de impulso fica instável. Mantenha a carga assinada e a rota de ascensão fica mais pesada, mais pobre e muito mais difícil de negar.
 
 ## Scanner
 
-Berço de energia marcado por pressure pulse. Carga barata vira caixão limpo.
+BERÇO DE ENERGIA // Marcas de pulso de pressão, bolsões de heat-cell deformados, soquete de custody stamp vazio. Blue debt cru pode queimar; não certifica sustentação.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator e custody stamp exigidos. Raw fuel rejeitado. Blue debt não certificado fratura sob launch impulse e anula recovery claim.
+ASCENT CHARGE: carregar vent-forged heat cell, isolante com histórico de pressão, manga de impulso em estágios e custody stamp assinado. Rejeitar combustível cru, isolante lascado e blue debt sem carimbo.
 
 ## Audio
 
-Você pode vender o impulso ou subir nele. Não os dois.
+Venda a sustentação e a cápsula vira inventário.
 
 ## Field Note
 
-Cada grama no berço é fuga, evidência ou blue-debt payout. A cápsula não perdoa ganância.
+A carga é a peça que todo mundo quer roubar porque também é a peça que tira você do fundo.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pt_BR. -->

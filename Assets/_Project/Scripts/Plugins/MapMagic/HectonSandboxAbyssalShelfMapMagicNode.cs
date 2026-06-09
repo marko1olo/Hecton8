@@ -52,7 +52,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Trench Sharpness")] public float trenchSharpness = 2.4f;
         [Den.Tools.GUI.ValAttribute("Island Radius m")] public float islandCenterRadiusMeters = 2600f;
         [Den.Tools.GUI.ValAttribute("Island Junction")] public float islandJunctionThreshold = 0.58f;
-        [Den.Tools.GUI.ValAttribute("Seed")] public int seed = 880031;
+        [Den.Tools.GUI.ValAttribute("Seed")] public int seed = WorldMacroGeologyFields.DefaultAuthoringSeed;
 
         [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = true;
         [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 8f;

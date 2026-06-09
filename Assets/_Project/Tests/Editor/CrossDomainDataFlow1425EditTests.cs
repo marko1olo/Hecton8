@@ -239,38 +239,50 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void PlayerMovementFallbackWaterSurface_RejectsDivergentFluidProvider()
+        public void PlayerMovementFallbackWaterSurfaceUsesCrestReferenceBeforeTerrainAndRejectsDivergentFluidProvider()
         {
             string movementPath = Path.Combine(
                 Application.dataPath,
                 "_Project/Scripts/HectonPlayerMovement.cs");
             string movementSource = File.ReadAllText(movementPath);
             string surfaceBody = ExtractMethodBody(movementSource, "private float ResolveFallbackWaterSurfaceY()");
+            string resolveOceanFallbackBody = ExtractMethodBody(movementSource, "private bool TryResolveOceanFallbackWaterSurfaceY(");
+            string sanitizeOceanBody = ExtractMethodBody(movementSource, "private static bool TryResolveOceanWaterSurfaceY(");
             string serializedFallbackBody = ExtractMethodBody(movementSource, "private float ResolveSerializedFallbackWaterSurfaceY()");
             string waterSurfaceResolverBody = ExtractMethodBody(movementSource, "private static bool TryResolveWaterSurfaceY(");
 
+            StringAssert.Contains("private const float DefaultWaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", movementSource);
             StringAssert.Contains("const float ProviderMismatchRejectMeters = 128f;", surfaceBody);
             StringAssert.Contains("float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();", surfaceBody);
-            StringAssert.Contains("float terrainWaterSurface = serializedFallbackWaterSurface;", surfaceBody);
+            StringAssert.Contains("float referenceWaterSurface = serializedFallbackWaterSurface;", surfaceBody);
+            StringAssert.Contains("TryResolveOceanFallbackWaterSurfaceY(out float oceanWaterSurface)", surfaceBody);
+            StringAssert.Contains("referenceWaterSurface = oceanWaterSurface;", surfaceBody);
+            StringAssert.Contains("bool hasReferenceWaterSurface = false;", surfaceBody);
             StringAssert.Contains("TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out float terrainProviderWaterSurface)", surfaceBody);
-            StringAssert.Contains("terrainWaterSurface = terrainProviderWaterSurface;", surfaceBody);
+            StringAssert.Contains("if (!hasReferenceWaterSurface)", surfaceBody);
+            StringAssert.Contains("referenceWaterSurface = terrainProviderWaterSurface;", surfaceBody);
             StringAssert.Contains("TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out float fluidWaterSurface)", surfaceBody);
-            StringAssert.Contains("math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters", surfaceBody);
+            StringAssert.Contains("math.abs(fluidWaterSurface - referenceWaterSurface) <= ProviderMismatchRejectMeters", surfaceBody);
             StringAssert.Contains("return fluidWaterSurface;", surfaceBody);
-            StringAssert.Contains("return terrainWaterSurface;", surfaceBody);
+            StringAssert.Contains("return referenceWaterSurface;", surfaceBody);
             StringAssert.Contains("return serializedFallbackWaterSurface;", surfaceBody);
+            StringAssert.Contains("ResolveOceanKinematics()", resolveOceanFallbackBody);
+            StringAssert.Contains("oceanKinematics.IsAvailable", resolveOceanFallbackBody);
+            StringAssert.Contains("TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out waterSurfaceY)", resolveOceanFallbackBody);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeOceanBody);
             StringAssert.Contains("TryResolveWaterSurfaceY(waterSurfaceY, out float safeWaterSurfaceY)", serializedFallbackBody);
             StringAssert.Contains("return safeWaterSurfaceY;", serializedFallbackBody);
             StringAssert.Contains("return DefaultWaterSurfaceY;", serializedFallbackBody);
             StringAssert.Contains("math.abs(candidateWaterSurfaceY) > 0.0001f", waterSurfaceResolverBody);
-            StringAssert.Contains("math.abs(candidateWaterSurfaceY) <= 1000f", waterSurfaceResolverBody);
+            StringAssert.Contains("math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", waterSurfaceResolverBody);
             StringAssert.Contains("waterSurfaceY = DefaultWaterSurfaceY;", waterSurfaceResolverBody);
-            AssertTextBefore(surfaceBody, "math.abs(fluidWaterSurface - terrainWaterSurface)", "return fluidWaterSurface;");
-            AssertTextBefore(surfaceBody, "if (hasTerrainWaterSurface)", "return terrainWaterSurface;");
+            AssertTextBefore(surfaceBody, "TryResolveOceanFallbackWaterSurfaceY", "terrainProvider.WaterSurfaceLevel");
+            AssertTextBefore(surfaceBody, "math.abs(fluidWaterSurface - referenceWaterSurface)", "return fluidWaterSurface;");
+            AssertTextBefore(surfaceBody, "if (hasReferenceWaterSurface)", "return referenceWaterSurface;");
             StringAssert.DoesNotContain("return fluidSurface.WaterLevel;", surfaceBody);
             StringAssert.DoesNotContain("math.isfinite(terrainProvider.WaterSurfaceLevel)", surfaceBody);
             StringAssert.DoesNotContain("math.isfinite(fluidSurface.WaterLevel)", surfaceBody);
-            StringAssert.DoesNotContain("!hasTerrainWaterSurface ||", surfaceBody);
+            StringAssert.DoesNotContain("!hasReferenceWaterSurface ||", surfaceBody);
         }
 
         [Test]
@@ -313,34 +325,41 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void BiomeMatrixSurfaceLevel_RejectsDivergentFluidProviderBeforeDepthTierSelection()
+        public void BiomeMatrixSurfaceLevelUsesCrestWaterlineBeforeTerrainFallbackForDepthTierSelection()
         {
             string biomePath = Path.Combine(
                 Application.dataPath,
                 "_Project/Scripts/BiomeMatrixDirector.cs");
             string biomeSource = File.ReadAllText(biomePath);
+            string rebindBody = ExtractMethodBody(biomeSource, "public void OnGlobalRegistryServiceReplaced(");
+            string cacheBody = ExtractMethodBody(biomeSource, "private void CacheRuntimeDependencies()");
+            string clearBody = ExtractMethodBody(biomeSource, "private void ClearRuntimeDependencies()");
             string surfaceBody = ExtractMethodBody(biomeSource, "private float ResolveSurfaceLevelY()");
-            string surfaceResolverBody = ExtractMethodBody(biomeSource, "private static bool TryResolveSurfaceLevelY(");
+            string resolveOceanBody = ExtractMethodBody(biomeSource, "private bool TryResolveOceanSurfaceLevelY(");
+            string sanitizeOceanBody = ExtractMethodBody(biomeSource, "private static bool TryResolveOceanSurfaceLevelY(");
 
-            StringAssert.Contains("private const float DefaultSurfaceLevelY = 14.02f;", biomeSource);
-            StringAssert.Contains("[SerializeField] private float surfaceOffsetMeters = DefaultSurfaceLevelY;", biomeSource);
-            StringAssert.Contains("float referenceSurfaceY = SanitizeSurfaceLevelY(surfaceOffsetMeters);", surfaceBody);
-            StringAssert.Contains("string referenceSource = \"SurfaceOffset\";", surfaceBody);
-            StringAssert.Contains("_playerMovement != null && TryResolveSurfaceLevelY(_playerMovement.CurrentWaterSurfaceY, out float playerSurfaceY)", surfaceBody);
-            StringAssert.Contains("_resolvedTerrainProvider != null && TryResolveSurfaceLevelY(_resolvedTerrainProvider.WaterSurfaceLevel, out float terrainSurfaceY)", surfaceBody);
-            StringAssert.Contains("_resolvedAtmosphereReadModel != null && TryResolveSurfaceLevelY(_resolvedAtmosphereReadModel.SeaLevelY, out float atmosphereSurfaceY)", surfaceBody);
-            StringAssert.Contains("_resolvedFluidEngine != null && TryResolveSurfaceLevelY(_resolvedFluidEngine.WaterLevel, out float fluidSurfaceY)", surfaceBody);
-            StringAssert.Contains("math.abs(candidateSurfaceY) > 0.0001f", surfaceResolverBody);
-            StringAssert.Contains("math.abs(candidateSurfaceY) <= 1000f", surfaceResolverBody);
-            StringAssert.Contains("surfaceY = DefaultSurfaceLevelY;", surfaceResolverBody);
-            StringAssert.Contains("math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", surfaceBody);
-            StringAssert.Contains("return fluidSurfaceY;", surfaceBody);
-            StringAssert.Contains("_debugDepthSource = referenceSource;", surfaceBody);
-            StringAssert.Contains("return referenceSurfaceY;", surfaceBody);
-            StringAssert.DoesNotContain("float referenceSurfaceY = math.isfinite(surfaceOffsetMeters) ? surfaceOffsetMeters : 0f;", surfaceBody);
-            StringAssert.DoesNotContain("math.isfinite(_resolvedTerrainProvider.WaterSurfaceLevel)", surfaceBody);
-            StringAssert.DoesNotContain("return _resolvedFluidEngine.WaterLevel;", surfaceBody);
-            AssertTextBefore(surfaceBody, "math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", "return fluidSurfaceY;");
+            StringAssert.Contains("using Hecton8.Core.Contracts;", biomeSource);
+            StringAssert.Contains("private IHectonOceanKinematicsService _resolvedOceanKinematicsService;", biomeSource);
+            StringAssert.Contains("case GlobalRegistryServiceSlot.OceanKinematics:", rebindBody);
+            StringAssert.Contains("_resolvedOceanKinematicsService = currentService as IHectonOceanKinematicsService;", rebindBody);
+            StringAssert.Contains("_resolvedOceanKinematicsService ??= GlobalRegistry.OceanKinematics;", cacheBody);
+            StringAssert.Contains("_resolvedOceanKinematicsService = null;", clearBody);
+            StringAssert.Contains("_playerMovement.CurrentWaterSurfaceY", surfaceBody);
+            StringAssert.Contains("_resolvedFluidEngine.WaterLevel", surfaceBody);
+            StringAssert.Contains("TryResolveOceanSurfaceLevelY(out float oceanSurfaceLevelY)", surfaceBody);
+            StringAssert.Contains("_debugDepthSource = \"OceanKinematics\";", surfaceBody);
+            StringAssert.Contains("_resolvedTerrainProvider.WaterSurfaceLevel", surfaceBody);
+            StringAssert.Contains("_resolvedAtmosphereReadModel.SeaLevelY", surfaceBody);
+            StringAssert.Contains("oceanKinematicsService.IsInitialized", resolveOceanBody);
+            StringAssert.Contains("oceanKinematicsService.ActiveProvider", resolveOceanBody);
+            StringAssert.Contains("oceanKinematics.IsAvailable", resolveOceanBody);
+            StringAssert.Contains("oceanKinematics.SeaLevel", resolveOceanBody);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeOceanBody);
+            AssertTextBefore(surfaceBody, "_resolvedFluidEngine.WaterLevel", "TryResolveOceanSurfaceLevelY(out float oceanSurfaceLevelY)");
+            AssertTextBefore(surfaceBody, "TryResolveOceanSurfaceLevelY(out float oceanSurfaceLevelY)", "_resolvedTerrainProvider.WaterSurfaceLevel");
+            AssertTextBefore(surfaceBody, "_resolvedTerrainProvider.WaterSurfaceLevel", "_resolvedAtmosphereReadModel.SeaLevelY");
+            StringAssert.DoesNotContain("WorldMacroGeologyFields", surfaceBody);
+            StringAssert.DoesNotContain("TerrainData", surfaceBody);
         }
 
         [Test]
@@ -908,13 +927,27 @@ namespace Hecton8.Tests.Editor
                 "_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs");
             string source = File.ReadAllText(sourcePath);
             string mirrorBody = ExtractMethodBody(source, "private void ConsumeGlobalSignalMirrors()");
+            string registryRefreshBody = ExtractMethodBody(source, "private void RefreshCachedRegistryServices()");
+            string registryRebindBody = ExtractMethodBody(source, "private void ApplyBiolumRegistryServiceRebind(");
+            string survivalSourceRefreshBody = ExtractMethodBody(source, "private void RefreshPlayerSurvivalVitalsSourceId(");
 
             StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration", mirrorBody);
             StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", mirrorBody);
+            StringAssert.Contains("private uint _playerSurvivalVitalsSourceId;", source);
+            StringAssert.Contains("ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);", registryRefreshBody);
+            StringAssert.Contains("case GlobalRegistryServiceSlot.Player:", registryRebindBody);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);", registryRebindBody);
+            StringAssert.Contains("uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;", mirrorBody);
+            StringAssert.Contains("playerSurvivalVitalsSourceId != 0u", mirrorBody);
+            StringAssert.Contains("vitals.SourceId != playerSurvivalVitalsSourceId", mirrorBody);
             StringAssert.Contains("(vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u", mirrorBody);
             StringAssert.Contains("!math.isfinite(vitals.Oxygen01)", mirrorBody);
             StringAssert.Contains("oxygen01 = math.saturate(vitals.Oxygen01);", mirrorBody);
+            StringAssert.Contains("HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized", survivalSourceRefreshBody);
+            StringAssert.Contains("playerContext.SurvivalSystem", survivalSourceRefreshBody);
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))", survivalSourceRefreshBody);
             StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath", mirrorBody);
+            Assert.That(mirrorBody.IndexOf("vitals.SourceId != playerSurvivalVitalsSourceId", StringComparison.Ordinal), Is.LessThan(mirrorBody.IndexOf("oxygen01 = math.saturate(vitals.Oxygen01);", StringComparison.Ordinal)));
         }
 
         [Test]

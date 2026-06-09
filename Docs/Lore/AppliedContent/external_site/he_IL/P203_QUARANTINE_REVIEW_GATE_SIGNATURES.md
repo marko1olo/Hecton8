@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Hold Signatures"
+title: "חתימות Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Hold Signatures
+# חתימות Quarantine Review Gate
 
-HE LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+שכבת חתימות ההסגר הופכת את אחריות Deep Reach לפרוצדורלית. ה-Great Tide יצרה סיכון אמיתי של זיהום ולחץ; השקר היה שימוש בסיכון הזה כדי להחזיק אנשים ורשומות במשמורת מקומית בזמן שביקורת חיצונית מפגרת. דיווחים ציבוריים קראו לתוצאה הסגר ביולוגי/לחץ וכשל הרשאה. כרטיסי ה-gate ששוחזרו מוסיפים עובדה קשה יותר: חילוץ הוחזק בשפת אישורים גם במקומות שבהם ציוד הנתיב עוד לא כשל.
 
 ## Scanner
 
-HE LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+כרטיס ביקורת שוחזר: extraction state HELD, שדה סיכון BIO/PRESSURE-UNCERTAIN, אישור חיצוני חסר. שחרור מסלול חסום בקוד gate.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Action: hold extraction pending pressure-biology certificate and external review. Exception: no independent shuttle capacity assigned. Human tags remain local custody until gate clears.
 
 ## Audio
 
-HE LOC HOLD: Pending review is still a locked door.
+לדלת עוד היה כוח. ה-gate אומר review pending, והפתח נשאר אדום.
 
 ## Field Note
 
-HE LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+שים את זה ליד נתיבי ניצולים נעולים וציוד פינוי שעוד יש בו סוללה. שדה hold סגר משפטית דלת שעבדה.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/he_IL. -->

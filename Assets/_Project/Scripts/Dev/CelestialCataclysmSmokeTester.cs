@@ -39,9 +39,17 @@ namespace Hecton8.Dev
         private const string AlienSkyShaderPath = "Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader";
         private const string AegirSkyShaderPath = "Assets/_Project/Art/Shaders/Sky/Hecton_AegirSky.shader";
         private const string AegirImpostorShaderPath = "Assets/_Project/Art/Shaders/H8_AegirGasGiantImpostor_1428.shader";
+        private const string AegirSkyMaterialPath = "Assets/_Project/Art/Materials/Sky/MAT_AegirSky_Master.mat";
+        private const string AegirGasMaterialPath = "Assets/_Project/Art/Materials/Celestial/MAT_AegirGasGiant_Impostor_1428.mat";
+        private const string AegirSourceValidatorPath = "Assets/_Project/Scripts/Editor/AegirGasGiantSourceValidator.cs";
         private const string CelestialAtmosphereIncludePath = "Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl";
         private const string CoreLitIncludePath = "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl";
         private const string AlienSkyShaderName = "HECTON/Sky/Hecton_AlienSky_Master";
+        private const string AegirCanonicalBandTextureGuid = "6c173d4e1a858b34ca1b7e5610aae988";
+        private const string AegirCanonicalDetailTextureGuid = "e1aefa60ab4517644bb884257440872b";
+        private const string AegirCanonicalStormTextureGuid = "d9d11072e85a2b54cacd11eaad6614a8";
+        private const string AegirProductionPrefabGuid = "9bafceacd557491409f6134514063ff4";
+        private const string UnityBuiltInPrimitiveMeshGuid = "0000000000000000e000000000000000";
         private const string LegacyFluidInstanceToken = "HectonFluidEngine" + ".Instance";
         private const string LegacyEclipseInstanceToken = "EclipseGameplaySystem" + ".Instance";
         private const string LegacyEclipsePublicInstanceToken = "public " + "static EclipseGameplaySystem " + "Instance";
@@ -310,6 +318,101 @@ namespace Hecton8.Dev
             return true;
         }
 
+        private bool ValidateAegirPresentationContracts()
+        {
+#if UNITY_EDITOR
+            string celestialSource = ReadAssetText(CelestialEnginePath);
+            if (!ContainsOrdinal(celestialSource, "AegirSkyProjectionProfile") ||
+                !ContainsOrdinal(celestialSource, "PublishCelestialRuntimeSnapshot" + "(!usingPublishedCelestialSnapshot)") ||
+                !ContainsOrdinal(celestialSource, "GlobalRegistry.PublishCelestialRuntimeSnapshot" + "(in snapshot)") ||
+                !ContainsOrdinal(celestialSource, "PublishAegirSkyProjectionGlobals(aegirDirection)") ||
+                !ContainsOrdinal(celestialSource, "ResolveAegirSkyProjectionVisibility01") ||
+                !ContainsOrdinal(celestialSource, "ResolveAegirSkyProjectionQuality01") ||
+                !ContainsOrdinal(celestialSource, "return math.max(math.saturate(profile.minimumQuality), quality);") ||
+                !ContainsOrdinal(celestialSource, "ClearAegirSkyProjectionGlobals") ||
+                !ContainsOrdinal(celestialSource, "TryClaimCelestialRuntimeAuthority") ||
+                !ContainsOrdinal(celestialSource, "ValidateAegirRendererMaterialCold") ||
+                !ContainsOrdinal(celestialSource, "TryRaiseCelestialSunAngleChanged") ||
+                !ContainsOrdinal(celestialSource, "TryRaiseCelestialPlanetPhaseChanged") ||
+                !ContainsOrdinal(celestialSource, "TryRaiseCelestialEclipseStarted") ||
+                !ContainsOrdinal(celestialSource, "TryRaiseCelestialEclipseEnded") ||
+                !ContainsOrdinal(celestialSource, "ReportCelestialEventDropIfBackpressured") ||
+                !ContainsOrdinal(celestialSource, "_CelestialEventDropWarningHash") ||
+                !ContainsOrdinal(celestialSource, "QueueDeferredRegister") ||
+                !ContainsOrdinal(celestialSource, "QueueDeferredUnregister") ||
+                !ContainsOrdinal(celestialSource, "DispatchToListener") ||
+                !ContainsOrdinal(celestialSource, "ReportQueueOverflow") ||
+                !ContainsOrdinal(celestialSource, "ReportListenerDispatchException") ||
+                !ContainsOrdinal(celestialSource, "DrainQueuedEvents") ||
+                !ContainsOrdinal(celestialSource, "CelestialTruthReadFailure") ||
+                !ContainsOrdinal(celestialSource, "ReportCelestialTruthFallbackIfNeeded") ||
+                !ContainsOrdinal(celestialSource, "ResolveCelestialTruthFailureContextHash") ||
+                !ContainsOrdinal(celestialSource, "_CelestialTruthFallbackWarningHash") ||
+                !ContainsOrdinal(celestialSource, "PublishAegirPresentationWarning") ||
+                !ContainsOrdinal(celestialSource, "_AegirMissingMaterialWarningHash") ||
+                !ContainsOrdinal(celestialSource, "_AegirMissingBandTextureWarningHash") ||
+                !ContainsOrdinal(celestialSource, "_AegirDuplicateOwnerWarningHash"))
+            {
+                return Fail("HectonCelestialEngine lacks Aegir sky projection source/runtime/failure contract.");
+            }
+            _debugOmegaSourceChecks++;
+
+            string aegirSkySource = ReadAssetText(AegirSkyShaderPath);
+            if (!ContainsOrdinal(aegirSkySource, "_H8AegirPlanetCenterRadius") ||
+                !ContainsOrdinal(aegirSkySource, "_H8AegirSunDirection") ||
+                !ContainsOrdinal(aegirSkySource, "systemVisibility = saturate(1.0 - _H8AegirSunDirection.w)") ||
+                !ContainsOrdinal(aegirSkySource, "_RingOpacity * systemVisibility") ||
+                !ContainsOrdinal(aegirSkySource, "float3 planetColor = DrawAegir"))
+            {
+                return Fail("Aegir sky shader lacks runtime projection, visibility, or ring-opacity contract.");
+            }
+            _debugOmegaSourceChecks++;
+
+            string impostorSource = ReadAssetText(AegirImpostorShaderPath);
+            if (!ContainsOrdinal(impostorSource, "_PlanetPhase") ||
+                !ContainsOrdinal(impostorSource, "_H8GlobalQualityWeight") ||
+                !ContainsOrdinal(impostorSource, "_H8AegirSunDirection") ||
+                !ContainsOrdinal(impostorSource, "_HectonCelestialLightReadability0") ||
+                !ContainsOrdinal(impostorSource, "systemVisibility = min(systemVisibility"))
+            {
+                return Fail("Aegir impostor shader lacks runtime phase, quality, or underwater visibility contract.");
+            }
+            _debugOmegaSourceChecks++;
+
+            string skyMaterialSource = ReadAssetText(AegirSkyMaterialPath);
+            string skyBandGuid = ReadMaterialTextureGuid(skyMaterialSource, "_AegirBandTex");
+            if (!skyBandGuid.Equals(AegirCanonicalBandTextureGuid, StringComparison.OrdinalIgnoreCase))
+                return Fail("Aegir sky material _AegirBandTex is not bound to the canonical band texture.");
+            _debugOmegaSourceChecks++;
+
+            string gasMaterialSource = ReadAssetText(AegirGasMaterialPath);
+            if (!ReadMaterialTextureGuid(gasMaterialSource, "_MainTex").Equals(AegirCanonicalBandTextureGuid, StringComparison.OrdinalIgnoreCase) ||
+                !ReadMaterialTextureGuid(gasMaterialSource, "_DetailTex").Equals(AegirCanonicalDetailTextureGuid, StringComparison.OrdinalIgnoreCase) ||
+                !ReadMaterialTextureGuid(gasMaterialSource, "_StormTex").Equals(AegirCanonicalStormTextureGuid, StringComparison.OrdinalIgnoreCase))
+            {
+                return Fail("Aegir impostor material does not use canonical band/detail/storm texture set.");
+            }
+            _debugOmegaSourceChecks++;
+
+            string validatorSource = ReadAssetText(AegirSourceValidatorPath);
+            if (!ContainsOrdinal(validatorSource, "Aegir Gas Giant Source Contract") ||
+                !ContainsOrdinal(validatorSource, "ValidateTextureImport") ||
+                !ContainsOrdinal(validatorSource, "streamingMipmaps") ||
+                !ContainsOrdinal(validatorSource, "isReadable") ||
+                !ContainsOrdinal(validatorSource, "maxTextureSize") ||
+                !ContainsOrdinal(validatorSource, "ValidateOrbitSceneOverrides") ||
+                !ContainsOrdinal(validatorSource, "RepairPrefabSource") ||
+                !ContainsOrdinal(validatorSource, "RepairOrbitSceneFromMenu") ||
+                !ContainsOrdinal(validatorSource, AegirProductionPrefabGuid) ||
+                !ContainsOrdinal(validatorSource, UnityBuiltInPrimitiveMeshGuid))
+            {
+                return Fail("Aegir source validator lacks scene/prefab/material repair contract.");
+            }
+            _debugOmegaSourceChecks++;
+#endif
+            return true;
+        }
+
         private bool ValidateOmegaContracts()
         {
 #if UNITY_EDITOR
@@ -525,6 +628,34 @@ namespace Hecton8.Dev
             return ContainsOrdinal(source, "NativeMemorySentinel.RegisterNativeQueue") &&
                    ContainsOrdinal(source, "NativeMemorySentinel.UnregisterNativeQueue") &&
                    ContainsOrdinal(source, "nameof(" + fieldName + ")");
+        }
+
+        private static string ReadMaterialTextureGuid(string source, string propertyName)
+        {
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(propertyName))
+                return string.Empty;
+
+            int propertyIndex = source.IndexOf("- " + propertyName + ":", StringComparison.Ordinal);
+            if (propertyIndex < 0)
+                return string.Empty;
+
+            int textureIndex = source.IndexOf("m_Texture:", propertyIndex, StringComparison.Ordinal);
+            if (textureIndex < 0)
+                return string.Empty;
+
+            int guidIndex = source.IndexOf("guid:", textureIndex, StringComparison.Ordinal);
+            if (guidIndex < 0)
+                return string.Empty;
+
+            guidIndex += "guid:".Length;
+            while (guidIndex < source.Length && source[guidIndex] == ' ')
+                guidIndex++;
+
+            int guidEnd = source.IndexOf(",", guidIndex, StringComparison.Ordinal);
+            if (guidEnd < 0)
+                return string.Empty;
+
+            return source.Substring(guidIndex, guidEnd - guidIndex).Trim();
         }
 
         private static bool ContainsOrdinal(string source, string token)

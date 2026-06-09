@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Quiet Salvage Contract Seed"
+title: "بذرة عقد Salvage هادئ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quiet Salvage Contract Seed
+# بذرة عقد Salvage هادئ
 
-AR LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+يبدأ Salvage الهادئ بفتحة نظيفة: نشاط عاصفة منخفض، تماس مبكر أقل، ونافذة bathydrop تبدو مدفوعة بالكامل. هذا الشكل مفيد لمسار salvage طويل لأن المشغل يستطيع تثبيت الأدوات والمأوى قبل أن يبدأ الطريق بأخذ القطع منه.
 
-## Scanner
-
-AR LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-AR LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-AR LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-AR LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+الدين يجلس في الحضانة. العينات، ملفات الحادث، سجلات pinger وإشعارات المسار ترتبط بتدقيق مستقبل أولا قبل الدفع الكامل. الجولة أهدأ لأن اللوحة قررت مسبقا من يملك الدليل النظيف.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ar_SA. -->

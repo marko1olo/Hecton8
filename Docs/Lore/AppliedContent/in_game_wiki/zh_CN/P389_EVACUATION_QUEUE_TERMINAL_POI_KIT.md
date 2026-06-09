@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "疏散队列终端证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Evacuation Queue Terminal POI Kit
+# 疏散队列终端证据套件
 
-ZH LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+疏散队列终端有价值，不是因为它说有人等待，而是因为门状态、时钟漂移、工人计数和航路容量以可现场核查的方式互相矛盾。
 
 ## Scanner
 
-ZH LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+POI证据套件：队列终端通过门状态、时钟漂移、工人数量错位和航路容量证明延迟。
 
 ## Terminal
 
-ZH LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+队列终端套件：航路保持清单、隔离解除延迟、Atlas权重记录、工人计数不符、salvage冲突标签、舱门状态条、徽章残留。
 
 ## Audio
 
-ZH LOC HOLD: A queue is a body count with cleaner formatting.
+队列是格式更干净的尸体计数。
 
 ## Field Note
 
-ZH LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+掠夺者备注：扫描徽章残留前不要撬下舱门条。金属不如时间戳值钱。
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/zh_CN. -->

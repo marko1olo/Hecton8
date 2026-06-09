@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Okno nieba drabiny księżyców Aegira"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Okno nieba drabiny księżyców Aegira
 
-The Aegir moon ladder is route grammar, not decoration.
+Księżyce Aegira nie są dekoracją kalendarza. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 i Mute oznaczają pasy ruchu, cienie przekaźników, czas pływów, ryzyko blackout i koszt transfer. Gracz czyta niebo jako presję trasy, nie jako dokładną matematykę orbitalną.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+Gracz nie potrzebuje dokładnych stałych orbitalnych, by używać nieba. Księżyc za pogodą nadal może oznaczać złą drogę przekaźnika. Jasne okno może oznaczać jeden czysty pakiet. Koniunkcja może oznaczać obciążenie pływowe, nie cud. Drabina czyni niebo czytelnym, ale nie zmienia go w wykład.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/pl_PL. -->

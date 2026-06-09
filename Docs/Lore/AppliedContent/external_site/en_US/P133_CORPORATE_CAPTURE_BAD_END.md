@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Corporate Capture: Clean Rescue
 
-Corporate Capture works because it starts like help. The signal is clean, the pickup is professional, and the room has air. Then the order of operations becomes clear: coordinates first, XO custody second, Atlas access third, contractor welfare after review.
+Corporate Capture is frightening because it is competent. The rescue team does not look like raiders. It has procedure, clean surfaces, medical language and a plausible right to ask for custody. That is why the trap can close without a gunshot.
 
-The ocean stops crushing the player, but Deep Reach starts preserving the story. Testimony is sealed under contamination language, payload custody moves before medical debrief, and every name the player carried becomes a liability screen. This is not death. It is survival inside the machine that needed silence.
+The sequence tells the truth. Coordinates are requested before a pulse check. XO custody and Atlas access move before testimony. The contractor is alive, but the story is sealed under contamination review, and every carried name becomes a liability screen. This is not death. It is survival inside the institution that needed silence.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/en_US. -->

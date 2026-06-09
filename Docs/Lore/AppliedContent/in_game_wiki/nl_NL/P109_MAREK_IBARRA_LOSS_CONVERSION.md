@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra: verliesconversie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra: verliesconversie
 
-NL LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra is het Keelmark Mutual-schadespoor dat vermiste arbeiders verandert in onopgeloste boekhoudstaten. De tabel is niet voor rouw geschreven, maar voor sluitingskosten: lichaam niet teruggevonden, drukstaat niet gecertificeerd, besmetting in afwachting, loonidentiteit opgeschort.
+
+Daarom tellen namen in HECTON-8. Een lockerplaat, paklabel, lichaamsregisterregel of teruggevonden routeklok kan een arbeider uit onopgeloste last terugbrengen naar een claim. Dubbelzinnigheid is goedkoper dan redding, goedkoper dan compensatie en makkelijker te begraven in een vervoerdersconflict.
+
+Voor een Marauder is teruggevonden identiteit geen versiering. Ze beschadigt de boekhoudtruc die een persoon twee keer liet verdwijnen: eerst in het water, daarna in het register.
 
 ## Scanner
 
-NL LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+SCHADETABEL // M. Ibarra zette vermiste arbeiders om in onopgeloste lastklassen tot drukstaat, besmettingsstaat of loonstatus kon worden gecertificeerd.
 
 ## Terminal
 
-NL LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual verliesconversie // Niet teruggevonden biologische activa blijven onopgelost tot certificering van drukstaat, besmettingsstaat of loonstatus. Claimantklasse niet sluiten zonder bewaringsbewijs.
 
 ## Audio
 
-NL LOC HOLD: A missing person became a pending category. That was cheaper.
+Een vermist persoon werd een wachtende categorie. Dat was goedkoper.
 
 ## Field Note
 
-NL LOC HOLD: Insurance language should feel colder than gunfire.
+Verzekeringstaal moet kouder zijn dan geweervuur. Een teruggevonden naam is geen sfeer; hij breekt de goedkopere categorie.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/nl_NL. -->

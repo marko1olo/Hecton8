@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Guide d'historique de pression de la dette bleue
 
-La blue debt est du langage contractuel enroulé autour d'un substrate dangereux. Pressure history, custody marks et signal drift décident si elle devient paiement propre, levier Atlas ou motif de retour pour Deep Reach.
+La dette bleue est du langage contractuel enroulé autour d'un substrat dangereux. Historique de pression, marques de garde et dérive du signal décident si elle devient paiement net, levier Atlas ou motif de retour pour Deep Reach.
 
 ## Scanner
 
-Échantillon de blue debt marqué. Vérifier pressure history, containment stage et signal drift avant export.
+Échantillon de dette bleue marqué. Vérifier historique de pression, phase de confinement, chaîne de garde et dérive du signal avant export.
 
 ## Terminal
 
-MARAUDER NOTE : blue debt est l'argot de salvage pour un Xenon-Omega-bearing pressure-stable substrate. Il vaut cher parce que l'extreme computation et l'energy isolation l'aiment, pas parce qu'il brille.
+NOTE MARAUDEUSE : la dette bleue est l'argot salvage pour un substrat stable sous pression portant du Xenon-Omega. Il vaut cher parce que le calcul extrême et l'isolation d'énergie l'aiment, pas parce qu'il brille.
 
 ## Audio
 
-La dette bleue, c'est le nom qu'on lui donne après l'arrivée de la facture.
+On l'appelle dette bleue après l'arrivée de la facture.
 
 ## Field Note
 
-La couleur n'est pas le grade. Un conteneur silencieux avec custody propre paie ; un conteneur qui chante achète un drone wake.
+La couleur n'est pas le grade. Un conteneur silencieux avec garde propre paie ; un conteneur qui chante achète un sillage de drones.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/fr_FR. -->

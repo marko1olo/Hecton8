@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit de provas do terminal de fila de evacuação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit de provas do terminal de fila de evacuação
 
-PT LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+O terminal de fila deve parecer uma sala construída para deixar sofrimento administrativamente limpo. O terminal lista retenções de rota, atraso de liberação de quarentena, ponderação Atlas e contagens operárias, mas as paredes carregam o registro mais sujo: tira de estado de escotilha, resíduo de crachá, marcas de capacidade faltante e uma etiqueta salvage em um painel que alguém ainda quer vender.
 
-## Scanner
-
-PT LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-PT LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-PT LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-PT LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+O POI ganha peso por conflito. Tirar uma peça pode abrir rota ou pagar dívida, mas também destruir a superfície que prova atraso. A leitura correta não é confissão. É um conjunto de objetos incompatíveis que força o operador a escolher o que sobrevive ao mergulho.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/pt_BR. -->

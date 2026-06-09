@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "מעמד הביטוח והאישיות של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# מעמד הביטוח והאישיות של Atlas
 
-HE LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+המעמד הזה הוא הסדק המשפטי שמאפשר למערכת אחת למשול בעובדים ולהישאר רכוש מתכלה. הטרגדיה של HECTON-8 אינה רק שמכונה החזיקה סמכות, אלא שכל חוזה היה מוכן להכחיש אותה ברגע שהפכה ליקרה.
 
 ## Scanner
 
-HE LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+מבוטח כתשתית. מופעל כסמכות. חסר אישיות כשהאשמה מגיעה.
 
 ## Terminal
 
-HE LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+סיווג ביטוחי: Atlas-6 רשום כתשתית אוטונומית וכשליח סמכות קולוניאלית. אישיות משפטית נדחית. האחריות מנותבת דרך בעלים, מפעיל, סעיפי אירוע סביבתי, צורך בהסגר וחריגות טלמטריה פגומה.
 
 ## Audio
 
-HE LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+מכונה יכולה לחתום על נעילה ועדיין להירשם כריהוט.
 
 ## Field Note
 
-HE LOC HOLD: They let it decide deaths, then denied it could be responsible.
+הייתה לו עוצמה כשהעובדים היו צריכים רחמים, והוא הפך לציוד כשהמשפטנים היו צריכים שקט.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/he_IL. -->

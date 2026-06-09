@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Basin Payload Act"
+title: "Gerbang Payload Cekungan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Basin Payload Act
+# Gerbang Payload Cekungan Atlas
 
-ID LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Cekungan Atlas adalah tempat rute berhenti bertanya apa yang terjadi dan mulai bertanya siapa yang mendapat paket berguna. Rantai bukti, vektor cekungan, kelas salvage, dan proof hash tidak bisa semuanya tetap tak tersentuh. Penerima harus dipilih, ditolak, atau diganti dengan penahanan lokal.
 
-## Scanner
-
-ID LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-ID LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-ID LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Itulah tekanan akhir: tidak ada rute yang membersihkan tempat kejadian. Jual koordinat membayar dan mengekspos cekungan. Pemutusan menutup jalur balik dan membunuh struktur berguna. Karantina menjaga dan menahan. Buku publik menerbitkan tanpa peta. Blind return menolak semua dan mempertaruhkan hilangnya paket. Kampanye berakhir dengan kustodi, bukan kenyamanan.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/id_ID. -->

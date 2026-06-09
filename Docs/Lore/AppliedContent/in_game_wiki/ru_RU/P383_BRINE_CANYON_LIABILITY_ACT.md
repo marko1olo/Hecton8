@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Brine Canyon Liability Act"
+title: "Шлюз ответственности рассольного каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Brine Canyon Liability Act
+# Шлюз ответственности рассольного каньона
 
-RU LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+Рассольный каньон превращает время в доказательство. Датчики, часы, состояния очередей и сломанные маршрутные плиты показывают, что затопление было реальным и принятый риск тоже был реальным. Оператор перестает собирать слухи и начинает носить цепочку документов, способную пережить рассмотрение получателя.
 
 ## Scanner
 
-RU LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Маршрутный шлюз: рассольный каньон. Слои плотности, поврежденные часы и принятые допуски становятся вещественными доказательствами ответственности.
 
 ## Terminal
 
-RU LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+МАРШРУТ КАМПАНИИ // РАССОЛЬНЫЙ КАНЬОН. Нужно: сравнить след допуска, эвакуационную очередь, разлом маршрута и часы давления. Событие Великого прилива подтверждено. Коммерческое исключение и веса Atlas остаются спорными.
 
 ## Audio
 
-RU LOC HOLD: The ocean did not lie. The timetable did.
+Океан сломал стену. Расписание сломало людей.
 
 ## Field Note
 
-RU LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Заметка мародера: не спорь с приливом. Спорь с меткой времени, за удаление которой кто-то заплатил.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/ru_RU. -->

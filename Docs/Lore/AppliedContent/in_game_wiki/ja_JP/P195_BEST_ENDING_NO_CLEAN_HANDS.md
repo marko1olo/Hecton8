@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "最良エンド: 清潔な手はない"
+title: "最良ルート：残留を見えるままに"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最良エンド: 清潔な手はない
+# 最良ルート：残留を見えるままに
 
-清潔な手はない、は最終トーンの規則である。HECTON-8は純粋さではなく、理解、準備、証人としての仕事を報いる。最良エンドはプレイヤーを有能に感じさせると同時に、関与していると感じさせるべきだ。
+残留を見えるままにすることが、最も強いルートの基準だ。結末はHECTON-8を報酬画面に変えず、具体的なものを救うべきだ。公開記録、拒否されたDeep Reach経路、保存された盆地、解放されたオペレーター、作業員名、Atlas proof hash。記録には受信者保管権、責任、欠落名、盆地損害、Atlas状態、債務残留の未解決欄も残さなければならない。
 
 ## Scanner
 
-最良の結末は何か本物を救い、降下で無垢が生き残ったふりをしてはいけない。
+最良ルート規則 // 具体的な成果を救う。オペレーター保管権、公開記録、拒否されたペイロード、生きた盆地、作業員名パケット、Atlas proof hash。損害欄は開いたままにする。
 
 ## Terminal
 
-NO CLEAN HANDS RULE: 最良既知エンドの条件はagency、証拠、結果、残留物である。被害者全員が満足するなら、その結末はHECTON-8を忘れている。
+エンディング記録標準
+保存必須の物体または状態: オペレーター脱出、公開記録、Deep Reachペイロード拒否、保存された盆地生態、作業員名パケット、Atlas proof hash。
+未解決必須欄: 受信者保管権、責任連鎖、欠落名、盆地損害、Atlas状態、債務残留。
+無効記録: 支払い、救助、企業処理の裏に全コストを隠したもの。
+記録用途: 変わったことと、まだ提出側が残るものを示す。
 
 ## Audio
 
-清潔に感じるなら、ここがどこかを忘れている。
+すべての行が閉じるなら、記録が嘘をついている。
 
 ## Field Note
 
-強いルートは真実を暴き、Deep Reachを拒み、生態の一部を守り、プレイヤーを解放できる。しかし代価は見え続けるべきだ。
+すべての行が閉じているなら、その結末は部屋を隠した。
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ja_JP. -->

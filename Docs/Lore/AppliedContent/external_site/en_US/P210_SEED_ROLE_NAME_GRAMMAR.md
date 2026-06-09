@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Seed Role Name Grammar
 
-Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Seed Role Name Grammar defines how HECTON-8 uses procedural variation without losing authored human texture. Replay can change where a worker's evidence appears, but the name must stay tied to work, permission, task, and object. This lets the colony remain surprising across runs while preserving the feeling that every record belonged to someone whose job mattered.
 
 ## Scanner
 
-A seed can move a worker's evidence order, not turn them into disposable text.
+A seed can move evidence order. It cannot turn a worker into disposable text.
 
 ## Terminal
 
-SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate crew terms for readability, but it must not rewrite identity, erase the job, or detach the name from a concrete object.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Random is not authorship. Bind the name to a job.
 
 ## Field Note
 
-Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Each seed-role identity combines personal name, crew family, route permission, last task, and object variant.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/en_US. -->

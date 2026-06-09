@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Tránsito de rotación de tripulación humana"
+title: "Tránsito de rotación humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tránsito de rotación de tripulación humana
+# Tránsito de rotación humana
 
-La rotación humana hace creíble el abandono de HECTON-8. Trabajadores, especialistas y reemplazos se mueven más lento que el lenguaje de reclamación. Una persona puede salir de Sol bajo un contrato, despertar bajo otro y descubrir que la emergencia para la que entrenó ya se volvió evidencia.
+La rotación humana era la promesa que hacía Aegir habitable sobre el papel. Los trabajadores aceptaban ciclos largos porque existían ventanas de regreso, custodia médica y un libro de transportista que los describía como personas recuperables, no como masa abandonada. En la práctica, cada rotación dependía de escasez de literas, deuda de ruta, autorización legal y de si Deep Reach aún quería vivo al testigo.
 
 ## Scanner
 
-Los humanos no viajan a Aegir como quien va al trabajo. Pasan años como carga con opiniones.
+Calendario de tripulación sellado como válido después de que media lista ya era inalcanzable.
 
 ## Terminal
 
-ROTACIÓN DE TRIPULACIÓN: transporte humano usa ventanas lentas, secciones habitables blindadas, ciclos de bajo metabolismo y rotaciones por etapas. Un trabajador perdido se vuelve problema de custody demorado.
+ROTACIÓN HUMANA: los traslados humanos requieren masa de litera, cupo de radiación, supervisión de sueño, deuda médica, custodia legal y seguro de ventana de retorno. La extracción de emergencia no es un botón; es una excepción prevaluada que casi nadie puede pagar.
 
 ## Audio
 
-Para cuando casa pregunta dónde estás, la sala ya se ha inundado.
+Un plan de rotación no es un plan de rescate. Solo se parecen desde un escritorio.
 
 ## Field Note
 
-Un trabajador de frontera vende tiempo antes de vender trabajo.
+A las personas se las rotó como inventario hasta que la ruta recordó que eran cuerpos.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/es_ES. -->

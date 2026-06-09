@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Relay Fragment"
+title: "Fragmen Relai Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Relay Fragment
+# Fragmen Relai Karantina
 
-ID LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+Fragmen Relai Karantina adalah akhir kecil yang bergigi. Ia membuktikan bahwa HECTON-8 dapat menyelamatkan seseorang dari tekanan, lalu tetap menolak mengembalikan statusnya sebagai manusia. Paket itu membawa dua kebenaran dalam satu napas administrasi: ekstraksi diterima, pelepasan ditolak. Tubuh dipulihkan. Orangnya ditahan. Baris tinjauan udara lebih tua daripada tanda terima penyelamatan, artinya putusan karantina sudah menunggu sebelum siapa pun membuka palka. Untuk gameplay dan lore, fragmen ini penting karena membuat penyelamatan tidak lengkap secara moral. Lantai kering bukan kebebasan. Segel medis bukan pelepasan. Koloni bisa menyimpan yang dibutuhkannya sebagai bukti, sampel, properti pengklaim, atau inventaris saksi, lalu menjaga manusia tetap berada di dalam sistem yang melukainya.
 
 ## Scanner
 
-ID LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Paket relai yang sama menyetujui ekstraksi dan menolak pelepasan. Laut melepas tubuh sebelum koloni melepas orangnya.
 
 ## Terminal
 
-ID LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+TAHANAN RELAI QRF-17 / EKSTRAKSI: DITERIMA / PELEPASAN: DITOLAK / ALASAN: rantai sampel belum selesai, tinjauan udara usang, sengketa pengklaim aktif, status saksi sementara.
 
 ## Audio
 
-ID LOC HOLD: You are out of the water. You are not out of custody.
+Tahanan relai. Ekstraksi diterima. Pelepasan ditolak. Kau keluar dari air, bukan dari tahanan.
 
 ## Field Note
 
-ID LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Dicap dua kali: TUBUH DIPULIHKAN, ORANG DITAHAN. Tinjauan udara lebih tua dari tanda terima penyelamatan; sengketa pengklaim masih terbuka.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/id_ID. -->

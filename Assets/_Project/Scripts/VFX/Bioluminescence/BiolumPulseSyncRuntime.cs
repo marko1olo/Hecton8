@@ -8,6 +8,8 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -374,6 +376,7 @@ namespace Hecton8.VFX.Bioluminescence
         private Thread _blackBoxDumpThread;
         private string _blackBoxDumpPath;
         private string _blackBoxDumpMirrorPath;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
 #if UNITY_EDITOR
         private string _csvOverridePath;
         private FileSystemWatcher _csvWatcher;
@@ -396,6 +399,7 @@ namespace Hecton8.VFX.Bioluminescence
         private float _dearLieBlend01 = 1f;
         private uint _frameCounter;
         private uint _profileSourceHash = ProfileFallbackHash;
+        private uint _playerSurvivalVitalsSourceId;
         private uint _lastBiomeHash;
         private uint _lastPredatorSignalFrame;
         private int _lastToxicBiolumSnapshotGeneration;
@@ -568,6 +572,8 @@ namespace Hecton8.VFX.Bioluminescence
             if (dumpWorkerStopped)
                 ReleaseVaultHandlesOnly(_dataVault, invalidateProfiles: false);
             _tickDispatcher = null;
+            _playerSurvivalVitalsSourceId = 0u;
+            _oceanKinematicsService = null;
             ReleaseRuntimeOwnerClaim();
         }
 
@@ -666,7 +672,9 @@ namespace Hecton8.VFX.Bioluminescence
                 ReleaseVaultHandlesOnly(_dataVault, invalidateProfiles: true);
             if (dumpWorkerStopped)
                 _dataVault = null;
+            _playerSurvivalVitalsSourceId = 0u;
             _tickDispatcher = null;
+            _oceanKinematicsService = null;
             ReleaseRuntimeOwnerClaim();
             _disposed = dumpWorkerStopped;
         }
@@ -1338,6 +1346,8 @@ namespace Hecton8.VFX.Bioluminescence
         {
             ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
+            ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot.OceanKinematics, GlobalRegistry.OceanKinematics);
         }
 
         private void ApplyBiolumRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -1364,7 +1374,23 @@ namespace Hecton8.VFX.Bioluminescence
                 case GlobalRegistryServiceSlot.DataVault:
                     BindDataVault(currentService as IDataVault);
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
             }
+        }
+
+        private void RefreshPlayerSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _playerSurvivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         private void BindDataVault(IDataVault currentVault)
@@ -2024,7 +2050,7 @@ namespace Hecton8.VFX.Bioluminescence
         {
             BiolumPulseStateDTO generatedState = default;
             double3 aupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z);
-            float darkness = ResolveDarknessScalar(weather, darknessActivationThreshold, aupReference);
+            float darkness = ResolveDarknessScalar(weather, darknessActivationThreshold, aupReference, ResolveBiolumSeaLevelAupY());
             float qualityGain = math.lerp(0.92f, 1.12f, math.saturate(_globalQualityWeight));
 
             for (int i = 0; i < SyncGroupCount; i++)
@@ -2393,7 +2419,9 @@ namespace Hecton8.VFX.Bioluminescence
             }
 
             int survivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
+            uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;
             if (survivalVitalsSnapshotGeneration != 0 &&
+                playerSurvivalVitalsSourceId != 0u &&
                 survivalVitalsSnapshotGeneration != _lastGlobalSurvivalVitalsSnapshotGeneration)
             {
                 _lastGlobalSurvivalVitalsSnapshotGeneration = survivalVitalsSnapshotGeneration;
@@ -2401,7 +2429,8 @@ namespace Hecton8.VFX.Bioluminescence
                 for (int i = 0; i < vitalsSignals.Length; i++)
                 {
                     ref readonly SurvivalVitalsChangedSignal vitals = ref vitalsSignals[i];
-                    if ((vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
+                    if (vitals.SourceId != playerSurvivalVitalsSourceId ||
+                        (vitals.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
                         !math.isfinite(vitals.Oxygen01))
                     {
                         continue;
@@ -3669,6 +3698,7 @@ namespace Hecton8.VFX.Bioluminescence
                     DeltaTime = deltaTime,
                     GlobalQualityWeight = _globalQualityWeight,
                     AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
+                    SeaLevelAupY = ResolveBiolumSeaLevelAupY(),
                     DarknessActivationThreshold = ResolveDarknessActivationThreshold(profileFloats),
                     PredatorPanicSpeed = ResolvePredatorPanicSpeed(profileFloats)
                 };
@@ -4523,24 +4553,53 @@ namespace Hecton8.VFX.Bioluminescence
             return math.saturate(eclipse * math.lerp(0.82f, 1.12f, health));
         }
 
-        private static float ResolveAupDepthDarknessScalar(double3 aupReference)
+        private double ResolveBiolumSeaLevelAupY()
         {
-            float depthMeters = ResolveAupDepthMeters(aupReference);
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return DefaultSeaLevelAupY;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
+        }
+
+        private static float ResolveAupDepthDarknessScalar(double3 aupReference, double seaLevelAupY)
+        {
+            float depthMeters = ResolveAupDepthMeters(aupReference, seaLevelAupY);
             return SmoothStepRange01(DefaultDepthDarknessStartMeters, DefaultDepthDarknessFullMeters, depthMeters);
         }
 
-        private static float ResolveAupDepthMeters(double3 aupReference)
+        private static float ResolveAupDepthMeters(double3 aupReference, double seaLevelAupY)
         {
             return math.isfinite(aupReference.y)
-                ? (float)math.max(0d, DefaultSeaLevelAupY - aupReference.y)
+                ? (float)math.max(0d, seaLevelAupY - aupReference.y)
                 : 0f;
         }
 
-        private static float ResolveDarknessScalar(MockWeatherSignal weather, float activationThreshold, double3 aupReference)
+        private static float ResolveDarknessScalar(MockWeatherSignal weather, float activationThreshold, double3 aupReference, double seaLevelAupY)
         {
             return math.max(
                 ResolveGlobalDarknessScalar(weather, activationThreshold),
-                ResolveAupDepthDarknessScalar(aupReference));
+                ResolveAupDepthDarknessScalar(aupReference, seaLevelAupY));
         }
 
         private static unsafe ref BiolumPulseStateDTO GetPulseStateRef(NativeArray<BiolumPulseStateDTO> states)
@@ -4567,6 +4626,7 @@ namespace Hecton8.VFX.Bioluminescence
             public float DeltaTime;
             public float GlobalQualityWeight;
             public double3 AupReference;
+            public double SeaLevelAupY;
             public float DarknessActivationThreshold;
             public float PredatorPanicSpeed;
 
@@ -4579,7 +4639,7 @@ namespace Hecton8.VFX.Bioluminescence
                 MockWeatherSignal weather = WeatherSignal.IsCreated && WeatherSignal.Length > 0 ? WeatherSignal[0] : default;
                 BiolumMockPredatorProximitySignal predator = PredatorSignal.IsCreated && PredatorSignal.Length > 0 ? PredatorSignal[0] : default;
                 float dt = math.clamp(math.isfinite(DeltaTime) ? DeltaTime : 0f, 0f, 0.25f);
-                float darkness = ResolveDarknessScalar(weather, DarknessActivationThreshold, AupReference);
+                float darkness = ResolveDarknessScalar(weather, DarknessActivationThreshold, AupReference, SeaLevelAupY);
                 float threat01 = math.saturate(math.isfinite(predator.Strength01) ? predator.Strength01 : 0f);
                 float panicSpeed = math.lerp(1f, math.max(1f, PredatorPanicSpeed), threat01);
                 float amplitudePanicGain = math.lerp(1f, 1.38f, threat01);

@@ -210,6 +210,7 @@ namespace Hecton8.World
         [SerializeField] private WorldZoneDirector worldZoneDirector;
         [SerializeField] private HectonVoxelEngine voxelEngine;
         [SerializeField] private MapMagicBridge mapMagicBridge;
+        [SerializeField] private WorldProceduralFieldSampler fieldSampler;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
         [Header("Cave Generation")]
@@ -545,11 +546,36 @@ namespace Hecton8.World
                     candidatePos.y = terrainHeight - 5f; // Slightly below surface for cave entrance
                 }
 
+                if (!PassesTerrainDetailCaveCandidate(candidatePos))
+                    continue;
+
                 if (!IsCandidateTooClose(candidatePos, minDistance) && _candidateBuffer.Count < _candidateBuffer.Capacity)
                     _candidateBuffer.Add(candidatePos);
             }
 
             return _candidateBuffer;
+        }
+
+        private bool PassesTerrainDetailCaveCandidate(Vector3 candidatePosition)
+        {
+            if (fieldSampler == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref fieldSampler);
+
+            if (fieldSampler == null ||
+                !fieldSampler.TrySampleTerrainDetail(candidatePosition, out WorldTerrainDetailRuntimeSample sample) ||
+                !sample.IsValid)
+            {
+                return true;
+            }
+
+            WorldTerrainDetailEligibilityFlags eligibility = sample.EligibilityFlags;
+            bool hasCaveMouth =
+                (eligibility & WorldTerrainDetailEligibilityFlags.CaveMouthCandidate) != 0;
+            bool hasVoxelRockAnchor =
+                (eligibility & (WorldTerrainDetailEligibilityFlags.VoxelAnchor | WorldTerrainDetailEligibilityFlags.RockScatter)) ==
+                (WorldTerrainDetailEligibilityFlags.VoxelAnchor | WorldTerrainDetailEligibilityFlags.RockScatter);
+
+            return hasCaveMouth || hasVoxelRockAnchor;
         }
 
         private void TryQueueCaveSpawn(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
@@ -1032,6 +1058,9 @@ namespace Hecton8.World
 
             if (mapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+
+            if (fieldSampler == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref fieldSampler);
         }
 
         private bool HasRequiredReferences()

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Протокол карантинного сохранения payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Протокол карантинного сохранения payload
 
-RU LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Карантинное сохранение - осторожный маршрут, а осторожность не означает безвредность. Payload блокирует прямую передачу Deep Reach и держит координатный вектор запечатанным. Экология, связанная с Atlas, остается достаточно целой для рассмотрения, и бассейн не передается покупателю восстановления по квитанции.
 
-## Scanner
-
-RU LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-RU LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-RU LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-RU LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Опасность институциональна. Карантинный escrow может пережить чрезвычайную ситуацию, которая его оправдала. Защищенный бассейн может стать удержанным бассейном, затем назначенным бассейном, затем претензией с более правильным языком. Этот маршрут сохраняет время и живую структуру, но оставляет custody marks по всему будущему.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ru_RU. -->

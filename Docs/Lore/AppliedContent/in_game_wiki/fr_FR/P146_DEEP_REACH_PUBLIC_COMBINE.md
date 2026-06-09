@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Deep Reach Public Combine"
+title: "Combinat public Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Public Combine
+# Combinat public Deep Reach
 
-FR LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+La face publique de Deep Reach est assez large pour paraître utile et assez sèche pour paraître innocente. Elle construit plaques de route, services d'habitat, logistique de pression et programmes de continuité au vocabulaire civique. À cette couche, la colonie voit rarement un seul coupable. Elle voit papier à en-tête, scellés de maintenance, slogans audités et un nom capable de réclamer l'infrastructure quand le travail rapporte, puis la distance quand le travail devient preuve.
 
 ## Scanner
 
-FR LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Plaque de charte publique : opérateur d'infrastructure, pas défendeur d'extraction.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+DOSSIER COMBINAT PUBLIC : Deep Reach se présente comme infrastructure de route, industrie océanique, logistique d'habitat pressurisé et services de continuité. Le travail porteur de responsabilité est distribué vers bureaux filiales, langage assureur, contractants de garde et offices de récupération.
 
 ## Audio
 
-FR LOC HOLD: A clean title is the cheapest pressure suit.
+Le panneau dit service public. Les serrures derrière disent propriété.
 
 ## Field Note
 
-FR LOC HOLD: The seal is clean. The rooms under it are not.
+Le nom propre n'est pas un mensonge. C'est la pièce où la saleté est classée ailleurs.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/fr_FR. -->

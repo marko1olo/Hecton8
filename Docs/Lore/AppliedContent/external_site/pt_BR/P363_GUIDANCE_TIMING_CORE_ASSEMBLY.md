@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de Núcleo de Timing de Orientação"
+title: "Conjunto do Núcleo de Temporização de Orientação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de Núcleo de Timing de Orientação
+# Conjunto do Núcleo de Temporização de Orientação
 
-O Conjunto de Núcleo de Timing de Orientação mantém o voo espacial de HECTON-8 duro: extraction é um problema de rota feito de relógios, sombras e confiança danificada.
+O Conjunto do Núcleo de Temporização de Orientação transforma fuga em engenharia orbital, não em um simples empurrão para cima. A cápsula de ascensão de HECTON-8 precisa cruzar água, clima, geometria lunar e regras corporativas de recepção antes que uma queima possa ser chamada de recuperável.
 
-## Scanner
+O componente guarda o mapa temporizado: efeméride de Aegir, faixa receptora Black Keel, cache de shutters do relé lunar, drift de plume de tempestade e tolerância do relógio de custody. Nada disso é decorativo. Uma cápsula pode estar selada, carregada e mecanicamente saudável, e ainda perder recuperação porque o pacote alcança a faixa errada na hora errada.
 
-Timing core em branco. A geometria de Aegir decide se a subida vira recovery, capture ou silêncio.
-
-## Terminal
-
-GUIDANCE CORE: alinhar relógio da cápsula à Aegir window, Black Keel receiver lane, moon relay shutter e drift de storm-plume. Packets atrasados viram perda de evidência; packets adiantados viram capture noise.
-
-## Audio
-
-Para cima não é direção. É uma janela com testemunha.
-
-## Field Note
-
-Não existe um para cima simples a partir de HECTON-8. Existe um receptor, uma sombra, drift de tempestade e uma packet queue já mais velha que seu pânico.
+Essa é a parte amarga do acordo de fuga de HECTON-8. O sobrevivente não escapa da profundidade para a liberdade. A cápsula entra numa janela contábil estreita acima de um oceano que continua deformando cada sinal. Reparar o núcleo de tempo dá ao lançamento um lugar nessa janela. Não torna a janela gentil.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/pt_BR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Simbiosis Karang Kabel"
+title: "Simbiosis Terumbu Kabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Simbiosis Karang Kabel
+# Simbiosis Terumbu Kabel
 
-Karang kabel adalah peringatan kedalaman tengah: kehidupan memakai industri sebagai tulang, bayang, pemecah arus dan jalur nutrisi.
+Terumbu kabel terbentuk ketika parit servis kedalaman menengah memberi pertumbuhan hidup bentuk yang stabil: batang daya, pasangan relai, cincin penjepit, dan baki kabel lama. Beberapa anyaman mengurangi abrasi dan menenangkan arus di sekitar jalur. Beberapa fauna penggembala menjaga lendir dari konduktor terbuka. Selongsong yang sama juga bisa menyembunyikan isolasi retak, menahan panas, atau membawa lalu lintas drone ke rute yang sudah ditandai tenang oleh penyelam.
+
+Perlakukan terumbu kabel sebagai infrastruktur aktif sampai pindaian membuktikan sebaliknya. Selongsong hijau mungkin satu-satunya hal yang menjaga relai tetap kering; bisa juga menutupi gangguan yang gagal saat diberi beban. Periksa kontinuitas sinyal, warna isolasi, urutan penjepit, dan gerakan drone sebelum memotong. Ini jembatan antara bekas perbaikan pertama dan fauna perbaikan berikutnya: pertumbuhan hidup mengikuti arus sebelum Atlas mulai merutekan perbaikan melalui tubuh hidup.
 
 ## Scanner
 
-Flora tumbuh di batang daya dan jalur sinyal. Karang memakai kabel koloni sebagai rangka.
+Anyaman kabel-akar mencengkeram batang daya P63 pada tiga cincin penjepit. Sinyal masih lewat di bawah selongsong hijau. Kerusakan isolasi terlihat di tepi bawah. Bahaya: lalu lintas drone dan penggembala mengikuti arus hidup.
 
 ## Terminal
 
-Catatan perawatan: mat akar-kabel mengurangi abrasi dan menjaga sinyal, tetapi menarik drone dan fauna pemakan.
+CATATAN PARIT SERVIS
+Jalur: batang daya P63 / pasangan relai C
+Kondisi: selongsong biologis mengurangi abrasi
+Gangguan: isolasi oranye terbuka di bawah anyaman bawah
+Lalu lintas: penggembala dan drone pemeliharaan dekat arus hidup
+Tindakan: pindai kontinuitas sebelum memotong pertumbuhan
 
 ## Audio
 
-Karang hidup belajar bentuk koridor servis.
+Terumbu itu bukan hiasan. Itu menjaga relai tetap kering, dan drone tahu arusnya hidup.
 
 ## Field Note
 
-Penggabungan pertama berguna sebelum mengerikan.
+Jangan kupas pertumbuhan hijau hanya karena terlihat salah. Jika itu menjaga jaket tetap kering, tandai kerusakan dan rute di sekitarnya.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/id_ID. -->

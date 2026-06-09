@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Abyssal Machine Field Repair Act"
+title: "深淵機械場修復ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Abyssal Machine Field Repair Act
+# 深淵機械場修復ゲート
 
-JA LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+深淵機械場は恐怖を手順に変える。導電膜、音響器官、サービス盆地は飾りではない。圧力、電力喪失、汚染された所有テーブルの中で、オペレーターがルートしなければならない部品だ。
 
-## Scanner
-
-JA LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-JA LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-JA LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-JA LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+この段階が機能するのは、どの修復も有用で法的に汚いからだ。生きた橋はドアを戻せる。同じ橋がドアを生物扱いにし、修復をAtlasイベントにし、請求分類を難しくする。前へ進む道は、書類を悪化させるものでできている。
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ja_JP. -->

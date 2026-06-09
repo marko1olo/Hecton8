@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Coördinateneis van Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Recovery Compliance Coordinate Demand
+# Coördinateneis van Recovery Compliance
 
-NL LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Nadat de kolonie verdween, kwam Deep Reach niet terug met een uitgestoken hand. Het eerste heldere kanaal vraagt waar het asset is, wie eigendom kan bewijzen en of de levende getuige quarantaine en retentiereview accepteert. In HECTON-8 wordt redding niet geweigerd; ze wordt vertraagd tot ze drukmiddel is.
 
 ## Scanner
 
-NL LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Pakket geauthenticeerd als Deep Reach Recovery Compliance: reddingstaal rond eisen voor coördinaten, bewaring en besmetting.
 
 ## Terminal
 
-NL LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+RECOVERY COMPLIANCE NOTICE DR-RC-8: verzend Atlas-toegangsvector, Xenon-Omega-bewaringsbewijs, biologische besmettingsstatus en huidige bekken-coördinaten. Medische berging blijft in behandeling tot assetketen, bergingsretentierecht en siterecht zijn afgestemd. Ongeautoriseerde uitzending kan de prioriteit van de overlevende verlagen naar bewijsbewaring.
 
 ## Audio
 
-NL LOC HOLD: They can say rescue without meaning rescue.
+Ze vonden een manier om redding als een bevelschrift te laten klinken.
 
 ## Field Note
 
-NL LOC HOLD: Use near payload authority decisions and receiver selection.
+Plaats dit waar de speler kan kiezen wat hij uitzendt. De dreiging moet procedureel voelen, niet theatraal: geen schurkentoespraak, alleen een wachtrij die een lichaam kan begraven.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/nl_NL. -->

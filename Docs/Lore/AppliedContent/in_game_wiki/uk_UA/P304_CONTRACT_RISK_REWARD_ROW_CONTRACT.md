@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Contract Risk Reward Boundary"
+title: "Межа ризику й нагороди контракту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Contract Risk Reward Boundary
+# Межа ризику й нагороди контракту
 
-UA LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+Межа переводить replay-тиск у контрактні записи таблиці. Маршрут змінюється тому, що змінилися борг, штормовий час, зберігання і пункти відповідальності, а не тому, що світ забув події.
 
 ## Scanner
 
-UA LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Рядок контракту зв'язує утримання, штормове вікно, порядок зберігання, стелю виплати і вагу пункту.
 
 ## Terminal
 
-UA LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: рядки потребують тяжкість утримання, стелю виплати, штормове вікно, зберігання зразка, порядок доказів і вагу пункту Deep Reach. Контракт — перший хижак.
 
 ## Audio
 
-UK LOC HOLD: The contract is the first predator.
+Контракт — перший хижак.
 
 ## Field Note
 
-UA LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Зміни нагороди належать рядку контракту, а не імпровізованому lore-тексту.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/uk_UA. -->

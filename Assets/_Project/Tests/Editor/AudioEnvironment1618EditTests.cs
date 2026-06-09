@@ -771,9 +771,61 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", stressHeartbeat);
             StringAssert.Contains("math.all(math.isfinite(pose.RuntimePosition))", stressHeartbeat);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", stressHeartbeat);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", stressHeartbeat);
+            StringAssert.Contains("if (IsBehaviourUsable(movement))", stressHeartbeat);
             AssertTextBefore(stressHeartbeat, "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", "HectonPlayerMovement movement = _playerMovement");
             AssertTextBefore(stressHeartbeat, "return Vector3.zero;", "HectonPlayerMovement movement = _playerMovement");
             Assert.That(stressHeartbeat.IndexOf("playerContext.PlayerMovement", StringComparison.Ordinal), Is.LessThan(0));
+        }
+
+        [Test]
+        public void PlayerStressVfxRebindsInitializedPlayerContextAndClearsRuntimeBindings()
+        {
+            string stressVfx = Read(PlayerStressVfxPath);
+            string onDisable = ExtractMethodBody(stressVfx, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(stressVfx, "private void OnDestroy()");
+            string hotSwap = ExtractMethodBody(stressVfx, "public void OnGlobalRegistryServiceReplaced(");
+            string coldCache = ExtractMethodBody(stressVfx, "private void CacheRegistryServicesCold()");
+            string refreshRuntime = ExtractMethodBody(stressVfx, "private void RefreshRuntimeDependencies()");
+            string applyCached = ExtractMethodBody(stressVfx, "private void ApplyCachedPlayerContext(");
+            string clearBindings = ExtractMethodBody(stressVfx, "private void ClearRuntimeBindings()");
+            string clearResolved = ExtractMethodBody(stressVfx, "private void ClearResolvedRuntimeBindings()");
+
+            StringAssert.Contains("ClearRuntimeBindings();", onDisable);
+            StringAssert.Contains("ClearRuntimeBindings();", onDestroy);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false)", hotSwap);
+            StringAssert.Contains("ApplyCachedPlayerContext(allowRegistryFallback: false)", hotSwap);
+            StringAssert.Contains("CachePlayerContext(GlobalRegistry.Player)", coldCache);
+            StringAssert.Contains("if (HasResolvedRuntimeBindings())", refreshRuntime);
+            StringAssert.Contains("ClearResolvedRuntimeBindings();", refreshRuntime);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = allowRegistryFallback ? ResolvePlayerContext() : _cachedPlayerContext;", applyCached);
+            StringAssert.Contains("if (!IsPlayerContextUsable(playerContext) || !playerContext.IsInitialized)", applyCached);
+            StringAssert.Contains("ClearResolvedRuntimeBindings();", applyCached);
+            StringAssert.Contains("_survivalSystem = playerContext.SurvivalSystem;", applyCached);
+            StringAssert.Contains("_playerMovement = playerContext.PlayerMovement;", applyCached);
+            StringAssert.Contains("_playerHealth = playerContext.PlayerHealth;", applyCached);
+            StringAssert.Contains("_dependencyResolveRetryRemaining = 0f;", applyCached);
+            StringAssert.Contains("ClearPlayerContext();", clearBindings);
+            StringAssert.Contains("ClearResolvedRuntimeBindings();", clearBindings);
+            StringAssert.Contains("_survivalSystem = null;", clearResolved);
+            StringAssert.Contains("_playerMovement = null;", clearResolved);
+            StringAssert.Contains("_playerHealth = null;", clearResolved);
+            StringAssert.Contains("_dependencyResolveRetryRemaining = 0f;", clearResolved);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", stressVfx);
+            StringAssert.Contains("private void CachePlayerContext(IPlayerRuntimeContext playerContext, bool allowRegistryFallback = true)", stressVfx);
+            StringAssert.Contains("private void ClearPlayerContext()", stressVfx);
+            StringAssert.Contains("private bool HasResolvedRuntimeBindings()", stressVfx);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", stressVfx);
+            StringAssert.Contains("private static bool IsBehaviourUsable(Behaviour behaviour)", stressVfx);
+            StringAssert.Contains("playerContext is Behaviour behaviour", stressVfx);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", stressVfx);
+            StringAssert.DoesNotContain("_cachedPlayerContext = GlobalRegistry.Player;", stressVfx);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", stressVfx);
+            AssertTextBefore(applyCached, "if (!IsPlayerContextUsable(playerContext) || !playerContext.IsInitialized)", "_survivalSystem = playerContext.SurvivalSystem;");
+            Assert.That(applyCached.IndexOf("if (_survivalSystem == null)", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(applyCached.IndexOf("if (_playerMovement == null)", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(applyCached.IndexOf("if (_playerHealth == null)", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(applyCached.IndexOf("_cachedPlayerContext = null;", StringComparison.Ordinal), Is.LessThan(0));
         }
 
         [Test]
@@ -1440,16 +1492,38 @@ namespace Hecton8.Tests.Editor
         public void PlayerCriticalKineticImpactWaterlineFallbackMatchesRuntimeSeaLevel()
         {
             string renderer = Read(RendererPath);
+            string coldCache = ExtractMethodBody(renderer, "private void CacheColdRegistryReferences()");
+            string cacheService = ExtractMethodBody(renderer, "private void CacheRegistryServiceReference(");
+            string disable = ExtractMethodBody(renderer, "private void OnDisable()");
+            string destroy = ExtractMethodBody(renderer, "private void OnDestroy()");
             string resolveWaterline = ExtractMethodBody(renderer, "private float ResolveKineticImpactWaterlineY()");
+            string resolveOcean = ExtractMethodBody(renderer, "private bool TryResolveOceanKineticImpactWaterlineY(");
+            string runtimeSanitize = ExtractMethodBody(renderer, "private static bool TryResolveRuntimeKineticImpactWaterlineY(");
+            string fallbackSanitize = ExtractMethodBody(renderer, "private static bool TryResolveKineticImpactWaterlineY(");
             string resolveDepth = ExtractMethodBody(renderer, "private float ResolveAbsoluteDepthMeters()");
 
-            StringAssert.Contains("private const float KineticImpactDefaultWaterlineY = 14.02f;", renderer);
-            StringAssert.Contains("playerMovement != null && TryResolveKineticImpactWaterlineY(playerMovement.CurrentWaterSurfaceY, out float playerWaterlineY)", resolveWaterline);
+            StringAssert.Contains("private const float KineticImpactDefaultWaterlineY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", renderer);
+            StringAssert.Contains("private IHectonOceanKinematicsService _oceanKinematicsService;", renderer);
+            StringAssert.Contains("_oceanKinematicsService = GlobalRegistry.OceanKinematics;", coldCache);
+            StringAssert.Contains("case GlobalRegistryServiceSlot.OceanKinematics:", cacheService);
+            StringAssert.Contains("_oceanKinematicsService = currentService as IHectonOceanKinematicsService;", cacheService);
+            StringAssert.Contains("_oceanKinematicsService = null;", disable);
+            StringAssert.Contains("_oceanKinematicsService = null;", destroy);
+            StringAssert.Contains("playerMovement != null && TryResolveRuntimeKineticImpactWaterlineY(playerMovement.CurrentWaterSurfaceY, out float playerWaterlineY)", resolveWaterline);
             StringAssert.Contains("return playerWaterlineY;", resolveWaterline);
+            StringAssert.Contains("TryResolveOceanKineticImpactWaterlineY(out float oceanWaterlineY)", resolveWaterline);
+            StringAssert.Contains("return oceanWaterlineY;", resolveWaterline);
             StringAssert.Contains("return KineticImpactDefaultWaterlineY;", resolveWaterline);
+            StringAssert.Contains("oceanKinematicsService.IsInitialized", resolveOcean);
+            StringAssert.Contains("oceanKinematicsService.ActiveProvider", resolveOcean);
+            StringAssert.Contains("oceanKinematics.IsAvailable", resolveOcean);
+            StringAssert.Contains("TryResolveRuntimeKineticImpactWaterlineY(oceanKinematics.SeaLevel, out waterlineY)", resolveOcean);
+            StringAssert.Contains("private static bool TryResolveRuntimeKineticImpactWaterlineY(float candidateWaterlineY, out float waterlineY)", renderer);
             StringAssert.Contains("private static bool TryResolveKineticImpactWaterlineY(float candidateWaterlineY, out float waterlineY)", renderer);
-            StringAssert.Contains("math.abs(candidateWaterlineY) > 0.0001f", renderer);
-            StringAssert.Contains("math.abs(candidateWaterlineY) <= 1000f", renderer);
+            StringAssert.DoesNotContain("math.abs(candidateWaterlineY) > 0.0001f", runtimeSanitize);
+            StringAssert.Contains("math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", runtimeSanitize);
+            StringAssert.Contains("math.abs(candidateWaterlineY) > 0.0001f", fallbackSanitize);
+            StringAssert.Contains("math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", fallbackSanitize);
             StringAssert.Contains("waterlineY = KineticImpactDefaultWaterlineY;", renderer);
             StringAssert.DoesNotContain("math.isfinite(playerMovement.CurrentWaterSurfaceY)", resolveWaterline);
             StringAssert.DoesNotContain("return playerMovement.CurrentWaterSurfaceY;", resolveWaterline);
@@ -3020,7 +3094,17 @@ namespace Hecton8.Tests.Editor
             string adaptiveStem = Read(AdaptiveStemMixerPath);
             string vocalWarning = Read(VocalWarningSystemPath);
             string drain = ExtractMethodBody(adaptiveStem, "private void DrainSignalInputs()");
+            string adaptiveAwake = ExtractMethodBody(adaptiveStem, "private void Awake()");
+            string adaptiveEnable = ExtractMethodBody(adaptiveStem, "private void OnEnable()");
+            string adaptiveColdTick = ExtractMethodBody(adaptiveStem, "public void ColdTick()");
+            string adaptiveServiceReplaced = ExtractMethodBody(adaptiveStem, "public void OnGlobalRegistryServiceReplaced(");
+            string adaptiveSurvivalSourceRefresh = ExtractMethodBody(adaptiveStem, "private void RefreshPlayerSurvivalVitalsSourceId(");
+            string vocalSchedule = ExtractMethodBody(vocalWarning, "private JobHandle ScheduleVocalWarningFrame(");
+            string vocalColdRefresh = ExtractMethodBody(vocalWarning, "private void RefreshCachedServicesCold()");
+            string vocalSurvivalSourceRefresh = ExtractMethodBody(vocalWarning, "private void RefreshPlayerSurvivalVitalsSourceId(");
             int survivalStart = vocalWarning.IndexOf("for (int i = 0; i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)", StringComparison.Ordinal);
+            if (survivalStart < 0)
+                survivalStart = vocalWarning.IndexOf("for (int i = 0; playerSurvivalVitalsSourceId != 0u && i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)", StringComparison.Ordinal);
             int survivalEnd = vocalWarning.IndexOf("private unsafe void DecayCooldowns()", survivalStart, StringComparison.Ordinal);
             Assert.That(survivalStart, Is.GreaterThanOrEqualTo(0));
             Assert.That(survivalEnd, Is.GreaterThan(survivalStart));
@@ -3029,11 +3113,36 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("(signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u", drain);
             StringAssert.Contains("!math.isfinite(signal.Oxygen01)", drain);
             StringAssert.Contains("oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);", drain);
+            StringAssert.Contains("private uint _playerSurvivalVitalsSourceId;", adaptiveStem);
+            StringAssert.Contains("CachePlayerSurvivalVitalsSourceIdCold();", adaptiveAwake);
+            StringAssert.Contains("CachePlayerSurvivalVitalsSourceIdCold();", adaptiveEnable);
+            StringAssert.Contains("CachePlayerSurvivalVitalsSourceIdCold();", adaptiveColdTick);
+            StringAssert.Contains("serviceSlot == GlobalRegistryServiceSlot.Player", adaptiveServiceReplaced);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);", adaptiveServiceReplaced);
+            StringAssert.Contains("uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;", drain);
+            StringAssert.Contains("if (playerSurvivalVitalsSourceId != 0u)", drain);
+            StringAssert.Contains("signal.SourceId != playerSurvivalVitalsSourceId", drain);
+            StringAssert.Contains("HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized", adaptiveSurvivalSourceRefresh);
+            StringAssert.Contains("playerContext.SurvivalSystem", adaptiveSurvivalSourceRefresh);
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))", adaptiveSurvivalSourceRefresh);
+            Assert.That(drain.IndexOf("signal.SourceId != playerSurvivalVitalsSourceId", StringComparison.Ordinal), Is.LessThan(drain.IndexOf("float oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);", StringComparison.Ordinal)));
             StringAssert.Contains("uint survivalFlags = signal.Flags;", vocalSurvivalBlock);
+            StringAssert.Contains("private uint _playerSurvivalVitalsSourceId;", vocalWarning);
+            StringAssert.Contains("public uint PlayerSurvivalVitalsSourceId;", vocalWarning);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", vocalColdRefresh);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", vocalSchedule);
+            StringAssert.Contains("PlayerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId,", vocalSchedule);
+            StringAssert.Contains("uint playerSurvivalVitalsSourceId = PlayerSurvivalVitalsSourceId;", vocalSurvivalBlock);
+            StringAssert.Contains("playerSurvivalVitalsSourceId != 0u", vocalSurvivalBlock);
+            StringAssert.Contains("if (signal.SourceId != playerSurvivalVitalsSourceId)", vocalSurvivalBlock);
+            StringAssert.Contains("playerContext != null && playerContext.IsInitialized", vocalSurvivalSourceRefresh);
+            StringAssert.Contains("playerContext.SurvivalSystem", vocalSurvivalSourceRefresh);
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))", vocalSurvivalSourceRefresh);
             StringAssert.Contains("(survivalFlags & SurvivalVitalsChangedSignalFlags.OxygenCritical) != 0u", vocalSurvivalBlock);
             StringAssert.Contains("(survivalFlags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u && oxygen01 < 0.22f", vocalSurvivalBlock);
             StringAssert.Contains("math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01))", vocalSurvivalBlock);
             StringAssert.DoesNotContain("|| signal.Oxygen01 < 0.22f", vocalSurvivalBlock);
+            Assert.That(vocalSurvivalBlock.IndexOf("if (signal.SourceId != playerSurvivalVitalsSourceId)", StringComparison.Ordinal), Is.LessThan(vocalSurvivalBlock.IndexOf("uint survivalFlags = signal.Flags;", StringComparison.Ordinal)));
         }
 
         [Test]

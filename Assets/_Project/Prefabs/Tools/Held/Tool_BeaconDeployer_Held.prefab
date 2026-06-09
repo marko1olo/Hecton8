@@ -52,6 +52,7 @@ MonoBehaviour:
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
+  _transportFeelContract: {fileID: 0}
   deployRange: 12
   deployCooldown: 0.25
   retractRange: 6
@@ -163,7 +164,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0ee55981801d7084bba89b587ed1d8a3, type: 2}
+  - {fileID: 2100000, guid: 418aebe9032d20048a184c1f1a98062e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

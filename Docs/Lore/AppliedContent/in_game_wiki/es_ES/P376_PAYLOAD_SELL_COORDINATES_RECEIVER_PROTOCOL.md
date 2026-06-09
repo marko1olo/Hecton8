@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protocolo de venta de coordenadas del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protocolo de venta de coordenadas del payload
 
-ES LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+El protocolo de venta de coordenadas trata HECTON-8 como propiedad recuperable. Convierte el payload final en un paquete para Deep Reach: vector de cuenca, malla de confianza, digest de pruebas y clase de acceso salvage. El remitente recibe dinero y alivio de deuda. Deep Reach recibe el mapa de aproximación y un camino más limpio de regreso a la reclamación.
 
 ## Scanner
 
-ES LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Ruta de venta de coordenadas armada. Vector de cuenca, mapa de confianza y digest de pruebas van a Deep Reach Recovery Compliance.
 
 ## Terminal
 
-ES LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+RECEPTOR PAYLOAD // VENTA DE COORDENADAS. Receptor: Deep Reach Recovery Compliance. Transmitir vector de cuenca, malla de confianza, digest XO de pruebas, clase de acceso salvage. Devolver recibo de pago, reducción de gravamen, sello de prioridad de recuperación. Transferir mapa de acceso al bloquear recibo.
 
 ## Audio
 
-ES LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Pago liquidado. Mapa transferido. Libro de trabajadores aún abierto.
 
 ## Field Note
 
-ES LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Nota de saqueador: si la primera línea es la cantidad, lee la segunda. La segunda es access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/es_ES. -->

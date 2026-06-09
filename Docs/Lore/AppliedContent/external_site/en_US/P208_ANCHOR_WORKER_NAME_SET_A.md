@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Anchor Worker Name Set A
 
-Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Anchor Worker Name Set A defines the early recurring colony names for HECTON-8. These eight workers are not lore trivia; they are memory handles. The player meets them through objects and labor first, then slowly sees how the same names cross maintenance records, permissions, damage reports, and audio fragments. Set A keeps the first hours human without stopping the game for exposition.
 
 ## Scanner
 
-Anchor names should reappear through work, not personal exposition.
+Early names must come back through work, not speeches. The shallow route teaches memory by repetition.
 
 ## Terminal
 
-ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: shallow and industrial-shelf recurrence. Each name should bind to one tool, one route permission, one damaged work object, and one later contradiction. These names are the player's first proof that the colony was a workplace before it became salvage.
 
 ## Audio
 

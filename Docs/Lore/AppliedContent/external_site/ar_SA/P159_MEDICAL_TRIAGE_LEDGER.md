@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "دفتر الفرز الطبي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# دفتر الفرز الطبي
 
-AR LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+دفتر الفرز الطبي يحول الإخلاء المتأخر إلى دليل بشري: فئات نظيفة، مساعدة تنتظر، وعمال عُدوا قبل أن يُرثوا.
 
 ## Scanner
 
-AR LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // إصابة ضغط، نقص أكسجين، تأخير قفل، مسار مفقود، hold اعتماد. الرعب في دقة انتظار المساعدة.
 
 ## Terminal
 
-AR LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+قاعدة طبية: احسب الأجساد بلا gore. استخدم pressure-state، دين الأكسجين، تأخير المسار، أولوية triage وsignoff hold لإظهار كيف جعل الإجراء المرضى أسرع من قدرة الأطباء.
 
 ## Audio
 
-AR LOC HOLD: The cleanest handwriting is on the worst page.
+أنظف خط يد على أسوأ صفحة.
 
 ## Field Note
 
-AR LOC HOLD: Medical text should count bodies without becoming gore.
+يجب أن يحسب النص الطبي الأجساد من دون أن يصبح gore.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/ar_SA. -->

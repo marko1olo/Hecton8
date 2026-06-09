@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "圧力破損しきい値"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# 圧力破損しきい値
 
-JP LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+圧力破損しきい値は、HECTON-8のサルベージを抽象値ではなく物理にする。コンテナはインベントリ名が緑だから安全なのではない。殻、ガスケット、クランプ、証明印、経路履歴が周囲の深度とまだ一致しているから安全なのだ。このしきい値はプレイヤーへの公平性の規則でもある。破損が損失になる前に、世界は話すべきだ。封止が鳴る。ガスケットがずれる。クランプが震える。細い亀裂が光る。塩のブルームが育つ。音響応答が幽霊のように二重になる。死試料の霧がガラスを曇らせる。どの信号も階層ごとに同じ意味を持つ。素材が有用な物体から局所的な危険へ移ったということだ。これによりクラフト、UI、環境音は同じ警告言語を共有できる。プレイヤーが罰されるのは圧力を無視したからであって、隠れた数式を読めなかったからではない。
 
 ## Scanner
 
-JP LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+良い試料も、間違った圧力線を越えれば危険物になる。表示が惜しかったことなど、海は気にしない。
 
 ## Terminal
 
-JP LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+圧力破損 / shallow-rated: 封止クリック、水のにじみ / industrial-rated: ガスケットずれ、クランプ震え / brine-rated: 細亀裂、塩ブルーム / abyssal-rated: 音響ゴースト、死試料霧 / Atlas-rated: 構造損失前の保管ロックアウト。
 
 ## Audio
 
-JP LOC HOLD: Pressure does not care that the label was almost right.
+圧力は、ラベルがほぼ正しかったことを気にしない。
 
 ## Field Note
 
-JP LOC HOLD: Failure thresholds should be readable before they punish.
+破損しきい値は罰の前に読めるべきだ。クリック音、ずれ、髪の毛ほどの亀裂、塩のブルーム、死試料の霧。失ってからしか学べないなら、世界が不正をしている。
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/ja_JP. -->

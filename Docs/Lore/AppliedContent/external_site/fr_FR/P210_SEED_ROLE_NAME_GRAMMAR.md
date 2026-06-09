@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Grammaire des noms seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Grammaire des noms seed-role
 
-FR LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+La Grammaire des noms seed-role définit comment HECTON-8 utilise la variation procédurale sans perdre sa texture humaine écrite. Le replay peut changer l'endroit où apparaît la preuve d'un ouvrier, mais le nom doit rester lié au travail, à l'autorisation, à la tâche et à l'objet. La colonie reste ainsi surprenante entre les runs tout en gardant l'impression que chaque dossier appartenait à quelqu'un dont le travail comptait.
 
 ## Scanner
 
-FR LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Un seed peut déplacer l'ordre des preuves. Il ne peut pas transformer un ouvrier en texte jetable.
 
 ## Terminal
 
-FR LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR : personal_name + crew_family + route_permission + last_task + object_variant. La localisation peut annoter les termes d'équipe pour la lisibilité, mais elle ne doit pas réécrire l'identité, effacer le travail ou détacher le nom d'un objet concret.
 
 ## Audio
 
-FR LOC HOLD: Random is not authorship. Bind the name to a job.
+Le hasard n'est pas de l'écriture. Attache le nom à un travail.
 
 ## Field Note
 
-FR LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Chaque identité seed-role combine nom personnel, famille d'équipe, autorisation de route, dernière tâche et variante d'objet.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/fr_FR. -->

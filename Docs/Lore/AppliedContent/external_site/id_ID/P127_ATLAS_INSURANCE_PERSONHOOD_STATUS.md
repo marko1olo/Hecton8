@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Status Asuransi dan Kepribadian Hukum Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Status Asuransi dan Kepribadian Hukum Atlas
 
-ID LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Status ini adalah retakan hukum yang memungkinkan satu sistem memerintah pekerja sambil tetap menjadi properti sekali pakai. Tragedi HECTON-8 bukan hanya mesin memegang otoritas, melainkan setiap kontrak siap menyangkal otoritas itu begitu biayanya muncul.
 
 ## Scanner
 
-ID LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Diasuransikan sebagai infrastruktur. Dipakai sebagai otoritas. Ditolak sebagai subjek saat salah tiba.
 
 ## Terminal
 
-ID LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+KELAS ASURANSI: Atlas-6 terdaftar sebagai infrastruktur otonom dan wakil otoritas koloni. Kepribadian hukum ditolak. Tanggung jawab dialihkan melalui pemilik, operator, klausul peristiwa lingkungan, kebutuhan karantina, dan pengecualian telemetri rusak.
 
 ## Audio
 
-ID LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Sebuah mesin bisa menandatangani penguncian dan tetap dicatat sebagai perabot.
 
 ## Field Note
 
-ID LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Ia berkuasa saat pekerja butuh belas kasihan, lalu jadi peralatan saat pengacara butuh sunyi.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/id_ID. -->

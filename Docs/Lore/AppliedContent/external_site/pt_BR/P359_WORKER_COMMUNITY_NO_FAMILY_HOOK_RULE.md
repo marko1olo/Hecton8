@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Worker Community Notice"
+title: "Aviso de contatos de trabalho"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Worker Community Notice
+# Aviso de contatos de trabalho
 
-PT-BR LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+O aviso de contatos de trabalho é um pequeno documento social com uma borda dura. Ele lista fileiras de beliches, líderes de rota, testemunhas de medlock, contatos de ferramentas e janelas de relé. Parece administração até a lógica de pressão aparecer: um contato fora do mundo pode chorar, discutir e lembrar, mas não chega à escotilha antes da água.
 
-## Scanner
+Em HECTON-8, contato de emergência significa estar na estação, ser treinado, ser alcançável por tom e estar liberado para a rota do trabalhador. A definição é severa, não sem afeto. Quando um retorno perdido pode virar caminho de inundação, o cuidado assume essa forma.
 
-PT-BR LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-PT-BR LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-PT-BR LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-PT-BR LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+O quadro também liga provas diárias em uma rede de comunidade. Uma chave de bomba em um artefato, uma correção de água em outro, uma assinatura de ferramenta em um terceiro: cada marca prende um trabalhador cansado a outro. Não é melodrama, mas um assentamento de pressão crível onde responsabilidade vira uma forma de intimidade.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/pt_BR. -->

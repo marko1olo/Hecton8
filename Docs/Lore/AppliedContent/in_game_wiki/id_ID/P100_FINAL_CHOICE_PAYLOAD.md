@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload Pilihan Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload Pilihan Akhir
 
-ID LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+Keputusan terakhir bukan layar kemenangan bersih. Itu masalah pengiriman dengan beban moral. Marauder menentukan apa yang naik dari bulan: koordinat, sampel, nama pekerja, akses Atlas, instruksi karantina, bukti publik, atau tidak ada yang berguna. Setiap payload menciptakan pemilik berbeda atas akibatnya. Deep Reach bisa merebut kendali lagi. Hukum publik bisa mendapat luka yang akhirnya terlihat. Kontinuitas Atlas bisa diputus atau dikurung. Ekologi samudra-mesin bisa dilindungi, dijual, atau dibiarkan di luar bahasa manusia. Ending bukan tentang siapa lolos dengan tangan bersih. Ending tentang siapa menerima cukup kebenaran untuk bergerak pertama.
 
 ## Scanner
 
-ID LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD AKHIR // Koordinat, sampel, nama, akses Atlas, perintah karantina, bukti publik. Apa yang meninggalkan HECTON-8 menentukan siapa bisa bertindak setelahnya.
 
 ## Terminal
 
-ID LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+MATRIKS PAYLOAD: jual koordinat dan bukti XO; putus kontinuitas Atlas; lindungi atau karantina ekologi samudra-mesin; publikasikan bukti ke ledger publik; tahan payload dan biarkan Deep Reach buta.
 
 ## Audio
 
-ID LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+Tidak ada kepemilikan bersih untuk TKP yang belajar bernapas.
 
 ## Field Note
 
-ID LOC HOLD: The best ending should be defensible, not clean.
+Ending terbaik harus bisa dibela, bukan bersih.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/id_ID. -->

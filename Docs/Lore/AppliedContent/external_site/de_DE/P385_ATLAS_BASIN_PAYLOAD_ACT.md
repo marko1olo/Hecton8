@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas-Becken-Payload-Tor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Basin Payload Act
+# Atlas-Becken-Payload-Tor
 
-DE LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Das Atlas-Becken ist der Punkt, an dem die Route nicht mehr fragt, was passiert ist, sondern wer das nutzbare Paket bekommt. Beweiskette, Beckenvektor, Salvage-Klasse und Proof Hash können nicht alle unberührt bleiben. Ein Empfänger muss gewählt, verweigert oder durch lokalen Halt ersetzt werden.
 
-## Scanner
-
-DE LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-DE LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-DE LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-DE LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Das ist der finale Druck: Keine Route reinigt den Tatort. Koordinatenverkauf zahlt und öffnet das Becken. Severance schneidet Rückwege und tötet nützliche Struktur. Quarantäne erhält und hält. Das öffentliche Hauptbuch veröffentlicht ohne Karte. Blind Return verweigert alle und riskiert Paketverlust. Die Kampagne endet mit Verwahrung, nicht mit Trost.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/de_DE. -->

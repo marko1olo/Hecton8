@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Melhor final: sem mãos limpas"
+title: "Melhor rota: resíduo visível"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Melhor final: sem mãos limpas
+# Melhor rota: resíduo visível
 
-Sem Mãos Limpas é a regra de tom final. HECTON-8 recompensa entendimento, preparo e trabalho de testemunha, não pureza. O melhor final deve fazer o jogador se sentir competente e implicado ao mesmo tempo.
+Resíduo visível é o padrão da rota mais forte. O final deve salvar algo concreto sem transformar HECTON-8 em tela de recompensa: registro público, rota Deep Reach negada, bacia preservada, operador livre, nomes de trabalhadores ou Atlas proof hash. O registro também precisa manter campos abertos para custódia do receptor, responsabilidade, nomes faltantes, dano da bacia, estado de Atlas e resíduo de dívida.
 
 ## Scanner
 
-O melhor final deve salvar algo real sem fingir que a inocência sobreviveu à descida.
+REGRA DA MELHOR ROTA // Salve um resultado concreto: custódia do operador, registro público, payload negado, bacia viva, pacote de nomes de trabalhadores ou Atlas proof hash. Deixe campos de dano abertos.
 
 ## Terminal
 
-REGRA SEM MÃOS LIMPAS: critérios do melhor final conhecido exigem agência, prova, consequência e resíduo. Se toda parte ferida está satisfeita, o final esqueceu HECTON-8.
+PADRÃO DE REGISTRO DE FINAL
+Objeto ou estado salvo obrigatório: saída do operador, registro público, payload da Deep Reach negado, ecologia de bacia preservada, pacote de nomes de trabalhadores ou Atlas proof hash.
+Campos abertos obrigatórios: custódia do receptor, cadeia de responsabilidade, nomes faltantes, dano da bacia, estado de Atlas, resíduo de dívida.
+Registro inválido: todos os custos escondidos atrás de pagamento, resgate ou encerramento corporativo.
+Uso do registro: mostrar o que mudou e o que ainda tem parte de protocolo.
 
 ## Audio
 
-Se parece limpo, esqueceu onde você está.
+Se todas as linhas fecham, o registro mente.
 
 ## Field Note
 
-Uma rota forte pode expor verdade, negar Deep Reach, preservar parte da ecologia e libertar o jogador, mas o custo precisa continuar visível.
+Se todas as linhas fecham, o final escondeu a sala.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/pt_BR. -->

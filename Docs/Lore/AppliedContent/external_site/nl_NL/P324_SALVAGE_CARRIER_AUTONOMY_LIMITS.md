@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Autonomielimieten van de salvage carrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Salvage Carrier Autonomy Limits
+# Autonomielimieten van de salvage carrier
 
-NL LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+Autonomielimieten van de salvage carrier houden HECTON-8 gegrond. Black Keel is gevaarlijk omdat hij tegelijk nuttig en beperkt is. Hij kan het boekhoud- en recoverywerk doen dat ontsnapping mogelijk maakt, maar zijn regels verbieden de onmogelijke redding die spelers verwachten van een persoonlijk schip. Het resultaat is infrastructuur met een hartslag, geen metgezel.
 
 ## Scanner
 
-NL LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel kan schuld, telemetrie en laag-risico supply drops verplaatsen zonder je te vragen. Hij kan geen diepe redding autoriseren.
 
 ## Terminal
 
-NL LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+AUTONOMIELIMIETEN / toegestaan: claim processing, verkoop van telemetrie, recovery-window scheduling, laag-risico ballast of supply drop, contaminated-mass rejection / verboden: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-NL LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Autonoom betekent niet vrij. Het betekent dat schuld kan bewegen zonder jou te vragen.
 
 ## Field Note
 
-NL LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Houd dit in carrierstatus en contract-UI, niet in combat barks. Autonomie dekt boekhouding, recovery scheduling en weigerlogica.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Quarantine Relay Fragment"
+title: "Фрагмент карантинного реле"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Quarantine Relay Fragment
+# Фрагмент карантинного реле
 
-RU LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Фрагмент карантинного реле задает горький край выживания в HECTON-8. Сеттинг не только про побег от давления воды; он про побег от записей, цепочек удержания и имущественных претензий, переживших потоп. Фрагмент придает концовкам жесткую форму: кого-то можно достать из океана и все равно не отпустить.
 
 ## Scanner
 
-RU LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Один и тот же пакет реле разрешает эвакуацию и запрещает выпуск. Океан отпускает тело раньше, чем колония отпускает человека.
 
 ## Terminal
 
-RU LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+УДЕРЖАНИЕ РЕЛЕ QRF-17 / ИЗВЛЕЧЕНИЕ: ПРИНЯТО / ВЫПУСК: ЗАПРЕЩЕН / ПРИЧИНЫ: спорная цепочка образцов, устаревшая проверка воздуха, активный спор заявителя, временный статус свидетеля.
 
 ## Audio
 
-RU LOC HOLD: You are out of the water. You are not out of custody.
+Удержание реле. Извлечение принято. Выпуск запрещен. Ты выбрался из воды, но не из-под надзора.
 
 ## Field Note
 
-RU LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Два штампа: ТЕЛО ИЗВЛЕЧЕНО, ЛИЦО УДЕРЖАНО. Проверка воздуха старше спасательной квитанции; спор заявителя открыт.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/ru_RU. -->

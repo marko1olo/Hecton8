@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Cadeia de origem da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Cadeia de origem da Deep Reach
 
-PT LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+A cadeia de origem impede que a Deep Reach vire um único escritório maligno. Ela é uma economia de rotas usando muitas peles legais, capaz de parecer local em cada jurisdição e ausente no ponto de impacto. HECTON-8 usa essa história para fazer o poder corporativo parecer velho, tedioso e letal: uma máquina capaz de matar uma colônia sem jamais soar como vilã.
 
 ## Scanner
 
-PT LOC HOLD: Old company. New disaster. Same charter language.
+Trança de cartas: palavras de Centauri, dinheiro de Sol, corpos de Aegir.
 
 ## Terminal
 
-PT LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: a Deep Reach incorporou cláusulas de autonomia compatíveis com Centauri, finanças de seguro da Sol Core, dívida logística de Barnard e depois conchas do projeto Aegir. Atlas foi autorizada como infraestrutura de rota antes de virar testemunha de morte em massa.
 
 ## Audio
 
-PT LOC HOLD: They brought the empire in filing cabinets.
+Eles trouxeram o império em armários de arquivo e chamaram isso de expansão.
 
 ## Field Note
 
-PT LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+A Deep Reach não começou com o desastre. Por isso sobreviveu a ele.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/pt_BR. -->

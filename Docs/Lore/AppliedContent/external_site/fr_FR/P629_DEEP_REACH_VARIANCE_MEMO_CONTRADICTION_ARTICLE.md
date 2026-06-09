@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Public Archive Evidence Primer
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Contradiction du mémo variance de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Contradiction du mémo variance de Deep Reach
 
-Clean office language can expose a lie when timestamps and pump marks disagree.
+Le premier mémo Deep Reach n'a pas besoin d'avouer. Il doit seulement être propre au mauvais endroit. Variance est le mot de bureau dans une pièce où la pompe a tourné hors limite, où un collier a été posé après l'alarme, où un ordre de travail est resté ouvert et où un tampon de marge a été accepté avant l'eau.
 
-## Scanner
-
-Memo says variance; room marks disagree.
-
-## Terminal
-
-Deep Reach memo language treats dangerous margin as managed variance.
-
-## Audio
-
-Trust the room before the clean word.
-
-## Field Note
-
-Trust the wet room first.
+C'est la contradiction que le joueur peut utiliser tôt. Elle ne résout pas la catastrophe. Elle enseigne l'ordre de preuve. Un mémo propre est une voix de source, pas la vérité. Une vanne bloquée, un horodatage et une marque d'ouvrier peuvent peser plus qu'un bon en-tête.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/fr_FR. -->

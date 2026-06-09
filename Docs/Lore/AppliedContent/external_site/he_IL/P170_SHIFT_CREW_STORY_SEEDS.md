@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "זרעי סיפור לצוותי משמרת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# זרעי סיפור לצוותי משמרת
 
-HE LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
+המערכת מגדירה שכבת וריאציה בטוחה: סדר roster, מיקום חפצים, זוגות תפקידים, תכולת ארוניות, סירובים והערות Marauder. ההיסטוריה המרכזית נעולה: Great Tide, אחריות Deep Reach, weighting של Atlas וכישלון הפינוי.
 
 ## Scanner
 
-HE LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // הרשימה יכולה להשתנות. האשמה לא.
 
 ## Terminal
 
-HE LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEEDS צוות משמרת // ריצה יכולה לשנות סדר roster, זוגות עובדים, תוכן ארוניות, סירובים, גיר מסלול, שברי תג והערות תיקון מאוחרות של Marauder. ה-seed משנה איך השחקן פוגש את הראיות, לא מה הן מוכיחות.
 
 ## Audio
 
-HE LOC HOLD: A different locker can hurt the same truth again.
+ארונית אחרת יכולה לחתוך את אותה אמת מצד אחר.
 
 ## Field Note
 
-HE LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+וריאציית seed משנה סדר חפצים, זוגות עבודה והערות Marauder. היא לעולם לא משנה את Great Tide או אחריות Deep Reach.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/he_IL. -->

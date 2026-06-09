@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "重型货运准备时间"
+title: "重型货运筹备时间"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 重型货运准备时间
+# 重型货运筹备时间
 
-重型货运时间保护无FTL时间线。Atlas硬件能先于大规模定居抵达，因为公司提前发射先驱货物，把它们向前分段，接受无人风险，并把失败窗口埋进项目语言。紧急情况开始后，救援不能借用这个技巧。
+重型货运把HECTON-8从测绘目标变成债务对象。大型货物追不上变化的真相；它必须被筹备、绑定、投保、停泊、制动，并由有权接收的人接收。当模块货列穿过航线时，背后的合同比殖民地反对意见更有惯性。
 
 ## Scanner
 
-Atlas级货运是裹在装甲里的预付耐心。
+舱单堆栈：货物在接收地点被证明仍活着之前就已承诺。
 
 ## Terminal
 
-货运记录：Atlas与seed货物使用分段、弹丸聚变辅助、长滑行和制动基础设施。公开日期可能隐藏先驱发射和前域出发。
+货运筹备：压力壳、陶瓷屏蔽、反应堆质量、seed库存、爬行机框架和栖居环需要相隔数年的发射窗口。一旦绑定，货物就变成运动中的法律论点。
 
 ## Audio
 
-那么重的船并不只是旅行。它会变成带尾迹的发票。
+货已经付过钱了。这让停止它比救人更难。
 
 ## Field Note
 
-重型航线由仓站、光束窗口、制动质量和政治胆量组装而成。
+货运不赶时间。它让别人的赶时间变得昂贵。
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/zh_CN. -->

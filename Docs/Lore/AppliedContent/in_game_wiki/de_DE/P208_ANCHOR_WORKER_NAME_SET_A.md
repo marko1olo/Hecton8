@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Anker-Arbeiternamenssatz A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Anker-Arbeiternamenssatz A
 
-DE LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
+Anker-Arbeiternamenssatz A ist die erste menschliche Schicht, die der Spieler wiedererkennen soll. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita und Pavel Sorn gehören zu Beweisen aus Flachwasser und Industrieschelf. Ihre Namen sollen nicht als Biografien erscheinen. Sie sollen auf einem Spindetikett, Pumpentag, Routenpermit, befleckten Essensbon, gerissenen Werkzeugkoffer auftauchen und später in einem Datensatz zurückkehren, der die Bedeutung verändert. Set A lässt die Kolonie bewohnt wirken, bevor die tiefere Verschwörung klar wird.
 
 ## Scanner
 
-DE LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Frühe Namen müssen durch Arbeit zurückkehren, nicht durch Reden. Die flache Route lehrt Erinnerung durch Wiederholung.
 
 ## Terminal
 
-DE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: Wiederkehr in Flachwasser und Industrieschelf. Jeder Name soll an ein Werkzeug, eine Routengenehmigung, ein beschädigtes Arbeitsobjekt und einen späteren Widerspruch gebunden sein. Diese Namen sind der erste Beweis des Spielers, dass die Kolonie ein Arbeitsplatz war, bevor sie Bergungsgut wurde.
 
 ## Audio
 
-DE LOC HOLD: Do not mourn the name until the tool tells you why.
+Betrauere den Namen nicht, bis das Werkzeug dir sagt warum.
 
 ## Field Note
 
-DE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Set-A-Anker: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/de_DE. -->

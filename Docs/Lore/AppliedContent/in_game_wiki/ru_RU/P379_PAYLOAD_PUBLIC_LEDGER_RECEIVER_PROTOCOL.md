@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Протокол публичного реестра payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Public Ledger Receiver Protocol
+# Протокол публичного реестра payload
 
-RU LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Протокол публичного реестра отправляет доказательства туда, где Deep Reach не сможет тихо ими владеть. Он редактирует координаты, запечатывает attestation hashes, прикрепляет route custody и digest весов Atlas, затем входит в отложенный relay. Отправитель теряет контроль при приемке. Пакет становится труднее купить, труднее похоронить и медленнее использовать.
 
 ## Scanner
 
-RU LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Маршрут публичного реестра взведен. Координаты редактируются до отложенного relay; стек attestation hash и цепь ответственности запечатываются при приемке.
 
 ## Terminal
 
-RU LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+ПОЛУЧАТЕЛЬ PAYLOAD // PUBLIC LEDGER LANE. Получатель: распределенный публичный реестр, отложенная Tau lane. Принять пакет инцидента с редактированными координатами, attestation hashes, route custody, digest весов Atlas, отметку получателя. Отклонить private payout и direct recovery claim. Отзыв заканчивается при приемке relay.
 
 ## Audio
 
-RU LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Реестр принял пакет. Координаты скрыты. Окно отзыва закрыто.
 
 ## Field Note
 
-RU LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Заметка мародера: редактируй маршрут до приемки relay. После приемки пакет больше не твой.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ru_RU. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Worker Locker Nameplate Sample"
+title: "工人储物柜名牌样本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Worker Locker Nameplate Sample
+# 工人储物柜名牌样本
 
-ZH LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+工人储物柜名牌样本把一个储物柜变成紧凑的人类记录。Ren Okoye 通过路线权限、工具认证、餐券和擦除疤痕存活下来。这个物件展示 HECTON-8 的核心证据风格：当薪资记忆失效后，工作保存身份。
 
 ## Scanner
 
-ZH LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye 的名牌保住了姓名，因为擦掉薪资行比擦掉工作更容易。
 
 ## Terminal
 
-ZH LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-ZH LOC HOLD: Name retained. Payline erased.
+姓名保留。薪资行抹除。工作仍然附着。
 
 ## Field Note
 
-ZH LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / 餐券夹在胶带下。Payroll stripe 被磨掉；手套尺寸标记仍可见。
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/zh_CN. -->

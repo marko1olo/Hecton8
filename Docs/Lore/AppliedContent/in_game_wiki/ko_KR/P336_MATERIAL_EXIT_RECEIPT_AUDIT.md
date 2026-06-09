@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Material Exit Receipt Audit"
+title: "물자 탈출 영수 감사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Material Exit Receipt Audit
+# 물자 탈출 영수 감사
 
-KO LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+물자 탈출 영수 감사는 돈 엔딩을 정당하고도 씁쓸하게 만든다. 플레이어는 가치를 빼내고 계약에서 살아남았지만, 기관은 여전히 기록과 이름, 재난의 공식 형태를 소유한다.
 
 ## Scanner
 
-KO LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+탈출 영수증이 회수 질량을 검증했다. 증거 보관은 끊겼고, 작업자 이름은 아직 인정되지 않았다.
 
 ## Terminal
 
-KO LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+AFTER-ACTION 영수: 회수 가능 질량과 계약 위험에 대한 salvage 지급 해제. 좌표 진실 미해결. Deep Reach 책임 상태 변화 없음. 작업자 이름 장부는 비보관 증거로 거부. 탈출 승인. 사건은 carrier 소유로 유지된다.
 
 ## Audio
 
-KO LOC HOLD: You got paid. That is not the same as getting out clean.
+돈은 받았다. 깨끗이 나온 것과는 다르다.
 
 ## Field Note
 
-KO LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+돈은 받았지만 도덕적으로 미완인 탈출을 위한 사후 기록. 보상은 정산되고, 증거 연쇄는 실패하며, 이름들은 공식 보관 밖에 남는다.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/ko_KR. -->

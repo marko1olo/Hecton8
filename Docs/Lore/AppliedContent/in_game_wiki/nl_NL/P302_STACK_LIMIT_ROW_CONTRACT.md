@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Stack Limit Data Boundary"
+title: "Datagrens van stapellimiet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Stack Limit Data Boundary
+# Datagrens van stapellimiet
 
-NL LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+De grens houdt inventaris fysiek. Items stapelen alleen wanneer container, drukrating, massa en besmettingsstaat dezelfde route kunnen overleven zonder tegen het savebestand te liegen.
 
 ## Scanner
 
-NL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Stapelrij weigert iconenhopen: vatklasse, drukrating, besmetting en massa bepalen aantal.
 
 ## Terminal
 
-NL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: stapelaantal vereist vattype, drukrating, besmettingsfase, massaklasse, waarschuwingstier en save-stabiele identiteit. Een krat is geen drukvat.
 
 ## Audio
 
-NL LOC HOLD: A crate is not a pressure vessel.
+Een krat is geen drukvat.
 
 ## Field Note
 
-NL LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Stapellimieten blijven table-owned en stabiel voor save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/nl_NL. -->

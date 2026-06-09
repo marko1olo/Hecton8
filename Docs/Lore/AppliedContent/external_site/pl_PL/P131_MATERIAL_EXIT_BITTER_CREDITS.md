@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Wyjście materiałowe: gorzkie kredyty"
+title: "Wyjście materialne: gorzkie kredyty"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Wyjście materiałowe: gorzkie kredyty
+# Wyjście materialne: gorzkie kredyty
 
-Wyjście materiałowe ma być chłodno legalne. Gracz odzyskuje materiał ciśnieniowy, utrzymuje custody, spełnia księgowość masy przez okno Black Keel i dostaje realne obniżenie lien. Żaden alarm nie ogłasza porażki; system zachowuje się dokładnie tak, jak go zaprojektowano.
+Wyjście materialne powinno być chłodno legalne, nie karykaturalnie złe. Kontraktor wykonał pracę, odzyskał materiał ciśnieniowy, utrzymał custody wystarczającą dla księgowości Black Keel i realnie zmniejszył lien. Statek nie ogłasza porażki, bo system handlowy nie ma powodu tak jej nazwać.
 
-Szkoda tkwi w tym, czego potwierdzenie nie obejmuje. Nazwiska zaginionych pracowników pozostają nieuzgodnione, łańcuch dowodowy jest niepełny, a Deep Reach zyskuje czystszy komercyjny powód powrotu. HECTON-8 nie karze gracza za profesjonalizm. Pokazuje, ile kosztuje zawodowy sukces, gdy miejsce pracy jest też grobem.
+Gorycz tkwi w tym, czego potwierdzenie nie musi pamiętać. Nazwiska robotników pozostają sporne, payload dowodowy jest niepełny, a Deep Reach dostaje czystszy komercyjny pretekst do powrotu niż ten, który robotnicy kolonii kiedykolwiek dostali na wyjście. HECTON-8 nie karze profesjonalizmu. Pokazuje, ile kosztuje, gdy miejsce pracy jest także grobem.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/pl_PL. -->

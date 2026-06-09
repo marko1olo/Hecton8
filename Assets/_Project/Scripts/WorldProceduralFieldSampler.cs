@@ -34,6 +34,7 @@ namespace Hecton8.World
         private const string MatrixLabelFallbackOnly = "FallbackOnly";
         private const string SeafloorSourceNoneLabel = "None";
         private const string SeafloorSourceMapMagicLabel = "MapMagicHeight";
+        private const string SeafloorSourceTerrainProviderLabel = "TerrainProviderHeight";
         private const string SeafloorSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
         private const string SeafloorSourceMacroGeologyLabel = "MacroGeologyFallback";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
@@ -78,7 +79,8 @@ namespace Hecton8.World
             MapMagicHeight,
             SceneProbeLegacy,
             MacroGeologyFallback,
-            FallbackSynthetic
+            FallbackSynthetic,
+            TerrainProviderHeight
         }
 
         [System.Flags]
@@ -524,10 +526,18 @@ namespace Hecton8.World
             public WorldZoneAnchor.ZoneKind resolvedZoneKind;
             public WorldProceduralPattern resolvedPattern;
             public byte isPreviewOverride;
+            public WorldTerrainDetailRuntimeSample terrainDetailSample;
+            public WorldMacroGeologySample macroGeologySample;
+            public WorldTerrainMesoDetailSample terrainMesoDetail;
+            public WorldTerrainSurfaceMaterialWeights terrainSurfaceMaterialWeights;
+            public WorldTerrainSurfaceMaterialClass terrainSurfaceMaterialClass;
+            public WorldTerrainDetailEligibilityFlags terrainDetailEligibilityFlags;
+            public float4 terrainMaterialPackedControl;
             public int verticalDomainIndex;
             public float verticalDomainWeight;
             public byte isSecondaryDomain;
             public SeafloorSource seafloorSource;
+            public byte hasTerrainDetailSample;
             public byte isValid;
         }
 
@@ -561,6 +571,7 @@ namespace Hecton8.World
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private MapMagicBridge mapMagicBridge;
+        private ITerrainProvider _terrainProviderRuntime;
         [SerializeField] private WorldZoneDirector worldZoneDirector;
         [SerializeField] private BiomeMatrixDirector biomeMatrixDirector;
 
@@ -590,7 +601,7 @@ namespace Hecton8.World
         [SerializeField, Min(0f)] private float steepSlopeGradientCheatMaxDropMeters = 1.25f;
 
         [Header("Macro Geology Fallback")]
-        [SerializeField] private uint macroGeologyAuthoringSeed = 880031u;
+        [SerializeField] private uint macroGeologyAuthoringSeed = unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed);
         [SerializeField, Min(WorldMacroGeologyFields.MinimumWorldExtentMeters)] private float macroGeologyWorldExtentMeters = WorldMacroGeologyFields.MinimumWorldExtentMeters;
         [SerializeField, Min(128f)] private float macroGeologyChunkSizeMeters = WorldMacroGeologyFields.DefaultChunkSizeMeters;
         [SerializeField, Min(8f)] private float macroGeologyDetailProbeMeters = 120f;
@@ -2130,6 +2141,7 @@ namespace Hecton8.World
                 SeafloorSource.FallbackSynthetic => hasZone ? 0.66f : 0.78f,
                 SeafloorSource.MacroGeologyFallback => hasZone ? 0.42f : 0.56f,
                 SeafloorSource.SceneProbeLegacy => hasZone ? 0.28f : 0.42f,
+                SeafloorSource.TerrainProviderHeight => hasZone ? 0.18f : 0.34f,
                 SeafloorSource.MapMagicHeight => hasZone ? 0.18f : 0.34f,
                 _ => 0.2f
             };
@@ -2722,6 +2734,14 @@ namespace Hecton8.World
                 seafloorSource = (SeafloorSource)output.SeafloorSource,
                 isValid = 1
             };
+            if (TryBuildTerrainDetailRuntimeSample(
+                    output.Position.x,
+                    output.Position.z,
+                    out WorldTerrainDetailRuntimeSample terrainDetailSample))
+            {
+                AssignTerrainDetailSample(ref sample, in terrainDetailSample);
+            }
+
             return true;
         }
 
@@ -3335,10 +3355,31 @@ namespace Hecton8.World
                 seafloorSource = seafloorSource,
                 isValid = 1
             };
+            if (TryBuildTerrainDetailRuntimeSample(
+                    position.x,
+                    position.z,
+                    out WorldTerrainDetailRuntimeSample terrainDetailSample))
+            {
+                AssignTerrainDetailSample(ref sample, in terrainDetailSample);
+            }
 
             if (ShouldUpdateDiagnostics())
                 UpdateDiagnostics(sample, "sample", 0f);
             return true;
+        }
+
+        private static void AssignTerrainDetailSample(
+            ref FieldSample sample,
+            in WorldTerrainDetailRuntimeSample terrainDetailSample)
+        {
+            sample.terrainDetailSample = terrainDetailSample;
+            sample.macroGeologySample = terrainDetailSample.Macro;
+            sample.terrainMesoDetail = terrainDetailSample.Meso;
+            sample.terrainSurfaceMaterialWeights = terrainDetailSample.MaterialWeights;
+            sample.terrainSurfaceMaterialClass = terrainDetailSample.DominantMaterial;
+            sample.terrainDetailEligibilityFlags = terrainDetailSample.EligibilityFlags;
+            sample.terrainMaterialPackedControl = terrainDetailSample.PackedMaterialControl;
+            sample.hasTerrainDetailSample = terrainDetailSample.IsValid ? (byte)1 : (byte)0;
         }
 
         public bool TrySampleBiomeInfluence(
@@ -3537,6 +3578,11 @@ namespace Hecton8.World
                 BeginScatterSamplingFrame();
 
             return TryResolveSeafloorHeight(position, out _, out seafloorSource);
+        }
+
+        public bool TrySampleTerrainDetail(Vector3 position, out WorldTerrainDetailRuntimeSample sample)
+        {
+            return TryBuildTerrainDetailRuntimeSample(position.x, position.z, out sample);
         }
 
         public float EvaluateHeatmap(
@@ -3921,6 +3967,7 @@ namespace Hecton8.World
                 SeafloorSource.FallbackSynthetic => zone == null ? 0.78f : 0.66f,
                 SeafloorSource.MacroGeologyFallback => zone == null ? 0.56f : 0.42f,
                 SeafloorSource.SceneProbeLegacy => zone == null ? 0.42f : 0.28f,
+                SeafloorSource.TerrainProviderHeight => zone == null ? 0.34f : 0.18f,
                 SeafloorSource.MapMagicHeight => zone == null ? 0.34f : 0.18f,
                 _ => 0.2f
             };
@@ -4042,6 +4089,15 @@ namespace Hecton8.World
                 return true;
             }
 
+            ITerrainProvider terrainProvider = ResolveTerrainProviderRuntime();
+            if (terrainProvider != null &&
+                terrainProvider.TryGetHeight(position.x, position.z, out seafloorHeight) &&
+                math.isfinite(seafloorHeight))
+            {
+                seafloorSource = SeafloorSource.TerrainProviderHeight;
+                return true;
+            }
+
             float fallbackSurface = ResolveWaterSurfaceLevel(math.max(position.y + 120f, 120f));
             if (TryResolveMacroGeologyFallbackHeight(position.x, position.z, out seafloorHeight))
             {
@@ -4057,16 +4113,7 @@ namespace Hecton8.World
 
         private bool TryResolveMacroGeologyFallbackHeight(float x, float z, out float seafloorHeight)
         {
-            int runtimeWorldSeed = 0;
-            if (global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int activeRuntimeWorldSeed))
-                runtimeWorldSeed = activeRuntimeWorldSeed;
-
-            WorldMacroGeologyParams parameters = WorldMacroGeologyParams.CreateDefault(
-                WorldMacroGeologyFields.CombineWorldSeed(macroGeologyAuthoringSeed, runtimeWorldSeed));
-            parameters.WorldExtentMeters = math.max(WorldMacroGeologyFields.MinimumWorldExtentMeters, macroGeologyWorldExtentMeters);
-            parameters.ChunkSizeMeters = math.max(128f, macroGeologyChunkSizeMeters);
-            parameters.DetailProbeMeters = math.max(8f, macroGeologyDetailProbeMeters);
-            parameters.WaterSurfaceY = 0f;
+            WorldMacroGeologyParams parameters = BuildMacroGeologyParams();
 
             WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(x, z, in parameters);
             if (!math.isfinite(sample.HeightMeters))
@@ -4079,14 +4126,111 @@ namespace Hecton8.World
             return true;
         }
 
+        private WorldMacroGeologyParams BuildMacroGeologyParams()
+        {
+            int runtimeWorldSeed = 0;
+            if (global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int activeRuntimeWorldSeed))
+                runtimeWorldSeed = activeRuntimeWorldSeed;
+
+            WorldMacroGeologyParams parameters = WorldMacroGeologyParams.CreateDefault(
+                WorldMacroGeologyFields.CombineWorldSeed(macroGeologyAuthoringSeed, runtimeWorldSeed));
+            parameters.WorldExtentMeters = math.max(
+                WorldMacroGeologyFields.MinimumWorldExtentMeters,
+                macroGeologyWorldExtentMeters);
+            parameters.ChunkSizeMeters = math.max(128f, macroGeologyChunkSizeMeters);
+            parameters.DetailProbeMeters = math.max(8f, macroGeologyDetailProbeMeters);
+            parameters.WaterSurfaceY = 0f;
+            return parameters;
+        }
+
+        private bool TryBuildTerrainDetailRuntimeSample(
+            float x,
+            float z,
+            out WorldTerrainDetailRuntimeSample sample)
+        {
+            sample = default;
+            WorldMacroGeologyParams parameters = BuildMacroGeologyParams();
+            WorldMacroGeologySample macro = WorldMacroGeologyFields.Evaluate(x, z, in parameters);
+            if (!math.isfinite(macro.HeightMeters))
+                return false;
+
+            WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(
+                in macro,
+                x,
+                z,
+                parameters.Seed);
+            WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(parameters.Seed);
+            mesoParams.PreviewExtentMeters = WorldTerrainDetailContracts.MesoProofExtentMeters;
+            WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(
+                in macro,
+                x,
+                z,
+                in mesoParams);
+            weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
+            WorldTerrainDetailEligibilityFlags eligibility =
+                WorldTerrainMesoDetailFields.ResolveEligibilityFlags(in macro, in meso, in weights);
+
+            sample = new WorldTerrainDetailRuntimeSample
+            {
+                Macro = macro,
+                Meso = meso,
+                MaterialWeights = weights,
+                DominantMaterial = WorldTerrainSurfaceMaterialResolver.ResolveDominant(in weights),
+                EligibilityFlags = eligibility,
+                PackedMaterialControl = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in weights),
+                MacroArtifactVersion = WorldMacroGeologyFields.ArtifactVersion,
+                SurfaceMaterialContractVersion = WorldTerrainSurfaceMaterialResolver.ContractVersion,
+                MesoDetailContractVersion = WorldTerrainMesoDetailFields.ContractVersion,
+                DetailEligibilityContractVersion = WorldTerrainDetailContracts.ContractVersion
+            };
+            return sample.IsValid;
+        }
+
         private float ResolveWaterSurfaceLevel(float fallbackWaterSurfaceLevel)
         {
             if (mapMagicBridge != null && TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel))
                 return waterSurfaceLevel;
 
+            ITerrainProvider terrainProvider = ResolveTerrainProviderRuntime();
+            if (terrainProvider != null && TryResolveWaterSurfaceLevel(terrainProvider.WaterSurfaceLevel, out waterSurfaceLevel))
+                return waterSurfaceLevel;
+
             return TryResolveWaterSurfaceLevel(fallbackWaterSurfaceLevel, out float fallbackSurfaceLevel)
                 ? fallbackSurfaceLevel
                 : DefaultWaterSurfaceLevelY;
+        }
+
+        private ITerrainProvider ResolveTerrainProviderRuntime()
+        {
+            if (IsTerrainProviderAvailable(_terrainProviderRuntime))
+                return _terrainProviderRuntime;
+
+            ITerrainProvider registryProvider = GlobalRegistry.Terrain;
+            if (IsTerrainProviderAvailable(registryProvider))
+            {
+                _terrainProviderRuntime = registryProvider;
+                return _terrainProviderRuntime;
+            }
+
+            if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
+            {
+                _terrainProviderRuntime = mapMagicBridge;
+                return _terrainProviderRuntime;
+            }
+
+            _terrainProviderRuntime = null;
+            return null;
+        }
+
+        private static bool IsTerrainProviderAvailable(ITerrainProvider terrainProvider)
+        {
+            if (terrainProvider is Object unityObject && unityObject == null)
+                return false;
+
+            if (terrainProvider is Behaviour behaviour && !behaviour.isActiveAndEnabled)
+                return false;
+
+            return terrainProvider != null && terrainProvider.IsAvailable;
         }
 
         private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
@@ -4146,7 +4290,8 @@ namespace Hecton8.World
             }
 
             float slopeDegrees = CalculateSlopeDegrees(centerHeight, northHeight, southHeight, eastHeight, westHeight, probe);
-            if (centerSource == SeafloorSource.MapMagicHeight &&
+            if ((centerSource == SeafloorSource.MapMagicHeight ||
+                 centerSource == SeafloorSource.TerrainProviderHeight) &&
                 steepSlopeGradientCheatMaxDropMeters > 0f &&
                 slopeDegrees >= steepSlopeGradientCheatThresholdDegrees)
             {
@@ -5720,10 +5865,18 @@ namespace Hecton8.World
         private bool NeedsAutoResolve()
         {
             return playerTransform == null ||
-                   mapMagicBridge == null ||
-                   !mapMagicBridge.isActiveAndEnabled ||
+                   !HasTerrainHeightProvider() ||
                    worldZoneDirector == null ||
                    biomeMatrixDirector == null;
+        }
+
+        private bool HasTerrainHeightProvider()
+        {
+            if (mapMagicBridge != null && mapMagicBridge.isActiveAndEnabled)
+                return true;
+
+            return IsTerrainProviderAvailable(_terrainProviderRuntime) ||
+                   IsTerrainProviderAvailable(GlobalRegistry.Terrain);
         }
 
         private static Vector2Int GetHeightCacheKey(float x, float z)
@@ -5829,11 +5982,25 @@ namespace Hecton8.World
                     RebindPlayerContext(previousService as IPlayerRuntimeContext, currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
-                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     if (ReferenceEquals(mapMagicBridge, previousService))
                         mapMagicBridge = null;
-                    mapMagicBridge = currentService as MapMagicBridge;
-                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+                    if (currentService is MapMagicBridge currentMapMagicBridge)
+                        mapMagicBridge = currentMapMagicBridge;
+                    else
+                        WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+                    if (ReferenceEquals(_terrainProviderRuntime, previousService) || _terrainProviderRuntime == null)
+                        _terrainProviderRuntime = mapMagicBridge;
+                    ClearSeafloorHeightCache();
+                    _isDataDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.TerrainProviderRuntime:
+                    if (ReferenceEquals(_terrainProviderRuntime, previousService))
+                        _terrainProviderRuntime = null;
+                    _terrainProviderRuntime = currentService as ITerrainProvider;
+                    if (currentService is MapMagicBridge terrainMapMagicBridge)
+                        mapMagicBridge = terrainMapMagicBridge;
+                    else if (mapMagicBridge == null)
+                        WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
                     ClearSeafloorHeightCache();
                     _isDataDirty = true;
                     break;
@@ -5960,6 +6127,13 @@ namespace Hecton8.World
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             }
 
+            if (!IsTerrainProviderAvailable(_terrainProviderRuntime))
+            {
+                _terrainProviderRuntime = GlobalRegistry.Terrain;
+                if (!IsTerrainProviderAvailable(_terrainProviderRuntime) && mapMagicBridge != null && mapMagicBridge.IsAvailable)
+                    _terrainProviderRuntime = mapMagicBridge;
+            }
+
             if (worldZoneDirector == null || !worldZoneDirector.isActiveAndEnabled)
             {
                 worldZoneDirector = null;
@@ -5983,7 +6157,9 @@ namespace Hecton8.World
 
         private void RefreshCachedDependencyDiagnostics()
         {
-            _debugBridgeReady = mapMagicBridge != null;
+            _debugBridgeReady = (mapMagicBridge != null && mapMagicBridge.isActiveAndEnabled) ||
+                                IsTerrainProviderAvailable(_terrainProviderRuntime) ||
+                                IsTerrainProviderAvailable(GlobalRegistry.Terrain);
             _debugZoneDirectorReady = worldZoneDirector != null;
             _debugBiomeDirectorReady = biomeMatrixDirector != null;
         }
@@ -6066,6 +6242,8 @@ namespace Hecton8.World
             {
                 case SeafloorSource.MapMagicHeight:
                     return SeafloorSourceMapMagicLabel;
+                case SeafloorSource.TerrainProviderHeight:
+                    return SeafloorSourceTerrainProviderLabel;
                 case SeafloorSource.SceneProbeLegacy:
                     return SeafloorSourceSceneProbeLegacyLabel;
                 case SeafloorSource.MacroGeologyFallback:

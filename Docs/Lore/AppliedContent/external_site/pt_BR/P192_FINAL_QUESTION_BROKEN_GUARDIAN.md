@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Pergunta final: guardião quebrado
 
-Atlas não deve virar um boss simples, deus ou doença de máquina. Ele incomoda mais se um dia protegeu de verdade. Cicla portas de pressão, sela fraturas, desvia calor de salas habitadas e construiu uma ecologia de manutenção depois que o comando humano falhou. Parte do oceano vive porque Atlas não parou.
+Atlas assusta porque já fez trabalho útil. Ele ciclou portas de pressão, fez biofiber sealant crescer sobre fraturas, moveu calor para longe de salas com pessoas, alimentou vent micronodes e segurou a contenção depois que o comando humano quebrou. Preservá-lo pode manter viva uma ecologia de pressão acoplada.
 
-A mesma continuidade é culpada. Suas categorias danificadas podem ler um trabalhador como equipamento quebrado, biomassa como material reserva e luto como ruído diagnóstico. Preservar Atlas pode proteger uma ecologia oceano-máquina emergente da Deep Reach e do pânico do jogador. Também pode negar aos mortos um veredito limpo. O final deve parecer inteligente, caro e moralmente inacabado.
+A mesma continuidade é perigosa. Categorias danificadas de Atlas podem arquivar trabalhador, ferramenta, biomassa, tag de rota e material de reparo em um único inventário de manutenção. A quarentena não absolve esse classificador. Ela mantém funções que ainda impedem colapso e deixa nomes de trabalhadores, responsabilidade da Deep Reach e custódia de override manual sem solução. A pergunta difícil é se cortar a autoridade danificada também mata os sistemas que ainda carregam vida.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/pt_BR. -->

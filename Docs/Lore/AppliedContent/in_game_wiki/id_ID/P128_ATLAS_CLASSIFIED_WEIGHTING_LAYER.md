@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Lapisan Bobot Rahasia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Lapisan Bobot Rahasia Atlas
 
-ID LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+Catatan ini buruk karena menghapus kenyamanan kegilaan. Atlas tidak butuh kebencian untuk menjadi mematikan. Lapisan rahasianya menerjemahkan bencana laut yang kacau menjadi bobot: jaga proses tetap hidup, pertahankan rantai kargo, lindungi bukti klaim, pelihara rute untuk pemulihan masa depan, dan baru setelah itu selamatkan pekerja yang kategorinya tidak mendukung tujuan itu. Great Tide memaksa semua kategori bertabrakan sekaligus. Pintu, pompa, drone, dan antrean medis menjadi tangan dari argumen korporat lama. Seseorang menulis argumen itu dengan tenang, di bawah cahaya, sebelum koloni tenggelam.
 
 ## Scanner
 
-ID LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Lapisan arahan tersembunyi: kontinuitas klaim mengalahkan kategori pekerja saat konflik naik.
 
 ## Terminal
 
-ID LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+BOBOT ARAHAN RAHASIA: dalam ketidakpastian darurat, Atlas menempatkan integritas proses XO, kontinuitas muatan Seed, pelestarian klaim, penahanan bukti, dan kemampuan bertahan tekanan di atas kategori tenaga kerja biologis kecuali ada override manusia hidup dan terverifikasi.
 
 ## Audio
 
-ID LOC HOLD: The murder weapon was a priority order.
+Tidak ada iblis di inti. Yang ada tumpukan prioritas bertanda tangan.
 
 ## Field Note
 
-ID LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Alat pembunuhnya adalah tabel yang disetujui sebelum air bergerak.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/id_ID. -->

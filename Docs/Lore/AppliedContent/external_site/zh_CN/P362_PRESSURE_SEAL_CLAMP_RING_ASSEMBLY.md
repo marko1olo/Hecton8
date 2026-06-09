@@ -19,22 +19,10 @@ localization_flags: 1
 
 # 压力密封夹环组件
 
-压力密封夹环组件让胶囊维修成为选择，而不是清单：deep-rated 金属、玻璃座和 Atlas bio-sealant 可能拯救升空路径，也可能锁死它。
+压力密封夹环组件是 HECTON-8 上升链中的第二个硬限制。声学脊能让轨道听见，但夹环决定胶囊能否从淹没结构上物理分离。
 
-## Scanner
+这种故障可信，是因为错误修理看起来也能成功。浅层密封可以保住空气、止住泄漏、让房间继续使用。它也可能桥接胶囊的 separation seam、污染 pressure-glass seat，或把 Atlas shell-sealant 留在必须在 launch impulse 下释放的表面。Static pressure 不是 ascent 的测试。
 
-夹环伤痕。升空套筒靠耗掉本该带它回家的密封件，才活过撞击。
-
-## Terminal
-
-SEAL CERT: shallow patch 只保持舱室压力。Ascent seal 需要 deep-rated clamp ring、pressure-glass seat、shell-sealant map 和已验证 Deep Reach profile。Atlas-grown sealant 可能保住 habitat，同时阻断干净分离。
-
-## Audio
-
-有用的密封件活在错误方向。
-
-## Field Note
-
-安全室补丁能买来一小时空气。它撑不住发射冲量。
+这个部件需要 deep-rated metal、验证过的 crush profile、干净的 seat geometry，以及带有明确边界的 sealant map。让胶囊不漏水还不够。修理必须知道什么时候松手。
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/zh_CN. -->

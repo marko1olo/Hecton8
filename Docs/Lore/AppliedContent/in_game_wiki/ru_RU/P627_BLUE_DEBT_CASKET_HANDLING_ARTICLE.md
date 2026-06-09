@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Обращение с кассетой синего долга"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Обращение с кассетой синего долга
 
-Blue debt is condition-dependent salvage.
+Синий долг - salvage, зависящий от состояния. Держи его запечатанным, холодным и стабильным по давлению, прежде чем решать: материал, ценность претензии, приманка или улика.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+ДАВЛЕНИЕ-КАССЕТА // Стабильна, пока холодная и запечатанная. Не стравливать. Закрепить перед переносом, если шов теплеет.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+СУБСТРАТ НЕПРЕРЫВНОСТИ XO // Сохранить состояние давления. Гражданское хранение запрещено. Телеметрию образца вести только через claim-grade custody.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Если кассета начинает считать в сонаре, она уже не только твоя.
 
 ## Field Note
 
-Stabilize before you spend it.
+Синий долг платит потому, что приходит с тремя владельцами: нашедшим, желающим и тем, что заметило движение.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/ru_RU. -->

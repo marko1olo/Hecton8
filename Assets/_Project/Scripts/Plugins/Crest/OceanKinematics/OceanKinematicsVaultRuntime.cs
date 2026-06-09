@@ -172,7 +172,7 @@ namespace Hecton8.Physics
             entry.ActiveOctaves = activeOctaves;
             entry.BurstExecutionMicros = math.max(0f, micros);
             entry.GlobalQualityWeight = math.saturate(math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
-            entry.OceanSurfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.OceanSurfaceY);
+            entry.OceanSurfaceY = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(tuning.OceanSurfaceY);
             entry.Flags = flags;
             entry.LastRequestHash = lastRequestHash;
             entry.MaxWavePeakHeight = math.max(0f, math.select(0f, tuning.MaxPeakHeight, math.isfinite(tuning.MaxPeakHeight)));
@@ -235,7 +235,7 @@ namespace Hecton8.Physics
                 }
             }
 
-            state.RestingWaterHeight = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.OceanSurfaceY);
+            state.RestingWaterHeight = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(tuning.OceanSurfaceY);
             state.MaxWavePeakHeight = peak;
             state.OceanSurfaceY = state.RestingWaterHeight;
             state.GlobalQualityWeight = quality;

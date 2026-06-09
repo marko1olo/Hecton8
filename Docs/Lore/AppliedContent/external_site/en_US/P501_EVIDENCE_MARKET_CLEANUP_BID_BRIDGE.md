@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Evidence Market Cleanup Bid"
+title: "Evidence Cleanup Bid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,25 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Evidence Market Cleanup Bid
+# Evidence Cleanup Bid
 
-## What it proves
+## What the record proves
 
-A cleanup bid is a paid attempt to change how an evidence fragment travels: clean it, rename it, suppress it, attach it to a salvage lot, or move it under a safer category. It proves that someone valued the paper trail enough to interfere with it. It does not prove the fragment true or false, and it does not prove buyer guilt. In HECTON-8 records, cleanup bids are motive pressure: follow payment route, original label, cleaned label, claimant rewrite, and custody transfer before drawing conclusions.
+A cleanup bid is not a verdict. It is a purchase order against an evidence route. The request may ask a broker to dry a tag, normalize a label, move a fragment into a salvage lot, delay publication, translate a worker name into a payout category, or bury the raw object behind a claimant-safe summary. It matters because money appears before the record changes. The payer may be guilty, frightened, careless, or buying time; the bid itself proves pressure on the trail, not the truth of the fragment.
+
+Read the bid by sequence. Original label, bid origin, escrow hold, handler account, cleaned label, custody transfer, and object route must stay together. If a cleaned label appears before payment, it may be normal archive handling. If payment arrives before the relabel, someone bought the route change. Preserve the original label beside the cleaned one, or the archive becomes part of the cleanup.
 
 ## How to read it
 
 EVIDENCE CLEANUP BID
-Do not treat a payment line as a verdict.
-Required next proof: bid origin, payment hold, custody transfer, claimant-safe rewrite, and object route.
-Preserve original label beside cleaned label.
+Do not treat payment as verdict.
+Payment before relabel = purchased route change.
+Relabel before payment = possible archive handling.
+Required next proof: escrow hold, handler account, custody transfer, old label, cleaned label, object route.
+Action: preserve both labels until the object route is resolved.
 
 ## Field note
 
-A bid is a smell, not a sentence. Keep the dirty label next to the clean one.
+Never archive the clean label alone. The old label and the payment clock are the evidence.
 
 <!-- External Site; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/en_US. -->

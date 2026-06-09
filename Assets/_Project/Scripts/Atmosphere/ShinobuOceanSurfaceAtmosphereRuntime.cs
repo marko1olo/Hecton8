@@ -2409,7 +2409,15 @@ namespace Hecton8.Atmosphere
 
         private void RefreshCachedSurfaceSnapshot()
         {
-            if (!ResolveWeather(out WeatherStateDTO weather))
+            bool hasWeather = ResolveWeather(out WeatherStateDTO weather);
+            if (TryResolveWaterCalibrationSeaLevelY(out float calibratedSeaLevel))
+            {
+                _cachedSeaLevel = calibratedSeaLevel;
+                _cachedSurfaceFlow = hasWeather ? CalculateSurfaceFlow(weather) : float3.zero;
+                return;
+            }
+
+            if (!hasWeather)
             {
                 _cachedSeaLevel = ResolveSeaLevelY(seaLevel);
                 _cachedSurfaceFlow = float3.zero;
@@ -2422,6 +2430,20 @@ namespace Hecton8.Atmosphere
             _cachedSurfaceFlow = CalculateSurfaceFlow(weather);
         }
 
+        private static bool TryResolveWaterCalibrationSeaLevelY(out float seaLevelY)
+        {
+            if (WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO snapshot) &&
+                math.isfinite(snapshot.ResolvedWaterLevelY) &&
+                math.abs(snapshot.ResolvedWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = snapshot.ResolvedWaterLevelY;
+                return true;
+            }
+
+            seaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
+        }
+
         private static float ResolveSeaLevelY(float candidateSeaLevelY)
         {
             return TryResolveSeaLevelY(candidateSeaLevelY, out float seaLevelY)
@@ -2432,8 +2454,7 @@ namespace Hecton8.Atmosphere
         private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
         {
             if (math.isfinite(candidateSeaLevelY) &&
-                math.abs(candidateSeaLevelY) > 0.0001f &&
-                math.abs(candidateSeaLevelY) <= 1000f)
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 seaLevelY = candidateSeaLevelY;
                 return true;

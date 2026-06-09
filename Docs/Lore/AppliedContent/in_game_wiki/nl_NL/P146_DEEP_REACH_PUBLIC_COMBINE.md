@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Public Combine"
+title: "Publieke Deep Reach-combine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Public Combine
+# Publieke Deep Reach-combine
 
-NL LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Deep Reachs publieke combine-gezicht is breed genoeg om nuttig te lijken en droog genoeg om onschuldig te lijken. Het bouwt routeplaten, habitatdiensten, druklogistiek en burgerlijk klinkende continuïteitsprogramma's. In deze laag ziet de kolonie zelden één schurk. Ze ziet briefpapier, onderhoudszegels, gecontroleerde slogans en een naam die infrastructuur kan claimen wanneer het werk winstgevend is, en afstand wanneer het werk bewijs wordt.
 
 ## Scanner
 
-NL LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Publieke charterplaat: infrastructuurbeheerder, geen winningsgedaagde.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+PUBLIEKE COMBINE-REGISTRATIE: Deep Reach presenteert zich als route-infrastructuur, oceaanindustrie, drukhabitatlogistiek en continuïteitsdiensten. Aansprakelijk werk wordt verdeeld over dochterdesks, verzekeringstaal, bewaringscontractanten en recovery offices.
 
 ## Audio
 
-NL LOC HOLD: A clean title is the cheapest pressure suit.
+Het bord op de deur zegt nutsdienst. De sloten erachter zeggen eigendom.
 
 ## Field Note
 
-NL LOC HOLD: The seal is clean. The rooms under it are not.
+De schone naam is geen leugen. Het is de kamer waar vuil elders wordt gearchiveerd.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/nl_NL. -->

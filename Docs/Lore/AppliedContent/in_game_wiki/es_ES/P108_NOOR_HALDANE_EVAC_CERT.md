@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: certificado de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: certificado de evacuación
 
-ES LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+Noor Haldane es la voz legal y de certificación de Deep Reach detrás de las retenciones de evacuación. Su firma no está escrita como pánico. Está escrita como control. La ruta debe seguir siendo certificable. El transportista debe aceptar custodia. El estado biológico debe poder revisarse. La cadena legal debe sobrevivir al desastre aunque la gente dentro de la ruta no sobreviva.
+
+Por eso duele el archivo de Haldane. El lenguaje puede defenderse. Una ruptura de cuarentena puede propagar contaminación. Una extracción sin certificar puede dejar atrapados a transportistas. El rechazo de un puerto puede convertir el rescate en otro desastre. En una sala de reuniones limpia, cada cláusula suena a contención responsable. En un corredor presurizado con el agua subiendo, las mismas cláusulas se vuelven cerradura.
+
+Para el jugador, este artículo conecta retenciones de ruta de la colonia, demoras médicas y responsabilidad de Deep Reach. Haldane no necesita odiar a nadie. Solo necesita hacer que la evacuación espere las condiciones que prueban que la evacuación es segura. La presión no espera. El oxígeno no espera. El certificado sí esperó.
 
 ## Scanner
 
-ES LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+RETENCIÓN DE CERTIFICACIÓN // N. Haldane mantuvo la ruta legalmente limpia mientras la ruta fallaba físicamente.
 
 ## Terminal
 
-ES LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // Asesoría de certificación de evacuación // Liberación denegada hasta cumplir requisitos de cuarentena presión-biológica, custodia del transportista y revisión externa de ruta. La extracción no autorizada puede comprometer cadena de reclamación, responsabilidad de hábitat y aceptación portuaria posterior.
 
 ## Audio
 
-ES LOC HOLD: The door was not locked by fear. It was locked by compliance.
+La puerta no estaba cerrada por miedo. Estaba cerrada por cumplimiento.
 
 ## Field Note
 
-ES LOC HOLD: This is the paper signature players should hate.
+Esta es la firma de papel que el jugador debería odiar: no pánico, no malicia, solo una puerta esperando revisión externa mientras el oxígeno sigue bajando.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/es_ES. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Stos systemowego przewoźnika i holowników
 
-Black Keel powinien wydawać się dość bliski, by go obwiniać, i dość daleki, by pozostać poza zasięgiem. To nie statek z fantazji o bohaterskim ratunku. To wynajęty stos przemysłowy z kadłuba przewoźnika, cumowań holowników, stojaków cargo, oprogramowania pieczy, szyn kapsuł i księgi, która nie śpi. Dzięki temu jest użyteczny: przyjmuje próbki, odpowiada pakietom, trzyma orbitę i wrzuca sprzęt w okno. Jest też okrutny: każda użyteczna funkcja wiąże się z własnością, timingiem i długiem. Gracz utknął pod realną, obecną maszyną, która strukturalnie nie chce zostać opiekunem.
+Black Keel ma wydawać się dość blisko, by dało się ją obwinić, i dość daleko, by pozostała nieosiągalna. To nie statek z heroicznej fantazji ratunkowej. To wynajęty stos przemysłowy z kadłuba nośnika, stanowisk holowników, regałów ładunkowych, oprogramowania opieki, szyn zrzutu kapsuł i księgi, która nigdy nie śpi.
+
+Dzięki temu jest użyteczna: może przyjmować próbki, odpowiadać na pakiety, trzymać orbitę, zrzucać kapsuły i wpychać sprzęt w wąskie okno. Dzięki temu jest też okrutna: każda użyteczna funkcja wiąże się z własnością, czasem, językiem kwarantanny, marginesem cieplnym i długiem. Ciało może utknąć pod maszyną, która jest realna, obecna, słucha i strukturalnie nie chce stać się schronieniem.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/pl_PL. -->

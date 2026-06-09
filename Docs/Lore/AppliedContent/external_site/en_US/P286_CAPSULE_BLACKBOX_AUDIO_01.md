@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Capsule Blackbox Audio 01
 
-The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+Capsule Blackbox Audio 01 is the first honest technical artifact of HECTON-8. It reframes survival as debt: the landing was bought by consuming return hardware. The record gives players a grounded reason for the ocean trap before any corporate mystery appears.
 
 ## Scanner
 
-Capsule black-box event confirms the survival burn spent the ascent sleeve.
+The first black box does not say you crashed. It says the capsule survived by spending the hardware meant to bring it back up.
 
 ## Terminal
 
-BLACKBOX EVT 00:14:32: survival burn complete; ascent sleeve spent; recovery ring no-lock; buoy unreliable; frames dropped 12-19.
+BLACKBOX EVT 00:14:32: survival burn complete; descent impact absorbed; ascent sleeve spent; recovery ring failed to lock; buoy unreliable; frames 12-19 dropped during pressure shear. Manual ascent not recommended without external sleeve replacement.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Black box event. Survival burn complete. Ascent sleeve spent. Recovery ring no-l
 
 ## Field Note
 
-RECORDER BKX-CAP-01: crush-frame cracked at lower ring; ascent bus flooded; recovery ring no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: lower crush-frame cracked; ascent sleeve burned through; recovery ring no-lock; buoy still repeats a dead request to rise.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/en_US. -->

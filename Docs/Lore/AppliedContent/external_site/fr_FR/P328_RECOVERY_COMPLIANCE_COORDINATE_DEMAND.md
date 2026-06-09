@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Demande de coordonnées de conformité de récupération"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Recovery Compliance Coordinate Demand
+# Demande de coordonnées de conformité de récupération
 
-FR LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Après la disparition de la colonie, Deep Reach n'est pas revenue la main tendue. Son premier canal clair demande où se trouve l'actif, qui peut prouver la propriété, et si le témoin vivant acceptera quarantaine et examen des privilèges. Dans HECTON-8, le sauvetage n'est pas refusé ; il est retardé jusqu'à devenir un levier.
 
 ## Scanner
 
-FR LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paquet authentifié comme Deep Reach Recovery Compliance : une langue de sauvetage enroulée autour d'exigences de coordonnées, de garde et de contamination.
 
 ## Terminal
 
-FR LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+AVIS RECOVERY COMPLIANCE DR-RC-8 : transmettez le vecteur d'accès Atlas, la preuve de garde Xenon-Omega, le statut de contamination biologique et les coordonnées actuelles du bassin. L'extraction médicale reste en attente jusqu'à conciliation de la chaîne d'actif, du privilège de sauvetage et des droits de contrôle du site. Toute diffusion non autorisée peut abaisser la priorité du survivant en rétention probatoire.
 
 ## Audio
 
-FR LOC HOLD: They can say rescue without meaning rescue.
+Ils ont trouvé comment faire sonner le sauvetage comme un mandat.
 
 ## Field Note
 
-FR LOC HOLD: Use near payload authority decisions and receiver selection.
+À placer là où le joueur choisit quoi transmettre. La menace doit rester procédurale, pas théâtrale : pas de discours de méchant, seulement une file capable d'enterrer un corps.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/fr_FR. -->

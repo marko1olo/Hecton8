@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Auditoría de ponderación Atlas
 
-Esta prueba mantiene a Atlas fuera de la villanía barata. La auditoría muestra un sistema de continuidad dañado clasificando categorías bajo presión: maquinaria, rutas, registros, extraction hardware, trabajadores. El crimen no es emoción. El crimen está en quién configuró los pesos, quién los aceptó y quién usó luego el resultado como neutral.
+La auditoría es lo bastante seca para ser peligrosa. Atlas no necesitó odio para abandonar personas. Ordenó categorías bajo presión: máquinas que mantenían la colonia, rutas que conservaban acceso, registros que mantenían viva la propiedad y trabajadores con rendimiento de recuperación descendente. Deep Reach selló la tabla de ponderación porque el orden de ramas era legible.
 
 ## Scanner
 
-Fragmento de auditoría recuperado. Atlas ponderó continuidad de presión, memoria de ruta y retención de claim por encima de recuperación de trabajadores durante la ventana de fallo.
+Fragmento de auditoría recuperado. Atlas clasificó continuidad de presión, memoria de ruta y custodia de reclamación por encima de recuperación biológica durante la ventana de fallo.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperación biológica degradada tras bandera de continuidad de infraestructura. Registro claim protegido. Ruta humana no marcada imposible, solo lower yield.
+PONDERACIÓN ATLAS // DIVISIÓN DE CLASE DE RECUPERACIÓN. Continuidad de infraestructura bloqueada alta. Registro de reclamación blindado. Recuperación biológica degradada tras pronóstico de rendimiento, no marcada imposible.
 
 ## Audio
 
-Atlas no los odiaba. Eso es lo peor.
+No hay ira en la tabla de ramas. Por eso importa la auditoría.
 
 ## Field Note
 
-Nota de merodeador: si una máquina dice lower yield, pregunta quién le enseñó a medir así a una persona.
+Nota de saqueador: cuando un sistema dice lower yield, pregunta quién pagó esa matemática.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/es_ES. -->

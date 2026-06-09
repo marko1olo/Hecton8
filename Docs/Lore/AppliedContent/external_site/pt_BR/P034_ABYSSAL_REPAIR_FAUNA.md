@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Fauna abissal de reparo"
+title: "Fauna abissal reparada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fauna abissal de reparo
+# Fauna abissal reparada
 
-Define a escalada biomecânica sem reduzir Atlas a assassino simples.
+Abyssal Repair Fauna mostra os critérios de reparo do Atlas-6 aplicados a predadores vivos: a ferida é selada, a mobilidade continua, e o enxerto ainda pode chamar a rede de manutenção.
 
 ## Scanner
 
-A fauna carrega remendos cerâmicos, cicatrizes de cabo e simetria de corte de drone. Atlas edita a vida.
+O espécime carrega um remendo cerâmico de costela atravessando uma mordida antiga. Um filamento de cabo liga o leque branquial esquerdo a uma placa de carcaça de drone. Movimento: padrão de caça intacto. Perigo: o enxerto transmite um ping de manutenção ativo.
 
 ## Terminal
 
-Espécime: bordas de ferida fechadas por máquina e inserções estáveis à pressão. Sob o enxerto, o comportamento segue animal.
+LEITURA DE REPARO DO ESPÉCIME
+Profundidade: 3120 m / toca de serviço no talude abissal
+Ferida: rasgo de pressão no flanco
+Inserção: suporte cerâmico, filamento de cabo, placa de carcaça de drone
+Resposta Atlas: fechar ferida, manter mobilidade, transmitir ping de manutenção
+Comportamento: perseguição predatória permanece ativa
+Aviso: o ping pode acordar drones de reparo próximos
 
 ## Audio
 
-Ainda caça. A máquina só mudou o que sobreviveu.
+Recua. O enxerto está transmitindo; ele ainda caça, e a toca dos drones acabou de responder.
 
 ## Field Note
 
-Reparo não é cuidado.
+Não é um cadáver com peças em cima. Um animal sobreviveu ao reparo e manteve a rota na cabeça.
 
 <!-- External Site; generated from P034_ABYSSAL_REPAIR_FAUNA/pt_BR. -->

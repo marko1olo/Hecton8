@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Escada de falsos finais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Escada de falsos finais
 
-PT LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+A escada de falsos finais mantém o escopo do replay legível: várias saídas, quatro grandes famílias incompletas e a bacia Atlas como centro de gravidade.
 
 ## Scanner
 
-PT LOC HOLD: Four major false families before the deep Atlas resolutions.
+ESCADA DE FINAIS // Pagamento material, retorno parcial, captura corporativa ou quarentena, vazamento de ledger público. Quatro famílias falsas antes das respostas profundas de Atlas.
 
 ## Terminal
 
-PT LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+ESCOPO DO DOSSIÊ: marque muitas saídas, mas agrupe em famílias claras. Pagamento material, saída/retorno parcial, captura/quarentena corporativa e vazamento de ledger público ficam abaixo das resoluções de payload da bacia Atlas.
 
 ## Audio
 
-PT LOC HOLD: The dossier can mark many exits before it marks an answer.
+O dossiê pode marcar saídas antes de marcar uma resposta.
 
 ## Field Note
 
-PT LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Finais suficientes para premiar estilos. Não tantos que barateiem a verdade.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/pt_BR. -->

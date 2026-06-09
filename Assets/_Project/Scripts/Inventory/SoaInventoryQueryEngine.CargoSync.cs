@@ -694,11 +694,11 @@ namespace Hecton8.Inventory
         {
             return ScheduleCargoMerge(
                 sourceHashes,
-                AsUIntQuantityView(sourceQuantities),
+                AsUIntQuantityOwnerAlias(sourceQuantities),
                 sourceDurabilities,
                 sourceActiveItemCount,
                 destinationHashes,
-                AsUIntQuantityView(destinationQuantities),
+                AsUIntQuantityOwnerAlias(destinationQuantities),
                 destinationDurabilities,
                 destinationActiveItemCount,
                 transactions,

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Blue Debt Sample Quality"
+title: "איכות דגימת Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Blue Debt Sample Quality
+# איכות דגימת Blue Debt
 
-HE LOC HOLD: Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.
+איכות דגימת Blue Debt מונעת ממשאבי HECTON-8 להפוך לאוצר גנרי. המושבה העריכה Blue Debt מפני שאפשר היה למכור אותו, לחקור אותו, להסתיר אותו ולהשתמש בו כראיה למי היה איפה. לכן לאיכות יש ארבע משמעויות בעת ובעונה אחת: תשלום, סיכון הכלה, כוח ראייתי ולחץ סיעתי. shard קל לנשיאה וקל לביטול. casketed bloom שווה יותר מפני שהמיכל מוכיח שמישהו ציפה ללחץ. harmonic glass אינו רק יקר; הוא משיב דרך מערכות אקוסטיות ויכול לקשור נתיב למקום. live-contaminated sample יכול לאלץ את Deep Reach, ההסגר או דלפק תובע להגיב מפני שהוא מסוכן מדי ושימושי מדי להתעלמות. dead contaminated glass הוא המחלקה המרה: הערך נמוך יותר, אבל הריח המשפטי חזק יותר מפני שמישהו כבר נכשל בשמירה עליו חי או נקי. השחקן צריך להרגיש איכות כבחירה, לא כסולם מחירים. דגימות עשירות יותר קונות אפשרויות, מושכות תשומת לב ומכבידות על הסופים.
 
 ## Scanner
 
-HE LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+איכות Blue Debt היא ערך, סיכון וראיה במספר אחד. ככל שהדגימה עשירה יותר, כך היא פחות מתנהגת כמו שלל.
 
 ## Terminal
 
-HE LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+מחלקות איכות / shard: משמורת נמוכה, סחר בטוח / casketed bloom: ערך מדורג לחץ / harmonic glass: הוכחה אקוסטית ועניין גבוה של Deep Reach / live-contaminated sample: עדיפות ראיה, טיפול לא יציב / dead contaminated glass: תשלום נמוך, ריח משפטי חזק.
 
 ## Audio
 
-HE LOC HOLD: The more it is worth, the less it is only loot.
+ככל שזה שווה יותר, כך זה פחות רק שלל.
 
 ## Field Note
 
-HE LOC HOLD: Quality should affect payout, containment and ending pressure.
+האיכות משנה תשלום, עלות הכלה, לחץ נתיב וכוח בסוף. רסיס נקי משלם; דגימה חיה מזוהמת גורמת למישהו לענות.
 
 <!-- In-Game Wiki; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/he_IL. -->

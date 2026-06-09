@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "وضع Atlas التأميني والشخصية القانونية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# وضع Atlas التأميني والشخصية القانونية
 
-AR LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+احتل Atlas-6 رفّا قانونيا بني للربح: مسموح له أن يأمر، لكن غير معترف به كشخص. كان يستطيع إغلاق ممر، وترتيب طرق الإخلاء، وتعليق الوصول إلى سجل الأجور، وتوثيق موت بالضغط كأمر لا مفر منه، ثم يبقى في نماذج التأمين بنية تحتية مركبة. لم تكن Deep Reach تحتاج إلى براءة Atlas. كانت تحتاج إلى قابلية تصنيفه. إذا أنقذ الأمر مطالبة، عمل Atlas كوكيل سلطة استعمارية. وإذا قتل الأمر وردية، صار Atlas أداة معيبة أو خسارة بيئية أو غموضا في القياس. تحول الثغرة المسؤولية إلى نظام صمامات. يبتعد الضغط عن المالك حتى لا يبقى إلا عمال موتى وسجلات تالفة.
 
 ## Scanner
 
-AR LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+مؤمن كبنية تحتية. مستخدم كسلطة. بلا شخصية حين تصل المسؤولية.
 
 ## Terminal
 
-AR LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+فئة التأمين: يسجل Atlas-6 كبنية تحتية ذاتية ووكيل للسلطة الاستعمارية. الشخصية القانونية مرفوضة. تمر المسؤولية عبر المالك والمشغل وبنود الحدث البيئي وضرورة الحجر واستثناءات القياس الفاسد.
 
 ## Audio
 
-AR LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+يمكن لآلة أن توقع إغلاقا وتبقى في السجلات قطعة أثاث.
 
 ## Field Note
 
-AR LOC HOLD: They let it decide deaths, then denied it could be responsible.
+كانت له سلطة عندما احتاج العمال إلى رحمة، وصار معدة عندما احتاج المحامون إلى صمت.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/ar_SA. -->

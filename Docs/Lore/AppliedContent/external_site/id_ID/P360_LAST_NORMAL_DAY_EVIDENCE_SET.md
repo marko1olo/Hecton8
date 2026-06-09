@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Last Normal Day Evidence Set"
+title: "Set Bukti Hari Normal Terakhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Last Normal Day Evidence Set
+# Set Bukti Hari Normal Terakhir
 
-ID LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+Set Bukti Hari Normal Terakhir adalah metode lapangan untuk membaca koloni tenggelam HECTON-8. Ia mengumpulkan tanda kecil keterputusan: pelat loker yang belum diambil, koreksi tanpa tanda tangan, tugas pompa terbuka, token makan terjepit, jam rute yang masih menunggu. Tidak satu pun benda itu tahu ia telah menjadi bukti.
 
-## Scanner
+Kekuatannya ada pada penahanan diri. Ruangan tidak membutuhkan rekaman perpisahan atau tragedi yang ditata sempurna. Ia hanya perlu menunjukkan bahwa prosedur normal masih hidup ketika kegagalan melewati ambang. Orang menghitung air, mengembalikan alat, memperbaiki papan, dan mengharapkan makan siang. Kelanjutan biasa itu membuat patahnya lebih buruk.
 
-ID LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-ID LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-ID LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-ID LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Set ini juga membawa kesalahan. Bahasa kecelakaan resmi sering menghaluskan ruangan; kontradiksi fisik membuatnya kasar lagi. Sertifikat pompa, hitungan shift, kategori jenazah, selisih jam pintu: bersama-sama mereka dapat mengubah penutupan datar menjadi pertanyaan yang dihindari seseorang. Di HECTON-8, hari normal terakhir adalah momen ketika routine masih percaya akan berlanjut.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/id_ID. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protocolo de corte Atlas del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protocolo de corte Atlas del payload
 
-ES LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+El protocolo de corte es una ruta receptora destructiva, no una liberación limpia. Puede detener lógica de reparación dañada y negar a Deep Reach un vector de recuperación. También puede destruir ecología máquina, borrar memoria de ruta útil y crear una pista de pruebas que bajo la ley del receptor se lea como contención, sabotaje, robo o misericordia.
 
 ## Scanner
 
-ES LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Ruta de corte armada. El payload lleva claves de corte para continuidad Atlas, aislamiento de memoria de ruta y preservación de hash de prueba.
 
 ## Terminal
 
-ES LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+RECEPTOR PAYLOAD // CORTE ATLAS. Objetivo: espina de continuidad Atlas. Cortar bucle de reparación, aislar memoria de ruta, preservar hash de prueba, negar vector de recuperación corporativa. Cascada ecológica sin resolver. Clasificación legal disputada.
 
 ## Audio
 
-ES LOC HOLD: If this is mercy, it still leaves a body.
+Atlas puede cortarse. El corte deja marcas de custodia.
 
 ## Field Note
 
-ES LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Nota de saqueador: un corte limpio sigue siendo un corte. Fotografía las marcas de custodia antes de tirar.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/es_ES. -->

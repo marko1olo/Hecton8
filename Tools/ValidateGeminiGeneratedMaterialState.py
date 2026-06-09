@@ -30,6 +30,12 @@ SPLIT_ATLAS_MANIFESTS = (
     GENERATED_ROOT
     / "GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
 )
+BATCH34_INTAKE_MANIFEST = (
+    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_IntakeManifest.json"
+)
+BATCH34_CURATION_MANIFEST = (
+    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json"
+)
 REQUIRED_MAPS = ("BaseColor", "NormalGL", "ARM_AO_Rough_Metal", "Height", "MaskMap_UnityURP")
 PANELIZED_HELD_SURFACES = {"safety_composite_panel"}
 MAX_BASECOLOR_BYTES = int(1.6 * 1024 * 1024)
@@ -46,6 +52,29 @@ SOURCE_TYPE_REQUIRED_CONSUMER_LANES = {
     "PICKUP_ATLAS": {"batch34_uv_atlas_material_handoff"},
 }
 VISOR_TRAUMA_LANE = "visor_trauma_decal_array_slice"
+PREVIEW_STALE_EPSILON_SECONDS = 2.0
+REQUIRED_SOURCE_CONSUMERS = (
+    (
+        "B34-3418",
+        "world_support_generated_decal_prefab_child",
+        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexGlassEdge_ViewportRim",
+    ),
+    (
+        "B34-3428",
+        "world_support_generated_decal_prefab_child",
+        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexStripe_Frame",
+    ),
+    (
+        "B34-3428",
+        "world_support_generated_decal_prefab_child",
+        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexStripe_CrossSpan",
+    ),
+    (
+        "B34-3429",
+        "world_support_generated_decal_prefab_child",
+        "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexScuff_Base",
+    ),
+)
 
 
 def display_path(path: Path) -> str:
@@ -80,6 +109,25 @@ def manifest_float(value: object, default: float = -1.0) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def count_by(entries: list[dict], field_name: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        key = str(entry.get(field_name, "")).strip() or "<missing>"
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def count_entries_with_list(entries: list[dict], field_name: str) -> tuple[int, int]:
+    entry_count = 0
+    item_count = 0
+    for entry in entries:
+        items = entry.get(field_name, []) or []
+        if items:
+            entry_count += 1
+            item_count += len(items)
+    return entry_count, item_count
 
 
 def material_manifest_paths() -> list[Path]:
@@ -135,6 +183,56 @@ def validate_material_manifests(errors: list[str], warnings: list[str]) -> list[
                 warnings.append(f"{asset_id}: high seamScoreAfter={seam_after} tilingScale={tiling_scale}")
 
     return assets
+
+
+def validate_material_manifest_previews(errors: list[str], warnings: list[str]) -> int:
+    preview_count = 0
+    for manifest_path in material_manifest_paths():
+        payload = load_json(manifest_path)
+        raw_preview = str(payload.get("preview", "")).strip()
+        if not raw_preview:
+            continue
+
+        preview_count += 1
+        preview_path = project_path(raw_preview)
+        if not preview_path.exists():
+            errors.append(f"{display_path(manifest_path)}: preview file missing: {raw_preview}")
+            continue
+
+        latest_input_mtime = manifest_path.stat().st_mtime
+        for asset in payload.get("assets", []) or []:
+            maps = asset.get("maps", {}) or {}
+            for raw_map in maps.values():
+                map_path = project_path(str(raw_map).strip())
+                if map_path.exists():
+                    latest_input_mtime = max(latest_input_mtime, map_path.stat().st_mtime)
+
+        preview_mtime = preview_path.stat().st_mtime
+        if preview_mtime + PREVIEW_STALE_EPSILON_SECONDS < latest_input_mtime:
+            errors.append(
+                f"{display_path(manifest_path)}: preview is stale against manifest/maps: "
+                f"{raw_preview}"
+            )
+    return preview_count
+
+
+def validate_material_atlas_preview_hygiene(errors: list[str]) -> int:
+    preview_file_count = 0
+    if not GEMINI_ATLAS_ROOT.exists():
+        return preview_file_count
+
+    for manifest_path in sorted(GEMINI_ATLAS_ROOT.rglob("GeminiMaterialAtlas_Manifest.json")):
+        payload = load_json(manifest_path)
+        raw_preview = str(payload.get("preview", "")).strip()
+        allowed_preview = project_path(raw_preview).resolve() if raw_preview else None
+        for preview_path in sorted(manifest_path.parent.glob("PREVIEW_*.png")):
+            preview_file_count += 1
+            if allowed_preview is None or preview_path.resolve() != allowed_preview:
+                errors.append(
+                    f"{display_path(manifest_path)}: off-manifest atlas preview file: "
+                    f"{display_path(preview_path)}"
+                )
+    return preview_file_count
 
 
 def validate_source_atlases(errors: list[str], warnings: list[str]) -> int:
@@ -319,6 +417,72 @@ def validate_catalog(
     if actual_source_consumer_count <= 0 and alpha_candidate_count:
         warnings.append("catalog has alpha candidates but no source consumer bindings")
 
+    consumer_count = int(catalog.get("consumerBindingCount", -1))
+    actual_consumer_count = sum(
+        len(entry.get("consumers", []) or [])
+        for entry in catalog.get("consumerBindings", []) or []
+    )
+    if consumer_count != actual_consumer_count:
+        errors.append(
+            f"catalog consumerBindingCount={consumer_count} but consumerBindings contain {actual_consumer_count}"
+        )
+
+    if BATCH34_CURATION_MANIFEST.exists():
+        curation_payload = load_json(BATCH34_CURATION_MANIFEST)
+        curation_entries = list(curation_payload.get("entries", []) or [])
+        intake_payload = load_json(BATCH34_INTAKE_MANIFEST) if BATCH34_INTAKE_MANIFEST.exists() else {}
+        source_audit = intake_payload.get("sourceAudit", {}) or {}
+        summary = catalog.get("batch34TextureExpansionSummary", {}) or {}
+        if not summary:
+            errors.append("catalog missing batch34TextureExpansionSummary")
+        else:
+            expected_selected = int(source_audit.get("selectedDownloadSourceCount", 0) or 0)
+            expected_unique = int(source_audit.get("uniqueSelectedDownloadSourceCount", 0) or 0)
+            expected_ignored = len(source_audit.get("ignoredDownloadCandidates", []) or [])
+            if len(curation_entries) != 50:
+                errors.append(f"Batch34 curation manifest must contain exactly 50 entries; found={len(curation_entries)}")
+            if expected_selected != 50 or expected_unique != 50:
+                errors.append(
+                    f"Batch34 intake must select 50 unique download sources; "
+                    f"selected={expected_selected} unique={expected_unique}"
+                )
+            warning_entries, warning_count = count_entries_with_list(curation_entries, "warnings")
+            issue_entries, issue_count = count_entries_with_list(curation_entries, "issues")
+            watermark_detected = sum(1 for entry in curation_entries if (entry.get("watermarkDetection") or {}).get("detected"))
+            watermark_repaired = sum(1 for entry in curation_entries if entry.get("watermarkRepaired"))
+            seam_refined = sum(1 for entry in curation_entries if entry.get("seamRefined"))
+            expected_counts = {
+                "entryCount": len(curation_entries),
+                "selectedDownloadSourceCount": expected_selected,
+                "uniqueSelectedDownloadSourceCount": expected_unique,
+                "ignoredDownloadCandidateCount": expected_ignored,
+                "entriesWithIssues": issue_entries,
+                "issueCount": issue_count,
+                "entriesWithWarnings": warning_entries,
+                "warningCount": warning_count,
+                "watermarkDetectedCount": watermark_detected,
+                "watermarkRepairedCount": watermark_repaired,
+                "seamRefinedCount": seam_refined,
+            }
+            for field_name, expected_value in expected_counts.items():
+                actual_value = int(summary.get(field_name, -1) or 0)
+                if actual_value != expected_value:
+                    errors.append(
+                        f"catalog batch34TextureExpansionSummary.{field_name}={actual_value} "
+                        f"but curation/intake manifests expect {expected_value}"
+                    )
+            for field_name, source_field in (
+                ("curationStatusCounts", "curationStatus"),
+                ("verdictCounts", "verdict"),
+                ("sourceTypeCounts", "sourceType"),
+                ("visualStatusCounts", "visualStatus"),
+                ("unityImportStatusCounts", "unityImportStatus"),
+            ):
+                expected = count_by(curation_entries, source_field)
+                actual = summary.get(field_name, {}) or {}
+                if actual != expected:
+                    errors.append(f"catalog batch34TextureExpansionSummary.{field_name} is stale or incorrect")
+
     material_ids = {
         str(entry.get("id", "")).strip()
         for entry in catalog.get("materials", []) or []
@@ -346,6 +510,7 @@ def validate_catalog(
         errors.append(f"catalog source atlas has no consumer binding: {source_id}")
 
     source_consumer_lanes_by_id: dict[str, set[str]] = {}
+    source_consumer_targets_by_id: dict[str, set[tuple[str, str]]] = {}
     for entry in catalog.get("sourceConsumerBindings", []) or []:
         source_id = str(entry.get("sourceId", "")).strip()
         if not source_id:
@@ -356,6 +521,15 @@ def validate_catalog(
             if str(consumer.get("lane", "")).strip()
         }
         source_consumer_lanes_by_id[source_id] = lanes
+        targets = {
+            (
+                str(consumer.get("lane", "")).strip(),
+                str(consumer.get("target", "")).strip(),
+            )
+            for consumer in entry.get("consumers", []) or []
+            if str(consumer.get("lane", "")).strip() and str(consumer.get("target", "")).strip()
+        }
+        source_consumer_targets_by_id[source_id] = targets
 
     for entry in catalog.get("sourceAtlases", []) or []:
         source_id = str(entry.get("id", "")).strip()
@@ -375,6 +549,18 @@ def validate_catalog(
                 errors.append(
                     f"catalog source atlas {source_id} ({source_type}) is bound to {VISOR_TRAUMA_LANE} without mesh/material handoff"
                 )
+
+    for source_id, lane, target in REQUIRED_SOURCE_CONSUMERS:
+        targets = source_consumer_targets_by_id.get(source_id, set())
+        if (lane, target) not in targets:
+            present = ", ".join(
+                f"{present_lane}->{present_target}"
+                for present_lane, present_target in sorted(targets)
+            ) or "<none>"
+            errors.append(
+                f"catalog source atlas {source_id} missing required source consumer target: "
+                f"{lane}->{target}; present={present}"
+            )
 
     expected_manifests = {display_path(path) for path in material_manifest_paths()}
     catalog_manifests = {str(entry.get("path", "")) for entry in catalog.get("materialManifests", []) or []}
@@ -403,6 +589,8 @@ def main() -> int:
     warnings: list[str] = []
 
     material_assets = validate_material_manifests(errors, warnings)
+    material_preview_count = validate_material_manifest_previews(errors, warnings)
+    atlas_preview_file_count = validate_material_atlas_preview_hygiene(errors)
     source_atlas_count = validate_source_atlases(errors, warnings)
     alpha_candidate_count = validate_alpha_candidates(errors, warnings)
     padded_atlas_count = validate_padded_atlases(errors, warnings)
@@ -421,6 +609,8 @@ def main() -> int:
     print("GEMINI_GENERATED_MATERIAL_STATE_VALIDATOR")
     print(f"materialManifests={len(material_manifest_paths())}")
     print(f"materialAssets={len(material_assets)}")
+    print(f"materialPreviews={material_preview_count}")
+    print(f"materialAtlasPreviewFiles={atlas_preview_file_count}")
     print(f"sourceAtlases={source_atlas_count}")
     print(f"alphaCandidates={alpha_candidate_count}")
     print(f"paddedAtlases={padded_atlas_count}")

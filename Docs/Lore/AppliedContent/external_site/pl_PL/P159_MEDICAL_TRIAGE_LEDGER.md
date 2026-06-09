@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "Medyczny ledger triage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# Medyczny ledger triage
 
-PL LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+Medyczny ledger triage zmienia opóźnioną ewakuację w ludzki dowód: czyste kategorie, czekającą pomoc i pracowników policzonych przed żałobą.
 
 ## Scanner
 
-PL LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Uraz ciśnieniowy, hipoksja, opóźnienie śluzy, brak trasy, hold certyfikacji. Groza tkwi w tym, jak schludnie pomoc czekała.
 
 ## Terminal
 
-PL LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+REGUŁA MEDYCZNA: liczyć ciała bez gore. Używaj pressure-state, długu tlenu, opóźnienia trasy, priorytetu triage i signoff hold, by pokazać, jak procedura tworzyła pacjentów szybciej, niż medycy leczyli.
 
 ## Audio
 
-PL LOC HOLD: The cleanest handwriting is on the worst page.
+Najczystsze pismo jest na najgorszej stronie.
 
 ## Field Note
 
-PL LOC HOLD: Medical text should count bodies without becoming gore.
+Tekst medyczny powinien liczyć ciała, nie stawać się gore.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/pl_PL. -->

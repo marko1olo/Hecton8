@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Підписи Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Підписи Packet Notary Interface
 
-UA LOC HOLD: Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.
+Відновлена стрічка Packet Notary — перший запис нижнього офісу, який робить повідомлення доказом, а не чуткою. Вона зв'язує три речі: packet hash, час ретрансляційного вікна та власника зберігання, який торкався запису. Deep Reach міг поховати чистий лог як неперевірений шум носія; нотаріальний інтерфейс заважає цьому тільки тоді, коли вцілів другий witness hash. Печатка є інструментом ланцюга зберігання, а не зізнанням. Підпис Som Varela засвідчує час маршруту і статус зберігання. Він не доводить, чому пакет затримали, і не називає того, хто наказав затримку.
 
 ## Scanner
 
-UA LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Пакетну печатку відновлено: хеш-стрічка ціла, мітка ретрансляційного вікна 17-A, власник зберігання не визначений. Вважати доказом лише після збігу witness chain.
 
 ## Terminal
 
-UA LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Маршрут: Relay Spine / witness hash strip. Дія: засвідчити packet hash, локальну затримку ретрансляції та власника зберігання. Виняток: бракує додатка з іменем працівника, тому пакет лишається в черзі claim material. Ескалація: public ledger тільки після другого witness hash.
 
 ## Audio
 
-UA LOC HOLD: A seal is not mercy. It is a clock with a price.
+Печатка ціла. Часова мітка запізнилася на два вікна. Якщо witness hash збіжиться, вони вже не назвуть це перешкодами.
 
 ## Field Note
 
-UA LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Не продавай це як лог. Продавай як годинник із свідком: час ретрансляції, packet hash, власник зберігання. Без трьох полів Deep Reach спише запис на шум носія.
 
 <!-- In-Game Wiki; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/uk_UA. -->

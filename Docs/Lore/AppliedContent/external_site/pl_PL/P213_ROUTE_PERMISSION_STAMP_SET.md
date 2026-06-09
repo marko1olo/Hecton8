@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Zestaw stempli zezwoleń trasy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Zestaw stempli zezwoleń trasy
 
-PL LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Zestaw stempli zezwoleń trasy definiuje rekwizyty dostępu dla HECTON-8. Stemples łączą tożsamość pracownika z fizycznymi granicami: drzwiami, pojazdami, skafandrami, windami i tablicami tras. Ponieważ każdy stempel może później zaprzeczyć rejestrowi albo fragmentowi audio, dostęp staje się biografią pod ciśnieniem i głównym sposobem czytania ostatniego ruchu kolonii.
 
 ## Scanner
 
-PL LOC HOLD: A route stamp is stronger than a diary line.
+Stempel trasy jest silniejszy niż linia dziennika, bo dowodzi, kto mógł przejść przez granicę ciśnienia.
 
 ## Terminal
 
-PL LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: zezwolenie trasy musi połączyć jednego pracownika, jedne drzwi albo pojazd, jedną rodzinę załogi i jedną późniejszą sprzeczność. Stempel bez fizycznej granicy jest dekoracją. Stempel na włazie, stojaku skafandrów, szynie crawlera albo tagu windy staje się dowodem ruchu.
 
 ## Audio
 
-PL LOC HOLD: Access is biography under pressure.
+Dostęp to biografia pod ciśnieniem.
 
 ## Field Note
 
-PL LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Stemples: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Łączyć ze stanem włazu i obiektem pracy.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/pl_PL. -->

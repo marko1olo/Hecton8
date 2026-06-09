@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Material Payout Ledger"
+title: "Material Settlement Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Material Payout Ledger
+# Material Settlement Ledger
 
-Material Payout Ledger documents the game's Stalker-like false-success lane: the player can profit and still leave HECTON-8 morally unresolved.
+Material Settlement Ledger defines a paid departure path. HECTON-8 can be left with a cleared account if certified material is surrendered, but the record of what happened remains quarantined unless the evidence archive is carried out.
 
 ## Scanner
 
-Blue debt sample certified. Payout possible. Truth optional. Deep Reach prefers that ordering.
+Blue debt sample certified: mass, purity, pressure log, custody chain. Credit can clear before evidence does.
 
 ## Terminal
 
-Payout schedule: sample mass, purity, pressure history and custody chain accepted. Evidence archive unresolved.
+Settlement opens when the sealed case matches the sample ledger, the descent pressure history has no gap, and Deep Reach's offer code accepts the chain of custody. Material closure moves credit to escrow and tags the Atlas archive as non-billable residue.
 
 ## Audio
 
-The account clears. The water does not.
+The account clears. The water keeps the receipt.
 
 ## Field Note
 
-A successful contract can still be a failed life.
+A clean transfer can be another kind of burial.
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/en_US. -->

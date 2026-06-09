@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Locker Prop Variant Matrix
 
-Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+Locker Prop Variant Matrix defines how HECTON-8 turns personal storage into readable evidence. Lockers are not biography dumps. They are compact world objects that connect worker, job, route access, damage, and later tampering. This lets players read colony life by inspecting things that still belong in the room.
 
 ## Scanner
 
-A locker should show work, route access and what got erased.
+A locker should show work, route access, and what somebody tried to erase. Keepsakes are allowed only after the job is readable.
 
 ## Terminal
 
-LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: every authored locker needs three readable clues: job, route, and damage. Decorative memory is secondary. A locker can hold a family token or private joke, but only after a tool, permission trace, or erasure scar tells the player how this person touched the colony.
 
 ## Audio
 

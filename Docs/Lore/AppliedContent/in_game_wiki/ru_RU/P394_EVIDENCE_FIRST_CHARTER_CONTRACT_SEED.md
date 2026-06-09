@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Evidence First Charter Contract Seed"
+title: "Семя контракта Хартии доказательств"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Evidence First Charter Contract Seed
+# Семя контракта Хартии доказательств
 
-RU LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Хартия доказательств - семейство контрактов, которое платит меньше за свободный salvage и резервирует больше емкости маршрута под доказательства. Пакеты аварий, полосы состояния люков, журналы pinger и нотариальные кассеты идут впереди тяжелых деталей, когда маршрут начинает сыпаться.
 
 ## Scanner
 
-RU LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Семя контракта: доказательства прежде материалов. Ниже выплата за материал, больше нотариальная емкость и жестче конфликты сохранения доказательств.
 
 ## Terminal
 
-RU LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: выплата за материал снижена, емкость нотариальной кассеты поднята, приоритет шкафа доказательств активен, штраф за salvage-разбор активен, давление receiver Deep Reach вероятно.
 
 ## Audio
 
-RU LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Самая чистая запись платит поздно и рано злит людей.
 
 ## Field Note
 
-RU LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Заметка мародера: шкаф доказательств не прощает долг. Он только мешает долгу выбрать, какое доказательство умрет первым.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ru_RU. -->

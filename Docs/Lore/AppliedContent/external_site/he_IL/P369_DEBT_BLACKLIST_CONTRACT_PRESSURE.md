@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "לחץ חוזה של חוב ורשימה שחורה"
+title: "לחץ חוזה Blacklist של חוב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# לחץ חוזה של חוב ורשימה שחורה
+# לחץ חוזה Blacklist של חוב
 
-HECTON-8 ממסגרת את הפרוטגוניסט דרך כלכלת ספר ולא דרך גורל. חוב, רשימות שחורות, משמורת מאגר תביעות, אשראי חמצן, גישת דרגש ואישורי Deep Reach ישנים גורמים לחוזה ה-salvage להרגיש כופה בלי להפוך את השחקן לחסר אונים.
+לחץ חוזה Blacklist של חוב מסביר מדוע עובד Deep Reach לשעבר ומוכשר נעשה Marauder על HECTON-8. החוזה לא צריך חטיפה. הוא צריך blacklist, ספר berth, oxygen credit וחלון מסלול שלא מחכה.
 
-## Scanner
-
-הודעת שעבוד קשורה למשמורת Black Keel. סירוב נשאר חוקי, אבל מקרקע: בלי דרגש, בלי אשראי חמצן נקי, בלי חלון מסלול מחוץ ל-Aegir.
-
-## Terminal
-
-קבלת תביעה / חלון הקלה מרשימה שחורה
-סטטוס קבלן: Marauder כבול בחוב
-מוביל: משמורת מאגר תביעות Black Keel
-תנאי הקלה: מסה ניתנת להשבה, הוכחת משמורת, ציות מקבל
-מצב כשל: הרשימה השחורה נשארת פעילה; גישת דרגש נדחית; תמיכת רווחת חמצן מומרת לשירות מחויב.
-
-## Audio
-
-זה לא היה חטיפה. זה היה סוג הבחירה שהספר מוכר כחופש: לחתום, לצלול, או להישאר נקי על הנייר ולכוד בפועל.
-
-## Field Note
-
-השעבוד לא כיוון אקדח. הוא הצביע על חשבון האוויר, רשימת הדרגשים וחלון המסלול הבא.
+Black Keel מציעה עבודה בתוך הלחץ הזה. קבלת claim נותנת למפעיל דרך חזרה לתנועה, אבל כל חלק בדרך נמדד: recoverable mass, custody proof, receiver compliance, debt relief. סירוב שומר ידיים נקיות על הנייר בזמן שהמסלולים המעשיים נסגרים. זו אכזריות החוזה: הוא משאיר בחירה ומתמחר צד אחד עד שכמעט אינו בחירה.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/he_IL. -->

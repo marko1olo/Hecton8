@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Payload-protocol coördinatenverkoop"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Payload-protocol coördinatenverkoop
 
-NL LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+Het coördinatenverkoopprotocol behandelt HECTON-8 als herstelbaar eigendom. Het zet de finale payload om in een ontvangerpakket voor Deep Reach: bekkenvector, betrouwbaarheidsraster, bewijsdigest en salvage-toegangsklasse. De afzender krijgt geld en schuldverlichting. Deep Reach krijgt de naderingskaart en een schoner pad terug naar de claim.
 
 ## Scanner
 
-NL LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Coördinatenverkooproute actief. Bekkenvector, betrouwbaarheidskaart en bewijsdigest gaan naar Deep Reach Recovery Compliance.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+PAYLOAD-ONTVANGER // COÖRDINATENVERKOOP. Ontvanger: Deep Reach Recovery Compliance. Verzend bekkenvector, betrouwbaarheidsraster, XO proof digest, salvage-toegangsklasse. Retour: betalingsbewijs, lienverlaging, herstelprioriteitsstempel. Toegangskaart overdragen bij ontvangstslot.
 
 ## Audio
 
-NL LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Betaling vrijgegeven. Kaart overgedragen. Arbeidersgrootboek blijft open.
 
 ## Field Note
 
-NL LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Plunderaarsnotitie: als de eerste regel het bedrag is, lees de tweede. De tweede is access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/nl_NL. -->

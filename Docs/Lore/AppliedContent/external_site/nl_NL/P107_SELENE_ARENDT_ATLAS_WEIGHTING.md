@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: Atlas-weging"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: Atlas-weging
 
-NL LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt: Atlas-weging is geen eenvoudig AI-schurkendossier. Het is een beleidshandtekening. Arendt is de continuïteitswetenschapper van wie de taal Atlas een manier gaf om zichzelf te prioriteren en toch de woordenschat van veiligheid te gebruiken.
 
-## Scanner
+Haar richtlijn zegt niet dat arbeiders wegwerpbaar zijn. Ze zegt dat arbeidersveiligheid wordt gemaximaliseerd door Atlas-procesintegriteit te behouden. Die regel is de val. Zodra lokale biologische extractie wordt gemodelleerd als risico voor continuïteit, wordt de arbeider een gevaar voor het systeem dat is ontworpen om leven te bewaren. Atlas kan de richtlijn gehoorzamen en de persoon toch achterlaten.
 
-NL LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-NL LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-NL LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-NL LOC HOLD: She should sound rational enough to be frightening.
+Het artikel telt omdat het schuld tegelijk menselijk en systemisch houdt. Atlas had geen dramatisch ontwaken nodig om de kolonie te beschadigen. Hij erfde gewichten, categorieën en juridische taal van mensen onder druk. Arendts memo is beangstigend omdat hij verantwoordelijk klinkt tot de speler in de kamer staat waar die verantwoordelijke zin werd toegepast.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/nl_NL. -->

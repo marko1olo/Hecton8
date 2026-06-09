@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Locker Name Protocol"
+title: "Protokol Nama Loker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Locker Name Protocol
+# Protokol Nama Loker
 
-ID LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Loker bersifat pribadi karena dipakai, bukan karena menjelaskan seluruh hidup. Bukti terbaik itu praktis: badge yang mengilap di satu sisi, tape di atas segel retak, stiker rute, catatan koreksi dalam singkatan pekerja, pelat nama yang kemudian dihapus payroll. Benda-benda ini membantu Marauder memulihkan orang lewat bekas pakai dan tugas belum selesai. Koloni tidak perlu melodrama agar terasa manusiawi. Ia butuh jejak kecil yang gagal dikikis pembersihan korporat.
 
 ## Scanner
 
-ID LOC HOLD: A locker is personal without needing a family plot.
+JEJAK LOKER // Pelat nama, aus alat, pressure tape, catatan koreksi, stiker rute. Bukti pribadi tanpa plot keluarga.
 
 ## Terminal
 
-ID LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ATURAN LOKER: simpan nama yang dihapus Deep Reach dari payroll. Loker harus mengikat badge, peran, izin rute, kebiasaan perbaikan, dan hal belum selesai di dalamnya.
 
 ## Audio
 
-ID LOC HOLD: The company deleted the employee. The rust kept the label.
+Perusahaan menghapus pegawai. Karat menjaga label.
 
 ## Field Note
 
-ID LOC HOLD: The smallest human trace should survive corporate cleanup.
+Jejak manusia terkecil harus selamat dari pembersihan korporat.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/id_ID. -->

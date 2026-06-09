@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Photic Shelf Survival Act"
+title: "بوابة الرف الضوئي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Photic Shelf Survival Act
+# بوابة الرف الضوئي
 
-AR LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+يعطي الرف للمسار مفرداته العملية: مضخة، ختم، قطع، ping، رقعة، تعبئة. كل فعل صغير ومادي. يفتح باب لأن مشبكا يصمد، لا لأن المستعمرة تريد أن تستكشف.
 
-## Scanner
-
-AR LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-AR LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-AR LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-AR LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+تدخل بقايا Atlas هنا كدليل صيانة لا كإجابة نهائية. لوحة مرممة، أو فيلم موصل، أو رقعة خدمة موجهة خطأ قد تساعد المشغل على البقاء وتثبت في الوقت نفسه أن النظام لمس المسار بالفعل. الوضوح يجعل العمل مقروءا؛ الدين يجعله عاجلا.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ar_SA. -->

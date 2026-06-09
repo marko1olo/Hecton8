@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Marauder Correction Note Sample"
+title: "약탈자 수정 메모 표본"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Marauder Correction Note Sample
+# 약탈자 수정 메모 표본
 
-KO LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+약탈자 수정 메모 표본은 자백이 아니다. 그래서 더 쓸모 있다. 이것은 공식 사고 양식 위에 남은 지저분한 주석이며, 깔끔한 원인을 믿지 않게 된 사람이 쓴 것이다. 메모는 누가 누구를 죽였는지 말하지 않는다. 사고라는 단어가 파일에 남기 전에 확인해야 할 것들을 말한다. 펌프 인증, 교대 인원, 시신 분류, 문 시계의 불일치, 그리고 구조를 붙잡아 방이 증거가 될 만큼 시간을 끈 승인 대기열. HECTON-8에서 이 물건은 환경 증거와 세력의 목소리를 잇는다. 식민지 기록은 날씨로 이야기를 끝내려 한다. 약탈자의 손글씨는 플레이어를 다시 그 방으로 돌려보낸다.
 
 ## Scanner
 
-KO LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+사고 양식 위에 기름연필로 덧쓴 수정. 날씨도 공황도 아니다. 시신 수가 붙은 승인 지연이다.
 
 ## Terminal
 
-KO LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+약탈자 메모 / 공식 원인: 기각 / 청구 전 확인: 펌프 인증, 교대 인원, 시신 분류, 문 시계 불일치, 구조 승인 대기열.
 
 ## Audio
 
-KO LOC HOLD: Someone else smelled the paperwork rot.
+방이 마르기도 전에 누군가는 서류의 썩은 냄새를 맡았다.
 
 ## Field Note
 
-KO LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+날씨 아님. 승인 지연. 펌프 인증, 교대 인원, 시신 분류 확인. 문 시계가 청구 도장보다 6분 빠르다.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ko_KR. -->

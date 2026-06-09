@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Seuil usine-temple
 
-Le seuil usine-temple marque la grammaire finale: infrastructure Deep Reach, colonie, machines Atlas-6 et océan deviennent un seul système physique.
+Le seuil usine-temple est l'assemblage de porte basse final au-delà de l'Usine du fond. Ce n'est pas une fusion mythique. C'est un partage de charge encore actif : les treillis Deep Reach portent l'ancienne contrainte de coque, les conduites de retour déplacent encore saumure et chaleur, la croissance carbonatée scelle les joints morts, et Atlas-6 route la continuité par les contacts qui répondent encore. La lecture se fait par l'ordre des colliers, les marques de flux, le bruit du bus câble et la position des étiquettes.
 
 ## Scanner
 
-La structure du fond n'est pas une base. Coque d'usine, logique de sanctuaire et tissu vivant partagent la charge.
+Lecture de porte basse : treillis d'usine, conduite de retour, scellement de pression et bus de routage Atlas portent la même charge. Il ne reste pas de frontière nette entre mur et porte.
 
 ## Terminal
 
-Alerte seuil: treillis industriel, joint biogène, chaleur xenon lattice et routage Atlas partagent l'autorité structurelle.
+THRESHOLD LOAD NOTICE
+Treillis : sous contrainte
+Conduite de retour : active
+Scellement de pression : surcroissance carbonatée
+Bus de routage : canal de continuité ATLAS-6
+Accès humain : non vérifié
+Action : relever l'ordre des colliers avant toute ouverture de joint
 
 ## Audio
 
-L'océan n'a pas enterré l'usine. Il en a fait un corps.
+N'appelle pas ça une porte. Trouve quelle ligne tient la pression avant de lui demander de s'ouvrir.
 
 ## Field Note
 
-Ici, la carte cesse de prétendre aux ruines de colonie.
+La carte dit seuil. Vérifie les colliers, pas le mot. La porte tient parce que quatre systèmes prennent la même charge.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/fr_FR. -->

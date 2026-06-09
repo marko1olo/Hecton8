@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Hold Signatures"
+title: "Tanda Tangan Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Hold Signatures
+# Tanda Tangan Quarantine Review Gate
 
-ID LOC HOLD: Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
+Catatan Quarantine Review Gate memperlihatkan bagaimana bahasa keselamatan menjadi penundaan. Gate tidak butuh kalimat yang memerintahkan seseorang mati. Ia menahan ekstraksi saat risiko pressure-biology, tinjauan eksternal, dan kepemilikan kustodi belum selesai. Dalam rantai bukti HECTON-8, detail buruknya adalah sebagian perangkat evakuasi masih punya daya ketika hold diterapkan. Tanda tangan Ikenna Sor menandai gate yang memperlakukan rute terbuka sebagai tidak aman sampai sertifikasi tiba. Sertifikasi tidak bisa tiba cukup cepat melewati jeda relai Aegir, dan Deep Reach tidak mencadangkan daya angkut independen untuk menunggu jeda itu.
 
 ## Scanner
 
-ID LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Kartu tinjauan dipulihkan: extraction state HELD, bidang risiko BIO/PRESSURE-UNCERTAIN, sertifikat eksternal absen. Pelepasan rute diblokir gate code.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Antrean: Evacuation release. Tindakan: tahan ekstraksi sampai sertifikat pressure-biology dan tinjauan eksternal. Pengecualian: kapasitas shuttle independen tidak ditugaskan. Human tags tetap dalam kustodi lokal sampai gate bersih.
 
 ## Audio
 
-ID LOC HOLD: Pending review is still a locked door.
+Pintu itu masih punya daya. Gate menulis review pending, dan palka tetap merah.
 
 ## Field Note
 
-ID LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Taruh ini di dekat rute penyintas yang terkunci dan perangkat evakuasi yang masih punya baterai. Bidang hold membuat pintu yang berfungsi tertutup secara hukum.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/id_ID. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Шар правок Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Шар правок Marauder
 
-UA LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Шар правок Marauder з'єднує процедуру Deep Reach і дію гравця: короткі анотації перетворюють офіційну мову на правду виживання.
 
 ## Scanner
 
-UA LOC HOLD: Marauders turn corporate language back into survival facts.
+ШАР ПРАВОК // Корпоративна мітка: temporary atmospheric variance. Помітка Marauder: CO2 першим з'їдає судження.
 
 ## Terminal
 
-UA LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ПРАВИЛО АНОТАЦІЇ: перекладати мову Deep Reach назад у факти виживання. Нотатки мають бути короткі, практичні, злі й корисні під тиском.
 
 ## Audio
 
-UA LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Добра нотатка не звучить розумно. Вона тримає когось живим.
 
 ## Field Note
 
-UA LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Гравець має відчувати, як стара мова Deep Reach перекладається в рахунок тіл.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/uk_UA. -->

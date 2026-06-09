@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "音声転写ダメージ帯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# 音声転写ダメージ帯
 
-JP LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+HECTON-8のボイスログは、音があるだけでは完成しない。転写は自分の傷を見せなければならない。
 
-## Scanner
+ダメージ帯はその傷を正直にする。ノイズ、パケット欠落、法務上の黒塗り、圧力歪み、話者分離の失敗、機械翻訳の失敗、後日の編集を示せる。この層がなければ、壊れた録音は偽の明瞭さか偽の謎になる。この層があれば、プレイヤーは世界が失ったものと誰かが消したものの差を見分けられる。
 
-JP LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+規則が厳しいのは、ゲームが証拠で成り立つからだ。破損は名前、番号、ネタバレになる貨物を隠してよい。疑いも作れる。扉を見る前に経路を危険に感じさせることもできる。それでも残った転写は行動を運ばなければならない。ロックを開けるな、サービス梯子で戻れ、酸素を手で数えろ、緑の状態灯を信じるな、公式行を見えるままにしろ。
 
-## Terminal
-
-JP LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-JP LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-JP LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+ローカライズとアクセシビリティにとって、帯は本文の一部だ。翻訳された転写は話者の役割、時間圧、読める警告を保つ必要がある。黒塗りが雰囲気になるのは、プレイヤーがまだ行動できる場合だけだ。そうでなければ、それはロアのふりをした壊れたUIでしかない。
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ja_JP. -->

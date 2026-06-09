@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Transit van menselijke crewrotatie
 
-Menselijke rotatie maakt HECTON-8s verlatenheid geloofwaardig. Werkers, specialisten en vervangingscrews bewegen trager dan claimtaal. Iemand kan Sol onder één contract verlaten, onder een ander wakker worden en ontdekken dat de nood waarvoor hij trainde al bewijs is geworden.
+Menselijke rotatie was de belofte die Aegir op papier leefbaar maakte. Arbeiders accepteerden lange cycli omdat terugkeervensters bestonden, medische bewaring bestond, en het carrierboek hen beschreef als terughaalbare mensen in plaats van verlaten massa. In de praktijk hing elke rotatie af van kooischaarste, routeschuld, juridische vrijgave en of Deep Reach de getuige nog levend wilde.
 
 ## Scanner
 
-Mensen pendelen niet naar Aegir. Ze brengen jaren door als vracht met meningen.
+Crewschema geldig gestempeld nadat de helft van de namen al onbereikbaar was.
 
 ## Terminal
 
-CREWROTATIE: mensentransport gebruikt trage vensters, afgeschermde habitatsecties, lage-metabolisme-cycli en gestage rotaties. Een vermiste werker wordt een vertraagd custody-probleem.
+CREWROTATIE: mensentransfers vereisen kooiruimte, stralingsruimte, slaaptoezicht, medische schuld, juridische bewaring en terugkeervensterverzekering. Noodextractie is geen knop; het is een vooraf geprijsde uitzondering die bijna niemand kan betalen.
 
 ## Audio
 
-Tegen de tijd dat thuis vraagt waar je bent, is de kamer al overstroomd.
+Een rotatieplan is geen reddingsplan. Het lijkt er alleen vanaf een bureau op.
 
 ## Field Note
 
-Een frontierwerker verkoopt tijd voordat hij arbeid verkoopt.
+Mensen werden als voorraad geroteerd tot de route iedereen eraan herinnerde dat het lichamen waren.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/nl_NL. -->

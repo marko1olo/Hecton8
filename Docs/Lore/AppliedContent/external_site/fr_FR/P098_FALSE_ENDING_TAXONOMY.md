@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomie des fausses fins"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomie des fausses fins
 
-FR LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+La taxonomie des fausses fins explique la structure de rejouabilité : une sortie peut être physiquement réelle, rentable et pourtant moralement incomplète. Le dossier conserve le savoir entre les tentatives, tandis que la pression, la dette et la vérité publique décident si la fin n'est qu'une fuite ou un véritable règlement de comptes.
 
 ## Scanner
 
-FR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Tableau des fins. Certaines sorties sont assez réelles pour compter, et assez mauvaises pour blesser.
 
 ## Terminal
 
-FR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+FAMILLES DE FINS : paiement matériel ; sortie partielle et retour au même seed ; capture corporative ; maintien en quarantaine ; publication du registre public ; résolution du bassin Atlas. Les journaux d'issue doivent séparer charge utile, preuve et état de dette.
 
 ## Audio
 
-FR LOC HOLD: Leaving is not the same as finishing.
+Sortir de l'eau n'est pas terminer le travail.
 
 ## Field Note
 
-FR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Une fausse fin n'est pas un tour. C'est un marché valable auquel il manque la vérité.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/fr_FR. -->

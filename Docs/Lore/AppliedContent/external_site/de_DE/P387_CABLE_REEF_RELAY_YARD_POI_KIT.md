@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Beweiskit Kabelriff-Relaisyard"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Cable Reef Relay Yard POI Kit
+# Beweiskit Kabelriff-Relaisyard
 
-DE LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+Der Relaisyard macht aus Ekel Werkzeugdisziplin. Kabelmäntel sind gespalten, Isolierung blättert, und Atlas-Servicefilm kreuzt Sockel, die nie eine Fläche teilen sollten. Ein sauberer Schnitt kann den einzigen Weg zerstören, der noch Signal trägt.
 
-## Scanner
-
-DE LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-DE LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-DE LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-DE LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Das Beweiskit ist körperlich: Pinger-Antwort, Totarmkarte, Schnittwarnung, Relaisgabel und die Servicemarke, an der lebendes Material eine gebrochene Route übernommen hat. Der Ort muss nützlich wirken, bevor er fremd wirkt. Die Gefahr ist eine Reparatur, die den Operator retten und zugleich den Anspruchsdatensatz verunreinigen kann.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/de_DE. -->

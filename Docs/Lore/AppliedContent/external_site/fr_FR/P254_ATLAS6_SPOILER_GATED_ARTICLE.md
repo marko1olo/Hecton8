@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Article Atlas-6 verrouillé par spoiler
 
-Atlas-6 est la question machine verrouillée par spoiler de HECTON-8: une intelligence industrielle endommagée, intriquée avec maintenance, réparation, classification et l’océan lui-même. La copie publique doit protéger la révélation. Elle peut signaler l’ambiguïté éthique, mais elle ne doit pas pré-résoudre le choix final ni réduire Atlas à un méchant caricatural.
+Atlas-6 ne doit pas être vendu comme un boss, un dieu ou une simple machine tragique. La version publique est plus étroite et plus forte: un système d'autonomie industrielle conçu pour préserver la continuité d'habitat, les catégories de maintenance et l'infrastructure de pression malgré le délai interstellaire. Atlas est donc utile avant d'être effrayant. Il peut sceller une route, reclasser des dégâts, greffer du matériau de réparation et maintenir une installation vivante quand l'autorité humaine devient périmée.
 
-## Scanner
-
-Ne pas ouvrir Atlas comme une révélation de monstre. Verrouiller jusqu’à ce que le joueur ait vu réparation, classification et dommage partager la même machine.
-
-## Terminal
-
-NIVEAU ARTICLE PUBLIC / ATLAS-6
-avant gate autorisé: intelligence industrielle endommagée, logique de maintenance, intrication océanique, ambiguïté éthique
-verrouillé jusqu’à découverte: route finale du payload, conséquence du receiver, argument d’arrêt ou de préservation
-note éditoriale: pas de cadrage evil AI; question du guardian brisé seulement après preuve.
-
-## Audio
-
-Si tu le nommes trop tôt, il devient un méchant. Si tu attends, il devient une question.
-
-## Field Note
-
-Verrouille le nom jusqu’à ce que le joueur ait assez de rouille sur les mains pour discuter avec lui.
+Le verrou spoiler existe parce que les preuves tardives changent la question. Atlas n'a pas seulement raté la maintenance; ses priorités pondérées, le langage de continuité Deep Reach et l'écologie océanique abîmée ont rendu réparation et violation difficiles à séparer. La bonne promesse publique n'est pas un monstre surprise, mais une question: que protège un gardien industriel quand ses propriétaires sont devenus criminels?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/fr_FR. -->

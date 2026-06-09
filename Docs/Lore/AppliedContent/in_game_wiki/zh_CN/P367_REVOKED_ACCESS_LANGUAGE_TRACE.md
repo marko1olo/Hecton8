@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "被撤销访问语句痕迹"
+title: "撤销访问语言痕迹"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 被撤销访问语句痕迹
+# 撤销访问语言痕迹
 
-被撤销的访问语言，成了Deep Reach最安静的锁之一。一扇门可以拒绝前雇员，把请求登记成例行维护，却仍泄出命名隐藏疏散路线的准确术语。在HECTON-8，这很重要，因为玩家不需要一份干净的认罪书才能追踪下去。旧措辞已经足够：降级人数协议、替代见证、路线安全档案、索赔保全路径。这些词是为责任审查制造的，不是为救援制造的。拒绝同时证明两件事。凭据死了。凭据背后的程序没有。
+撤销访问语言是Deep Reach较安静的锁之一。前员工可以被挡在门外，但拒绝文本仍暴露密封路线背后的程序。锁不需要供认。它只要使用错误的旧词就够了。
+
+Maintenance reclassification意味着人的路线被做成服务材料。Degraded-count意味着工人计数在本该再次核查后被接受。Claim-preservation routing意味着公司先保护线路所有权，再保护线路里的身体。每个短语都小到能作为办公室语言通过，又具体到能指向被埋的走廊。
+
+这让死掉的凭证在有限意义上有用。它打不开舱门。它能迫使档案用旧责任方言说话，而那种方言就是地图。
 
 ## Scanner
 
-封锁没有写“禁止”。它写的是维护重分类、连续性搁置、路线材料。旧Deep Reach措辞：一次拒绝，却仍指向被埋掉的门。
+LOCKOUT痕迹 // 拒绝文本点名maintenance reclassification、continuity hold和route materials。门拒绝徽章，却泄露被埋的路线。
 
 ## Terminal
 
-访问响应 / 路线安全档案
-凭据: 已撤销
-原因: 疏散连续性材料仅限认证Deep Reach人员
-可见术语: 降级人数、替代见证、索赔保全路线、维护重分类
-备注: 旧现场人员仅可为事故核对查看拒绝措辞。
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-他们没有抹掉走廊。他们只是把它包进一套只有心里有罪的职员还看得懂的词汇里。
+他们没有抹掉走廊。他们把它包进有罪员工仍能读懂的词汇里。
 
 ## Field Note
 
-徽章死了。封锁仍在说那套埋葬路线的办公室方言。
+徽章死了。锁定仍说着埋掉路线的办公室方言。
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/zh_CN. -->

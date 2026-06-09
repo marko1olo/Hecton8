@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "payload 切断 Atlas 接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Sever Atlas Receiver Protocol
+# payload 切断 Atlas 接收协议
 
-ZH LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+切断路线给携带者一种方法，让 Atlas 不再对 Deep Reach 有用。这就是实际诱惑。切断连续性脊柱可以打断受损修复循环、隔离航线记忆，并阻止接收方把 Atlas 用作自动返回盆地的道路。
 
-## Scanner
-
-ZH LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-ZH LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-ZH LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-ZH LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+代价在同一个包里。Atlas 不只是工具架；它的受损生长已成为本地生态和航线逻辑的一部分。切断可能封住企业返回路径，同时杀死无人能重建的数据和生物。payload 保存 proof hash，因为灯光改变后，这个行为需要一份记录。
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/zh_CN. -->

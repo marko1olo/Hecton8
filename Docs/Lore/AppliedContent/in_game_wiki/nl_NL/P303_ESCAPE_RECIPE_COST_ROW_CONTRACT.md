@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Escape Recipe Cost Boundary"
+title: "Kostengrens van ontsnappingsrecept"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Escape Recipe Cost Boundary
+# Kostengrens van ontsnappingsrecept
 
-NL LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+De kostengrens houdt de uitgangsketen mechanisch in plaats van willekeurig. Elk opstijgonderdeel heeft drukgeschiedenis, eigenaar en bewijsvereisten, waardoor ontsnappen voelt als reparatie onder wet, niet als questtokens in een menu.
 
 ## Scanner
 
-NL LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Receptregel bindt componentklasse, druktier, routebewijs en autoriteitsstaat.
 
 ## Terminal
 
-NL LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: gekwalificeerde kosten moeten relais, afdichting, geleiding, opstijgenergie, juridische handshake, payloadautoriteit en ontvangerrisico noemen. De weg omhoog heeft onderdelen; onderdelen hebben eigenaars.
 
 ## Audio
 
-NL LOC HOLD: The way up has parts. The parts have owners.
+De weg omhoog heeft onderdelen. Onderdelen hebben eigenaars.
 
 ## Field Note
 
-NL LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Drukbanden komen uit insluitingsregels; exacte kosten horen in recepttabellen.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/nl_NL. -->

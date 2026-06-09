@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Contract Continuity Desk Signatures
 
-Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+Contract Continuity Desk Signatures shows how the player's opening job becomes legal pressure before the player understands the sea. The trap is not a single malicious sentence. It is assembled from routine signatures that look boring enough to pass: a lien merge from the Aegir Reclamation Pool, a Black Keel recovery clause, an oxygen-credit addendum, a blacklist-risk notice and a payload custody hold. Each signature is small. Together they make refusal expensive, silence profitable and rescue conditional. This is the lower office face of Deep Reach: not a throne, but desks that can turn survival into breach of contract.
 
 ## Scanner
 
-The contract trap is assembled from clause fragments, not one villain order.
+The opening contract trap is built from lower signatures: lien merge, oxygen addendum, blacklist risk and payload custody hold.
 
 ## Terminal
 
-SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Merge Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Attach oxygen-credit addendum, blacklist-risk notice and payload custody hold. Escalation not required if operator accepts.
 
 ## Audio
 
-Nobody says trap. They say continuity.
+A signature can be a pressure door when every clause locks after it.
 
 ## Field Note
 
-Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Nobody stamps a trap. They stamp continuity.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/en_US. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload финального выбора"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload финального выбора
 
-Final Choice Payload задает философию концовок HECTON-8: игрок выбирает, что покидает луну, кто это получает и что это делает возможным для Deep Reach, public law, Atlas и ocean-machine ecology.
+Payload финального выбора задает философию концовок HECTON-8: игрок решает, что покинет луну, кто это получит и что это откроет для Deep Reach, публичного права, Atlas и океано-машинной экологии.
 
 ## Scanner
 
-Payload matrix. Продать, отсечь, quarantine, publish или оставить новое тело дышать.
+ФИНАЛЬНЫЙ PAYLOAD // Координаты, образцы, имена, доступ Atlas, приказы карантина, публичное доказательство. То, что покинет HECTON-8, решит, кто сможет действовать потом.
 
 ## Terminal
 
-FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+МАТРИЦА PAYLOAD: продать координаты и XO-доказательство; разорвать непрерывность Atlas; сохранить или закрыть на карантин океано-машинную экологию; опубликовать доказательства в публичный ledger; удержать payload и оставить Deep Reach слепыми.
 
 ## Audio
 
-У crime scene, который стал живым неправильным способом, нет чистого владельца.
+У места преступления, которое научилось дышать, не бывает чистого владельца.
 
 ## Field Note
 
-Лучшая концовка должна быть defendable, не чистой.
+Лучшая концовка должна быть защитимой, а не чистой.
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/ru_RU. -->

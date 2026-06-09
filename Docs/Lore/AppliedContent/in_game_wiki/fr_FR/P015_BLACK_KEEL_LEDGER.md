@@ -19,21 +19,19 @@ localization_flags: 1
 
 # Registre Black Keel
 
-Black Keel est la ligne orbitale du joueur, pas un rêve de sauvetage. Il appartient à l'infrastructure claim-pool : registres de garde, dette d'assurance, fenêtres de récupération, quarantaine et autorité carrier.
-
-Il guide parce que guider protège la valeur. Il retarde parce que retarder protège aussi la valeur. Il peut aider sans être de ton côté.
+Black Keel est la ligne orbitale du joueur, mais pas son vaisseau. Publiquement, il appartient à l'Aegir Reclamation Pool; juridiquement, Keelmark Mutual l'entoure d'assurance, dette et exposition de récupération. D'anciens crochets Deep Reach peuvent plier l'ordre des charges, la quarantaine et les certificats de route. Le registre est froid parce qu'il est pratique : corps vivant, preuve, blue-debt, caisse d'outils et coque récupérable se disputent la même tonne-window.
 
 ## Scanner
 
-Registre de tender claim-pool. Garde publique carrier, dette d'assurance, pénalités de masse d'ascension et crochets Deep Reach cachés.
+Registre de tender claim-pool. Garde Aegir Reclamation Pool, exposition Keelmark Mutual, créance 4.8 tonne-window et crochets Deep Reach masqués.
 
 ## Terminal
 
-REGISTRE BLACK KEEL // Service de récupération conditionnel. Clearance de claim incomplète. Route priorité profonde masquée. Autorité de charge côté carrier. Survie contracteur ne dépasse pas cargaison assurée sans valeur d'ascension mise à jour.
+REGISTRE BLACK KEEL // Survie contracteur enregistrée comme payload biologique récupérable. Noyau de preuve en attente de classe de garde. Matériau blue-debt exige revue containment. Bénéficiaire priorité profonde masqué. Dette tonne-window active jusqu'à valeur de récupération supérieure à exposition cargo assurée.
 
 ## Audio
 
-Black Keel n'est pas ton vaisseau. C'est la machine qui sait ce que tu dois.
+Black Keel peut te sauver de l'océan et vendre chaque seconde de la remontée.
 
 ## Field Note
 

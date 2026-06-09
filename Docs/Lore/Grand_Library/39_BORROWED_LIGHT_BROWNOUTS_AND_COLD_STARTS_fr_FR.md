@@ -1,58 +1,78 @@
 <!-- localization_status: draft_machine_or_llm -->
 # LUMIERE EMPRUNTEE, BAISSES DE TENSION ET DEMARRAGES A FROID
 
-> **Source :** Cours Deep Reach sur l'énergie d'urgence, notes d'évaluation de récupération Black Keel, enregistrements de salles de disjoncteurs par Marauders.  
-> **Voix :** Instructeur d'énergie d'infrastructure, avec annotations ultérieures d'équipages endettés.  
-> **Note de relecture :** Sur HECTON-8, la lumière ne prouve pas la vie. Elle prouve que quelque chose, quelque part, accepte encore de dépenser de l'ordre stocké contre l'obscurité.
+> **Source :** cours Deep Reach sur l'alimentation d'urgence, cartes de service de salles de disjoncteurs, notes Black Keel d'evaluation de sauvetage et enregistrements de maraudeurs dans des annexes restaurees.  
+> **Portee :** priorite des charges, comportement en baisse de tension, demarrages a froid, reserves empruntees et traces d'alimentation utilisees pour routes, reclamations et decisions de survie.  
+> **Usage terrain :** lire avant de faire confiance a une piece eclairee, de ponter un disjoncteur, de reveiller un panneau mort, d'ouvrir une armoire alimentee ou de deplacer une cellule qui nourrit peut-etre autre chose.
 
 ---
 
-## 1. La Lumière Est Une Négociation
+## 1. Une piece eclairee est une charge
 
-Les gens font confiance à la lumière trop vite.
+Sur HECTON-8, la lumiere ne prouve pas qu'une piece va bien. Elle prouve qu'un circuit depense encore de l'energie.
 
-Sur HECTON-8, une salle éclairée peut être vivante, mourante, mensongère ou en train de dépenser les dernières secondes polies d'une banque de condensateurs. Une lampe peut fonctionner sur réserve d'urgence pendant que le contrôleur de porte à côté n'a plus l'autorité de déverrouiller. Un couloir peut briller parce que l'habitat priorise encore l'optique morale après que chaque pompe utile s'est tue. Un poste peut se réveiller assez longtemps pour demander un identifiant et mourir avant que la réponse compte.
+Une lampe peut tourner sur reserve d'urgence pendant que le controleur de porte a cote n'a plus l'autorite d'ouvrir. Un couloir peut briller parce que l'habitat protege encore l'eclairage de moral apres que les pompes utiles ont cesse de rendre compte. Une station peut se reveiller assez longtemps pour demander un identifiant et mourir avant que la reponse atteigne son tampon. Une pastille verte d'etat peut rester vivante parce qu'elle est du cote protege d'un disjoncteur, pas parce que le systeme derriere vit.
 
-Deep Reach a construit les systèmes d'énergie autour de la priorité, pas du confort. L'air d'abord. La pression ensuite. La chaleur là où elle garde les joints flexibles. Les données là où elles empêchent une perte juridique ou médicale. La lumière venait plus tard, sauf si l'obscurité elle-même devenait un danger. L'ancienne colonie pouvait paraître humaine parce que la hiérarchie fonctionnait. Après l'abandon, cette hiérarchie est devenue un champ de promesses à moitié tenues.
+Deep Reach a construit la hierarchie d'alimentation autour de la survie, de la responsabilite et de l'habitude. L'air d'abord. Le controle de pression ensuite. La chaleur la ou elle gardait les joints souples. Le froid la ou echantillons, medicaments ou corps creaient une exposition legale. Les donnees la ou les logs evitaient pertes medicales ou contractuelles. La lumiere venait plus tard, sauf si l'obscurite devenait elle-meme risque de chute, de coupure ou de panique.
 
-Les Marauders apprennent à demander qui paie pour la lumière. Une salle qui ne peut pas répondre n'est pas forcément vide. Elle emprunte peut-être à quelque chose que le joueur n'a pas encore trouvé.
+Apres l'abandon, cette hierarchie est devenue plus dure a lire. Une piece peut sembler occupee parce qu'un circuit peu couteux marche encore. Elle peut sembler morte parce qu'une charge prioritaire a pris toutes les cellules accessibles. La bonne question n'est pas de savoir si la lumiere est allumee. La bonne question est quelle charge la paie.
 
-## 2. Logique De Baisse
+## 2. Ordre de baisse de tension
 
-Une baisse de tension est une machine qui choisit ce qui mérite de continuer à exister.
+Une baisse de tension n'est pas une coupure. C'est une sequence.
 
-Quand l'énergie tombe, les anciens systèmes délestent les charges dans l'ordre. Les panneaux décoratifs meurent avant les pompes. Les archives non critiques dorment avant le contrôle atmosphérique. Les moteurs de porte ralentissent avant que les verrous de pression libèrent. Les armoires médicales peuvent préserver le froid tout en refusant de s'ouvrir. La hiérarchie était rationnelle lorsqu'elle était entretenue, cruelle lorsqu'elle était abandonnée, dangereuse lorsqu'elle était réparée partiellement par des gens qui ne comprenaient pas les hypothèses d'origine.
+Quand la tension tombe, les systemes entretenus delestent les charges dans un ordre prevu. Les bandes lumineuses murales tombent avant les pompes de circulation. Les terminaux non critiques dorment avant la logique de pression. Les moteurs de porte ralentissent avant que les verrous durs liberent. Les armoires medicales peuvent garder le froid tout en refusant de s'ouvrir. Une salle sure peut preserver l'echange d'air en tuant chaque prise qu'une equipe de reparation esperait utiliser.
 
-Les baisses créent des salles étranges. Un établi peut avoir de la chaleur mais pas de journaux. Une pompe peut tourner sans plus rapporter. Une lumière d'avertissement peut clignoter depuis un circuit protégé pendant que le capteur concerné est mort. Une salle sûre peut garder l'air en mouvement en tuant chaque prise que le joueur espérait utiliser.
+Les systemes abandonnes ne suivent pas toujours l'ancien tableau. Les contacteurs sales collent. Des couloirs rafistoles retroalimentent des panneaux qui auraient du mourir. Un capteur mort peut garder une lampe d'avertissement vivante parce que le circuit d'avertissement est plus facile a alimenter que la verite qu'il signalait autrefois. Une pompe peut tourner sans rapporter parce que son rail de telemetrie est mort en premier.
 
-Black Keel valorise les historiques de baisse parce qu'ils révèlent l'ordre de la panne. Les circuits morts en premier peuvent prouver quand l'habitat a perdu son équipage, quand une revendication a été trafiquée, si un frigo d'échantillons est resté froid et si une salle verrouillée a été scellée par procédure ou par famine.
+L'ordre de baisse compte parce qu'il dit quand une piece a cesse d'etre entretenue. Les charges mortes en premier peuvent montrer si un echantillon est reste froid, si une porte a ete scellee par procedure ou par faim d'energie, si une balise de detresse avait du courant quand Black Keel l'a marquee inactive, et si quelqu'un a bouge un disjoncteur apres la fermeture du log officiel de route.
 
-## 3. Démarrages A Froid
+## 3. Demarrages a froid
 
-Démarrer à froid un lieu mort n'est pas la même chose que l'allumer.
+Demarrer a froid une piece morte n'est pas la meme chose que l'allumer.
 
-Un démarrage à froid demande à de vieilles machines de se souvenir de leur forme après que la pression, le sel, le temps et la négligence l'ont éditée. Les roulements se réveillent secs. Les contacteurs arquent à travers une pellicule minérale. Les batteries acceptent la charge de manière inégale. Les systèmes de sécurité comparent aujourd'hui à des seuils écrits pour une colonie habitée et trouvent le monde entier suspect. Parfois cette suspicion est correcte.
+Un demarrage a froid demande a de vieilles machines de bouger apres que pression, sel et temps ont change leurs tolerances. Les roulements se reveillent secs. Les contacteurs arcquent a travers un film mineral. Les piles de batteries acceptent la charge de facon inegale. Les ventilateurs jettent poussiere posee, moisissure ou vapeur chimique dans un air qui semblait respirable. La logique de securite compare une piece abimee a des seuils ecrits pour une colonie occupee et declare la moitie du lieu suspecte.
 
-Les bons Marauders n'envoient pas brutalement de l'énergie dans une salle morte s'ils ne sont pas prêts à ce que la salle réponde mal. Un ventilateur peut jeter du poison dans un air respirable. Une porte peut se verrouiller pour protéger un état de pression qui n'existe plus. Un serveur peut écraser le dernier crash log utile avec un échec de démarrage propre. Un chauffage peut ramollir un joint qui ne survivait que parce qu'il était froid.
+Parfois la machine a raison de suspecter. Une porte peut se verrouiller pour proteger un etat de pression qui n'existe plus. Un chauffage peut ramollir un joint qui survivait seulement parce qu'il restait froid. Un serveur peut ecraser le dernier crash record utile avec une panne de boot neuve. Une pompe peut vider l'eau d'une piece et la pousser par un bac fendu dans une autre.
 
-Le démarrage à froid est un choix de séquence. Réveille la mauvaise chose d'abord et la salle raconte une histoire. Réveille-la prudemment et elle peut en raconter une autre.
+Les bonnes equipes ne reveillent pas une piece d'un seul coup. Elles reveillent d'abord la mesure, puis le confinement, puis le mouvement, puis le confort. Si l'ordre doit changer, elles ecrivent pourquoi. Un demarrage a froid est un pari sur la sequence, et HECTON-8 fait payer les equipes qui devinent par habitude.
 
-## 4. Énergie Empruntée
+## 4. Energie empruntee
 
-Rien n'embarrasse un professionnel comme apprendre qu'il utilisait la réserve de quelqu'un d'autre.
+L'energie empruntee fait un travail que son etiquette n'admet pas.
 
-HECTON-8 est plein d'énergie empruntée. Cellules d'urgence croisées à travers des couloirs rapiécés. Chargeurs de drones alimentant les lumières de salles sûres. Laboratoire mort volant un filet de courant à un réseau d'antennes mort-né. Congélateur médical oublié gardant un échantillon vivant en affamant six portes de leur autorité moteur. La colonie n'a pas toujours échoué en îles propres. Elle a échoué en négociations que personne de vivant n'a closes.
+HECTON-8 en est pleine : cellules d'urgence croisees par des couloirs rapièces, chargeurs de drones gardant les lumieres d'une salle sure, laboratoire mort volant un courant goutte a un reseau d'antennes, congelateur medical preservant un echantillon en affamant six portes d'autorite moteur. La colonie a rarement echoue en ilots propres. Les charges ont continue a negocier apres le depart des personnes qui comprenaient le marche.
 
-Les Marauders exploitent cela et le craignent. Une ligne de pontage peut restaurer une console assez longtemps pour évaluer un lot de récupération. Elle peut aussi vider la dernière réserve qui garde une balise témoin vivante. Une cellule portable peut ouvrir une porte, réveiller un circuit parasite ou pousser Black Keel à demander pourquoi l'historique d'énergie ne correspond plus à la route revendiquée.
+Les maraudeurs utilisent l'energie empruntee parce qu'elle peut changer une route morte en route payee. Une ligne de pont peut reveiller une console assez longtemps pour chiffrer un lot de sauvetage. Une cellule portable peut ouvrir une armoire avant que le joint seche. Un chargeur peut faire tourner une pompe pendant les minutes necessaires pour traverser un puisard.
 
-L'énergie est une preuve. Chaque câble déplacé est une phrase dans cette preuve.
+Le meme pont peut vider la derniere reserve qui nourrit une balise de preuve, effacer l'ecart de temps dans un power log ou faire echouer fermee une porte de salle sure avec des medicaments dedans. Les auditeurs Black Keel aiment l'energie empruntee quand elle augmente la valeur recuperable. Ils l'aiment moins quand le nouveau chemin d'alimentation explique pourquoi leur ancien refus etait faux.
 
-## 5. Ce Que Le Joueur Apprend
+## 5. Salles de disjoncteurs
 
-Le joueur apprend que l'énergie n'est pas un état binaire. C'est un ordre social entre machines.
+Une salle de disjoncteurs est une carte avec des traces de brulure.
 
-Un panneau vivant peut être cru, taxé, contourné, affamé, restauré ou laissé tranquille. Chaque action change ce dont le lieu pourra se souvenir. Alimenter une archive peut tuer une pompe. Sauver une pompe peut laisser un message non lu. Restaurer la lumière peut rendre la salle plus sûre pour le joueur et plus visible pour tout le reste qui utilise l'obscurité.
+Les etiquettes Deep Reach sont utiles jusqu'au moment ou elles ne le sont plus. Un disjoncteur marque `Hab Lighting B` peut alimenter une pompe apres trois patchs d'urgence. Une poignee recouverte de ruban peut cacher une alimentation croisee de survie bricolee. Un disjoncteur propre dans une piece sale signifie souvent que quelqu'un l'a touche apres l'inondation. Un disjoncteur chaud dans une annexe froide merite l'attention avant la porte voisine.
 
-Le bon travail d'énergie ne consiste pas à rendre tout lumineux. Il consiste à décider quelle vérité mérite l'énergie en premier. Le meilleur Marauder n'est pas celui qui porte la plus grosse cellule, mais celui qui comprend ce que la salle a sacrifié pour garder une seule lumière verte en vie.
+Les enregistrements de maraudeurs preferent les faits vite verifiables : position de poignee, temperature de bus, sel dans la charniere, odeur au contacteur, quelles charges clignotent quand les pinces de cellule mordent. Les longues explications tuent dans les salles de disjoncteurs. Les etiquettes courtes gardent les mains plus honnetes.
 
-Sur HECTON-8, l'obscurité n'est pas le vide et la lumière n'est pas la miséricorde. Les deux sont de la comptabilité. Le joueur survit en apprenant à lire la facture avant de la payer.
+La meilleure note n'est pas `safe`. La meilleure note est `alimente verrou clinique, saute a 11 A, ne pas ponter pendant cycle pompe`.
+
+## 6. Energie comme preuve
+
+Les traces d'alimentation peuvent prouver la sequence quand les pieces mentent.
+
+Un declenchement de disjoncteur peut montrer qu'une porte a ete ouverte apres une evacuation declaree. Une courbe de charge peut montrer qu'une cellule portable a ete branchee du mauvais cote d'un scelle de garde. Un log de baisse peut montrer que le froid a survecu assez longtemps pour qu'un echantillon conserve sa valeur. Une coupure absente peut montrer que quelqu'un a edite l'archive ou l'a alimentee par une ligne non listee.
+
+L'energie cree aussi de la responsabilite. Une equipe qui restaure la lumiere peut se reveler dans un log de recepteur. Une equipe qui garde une pompe vivante peut detruire un enregistrement terminal. Une equipe qui vole une cellule peut transformer une salle sure silencieuse en salle morte et laisser la facture dans la trace de tension.
+
+Chaque cable deplace change l'histoire que la piece peut prouver.
+
+## 7. Regle de terrain
+
+Avant de faire confiance a la lumiere, trouve sa charge.
+
+Avant de ponter l'energie, nomme ce qui perdra l'energie.
+
+Avant de demarrer une piece a froid, reveille les instruments qui peuvent dire quand s'arreter.
+
+Sur HECTON-8, l'obscurite ne prouve pas le vide et la lumiere ne prouve pas la securite. Les deux sont des etats d'alimentation avec proprietaires, couts et traces. Les equipes qui survivent ne portent pas les plus grosses cellules. Elles savent quel disjoncteur fera dire a la piece le mensonge le moins cher.

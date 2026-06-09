@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Public Ledger Record"
+title: "Registro de libro público"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Public Ledger Record
+# Registro de libro público
 
-ES LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Este registro de final sigue el momento en que la prueba sale de la custodia privada. Lo útil son los campos del recibo: quién selló el paquete, qué coordenadas se redactaron, qué nivel de prueba se aceptó y cuánto tiempo tiene Deep Reach antes de contestar con un contrapaquete.
 
 ## Scanner
 
-ES LOC HOLD: Witness hash escaped claimant custody.
+REGISTRO DE LIBRO PÚBLICO // Hash testigo salió de custodia privada por ruta de paquete Tau/Luyten. Nivel de prueba pública fijado; retraso de respuesta de Deep Reach adjunto.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+REGISTRO DE FINAL / LIBRO PÚBLICO
+Ruta: paquete diferido Tau/Luyten.
+Carga: hash testigo, tira de custodia, nivel de prueba con coordenadas redactadas, marca temporal del receptor.
+Control tras relé: cedido.
+Respuesta de Deep Reach: contrapaquete retrasado por recibo público.
+Pérdida conocida: el remitente no elige primer lector ni cadena posterior de presentación.
 
 ## Audio
 
-ES LOC HOLD: Truth can leave your hands and still matter.
+El libro lo selló. Ya no eliges al primer lector.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Si el recibo es público, el archivo sobrevive porque sale de tus manos. Revisa la redacción de coordenadas antes de celebrar el sello.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/es_ES. -->

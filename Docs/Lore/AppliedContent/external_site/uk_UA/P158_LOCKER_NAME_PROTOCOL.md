@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Locker Name Protocol"
+title: "Протокол іменних шафок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Locker Name Protocol
+# Протокол іменних шафок
 
-UK LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+Протокол іменних шафок робить особисті докази ігровими: імена виживають через предмети, знос, маршрутний дозвіл і помітки Marauder.
 
 ## Scanner
 
-UK LOC HOLD: A locker is personal without needing a family plot.
+СЛІД ШАФКИ // Табличка імені, знос інструмента, pressure tape, правка, маршрутна наліпка. Особистий доказ без сімейної мелодрами.
 
 ## Terminal
 
-UK LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ПРАВИЛО ШАФКИ: берегти імена, які Deep Reach прибрала з payroll. Шафка має зв'язувати бейдж, роль, маршрутний дозвіл, звичку ремонту й незавершену річ усередині.
 
 ## Audio
 
-UK LOC HOLD: The company deleted the employee. The rust kept the label.
+Компанія видалила працівника. Іржа зберегла ярлик.
 
 ## Field Note
 
-UK LOC HOLD: The smallest human trace should survive corporate cleanup.
+Найменший людський слід має пережити корпоративне прибирання.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/uk_UA. -->

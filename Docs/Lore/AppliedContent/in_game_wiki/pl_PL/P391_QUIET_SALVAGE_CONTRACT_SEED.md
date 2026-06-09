@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Quiet Salvage Contract Seed"
+title: "Ziarno kontraktu cichego salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Quiet Salvage Contract Seed
+# Ziarno kontraktu cichego salvage
 
-PL LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Ciche Salvage to rodzina kontraktów z mniejszą liczbą wczesnych alarmów i twardszym językiem własności. Trasa daje operatorowi czas na naprawę, oddech i czytanie, lecz tagi próbek, logi pinger i szafki dowodowe wiążą się z receiverem przed pierwszą dużą wypłatą.
 
 ## Scanner
 
-PL LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Ziarno kontraktu: ciche salvage. Niska ekspozycja burzowa, czysta pierwsza wypłata, ograniczona piecza nad wszystkim, co dowodzi historii trasy.
 
 ## Terminal
 
-PL LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: okno burzowe spokojne, slot bathydrop wstępnie czysty, wczesny kontakt z fauną zmniejszony, blokada custody silniejsza, klauzula audytu receiver-first aktywna.
 
 ## Audio
 
-PL LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Spokojna woda znaczy, że ktoś już przeniósł ryzyko do papierów.
 
 ## Field Note
 
-PL LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Notatka marodera: spokojna woda pozwala usłyszeć kłamstwo tablicy kontraktowej z lepszą dykcją.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/pl_PL. -->

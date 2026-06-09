@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "انقسام النطاقات بين القانون المدني والشركات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# انقسام النطاقات بين القانون المدني والشركات
 
-AR LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+فضاء البشر في عام 2190 رقيق وقديم ومقسم بعناية. ما زال Sol Core يقرر أي أوراق تعد ملكية. تمنح Centauri شركة Deep Reach لغة الشرعية الأولى. تفسر Barnard Yards لماذا قد يبدو عمل marauder حرفة لا قرصنة. تستطيع Tau Ceti جعل الأدلة علنية، لكن بعد تأخير المرحلات والمراجعة السياسية. تنقل Luyten الحزم وتقرر أي custody chain ينجو من الرحلة. يقع Aegir حيث تصبح كل ولاية قانونية نافعة، ولا يصل أحد بسرعة كافية لحسم النزاع.
 
 ## Scanner
 
-AR LOC HOLD: Legal map. Same species, different owners of truth.
+خريطة قانونية: نوع واحد، وعدة مالكين للسجل.
 
 ## Terminal
 
-AR LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: يحتفظ Sol Core بالتمويل القانوني القديم والتصديق؛ تحمل Centauri مواثيق الاستعمار الأولى؛ جعلت Barnard Yards عمل salvage أمرا اعتياديا؛ تستطيع Tau Ceti تحويل الأدلة إلى قانون عام؛ تتحكم Luyten في custody الحزم؛ ويبقى Aegir claim شركة حتى يثبت أحد العكس.
 
 ## Audio
 
-AR LOC HOLD: The farther you go, the more the law becomes a receipt.
+كلما ابتعدت الإشارة، صار القانون أقرب إلى دفتر حسابات.
 
 ## Field Note
 
-AR LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+لا يمنع الإنقاذ البعد وحده. يمنعه السؤال عمّن يملك حق تسمية العالقين مواطنين.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/ar_SA. -->

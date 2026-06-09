@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "普通公民对艾吉尔的记忆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# 普通公民对艾吉尔的记忆
 
-CN LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+HECTON-8 的公共记忆故意很薄。人类空间不必无知；只要疲惫、遥远，并习惯接受损失摘要就够了。Aegir 足够有名，能影响价格和政策，却不够鲜活，不能逼出救援。重返这片海洋，会打开公共记忆与私人证据之间的空隙。
 
 ## Scanner
 
-CN LOC HOLD: Public memory: old disaster, distant resource, no faces.
+公共档案残片：人人都听过 Aegir，几乎没人记得一个名字。
 
 ## Terminal
 
-CN LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE：HECTON-8 损失事件，2147。官方原因：风暴级联、撤离失败、自动化腐败、生物隔离、遥测不可靠。当前状态：索赔休眠，保险指数仍在，民用航行不建议进入。
 
 ## Audio
 
-CN LOC HOLD: Most people know the place as a line under insurance rates.
+多数人认识 Aegir，只是因为它压在自己的保险费率下面。
 
 ## Field Note
 
-CN LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+灾难被算进账单之后，就会变成日常。
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/zh_CN. -->

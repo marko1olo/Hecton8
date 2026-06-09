@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistência do dossiê de saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistência do dossiê de saqueador
 
-PT LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+A Persistência do dossiê de saqueador define o contrato de replay de HECTON-8: o jogador herda contexto, não poder. O dossiê permite que tentativas posteriores leiam erros antigos mais rápido, reconheçam armadilhas contratuais mais cedo e entendam quais finais foram incompletos sem transformar memória em vantagem mecânica que quebre a pressão de sobrevivência.
 
 ## Scanner
 
-PT-BR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Carretel de dossiê. Você mantém conhecimento, não superpoderes.
 
 ## Terminal
 
-PT-BR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTÊNCIA DO DOSSIÊ: registros de finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do livro público retidos. Poder do equipamento, verdade do mundo e estado local de pressão reiniciam por seed.
 
 ## Audio
 
-PT-BR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+A próxima tentativa começa com cicatrizes no arquivo, não músculos no traje.
 
 ## Field Note
 
-PT LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+O dossiê lembra provas e avisos; ele não torna a pressão indulgente.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/pt_BR. -->

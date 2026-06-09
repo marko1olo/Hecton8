@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "ヌール・ハルデーンの退避証明"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# ヌール・ハルデーンの退避証明
 
-JP LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+ヌール・ハルデーンの退避証明は、コンプライアンスを致死的な物体として扱うDeep Reachの証拠記事である。ハルデーンは叫ぶ悪役ではない。物理的ルートが失敗する間も、退避を法的に防御可能に保つ法務署名者だ。
 
-## Scanner
+彼女の保留はもっともらしい要件でできている。圧力生物学的隔離、輸送体管理、外部ルート審査、下流港受入、責任連鎖。どの言葉も馬鹿げてはいない。そこが要点だ。システムは自分の枠内で正しくあり、待つことで人を殺すことができる。
 
-JP LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-JP LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-JP LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-JP LOC HOLD: This is the paper signature players should hate.
+この記事は、プレイヤーに古いコロニーの扉やルートボードを読む方法を与える。閉じた退避路は単なる壊れた機械ではない。まだ審査を待っている法的決定かもしれない。HECTON-8のノワールはその遅延から生まれる。証明書が十分長く「まだだ」と言えるなら、誰も「死なせろ」と言う必要はない。
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/ja_JP. -->

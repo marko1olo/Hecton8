@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_galley_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS196_FIRST_GALLEY_PREP_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, cup rail note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter galley |
@@ -33,20 +33,20 @@ Forbidden facts: no drink availability, no food item, no appliance function, no 
 
 ### Scanner
 
-CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof.
+CUP RAIL // Dark steam stain marks warm cup rest. Prep history, not drink proof.
 
 ### Codex
 
 The backstop is darker above the rail, with a faint cup ring below it. Steam or warm condensation settled there often enough to stain the surface.
 
-The shadow records use, not available drink.
+The stain records use, not available drink.
 
 ### PDA Log
 
 Galley note:
 
 - Rail: cup rest.
-- Backstop: steam shadow.
+- Backstop: steam stain.
 - Ring: faint below stain.
 - Use class: warm container rest.
 
@@ -56,7 +56,7 @@ Do not treat the shadow as drink proof.
 
 CUP RAIL
 
-STEAM SHADOW
+STEAM STAIN
 
 PREP HISTORY
 
@@ -71,18 +71,18 @@ PREP HISTORY
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| ru_RU | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| ja_JP | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| zh_CN | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| fr_FR | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| es_ES | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| de_DE | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| pl_PL | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| uk_UA | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| ar_SA | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| id_ID | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| ko_KR | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| he_IL | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| pt_BR | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
-| nl_NL | draft_machine_or_llm | CUP RAIL // Steam shadow marks warm cup rest. Prep history, not drink proof. |
+| en_US | source_authority | CUP RAIL // Dark steam stain marks warm cup rest. Prep history, not drink proof. |
+| ru_RU | draft_machine_or_llm | НАПРАВЛЯЮЩАЯ ДЛЯ ЧАШЕК // Темное паровое пятно отмечает место теплой чашки. История подготовки, не доказательство напитка. |
+| ja_JP | draft_machine_or_llm | カップレール // 黒い蒸気染みが温かいカップの置き跡を示す。準備履歴であり飲み物の証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 杯架轨 // 深色蒸汽污痕标出热杯放置处。是备餐历史，不是饮品证明。 |
+| fr_FR | draft_machine_or_llm | RAIL A TASSES // Tache sombre de vapeur: repos de tasse chaude. Historique de preparation, pas preuve de boisson. |
+| es_ES | draft_machine_or_llm | RIEL DE TAZAS // Mancha oscura de vapor marca apoyo de taza caliente. Historial de preparación, no prueba de bebida. |
+| de_DE | draft_machine_or_llm | BECHERSCHIENE // Dunkler Dampffleck markiert warmen Becherstand. Vorbereitungsverlauf, kein Getränkebeweis. |
+| pl_PL | draft_machine_or_llm | LISTWA NA KUBKI // Ciemna plama pary oznacza miejsce ciepłego kubka. Historia przygotowania, nie dowód napoju. |
+| uk_UA | draft_machine_or_llm | НАПРЯМНА ДЛЯ ЧАШОК // Темна парова пляма позначає місце теплої чашки. Історія підготовки, не доказ напою. |
+| ar_SA | draft_machine_or_llm | سكة أكواب // بقعة بخار داكنة تحدد موضع كوب دافئ. سجل تحضير، لا دليل شراب. |
+| id_ID | draft_machine_or_llm | REL CANGKIR // Noda uap gelap menandai sandaran cangkir hangat. Riwayat persiapan, bukan bukti minuman. |
+| ko_KR | draft_machine_or_llm | 컵 레일 // 어두운 증기 얼룩이 따뜻한 컵 받침 자리를 표시한다. 준비 이력이지 음료 증거가 아니다. |
+| he_IL | draft_machine_or_llm | מסילת כוסות // כתם אדים כהה מסמן מקום לכוס חמה. היסטוריית הכנה, לא הוכחת משקה. |
+| pt_BR | draft_machine_or_llm | TRILHO DE COPOS // Mancha escura de vapor marca apoio de copo quente. Historico de preparo, nao prova de bebida. |
+| nl_NL | draft_machine_or_llm | BEKERGELEIDER // Donkere stoomvlek markeert rustplek van warme beker. Bereidingsgeschiedenis, geen drinkbewijs. |

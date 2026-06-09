@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: drukclaim"
+title: "HECTON-8: De Drukclaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: drukclaim
+# HECTON-8: De Drukclaim
 
-P-63-notities maken het begin bergingswerk onder schuld. Bruikbare feiten zijn mechanisch: verbruikte stijgcapaciteit, overstroomde avionica, beschadigde afdichtingen, scannerretours en officiële taal zonder antwoord op de deuken.
+HECTON-8 begint met een Marauder met schuld, door een claim window van Black Keel op P-63 gedropt, waar elke reparatie, scan en verzegelde deur overleven in bewijs verandert.
 
 ## Scanner
 
-Marauder-inname. Black Keel-contract verbindt P-63, een beschadigde bathydrop, 4.8 tonne-window-lien en een ongevalsrapport dat niet bij het metaal past.
+Publiek startartikel: contract voor mythe, Black Keel-venster, beschadigde bathydrop, heldere P-63-shelf, Deep Reach-weglatingen, eerste Atlas-spoor.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // H8-CLAIM. Aegir-relais open. Werk: drukafdichtingen herstellen, P-63 scannen, vracht bergen, bewijs bewaren, terug voor de ontvangstkromme sluit.
+SITE LONGFORM: speelbare route tonen via drukwerk, bewijs-custody, geen instant rescue, geen family hook en fysieke proof.
 
 ## Audio
 
-Black Keel-relais: "Venster smal. Repareer de valschaal, lees de druksporen en breng bewijs mee met de vracht."
+Op HECTON-8 verkoopt niemand je redding. Ze verkopen een claim en laten het water de rest beslissen.
 
 ## Field Note
 
-Marauder-notitie: licht op P-63 is geen veiligheid. Tel lucht, dicht voor vracht en wantrouw elk dossier zonder antwoord op deuken.
+Als papierwerk kalm klinkt, lees het metaal. De eerste waarheid van HECTON-8 leeft tussen een contractregel en een gebroken seal.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/nl_NL. -->

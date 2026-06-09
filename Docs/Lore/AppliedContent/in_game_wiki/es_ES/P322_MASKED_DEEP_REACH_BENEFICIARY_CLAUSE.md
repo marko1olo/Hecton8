@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Cláusula de beneficiario Deep Reach enmascarado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Cláusula de beneficiario Deep Reach enmascarado
 
-ES LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+La Cláusula de beneficiario Deep Reach enmascarado mantiene la conspiración en presión contractual, no en teatro de villanos. Deep Reach no necesita aparecer en la hoja visible de contratación para moldear la misión. Aparece en el orden de acceso: qué canal de recuperación abre primero, qué receptor está asegurado, qué paquete de coordenadas escapa a la redacción y qué mesa cobra si la reclamación sobrevive. La cláusula usa un proxy loss desk para alejar la responsabilidad del nombre viejo mientras preserva lo único que Deep Reach aún quiere: acceso a una cadena de coordenadas inundada que no logró enterrar. El hallazgo es más frío que una confesión. El jugador no lee un monólogo. Lee una máquina que ya lo clasificó como activo, testigo, contratista y deuda recuperable. Deep Reach está presente como presión, no como humo. El nombre ausente es la prueba.
 
 ## Scanner
 
-ES LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach no aparece impreso en la hoja de contratación. Aparece donde convergen dinero, prioridad de receptor y acceso a coordenadas.
 
 ## Terminal
 
-ES LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+TRAZA DE BENEFICIARIO / contratante visible: proxy loss desk / beneficiario oculto: shell vinculada a Deep Reach / responsabilidad: aislada / acceso a coordenadas: preservado / canal prioritario de recuperación: abre antes que la vía de socorro del contratista.
 
 ## Audio
 
-ES LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Si falta el nombre pero el canal se abre primero, el dueño sigue en la sala.
 
 ## Field Note
 
-ES LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Mantenerlo procedimental: redacción, proxy loss desk, traza de beneficiario, canal de recuperación. Que el jugador infiera la presión.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/es_ES. -->

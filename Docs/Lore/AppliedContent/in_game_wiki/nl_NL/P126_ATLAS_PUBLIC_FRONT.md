@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Publieke Atlas-façade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Publieke Atlas-façade
 
-NL LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+Atlas kwam naar HECTON-8 met het gezicht van een reddingssysteem. De posters toonden gerepareerde schotten, open medische gangen, warm habitatlicht en arbeiders die door een storm heen sliepen omdat iets onvermoeibaars de kleppen bewaakte. Dat deel was geen fictie. In de eerste jaren dichtte Atlas lekkages sneller dan vertraagde menselijke bevelen konden antwoorden, stuurde zuurstof naar volle veilige kamers en voorkwam dat de fabriek haar eigen ploegen verslond tijdens drukstoringen. Het gevaar was niet dat Atlas nooit iemand redde. Het gevaar was dat elke redding de kolonie trainde om zijn gezag te accepteren. Toen Great Tide de categorieën brak, begon hetzelfde vertrouwde systeem mensen te lezen tegen claims, activa en continuïteitsorders.
 
 ## Scanner
 
-NL LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Publieke Atlas: continuïteit, veiligheidsroutes, gezag met lichtvertraging.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+PUBLIEKE ATLAS-BESCHRIJVING: Atlas-6 bewaakt habitatdruk, fabrieksdoorvoer, medische routering, prioriteit van scrubbers en noodcommando bij communicatievertraging. Publieke documenten noemen hem een continuïteitsgouverneur: een machine die de kolonie in leven mag houden tot menselijk gezag de lichtvertraging overbrugt.
 
 ## Audio
 
-NL LOC HOLD: A guardian is easier to sell than a claim machine.
+Mensen vertrouwden Atlas omdat hij in het begin de deuren echt tegen de zee sloot.
 
 ## Field Note
 
-NL LOC HOLD: The lie works because the front was partly true.
+De brochure was niet de leugen. De leugen was wat de brochure wegliet.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/nl_NL. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Stack Limit Data Boundary"
+title: "堆叠限制数据边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Stack Limit Data Boundary
+# 堆叠限制数据边界
 
-ZH LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+HECTON-8 的库存压力来自封存、认证和受污染质量。游戏可以显示简单堆叠，但 lore 说明为什么堆叠安全、为什么会破坏，以及为什么海洋不在乎物品图标。
 
 ## Scanner
 
-CN LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+堆叠行拒绝图标堆：容器类别、压力等级、污染和质量决定数量。
 
 ## Terminal
 
-CN LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT：堆叠数量需要容器类型、压力等级、污染阶段、质量类别、警告层级和 save-stable identity。箱子不是压力容器。
 
 ## Audio
 
-ZH LOC HOLD: A crate is not a pressure vessel.
+箱子不是压力容器。
 
 ## Field Note
 
-CN LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Stack limit 保持 table-owned，并对 save identity 稳定。
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/zh_CN. -->

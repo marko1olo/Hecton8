@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Pytanie finałowe: sprzedaż miejsca zbrodni
 
-Sprzedaż miejsca zbrodni to droga materialnego sukcesu. Gracz przeżywa, może wyczyścić dług, a nawet odejść z pieniędzmi. Ceną jest to, że dowody kolonii stają się dźwignią dla tej samej sieci władzy, która pogrzebała obiekt, przycięła masę ratunkową i traktowała ciała jak pogodę kontraktową.
+Sprzedaż miejsca zbrodni to oś materialnego sukcesu. Operator może przeżyć, zamknąć dług i odejść z pieniędzmi, bo Keelmark/Recovery Compliance uznaje współrzędne, wartość próbki, dowód XO i hash pieczy przewoźnika. Liczy się brakujący załącznik: bez osobnego pakietu świadka nazwiska pracowników, rachunek masy ratunkowej i odpowiedzialność Deep Reach zostają poza płatnym pokwitowaniem.
 
 ## Scanner
 
-Współrzędne, dowód XO i czysty łańcuch pieczy mogą kupić wyjście. Sprzedają też salę mordu tym, którzy ją wycenili.
+OŚ SPRZEDAŻY MIEJSCA ZBRODNI // Keelmark może zamknąć zastaw za współrzędne basenu Atlas, próbkę niebieskiego długu, dowód świadka XO i hash pieczy przewoźnika. Dowody pracowników nie trafiają na pokwitowanie bez osobnego poświadczenia.
 
 ## Terminal
 
-OŚ SPRZEDAŻY FINAŁOWEJ: współrzędne basenu Atlas, użyteczna próbka niebieskiego długu, dowód świadka XO i hash pieczy carriera mogą zdjąć zastaw operatora. Bez osobnego poświadczenia Deep Reach dostaje czystszy powrót na HECTON-8 niż martwi pracownicy kiedykolwiek mieli do ratunku.
+OŚ FINAŁOWA / SPRZEDAŻ MIEJSCA ZBRODNI
+Odbiorca: Keelmark/Recovery Compliance.
+Przyjęto: współrzędne basenu Atlas, użyteczną próbkę niebieskiego długu, dowód świadka XO, hash pieczy przewoźnika.
+Skutek dla zastawu: dług operatora zamknięty lub obniżony według tabeli kontraktu.
+Domyślnie pominięte: rejestr nazwisk pracowników, audyt masy ratunkowej, publiczny pakiet świadka.
+Przewaga Deep Reach: geometria powrotu i wycena próbki docierają bez wrogiego łańcucha pieczy.
+Znana strata: mapa grobu może stać się własnością, zanim stanie się zeznaniem.
 
 ## Audio
 
-Dług można spłacić mapą grobu. Rejestr nazwie to pracą.
+Możesz sprzedać mapę grobu. Pokwitowanie nadal nazwie to pracą.
 
 ## Field Note
 
-To nie żartobliwa porażka. To opłacone zakończenie z pokwitowaniem, zdjętym zastawem i gorszą przyszłością dla tych, którzy zostali na dole.
+To płatne wyjście z pokwitowaniem. Niebezpieczna jest pusta linia: brak załączonego rejestru nazwisk pracowników.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pl_PL. -->

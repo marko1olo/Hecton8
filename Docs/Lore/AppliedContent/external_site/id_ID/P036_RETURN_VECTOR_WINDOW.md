@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Jendela Vektor Pulang"
+title: "Jendela Vektor Balik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Jendela Vektor Pulang
+# Jendela Vektor Balik
 
-Menjelaskan mengapa HECTON-8 tidak bisa ditinggalkan begitu saja: carrier ada, tetapi jauh, otomatis, dan terikat waktu Aegir.
+Jendela Vektor Balik menjelaskan ekstraksi HECTON-8 sebagai prosedur orbital, bukan penyelamatan instan. Black Keel dapat menerima sinyal lewat jendela Aegir yang sempit, tetapi jemputan bergantung pada celah badai, jeda partikel bermuatan, integritas relai, dan perangkat naik yang dibangun ulang. Packet ini menjembatani kontak pertama dengan carrier dan catatan keluar parsial berikutnya: jawaban membuktikan rute bisa ada, bukan bahwa rute siap.
 
 ## Scanner
 
-Geometri orbit bukan tombol penyelamat. Black Keel hanya mendengar lewat jendela Aegir yang sempit.
+BACAAN VEKTOR BALIK // Ping Black Keel diterima lewat celah badai Aegir. Jarak carrier: lintasan transfer tinggi. Jalur relai kotor di bawah muatan awan. Pendakian kapsul ditolak sampai inti pandu, pelindung panas, dan handshake balik semua hijau.
 
 ## Terminal
 
-Prediktor comm: carrier tinggi di atas Aegir. Kapsul naik butuh celah badai, jeda partikel, dan garis relay bersih.
+PREDIKTOR JENDELA BALIK
+Carrier: BLACK KEEL / lintasan transfer otomatis
+Jendela: 17 mnt 40 dtk setelah jeda partikel bermuatan berikutnya
+Cuaca: celah squall permukaan wajib
+Relai: jalur langit bising / tiang shelter bisa mengulang sekali
+Perangkat naik: inti pandu hilang, pelindung panas belum tersertifikasi, cadangan baterai rendah
+Tindakan: bangun ulang rantai naik sebelum menganggap ping carrier sebagai jemputan
 
 ## Audio
 
-Black Keel cukup hidup untuk menjawab. Tidak cukup dekat untuk menyelamatkan.
+Black Keel mendengar ping itu. Itu memberi kita jendela, bukan tangga.
 
 ## Field Note
 
-Balasan adalah waktu, bukan belas kasihan.
+Jawaban bukan penyelamatan. Itu jam yang bisa kau lewatkan.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/id_ID. -->

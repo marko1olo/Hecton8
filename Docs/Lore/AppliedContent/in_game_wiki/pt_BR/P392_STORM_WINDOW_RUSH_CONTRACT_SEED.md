@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Storm Window Rush Contract Seed"
+title: "Semente de contrato de corrida por janela de tempestade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Storm Window Rush Contract Seed
+# Semente de contrato de corrida por janela de tempestade
 
-PT LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Corrida por Janela de Tempestade é uma família de contratos onde clima e órbita viram os primeiros sistemas de pressão. A rota não adiciona poder herdado; ela encurta tempo seguro de trabalho, estreita geometria de recuperação e pune reparos relaxados mais cedo.
 
 ## Scanner
 
-PT LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Semente de contrato: janela de corrida. Pagamento maior ligado a cobertura de tempestade fechando, horário de shutter orbital e menor folga de reparo.
 
 ## Terminal
 
-PT LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: janela de tempestade comprimida, shutter de relé orbital hostil, teto de pagamento elevado, recall bathydrop antecipado, tolerância de reparo reduzida.
 
 ## Audio
 
-PT LOC HOLD: This contract pays because it hates waiting.
+Este contrato paga porque a janela está fechando.
 
 ## Field Note
 
-PT LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Nota de marauder: pagamento rush parece maior porque o contrato cobra cada minuto duas vezes.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/pt_BR. -->

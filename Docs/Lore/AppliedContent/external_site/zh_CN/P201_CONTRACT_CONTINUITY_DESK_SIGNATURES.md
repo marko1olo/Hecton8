@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Contract Continuity Desk Signatures"
+title: "合同连续性办公桌签名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Contract Continuity Desk Signatures
+# 合同连续性办公桌签名
 
-CN LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+合同连续性办公桌签名揭开了 HECTON-8 开场合同下方的纸面层。文章给合同系统赋予名字、印章和功能，让玩家看见一次打捞任务如何变成保管交易。Edda Malk 的办公桌不需要知道整场殖民地罪行，也能让当下变得危险。它只需要按正确顺序合并留置权、氧气债务和回收条款。等操作员签下名字时，船壳外施压的已经不只有海洋；合同也已经开始收紧。
 
 ## Scanner
 
-ZH LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+开场合同陷阱由下层签名搭成：留置权合并、氧气附录、黑名单风险和载荷保管冻结。
 
 ## Terminal
 
-ZH LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED：Edda Malk，Contract Continuity Desk。将 Aegir Reclamation Pool 留置条款与 Black Keel 回收条款合并。附加氧气信用附录、黑名单风险通知和载荷保管冻结。若操作员接受，无需升级。
 
 ## Audio
 
-ZH LOC HOLD: Nobody says trap. They say continuity.
+如果之后每一条款都会锁上，签名就能变成压力门。
 
 ## Field Note
 
-CN LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+没人会给“陷阱”盖章。他们盖的是“连续性”。
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/zh_CN. -->

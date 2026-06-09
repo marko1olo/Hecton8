@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_repair_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS167_FIRST_REPAIR_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, clamp alignment note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first repair reading |
@@ -33,7 +33,7 @@ Forbidden facts: no torque mechanic claim, no complete seal approval, no automat
 
 ### Scanner
 
-HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns.
+HOSE CLAMP // Torque paint is split. Re-seat the band before tightening.
 
 ### Codex
 
@@ -71,18 +71,18 @@ RESEAT BEFORE TIGHTENING
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| ar_SA | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| de_DE | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| es_ES | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| fr_FR | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| he_IL | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| id_ID | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| ja_JP | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| ko_KR | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| nl_NL | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| pl_PL | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| pt_BR | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| ru_RU | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| uk_UA | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
-| zh_CN | draft_machine_or_llm | HOSE CLAMP // Torque tick split. Re-seat before tightening; paint mark no longer aligns. |
+| en_US | source_authority | HOSE CLAMP // Torque paint is split. Re-seat the band before tightening. |
+| ar_SA | draft_machine_or_llm | مشبك الخرطوم // علامة العزم منفصلة. أعد تثبيت الطوق قبل الشد. |
+| de_DE | draft_machine_or_llm | SCHLAUCHSCHELLE // Drehmomentmarke ist versetzt. Band vor dem Festziehen neu setzen. |
+| es_ES | draft_machine_or_llm | ABRAZADERA DE MANGUERA // La marca de par está partida. Recoloca la banda antes de apretar. |
+| fr_FR | draft_machine_or_llm | COLLIER DE TUYAU // Le repère de couple est décalé. Replacer la bande avant de serrer. |
+| he_IL | draft_machine_or_llm | מהדק צינור // סימון המומנט מפוצל. יש להושיב מחדש את הרצועה לפני הידוק. |
+| id_ID | draft_machine_or_llm | KLEM SELANG // Tanda torsi terbelah. Pasang ulang pita sebelum dikencangkan. |
+| ja_JP | draft_machine_or_llm | ホースクランプ // トルク塗装線が割れている。締める前にバンドを戻す。 |
+| ko_KR | draft_machine_or_llm | 호스 클램프 // 토크 표시가 갈라졌다. 조이기 전에 밴드를 다시 앉혀라. |
+| nl_NL | draft_machine_or_llm | SLANGKLEM // Momentmarkering is gesplitst. Zet de band opnieuw voor het aandraaien. |
+| pl_PL | draft_machine_or_llm | OBEJMA WĘŻA // Znak momentu jest rozjechany. Osadź taśmę ponownie przed dokręceniem. |
+| pt_BR | draft_machine_or_llm | ABRAÇADEIRA DE MANGUEIRA // A marca de torque se abriu. Reassente a faixa antes de apertar. |
+| ru_RU | draft_machine_or_llm | ХОМУТ ШЛАНГА // Метка затяжки разошлась. Перед затяжкой заново посади ленту. |
+| uk_UA | draft_machine_or_llm | ХОМУТ ШЛАНГА // Мітка затягування розійшлася. Перед затягуванням заново посади стрічку. |
+| zh_CN | draft_machine_or_llm | 软管卡箍 // 扭矩漆线已错开。拧紧前先重新安放箍带。 |

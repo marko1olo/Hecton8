@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: No Clean Ending Dossier Note"
+title: "Nota de Dossier Sem Final Limpo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: No Clean Ending Dossier Note
+# Nota de Dossier Sem Final Limpo
 
-PT LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost.
+Os finais de HECTON-8 deixam cicatrizes por design: ecologia protegida, corporação negada, registro de testemunha liberado, dívida não paga e um jogador que mudou o oceano sem ganhar o direito de encerrá-lo.
 
 ## Scanner
 
-PT LOC HOLD: Dossier note: closure denied; consequence retained.
+Nota de dossier: fechamento negado; consequência retida.
 
 ## Terminal
 
-PT LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: resultado armazenado. Fechamento limpo indisponível no estado atual das provas. Dívida, ecologia, responsabilidade e custódia da testemunha permanecem registros ativos.
 
 ## Audio
 
-PT LOC HOLD: You saved something. That is not the same as clearing it.
+Você salvou algo. Não é o mesmo que limpar.
 
 ## Field Note
 
-PT LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Dossier pós-final mantém a ponte aberta: resultado registrado, dívida e provas não resolvidas, nenhuma vitória perfeita concedida.
 
 <!-- External Site; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/pt_BR. -->

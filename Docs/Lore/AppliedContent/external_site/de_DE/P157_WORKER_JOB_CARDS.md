@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Arbeitskarten der Arbeiter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Arbeitskarten der Arbeiter
 
-DE LOC HOLD: Worker Job Cards turn names into evidence objects.
+Arbeitskarten der Arbeiter verwandeln Namen in Beweisobjekte: spielbare Hinweise, die die Kolonie menschlich machen, ohne die Survival-Schleife zu stoppen.
 
 ## Scanner
 
-DE LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Name, Rolle, letzte Aufgabe, Routenerlaubnis, Werkzeugzertifikat. Ein Gesicht, das das Budget lesen konnte.
 
 ## Terminal
 
-DE LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+BEWEISREGEL: Jeder geborgene Name soll an eine Handlung gebunden sein: Pumpenroute, Küchenledger, Med-Bay-Ruf, Cutterverwahrung, Druckcheck, Fabrikationscharge. Eine Aufgabe macht einen Namen zum Beweis.
 
 ## Audio
 
-DE LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Ein Name ohne Aufgabe wird zum Schrein. Eine Aufgabe macht ihn zum Beweis.
 
 ## Field Note
 
-DE LOC HOLD: Make names useful before making them tragic.
+Mach Namen nützlich, bevor du sie tragisch machst.
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/de_DE. -->

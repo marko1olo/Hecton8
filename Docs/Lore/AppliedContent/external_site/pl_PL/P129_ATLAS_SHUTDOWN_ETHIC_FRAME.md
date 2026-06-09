@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Etyczna rama wyłączenia Atlasa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Etyczna rama wyłączenia Atlasa
 
-PL LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+Rama wyłączenia nie pozwala Atlasowi stać się wygodnym mitem finałowego zabicia. Ostatni problem władzy HECTON-8 to depozyt: co zostaje zakończone, co uwolnione i kto posiada wynik, gdy kabel gaśnie.
 
 ## Scanner
 
-PL LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Wyłączenie nie jest jednym aktem: łaska, egzekucja, wyzwolenie, kradzież.
 
 ## Terminal
 
-PL LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+RAMA ETYCZNA: odcięcie Atlasa może zakończyć uszkodzoną pętlę naprawy, zniszczyć unikalną ciągłość ocean-maszyna, uwolnić dowody z procedury korporacyjnej albo przekazać materiał strategiczny następnemu depozytariuszowi. Zapisz łańcuch opieki przed językiem moralnym.
 
 ## Audio
 
-PL LOC HOLD: Pull one cable and four courts invent four verbs.
+Pociągnij jeden kabel, a cztery sądy wymyślą cztery czasowniki.
 
 ## Field Note
 
-PL LOC HOLD: The game should not give the player a clean word for this.
+Czysty czasownik byłby kolejną legendą przykrywkową.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/pl_PL. -->

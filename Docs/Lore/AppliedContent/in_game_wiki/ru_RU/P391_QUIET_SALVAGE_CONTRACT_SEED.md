@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Quiet Salvage Contract Seed"
+title: "Семя тихого salvage-контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Quiet Salvage Contract Seed
+# Семя тихого salvage-контракта
 
-RU LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Тихий salvage - семейство контрактов с меньшим числом ранних тревог и более жестким языком собственности. Маршрут дает оператору время чинить, дышать и читать, но метки образцов, журналы pinger и шкафы доказательств привязаны к receiver до первой крупной выплаты.
 
 ## Scanner
 
-RU LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Семя контракта: тихий salvage. Низкая штормовая экспозиция, чистая первая выплата и ограниченная custody на все, что доказывает историю маршрута.
 
 ## Terminal
 
-RU LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: штормовое окно спокойно, слот bathydrop предварительно очищен, ранний контакт с фауной снижен, custody-блокировка усилена, пункт receiver-first audit активен.
 
 ## Audio
 
-RU LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Тихая вода значит, что кто-то уже перенес риск в бумаги.
 
 ## Field Note
 
-RU LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Заметка мародера: спокойная вода позволяет расслышать ложь контрактной доски с лучшей дикцией.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ru_RU. -->

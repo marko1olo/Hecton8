@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "锚点工人姓名集 A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# 锚点工人姓名集 A
 
-CN LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+锚点工人姓名集 A 定义 HECTON-8 早期反复出现的殖民地姓名。这八名工人不是设定琐事，而是记忆把手。玩家首先通过物件和劳动遇见他们，然后逐渐看到同样的名字穿过维护记录、许可、损坏报告和音频碎片。Set A 不需要停下游戏讲解，也能让最初几小时带有人味。
 
 ## Scanner
 
-CN LOC HOLD: Anchor names should reappear through work, not personal exposition.
+早期姓名必须通过工作回来，而不是通过演讲回来。浅层路线用重复教会记忆。
 
 ## Terminal
 
-CN LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: 浅层和工业陆架的重复。每个名字应绑定一个工具、一个航线许可、一个损坏工作物件，以及一个后来的矛盾。这些名字是玩家第一次证明殖民地在成为可打捞物之前曾是工作场所。
 
 ## Audio
 
-CN LOC HOLD: Do not mourn the name until the tool tells you why.
+在工具告诉你原因之前，不要哀悼那个名字。
 
 ## Field Note
 
-CN LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Set A 锚点: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/zh_CN. -->

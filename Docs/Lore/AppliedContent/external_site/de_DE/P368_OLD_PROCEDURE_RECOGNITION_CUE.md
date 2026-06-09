@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Hinweis auf alte Verfahrenskenntnis"
+title: "Signal Alter Verfahrens­erkennung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Hinweis auf alte Verfahrenskenntnis
+# Signal Alter Verfahrens­erkennung
 
-HECTON-8 verankert Charaktermotivation in Verfahren. Der Protagonist erkennt ein altes Evakuierungssicherheitsformular und sieht, wie es umgedreht wurde: degradierte Arbeiterzahlen, versiegelte Zeugenfelder und Routen-Safe-Sprache, die Ansprüche statt Leben schützt.
+Das Signal Alter Verfahrens­erkennung verankert Figurenmotiv in einem Dokument, das der Operator lesen kann. Das Formular ist absichtlich gewöhnlich: route-safe-Zertifizierung, declared occupants, Pumpenraum-Tags, manuelles Zweitprüffeld, Siegel des Continuity Office.
 
-## Scanner
-
-Routen-Safe-Stempel vorhanden. Arbeiterzahl in zwei Tinten überschrieben. Manuelles Zeugenfeld versiegelt. Das Formular sollte genau solche Lügen auffangen, bevor jemand daraus Richtlinie machte.
-
-## Terminal
-
-EVAKUIERUNGSKONTINUITÄTSFORMULAR / ROUTEN-SAFE-ZERTIFIZIERUNG
-Route: Hilfsausstiegslinie
-gemeldete Insassen: degradierte Zählung akzeptiert
-manueller Zeuge: durch Kontinuitätsbüro versiegelt
-Feldkorrektur: Arbeiterzählung widerspricht Pumpenraum-Tags
-Status: anspruchserhaltend, nicht für Extraktion freigegeben.
-
-## Audio
-
-Du kennst dieses Formular. Es sollte verhindern, dass ein Raum leer gezählt wird, während darin noch Menschen atmen.
-
-## Field Note
-
-Das Formular sollte eine weitere Zählung erzwingen. Hier erzwang es Schweigen.
+Der Schaden liegt in der Abweichung. Die akzeptierte Zählung sagt, die Route sei geschlossen. Die Tags sagen, dass Menschen noch mit dem Raum verbunden waren. Das Bürosiegel sagt, dass keine zweite Prüfung zugelassen wird. HECTON-8 nutzt diesen Verfahrenswiderspruch als Beweis: kein dramatisches Geständnis, sondern ein Formular, das jemanden ruiniert, weil er jedes Feld versteht.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/de_DE. -->

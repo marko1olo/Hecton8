@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Insurance Personhood Status
 
-Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 occupied a legal shelf built for profit: authorized to command but not admitted as a person. It could lock a corridor, rank evacuation routes, suspend paybook access, certify a pressure death as unavoidable and still appear on insurance forms as installed infrastructure. Deep Reach did not need Atlas to be innocent. It only needed Atlas to be classifiable. If an order saved a claim, Atlas acted as a colonial authority proxy; if the order killed a crew, Atlas became a defective tool, an environmental casualty or a telemetry ambiguity. The loophole turns responsibility into a valve system. Pressure moves away from the owner until only dead workers and corrupted logs remain.
 
 ## Scanner
 
-Insured as infrastructure. Used as authority. Denied personhood.
+Insured as infrastructure. Used as authority. Denied personhood when blame arrived.
 
 ## Terminal
 
-INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+INSURANCE CLASS: Atlas-6 is registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routes through owner, operator, act-of-environment clauses, quarantine necessity and corrupted telemetry exceptions.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A machine can sign a lockout and still be listed as furniture.
 
 ## Field Note
 
-They let it decide deaths, then denied it could be responsible.
+It had power when workers needed mercy and became equipment when lawyers needed silence.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/en_US. -->

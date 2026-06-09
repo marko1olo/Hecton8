@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Ending Payout Data Boundary"
+title: "엔딩 지급 데이터 경계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Ending Payout Data Boundary
+# 엔딩 지급 데이터 경계
 
-KO LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+이 경계는 엔딩을 승리 점수가 아니라 거래 기록으로 유지한다. 지급도 중요하지만 보관, 공개 증거, 격리, 빚, 플레이어가 떠난 뒤 수신자의 행동권도 중요하다.
 
 ## Scanner
 
-KO LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+엔딩 행은 수신자, 보관, 증거 상태, 지급, 미해결 결과를 묶는다.
 
 ## Terminal
 
-KO LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: 행은 payload 경로, 수신자, 증거 상태, 물질 지급, 법적 결과, 격리 지연, 미해결 비용을 요구한다. 크레딧은 범죄 현장을 닫지 않는다.
 
 ## Audio
 
-KO LOC HOLD: Credits do not close a crime scene.
+크레딧은 범죄 현장을 닫지 않는다.
 
 ## Field Note
 
-KO LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+credit value, quarantine delay, dossier flags는 수신자와 증거 상태가 명확해진 뒤에만 기록된다.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ko_KR. -->

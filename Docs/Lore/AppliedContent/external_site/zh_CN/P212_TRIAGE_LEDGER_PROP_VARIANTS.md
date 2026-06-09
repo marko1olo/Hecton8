@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "分诊账本道具变体"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# 分诊账本道具变体
 
-CN LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+分诊账本道具变体把医疗证据定义为流程证据。HECTON-8 使用账本连接伤害、压力故障、航线拒绝、设备状态和见证缺口。恐怖因此保持系统性：玩家读到的不只是人受伤了，而是殖民地如何把伤害转换成路线决策。
 
 ## Scanner
 
-CN LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+医疗证据应暴露拖延和路线，而不是用痛苦装饰房间。
 
 ## Terminal
 
-CN LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: 每条账本记录都必须把伤害连接到压力、航线拒绝、设备状态、认证拖延或缺失的见证链。单独的痛苦还不够。道具必须显示谁能移动，谁被扣住，以及哪个系统把拖延伪装成流程。
 
 ## Audio
 
-CN LOC HOLD: Pain is not proof until the route bears the mark.
+在航线带上标记之前，痛苦不是证据。
 
 ## Field Note
 
-CN LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+变体：挤压状态速记、氧债标记、航线扣押划线、Atlas 稳定化备注、witness hash 缺口。
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/zh_CN. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Blackout Window Signal Decay"
+title: "Zanik sygnału w oknie blackoutu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Blackout Window Signal Decay
+# Zanik sygnału w oknie blackoutu
 
-PL LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+Cisza HECTON-8 to po części astronomia, po części uszkodzona infrastruktura, po części korporacyjna automatyka. Cień Aegir, zatopione przekaźniki, takt nośnika i kolejki prawne zmieniają komunikację w pogodę: coś, wokół czego gracz planuje, czego się boi, co naprawia i czasem wykorzystuje.
 
 ## Scanner
 
-PL LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Okno sygnału się zapada: mokry kręgosłup przekaźników, cień Aegir, nieaktualna geometria nośnika, kolejka prawna wciąż ponawia próby.
 
 ## Terminal
 
-PL LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: utrata uplinku powyżej tolerancji. Kanał głosowy zawieszony. Fragmenty tekstu mogą nadejść przez naprawione akustyczne węzły kręgosłupa. Geometria orbitalnego nośnika odświeży się po ustąpieniu magnetycznego cienia Aegir. Automatyczne liczniki zastawu i dozoru biegną dalej bez kontaktu operatora.
 
 ## Audio
 
-PL LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Najpierw milknie niebo. Zawiadomienia o długu nadal pukają.
 
 ## Field Note
 
-PL LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Powiązać okna blackoutu z tempem trasy: mniej głosu, więcej czytania fragmentów, większa wartość naprawionych przekaźników i lokalnych boi.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/pl_PL. -->

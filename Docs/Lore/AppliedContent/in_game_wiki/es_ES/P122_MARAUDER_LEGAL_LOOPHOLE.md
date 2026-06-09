@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Resquicio legal marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Resquicio legal marauder
 
-ES LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Los merodeadores no son una tribu con una sola bandera. Son contratistas, tripulaciones endeudadas, buzos de pecios y mecánicos desesperados que trabajan dentro de un resquicio creado por el retraso. Una colonia muerta aún tiene dueño, pero el dueño no repara cascos, no bombea salmuera ni saca grabadoras de cubiertas aplastadas. Deep Reach necesita equipos de los que pueda renegar. Los dominios necesitan pruebas que no tengan que recoger. Las tripulaciones necesitan suficiente papel para sobrevivir a la siguiente patrulla.
 
 ## Scanner
 
-ES LOC HOLD: License valid in one lane, criminal in the next.
+Licencia válida en un carril, acusación en el siguiente.
 
 ## Terminal
 
-ES LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor bajo custody del Aegir Reclamation Pool; intruso tolerado bajo lenguaje de activos de Deep Reach; raider procesable en resúmenes limpios de Sol; emergency responder solo si el registro recuperado no avergüenza a nadie importante.
 
 ## Audio
 
-ES LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+El mismo cortador puede ser herramienta, delito o el único dispositivo de rescate que queda.
 
 ## Field Note
 
-ES LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder solo es un cargo mientras el tribunal correcto pueda sacar provecho.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/es_ES. -->

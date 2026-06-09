@@ -8,6 +8,7 @@
 using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Power;
 using Hecton8.World;
@@ -197,6 +198,7 @@ namespace Hecton8.Gameplay
         private bool _combatDamageSyncDirty;
         private IFluidDecalPresentationSink _fluidDecals;
         private IAtmosphereReadModel _atmosphereRuntime;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private ITerrainProvider _terrainProvider;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -662,6 +664,7 @@ namespace Hecton8.Gameplay
         {
             _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _terrainProvider = GlobalRegistry.Terrain;
         }
 
@@ -669,6 +672,7 @@ namespace Hecton8.Gameplay
         {
             _fluidDecals = null;
             _atmosphereRuntime = null;
+            _oceanKinematicsService = null;
             _terrainProvider = null;
         }
 
@@ -712,6 +716,9 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereRuntime = currentService as IAtmosphereReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _terrainProvider = currentService as ITerrainProvider;
@@ -1006,13 +1013,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveDepthMeters()
         {
-            float seaLevelY = DefaultSeaLevelY;
-            ITerrainProvider terrainProvider = _terrainProvider;
-            if (terrainProvider != null && TryResolveSeaLevelY(terrainProvider.WaterSurfaceLevel, out float terrainSeaLevelY))
-                seaLevelY = terrainSeaLevelY;
-            else if (_atmosphereRuntime != null && TryResolveSeaLevelY(_atmosphereRuntime.SeaLevelY, out float atmosphereSeaLevelY))
-                seaLevelY = atmosphereSeaLevelY;
-
+            float seaLevelY = ResolveWaterSurfaceLevelY();
             Transform hostTransform = _cachedTransform != null ? _cachedTransform : transform;
             if (!TryResolveAupFromRuntimeOrigin(hostTransform.position, out AbsoluteUniversePosition moduleAup))
                 return 0f;
@@ -1021,11 +1022,56 @@ namespace Hecton8.Gameplay
             return Mathf.Max(0f, (float)(seaLevelY - absoluteModuleY));
         }
 
+        private float ResolveWaterSurfaceLevelY()
+        {
+            if (TryResolveOceanWaterSurfaceLevel(out float oceanSeaLevelY))
+                return oceanSeaLevelY;
+
+            ITerrainProvider terrainProvider = _terrainProvider;
+            if (terrainProvider != null && TryResolveSeaLevelY(terrainProvider.WaterSurfaceLevel, out float terrainSeaLevelY))
+                return terrainSeaLevelY;
+
+            if (_atmosphereRuntime != null && TryResolveSeaLevelY(_atmosphereRuntime.SeaLevelY, out float atmosphereSeaLevelY))
+                return atmosphereSeaLevelY;
+
+            return DefaultSeaLevelY;
+        }
+
+        private bool TryResolveOceanWaterSurfaceLevel(out float seaLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY))
+            {
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
+        private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
         private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
         {
             if (math.isfinite(candidateSeaLevelY) &&
                 math.abs(candidateSeaLevelY) > 0.0001f &&
-                math.abs(candidateSeaLevelY) <= 1000f)
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 seaLevelY = candidateSeaLevelY;
                 return true;

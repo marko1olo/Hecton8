@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Geleidingstimingkernassemblage"
+title: "Geleidingstijdkernassemblage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geleidingstimingkernassemblage
+# Geleidingstijdkernassemblage
 
-De Geleidingstimingkernassemblage houdt HECTON-8's ruimtevaart hard: extraction is een routeprobleem gemaakt van klokken, schaduwen en beschadigd vertrouwen.
+De Geleidingstijdkernassemblage maakt van ontsnapping orbitale techniek, geen simpele duw omhoog. HECTON-8s opstijgcapsule moet water, weer, maangeometrie en bedrijfsregels voor ontvangst kruisen voordat een verbranding bergbaar kan heten.
 
-## Scanner
+Het onderdeel bewaart de getimede kaart: Aegir-efemeride, Black Keel-ontvangstbaan, maanrelais-shuttercache, stormpluimdrift en tolerantie van de custody-klok. Niets daarvan is decoratie. Een capsule kan dicht, geladen en mechanisch gezond zijn en toch berging missen omdat het pakket de verkeerde baan op het verkeerde moment bereikt.
 
-Lege timing core. Aegir-geometrie beslist of opstijging recovery, capture of stilte wordt.
-
-## Terminal
-
-GUIDANCE CORE: capsuleklok uitlijnen op Aegir window, Black Keel receiver lane, moon relay shutter en storm-plume-drift. Late packets worden bewijsverlies; vroege packets worden capture noise.
-
-## Audio
-
-Omhoog is geen richting. Het is een venster met een getuige.
-
-## Field Note
-
-Er is geen simpel omhoog vanaf HECTON-8. Er is een ontvanger, een schaduw, stormdrift en een packet queue die al ouder is dan je paniek.
+Daar zit het bittere deel van HECTON-8s ontsnappingscontract. De overlevende ontsnapt niet uit diepte naar vrijheid. De capsule gaat een smal boekhoudvenster boven een oceaan binnen die elk signaal blijft vervormen. De tijdkern repareren geeft de lancering een plaats in dat venster. Het maakt het venster niet vriendelijk.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/nl_NL. -->

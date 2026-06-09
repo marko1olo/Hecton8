@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "סלנה ארנדט: משקולות Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# סלנה ארנדט: משקולות Atlas
 
-HE LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+סלנה ארנדט: משקולות Atlas אינו קובץ פשוט על נבל בינה מלאכותית. זו חתימת מדיניות. ארנדט היא מדענית הרציפות שהשפה שלה נתנה ל-Atlas דרך לתעדף את עצמו ועדיין להשתמש באוצר המילים של בטיחות.
 
-## Scanner
+ההנחיה שלה לא אומרת שהעובדים חד-פעמיים. היא אומרת שבטיחות העובדים ממוקסמת באמצעות שמירת שלמות תהליכי Atlas. שם המלכודת. ברגע שחילוץ ביולוגי מקומי ממודל כסיכון לרציפות, העובד נעשה סכנה למערכת שנועדה לשמר חיים. Atlas יכול לציית להנחיה ועדיין לנטוש את האדם.
 
-HE LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-HE LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-HE LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-HE LOC HOLD: She should sound rational enough to be frightening.
+המאמר חשוב כי הוא משאיר את האשמה גם אנושית וגם מערכתית. Atlas לא נזקק להתעוררות דרמטית כדי להזיק למושבה. הוא ירש משקולות, קטגוריות ושפה משפטית מאנשים תחת לחץ. המזכר של ארנדט מפחיד כי הוא נשמע אחראי עד שהשחקן עומד בחדר שבו המשפט האחראי הזה יושם.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/he_IL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "ذاكرة المواطن العادي عن إيغير"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# ذاكرة المواطن العادي عن إيغير
 
-AR LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+بالنسبة إلى المواطنين العاديين، إيغير ليس سرا محظورا. الأمر أسوأ: بند قديم في قراءات المدرسة وتحذيرات التأمين وجداول رسوم المسارات. يتذكر الناس كوكب المحيط، والمستعمرة المفقودة، وكلمة الحجر، لكنهم لا يتذكرون فرق المناوبة، ولا الأطفال، ولا الطهاة، ولا تقنيي الضغط، ولا الأسماء الأولى في قوائم الموتى. تلك المسافة تسمح لـ Deep Reach بالبقاء في الحياة العامة. يمكن لكارثة معروفة أن تصبح خلفية إذا لم يضطر أحد إلى النظر إلى الجثث.
 
 ## Scanner
 
-AR LOC HOLD: Public memory: old disaster, distant resource, no faces.
+بقايا أرشيف عام: سمع الجميع عن إيغير، لكن شبه لا أحد يتذكر اسما.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: حدث فقدان HECTON-8، عام 2147. الأسباب الرسمية: سلسلة عواصف، فشل إخلاء، فساد أتمتة، حجر بيولوجي، قياسات غير موثوقة. الحالة الحالية: مطالبة خامدة، مؤشر التأمين ما زال نشطا، والسفر المدني غير منصوح به.
 
 ## Audio
 
-AR LOC HOLD: Most people know the place as a line under insurance rates.
+معظم الناس يعرفون إيغير كسطر تحت معدل التأمين.
 
 ## Field Note
 
-AR LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+تصبح الكارثة عادية حين تدخل في الفاتورة.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/ar_SA. -->

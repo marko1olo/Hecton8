@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "最終選択ペイロード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# 最終選択ペイロード
 
-JP LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+最終選択ペイロードはHECTON-8のエンディング哲学を定義する。月から何が出るか、誰が受け取るか、それがDeep Reach、公的法、Atlas、海洋機械生態に何を可能にするかをプレイヤーが選ぶ。
 
 ## Scanner
 
-JP LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+FINAL PAYLOAD // 座標、試料、名前、Atlasアクセス、検疫命令、公的証明。HECTON-8を離れるものが、その後に動ける者を決める。
 
 ## Terminal
 
-JP LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOAD MATRIX: 座標とXO証拠を売る。Atlas連続性を断つ。海洋機械生態を保存または検疫する。証拠を公的台帳へ公開する。ペイロードを握り、Deep Reachを盲目のままにする。
 
 ## Audio
 
-JP LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+呼吸を覚えた犯罪現場に、清潔な所有権はない。
 
 ## Field Note
 
-JP LOC HOLD: The best ending should be defensible, not clean.
+最良の結末は清潔ではなく、弁護可能であるべきだ。
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/ja_JP. -->

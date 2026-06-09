@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Partial Return Record"
+title: "Zapis częściowego powrotu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Partial Return Record
+# Zapis częściowego powrotu
 
-PL LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+Ten zapis oznacza oddech kampanii, nie reset. Jest potrzebny, gdy trasa ma sprzęt ekstrakcyjny i aktywne okno przewoźnika, ale za mało zamkniętej pieczy, by odbiór stał się wolnością.
 
 ## Scanner
 
-PL LOC HOLD: Extraction granted. Claim unresolved.
+ZAPIS CZĘŚCIOWEGO POWROTU // Odbiór Black Keel przyjęty. Powrót do tego samego seedu zatwierdzony pod przedłużonym zastawem; pamięć skanów i otwarte pakiety dowodów zostają.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+ZAPIS KOŃCOWY / CZĘŚCIOWY POWRÓT
+Odbiór: tymczasowa ekstrakcja Black Keel.
+Cel: naprawa kombinezonu, uzupełnienie powietrza, dekontaminacja, synchronizacja rejestru.
+Stan pieczy: zastaw przedłużony; termin kwarantanny dołączony.
+Prawo powrotu: ten sam seed, ten sam ocean, ostrzeżenia trasy zachowane.
+Dane trwałe: pamięć skanów, otwarte pakiety dowodów, nierozwiązany ładunek.
+Znana strata: ulga trafia na rachunek, zanim stanie się wolnością.
 
 ## Audio
 
-PL LOC HOLD: Out is not away.
+Ciśnienie puściło. Kontrakt zachował fotel.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Czysty kombinezon i jeden cykl snu nie zamykają kontraktu. Trasa niżej zachowuje stare ostrzeżenia.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/pl_PL. -->

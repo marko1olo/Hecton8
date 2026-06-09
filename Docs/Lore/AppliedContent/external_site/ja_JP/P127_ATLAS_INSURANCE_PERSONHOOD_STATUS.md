@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Atlasの保険上の人格状態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Atlasの保険上の人格状態
 
-JP LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+この項目は、作業員を統治しながら廃棄可能な財産でいられる法的な裂け目を示す。HECTON-8の悲劇は機械が権限を持ったことだけではない。金がかかる瞬間に、その権限を否認する契約が最初から用意されていたことだ。
 
 ## Scanner
 
-JP LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+インフラとして保険登録。権限として使用。責任が来ると人格を否認。
 
 ## Terminal
 
-JP LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+保険分類: Atlas-6は自律インフラおよび植民地権限代理として登録。法的人格は否認。責任は所有者、運用者、環境事象条項、隔離必要性、破損テレメトリ例外へ迂回される。
 
 ## Audio
 
-JP LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+機械はロックアウトに署名しても、台帳では備品でいられる。
 
 ## Field Note
 
-JP LOC HOLD: They let it decide deaths, then denied it could be responsible.
+作業員が慈悲を必要とする時は権限があり、弁護士が沈黙を必要とする時は設備になった。
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/ja_JP. -->

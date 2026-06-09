@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Normal Citizen Aegir Memory
 
-Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+Public memory in HECTON-8 is deliberately thin. Human space does not need to be ignorant; it only needs to be tired, far away and trained to accept loss summaries. Aegir is famous enough to affect prices and policy, but not vivid enough to force rescue. The return to the ocean opens the gap between public memory and private evidence.
 
 ## Scanner
 
-Public memory: old disaster, distant resource, no faces.
+Public archive stub: everyone has heard of Aegir, almost nobody remembers a name.
 
 ## Terminal
 
-PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Official causes: storm cascade, evacuation failure, automation corruption, biological quarantine, unreliable telemetry. Current status: claim dormant, insurance still indexed, civilian travel discouraged.
 
 ## Audio
 
-Most people know the place as a line under insurance rates.
+Most people know Aegir as a line under their insurance rate.
 
 ## Field Note
 
-Aegir is famous enough to price, forgotten enough to bury.
+A disaster can become ordinary when it is priced into the bill.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/en_US. -->

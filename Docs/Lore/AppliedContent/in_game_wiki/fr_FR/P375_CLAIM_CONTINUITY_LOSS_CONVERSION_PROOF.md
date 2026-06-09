@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Conversion de perte pour continuité de claim"
+title: "Conversion de perte par continuité de réclamation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conversion de perte pour continuité de claim
+# Conversion de perte par continuité de réclamation
 
-La chaîne de preuve se termine en conversion. Deep Reach peut admettre le dommage et garder la propriété si les travailleurs deviennent pertes, si la preuve devient material custody et si le claim reste vivant. Le joueur ne transporte donc pas seulement la vérité. Il transporte quelque chose que le système sait acheter.
+La chaîne se termine au registre parce que le registre peut survivre à tout le reste. Les travailleurs deviennent perte irrécupérable, les modules endommagés deviennent garde matérielle, et les preuves restent attachées à la réclamation. Porter ces documents, ce n'est pas porter du sentiment. C'est porter un problème pour chaque receveur qui veut la réclamation sans les corps.
 
 ## Scanner
 
-Tampon du bureau des pertes récupéré. Le ledger a mieux survécu que les travailleurs qu'il a renommés.
+Tampon du bureau des pertes récupéré. Le statut des travailleurs passe en irrécupérable avant que la garde des preuves quitte la réclamation active.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+PERTE KEELMARK // CONTINUITÉ RETENUE. Main-d'oeuvre biologique convertie en perte irrécupérable. Garde matérielle et garde de preuve actives jusqu'à assignation du receveur.
 
 ## Audio
 
-C'est ici que des gens sont devenus une colonne propre.
+C'est ici que les noms deviennent une colonne propre.
 
 ## Field Note
 
-Note de maraudeur : un ledger peut se souvenir des morts et quand même les dépenser.
+Note de pillard: un registre peut se souvenir des morts et quand même les dépenser.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/fr_FR. -->

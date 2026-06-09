@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protokoll für orbitale Rückholfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Orbital Recovery Window Protocol
+# Protokoll für orbitale Rückholfenster
 
-DE LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+Das Protokoll für orbitale Rückholfenster erdet HECTON-8s Fluchtschleife in lokaler Astronomie und Systemtechnik. Der Spieler ist nicht gestrandet, weil die Geschichte es sagt. Er ist gestrandet, weil Aegirs Sturmscherung, magnetische Störung, beschädigte Aufstiegskette und rechtlicher Empfängerzustand nur in schmalen Fenstern zusammenpassen. Rettung wird zu einer Route, die gebaut werden muss, nicht zu einem Knopf.
 
 ## Scanner
 
-DE LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel ist nah genug, um dich zu hören, und zu eingeschränkt, um dich jederzeit zu fangen. Aegir öffnet nur schmale Rückholfenster.
 
 ## Terminal
 
-DE LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RÜCKHOLFENSTER / Black-Keel-Empfänger akzeptiert rated ascent object nur bei geringer storm-top shear, reduziertem Aegir-Magnetrauschen, verifiziertem guidance core, passendem quarantine handshake und receiver custody state. Fensterdrift macht manuellen launch ungültig.
 
 ## Audio
 
-DE LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Das Schiff ist nah genug, um zu zählen, und zu weit, um dich schnell zu retten.
 
 ## Field Note
 
-DE LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Für Routentimer, Carrier-UI und False-Exit-Erklärung: Sturmscherung, magnetisches Rauschen, Aufstiegsgeometrie, Quarantäne-Handshake.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/de_DE. -->

@@ -21,32 +21,42 @@ localization_flags: 0
 
 ## No Empty Sky
 
-Aegir is not background astronomy. It is the machinery above the ocean: gravity, radiation, relay geometry, debris weather, contract timing and recovery law. HECTON-8 sits inside that machine as the eighth named moon, bright at the surface when the weather allows it, lethal at depth when pressure and infrastructure remove choices.
+Aegir is not backdrop astronomy. It is the machine above the ocean: gravity, radiation, moon occlusion, relay geometry, debris weather, braking windows, custody queues and the cold fact that help cannot cross distance just because a player wants it. HECTON-8 sits inside that machine as the eighth named moon, bright at the surface when the weather permits it and lethal at depth when pressure and broken infrastructure remove options.
 
-There is no ansible. No FTL courier returns with help while the player waits under a leaking hatch. The broad Ran/Aegir route is a roughly 10.5 light-year class problem for public scale, and even local Aegir windows are measured through orbit, storm, moon occlusion and custody queues. A true distress packet can be late. A clean packet can be useless. A useful packet can still be too expensive to answer.
+There is no ansible. There is no FTL courier returning with a clean rescue order while the Marauder waits beneath a leaking hatch. Ran to Aegir is a light-year-scale problem in public language, and local Aegir movement still cares about orbit, storm phase, moon shadow, carrier heat, packet routing and who is legally allowed to answer. A true distress packet can be late. A clean packet can be useless. A useful packet can still be too expensive to service.
 
-## The Moon Ladder
+This is the first astronomy rule for HECTON-8: the sky is not hope. The sky is timing. A player looking up should feel that every message, drop and pickup has geometry behind it, and that a calm voice from orbit may be reading the same schedule that is killing them.
 
-The public ladder names Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute. The exact future ephemeris belongs to celestial data tables; the article uses hazard bands because those are what players and contractors can read without pretending final numbers exist.
+## The Moon Ladder Is Weather
 
-Skarn brings charged-particle surge. Vela throws ice and lens-dirty scatter. Claw and Lumen preserve old route logic. Thorne and Anvil carry dead-claim paperwork. Kestrel compresses relay and eclipse timing close enough to matter. Mute proves Aegir has other dead claims; HECTON-8 is only the one still paying.
+The public ladder names Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute. Exact ephemeris belongs in celestial tables, not in a promise article, but the player-facing truth is simple: the moons are not decoration. They are moving hazards, relay shutters and legal landmarks. They change when a packet can climb, when a signal can be trusted and when a claim can be notarized.
+
+Skarn brings charged-particle surge. Vela throws ice scatter and lens-dirty navigation. Claw and Lumen preserve old route logic because old infrastructure still expects them. Thorne and Anvil carry dead-claim paperwork and bad debris lanes. Kestrel matters because it compresses eclipse timing close enough to change a pickup. Mute proves Aegir has more dead claims than one; HECTON-8 is simply the claim still paying.
+
+The game should let players read that ladder in small ways. A relay delay after Kestrel should feel different from a storm delay under P-63 water. Ice scatter should make navigation sound less certain. A moon shadow should make a terminal queue feel like physics, not plot convenience.
 
 ## Why Black Keel Stays High
 
-Black Keel is a claim tender, not a loyal rescue ship. It holds in expensive orbit, balancing heat, fuel, debris, legal clarity and recoverable mass. Coming down is not a brave choice in this system; it is a cost event that can burn the next contract window.
+Black Keel is a claim tender, not a loyal rescue ship. It holds in expensive orbit because coming down is not heroic in this system; it is a cost event that burns fuel, heat margin, debris clearance and the next contract window. A carrier that dives every time a worker screams does not survive enough contracts to become Black Keel.
 
-A return needs acoustic relay, pressure-rated ascent hardware, guidance timing, storm permission, quarantine handshake, payload hash and tonne-window allocation. When one link fails, the carrier can still sound calm. Calm is not mercy. Calm is automation with a ledger.
+That makes Black Keel frightening without making it cartoon evil. The platform can be correct about risk and still brutal about people. It can preserve a pickup window and still let a worker drown below. It can send calm instructions because calm is automation with a ledger, not mercy.
 
-## The Sky Is A Machine
+A return from HECTON-8 needs more than courage. It needs acoustic relay, pressure-rated ascent hardware, guidance timing, storm permission, quarantine handshake, payload hash and tonne-window allocation. Break one link and the orbital answer can remain polite while the route stays closed.
 
-Aegir should never read like a painted backdrop. It is the largest machine in the story: a primary star, a moon ladder, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume and guidance lag stacked into one hostile schedule. The player does not need to see all of it at once. They need to feel that every message, drop and pickup has geometry behind it.
+## Physics Before Law
 
-This is why rescue cannot simply arrive. There is no FTL correction, no hidden ansible, no heroic carrier ignoring mass. A route window is permission from physics before it is permission from law. Black Keel can lower a tender because it has a narrow local job, not because it owns a miracle.
+The law arrives after geometry. A court can argue custody only if a packet leaves the water. A contract can name salvage only if the claim can be timed, weighed and received. A rescue order can be noble and still miss the only viable route window. HECTON-8's hard-scifi rule is not that bureaucracy beats heroism; it is that physics gives bureaucracy teeth.
+
+This matters for story tone. The player is not alone because every adult in orbit is stupid. The player is alone because distance, pressure, bad weather, damaged ascent hardware, quarantine, mass economics and legal custody all overlap at the worst possible time. That overlap is more frightening than a villain pressing a red button.
+
+It also keeps the moon beautiful. Aegir can hang huge above the water, moons can cut shadows across cloud and ocean, and the scene can still stay hard. The sky can be cinematic without becoming magic if every visible wonder also changes risk, timing or route readability.
 
 ## What Looking Up Means
 
-Looking up on HECTON-8 should feel practical and bitter. The sky is not hope. It is timing. Aegir decides when a packet can climb, when a receiver can answer, when a claim can be notarized and when the player is alone with stale instructions.
+Looking up on HECTON-8 should feel practical and bitter. A clear sky might mean a relay opening. A bright moon might mean a shadow about to cut the route. A carrier light might mean custody, not rescue. A silent orbit might mean the packet is late, filtered, too expensive, or already owned by someone else.
 
-The best astronomy article for this game should make a player read moonlight as risk. If Kestrel moves, a relay shadow changes. If ice scatter rises, navigation becomes rumor. If the Silent Orbit stays silent, old metal can still decide the present.
+That is why the astronomy article belongs near the start of the public wiki. It teaches the player that HECTON-8 is not abandoned because the writers forgot spaceships. It is abandoned because the ships are real, the distances are real, the claim law is real and none of those facts care whether a worker still has oxygen.
+
+Read Aegir as a hostile schedule. Read the moon ladder as weather. Read Black Keel as a receiver with a ledger. Then the ocean below makes more sense: every sealed door, broken ascent frame and delayed packet is one small part of a sky that refuses rescue unless the proof, mass and timing all line up.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/en_US. -->

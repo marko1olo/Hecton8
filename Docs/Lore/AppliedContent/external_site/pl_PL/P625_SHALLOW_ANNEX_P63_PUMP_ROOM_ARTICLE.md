@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pompownia płytkiego aneksu P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pompownia płytkiego aneksu P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+Płytki aneks P-63 jest pierwszym pomieszczeniem, które może znów działać. To nie komora nagrody, tylko zmęczona maszyna: ręczna korba zęzowa, zacięta gardziel zaworu, ślad zimnego szczeliwa i fabrykator, który uznaje tylko niskoryzykowne naprawy, zanim woda spadnie poniżej linii wlotu.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+Pomieszczenie uczy pierwszej zasady salvage na HECTON-8: powietrze bierze się z naprawy, nie ze szczęścia. Działająca pompa usuwa wodę po kostki, odsłania stare szafki narzędziowe i daje fizyczny powód, by ufać aneksowi przez kilka kolejnych minut. Terminal wciąż nazywa zadanie niewielkim napływem wody. Ściany mówią co innego.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/pl_PL. -->

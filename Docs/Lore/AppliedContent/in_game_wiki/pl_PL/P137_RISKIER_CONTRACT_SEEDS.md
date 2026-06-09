@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Ryzykowniejsze seedy kontraktów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Ryzykowniejsze seedy kontraktów
 
-PL LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.
+Ryzykowne kontrakty kuszą doświadczonego Maraudera bez psucia survivalu. Tablica może zaoferować lepszą ulgę lien za złe okno, wczesne zejście poniżej bezpiecznej głębokości, próbkę, która ma zostać zapieczętowana, albo opiekę nad dowodami tak surową, że każdy skrót kosztuje. Gracz wybiera presję, nie odziedziczoną siłę.
 
 ## Scanner
 
-PL LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED KONTRAKTU // Gorsze okno, głębszy pierwszy cel, ostrzejszy depozyt, rzadsza próbka, większa ulga lien. Brak dziedziczonej mocy.
 
 ## Terminal
 
-PL LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+OPCJA SEED: zwiększ wypłatę, przyjmując gorszy moment orbitalny, głębsze cele początkowe, surowszą opiekę nad dowodami, rzadszy dowód zasobu albo ciaśniejszy rozrachunek powrotu. Moc sprzętu i ekwipunek resetują się.
 
 ## Audio
 
-PL LOC HOLD: The board pays more when it expects less of you to return.
+Tablica płaci więcej, gdy mniej oczekuje twojego powrotu.
 
 ## Field Note
 
-PL LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Replay ma pytać o chciwość, odwagę albo głupotę. Nie o grind.
 
 <!-- In-Game Wiki; generated from P137_RISKIER_CONTRACT_SEEDS/pl_PL. -->

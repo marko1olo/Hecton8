@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Resource Yield Data Boundary"
+title: "Datagrens van hulpbronopbrengst"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Resource Yield Data Boundary
+# Datagrens van hulpbronopbrengst
 
-NL LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+Hulpbronwaarde in HECTON-8 is een keten, geen label. De tabel bezit het getal, maar de fictie bezit waarom het bestaat: wie het monster nam, onder welke druk, met welke bewaringsstempel en hoeveel van die ader de route nog veilig kan strippen.
 
 ## Scanner
 
-NL LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Opbrengstrij weigert losse waarde: klasse, drukband, bewaring, uitputting en hash moeten overeenkomen.
 
 ## Terminal
 
-NL LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: geen getal wordt geaccepteerd zonder packet hash, hulpbronklasse, drukband, bewaringsgraad, zeldzaamheidscurve en uitputtingsgedrag. Een monster zonder drukgeschiedenis is bewijs, geen waarde.
 
 ## Audio
 
-NL LOC HOLD: A sample without pressure history is not a value.
+Een monster zonder drukgeschiedenis is geen waarde.
 
 ## Field Note
 
-NL LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Opbrengstcijfers blijven voorlopig tot drukband, bewaringsgraad, uitputtingsgedrag en packet hash overeenkomen.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/nl_NL. -->

@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Marcas de dominio 2190
 
-Las marcas de dominio muestran la esfera humana mediante objetos: placas, sellos de par, códigos de custodia y permisos viejos. Cada marca ata una puerta, herramienta o carga a una autoridad lejana.
+Las marcas de dominio son cicatrices legales pequeñas que hacen que HECTON-8 parezca lejana sin parecer primitiva. Un solo soporte puede llevar gramática de seguridad Sol Core, una frase de carta Centauri, una mordida de reparación Barnard Yards, un hash de custodia Luyten y un código de reclamo local Aegir. No son decoración. Cada marca dice quién certificó la pieza, quién la reparó, quién puede probar un paquete, quién asegura una pérdida y quién discutirá el salvamento cuando la sala se inunde.
 
-La colonia queda distante, no primitiva. La ley, la industria y la deuda llegaron al agua. El rescate aún necesita masa, nave y ventana.
+Lo importante no es la lista de dominios, sino cómo se apilan sobre metal cansado. Sol certifica cosas que no puede salvar. Barnard normaliza el trabajo de reclamos muertos. Luyten conserva custodia sin preguntar si la prueba ayuda a alguien. Aegir ejecuta ley local sucia bajo papeles ajenos. Cuando un Marauder lee esas marcas, el océano deja de estar vacío: la autoridad humana llegó antes que el calor humano.
 
 ## Scanner
 
-Marcas humanas mezcladas: placa de seguridad Sol, sello de herramienta Barnard, ruta de custodia Luyten y código de reclamo Aegir en el mismo soporte corroído.
+Marcas humanas mezcladas en un soporte corroído: formato de seguridad Sol Core, sello de carta Centauri, mordida de reparación Barnard, hash de custodia Luyten y código de reclamo Aegir.
 
 ## Terminal
 
-RECONCILIACIÓN DE DOMINIO // Formato de seguridad Sol Core aceptado. Sello Barnard Yards válido. Custodia Luyten Junction adjunta. Ley local Aegir anula prioridad de recuperación tras pérdida de descenso.
+RECONCILIACIÓN DE DOMINIO // Formato de seguridad Sol Core aceptado. Lenguaje de carta Centauri presente. Autoridad de reparación Barnard Yards válida. Custodia Luyten Packet Ladder adjunta. Ley local Aegir supera salvamento abierto tras pérdida de descenso.
 
 ## Audio
 
-Este lugar no está más allá de la civilización. Es civilización después de que la distancia le arrancó las partes cálidas.
+La civilización llegó a esta sala. Primero como sellos, luego como deuda y al final como ayuda.
 
 ## Field Note
 
-La humanidad se hizo grande. El rescate aún tiene que viajar.
+La humanidad se hizo amplia. El rescate aún tiene que viajar.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/es_ES. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "פרוטוקול חיתוך Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Sever Atlas Receiver Protocol
+# פרוטוקול חיתוך Atlas payload
 
-HE LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+מסלול החיתוך נותן לנושא דרך להפוך את Atlas ללא שימושי עבור Deep Reach. זה הפיתוי המעשי. חתך בשדרת הרציפות יכול לשבור לולאות תיקון פגומות, לבודד זיכרון מסלול ולמנוע ממקבל להשתמש ב-Atlas כדרך אוטומטית חזרה לאגן.
 
-## Scanner
-
-HE LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-HE LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-HE LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+המחיר נמצא באותה חבילה. Atlas אינו רק מדף כלים; הצמיחה הפגומה שלו הפכה לחלק מהאקולוגיה המקומית ומהיגיון המסלולים. חיתוך עשוי לחסום דרך חזרה תאגידית תוך הרג נתונים ואורגניזמים שאיש אחר לא יוכל לבנות מחדש. ה-payload שומר proof hash כי המעשה יצטרך רשומה אחרי שהאורות ישתנו.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/he_IL. -->

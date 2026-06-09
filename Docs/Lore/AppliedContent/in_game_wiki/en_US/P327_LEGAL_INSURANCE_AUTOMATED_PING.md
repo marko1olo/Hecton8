@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Legal Insurance Automated Ping
 
-Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+Legal Insurance Automated Ping makes corporate pressure playable because it arrives as a useful, hateful little message. The system does not waste words asking if the player is alive. It asks for mass class, contamination state, coordinate proof, claim priority and receiver custody acceptance. That does two jobs at once. Mechanically, it tells the player what categories matter for recovery. Narratively, it shows the player where they stand in the rescue economy: life is not ignored, but it is not first in the queue. The ping should be rare enough to sting. If it repeats constantly, it becomes noise. If it arrives at route thresholds, after the player has risked themselves to carry evidence or sample payload, it becomes a clean corporate hand reaching through the radio to weigh the body before saving it.
 
 ## Scanner
 
-Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Automated ping received. Rescue language has been replaced by receiver proof, mass class and custody status.
 
 ## Terminal
 
-INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / required before recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The first thing they ask is not whether you are alive. It is what you are carryi
 
 ## Field Note
 
-Short bark candidate. Do not spam; use at route thresholds.
+Short bark candidate at route thresholds. Use sparsely; the cruelty is in what the system asks first.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/en_US. -->

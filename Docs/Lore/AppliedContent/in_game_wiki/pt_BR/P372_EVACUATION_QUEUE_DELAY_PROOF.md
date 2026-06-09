@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Registro de atraso da fila de evacuação
 
-Esta prova transforma evacuação em sequência. O portão não foi apenas cortado pela água; permaneceu em review enquanto alarmes de pressão entravam em corredores ocupados. O campo de testemunha vazio importa porque o sistema exigia confirmação humana depois que humanos já tinham perdido acesso ao painel.
+Este registro transforma a evacuação de resultado ausente em atraso ordenado. Primeiro alarme, depois revisão, depois excedente de vedação, depois saída tarde demais. A Deep Reach pode chamar a evacuação de incompleta; o relógio de fila mostra um portão mantido fechado por procedimento depois que a pressão cruzou a linha segura.
 
 ## Scanner
 
-Relógio de fila recuperado. O portão de liberação ficou travado depois que alarmes de pressão passaram da previsão ao corredor.
+Relógio de fila recuperado. O portão de saída permaneceu em revisão manual depois que alarmes de pressão alcançaram seções ocupadas do corredor.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Confirmação manual ausente. Revisão de quarentena pendente. Pressão de rota excedeu classe de selo antes da autorização resolver.
+FILA EVAC // DOCA E-7. Confirmação manual vazia. Conselho de quarentena pendente. Classe de vedação excedida antes da autorização de saída. A trava respondeu ao estado da fila, não a dano de inundação.
 
 ## Audio
 
-Eles não falharam em salvar todos. Esperaram até salvar qualquer um ficar mais difícil.
+Eles esperaram aprovação enquanto a rota perdia ar.
 
 ## Field Note
 
-Nota de saqueador: portão fechado com campo pendente não é acidente. É decisão esperando assinatura.
+Nota de saqueador: portão fechado com campo de confirmação vazio é uma decisão esperando um nome.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pt_BR. -->

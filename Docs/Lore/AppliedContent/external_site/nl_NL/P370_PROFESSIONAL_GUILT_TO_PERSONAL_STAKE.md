@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Van Professionele Schuld naar Persoonlijke Inzet"
+title: "Van Beroepsschuld naar Persoonlijk Belang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Van Professionele Schuld naar Persoonlijke Inzet
+# Van Beroepsschuld naar Persoonlijk Belang
 
-De motivatie van de protagonist groeit van expertise naar verantwoordelijkheid. HECTON-8 vermijdt geforceerd familiemelodrama: de voormalige Deep Reach-werker geeft erom omdat die de procedurele machine begrijpt die achterlating voltooid liet lijken.
+Van Beroepsschuld naar Persoonlijk Belang sluit het dossier door makkelijk melodrama te weigeren. De operator hoeft geen familie van een slachtoffer te zijn, niet heimelijk verantwoordelijk voor de ramp en niet gekozen door de kolonie. Het motief groeit uit werk.
 
-## Scanner
-
-Het handtekeningpatroon komt overeen met de oude procedurecache. De namen veranderden. De kamer faalde op dezelfde manier. Expertise is geen afstand meer.
-
-## Terminal
-
-DOSSIERAFRONDING / PROFESSIONELE INZET
-triggerbewijs: procedureherkenning, teruggevonden werknemertags, conflict met claimontvanger
-uitgesloten motief: familieband, wraaklijn, status als gekozen getuige
-actief motief: voormalig systeemwerker herkent voorkombare achterlating en kan de machine die haar archiveerde nog lezen.
-
-## Audio
-
-Je kwam voor een claim. Je bleef omdat het papierwerk je handen kende.
-
-## Field Note
-
-Niet jouw handtekening. Nog steeds jouw vak. Daarom blijft de kamer niet stil.
+De oude formulieren, route stamps, verzegelde controles en ontvangerconflicten zijn bekend genoeg om pijn te doen. Ze tonen een vermijdbare achterlating, geschreven in een vaktaal die de operator ooit vertrouwde. Zo wordt HECTON-8 persoonlijk op een koudere manier: wanneer iemand kan lezen hoe de machine een kamer begroef, wordt weglopen nog een regel in dezelfde machine.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/nl_NL. -->

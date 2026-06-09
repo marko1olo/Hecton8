@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "عقود seed أخطر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# عقود seed أخطر
 
-AR LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+عقود seed الأخطر تجعل replay اقتصاديا وإجرائيا: العقد يغير ما يطلبه المحيط، لا ما يحمله اللاعب.
 
 ## Scanner
 
-AR LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED عقد // نافذة أسوأ، هدف أول أعمق، عهدة أشد، عينة أندر، تخفيف lien أكبر. لا قوة موروثة.
 
 ## Terminal
 
-AR LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+خيار SEED: زد الدفع بقبول توقيت مداري أسوأ، أهداف أولى أعمق، عهدة أدلة أقسى، إثبات مورد أندر أو حساب عودة أضيق. قوة المعدات والمخزون يعاد ضبطهما.
 
 ## Audio
 
-AR LOC HOLD: The board pays more when it expects less of you to return.
+اللوحة تدفع أكثر عندما تتوقع عودتك أقل.
 
 ## Field Note
 
-AR LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+يجب أن يسأل replay عن الجشع أو الشجاعة أو الحماقة. لا عن الطحن.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/ar_SA. -->

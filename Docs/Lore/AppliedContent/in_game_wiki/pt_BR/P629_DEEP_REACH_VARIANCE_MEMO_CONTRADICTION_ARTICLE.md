@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Contradição do memorando variance da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Contradição do memorando variance da Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+O memorando variance não é prova sozinho. Ele fica útil quando marcas da sala de bombas, carimbos de tempo e selos accepted-margin contradizem a linguagem limpa do escritório.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+MARCA DE CONTRADIÇÃO // O memorando diz variance. A marca da bomba mostra intervenção manual tardia.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // A entrada de água permanece dentro da tolerância gerenciada até revisão de return-action. A fila local pode adiar linguagem de escalonamento não crítica.
 
 ## Audio
 
-Trust the room before the clean word.
+Ninguém escreve variance numa parede que ainda pinga.
 
 ## Field Note
 
-Trust the wet room first.
+Quando uma palavra de escritório é mais limpa que a sala, confie primeiro na sala.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/pt_BR. -->

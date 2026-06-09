@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Keelmark Loss Desk
 
-Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+The Keelmark Loss Desk is not the hand that floods a corridor. It is the hand that decides how the flooded corridor enters the books. That distinction is why it matters. An insurer can make murder look like weather if the categories are ready early enough.
 
-## Scanner
-
-Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-The ledger is dry because the room was not.
-
-## Field Note
-
-A loss category is a grave with better stationery.
+Keelmark's tables teach Deep Reach what language will survive inquiry. Equipment can be depreciated. Habitat can be impaired. Labor can be suspended. Witnesses can be exposed, compromised, or unrecoverable. Names are heavier, so the desk avoids them until forced.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/en_US. -->

@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Livro de Trânsito da Reivindicação Longa de Ran
 
-HECTON-8 segue uma regra dura: comunicação é barata perto de massa. Um retransmissor Black Keel pode responder porque um pacote viaja por luz, espelhos e filas de transportadores. Um tender não pode. Naves na rota Ran ainda obedecem aceleração, calor de frenagem, agenda de pellet lanes, clima de Aegir e a economia de quem paga pela janela de risco.
+HECTON-8 trata o primeiro contato como papelada sob pressão, porque é isso que resgate interestelar vira sem FTL. Um retransmissor Black Keel pode reconhecer um Marauder encalhado dentro dos limites do transportador. Ele não pode fazer uma nave aparecer. O livro de reivindicação longa fica entre esses fatos.
 
-O livro de reivindicação longa é a forma administrativa dessa física. Ele não pergunta se o sobrevivente está com medo. Pergunta se a coordenada é confiável, se o pacote de subida aguenta transferência, se existe hash de testemunha Luyten, se a Deep Reach pode alegar quarentena e se a carga é corpo, prova, frete ou tudo junto.
+            No mundo, o livro não é formalidade. É o primeiro objeto durável que o sobrevivente possui fora do oceano. Ele diz que um humano vive, mas também quão confiáveis são as coordenadas, quanta massa deve subir, se o pacote de subida está selado, se a Deep Reach tem argumento de quarentena, se o payload é equipamento pessoal ou prova que muda a reivindicação, e quem aceita responsabilidade se a coleta queimar, errar ou voltar contaminada.
 
-Assim o oceano não fica isolado porque a civilização sumiu. Ele fica isolado porque a civilização é lenta, proprietária e procedural. O jogador não espera resgate; constrói o pacote, a carga e a alavanca que tornam resgate mais valioso que silêncio.
+            Essa estrutura mantém a civilização presente sem transformá-la em saída fácil. Pessoas ouvem você. Escritórios carimbam você. Relés preservam seu pacote. Seguradoras e donos de rota colocam números no seu corpo. O horror não é vazio. O horror é um sistema que sabe exatamente onde você está e ainda pergunta quanto vale recuperar você.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/pt_BR. -->

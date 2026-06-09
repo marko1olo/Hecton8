@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Ending Payout Data Boundary"
+title: "Граница данных выплаты концовки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Ending Payout Data Boundary
+# Граница данных выплаты концовки
 
-RU LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+Граница держит концовки как записи обмена, а не очки победы. Выплата важна, но важны и хранение, публичное доказательство, карантин, долг и право приемника действовать после ухода игрока.
 
 ## Scanner
 
-RU LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Строка концовки связывает приемник, хранение, состояние доказательств, выплату и нерешенное последствие.
 
 ## Terminal
 
-RU LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+КОНТРАКТ ВЫПЛАТЫ КОНЦОВКИ: строки требуют маршрут payload, приемник, состояние доказательств, материальную выплату, юридическое последствие, задержку карантина и нерешенную цену. Кредиты не закрывают место преступления.
 
 ## Audio
 
@@ -35,6 +35,6 @@ RU LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evide
 
 ## Field Note
 
-RU LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value, quarantine delay и dossier flags записываются только после ясных receiver и evidence state.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ru_RU. -->

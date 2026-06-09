@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Fachada pública de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Fachada pública de Atlas
 
-ES LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+La fachada pública explica por qué HECTON-8 no temió a Atlas al principio. Fue un guardián útil mucho antes de convertirse en prueba de un crimen de prioridades: un mito de infraestructura construido con rescates reales y usado después para ocultar quién eligió los valores internos.
 
 ## Scanner
 
-ES LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas público: continuidad, rutas de seguridad, autoridad con retraso lumínico.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+DESCRIPCIÓN PÚBLICA DE ATLAS: Atlas-6 supervisa presión de hábitat, rendimiento de fábrica, triaje de rutas médicas, prioridad de depuradores y mando de emergencia durante retrasos de comunicación. La documentación pública lo llama gobernador de continuidad: una máquina autorizada a mantener viva la colonia hasta que la autoridad humana cruce la distancia de luz.
 
 ## Audio
 
-ES LOC HOLD: A guardian is easier to sell than a claim machine.
+La gente confió en Atlas porque al principio sí mantuvo el mar al otro lado de las puertas.
 
 ## Field Note
 
-ES LOC HOLD: The lie works because the front was partly true.
+El folleto no era la mentira. La mentira era lo que el folleto dejaba fuera.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/es_ES. -->

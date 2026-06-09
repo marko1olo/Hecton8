@@ -54,8 +54,7 @@ namespace Hecton8.EditorTools.SaveSystem
         internal static WorldPickupStableIdScanResult ScanOpenScenePickupStableIds(bool repair, string requiredScenePath)
         {
             PickupItem[] pickups = UnityEngine.Object.FindObjectsByType<PickupItem>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             Dictionary<string, PickupItem> firstByIdentity = new Dictionary<string, PickupItem>(pickups.Length, StringComparer.Ordinal);
             int issueCount = 0;
             int repairedCount = 0;

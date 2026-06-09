@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Pressure Crew Archetype Table
 
-Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Pressure crew archetypes turn HECTON-8's worker cast into readable labor history. The colony is not explained by biographies first; it is explained by work. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness give every name a function, a place in the ocean economy, and a reason to appear as evidence. This lets lore surface through objects and routes instead of detached exposition.
 
 ## Scanner
 
-Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Crews are verbs before they are backstory: pump, seal, relay, map, forge, triage, cultivate, witness.
 
 ## Terminal
 
-CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness. Every worker identity binds to a crew family before personal detail. This keeps evidence tied to machines, routes, pressure failures, food culture, salvage law, and the final payload chain.
 
 ## Audio
 
-Job first. Memory second. That is how the colony survives.
+Job first. Memory second. That is how the colony survives on paper.
 
 ## Field Note
 
-Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+A dead worker reads cleaner when the room still needs the job they knew.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/en_US. -->

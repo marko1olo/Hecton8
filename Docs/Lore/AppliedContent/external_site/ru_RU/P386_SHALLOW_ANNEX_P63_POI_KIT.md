@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Набор доказательств мелководного отсека P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Shallow Annex P-63 POI Kit
+# Набор доказательств мелководного отсека P-63
 
-RU LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 работает потому, что не отделяет убежище от доказательства. Комната дает оператору воздух, трюмную помпу, запас прокладок, линию пингера и след резака. Сначала эти вещи полезны; контракт может подождать, вода - нет.
 
-## Scanner
-
-RU LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-RU LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-RU LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-RU LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Когда комната стабилизирована, те же предметы получают другой вес. Запечатанное уведомление маршрута говорит о закрытии в контролируемых условиях, а поврежденная помпа, залатанный лоток прокладок и мокрый пакет аварии показывают более жесткий выход. Первое противоречие не спрятано в речи. Оно прикручено к месту, которое оставило оператора в живых.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ru_RU. -->

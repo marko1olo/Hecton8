@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Status dowodowy prawdy z odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Status dowodowy prawdy z odzysku
 
-PL LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Dowody z odzysku dają HECTON-8 powoli narastający spisek. Kolonia milczy nie dlatego, że nic się nie stało, ale dlatego, że każdy przedmiot-dowód ma wartość rynkową, wartość odpowiedzialności i wartość prawną. Prawda wypływa przez trasy przechowania i uszkodzone rzeczy, nie przez wygodne wyznanie.
 
 ## Scanner
 
-PL LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Pakiet czarnej skrzynki: prawda, dopóki nie dotknie jej biuro roszczeń.
 
 ## Terminal
 
-PL LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: surowy odzysk domyślnie staje się materiałem roszczeniowym. Dowód publiczny wymaga nienaruszonego hasha źródła, znacznika ciśnienia i czasu, pakietu świadka, notariusza przekaźnikowego poza kontrolą roszczącego oraz ścieżki przechowania odpornej na utratę statku, solankę i ręczne edycje.
 
 ## Audio
 
-PL LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Zwłoki są dowodem dopiero wtedy, gdy komuś nie uda się ich źle zarchiwizować.
 
 ## Field Note
 
-PL LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Fakt z głębin jest groźny tylko wtedy, gdy zachowa świadków.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/pl_PL. -->

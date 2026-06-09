@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Aturan Prop Fragmen Audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Aturan Prop Fragmen Audio
 
-ID LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Aturan Prop Fragmen Audio menentukan bagaimana HECTON-8 memakai suara tanpa membanjiri dunia dengan monolog. Setiap fragmen audio membutuhkan sumber fisik, status transkrip rusak, timestamp, dan kontradiksi. Suara tidak boleh menggantikan bukti lingkungan; ia harus menajamkannya, membuat ruangan, prop, dan catatan rute berbicara bersama.
 
 ## Scanner
 
-ID LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Suara itu mahal. Ia harus membuktikan sesuatu yang juga bisa dibuktikan ruangan dengan logam, air, timestamp, atau kerusakan.
 
 ## Terminal
 
-ID LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: tidak ada monolog melayang. Suara milik strip hidrofon, perekam suit, cache terminal, handset perawatan, atau fragmen black-box. Setiap baris yang bisa diputar harus memiliki sumber, status transkrip rusak, timestamp rute, dan satu kontradiksi yang bisa diperiksa pemain.
 
 ## Audio
 
-ID LOC HOLD: If the room cannot prove me, cut the line.
+Jika ruangan tidak bisa membuktikanku, potong barisnya.
 
 ## Field Note
 
-ID LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Fragmen audio membutuhkan prop sumber, kerusakan transkrip, timestamp rute, dan satu kontradiksi fisik.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/id_ID. -->

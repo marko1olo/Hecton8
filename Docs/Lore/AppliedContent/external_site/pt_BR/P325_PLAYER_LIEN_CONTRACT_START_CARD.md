@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Player Lien Contract Start Card"
+title: "Cartão Inicial de Contrato com Lien do Jogador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Player Lien Contract Start Card
+# Cartão Inicial de Contrato com Lien do Jogador
 
-PT LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+O protagonista de HECTON-8 é um ex-profissional da Deep Reach que virou salvage operator. Essa origem mantém a história adulta e prática: o jogador vem por trabalho, não por destino. A virada emocional é conquistada por evidências, contratos e acesso lembrado, permitindo que o mistério se torne pessoal sem ser reduzido a vingança familiar.
 
 ## Scanner
 
-PT LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+O cartão inicial não transforma você em vítima escolhida. Transforma você em ex-profissional da Deep Reach com um lien, uma chave e um motivo para mentir para si.
 
 ## Terminal
 
-PT LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+INÍCIO DO CONTRATO / operador: salvage contractor independente / acesso antigo: Deep Reach field key, inativa mas reconhecida / lien: ativo / motivo declarado: claim value / pressão não declarada: prior exposure, familiaridade de rota, beneficiary conflict.
 
 ## Audio
 
-PT LOC HOLD: You came for work. The file remembered you before you remembered it.
+Você veio por trabalho. O arquivo lembrou de você antes de você lembrar dele.
 
 ## Field Note
 
-PT LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Sem lost-relative hook. O motivo começa como trabalho: salvage value, field access antigo, exposição profissional, pressão pessoal mascarada.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/pt_BR. -->

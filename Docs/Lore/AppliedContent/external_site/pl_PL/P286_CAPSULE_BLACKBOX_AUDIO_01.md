@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Capsule Blackbox Audio 01"
+title: "Audio czarnej skrzynki kapsuły 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Capsule Blackbox Audio 01
+# Audio czarnej skrzynki kapsuły 01
 
-PL LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+Audio czarnej skrzynki kapsuły 01 to pierwszy uczciwy artefakt techniczny HECTON-8. Przedefiniowuje przetrwanie jako dług: lądowanie kupiono zużyciem sprzętu powrotnego. Zapis daje graczom uziemiony powód oceanicznej pułapki, zanim pojawi się korporacyjna tajemnica.
 
 ## Scanner
 
-PL LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+Pierwsza czarna skrzynka nie mówi, że się rozbiłeś. Mówi, że kapsuła przetrwała, zużywając sprzęt przeznaczony do powrotu.
 
 ## Terminal
 
-PL LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; uderzenie zejścia pochłonięte; ascent sleeve zużyty; recovery ring nie zablokował; boja niewiarygodna; frames 12-19 utracone podczas pressure shear. Ręczne wynurzenie niezalecane bez zewnętrznej wymiany sleeve.
 
 ## Audio
 
-PL LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Zdarzenie czarnej skrzynki. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-PL LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: dolny crush-frame pęknięty; ascent sleeve przepalony; recovery ring no-lock; boja wciąż powtarza martwe żądanie wynurzenia.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/pl_PL. -->

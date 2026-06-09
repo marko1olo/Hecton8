@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "פרוטוקול לוקליזציה טבעית של שמות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# פרוטוקול לוקליזציה טבעית של שמות
 
-HE LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+לוקליזציה טבעית של שמות מגינה על שכבת ראיות העובדים מתאונת ממשק. השחקן לא צריך לראות שם מעוך, הפוך לשטות, חצי מתורגם על ידי fallback או מוחלף בשארית debug אנגלית.
+
+הכלל פשוט: זהות אישית נכתבת לכל locale, והמערכות סביב מתורגמות רגיל. אם שפה צריכה צורה קצרה לתג, היא נכתבת ו-baked מראש, לא מומצאת בזמן runtime.
 
 ## Scanner
 
-HE LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // הרצועה הזאת נכתבה, לא תורגמה בזמן אמת. האדם שורד בממשק רק אם הממשק מפסיק לאלתר.
 
 ## Terminal
 
-HE LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+לוקליזציית שמות // שמות אישיים, רצועות קצרות ושברי תג baked לכל locale. תפקידים, מחלקות, היתרי מסלול והערות משמרת מתורגמים סביבם. RTL ו-CJK דורשים קיצורים כתובים, שבירות שורה בטוחות, וללא recomposition live בסורק, UI ארוניות, מסופים או wiki חיצוני.
 
 ## Audio
 
-HE LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+שם ששובר UI אינו כבוד. זו המושבה שמוחקת את העובד בפעם השנייה.
 
 ## Field Note
 
-HE LOC HOLD: No live name translation. Preserve identity through baked strings.
+אל תיתן ל-runtime fallback לשנות שם של עובד מת. שם שבור הוא עוד מחיקה.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/he_IL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aufstiegsenergie-Ladungsbaugruppe"
+title: "Baugruppe der Aufstiegsenergieladung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aufstiegsenergie-Ladungsbaugruppe
+# Baugruppe der Aufstiegsenergieladung
 
-Die Aufstiegsladung verwandelt Tiefenressourcen in mechanischen und moralischen Tausch. Hochdruckmaterialien können die Kapsel heben, Beweise durch custody bewahren oder zur Auszahlung werden, die den Heimweg schwächt.
+Die Aufstiegsenergieladung wandelt HECTON-8s Tiefenmaterialien in einen kontrollierten Startimpuls um. Sie ist kein Brennstoffhaufen. Sie ist eine Kradle aus vent-forged heat cells, Druckhistorienisolation, gestuften Impulshülsen und custody-Markierungen, die dem Empfänger sagen, welche Art Material den Brand überstanden hat.
+
+Blue debt wird wertvoll, bevor es sicher wird. Eine druckgewachsene Xenon-Omega-Probe kann eine carrier-Rechnung bezahlen, ein Upgrade verankern, beweisen, was Deep Reach weiterlaufen ließ, oder unter Startlast brechen, wenn ihre Historie wie loses Loot behandelt wurde. Die Ladung muss Energie und Papiere zugleich tragen: Masse, Druckzustand, Kontaminationsklasse und custody stamp.
+
+Darum erzeugt die Baugruppe eine echte Salvage-Entscheidung. Zerlege die Kradle für Auszahlung, und die Kapsel verliert zertifizierten Auftrieb. Lade Rohmaterial, und das Impulsprofil wird instabil. Erhalte die signierte Ladung, und die Aufstiegsroute wird schwerer, ärmer und viel schwerer abzustreiten.
 
 ## Scanner
 
-Energiekradle von pressure pulse geritzt. Eine billige Ladung macht einen sauberen Sarg.
+ENERGIEKRADLE // Druckpuls-Riefen, verzogene heat-cell-Taschen, custody-stamp-Sockel leer. Rohes blue debt kann brennen; es zertifiziert keinen Auftrieb.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator und custody stamp erforderlich. Raw fuel abgelehnt. Unzertifizierte blue debt bricht unter launch impulse und macht recovery claim ungültig.
+ASCENT CHARGE: vent-forged heat cell, Druckhistorienisolator, gestufte Impulshülse und signierten custody stamp laden. Rohbrennstoff, angeschlagenen Isolator und ungestempeltes blue debt ablehnen.
 
 ## Audio
 
-Du kannst den Auftrieb verkaufen oder darauf reiten. Nicht beides.
+Verkauf den Auftrieb, und die Kapsel wird Inventar.
 
 ## Field Note
 
-Jedes Gramm im Kralde ist Flucht, Beweis oder blue-debt payout. Die Kapsel vergibt keine Gier.
+Die Ladung will jeder stehlen, weil genau sie dich vom Meeresboden wegbringt.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/de_DE. -->

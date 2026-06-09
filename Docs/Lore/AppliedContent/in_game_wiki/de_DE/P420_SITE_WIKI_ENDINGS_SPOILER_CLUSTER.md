@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Enden und payload custody
 
-Enden-Dossierhub: custody, evidence, Atlas' Zukunft und der Preis des Gehens.
+Enden-Dossier-Hub: Jeder Ausgang ist custody transfer, kein Moral-Farbschild.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, öffentliche Wahrheit, Atlas continuity und after-action records.
+Spoiler hub: payload custody, receiver consequences, false exits, public proof, Quarantänehebel und Atlas continuity.
 
 ## Terminal
 
-SITE NAV: final payload pages hinter spoiler gates halten. Nach receiver und proof ownership ordnen.
+SITE NAV: finale Seiten hinter spoiler gates halten; nach Kontrolle über Körper, Koordinaten, samples, Atlas records und worker proof ordnen.
 
 ## Audio
 
-Das Ende ist, wem der Beweis nach dem Aufstieg gehört.
+Der Ausstieg ist nicht das Ende. Er ist custody transfer.
 
 ## Field Note
 
-Enden bleiben spoiler-gated und werden nach receiver und custody consequence geordnet, nicht nach Moralmarken.
+Wenn der Körper entkommt, aber die proof besitzt wird, ist der Ozean mit dem Fall nicht fertig.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/de_DE. -->

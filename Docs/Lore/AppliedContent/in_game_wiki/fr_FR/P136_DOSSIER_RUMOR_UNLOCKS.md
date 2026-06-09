@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Mémoire de rumeurs du dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Mémoire de rumeurs du dossier
 
-FR LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+Le dossier Marauder n'est pas un coffre. C'est la part du travail qui survit à une réclamation ratée : noms entendus à moitié sur relais, clauses de contrat qui sentaient mauvais, familles de fins déjà exposées, avertissements payés par les dernières minutes de quelqu'un d'autre. Une nouvelle partie doit commencer avec de meilleurs soupçons, pas avec un meilleur sous-marin.
 
 ## Scanner
 
-FR LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MÉMOIRE DOSSIER // Rumeurs, avertissements, contexte contractuel et fins restent. Coque, oxygène, outils, cargaison et carte ne restent pas.
 
 ## Terminal
 
-FR LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+RÈGLE DE PERSISTANCE : le dossier peut garder familles de rumeurs, catégories de preuve, marqueurs de fin et avertissements de route entre campagnes. Il ne transporte ni équipement, ni ressources, ni géographie du seed, ni propriété de la vérité.
 
 ## Audio
 
-FR LOC HOLD: Your file remembers what your hands cannot carry.
+Le fichier se souvient de ce que tes mains ne peuvent pas porter.
 
 ## Field Note
 
-FR LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Que le savoir persiste. Que la pression reste.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/fr_FR. -->

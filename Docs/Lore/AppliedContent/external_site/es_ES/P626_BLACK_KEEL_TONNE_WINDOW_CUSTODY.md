@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Field Archive Longform
 spoiler_tier: 0
-title: "Custodia tonne-window de Black Keel"
+title: "Custodia tonne-window Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custodia tonne-window de Black Keel
+# Custodia tonne-window Black Keel
 
-La frase tonne-window suena a cálculo de carga hasta que un Marauder la lee contando respiraciones. Black Keel no pregunta por masa porque su tripulación haya olvidado el miedo. Pregunta porque cada kilogramo que sale de HECTON-8 se convierte en custodia. Un cuerpo se convierte en custodia de cuarentena. Una unidad sellada se convierte en custodia de prueba. Una caja de aleación se convierte en custodia de salvamento. Una bolsa de material de proceso Xenon-Omega se convierte en custodia de deuda, custodia de reclamación y a veces custodia de peligro al mismo tiempo. Keelmark escribe esas categorías antes de que el portador se mueva, porque el portador pertenece a una cadena de dueños que puede sobrevivir a la vergüenza, pero no a una carga sin precio. Por eso la primera respuesta desde órbita puede sentirse cruel. La nave puede reconocer una señal y aun así negar el izado. La ventana puede sostener la prueba pero no al buzo. Puede sostener al buzo si la prueba se queda atrás. Puede aceptar salvamento que pague el gravamen mientras el cuerpo espera una línea de cuarentena más limpia. Nadie tiene que reír para que duela. El dolor viene de una frontera madura haciendo exactamente aquello para lo que fue construida: preservar el portador, preservar la reclamación, preservar el rastro de papeles y dejar a la persona tomar una decisión de masa dentro del agua.
+La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.
 
-## Scanner
+Por eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.
 
-LÍNEA DE CUSTODIA // La masa tonne-window aceptada puede ser salvamento, prueba, cuerpo u objeto de deuda. Un paquete oído no asigna prioridad de izado; asigna responsabilidad.
-
-## Terminal
-
-RECIBO DE MASA KEELMARK // La ventana concede custodia a una ranura, no piedad a una persona. Cargas con exceso de masa pasan a la siguiente vuelta salvo que valor de reclamación, clase de cuarentena y geometría del portador limpien juntas.
-
-## Audio
-
-Audio de deuda de Black Keel: puedo llevar prueba, metal o a ti. El libro preguntará cuál mantiene solvente la nave.
-
-## Field Note
-
-Cuando el portador dice masa aceptada, no dice persona aceptada. Ata la prueba a tu traje antes de que el libro te pida elegir.
+Para el jugador, la presión final se vuelve concreta: ¿qué vuelve primero, cuerpo, prueba, muestra, herramienta, coordenadas o historia? Black Keel calcula. La misericordia no supera el contrato salvo que el jugador fuerce un caso de custodia mejor.
 
 <!-- External Site; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/es_ES. -->

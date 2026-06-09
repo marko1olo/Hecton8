@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Faction Message Split
 
-Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+The split keeps Deep Reach institutional instead of cartoonishly unified. A corporation can issue rescue orders, cover-up orders, and honest technical warnings at the same time because each office is defending a different ledger.
 
 ## Scanner
 
-Message sources conflict: asset recovery, legal silence, old engineering warning.
+Three Deep Reach sources disagree: recovery wants coordinates, legal wants silence, legacy engineering warns the basin will answer.
 
 ## Terminal
 
-SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance requests navigable coordinates. Asset Silence orders evidence containment and no public acknowledgment. Legacy Engineering Node 4 repeats a pre-collapse warning: do not disturb the lower basin relays during Aegir shadow. These are not rebels. They are departments protecting different losses.
 
 ## Audio
 
-A company can be one logo and three knives.
+One logo. Three voices. None of them clean.
 
 ## Field Note
 
-This is not redemption. It is pressure-source readability.
+Use after the player has heard at least two Deep Reach tones. The beat is ambiguity with teeth: conflicting instructions, shared ownership, no clean ally.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/en_US. -->

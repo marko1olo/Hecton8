@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sensor_surface |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS179_FIRST_SENSOR_SURFACE_ARTICLES.md |
 | Speaker | Instrument scanner, pressure-port note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first instrument inspection |
@@ -23,7 +23,7 @@
 
 ## Source Brief
 
-The source knows salt crystallized inside the pressure-port rim. It does not know the true pressure state or the instrument reading.
+The source knows salt crystallized inside the pressure-port rim. It does not know the actual pressure state or the instrument reading.
 
 Player use: supports hatch, pump, and shelter maintenance believability while keeping readings evidence-bound.
 
@@ -33,7 +33,7 @@ Forbidden facts: no pressure value, no live sensor verdict, no hatch system clai
 
 ### Scanner
 
-PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared.
+PRESSURE PORT // Salt needle inside rim. Flag reading; rim is partly blocked.
 
 ### Codex
 
@@ -71,18 +71,18 @@ FLAG BEFORE READING
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| ru_RU | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| ja_JP | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| zh_CN | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| fr_FR | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| es_ES | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| de_DE | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| pl_PL | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| uk_UA | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| ar_SA | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| id_ID | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| ko_KR | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| he_IL | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| pt_BR | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
-| nl_NL | draft_machine_or_llm | PRESSURE PORT // Salt needle inside rim. Treat reading as blocked until cleared. |
+| en_US | source_authority | PRESSURE PORT // Salt needle inside rim. Flag reading; rim is partly blocked. |
+| ar_SA | draft_machine_or_llm | منفذ ضغط // إبرة ملح داخل الحافة. علّم القراءة؛ الحافة مسدودة جزئيا. |
+| de_DE | draft_machine_or_llm | DRUCKPORT // Salznadel im Rand. Messwert markieren; Rand teilweise blockiert. |
+| es_ES | draft_machine_or_llm | PUERTO DE PRESION // Aguja de sal dentro del borde. Marca la lectura; el borde esta parcialmente bloqueado. |
+| fr_FR | draft_machine_or_llm | ORIFICE DE PRESSION // Aiguille de sel dans le bord. Signaler la lecture; bord partiellement bloque. |
+| he_IL | draft_machine_or_llm | פתח לחץ // מחט מלח בתוך השפה. סמן את הקריאה; השפה חסומה חלקית. |
+| id_ID | draft_machine_or_llm | PORT TEKANAN // Jarum garam di dalam tepi. Tandai bacaan; tepi sebagian tersumbat. |
+| ja_JP | draft_machine_or_llm | 圧力ポート // 縁内に塩針。読値を注意扱い；縁が一部詰まり。 |
+| ko_KR | draft_machine_or_llm | 압력 포트 // 가장자리 안에 소금 바늘. 판독값 표시; 가장자리가 일부 막혔다. |
+| nl_NL | draft_machine_or_llm | DRUKPOORT // Zoutnaald in rand. Markeer uitlezing; rand deels geblokkeerd. |
+| pl_PL | draft_machine_or_llm | PORT CISNIENIA // Igla soli w obreczy. Oznacz odczyt; obrecz czesciowo zablokowana. |
+| pt_BR | draft_machine_or_llm | PORTA DE PRESSAO // Agulha de sal dentro da borda. Marque a leitura; borda parcialmente bloqueada. |
+| ru_RU | draft_machine_or_llm | ПОРТ ДАВЛЕНИЯ // Соляная игла внутри кромки. Пометь показание; кромка частично забита. |
+| uk_UA | draft_machine_or_llm | ПОРТ ТИСКУ // Соляна голка всередині крайки. Познач показник; крайка частково забита. |
+| zh_CN | draft_machine_or_llm | 压力口 // 边缘内有盐针。标记读数；边缘部分堵塞。 |

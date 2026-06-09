@@ -88,7 +88,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 21bb5814f706ec140ab043a48c6da7b5, type: 2}
+  - {fileID: 2100000, guid: 418aebe9032d20048a184c1f1a98062e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -164,6 +164,7 @@ MonoBehaviour:
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
+  _transportFeelContract: {fileID: 0}
   maxRange: 5
   damagePerSecond: 25
   cuttableLayer:
@@ -173,10 +174,20 @@ MonoBehaviour:
   cooldownRate: 0.3
   overheatLockoutTime: 2
   heatDamageBonus: 0.15
+  recoilImpulseBase: 4
+  submergedRecoilScale: 0.6
+  waterHeatCouplingScale: 250000
   maxJitterAmplitude: 0.008
   jitterFrequency: 50
   deconstructThreshold: 3
+  heavySalvageRequiredTension01: 0.42
+  heavySalvageRequiredPull01: 0.36
+  heavySalvagePullVelocityForFullIntent: 1.75
+  heavySalvageAnchorRetraction: 0.03
   laserLine: {fileID: 0}
+  wfcCutDecalProxy: {fileID: 0}
+  wfcCutDecalRenderer: {fileID: 0}
+  wfcCutDecalMaxScale: 0.55
   cutAudio: {fileID: 0}
   overheatErrorClip: {fileID: 0}
   basePitch: 1

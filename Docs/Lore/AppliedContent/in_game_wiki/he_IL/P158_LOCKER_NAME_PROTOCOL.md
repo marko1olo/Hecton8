@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Locker Name Protocol"
+title: "פרוטוקול שם ארונית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Locker Name Protocol
+# פרוטוקול שם ארונית
 
-HE LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+ארונית היא אישית כי השתמשו בה, לא כי היא מסבירה חיים שלמים. הראיה הטובה ביותר מעשית: תג שחוק בקצה אחד, סרט על אטם סדוק, מדבקת מסלול, פתק תיקון בקיצור של עובד, לוחית שם ש-payroll מחק אחר כך. החפצים האלה מאפשרים ל-Marauder להשיב אנשים דרך סימני שימוש ומשימות לא גמורות. המושבה לא צריכה מלודרמה כדי להרגיש אנושית. היא צריכה עקבות קטנים שניקוי תאגידי לא הצליח לגרד.
 
 ## Scanner
 
-HE LOC HOLD: A locker is personal without needing a family plot.
+עקבת ארונית // לוחית שם, שחיקת כלי, pressure tape, פתק תיקון, מדבקת מסלול. ראיה אישית בלי עלילת משפחה.
 
 ## Terminal
 
-HE LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+כלל ארונית: לשמר שמות ש-Deep Reach הסירה מ-payroll. ארונית צריכה לחבר תג, תפקיד, הרשאת מסלול, הרגל תיקון והדבר הלא גמור שנשאר בפנים.
 
 ## Audio
 
-HE LOC HOLD: The company deleted the employee. The rust kept the label.
+החברה מחקה את העובד. החלודה שמרה את התווית.
 
 ## Field Note
 
-HE LOC HOLD: The smallest human trace should survive corporate cleanup.
+העקבה האנושית הקטנה ביותר צריכה לשרוד ניקוי תאגידי.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/he_IL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Public Combine"
+title: "Публічний комбінат Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Public Combine
+# Публічний комбінат Deep Reach
 
-UK LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Публічне лице Deep Reach досить широке, щоб виглядати корисним, і досить сухе, щоб виглядати невинним. Воно будує маршрутні пластини, житлові сервіси, гермологістику й програми неперервності з громадянським тоном. На цьому шарі колонія рідко бачить одного злочинця. Вона бачить бланки, пломби обслуговування, перевірені гасла й ім'я, здатне назвати себе інфраструктурою, коли робота прибуткова, і дистанцією, коли робота стає доказом.
 
 ## Scanner
 
-UK LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Публічна хартія: оператор інфраструктури, не відповідач за видобуток.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+ЗАПИС ПУБЛІЧНОГО КОМБІНАТУ: Deep Reach виступає як маршрутна інфраструктура, океанічна індустрія, логістика герможитла й сервіси неперервності. Роботу з відповідальністю рознесено по дочірніх столах, страховій мові, підрядниках опіки й recovery-офісах.
 
 ## Audio
 
-UK LOC HOLD: A clean title is the cheapest pressure suit.
+На дверях написано комунальна служба. Замки за ними кажуть власність.
 
 ## Field Note
 
-UK LOC HOLD: The seal is clean. The rooms under it are not.
+Чисте ім'я не є брехнею. Це кімната, де бруд розкладають по інших справах.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/uk_UA. -->

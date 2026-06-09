@@ -43,6 +43,11 @@ namespace Hecton8.Atmosphere
         private const float ThunderCameraShakeScale = 0.35f;
         private const float ScreenSpaceRainFrameTimeShedMs = 14f;
         private const float DefaultSurfaceWaterLevelY = 14.02f;
+        private const float FallbackClearCalmStormEmissionMultiplier = 0.95f;
+        private const float FallbackClearBreezeStormEmissionMultiplier = 1.0f;
+        private const float FallbackOvercastStormEmissionMultiplier = 1.2f;
+        private const float FallbackHeavyRainStormEmissionMultiplier = 1.55f;
+        private const float FallbackElectricalStormStormEmissionMultiplier = 1.85f;
         private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
         private const uint ThunderCameraJuiceSourceHash = 0x54484E44u; // THND
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
@@ -466,10 +471,13 @@ namespace Hecton8.Atmosphere
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
             TryUnregisterHotSwapListener();
-            TryUnregisterService();
             RefreshPlayerMovementSubscription(null);
+            _playerRuntimeContext = null;
             _stormEquipmentPulseTimer = 0f;
             DisposeWeatherMathBuffers(forceCompletePendingJob: true);
+            ClearWeatherBindings();
+            FlushWeatherShaderGlobals();
+            TryUnregisterService();
 
         }
 
@@ -640,7 +648,12 @@ namespace Hecton8.Atmosphere
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
             {
-                celestialEngine = currentService as HectonCelestialEngine;
+                HectonCelestialEngine previousCelestialEngine = previousService as HectonCelestialEngine;
+                HectonCelestialEngine currentCelestialEngine = currentService as HectonCelestialEngine;
+                if (!ReferenceEquals(previousCelestialEngine, currentCelestialEngine))
+                    ClearCelestialSurfaceWeatherOverride(previousCelestialEngine);
+
+                CacheCelestialEngine(currentCelestialEngine);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
@@ -837,10 +850,10 @@ namespace Hecton8.Atmosphere
                     stormFlashlight = playerContext != null ? playerContext.Flashlight : null;
             }
 
-            if (celestialEngine != null)
+            if (IsCelestialEngineUsable(celestialEngine))
                 return;
 
-            celestialEngine = GlobalRegistry.CelestialEngine;
+            CacheCelestialEngine(GlobalRegistry.CelestialEngine);
         }
 
         private void RefreshOwnedWeatherVfxRig()
@@ -858,6 +871,33 @@ namespace Hecton8.Atmosphere
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
         {
             _playerRuntimeContext = playerContext;
+        }
+
+        private void CacheCelestialEngine(HectonCelestialEngine engine)
+        {
+            celestialEngine = IsCelestialEngineUsable(engine)
+                ? engine
+                : null;
+        }
+
+        private static void ClearCelestialSurfaceWeatherOverride(HectonCelestialEngine engine)
+        {
+            if (IsCelestialEngineUsable(engine))
+                engine.ClearSurfaceWeatherOverride();
+        }
+
+        private HectonCelestialEngine ResolveCachedCelestialEngine()
+        {
+            if (IsCelestialEngineUsable(celestialEngine))
+                return celestialEngine;
+
+            celestialEngine = null;
+            return null;
+        }
+
+        private static bool IsCelestialEngineUsable(HectonCelestialEngine engine)
+        {
+            return engine != null && (!Application.isPlaying || engine.isActiveAndEnabled);
         }
 
         private void RefreshPlayerMovementSubscription(HectonPlayerMovement target)
@@ -1371,7 +1411,7 @@ namespace Hecton8.Atmosphere
             else
             {
                 IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematics();
-                if (oceanKinematics != null && TryResolveSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY))
+                if (oceanKinematics != null && TryResolveOceanSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY))
                 {
                     referenceSurfaceY = oceanSurfaceY;
                 }
@@ -1387,11 +1427,24 @@ namespace Hecton8.Atmosphere
             return referenceSurfaceY;
         }
 
+        private static bool TryResolveOceanSurfaceY(float candidateSurfaceY, out float surfaceY)
+        {
+            if (math.isfinite(candidateSurfaceY) &&
+                math.abs(candidateSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                surfaceY = candidateSurfaceY;
+                return true;
+            }
+
+            surfaceY = DefaultSurfaceWaterLevelY;
+            return false;
+        }
+
         private static bool TryResolveSurfaceY(float candidateSurfaceY, out float surfaceY)
         {
             if (math.isfinite(candidateSurfaceY) &&
                 math.abs(candidateSurfaceY) > 0.0001f &&
-                math.abs(candidateSurfaceY) <= 1000f)
+                math.abs(candidateSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 surfaceY = candidateSurfaceY;
                 return true;
@@ -1885,9 +1938,10 @@ namespace Hecton8.Atmosphere
                     bindings.sunMultiplier);
             }
 
-            if (celestialEngine != null)
+            HectonCelestialEngine activeCelestialEngine = ResolveCachedCelestialEngine();
+            if (activeCelestialEngine != null)
             {
-                celestialEngine.SetSurfaceWeatherOverride(
+                activeCelestialEngine.SetSurfaceWeatherOverride(
                     _currentState.cloudDensityThreshold,
                     _currentState.cloudSoftness,
                     bindings.cloudSpeedMultiplier,
@@ -1946,8 +2000,9 @@ namespace Hecton8.Atmosphere
             if (underwaterVisuals != null)
                 underwaterVisuals.ClearSurfaceWeatherOverride();
 
-            if (celestialEngine != null)
-                celestialEngine.ClearSurfaceWeatherOverride();
+            HectonCelestialEngine activeCelestialEngine = ResolveCachedCelestialEngine();
+            if (activeCelestialEngine != null)
+                activeCelestialEngine.ClearSurfaceWeatherOverride();
 
             if (acousticZoneController != null)
                 acousticZoneController.ClearSurfaceWeatherMix();
@@ -2015,7 +2070,7 @@ namespace Hecton8.Atmosphere
                     math.max(0f, bindings.localRainDensityMultiplier),
                     math.max(0.1f, bindings.localRainAreaScale),
                     math.saturate(bindings.localRainExposure)));
-            if (celestialEngine == null)
+            if (ResolveCachedCelestialEngine() == null)
                 Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
             _debugScreenSpaceRainShed = shedScreenSpaceRain && surfaceVfxActive;
         }
@@ -2023,7 +2078,7 @@ namespace Hecton8.Atmosphere
         private void PublishClearedWeatherShaderGlobals()
         {
             Shader.SetGlobalFloat(_RainIntensityId, 0f);
-            if (celestialEngine == null)
+            if (ResolveCachedCelestialEngine() == null)
                 Shader.SetGlobalFloat(_LightningFlashId, 0f);
             Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);
             Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);
@@ -2414,7 +2469,7 @@ namespace Hecton8.Atmosphere
                 new Vector2(1f, 0.15f),
                 1.18f,
                 1f,
-                0.95f,
+                FallbackClearCalmStormEmissionMultiplier,
                 new Color(0.95f, 0.98f, 1f, 1f),
                 new Color(0.62f, 0.66f, 0.76f, 1f),
                 new Color(1.18f, 0.63f, 0.31f, 1f),
@@ -2428,7 +2483,7 @@ namespace Hecton8.Atmosphere
                 8f,
                 0.95f,
                 0.92f,
-                1f,
+                FallbackClearBreezeStormEmissionMultiplier,
                 0f,
                 0f,
                 0f,
@@ -2516,7 +2571,7 @@ namespace Hecton8.Atmosphere
                 new Vector2(0.8f, 0.6f),
                 0.82f,
                 0.25f,
-                1.2f,
+                FallbackOvercastStormEmissionMultiplier,
                 new Color(0.7f, 0.74f, 0.8f, 1f),
                 new Color(0.32f, 0.36f, 0.44f, 1f),
                 new Color(0.9f, 0.46f, 0.24f, 1f),
@@ -2567,7 +2622,7 @@ namespace Hecton8.Atmosphere
                 new Vector2(0.7f, 0.7f),
                 0.62f,
                 0f,
-                1.55f,
+                FallbackHeavyRainStormEmissionMultiplier,
                 new Color(0.56f, 0.61f, 0.68f, 1f),
                 new Color(0.21f, 0.24f, 0.31f, 1f),
                 new Color(0.72f, 0.38f, 0.2f, 1f),
@@ -2618,7 +2673,7 @@ namespace Hecton8.Atmosphere
                 new Vector2(0.55f, 0.83f),
                 0.48f,
                 0f,
-                1.85f,
+                FallbackElectricalStormStormEmissionMultiplier,
                 new Color(0.48f, 0.53f, 0.61f, 1f),
                 new Color(0.15f, 0.17f, 0.24f, 1f),
                 new Color(0.62f, 0.31f, 0.16f, 1f),
@@ -2837,8 +2892,8 @@ namespace Hecton8.Atmosphere
             if (weatherVfxRig == null)
                 RefreshOwnedWeatherVfxRig();
 
-            if (celestialEngine == null)
-                celestialEngine = GlobalRegistry.CelestialEngine;
+            if (!IsCelestialEngineUsable(celestialEngine))
+                CacheCelestialEngine(GlobalRegistry.CelestialEngine);
         }
 
         private void Reset()

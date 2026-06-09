@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "بروتوكول مستقبل السجل العام payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Public Ledger Receiver Protocol
+# بروتوكول مستقبل السجل العام payload
 
-AR LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+بروتوكول السجل العام يرسل الأدلة إلى حيث لا تستطيع Deep Reach امتلاكها بهدوء. ينقح الإحداثيات، ويختم attestation hashes، ويرفق حيازة المسار وdigest أوزان Atlas، ثم يدخل relay مؤجلا. يفقد المرسل السيطرة عند القبول. تصبح الحزمة أصعب شراء، وأصعب دفنا، وأبطأ استخداما.
 
 ## Scanner
 
-AR LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+مسار السجل العام مسلح. تنقح الإحداثيات قبل relay مؤجل؛ وتختم حزمة attestation hash وسلسلة المسؤولية عند القبول.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+مستقبل PAYLOAD // مسار السجل العام. المستقبل: سجل عام موزع، مسار Tau مؤجل. قبول حزمة حادث منقحة الإحداثيات، attestation hashes، حيازة مسار، digest أوزان Atlas، ختم وقت المستقبل. رفض الدفع الخاص ومطالبة الاسترجاع المباشر. ينتهي الاسترجاع عند قبول relay.
 
 ## Audio
 
-AR LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+أخذ السجل الحزمة. الإحداثيات حجبت. نافذة الاسترجاع أغلقت.
 
 ## Field Note
 
-AR LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+ملاحظة نهب: نقح المسار قبل أن يقبل relay. بعد القبول، لم تعد الحزمة لك.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ar_SA. -->

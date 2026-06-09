@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Fabriktempel-Schwelle
 
-Die Schwelle markiert die finale Raumgrammatik: Deep Reach, Kolonie, Atlas-6 und Ozean sind ein physisches System.
+Die Fabriktempel-Schwelle ist die letzte untere Torbaugruppe hinter dem Bodenwerk. Sie ist keine mythische Verschmelzung. Sie ist eine arbeitende Lastteilung: Deep-Reach-Träger nehmen alte Rumpfspannung auf, Rücklaufrohre bewegen noch Sole und Wärme, Karbonatwuchs dichtet versagte Dichtungen, und Atlas-6 routet Kontinuität über Kontakte, die noch antworten. Lesbar wird sie über Schellenfolge, Strömungsmarken, Kabelbusrauschen und Etikettenlage.
 
 ## Scanner
 
-Die Bodenstruktur ist keine Basis. Fabrikhülle, Schreinlogik und lebendes Druckgewebe teilen einen Lastpfad.
+Unteres Tor gelesen: Fabrikträger, Rücklaufrohr, Druckdichtung und Atlas-Routingbus tragen dieselbe Last. Eine saubere Wand-Tür-Grenze bleibt nicht.
 
 ## Terminal
 
-Schwellenwarnung: Industrieträger, biogene Dichtung, Xenon-Lattice-Hitze und Atlas-Routing teilen Strukturhoheit.
+THRESHOLD LOAD NOTICE
+Träger: unter Spannung
+Rücklaufrohr: aktiv
+Druckdichtung: Karbonatüberwuchs
+Routingbus: ATLAS-6-Kontinuitätskanal
+Menschlicher Zugang: ungeprüft
+Aktion: Schellenfolge markieren, bevor eine Naht geöffnet wird
 
 ## Audio
 
-Der Ozean begrub die Fabrik nicht. Er machte sie zu einem Körper.
+Nenn es nicht Tür. Finde erst heraus, welche Leitung den Druck hält, bevor du sie öffnen lässt.
 
 ## Field Note
 
-Hier hört die Karte auf, Kolonieruine zu spielen.
+Das Kartenlabel sagt Schwelle. Prüfe die Schellen, nicht das Wort. Das Tor hält, weil vier Systeme dieselbe Last übernehmen.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/de_DE. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "2147年後のAtlas公的記憶"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# 2147年後のAtlas公的記憶
 
-JP LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+2147年後の公的記憶は、清掃された公共の傷だ。権限を事故に、事故をノイズに、ノイズを隔離政策に変え、公式の慈悲を越えて読む者にだけ断片を残す。
 
 ## Scanner
 
-JP LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+2147年後の公的物語: 自動化失敗、破損ログ、行為主体なし。
 
 ## Terminal
 
-JP LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+2147年後の公的見解: Atlas自動化は地質工学的カスケード中に失敗。作業員安全ログは破損。直接の行為主体性は未確認。隔離条件下でシステム回復不能。断片的な機械出力からの法的推論は禁止。
 
 ## Audio
 
-JP LOC HOLD: A dead machine makes a useful scapegoat.
+死んだ機械は便利な身代わりになる。
 
 ## Field Note
 
-JP LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+壊れた道具と呼べば、その道具が何を守るよう命じられたかは問われない。
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/ja_JP. -->

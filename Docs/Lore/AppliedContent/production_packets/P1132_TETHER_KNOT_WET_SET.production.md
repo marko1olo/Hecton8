@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_navigation_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS169_FIRST_NAVIGATION_MARK_ARTICLES.md |
 | Speaker | Field scanner, route tether note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first navigation marks |
@@ -39,7 +39,7 @@ TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail.
 
 The knot has set hard where the line held tension in water. The loose tail points nowhere useful; the chafe stripe across the anchor eye records the loaded direction.
 
-Rope remembers stress better than intention.
+The loaded side is in the abrasion, not the tail.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ FOLLOW CHAFE STRIPE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| ar_SA | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| de_DE | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| es_ES | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| fr_FR | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| he_IL | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| id_ID | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| ja_JP | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| ko_KR | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| nl_NL | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| pl_PL | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| pt_BR | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| ru_RU | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| uk_UA | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
-| zh_CN | draft_machine_or_llm | TETHER KNOT // Wet-set under load. Follow chafe stripe, not loose tail. |
+| ar_SA | draft_machine_or_llm | عقدة حبل تثبيت // اشتدت مبللة تحت حمل. اتبع خط الاحتكاك لا الطرف المرتخي. |
+| de_DE | draft_machine_or_llm | SICHERUNGSLEINENKNOTEN // Nass unter Last festgezogen. Scheuerstreifen folgen, nicht losem Ende. |
+| es_ES | draft_machine_or_llm | NUDO DE AMARRE // Se fijo mojado bajo carga. Sigue la franja de roce, no el cabo suelto. |
+| fr_FR | draft_machine_or_llm | NOEUD DE LIGNE // Serre mouille sous charge. Suivre la trace d'usure, pas le brin libre. |
+| he_IL | draft_machine_or_llm | קשר רתיקה // התקבע רטוב תחת עומס. עקוב אחרי פס השפשוף, לא אחרי הקצה הרפוי. |
+| id_ID | draft_machine_or_llm | SIMPUL TAMBAT // Mengunci saat basah di bawah beban. Ikuti garis gesek, bukan ujung longgar. |
+| ja_JP | draft_machine_or_llm | テザー結び目 // 荷重下で濡れ締まり。緩い端ではなく擦れ筋を追う。 |
+| ko_KR | draft_machine_or_llm | 테더 매듭 // 하중을 받은 채 젖어 굳었다. 느슨한 끝이 아니라 쓸린 줄을 따른다. |
+| nl_NL | draft_machine_or_llm | LIJNKNOOP // Nat vastgezet onder last. Volg de schuursreep, niet het losse uiteinde. |
+| pl_PL | draft_machine_or_llm | WEZEL LINY // Mokry zacisnal sie pod obciazeniem. Idz za sladem tarcia, nie za luznym koncem. |
+| pt_BR | draft_machine_or_llm | NO DO CABO // Travou molhado sob carga. Siga a faixa de atrito, nao a ponta solta. |
+| ru_RU | draft_machine_or_llm | УЗЕЛ ФАЛА // Схватился мокрым под нагрузкой. Иди по полосе истирания, не по свободному хвосту. |
+| uk_UA | draft_machine_or_llm | ВУЗОЛ ФАЛА // Схопився мокрим під навантаженням. Іди за смугою стирання, не за вільним кінцем. |
+| zh_CN | draft_machine_or_llm | 系索结 // 湿态受力后定型。沿磨痕走，不要沿松尾。 |

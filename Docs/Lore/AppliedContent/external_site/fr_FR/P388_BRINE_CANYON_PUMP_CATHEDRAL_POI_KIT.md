@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit de preuves de la cathédrale de pompes du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit de preuves de la cathédrale de pompes du canyon de saumure
 
-FR LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+La cathédrale de pompes donne une tâche à l'échelle de mi-profondeur. L'opérateur doit traverser des passerelles, stabiliser une poche de saumure, lire le verre de densité et comparer une horloge de maintien à un registre de file ouvrière. Aucun objet n'est décoratif; chacun change la lecture du retard: météo, négligence ou protection de réclamation.
 
-## Scanner
-
-FR LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-FR LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-FR LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-FR LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+La preuve reste plus forte quand elle respecte l'océan. La Grande Marée a brisé des murs et déplacé l'eau. La salle ne le nie pas. Elle montre ce que l'horaire a fait autour de l'inondation: marge acceptée, démarrage tardif de pompe, route maintenue, file saturée. Le POI devient repère parce que la machine se souvient encore de l'ordre du travail.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/fr_FR. -->

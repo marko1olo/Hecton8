@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Vie du plateau photique
 
-Le plateau photique est la première base vivante après la chute endommagée. La lumière de Ran-Aegir atteint l'eau supérieure, et le plateau répond par des tapis nourris aux minéraux, des brouteurs transparents, du pressureweed et des algues de route. Les tapis éclairent la roche et tiennent de petites poches d'oxygène ; les brouteurs de verre rasent les algues en couloirs lisibles ; le pressureweed se plie avant que la houle ou le déplacement d'un prédateur n'atteigne le joueur ; les algues de route marquent un courant qui peut ramener un nageur à sa ligne ou l'en éloigner. Cette zone doit être belle, car HECTON-8 valait la peine d'être désirée. Elle doit aussi rester dangereuse : tempêtes, mauvaise visibilité, prédateurs de surface et ligne de retour rompue peuvent changer l'eau claire en piège avant les récifs de câbles ou les tissus de réparation Atlas.
+Le plateau photique est la première base vivante après la chute endommagée. La lumière de Ran-Aegir atteint les 0-250 m supérieurs, et le plateau répond par des objets qu'un plongeur peut lire : tapis d'oxygène sur basalte, voies de brouteurs de verre dans les algues, pressureweed plié avant la houle, et algues de route marquant un courant de retour vers la ligne d'abri.
+
+Aucun de ces signes n'est une autorisation. Un tapis d'oxygène lumineux peut cacher un joint contaminé. Une voie fraîche de brouteurs peut signaler un passage sûr, ou montrer que le banc s'est dispersé devant un prédateur peu profond. Le pressureweed peut avertir d'une météo, d'un déplacement de prédateur ou d'une impulsion de pression venue de l'infrastructure de service sous le plateau. Les algues de route indiquent le retour jusqu'à ce que le limon de tempête ou une ligne lâche déplace le courant. C'est le point de comparaison natif avant les récifs-câbles et le tissu de réparation Atlas : la lune était déjà vivante, lisible et dangereuse avant que les machines utilisent le vivant comme matériau de maintenance.
 
 ## Scanner
 
-BIOTE DU PLATEAU PHOTIQUE // Tapis vivants, brouteurs de verre, pressureweed et algues de route confirmés. L'eau claire donne oxygène et indices de trajet ; elle ne pardonne ni météo mauvaise, ni prédateurs, ni ligne de retour perdue.
+SCAN DU PLATEAU PHOTIQUE // Tapis d'oxygène sur lèvre de basalte. Voie fraîche de brouteur de verre dans la pousse verte. Pressureweed plié vers l'ouest avant la houle. Algues de route marquant le courant vers la ligne d'abri. Dangers : passage de prédateur peu profond, limon de tempête, ligne de retour lâche.
 
 ## Terminal
 
-RELEVE DU PLATEAU : écologie photique native hors dominance de réparation Atlas. Echantillons de base : tapis d'oxygène, trace de brouteur transparent, ligne de flexion de pressureweed, sillage d'algues de route. Comparer aux croissances de récif-câble et aux tissus de cicatrice avant récolte.
+RELEVÉ DE BASE DU PLATEAU
+Profondeur : 0-250 m
+Échantillon A : tapis d'oxygène / nourri aux minéraux / poche respirable faible volume
+Échantillon B : voie de brouteur de verre / coupe fraîche / dispersion par prédateur inconnue
+Échantillon C : flexion de pressureweed / pli ouest avant houle
+Échantillon D : algues de route / courant vers la ligne d'abri
+Comparer à : natte racine-câble, tissu de cicatrice de réparation, biofilm de porte de pression
 
 ## Audio
 
-La première eau vivante n'est pas une grâce. C'est une ligne de base dans laquelle on peut nager.
+Je vois le courant de retour. Attache-toi avant de suivre la couleur.
 
 ## Field Note
 
-La première couleur n'est pas une grâce. C'est la lune qui montre à quoi ressemblait le normal avant que les machines l'apprennent.
+L'eau claire est utile avant d'être sûre. Compte couleur du tapis, voies de brouteurs, pli de weed et tension de ligne avant de lui faire confiance.
 
 <!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/fr_FR. -->

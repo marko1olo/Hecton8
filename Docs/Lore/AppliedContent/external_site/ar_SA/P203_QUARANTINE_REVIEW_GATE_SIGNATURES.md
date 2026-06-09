@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Hold Signatures"
+title: "توقيعات بوابة مراجعة الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Hold Signatures
+# توقيعات بوابة مراجعة الحجر
 
-AR LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+تجعل طبقة توقيعات الحجر مسؤولية Deep Reach إجرائية. صنعت Great Tide خطرا حقيقيا من التلوث والضغط؛ وكانت الكذبة في استخدام ذلك الخطر لإبقاء الناس والسجلات تحت حفظ محلي بينما تتأخر المراجعة الخارجية. وصفت التقارير العامة النتيجة بأنها حجر بيولوجي/ضغطي وفشل تفويض. تضيف بطاقات gate المستعادة حقيقة أقسى: تم حجز الاستخراج بلغة الشهادات حتى في مواضع لم تكن معدات المسار قد تعطلت بعد.
 
 ## Scanner
 
-AR LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+تمت استعادة بطاقة مراجعة: extraction state HELD، حقل الخطر BIO/PRESSURE-UNCERTAIN، والشهادة الخارجية غائبة. تحرير المسار محجوب بواسطة gate code.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Action: hold extraction pending pressure-biology certificate and external review. Exception: no independent shuttle capacity assigned. Human tags remain local custody until gate clears.
 
 ## Audio
 
-AR LOC HOLD: Pending review is still a locked door.
+كان في الباب طاقة. تقول البوابة review pending، وبقيت الفتحة حمراء.
 
 ## Field Note
 
-AR LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+ضع هذا بجانب مسارات ناجين مقفلة ومعدات إخلاء بقيت فيها بطارية. حقل hold جعل بابا عاملا مغلقا قانونيا.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/ar_SA. -->

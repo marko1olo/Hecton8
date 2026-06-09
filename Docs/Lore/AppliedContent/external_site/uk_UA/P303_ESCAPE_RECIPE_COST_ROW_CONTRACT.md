@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Escape Recipe Cost Boundary"
+title: "Межа вартості рецепта виходу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Escape Recipe Cost Boundary
+# Межа вартості рецепта виходу
 
-UK LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+Покинути HECTON-8 — передусім ремонтна задача: сигнал, герметик, наведення, енергія підйому, юридичне рукостискання і зберігання payload. Таблиця рецепта тримає точні ціни; lore пояснює, чому кожна ціна кусається.
 
 ## Scanner
 
-UA LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Рядок рецепта виходу зв'язує клас компонента, рівень тиску, доказ маршруту і стан повноважень.
 
 ## Terminal
 
-UA LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: кваліфіковані витрати мають назвати реле, герметик, наведення, енергію підйому, юридичне рукостискання, повноваження payload і ризик приймача. Шлях угору має деталі; деталі мають власників.
 
 ## Audio
 
-UK LOC HOLD: The way up has parts. The parts have owners.
+Шлях угору має деталі. Деталі мають власників.
 
 ## Field Note
 
-UA LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure bands походять із правил утримання; точні costs належать recipe tables.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/uk_UA. -->

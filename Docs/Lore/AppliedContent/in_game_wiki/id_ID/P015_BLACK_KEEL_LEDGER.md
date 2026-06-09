@@ -19,21 +19,19 @@ localization_flags: 1
 
 # Ledger Black Keel
 
-Black Keel adalah garis hidup orbit pemain, tapi bukan fantasi penyelamatan. Ia bagian dari infrastruktur claim-pool: ledger kustodi, utang asuransi, jendela pemulihan, karantina, dan otoritas carrier.
-
-Ia bisa menuntun karena tuntunan melindungi nilai. Ia bisa menunda karena penundaan juga melindungi nilai. Membantu bukan berarti berpihak.
+Black Keel adalah garis hidup orbit pemain, tetapi bukan kapal pemain. Secara publik milik Aegir Reclamation Pool; secara legal Keelmark Mutual membungkusnya dengan asuransi, utang, dan exposure pemulihan. Hook lama Deep Reach dapat membelokkan urutan payload, bahasa karantina, dan sertifikat rute. Ledger dingin karena praktis: tubuh hidup, inti bukti, sampel blue-debt, peti alat, dan potongan hull bersaing untuk tonne-window yang sama.
 
 ## Scanner
 
-Ledger tender claim-pool. Kustodi carrier publik, utang asuransi, penalti massa naik, dan hook prioritas Deep Reach tersembunyi.
+Ledger tender claim-pool. Kustodi Aegir Reclamation Pool, exposure Keelmark Mutual, lien 4.8 tonne-window, dan hook prioritas Deep Reach tersamar.
 
 ## Terminal
 
-LEDGER BLACK KEEL // Layanan pemulihan bersyarat. Izin klaim belum lengkap. Rute prioritas dalam disamarkan. Otoritas payload tetap di sisi carrier. Kelangsungan hidup kontraktor tidak mengalahkan kargo diasuransikan tanpa nilai naik terbaru.
+LEDGER BLACK KEEL // Survival kontraktor terdaftar sebagai payload biologis dapat dipulihkan. Inti bukti menunggu kelas kustodi. Material blue-debt perlu review containment. Penerima prioritas dalam tersamar. Utang tonne-window aktif sampai nilai recovery melebihi exposure kargo diasuransikan.
 
 ## Audio
 
-Black Keel bukan kapalmu. Itu mesin yang tahu utangmu.
+Black Keel bisa menyelamatkanmu dari laut dan tetap menjual tiap detik pengangkatan.
 
 ## Field Note
 

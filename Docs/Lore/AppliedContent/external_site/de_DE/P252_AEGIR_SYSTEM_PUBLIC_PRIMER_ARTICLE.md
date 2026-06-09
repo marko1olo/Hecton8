@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Öffentliche Einführung in das Aegir-System
 
-Aegir ist das Wirtssystem um HECTON-8, und es zählt in jedem praktischen Sinn. Seine Mondleiter formt Gezeiten und Anflugfenster. Seine Relaisgeometrie lässt Beweise schneller reisen als Rettungsmasse. Seine Trägerorbits machen Black Keel anwesend, aber nicht sofort hilfreich. Es gibt keinen Wunderdruck, keine Ansible-Rettung und keinen sauberen Notfallknopf. Die öffentliche Version von Aegir soll erreichbar genug wirken, um grausam zu sein: verbunden, geplant, bepreist und trotzdem zu langsam für die Menschen unten.
+Aegir zählt, weil es den Himmel praktisch macht. Das System um HECTON-8 ist keine dekorative Sternkarte, sondern eine Maschine aus Monden, Fenstern, Strahlungswetter, Relaisschatten, Eissplittergefahren und Carrier-Transfergeometrie. Eine Nachricht kann in einem engen Signalfenster gehen, während ein Körper nicht bergbar ist. Eine Probe kann wertvoll sein und trotzdem das Quarantänetiming verpassen. Black Keel kann im System präsent sein und trotzdem nicht so über dir stehen, wie ein verängstigter Taucher es will.
 
-## Scanner
+So bleibt HECTON-8 hard sci-fi, ohne Hausaufgabe zu werden. Der Spieler braucht keine Vorlesung über Orbitalmechanik, um Aegir zu spüren. Er spürt es, wenn ein Signal durchkommt und der Lift nicht, wenn Sturmrauschen ein Relais verdirbt, wenn Mondschatten einen sicheren Uplink zum toten Slot macht, wenn ein Gezeitenfenster über eine Canyonroute entscheidet.
 
-Aegir ist kein Hintergrund. Es ist ein Fahrplan mit Schwerkraft, Strahlung, Gezeiten, Relaisverzug und teuren Massefenstern.
-
-## Terminal
-
-ÖFFENTLICHE ARTIKELSTUFE / AEGIR-SYSTEM
-erlaubt: Wirtssystem, HECTON-8-Mondrolle, Gezeitenfenster, Relaisgeometrie, Trägerverzug, Routen-Sprache ohne FTL
-gesperrt: finales Payload-Routing, versteckte Receiver-Priorität, genaue späte Ephemeridenlocks
-Redaktionsnotiz: Verzögerung erklären, ohne das Setting unerreichbar wirken zu lassen.
-
-## Audio
-
-Das System ist nah genug, um zu antworten. Das ist der grausame Teil. Es ist nicht nah genug, um auf Befehl einen Körper zu heben.
-
-## Field Note
-
-Sag nicht nur, Aegir sei weit weg. Benenne, was Entfernung tut: Sie bepreist Hub, verzögert Körper und lässt Beweise Rettung überholen.
+Aegir ist auch der Grund, warum der Frontier nicht leer ist. Andere Monde tragen Relaisrollen, kalte Claims, tote Beacons, Verkehrsnarben und Quarantänedruck. HECTON-8 ist die spielbare Krise, nicht das ganze System. Die größere Leiter macht Rettung teuer, Salvage legal, Beweise verzögert und jedes Rückkehrfenster verdient.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/de_DE. -->

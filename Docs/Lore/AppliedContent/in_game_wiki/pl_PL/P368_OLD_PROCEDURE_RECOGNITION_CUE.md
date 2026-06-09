@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Sygnał rozpoznania starej procedury"
+title: "Sygnał Rozpoznania Starej Procedury"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sygnał rozpoznania starej procedury
+# Sygnał Rozpoznania Starej Procedury
 
-Rozpoznanie starej procedury zmienia przeszłość protagonisty w narzędzie gry. Gracz nie podąża za mistyczną wskazówką ani osobistą przepowiednią. Czyta formularz bezpieczeństwa, któremu kiedyś musiał ufać. Stempel trasy bezpiecznej mówi, że linię certyfikowano. Dowody w pomieszczeniu mówią, że liczba pracowników została zmieniona. Pole świadka ręcznego, część mająca wymusić drugą ludzką kontrolę, zostało zapieczętowane przez biuro ciągłości. Ten konflikt jest zaczepem. Deep Reach nie tylko ukryło trasę. Użyło języka ochrony pracowników, by porzucenie wyglądało na administracyjnie zakończone. Stawka protagonisty zaczyna się od zawodowego rozpoznania: ten formularz miał zapobiegać dokładnie takiej awarii.
+Rozpoznanie starej procedury zaczyna się od formularza bezpieczeństwa, nie od przyznania. Certyfikacja route-safe powinna wiązać korytarz z liczbą, zestawem tagów pompowni i drugim ludzkim sprawdzeniem, kiedy liczby się rozchodzą. W tym zapisie zadeklarowanych occupants zdegradowano, liczba tagów nadal spiera się z salą, a pole drugiego sprawdzenia zamknęło Continuity Office.
+
+Ta sprzeczność wystarczy. Operator nie potrzebuje dostępu dowodzenia, żeby ją przeczytać. Deep Reach użyła języka ochrony pracowników, żeby porzucenie wyglądało na administracyjnie zamknięte. Formularz nie zawiódł, bo ktoś zapomniał linii. Zawiódł, bo linię, która miała zatrzymać licznik, zmieniono w linię chroniącą claim.
 
 ## Scanner
 
-Stempel trasy bezpiecznej obecny. Liczba pracowników nadpisana dwoma atramentami. Pole świadka ręcznego zapieczętowane. Formularz zbudowano, by łapać takie kłamstwo, zanim ktoś zrobił z niego politykę.
+FORMULARZ ROUTE-SAFE // Zadeklarowani occupants zdegradowani. Tagi pompowni nie zgadzają się z liczbą pracowników. Pole drugiego sprawdzenia zamknięte przez Continuity Office.
 
 ## Terminal
 
-FORMULARZ CIĄGŁOŚCI EWAKUACJI / CERTYFIKACJA TRASY BEZPIECZNEJ
-trasa: pomocnicza linia wyjścia
-zadeklarowani obecni: zdegradowany stan zaakceptowany
-świadek ręczny: zapieczętowany przez biuro ciągłości
-poprawka terenowa: wykaz pracowników niezgodny z tagami pompowni
-status: zachowanie roszczeń, brak zgody na wydobycie.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-Znasz ten formularz. Miał nie dopuścić, by pomieszczenie uznano za puste, gdy ludzie nadal w nim oddychali.
+Znasz ten formularz. Jeśli tagi się nie zgadzają, sala nie jest cleared.
 
 ## Field Note
 
-Formularz miał wymusić kolejne liczenie. Tutaj wymusił ciszę.
+Formularz miał wymusić kolejny licznik. Tutaj sprawił, że zły licznik wyglądał na domknięty.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/pl_PL. -->

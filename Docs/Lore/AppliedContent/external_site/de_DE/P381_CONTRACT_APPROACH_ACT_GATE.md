@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Contract Approach Act Gate"
+title: "Vertragsanflug-Tor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Contract Approach Act Gate
+# Vertragsanflug-Tor
 
-DE LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+Der Vertragsanflug setzt den Druck der Kampagne, ohne so zu tun, als hätte der Ozean schon alles erklärt. Ein Black-Keel-Brett weist Anspruchsübertragung, Bathydrop-Zeit, Pfandrisiko und Werkzeugschuld zu, bevor der Operator offenes Wasser erreicht. Die Route beginnt als bezahlte Arbeit unter schlechten Bedingungen.
 
-## Scanner
-
-DE LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-DE LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-DE LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-DE LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Wichtig ist der Deep-Reach-Rest im Operatorprofil. Kein Familienhaken, kein Heldentitel. Es ist eine prozedurale Übereinstimmung: Zugriffssprache, Wartungskürzel und Gewohnheiten aus Evakuierungsinfrastruktur, die noch zu verlassenen Koloniesystemen passen. Das erste Tor sagt, der Abstieg ist Arbeit; die zweite Zeile sagt, diese Arbeit hat bereits eine Akte.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/de_DE. -->

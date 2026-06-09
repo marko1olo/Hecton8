@@ -19,15 +19,19 @@ localization_flags: 0
 
 # Marek Ibarra Loss Conversion
 
-Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra is the Keelmark Mutual adjuster trace that turns missing workers into unresolved accounting states. The table is not written for grief. It is written for closing cost: body unrecovered, pressure state uncertified, contamination pending, payroll identity suspended.
+
+This is why names matter in HECTON-8. A locker plate, suit tag, body-ledger row or recovered route clock can move a worker out of unresolved load and back into a claim someone must answer. Ambiguity is cheaper than rescue, cheaper than compensation and easier to bury in a carrier dispute.
+
+For a Marauder, recovered identity is not decoration. It damages the accounting trick that made a person disappear twice: first in the water, then in the ledger.
 
 ## Scanner
 
-Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+ADJUSTER TABLE // M. Ibarra converted missing workers into unresolved load classes until pressure state, contamination state or payroll state could be certified.
 
 ## Terminal
 
-IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual loss conversion // Unrecovered biological assets remain unresolved pending pressure-state, contamination-state or payroll-state certification. Do not close claimant class without custody proof.
 
 ## Audio
 
@@ -35,6 +39,6 @@ A missing person became a pending category. That was cheaper.
 
 ## Field Note
 
-Insurance language should feel colder than gunfire.
+Insurance language should feel colder than gunfire. A recovered name is not flavor; it breaks the cheaper category.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/en_US. -->

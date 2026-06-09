@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: P-63 Pump Room Work Order"
+title: "Perintah Kerja Ruang Pompa P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: P-63 Pump Room Work Order
+# Perintah Kerja Ruang Pompa P-63
 
-ID LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+Perintah Kerja Ruang Pompa P-63 adalah HECTON-8 dalam skala kecil: air di ruangan, satu alat di tangan, jalur acoustic return, dan rute yang tidak bisa dipercaya sampai lingkungan menjawab. Ia membuat mekanik terasa seperti kebiasaan koloni.
 
 ## Scanner
 
-ID LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Perbaikan pertama terbaca seperti kebiasaan koloni: pompa, segel, dengarkan, potong hanya jika ruangan berhenti berbohong.
 
 ## Terminal
 
-ID LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: bersihkan sump; tambal cold seam; verifikasi return pinger; potong fused latch hanya setelah tekanan bertahan; cetak gasket dari stok lokal; tandai route safe setelah acoustic return berulang tiga kali. Inisial supervisor hilang di bawah noda air.
 
 ## Audio
 
-ID LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Pompa dulu. Segel kedua. Jika ia bernyanyi, berhenti memotong.
 
 ## Field Note
 
-ID LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Papan klip basah menembus setengah bawah. Baris tentang memotong masih terbaca karena seseorang melingkarinya dua kali dan menulis jika ia bernyanyi, berhenti.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/id_ID. -->

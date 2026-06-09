@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Relay Fragment"
+title: "מקטע ממסר הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Relay Fragment
+# מקטע ממסר הסגר
 
-HE LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+מקטע ממסר ההסגר הוא סוף קטן עם שיניים. הוא מוכיח ש-HECTON-8 יכולה להציל מישהו מן הלחץ ועדיין לסרב להחזיר לו מעמד של אדם. החבילה נושאת שתי אמיתות באותה נשימה מנהלית: חילוץ התקבל, שחרור נדחה. הגוף חולץ. האדם מוחזק. שורת ביקורת האוויר ישנה יותר מקבלת החילוץ, כלומר פסק ההסגר חיכה עוד לפני שמישהו פתח את הצוהר. עבור משחק ולור, המקטע חשוב מפני שהוא הופך הצלה לבלתי שלמה מוסרית. רצפה יבשה אינה חירות. חותם רפואי אינו שחרור. המושבה יכולה לשמור את מה שהיא צריכה כראיה, דגימה, רכוש תובע או מלאי עדים, ואז להשאיר את האדם בתוך המערכת שפגעה בו.
 
 ## Scanner
 
-HE LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+אותה חבילת ממסר מאשרת חילוץ ומסרבת לשחרור. האוקיינוס משחרר את הגוף לפני שהמושבה משחררת את האדם.
 
 ## Terminal
 
-HE LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+החזקת ממסר QRF-17 / חילוץ: התקבל / שחרור: נדחה / סיבות: משמורת דגימה לא פתורה, ביקורת אוויר מיושנת, מחלוקת תובע פעילה, מעמד עד זמני.
 
 ## Audio
 
-HE LOC HOLD: You are out of the water. You are not out of custody.
+החזקת ממסר. חילוץ התקבל. שחרור נדחה. אתה מחוץ למים, לא מחוץ למשמורת.
 
 ## Field Note
 
-HE LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+שתי חותמות: גוף חולץ, אדם מוחזק. ביקורת האוויר קדמה לקבלת החילוץ; מחלוקת התובע עדיין פתוחה.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/he_IL. -->

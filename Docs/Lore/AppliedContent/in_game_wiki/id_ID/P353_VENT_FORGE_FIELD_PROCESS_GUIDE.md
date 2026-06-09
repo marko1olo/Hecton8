@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Panduan Proses Lapangan Vent-Forge
 
-Vent forges adalah reaktor alami-industri. Mereka mengubah panas, brine, dan pressure history menjadi ceramics, sealants, dan charge materials berguna sambil menjaga setiap sampel terikat pada jalur termalnya.
+Vent-forge adalah reaktor alami-industri. Ia mengubah panas, brine, riwayat tekanan, dan pendinginan lambat menjadi keramik, sealant, dan material muatan. Sampel hanya berguna jika jalur termalnya selamat dari pemulihan.
 
 ## Scanner
 
-Vent-forge chemistry aktif. Kualitas mengikuti pressure history, heat pulse, dan pendinginan lambat, bukan kilau sampel.
+Kimia vent-forge aktif. Kualitas mengikuti riwayat tekanan, pulsa panas, dan pendinginan lambat, bukan kilau sampel.
 
 ## Terminal
 
-FIELD GUIDE: vent forges memasak sulfides, noble-gas pockets, ceramics, dan sealant precursors. Rute sampel melalui heat, brine, dan pressure lebih penting daripada namanya.
+PANDUAN LAPANGAN: vent-forge memasak sulfida, kantong gas mulia, butir keramik, dan prekursor sealant. Rute sampel melalui panas, brine, dan tekanan lebih penting daripada namanya.
 
 ## Audio
 
-Vent tidak membuat bijih. Ia membuat proses yang kau sela.
+Vent tidak membuat bijih. Ia membuat proses yang kau putus.
 
 ## Field Note
 
-Jangan angkat lot segar langsung ke air dingin. Biarkan vent menyelesaikan anneal atau shell akan retak halus.
+Jangan angkat lot segar langsung ke air dingin. Biarkan vent menyelesaikan anneal atau cangkangnya akan retak jaring.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/id_ID. -->

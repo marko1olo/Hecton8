@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Empieza aquí: HECTON-8
 
-Cluster inicial: contrato, rol del jugador, presión de supervivencia HECTON-8 y primera contradicción en la historia de Deep Reach.
+Empieza aquí: HECTON-8 comienza como un salvage contract alrededor de una colonia ahogada, un Marauder endeudado y una versión de Deep Reach demasiado limpia.
 
 ## Scanner
 
-Hub de publicación: premisa, papel del jugador, primeras restricciones y primera mentira de Deep Reach.
+Entrada pública: salvage contract, Marauder endeudado, cápsula dañada, contradicción de Deep Reach y primera traza de reparación Atlas.
 
 ## Terminal
 
-SITE NAV: entrada por contrato, antiguo especialista Deep Reach, Marauder endeudado, cápsula dañada, sin gancho familiar, primera traza de reparación Atlas.
+SITE NAV: empezar por lenguaje contractual, supervivencia bajo presión, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-Viniste por salvage. El océano hará que ese motivo quede pequeño.
+El primer registro no pide ayuda. Presenta una claim.
 
 ## Field Note
 
-La navegación spoiler-light empieza aquí: premisa primero, evidencia después, finales solo tras ganarse el acceso.
+Lee primero el papeleo. En HECTON-8 la mentira sobrevive porque cada frase contiene algo cierto.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/es_ES. -->

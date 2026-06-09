@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Скрытая beneficiary clause Deep Reach
 
-Скрытая beneficiary clause держит заговор приземленным. Deep Reach не магический кукловод; это contract pressure layer через shell custody, insurance priority и recovery compliance.
+Скрытая beneficiary clause Deep Reach удерживает заговор на уровне контрактного давления, а не театра злодеев. Deep Reach не обязана появляться в видимом hire sheet, чтобы формировать миссию. Она появляется в порядке доступа: какой recovery channel открывается первым, какой receiver застрахован, какой coordinate packet переживает редактирование и какой стол получает выплату, если claim выживет. Clause использует proxy loss desk, чтобы отвести liability от старого имени, сохранив главное, чего Deep Reach все еще хочет: доступ к затопленной цепочке координат, которую они не смогли похоронить. От этого находка холоднее признания. Игрок читает не монолог. Он читает машину, которая уже разложила его на asset, witness, contractor и recoverable debt. Deep Reach присутствует как давление, а не дым. Отсутствующее имя и есть доказательство.
 
 ## Scanner
 
-Contract clause отредактирована. Beneficiary chain идет через proxy loss desk.
+Deep Reach не напечатана в hire sheet. Она появляется там, где сходятся деньги, приоритет приемника и доступ к координатам.
 
 ## Terminal
 
-BENEFICIARY TRACE: Deep Reach отсутствует в видимом hire sheet и присутствует в priority recovery channel. Proxy holder скрывает liability и сохраняет coordinate access.
+BENEFICIARY TRACE / видимый наниматель: proxy loss desk / скрытый beneficiary: shell, связанная с Deep Reach / liability: изолирована / coordinate access: сохранен / priority recovery channel: открывается раньше contractor distress lane.
 
 ## Audio
 
@@ -35,6 +35,6 @@ BENEFICIARY TRACE: Deep Reach отсутствует в видимом hire shee
 
 ## Field Note
 
-Не писать это как монолог злодея. Показать clause и дать игроку вывести давление самому.
+Держать процедурно: редактирование, proxy loss desk, beneficiary trace, recovery channel. Пусть игрок сам выводит давление.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/ru_RU. -->

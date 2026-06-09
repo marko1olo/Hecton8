@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Payload Withhold Blind Return Protocol
 
-Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+The blind return protocol refuses every receiver. No corporation, ledger, quarantine lane or severance target receives the final payload. The carrier keeps the map and evidence local, which denies Deep Reach a clean route back. It also leaves debt active, public proof unfiled and the packet vulnerable to water, death or bad storage.
 
 ## Scanner
 
-Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Blind return route armed. No receiver assigned. Basin vector, proof hashes and access class remain local; lien and recovery window stay unresolved.
 
 ## Terminal
 
-PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+PAYLOAD RECEIVER // BLIND RETURN WITHHOLD. Receiver: none. Hold basin vector, proof hashes, salvage class, local evidence packet. Deny Deep Reach access map, payout receipt and receiver custody. Known cost: lien unresolved, packet loss risk total.
 
 ## Audio
 
-Sometimes not sending is the only thing that still belongs to you.
+No receiver, no receipt. If the pack floods, the proof goes with it.
 
 ## Field Note
 
-Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Marauder note: keeping the map is a choice. It just gives you no receiver to blame if the bag tears.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/en_US. -->

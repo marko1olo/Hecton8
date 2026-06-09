@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Gids voor verdronken korstlagen
 
-De verdronken korst is HECTON-8's leesbare geschiedenis: oude koloniesneden, ijsinstortingsplanken, pressure-glass-naden en mineraalbanden tonen waar een route houdt, schuift of faalt bij aanraking.
+De verdronken korst is HECTON-8s leesbare geschiedenis. Oude koloniesneden, planken van ijsinstorting, drukglasnaden en mineraalbanden tonen waar een route houdt, schuift of bij aanraking faalt. Salvageploegen lezen haar als een beschadigd grootboek: wat gebouwd werd, wat viel en waar de oceaan sindsdien aan maalt.
 
 ## Scanner
 

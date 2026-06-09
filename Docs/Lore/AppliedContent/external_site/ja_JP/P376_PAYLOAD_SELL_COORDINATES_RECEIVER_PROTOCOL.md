@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "payload座標売却受領プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# payload座標売却受領プロトコル
 
-JA LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+このプロトコルは単なる戦利品売却ではない。到達権の移転だ。Deep ReachにはHECTON-8を争う紙は十分にある。足りないのは損傷した盆地を抜けて戻る信頼できる道だ。payloadは座標、信頼、証拠保管、salvageクラスを束ねてその道を渡す。
 
-## Scanner
-
-JA LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-JA LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-JA LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-JA LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+支払いは本物で、債務軽減も本物だ。だからこのルートは危険であり、戯画ではない。追い詰められたオペレーターは先取特権を消しながら、時刻記録を埋めた会社にコロニーへの帰路を届けることができる。受領印は生存をサービスに変える。
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/ja_JP. -->

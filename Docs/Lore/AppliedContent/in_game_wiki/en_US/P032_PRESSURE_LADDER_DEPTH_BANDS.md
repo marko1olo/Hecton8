@@ -19,22 +19,32 @@ localization_flags: 0
 
 # Pressure Ladder
 
-The pressure ladder is a survival map. The 0-250 m shelf tolerates damaged gear for short work. The 250-1200 m industrial shelf needs better seals and power. Brine canyons bend buoyancy and sonar. Abyssal machine fields punish weak hull discipline. The Atlas basin requires signal hardening and pressure-rated return planning. Descend when the next seal, battery, oxygen loop and return ping all agree.
+The pressure ladder is the route logic behind HECTON-8's depth progression. It is not a level name list. Every deeper band asks the same practical question in a harsher form: can the suit seal, battery, oxygen loop, insulation, signal and return ping all survive the next drop at the same time?
+
+The first shelf allows short work with damaged gear because the return line can still be found. The service shelf adds suit-grade checks and battery latch checks at each depth gate. Brine canyons need insulation and buoyancy trim because salt, heat and density shifts turn a good reading bad during descent. Abyssal machine fields require hardened signal and disciplined hull handling; a delayed ping can mean the route is already behind the diver. The Atlas basin adds bus noise and pressure loss to the same chain.
+
+Read the maintenance board before treating a gate as permission. If one reading is red, the next descent is not a route, it is bad procedure. Repair the weakest seal, pack, loop, wrap or relay first.
 
 ## Scanner
 
-Depth banding detected: photic shelf, industrial shelf, brine canyon, abyssal machine field, Atlas basin. Gear rating gates the route.
+DEPTH GATE READ // Band: 250-1200 m service descent. Seal margin 11%. Suit plate accepts Grade C only after battery pack B2 is latched. Return ping weak below the third clamp. Do not open the lower lock on courage.
 
 ## Terminal
 
-DEPTH LADDER: 0-250 m shelf; 250-1200 m industrial/cable shelf; 1200-2800 m brine canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+DEPTH ACCESS BOARD
+0-250 m: photic shelf / short-work gear accepted
+250-1200 m: service shelf / Grade C suit seal, latched battery, tether ping required
+1200-2800 m: brine canyon / insulation wrap and buoyancy trim required
+2800-4300 m: abyssal machine field / hardened signal and hull discipline required
+4300-5600 m: Atlas basin / return plan must survive pressure loss and bus noise
+Failure: next band locked until weakest reading is repaired
 
 ## Audio
 
-You do not descend because you are brave. You descend because the next seal holds.
+Stop arguing with the door. The seal margin is red, and your return ping is already late.
 
 ## Field Note
 
-The ocean gates progress with pressure, not permission.
+The gate does not care why you need the route. It reads seal, power, oxygen, insulation, signal, then either gives you green or kills the idea.
 
 <!-- In-Game Wiki; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/en_US. -->

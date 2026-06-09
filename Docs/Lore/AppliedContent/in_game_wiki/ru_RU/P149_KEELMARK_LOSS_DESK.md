@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Loss Desk Keelmark"
+title: "Стол убытков Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Loss Desk Keelmark
+# Стол убытков Keelmark
 
-Loss Desk Keelmark делает cover-up процедурным. Тела исчезают в accounting раньше, чем исчезают в океане.
+Keelmark - арифметическая комната. Она переводит катастрофу в классы убытков, которые можно страховать, оспаривать, продавать или игнорировать. Ее опасность не в театральной жестокости, а в спокойной способности спрятать человека внутри категории unrecoverable exposure.
 
 ## Scanner
 
-Страхование не прятало мертвых. Оно переименовывало их, пока никого не требовалось доставать.
+Найдена таблица потерь: колонка для оборудования, колонка для труда, колонка для неудобных показаний.
 
 ## Terminal
 
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+СТОЛ УБЫТКОВ KEELMARK: страховая сортировка назначает потерю груза, потерю жилья, impairment труда, риск свидетеля и класс recoverable material до того, как публичное заявление назовет мертвых.
 
 ## Audio
 
-Ledger сухой, потому что комната была мокрой.
+Они посчитали пропавших раньше, чем имена.
 
 ## Field Note
 
-Loss category - могила с лучшим stationery.
+Стол убытков не скорбит. Он решает, какое отсутствие можно выставить счетом.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/ru_RU. -->

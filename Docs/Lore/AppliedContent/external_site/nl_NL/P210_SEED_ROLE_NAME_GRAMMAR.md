@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Seed-role-naamgrammatica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Seed-role-naamgrammatica
 
-NL LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Seed-role-naamgrammatica bepaalt hoe HECTON-8 procedurele variatie gebruikt zonder geschreven menselijke textuur te verliezen. Replay kan veranderen waar het bewijs van een arbeider verschijnt, maar de naam moet verbonden blijven aan werk, vergunning, taak en object. Zo blijft de kolonie verrassend tussen runs en bewaart ze toch het gevoel dat elk record hoorde bij iemand wiens werk ertoe deed.
 
 ## Scanner
 
-NL LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Een seed kan de bewijsvolgorde verplaatsen. Hij kan een arbeider niet in wegwerptekst veranderen.
 
 ## Terminal
 
-NL LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalisatie mag crewtermen toelichten voor leesbaarheid, maar mag identiteit niet herschrijven, werk niet wissen en de naam niet losmaken van een concreet object.
 
 ## Audio
 
-NL LOC HOLD: Random is not authorship. Bind the name to a job.
+Willekeur is geen auteurschap. Bind de naam aan een taak.
 
 ## Field Note
 
-NL LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Elke seed-role-identiteit combineert persoonlijke naam, crewfamilie, routevergunning, laatste taak en objectvariant.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/nl_NL. -->

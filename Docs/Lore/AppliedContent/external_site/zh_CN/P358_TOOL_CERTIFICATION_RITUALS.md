@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Tool Certification Board"
+title: "工具认证板"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Tool Certification Board
+# 工具认证板
 
-ZH LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+工具认证板记录了一种更相信标记而不是演说的文化。切割头已重索引。密封剂筒已称重。压力手套双签。泵钥匙晚归。下潜套件扣留。每一行都很直白，因为在几乎正确的工具也能悄悄杀人的地方，直白流程让人活下去。
 
-## Scanner
+板面看起来像仪式，是因为危险劳动会重复同一套动作，给恐惧找一个去处。称重、检查、签名、归还、复查。第二个签名不是装饰；它让信任承担责任。如果手套在压力下失效，板上的标记会说明谁看过、谁催过、谁仍试图把它送下去。
 
-ZH LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-ZH LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-ZH LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-ZH LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+这是没有神秘色彩的工人信念。殖民地没有对切割器祈祷。它让另一个疲惫的人去看刃口、密封、重量和钥匙归还。生存因此变成共同的事，因为每件工具在接触路线前都背着别人的名字。
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/zh_CN. -->

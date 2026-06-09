@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: No Clean Ending Dossier Note"
+title: "Dossiernotiz ohne sauberes Ende"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: No Clean Ending Dossier Note
+# Dossiernotiz ohne sauberes Ende
 
-DE LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+Die Notiz bestimmt den Erinnerungston nach dem Ende. Selbst das stärkste Ende hinterlässt eine lebende Akte: etwas Gerettetes, etwas Beschädigtes und einen Preis, der nicht ordentlich werden will.
 
 ## Scanner
 
-DE LOC HOLD: Dossier note: closure denied; consequence retained.
+Dossiernotiz: Abschluss verweigert; Folge beibehalten.
 
 ## Terminal
 
-DE LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: Ergebnis gespeichert. Sauberer Abschluss unter aktuellem Beweisstand nicht verfügbar. Schuld, Ökologie, Haftung und Zeugenverwahrung bleiben aktive Akten.
 
 ## Audio
 
-DE LOC HOLD: You saved something. That is not the same as clearing it.
+Du hast etwas gerettet. Das heißt nicht, dass du es bereinigt hast.
 
 ## Field Note
 
-DE LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Nach-Ende-Dossier hält die Brücke offen: Ergebnis erfasst, Schuld und Beweis ungelöst, kein perfekter Sieg gewährt.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/de_DE. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Last Normal Day Evidence Set"
+title: "Bewijsset van de laatste normale dag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Last Normal Day Evidence Set
+# Bewijsset van de laatste normale dag
 
-NL LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+De laatste normale dag is geen datum. Het is de vorm die een kamer behoudt wanneer werk wordt onderbroken. Een lockerplaat wacht op een hand die nooit terugkwam. Een correctie mist een handtekening omdat iemand na de afdaling wilde terugkeren. Een pomptaak blijft open. Een lunchtoken zit nog onder tape. De routeklok blijft op een terugkeerstempel wachten omdat een klok geen categorie voor stilte heeft.
+
+Deze voorwerpen zijn betrouwbaarder dan toespraken. Niemand legde ze neer voor herinnering. Het bord probeerde nog een shift te draaien, een ploeg te voeden, een sump te legen, een stuk gereedschap te tellen en een route eerlijk te houden. Daarom doet het bewijs pijn. De kolonie was nog niet klaar met ramp worden. Ze was nog normaal genoeg om te ruziën over bekers, sleutels en late handtekeningen terwijl de fout al in de muren zat.
+
+Voor een Marauder waarschuwt de set ook tegen luie salvage. Een waardevolle plaat is in seconden weg, maar een ongetekende correctie kan verklaren waarom het officiële oorzaakveld leeg bleef. Een geklemd maaltijdtoken kan bewijzen dat een werker verwachtte terug te keren voor de deurklok stopte. Een lichaamscategorie kan schoon lijken tot pompcertificaat en shifttelling elkaar tegenspreken.
+
+Lees de onderbreking voordat je het object meeneemt. HECTON-8s verdronken kamers hebben geen perfecte laatste boodschappen nodig. Hun sterkste getuigenis is kleiner: open werk, niet overgedragen plicht, een klok die wacht op iemand die de oceaan al heeft weggenomen.
 
 ## Scanner
 
-NL LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+LAATSTE-NORMALE-DAG-SET // Lockerplaat niet opgehaald, correctienota ongetekend, pomptaak open, lunchtoken nog vastgeklemd, routeklok wacht op terugkeer. Het sterkste bewijs is onaf werk.
 
 ## Terminal
 
-NL LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+BEWIJSSET: lockerplaat niet opgehaald; correctie ongetekend; pomptaak open; lunchtoken geklemd; routeklok wacht. Officiële oorzaak leeg. Marauder-correctie: vergelijk pompcertificaat, shifttelling, lichaamscategorie en deur-klokverschil voor salvage-verwijdering.
 
 ## Audio
 
-NL LOC HOLD: The last day did not know it was last.
+De laatste dag wist niet dat hij de laatste was.
 
 ## Field Note
 
-NL LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Niemand maakte de kamer klaar voor geschiedenis. Laat de tegenspraak intact: open taak, geklemd maaltijdtoken, leeg oorzaakveld, routeklok die nog een persoon verwacht.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/nl_NL. -->

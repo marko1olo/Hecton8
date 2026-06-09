@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "מארק איבארה: המרת הפסדים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# מארק איבארה: המרת הפסדים
 
-HE LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+מארק איבארה הוא עקבת השמאי של Keelmark Mutual שהופכת עובדים נעדרים למצבים חשבונאיים לא פתורים. הטבלה לא נכתבה בשביל אבל, אלא בשביל עלות סגירה: גוף שלא הושב, מצב לחץ לא מאושר, זיהום בהמתנה, זהות שכר מושעית.
+
+לכן שמות חשובים ב-HECTON-8. לוחית ארונית, תג חליפה, שורת רישום גופות או שעון נתיב שהושב יכולים להוציא עובד ממטען לא פתור ולהחזיר אותו לתביעה. עמימות זולה יותר מהצלה, זולה יותר מפיצוי וקלה יותר לקבורה בסכסוך מובילים.
+
+בשביל Marauder, זהות שהושבה אינה קישוט. היא פוגעת בתכסיס החשבונאי שהעלים אדם פעמיים: קודם במים, ואז בספר החשבונות.
 
 ## Scanner
 
-HE LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+טבלת שמאי // M. איבארה המיר עובדים נעדרים למחלקות מטען לא פתורות עד שניתן יהיה לאשר מצב לחץ, מצב זיהום או מצב שכר.
 
 ## Terminal
 
-HE LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual המרת הפסדים // נכסים ביולוגיים שלא הושבו נותרים לא פתורים עד אישור מצב לחץ, מצב זיהום או מצב שכר. אין לסגור מחלקת תובע בלי הוכחת משמורת.
 
 ## Audio
 
-HE LOC HOLD: A missing person became a pending category. That was cheaper.
+אדם נעדר הפך לקטגוריה בהמתנה. זה היה זול יותר.
 
 ## Field Note
 
-HE LOC HOLD: Insurance language should feel colder than gunfire.
+שפת ביטוח צריכה להיות קרה יותר מירי. שם שהושב אינו אווירה; הוא שובר את הקטגוריה הזולה.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/he_IL. -->

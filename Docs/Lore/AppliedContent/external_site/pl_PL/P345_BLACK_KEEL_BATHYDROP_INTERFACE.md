@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Interfejs bathydrop Black Keel
 
-Interfejs bathydrop to miejsce, w którym setting kosmiczny dotyka gry oceanicznej. Samo istnienie Black Keel na orbicie nie wystarcza. Gracz potrzebuje łańcucha: integralności kapsuły, kontroli wyporności, masztu com, zaczepu wznoszenia, uszczelek ciśnieniowych, matematyki przekaźnika, timingu powierzchni i akceptacji przewoźnika. Jedno zerwane ogniwo zmienia ratunek w teorię. Otwarcie pozostaje uczciwe. Gracz nie jest uwięziony, bo opowieść zapomniała o statku. Jest uwięziony, bo jedyna maszyna łącząca abyss, powierzchnię i orbitę zawiodła w sposób pogarszany przez wodę co godzinę.
+Interfejs bathydrop to miejsce, w którym ekonomia tras dotyka oceanu. Samo istnienie Black Keel na orbicie nie wystarcza. Działające wynurzenie wymaga łańcucha: integralności kapsuły, kontroli wyporności, masztu łączności, zaczepu wznoszenia, uszczelek ciśnieniowych, matematyki przekaźnika, czasu powierzchni i akceptacji przewoźnika.
+
+Zerwij jedno ogniwo, a cały ratunek staje się teorią. To czyni początek uczciwym. Nikt nie utknął dlatego, że przewoźnik zniknął ze świata. Pułapka istnieje, bo jedyna maszyna zdolna połączyć głębię, powierzchnię i orbitę zawiodła w nazwanych częściach, a woda potrafi pogarszać każdą awarię z godziny na godzinę.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/pl_PL. -->

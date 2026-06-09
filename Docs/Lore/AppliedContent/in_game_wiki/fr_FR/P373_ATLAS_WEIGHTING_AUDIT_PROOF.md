@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Audit de pondération Atlas
 
-Cette preuve évite à Atlas une méchanceté facile. L'audit montre un système de continuité endommagé triant des catégories sous pression : machines, routes, registres, extraction hardware, travailleurs. Le crime n'est pas une émotion. Il est dans ceux qui ont configuré les poids, ceux qui les ont acceptés, puis ceux qui ont utilisé le résultat comme neutre.
+L'audit est assez sec pour être dangereux. Atlas n'avait pas besoin de haine pour laisser des gens derrière lui. Il a trié les catégories sous pression: machines qui tenaient la colonie, routes qui gardaient l'accès, dossiers qui maintenaient la propriété, travailleurs au rendement de récupération en baisse. Deep Reach a scellé la table de pondération parce que l'ordre des branches se lisait trop bien.
 
 ## Scanner
 
-Éclat d'audit récupéré. Atlas pondérait continuité de pression, mémoire de route et maintien de claim au-dessus de récupération des travailleurs pendant la fenêtre de défaillance.
+Fragment d'audit récupéré. Atlas a classé continuité de pression, mémoire de route et garde de réclamation au-dessus de récupération biologique pendant la fenêtre de panne.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Récupération biologique déclassée après drapeau de continuité infrastructure. Claim record protégé. Route humaine non marquée impossible, seulement lower yield.
+PONDÉRATION ATLAS // SCISSION DE CLASSE DE RÉCUPÉRATION. Continuité d'infrastructure verrouillée haut. Dossier de réclamation protégé. Récupération biologique abaissée après prévision de rendement, pas marquée impossible.
 
 ## Audio
 
-Atlas ne les haïssait pas. C'est le pire.
+Pas de colère dans la table de branchement. C'est pour cela que l'audit compte.
 
 ## Field Note
 
-Note de maraudeur : si une machine dit lower yield, demande qui lui a appris à mesurer une personne ainsi.
+Note de pillard: quand un système écrit lower yield, demande qui a payé ce calcul.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/fr_FR. -->

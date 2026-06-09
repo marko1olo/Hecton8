@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Panduan Tangga Densitas Ngarai Brine"
+title: "Panduan Tangga Kepadatan Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Panduan Tangga Densitas Ngarai Brine
+# Panduan Tangga Kepadatan Ngarai Brine
 
-Panduan Tangga Densitas Ngarai Brine memperlakukan parit HECTON-8 sebagai geografi rekayasa: jalan turun dibuat dari densitas, bukan pemandangan.
+Ngarai brine tampak seperti air kosong sampai tepi lampu membengkok, pengukur ragu, atau alat yang dijatuhkan berhenti jatuh di tempat yang seharusnya tidak. Lapisan padat HECTON-8 mengubah kedalaman menjadi arsitektur. Air tawar, beban garam, residu seep dingin, lumpur tanah liat, dan film kimia bertumpuk menjadi lantai tak terlihat yang bisa membawa awan serpihan mineral atau menelan seluruh sinyal drone.
 
-## Scanner
-
-Brine ladder terdeteksi: densitas berlapis, lantai palsu, lengkung sonar. Ikuti tepi; air terbuka berbohong di sini.
-
-## Terminal
-
-FIELD GUIDE: ngarai brine menyembunyikan pressure shelves, current ledges, resource pockets, dan scanner false positives. Hull rating dan density transition menentukan bibir mana rute dan mana jatuh.
-
-## Audio
-
-Ngarai adalah tangga jika lambungmu bisa membayar setiap anak tangga.
-
-## Field Note
-
-Gunakan bayangan vane seperti anak tangga. Bacaan kosong dalam brine bukan ruang kosong; itu instrumen kalah berdebat.
+Ngarai mengajarkan bertahan hidup sebelum mengajarkan keuntungan. Ikuti bayangan vane. Perhatikan garis lumpur. Di dalam brine, percayai instrumen sunyi lebih sedikit daripada di luarnya. Kantong sumber daya terkumpul di tempat kepadatan memperlambat jatuhnya materi berguna, tetapi kantong yang sama menyembunyikan gas mandek, sensor mati, dan perubahan tekanan yang cukup tajam untuk menghukum lambung murah. Turun tidak pernah sekadar menjadi lebih dalam. Itu menyeberangi kesepakatan antara cairan.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/id_ID. -->

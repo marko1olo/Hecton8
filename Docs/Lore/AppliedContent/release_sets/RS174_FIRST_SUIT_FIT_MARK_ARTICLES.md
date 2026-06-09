@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS172 gives early suit and personal gear checks physical readability: cuff fold lines, visor salt arcs, glove seam grit, boot suction rings, and patch stitch dots. The player should learn that personal equipment has inspectable evidence before any suit-system implementation claim.
+RS174 gives early suit and personal gear checks physical readability: cuff fold lines, visor salt arcs, glove seam grit, boot suction rings, and patch stitch dots. The player should learn that personal equipment has inspectable evidence before any suit-system implementation claim.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 
@@ -24,7 +24,7 @@ These files do not create website pages, in-game wiki pages, route cards, bindin
 
 ## First-20 Boundary
 
-RS172 improves the first-20 route by making worn gear and emergency suit checks readable through local marks without touching player, suit, pressure, or visor runtime code.
+RS174 improves the first-20 route by making worn gear and emergency suit checks readable through local marks without touching player, suit, pressure, or visor runtime code.
 
 ## Localization Boundary
 

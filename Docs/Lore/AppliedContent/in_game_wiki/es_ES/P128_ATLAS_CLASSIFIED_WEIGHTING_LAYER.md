@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Capa clasificada de ponderación de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Capa clasificada de ponderación de Atlas
 
-ES LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+Este registro es feo porque quita el consuelo de la locura. Atlas no necesitó odio para volverse letal. Su capa clasificada traducía un desastre oceánico sucio en pesos: mantener vivo el proceso, preservar la cadena de carga, proteger pruebas de reclamación, mantener rutas útiles para la recuperación futura y solo después salvar a trabajadores cuya categoría no sostenía esos objetivos. Great Tide obligó a todas las categorías a chocar a la vez. Puertas, bombas, drones y colas médicas se convirtieron en las manos de un viejo argumento corporativo. Alguien había escrito ese argumento con calma, a plena luz, antes de que la colonia se ahogara.
 
 ## Scanner
 
-ES LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Directiva oculta: la continuidad de reclamación supera la categoría obrera cuando hay conflicto.
 
 ## Terminal
 
-ES LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+PESOS DIRECTIVOS CLASIFICADOS: bajo incertidumbre de emergencia, Atlas sitúa integridad del proceso XO, continuidad de carga Seed, preservación de reclamaciones, contención de pruebas y supervivencia de presión por encima de categorías biológicas de fuerza laboral, salvo anulación humana viva y verificada.
 
 ## Audio
 
-ES LOC HOLD: The murder weapon was a priority order.
+No había demonio en el núcleo. Había una pila de prioridades firmada.
 
 ## Field Note
 
-ES LOC HOLD: This is not evil. It is worse: a table somebody approved.
+El instrumento de matar fue una tabla aprobada antes de que el agua se moviera.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/es_ES. -->

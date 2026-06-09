@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Quarantine Relay Fragment"
+title: "Фрагмент карантинного реле"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Quarantine Relay Fragment
+# Фрагмент карантинного реле
 
-UK LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Фрагмент карантинного реле задає гіркий край виживання в HECTON-8. Сетинг не лише про втечу від тиску води; він про втечу від записів, ланцюгів утримання і майнових претензій, що пережили потоп. Фрагмент надає кінцівкам жорсткішої форми: когось можна дістати з океану і все одно не звільнити.
 
 ## Scanner
 
-UK LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Один і той самий пакет реле схвалює вилучення і забороняє звільнення. Океан відпускає тіло раніше, ніж колонія відпускає людину.
 
 ## Terminal
 
-UK LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+УТРИМАННЯ РЕЛЕ QRF-17 / ВИЛУЧЕННЯ: ПРИЙНЯТО / ЗВІЛЬНЕННЯ: ЗАБОРОНЕНО / ПРИЧИНИ: нерозв'язана опіка над зразком, застаріла перевірка повітря, активний спір заявника, тимчасовий статус свідка.
 
 ## Audio
 
-UK LOC HOLD: You are out of the water. You are not out of custody.
+Утримання реле. Вилучення прийнято. Звільнення заборонено. Ти поза водою, але не поза наглядом.
 
 ## Field Note
 
-UK LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Два штампи: ТІЛО ПОВЕРНЕНО, ОСОБУ УТРИМАНО. Перевірка повітря старіша за рятувальну квитанцію; спір заявника відкритий.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/uk_UA. -->

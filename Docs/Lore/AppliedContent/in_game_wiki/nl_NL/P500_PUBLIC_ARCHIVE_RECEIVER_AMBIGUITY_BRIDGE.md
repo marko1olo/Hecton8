@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ontvangerambiguiteit in openbaar archief"
+title: "Ontvangersconflict in het openbare archief"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,33 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Ontvangerambiguiteit in openbaar archief
+# Ontvangersconflict in het openbare archief
 
-Twee ontvangerlabels op een HECTON-8-pakket bewijzen niet automatisch vervalsing. Het openbare archief splitst adresband, eerste relaynode, quarantainekantoor, claimdesk en juridisch archief. Die banen kunnen verschillen zonder onschuldig te zijn. De gevaarlijke fout is het schoonste label als waarheid nemen. Deep Reach houdt de publieke ontvanger vaak smal terwijl bruikbare bewaring elders loopt. Atlas-fragmenten tonen soms het omgekeerde: een relaybewijs lijkt eigendom maar bewijst alleen transit.
+De ontvanger is in deze pakketten geen persoon. Het is een veld dat bij elke overdracht opnieuw wordt gekopieerd. Een enkel HECTON-8-archiefpakket kan een oorspronkelijke adresband voor Deep Reach Claims dragen, een Atlas-relaisstempel, een quarantaineblokkade van de ondiepe annex, een Keelmark-claimdesknummer en een openbare archiefregel. Geen van die velden bewijst op zichzelf wie het bewijs vasthield, wie het wijzigde of wie betaalde om het zichtbaar te maken. In de openbare spiegel is de nette ontvanger vaak het kantoor dat post mag beantwoorden, niet de plek waar het pakket fysiek doorheen ging.
+
+Lees een ontvangersconflict als een routeprobleem. Controleer de zegelvolgorde, hashtijd, waterlijn op de hoes, gereedschapssporen op de tray en welk kantoor nog stroom had toen de upload plaatsvond. Als de adresband één kantoor noemt en het relaisbewijs een ander, noem het pakket pas vervalst wanneer de fysieke bewaarmarkeringen de volgorde breken. Spreek ook niemand vrij omdat het openbare veld er netjes uitziet. Het bruikbare bewijs ligt tussen de kantoornaam en de sporen van de behandeling.
 
 ## Scanner
 
-ONTVANGERAMBIGUITEIT // Adresband, relaybewijs, quarantainehold, claimsamenvatting en archiefregel noemen niet hetzelfde kantoor. Zekerheid: gedeeltelijk.
+ONTVANGERSCONFLICT // Zichtbaar: adresband, relaisnode, quarantaineblokkade, claimdesk, archiefregel. Vereist: zegelvolgorde, hashtijd, objectbewijs. Vertrouwen: gedeeltelijk.
 
 ## Terminal
 
-ONTVANGERAMBIGUITEIT
-Maak van adres, relay, quarantaine, claim en archief niet een eigenaar.
-De publieke samenvatting kan het kantoor noemen dat mag antwoorden. De bewaarroute kan tonen wie het pakket echt vasthield.
-Eindontvanger blijft dicht tot routebewijs aanwezig is.
+ONTVANGERSCONFLICT IN HET OPENBARE ARCHIEF
+Voeg ontvangersvelden niet samen.
+Adresband = bedoelde bestemming.
+Relaisbewijs = transit.
+Quarantaineblokkade = controle.
+Claimdesk = betaling en juridische reactie.
+Archiefregel = publicatie-eigenaar.
+Actie: houd de eindontvanger verzegeld tot de fysieke bewaarvolgorde overeenkomt met de pakkethash.
 
 ## Audio
 
-Een schoon ontvangerlabel is niet de hele route. Volg het lichaam van het pakket, niet de kantoornaam die voor publieke post is opgepoetst.
+Vijf kantoren kunnen één pakket aanraken. De naam in de index is alleen het kantoor dat als eerste antwoordde.
 
 ## Field Note
 
-Ontvangervelden zijn beleefd. Bewaarmarkeringen zijn fysiek. Als het label glimlacht en de route bloedt, volg de route.
+Begin bij de natte markering, niet bij het briefhoofd. Kantoren kunnen een pakket hernoemen; ze kunnen geen roestlijn op de tray verplaatsen.
 
 <!-- In-Game Wiki; generated from P500_PUBLIC_ARCHIVE_RECEIVER_AMBIGUITY_BRIDGE/nl_NL. -->

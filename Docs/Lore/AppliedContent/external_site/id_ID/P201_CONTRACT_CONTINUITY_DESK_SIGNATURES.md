@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Contract Continuity Desk Signatures"
+title: "Tanda Tangan Meja Kontinuitas Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Contract Continuity Desk Signatures
+# Tanda Tangan Meja Kontinuitas Kontrak
 
-ID LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Tanda Tangan Meja Kontinuitas Kontrak membongkar lapisan dokumen di bawah kontrak pembuka HECTON-8. Artikel ini memberi sistem kontrak nama, stempel, dan fungsi agar pemain melihat bagaimana perjalanan salvage berubah menjadi tawar-menawar kustodi. Meja Edda Malk tidak perlu mengetahui seluruh kejahatan koloni untuk membuat masa kini berbahaya. Ia hanya perlu menggabungkan lien, utang oksigen, dan klausul pemulihan dalam urutan yang benar. Saat operator menandatangani, laut bukan satu-satunya tekanan di luar lambung; kontrak sudah mulai menghimpit.
 
 ## Scanner
 
-ID LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Jebakan kontrak pembuka dibangun dari tanda tangan bawah: penggabungan lien, adendum oksigen, risiko daftar hitam, dan penahanan kustodi muatan.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Gabungkan syarat lien Aegir Reclamation Pool dengan klausul pemulihan Black Keel. Lampirkan adendum kredit oksigen, pemberitahuan risiko daftar hitam, dan penahanan kustodi muatan. Eskalasi tidak diperlukan jika operator menerima.
 
 ## Audio
 
-ID LOC HOLD: Nobody says trap. They say continuity.
+Tanda tangan bisa menjadi pintu tekanan ketika setiap klausul setelahnya mengunci.
 
 ## Field Note
 
-ID LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Tidak ada yang menstempel jebakan. Mereka menstempel kontinuitas.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/id_ID. -->

@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 05a9d9b8cef38164fb1ba430fbf720e0, type: 2}
+  - {fileID: 2100000, guid: 1be5e2f0067024b4c8a80836c830c339, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -142,6 +142,7 @@ MonoBehaviour:
   enableEnergyConsumption: 1
   lifecycleDebugLogging: 0
   _swimContract: {fileID: 0}
+  _transportFeelContract: {fileID: 0}
   range: 14
   analysisCooldown: 0.4
   analysisMask:

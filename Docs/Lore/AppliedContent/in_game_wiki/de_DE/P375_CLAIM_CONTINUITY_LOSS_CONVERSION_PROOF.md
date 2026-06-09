@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Claim-Continuity-Verlustumwandlung"
+title: "Anspruchskontinuität Verlustumwandlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Claim-Continuity-Verlustumwandlung
+# Anspruchskontinuität Verlustumwandlung
 
-Die Beweiskette endet in Umwandlung. Deep Reach kann Schaden eingestehen und Eigentum behalten, wenn Arbeiter zu Verlusten werden, Beweis zu Material Custody wird und der Claim weiterlebt. Darum trägt der Spieler nicht nur Wahrheit. Er trägt etwas, das das System kaufen kann.
+Die Kette endet beim Hauptbuch, weil das Hauptbuch alles andere überleben kann. Arbeiter werden nicht bergbarer Verlust, beschädigte Module werden Materialverwahrung, und Beweise bleiben an den Anspruch gebunden. Wer diese Dokumente trägt, trägt kein Gefühl. Er trägt ein Problem für jeden Empfänger, der den Anspruch ohne Körper will.
 
 ## Scanner
 
-Stempel des Loss Desk geborgen. Das Ledger überlebte besser als die Arbeiter, die es umbenannte.
+Verlustschreibtisch-Stempel geborgen. Arbeiterstatus wird in nicht bergbar umgewandelt, bevor Beweisverwahrung den aktiven Anspruch verlässt.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+KEELMARK-VERLUST // KONTINUITÄT ERHALTEN. Biologische Belegschaft in nicht bergbaren Verlust umgewandelt. Materialverwahrung und Beweisverwahrung aktiv bis Empfängerzuweisung.
 
 ## Audio
 
-Hier wurden Menschen zu einer sauberen Spalte.
+Hier wurden Namen zu einer sauberen Spalte.
 
 ## Field Note
 
-Marauder-Notiz: Ein Ledger kann die Toten erinnern und sie trotzdem ausgeben.
+Plünderernotiz: Ein Hauptbuch kann die Toten behalten und sie trotzdem ausgeben.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/de_DE. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Führungstimingkern-Baugruppe"
+title: "Baugruppe des Führungszeitkerns"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Führungstimingkern-Baugruppe
+# Baugruppe des Führungszeitkerns
 
-Die Führungstimingkern-Baugruppe hält HECTON-8s Raumflug hart: extraction ist ein Routenproblem aus Uhren, Schatten und beschädigtem Vertrauen.
+Die Baugruppe des Führungszeitkerns macht Flucht zu Orbitaltechnik statt zu einem einfachen Stoß nach oben. HECTON-8s Aufstiegskapsel muss Wasser, Wetter, Mondgeometrie und Konzernregeln der Empfänger durchqueren, bevor ein Brennen als bergbar gilt.
 
-## Scanner
+Die Komponente hält die getaktete Karte: Aegir-Ephemeride, Black-Keel-Empfängerspur, Mondrelais-Schutter-Cache, Sturmplume-Drift und Toleranz der custody-Uhr. Nichts davon ist Dekor. Eine Kapsel kann dicht, geladen und mechanisch gesund sein und trotzdem die Bergung verfehlen, weil ihr Paket die falsche Spur zur falschen Zeit erreicht.
 
-Leerer Timingkern. Aegir-Geometrie entscheidet, ob Aufstieg recovery, capture oder Stille wird.
-
-## Terminal
-
-GUIDANCE CORE: Kapseluhr auf Aegir window, Black Keel receiver lane, moon relay shutter und storm-plume-Drift ausrichten. Späte packets werden Beweisverlust; frühe packets werden capture noise.
-
-## Audio
-
-Oben ist keine Richtung. Es ist ein Fenster mit Zeugen.
-
-## Field Note
-
-Von HECTON-8 gibt es kein einfaches Oben. Es gibt einen Empfänger, einen Schatten, Sturmdrift und eine packet queue, die schon älter ist als deine Panik.
+Das ist die bittere Stelle des HECTON-8-Fluchtvertrags. Der Überlebende entkommt nicht aus der Tiefe in Freiheit. Die Kapsel tritt in ein enges Abrechnungsfenster über einem Ozean ein, der jedes Signal weiter verformt. Die Reparatur des Zeitkerns gibt dem Start einen Platz in diesem Fenster. Sie macht das Fenster nicht freundlich.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/de_DE. -->

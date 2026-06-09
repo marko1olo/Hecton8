@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fastener_repair |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS178_FIRST_FASTENER_REPAIR_ARTICLES.md |
 | Speaker | Repair scanner, shelter maintenance note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter repair |
@@ -72,17 +72,17 @@ DO NOT PRY FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| ru_RU | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| ja_JP | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| zh_CN | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| fr_FR | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| es_ES | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| de_DE | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| pl_PL | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| uk_UA | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| ar_SA | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| id_ID | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| ko_KR | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| he_IL | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| pt_BR | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
-| nl_NL | draft_machine_or_llm | RIVET HEAD // White salt ring under lip. Mark panel for dry inspection before prying. |
+| ar_SA | draft_machine_or_llm | رأس برشام // حلقة ملح بيضاء تحت الحافة. علّم اللوح لفحص جاف قبل الفك. |
+| de_DE | draft_machine_or_llm | NIETKOPF // Weisser Salzring unter Lippe. Paneel vor dem Hebeln fuer Trockenpruefung markieren. |
+| es_ES | draft_machine_or_llm | CABEZA DE REMACHE // Anillo blanco de sal bajo el borde. Marca el panel para inspeccion seca antes de hacer palanca. |
+| fr_FR | draft_machine_or_llm | TETE DE RIVET // Anneau de sel blanc sous le bord. Marquer le panneau pour inspection seche avant de faire levier. |
+| he_IL | draft_machine_or_llm | ראש מסמרה // טבעת מלח לבנה מתחת לשפה. סמן את הלוח לבדיקה יבשה לפני חילוץ. |
+| id_ID | draft_machine_or_llm | KEPALA PAKU KELING // Cincin garam putih di bawah bibir. Tandai panel untuk pemeriksaan kering sebelum dicongkel. |
+| ja_JP | draft_machine_or_llm | リベット頭 // 縁下に白い塩輪。こじる前に乾式点検用としてパネルをマーク。 |
+| ko_KR | draft_machine_or_llm | 리벳 머리 // 턱 아래 흰 소금 고리. 들어내기 전 건식 점검 대상으로 패널을 표시한다. |
+| nl_NL | draft_machine_or_llm | KLINKNAGELKOP // Witte zoutring onder rand. Markeer paneel voor droge inspectie voor wrikken. |
+| pl_PL | draft_machine_or_llm | LEB NITU // Bialy pierscien soli pod krawedzia. Oznacz panel do suchej kontroli przed podwazeniem. |
+| pt_BR | draft_machine_or_llm | CABECA DE REBITE // Anel branco de sal sob a borda. Marque o painel para inspecao seca antes de alavancar. |
+| ru_RU | draft_machine_or_llm | ГОЛОВКА ЗАКЛЕПКИ // Белое соляное кольцо под кромкой. Отметь панель для сухой проверки перед поддеванием. |
+| uk_UA | draft_machine_or_llm | ГОЛІВКА ЗАКЛЕПКИ // Біле соляне кільце під крайкою. Познач панель для сухої перевірки перед підважуванням. |
+| zh_CN | draft_machine_or_llm | 铆钉头 // 唇缘下有白色盐环。撬动前标记面板做干检。 |

@@ -1,6 +1,6 @@
 ﻿# Reports Index
 
-Date: 2026-06-05
+Date: 2026-06-09
 Status: STATIC POLICY
 Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC
@@ -14,6 +14,7 @@ Evidence class: STATIC_DOC
 - Do not cite a report as `VERIFIED`, `COMPLETE`, or `PRODUCTION READY` without a current proof artifact.
 - Do not turn this folder into a maintained knowledge base. It is evidence storage.
 - Superseded chains, local telemetry, duplicate prompt extracts, and stale rerun/pass/loop reports are archive targets once no active contract cites them.
+- Hidden `.tmp.*` cache files are transient writer/cache residue, not reports. Move them to `Docs/DEPRECATED` after confirming no validator reads the exact path.
 
 ## Useful Active Families
 
@@ -43,7 +44,6 @@ Evidence class: STATIC_DOC
 - mod registry cache and DataVault binding reports
 - DataVault rebind/release lifecycle reports
 - SignalBus hot-path audits
-- project metrics dashboards and chart bundles
 - documentation structure scans
 
 ## Current 2026-06-05 Fronts
@@ -65,6 +65,11 @@ Superseded dated documentation layers, old patch diffs, generated atlas copies, 
 - `Docs/DEPRECATED/Reports_2026-05-21_REVALIDATION_QUARANTINE/`
 - `Docs/DEPRECATED/Reports_2026-05-21_LOOP11_STALE_HANDOFF/`
 - `Docs/DEPRECATED/X_012_Stale_DataMonolith_Reports_2026-05-23/`
+- `Docs/DEPRECATED/TokenUsageLocalTelemetrySuite_20260609/`
+- `Docs/DEPRECATED/NativeMemoryCleanupProgress_Stale_20260609/`
+- `Docs/DEPRECATED/ArchitectureDensityAudits_X012_Stale_20260609/`
+- `Docs/DEPRECATED/UnreferencedOptimizationReports_20260609/`
+- `Docs/DEPRECATED/UnreferencedRootReports_20260609/`
 - `Docs/_Archive/Reports_X_012_2026-05-23/`
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-23/`
 - `Docs/_Archive/Architecture_X_012_APEX_2026-05-24/`

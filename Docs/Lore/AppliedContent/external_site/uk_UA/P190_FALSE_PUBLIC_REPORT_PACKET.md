@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Пакет хибного публічного звіту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Пакет хибного публічного звіту
 
-UA LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
+Пакет хибного публічного звіту формулює публічну версію Deep Reach про втрату колонії та пропуски, які роблять її хибною. Це не пропаганда, що заперечує катастрофу; це пропаганда, яка редагує катастрофу в нещасний випадок без відповідальних рук. Стаття важлива тому, що дозволяє HECTON-8 зберегти жорстку науково-фантастичну катастрофу й водночас довести історію прикриття. Фізика океану пояснює, чому колонія була вразливою. Зниклі службові записки пояснюють, чому вразливість стала покинутістю.
 
 ## Scanner
 
-UA LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Публічний звіт спрацював тому, що залишив справжній океан і прибрав людські рішення всередині нього.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: втрата HECTON-8 списана на винятковий припливний каскад, затримку ретрансляції й карантинну невизначеність. Опущено: прийняті запаси ризику, утримання випуску евакуації, override безперервності Atlas, конвертація претензії й запит відновлення спершу вантажу.
 
 ## Audio
 
-UA LOC HOLD: They did not fake the storm. They buried the choice.
+Вони сказали правду про воду і збрехали про руки.
 
 ## Field Note
 
-UA LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Найкраща брехня не заперечувала приплив. Вона використала приплив як прикриття.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/uk_UA. -->

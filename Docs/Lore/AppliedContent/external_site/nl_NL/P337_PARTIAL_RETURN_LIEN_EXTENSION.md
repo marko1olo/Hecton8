@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Partial Return Lien Extension"
+title: "Verlenging retentierecht voor gedeeltelijke terugkeer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Partial Return Lien Extension
+# Verlenging retentierecht voor gedeeltelijke terugkeer
 
-NL LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
+De replaystructuur van HECTON-8 behandelt gedeeltelijke uitgangen als dossiers, niet als resets. Een mislukte ontsnapping kan de campagne nog steeds vooruitduwen door te veranderen wat bekend is, wie iets tegoed heeft en welk venster daarna opengaat.
 
 ## Scanner
 
-NL LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Terugkeer goedgekeurd onder verlengd retentierecht. Kennisflags blijven; uitrustingsinventaris wordt in quarantaine gezet en gestript.
 
 ## Terminal
 
-NL LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PARTIAL RETURN-ORDER: herintrede in dezelfde seed toegestaan onder verlengd retentierecht, herzien stormvenster en behouden kennisdossier. Fysieke inventaris gereset door bewaringsquarantaine; gereedschap blijft carrier-eigendom tot bewijsreview sluit.
 
 ## Audio
 
-NL LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+De route onthoudt wat je bewees. De oceaan houdt de rest.
 
 ## Field Note
 
-NL LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Herintredingsrecord: same-seed-terugkeer draagt kennis, schulddruk, stormwijzigingen en bewaringsreset in plaats van geërfde uitrusting.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/nl_NL. -->

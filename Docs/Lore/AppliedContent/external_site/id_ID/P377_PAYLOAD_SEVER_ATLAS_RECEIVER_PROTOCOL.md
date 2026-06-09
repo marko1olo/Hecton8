@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protokol Penerima Putus Atlas Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protokol Penerima Putus Atlas Payload
 
-ID LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+Rute pemutusan memberi pembawa cara membuat Atlas tidak lagi berguna bagi Deep Reach. Itulah daya tarik praktisnya. Potongan pada tulang punggung kontinuitas dapat mematahkan loop perbaikan rusak, mengisolasi memori rute, dan mencegah penerima memakai Atlas sebagai jalan otomatis kembali ke cekungan.
 
-## Scanner
-
-ID LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-ID LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-ID LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Biayanya ada di paket yang sama. Atlas bukan sekadar rak alat; pertumbuhan rusaknya telah menjadi bagian dari ekologi lokal dan logika rute. Pemutusan dapat menutup jalur balik korporat sambil membunuh data dan organisme yang tidak dapat dibangun ulang oleh siapa pun. Payload menyimpan proof hash karena tindakan itu akan membutuhkan catatan setelah lampu berubah.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/id_ID. -->

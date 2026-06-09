@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Feiger Ausstiegspfad"
+title: "Notausstiegskette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feiger Ausstiegspfad
+# Notausstiegskette
 
-Diese Endings respektieren Entscheidung, belohnen Unwissen aber nicht sauber. Ein echter Pfad, kein Fake-Game-Over.
+Die Notausstiegskette macht frühe Flucht zu Verfahren. Das Fahrzeug kann HECTON-8 nach genug Reparaturarbeit verlassen, doch der Anlagenbericht bleibt offen: Wahrheitspakete, Haftungsbeweis und Materialzertifikat bleiben unten.
 
 ## Scanner
 
-Dieser Ausstieg ist echt und dünn: reparierte Kapsel, enges Wetter, keine Wahrheit, kein sauberer Lohn.
+Die frühe Startkette ist echt, aber jedes Licht bleibt vorläufig: Rumpfsiegel, B2-Reserve, Rückkehr-Ping, Sturmloch, Anspruchsbake.
 
 ## Terminal
 
-Aufstieg nach Rumpfsiegel, Batteriereserve, Relais-Ping und Sturmlochprognose möglich. Ledger: unvollständige Bergung.
+Notaufstieg öffnet nur, wenn die Wiege klemmt, Ballastventile trocken sind, Black Keel das P036-Rückkehrfenster wiederholt und die Oberflächenböe einen sauberen Korridor lässt. Das Vertragsbuch stempelt die Abreise unvollständig: keine Atlas-Aussage, kein Deep-Reach-Haftungspaket, keine zertifizierte Auszahlung.
 
 ## Audio
 
-Du kannst laufen. Der Ozean hinter dir erklärt sich nicht.
+Start ist möglich. Abschluss ist nicht an Bord.
 
 ## Field Note
 
-Frühes Gehen soll gelöst wirken, nicht erfüllend.
+Die Kapsel nimmt einen Passagier an, bevor die Anlage einen Datensatz akzeptiert.
 
 <!-- External Site; generated from P037_COWARD_EXIT_CHAIN/de_DE. -->

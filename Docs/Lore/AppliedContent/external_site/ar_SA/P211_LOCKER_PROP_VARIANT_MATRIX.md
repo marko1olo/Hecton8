@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "مصفوفة متغيرات خزانة العامل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# مصفوفة متغيرات خزانة العامل
 
-AR LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+تحدد مصفوفة متغيرات خزانة العامل كيف تحول HECTON-8 التخزين الشخصي إلى دليل مقروء. الخزائن ليست مكبات سير ذاتية. إنها أجسام عالمية مكثفة تربط العامل، والعمل، ووصول المسار، والضرر، والعبث اللاحق. هكذا يقرأ اللاعب حياة المستعمرة عبر أشياء لا تزال تنتمي إلى الغرفة.
 
 ## Scanner
 
-AR LOC HOLD: A locker should show work, route access and what got erased.
+يجب أن تكشف الخزانة العمل، ووصول المسار، وما حاول أحدهم محوه. لا يسمح بالتذكارات إلا بعد أن يصبح العمل مقروءا.
 
 ## Terminal
 
-AR LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: تحتاج كل خزانة مؤلفة إلى ثلاث دلائل مقروءة: العمل، والمسار، والضرر. الذاكرة الزخرفية ثانوية. يمكن للخزانة أن تحمل رمزا عائليا أو نكتة خاصة، لكن فقط بعد أن تخبر أداة أو أثر تصريح أو ندبة محو اللاعب كيف لمس هذا الشخص المستعمرة.
 
 ## Audio
 
-AR LOC HOLD: The locker is not a shrine. It is a failed work order.
+الخزانة ليست مزارا. إنها أمر عمل فاشل.
 
 ## Field Note
 
-AR LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+المتغيرات: تآكل أداة، وسم تصريح مسار، شريط ضغط، ملصق مناوبة، ندبة محو راتب، علامة حفظ من مارودر.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/ar_SA. -->

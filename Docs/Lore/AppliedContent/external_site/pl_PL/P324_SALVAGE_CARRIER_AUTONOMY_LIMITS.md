@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Granice autonomii carriera salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Salvage Carrier Autonomy Limits
+# Granice autonomii carriera salvage
 
-PL LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+Granice autonomii carriera salvage utrzymują HECTON-8 przy ziemi. Black Keel jest niebezpieczny, bo jednocześnie użyteczny i ograniczony. Może wykonywać księgowość i odzysk, które czynią ucieczkę możliwą, ale jego reguły zakazują niemożliwego ratunku, którego gracze oczekują od osobistego statku. Wynikiem jest infrastruktura z pulsem, nie towarzysz.
 
 ## Scanner
 
-PL LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel może przesuwać dług, telemetrię i niskoryzykowne zrzuty bez pytania. Nie może autoryzować głębokiego ratunku.
 
 ## Terminal
 
-PL LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+GRANICE AUTONOMII / dozwolone: claim processing, sprzedaż telemetrii, recovery-window scheduling, niskoryzykowny ballast lub supply drop, contaminated-mass rejection / zakazane: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-PL LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Autonomiczny nie znaczy wolny. Znaczy, że dług może ruszyć bez pytania.
 
 ## Field Note
 
-PL LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Trzymać w statusie carrier i UI kontraktu, nie w barkach walki. Autonomia obejmuje księgowość, planowanie odzysku i logikę odmowy.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/pl_PL. -->

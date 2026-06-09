@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: No Clean Ending Dossier Note"
+title: "Dossiernotitie zonder schoon einde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: No Clean Ending Dossier Note
+# Dossiernotitie zonder schoon einde
 
-NL LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost.
+HECTON-8s eindes laten bewust littekens achter: beschermde ecologie, geweigerde corporatie, vrijgegeven getuigenrecord, onbetaalde schuld en een speler die de oceaan veranderde zonder het recht te krijgen hem af te sluiten.
 
 ## Scanner
 
-NL LOC HOLD: Dossier note: closure denied; consequence retained.
+Dossiernotitie: afsluiting geweigerd; gevolg behouden.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: uitkomst opgeslagen. Schone afsluiting niet beschikbaar onder huidige bewijsstatus. Schuld, ecologie, aansprakelijkheid en getuigenbewaring blijven actieve records.
 
 ## Audio
 
-NL LOC HOLD: You saved something. That is not the same as clearing it.
+Je hebt iets gered. Dat is niet hetzelfde als het zuiveren.
 
 ## Field Note
 
-NL LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Dossier na einde houdt de brug open: uitkomst geregistreerd, schuld en bewijs onopgelost, geen perfecte overwinning toegekend.
 
 <!-- External Site; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/nl_NL. -->

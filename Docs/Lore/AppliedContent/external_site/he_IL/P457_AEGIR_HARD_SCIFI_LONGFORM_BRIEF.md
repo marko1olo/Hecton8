@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir: השמיים שמסרבים להציל"
+title: "Aegir: השמיים שמסרבים לחילוץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,28 +17,46 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: השמיים שמסרבים להציל
+# Aegir: השמיים שמסרבים לחילוץ
 
-## שמיים שאינם ריקים
+## אין שמיים ריקים
 
-Aegir אינו רקע. זו מכונה מעל האוקיינוס: כבידה, קרינה, גאומטריית ממסרים, מזג פסולת, זמן חוזה וחוק חילוץ.
+Aegir אינה astronomy של רקע. היא machine מעל האוקיינוס: gravity, radiation, moon occlusion, relay geometry, debris weather, braking windows, custody queues והעובדה הקרה שעזרה אינה חוצה distance רק כי השחקן רוצה. HECTON-8 יושבת בתוך המכונה הזו כ-moon השמיני שנקרא בשם, בהירה ב-surface כשה-weather מאפשר, וקטלנית ב-depth כאשר pressure ו-infrastructure שבורה מוחקים אפשרויות.
 
-אין ansible ואין FTL. מסלול Ran/Aegir הוא בקנה מידה של שנות אור; חלונות מקומיים תלויים במסלול, סערה, צל ירחים ותורי custody. חבילה נכונה יכולה לאחר. חבילה נקייה יכולה להיות חסרת ערך משפטי.
+אין ansible. אין FTL courier שחוזר עם rescue order נקי בזמן שה-Marauder מחכה מתחת ל-hatch דולף. Ran אל Aegir הוא light-year-scale problem בשפה הציבורית, ואפילו תנועה מקומית של Aegir תלויה ב-orbit, storm phase, moon shadow, carrier heat, packet routing ומי רשאי לענות משפטית. distress packet אמיתי יכול לאחר. packet נקי יכול להיות חסר תועלת. packet שימושי עדיין יכול להיות יקר מדי לשירות.
 
-הסולם קורא ל-Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON ו-Mute. קבועים מדויקים שייכים לטבלאות עתידיות. בשטח משתמשים ב-shadow, surge, scatter, plume, lag ו-receiver.
+כלל האסטרונומיה הראשון של HECTON-8 הוא זה: השמיים אינם תקווה. השמיים הם timing. שחקן שמביט למעלה צריך להרגיש שלכל message, drop ו-pickup יש geometry מאחוריהם, ושקול רגוע מהמסלול אולי קורא את אותו schedule שהורג אותו.
 
-Black Keel נשאר גבוה כי ירידה עולה חום, דלק, חשיפה, לוח זמנים ואחריות. חזרה צריכה ממסר אקוסטי, חומרת עלייה, תזמון, מזג אוויר, הסגר, hash מטען וחלון מסה. אם חוליה אחת חסרה, ה-carrier עדיין נשמע רגוע. הרוגע הוא אוטומציה עם ledger.
+## Moon ladder היא מזג אוויר
 
-## השמים הם מכונה
+ה-ladder הציבורית קוראת בשם Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON ו-Mute. ephemeris מדויקת שייכת ל-celestial tables, לא למאמר הבטחה, אבל האמת player-facing פשוטה: moons אינן קישוט. הן moving hazards, relay shutters ו-legal landmarks. הן משנות מתי packet יכול לטפס, מתי signal אמין ומתי claim יכול להיות notarized.
 
-Aegir אינו צריך להיקרא כרקע מצויר. זו המכונה הגדולה בסיפור: כוכב ראשי, סולם ירחים, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume וguidance lag בלוח זמנים עוין. השחקן לא חייב לראות הכול מיד. הוא צריך להרגיש שלכל הודעה, הטלה ואיסוף יש גיאומטריה.
+Skarn מביא charged-particle surge. Vela זורקת ice scatter ו-lens-dirty navigation. Claw ו-Lumen משמרים old route logic כי infrastructure ישנה עדיין מצפה להם. Thorne ו-Anvil נושאים dead-claim paperwork ו-debris lanes גרועות. Kestrel חשוב כי הוא דוחס eclipse timing מספיק כדי לשנות pickup. Mute מוכיח של-Aegir יש עוד dead claims; HECTON-8 היא רק claim שעוד משלמת.
 
-לכן חילוץ לא יכול פשוט להגיע. אין תיקון FTL, אין ansible מוסתר, אין carrier גיבור שמתעלם ממסה. route window הוא קודם רשות של פיזיקה ואחר כך של חוק. Black Keel יכול להוריד tender כי העבודה המקומית צרה, לא כי יש לו נס.
+המשחק צריך לתת לקרוא את ה-ladder בדרכים קטנות. relay delay אחרי Kestrel צריך להרגיש שונה מ-storm delay מתחת למי P-63. ice scatter צריך לגרום ל-navigation להישמע פחות בטוחה. moon shadow צריך להפוך terminal queue ל-physics, לא plot convenience.
 
-## מה פירוש להסתכל למעלה
+## למה Black Keel נשארת גבוה
 
-להסתכל למעלה ב-HECTON-8 צריך להיות מעשי ומר. השמים אינם תקווה. הם timing. Aegir קובע מתי packet יעלה, מתי receiver יענה, מתי claim יאושר ומתי השחקן יישאר לבד עם הוראות ישנות.
+Black Keel היא claim tender, לא rescue ship נאמנה. היא מחזיקה ב-orbit יקר כי לרדת אינו מעשה הירואי במערכת הזו; זה cost event ששורף fuel, heat margin, debris clearance ואת ה-contract window הבא. carrier שצולל בכל פעם ש-worker צועק לא ישרוד מספיק contracts כדי להפוך ל-Black Keel.
 
-מאמר אסטרונומיה טוב גורם לאור ירח להיקרא כסיכון. אם Kestrel זז, relay shadow משתנה. אם ice scatter עולה, ניווט הופך לשמועה. אם Silent Orbit שותק, מתכת ישנה עדיין יכולה להחליט את ההווה.
+כך Black Keel מפחידה בלי cartoon evil. הפלטפורמה יכולה להיות צודקת לגבי risk ועדיין אכזרית כלפי אנשים. היא יכולה לשמור pickup window ולתת ל-worker לטבוע למטה. היא יכולה לשלוח instructions רגועות כי calm הוא automation with a ledger, לא mercy.
+
+חזרה מ-HECTON-8 דורשת יותר מאומץ. צריך acoustic relay, pressure-rated ascent hardware, guidance timing, storm permission, quarantine handshake, payload hash ו-tonne-window allocation. שבור link אחד וה-orbital answer יכולה להישאר מנומסת בזמן שה-route סגורה.
+
+## פיזיקה לפני חוק
+
+law מגיע אחרי geometry. court יכול להתווכח על custody רק אם packet יצא מהמים. contract יכול לקרוא salvage רק אם claim יכול להיות timed, weighed ו-received. rescue order יכול להיות noble ועדיין לפספס את ה-viable route window היחיד. ה-hard-scifi rule של HECTON-8 אינו ש-bureaucracy מנצחת heroism; הוא ש-physics נותנת ל-bureaucracy שיניים.
+
+זה חשוב לטון. השחקן אינו לבד כי כל המבוגרים במסלול טיפשים. הוא לבד כי distance, pressure, bad weather, damaged ascent hardware, quarantine, mass economics ו-legal custody חופפים בזמן הגרוע ביותר. החפיפה הזו מפחידה יותר מנבל שלוחץ על כפתור אדום.
+
+היא גם שומרת על יופי הירח. Aegir יכולה להיתלות ענקית מעל water, moons יכולים לחתוך shadows על cloud ו-ocean, וה-scene עדיין תישאר hard. השמיים יכולים להיות cinematic בלי להפוך ל-magic אם כל visible wonder משנה גם risk, timing או route readability.
+
+## מה פירוש להביט למעלה
+
+להביט למעלה ב-HECTON-8 צריך להיות מעשי ומר. clear sky עשויים להיות relay opening. bright moon עשוי להיות shadow שעומד לחתוך route. carrier light עשוי להיות custody, לא rescue. silent orbit עשוי לומר שה-packet late, filtered, too expensive או already owned בידי מישהו אחר.
+
+לכן astronomy article שייך קרוב לתחילת ה-public wiki. הוא מלמד ש-HECTON-8 אינה נטושה כי הכותבים שכחו spaceships. היא נטושה כי ships אמיתיות, distances אמיתיים, claim law אמיתי, ואף אחד מה-facts האלה לא אכפת אם ל-worker נשאר oxygen.
+
+קרא את Aegir כ-hostile schedule. קרא את moon ladder כ-weather. קרא את Black Keel כ-receiver with a ledger. ואז האוקיינוס שמתחת מובן יותר: כל sealed door, broken ascent frame ו-delayed packet הם חלק קטן משמיים שמסרבים ל-rescue עד ש-proof, mass ו-timing מסתדרים יחד.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/he_IL. -->

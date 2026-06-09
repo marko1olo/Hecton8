@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "Divisão cívico-corporativa dos domínios"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# Divisão cívico-corporativa dos domínios
 
-PT LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+O espaço humano de 2190 é rarefeito, antigo e compartimentado. Sol Core ainda decide quais papéis contam como propriedade. Centauri dá à Deep Reach a linguagem da legitimidade colonial inicial. Barnard Yards explica por que o trabalho marauder pode parecer profissão em vez de pirataria. Tau Ceti pode tornar provas públicas, mas só depois de atraso de retransmissão e revisão política. Luyten move pacotes e decide qual custody chain sobrevive à viagem. Aegir fica onde toda jurisdição vira ferramenta e ninguém chega rápido o bastante para encerrar a disputa.
 
 ## Scanner
 
-PT LOC HOLD: Legal map. Same species, different owners of truth.
+Mapa jurídico: uma espécie, vários donos do registro.
 
 ## Terminal
 
-PT LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core mantém finanças de lei antiga e certificação; Centauri carrega as primeiras cartas coloniais; Barnard Yards normalizou o trabalho de salvage; Tau Ceti pode transformar provas em direito público; Luyten controla a custody de pacotes; Aegir segue sendo um claim corporativo até alguém provar o contrário.
 
 ## Audio
 
-PT LOC HOLD: The farther you go, the more the law becomes a receipt.
+Quanto mais longe o sinal viaja, mais a lei soa como contabilidade.
 
 ## Field Note
 
-PT LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+O resgate não é travado só pela distância. É travado por quem pode chamar os encalhados de cidadãos.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/pt_BR. -->

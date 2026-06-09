@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Perintah Bersih Deep Reach"
+title: "Perintah Pembersihan Aktif Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Perintah Bersih Deep Reach
+# Perintah Pembersihan Aktif Deep Reach
 
-Perintah ini membuat Deep Reach antagonis kini: pembersihan dan ekstraksi aktif, bukan hanya sejarah.
+Perintah Pembersihan Aktif Deep Reach adalah work order saat ini, bukan catatan arsip. Ia menunjukkan custody sumber daya, akses Atlas, dan penghapusan bukti dijadwalkan lewat kontraktor proxy setelah penahanan evakuasi.
 
 ## Scanner
 
-Tumpukan perintah: sumber daya, akses Atlas, hapus bukti. Penyelamatan di bawah kendali aset.
+Perintah aktif ditemukan: sita sampel tersertifikasi, buka kanal Atlas, karantina penyintas, hapus bukti tanggung jawab.
 
 ## Terminal
 
-Direktif proxy: kontraktor dapat disangkal. Simpan sampel. Buka kanal Atlas jika risiko lokal diterima. Hapus corpus liabilitas.
+Work order proxy DR-CLEANSE-19 masih aktif. Kontraktor yang dapat disangkal mendapat custody sampel lebih dulu, akses Atlas kedua, pemulihan saksi terakhir. Jika Black Keel atau ledger situs membuka tanggung jawab, antrean purge memindahkan arsip bukti ke cold delete dan menandai kematian lapangan sebagai kerugian cuaca.
 
 ## Audio
 
-Deep Reach tidak memburumu. Mereka memakai kau sebagai probe murah.
+Suara itu bukan trafik penyelamatan. Itu tawaran pembersihan.
 
 ## Field Note
 
-Mereka tidak kembali untuk meminta maaf.
+Kolom permintaan maaf kosong.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/id_ID. -->

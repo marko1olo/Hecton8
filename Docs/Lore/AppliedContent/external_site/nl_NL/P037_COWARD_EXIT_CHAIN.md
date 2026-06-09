@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Laffe Uitstapketen"
+title: "Nooduitstapketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Laffe Uitstapketen
+# Nooduitstapketen
 
-Deze endingfamilie respecteert keuzevrijheid zonder onwetendheid te schoon te belonen. Echte route, geen nep-game-over.
+Nooduitstapketen maakt van vroeg ontsnappen een procedure. Het voertuig kan HECTON-8 na genoeg herstelwerk verlaten, maar het sitedossier blijft open: waarheidspakketten, aansprakelijkheidsbewijs en materiaalcertificering blijven beneden.
 
 ## Scanner
 
-Deze uitgang is echt maar dun: gerepareerde capsule, smal weer, geen waarheid, geen schone betaling.
+De vroege lanceerketen is echt, maar elk lampje is voorlopig: rompafdichting, B2-reserve, terugkeer-ping, stormgat, claimbaken.
 
 ## Terminal
 
-Opstijgketen na rompafdichting, batterijreserve, relais-ping en stormgatvoorspelling. Ledger: onvolledige berging.
+Noodopstijging opent alleen wanneer de cradle klemt, ballastkleppen droog zijn, Black Keel het P036-terugkeervenster herhaalt en de oppervlaktestorm een schone corridor laat. Het contractboek stempelt het vertrek onvolledig: geen Atlas-getuigenis, geen Deep Reach-aansprakelijkheidspakket, geen gecertificeerde betaling.
 
 ## Audio
 
-Je kunt vluchten. De oceaan achter je legt zich niet uit.
+Lancering is mogelijk. Afsluiting is niet aan boord.
 
 ## Field Note
 
-Vroeg vertrekken moet opgelost voelen, niet bevredigend.
+De capsule accepteert een passagier voordat de site een dossier accepteert.
 
 <!-- External Site; generated from P037_COWARD_EXIT_CHAIN/nl_NL. -->

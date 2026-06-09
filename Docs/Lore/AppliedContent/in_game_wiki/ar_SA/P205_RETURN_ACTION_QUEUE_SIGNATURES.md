@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "توقيعات طابور إجراء العودة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# توقيعات طابور إجراء العودة
 
-AR LOC HOLD: Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.
+تصل توقيعات Return Action Queue قضية HECTON-8 القديمة بضغط حاضر في 2190. الطابور ليس أرشيفا تاريخيا. إنه يعالج حزما مؤخرة أثناء نوافذ Aegir الحية ويرتب ما يجب أن تفعله Black Keel أو جهة الترحيل أولا. في الشريط المستعاد، تأتي payload custody وcoordinate receipt وquarantine handshake قبل contractor recovery. بهذا تبقى Deep Reach خطرة من دون قائد في الغرفة: مكتب سفلي ما زال يستطيع توجيه نافذة إنقاذ عبر تحديد أي إجراء صار نظيفا بما يكفي للتنفيذ.
 
 ## Scanner
 
-AR LOC HOLD: The old crime has a live queue.
+تم استلام live return strip: أولوية payload custody HIGH، contractor recovery BELOW-CLEARANCE، وAegir window 04 مفتوحة اثنتي عشرة دقيقة.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Action: prioritize payload custody, coordinate receipt and quarantine handshake before contractor recovery. Carrier clause: Black Keel may delay pickup until custody state is clean.
 
 ## Audio
 
-AR LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+طابور Keene نشط. الإنقاذ خلف payload custody ما لم نغير handshake.
 
 ## Field Note
 
-AR LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+هذه ليست ورقة قديمة. ختم الطابور جديد: حزمة مؤخرة، carrier clause، أمر payload-first. افحص لغة الاسترداد في Black Keel قبل أن تثق بالالتقاط.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/ar_SA. -->

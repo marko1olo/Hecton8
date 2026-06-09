@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Quarantine Hold Signatures"
+title: "Firmas de la puerta de revisión de cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Quarantine Hold Signatures
+# Firmas de la puerta de revisión de cuarentena
 
-ES LOC HOLD: Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
+Los registros Quarantine Review Gate conservan cómo el lenguaje de seguridad se vuelve retraso. El gate no necesita una línea ordenando que alguien muera. Mantiene la extracción pendiente mientras el riesgo pressure-biology, la revisión externa y la custodia sigan sin resolver. En la cadena de pruebas de HECTON-8, el detalle sucio es que parte del hardware de evacuación aún tenía energía cuando se aplicó la retención. La firma de Ikenna Sor marca el gate que trató una ruta abierta como insegura hasta que llegara la certificación. La certificación no podía llegar a tiempo por el retraso de relevo de Aegir, y Deep Reach no reservó suficiente capacidad independiente para esperar.
 
 ## Scanner
 
-ES LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Tarjeta de revisión recuperada: extraction state HELD, campo BIO/PRESSURE-UNCERTAIN, certificado externo ausente. Liberación de ruta bloqueada por gate code.
 
 ## Terminal
 
-ES LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Cola: Evacuation release. Acción: retener extracción hasta certificado pressure-biology y revisión externa. Excepción: no hay capacidad de lanzadera independiente asignada. Human tags quedan en custodia local hasta limpiar el gate.
 
 ## Audio
 
-ES LOC HOLD: Pending review is still a locked door.
+La puerta aún tenía energía. El gate dice review pending, y la escotilla siguió en rojo.
 
 ## Field Note
 
-ES LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Pon esto junto a rutas de supervivientes bloqueadas y hardware de evacuación con batería. El campo de retención convirtió una puerta funcional en una puerta cerrada legalmente.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/es_ES. -->

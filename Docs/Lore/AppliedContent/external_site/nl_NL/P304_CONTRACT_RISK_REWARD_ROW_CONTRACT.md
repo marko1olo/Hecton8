@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Contract Risk Reward Boundary"
+title: "Grens van contractrisico en beloning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Contract Risk Reward Boundary
+# Grens van contractrisico en beloning
 
-NL LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+Replayability in HECTON-8 is geen geërfde macht. Het is een slechter contract, een krapper venster, een vroegere bewijsvraag en een carrier die onthoudt welke delen van jou nog onderpand zijn.
 
 ## Scanner
 
-NL LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Contractrij bindt retentierecht, stormvenster, bewaringsvolgorde, uitbetalingsplafond en clausulegewicht.
 
 ## Terminal
 
-NL LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: rijen vereisen ernst van retentierecht, uitbetalingsplafond, stormvenster, monsterbewaring, bewijsvolgorde en Deep Reach-clausulegewicht. Het contract is het eerste roofdier.
 
 ## Audio
 
-NL LOC HOLD: The contract is the first predator.
+Het contract is het eerste roofdier.
 
 ## Field Note
 
-NL LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Beloningswijzigingen horen bij de contractrij, niet bij geïmproviseerde loretekst.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/nl_NL. -->

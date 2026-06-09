@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "疏散队列终端证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Evacuation Queue Terminal POI Kit
+# 疏散队列终端证据套件
 
-ZH LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+队列终端应像一间为了把痛苦整理成行政格式而建的房间。终端列出航路保持、隔离解除延迟、Atlas权重和工人计数，但墙上保存着更脏的记录：舱门状态条、徽章残留、缺失容量标记，以及某个仍有人想卖掉的面板上的salvage标签。
 
-## Scanner
-
-ZH LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-ZH LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-ZH LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-ZH LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+这个POI的重量来自冲突。拔出零件也许能打开航路或偿还债务，但也可能毁掉证明延迟的表面。正确读法不是供述，而是一组互不吻合的物件，迫使操作员选择哪些东西能活过这次下潜。
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/zh_CN. -->

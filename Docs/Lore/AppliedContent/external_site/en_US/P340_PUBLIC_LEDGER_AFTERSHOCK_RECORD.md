@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Public Ledger Aftershock Record
 
-HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence: grief, markets, lawsuits, cult readings, rescue efforts, and revenge using the same released facts.
 
 ## Scanner
 
-Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Ledger mirrors accepted. Evidence is no longer removable; consequence is no longer steerable.
 
 ## Terminal
 
-PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: evidence released outside Deep Reach custody. Worker names, Atlas vector fragments, and liability tags mirrored across public receivers. Player authority over interpretation terminated.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Truth left the room. It did not ask where to go next.
 
 ## Field Note
 
-Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Public truth record: mirrored evidence prevents erasure, but ends the player's control over interpretation and retaliation.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/en_US. -->

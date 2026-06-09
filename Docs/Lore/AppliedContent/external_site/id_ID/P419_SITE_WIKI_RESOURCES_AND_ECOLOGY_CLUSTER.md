@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Sumber Daya dan Ekologi
 
-Klaster sumber daya harus menunjukkan rantai proses, bukan daftar jarahan. Mineral bisa berasal dari drowned crust, endapan brine trap, jejak vent heat, mesin tua, atau jaringan yang tumbuh di sekitar logam setelah campur tangan Atlas. Blue debt mengikat ekonomi pada geologi: apa pun yang bisa diangkat sudah punya harga di atas. Ekologi bukan latar dan bukan kebun binatang. Fauna merespons suara, tekanan, cahaya, jejak garam, dan repair paths yang rusak. Karena itu sumber daya, biota, dan bukti harus dibaca bersama: satu sampel dapat memberi makan alat, mengungkap kecelakaan, dan menunjukkan tempat Atlas menyamakan perbaikan dengan pemakaian yang hidup.
+Kesalahan pertama adalah menyebut sumber daya HECTON-8 sebagai bahan mentah. Di bawah sana, hampir tidak ada yang berguna datang tanpa tersentuh. Pecahan Drowned Crust membawa riwayat tekanan. Urat blue debt menyimpan ingatan panas, brine, dan metode ekstraksi. Pelat cangkang bisa menjadi zirah karang, sealant gagal, kulit kabel yang ditumbuhkan Atlas, dan bukti hukum sebelum Marauder memasukkannya ke kotak.
+
+Karena itu halaman sumber daya duduk di sebelah halaman ekologi. Koloni lama tidak menambang lantai mati. Deep Reach memotong tangga brine, rak mineral yang diberi makan vent, mesin berlumpur, dan sistem filter hidup yang sudah mengenal irama bulan. Setelah bencana, Atlas mendorong model perbaikannya ke apa pun yang bisa menutup kebocoran atau membawa sinyal. Biofilm menjadi konduktor. Anyaman akar menjadi gasket. Fauna bertag menjadi umpan balik bergerak.
+
+Hewan bukan kotak loot bersirip. Mereka membaca getaran, panas, jatuhnya cahaya, kimia darah, jejak garam, dan lumpur terganggu. Pemakan tumbuhan bisa membuka zona kikis aman hanya dengan melakukan kebiasaannya. Bayangan predator bisa menunjukkan koridor yang membawa pulsa akustik salah. Hewan bertag bisa menjadi jalur perbaikan, saksi, dan bahaya dalam lintasan yang sama.
+
+Blue debt membuat hitungan moral lebih kotor. Sampel terbaik bisa kusam, tersegel, dan buruk rupa karena menyimpan keadaan tekanan yang membuktikan tempat terbentuknya. Pecahan terang bisa tidak bernilai jika vent mencuci ingatannya. Mengambil salah satunya bisa mengubah aliran, membangunkan pemburu, merusak tambalan Atlas, atau menghapus jejak kecelakaan era pekerja yang lebih penting daripada bayaran.
+
+Pertanyaan berguna tidak pernah cuma apa yang bisa dipanen. Pertanyaannya adalah apa yang sedang dilakukan laut dengan materi itu sebelum tangan manusia masuk ke rantai. HECTON-8 menjadi terbaca saat geologi, kehidupan, mesin, dan custody diperlakukan sebagai satu sistem yang mengingat kerusakan.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/id_ID. -->

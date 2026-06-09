@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Sanitized Accident Reply Window"
+title: "Oczyszczone okno odpowiedzi o wypadku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Sanitized Accident Reply Window
+# Oczyszczone okno odpowiedzi o wypadku
 
-PL LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+Oczyszczone okno odpowiedzi o wypadku pokazuje, jak Deep Reach kłamie, zanim ktokolwiek zacznie krzyczeć. Kłamstwo jest proceduralne, znajome i zleżałe: publiczna linia straty zderza się z fizycznym dowodem. Korporacyjny horror HECTON-8 działa najlepiej, gdy oficjalna odpowiedź jest zbyt czysta dla miejsca, które ją wyprodukowało.
 
 ## Scanner
 
-PL LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Okno odpowiedzi otwarte. Deep Reach powtarza sztormowe załamanie, awarię geologiczną i autonomiczną ewakuację, jakby pomieszczenie nadal było suche.
 
 ## Terminal
 
-PL LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: spiętrzenie sztormowe, załamanie geologiczne, awaria autonomicznej ewakuacji / RESTRICTED ADVICE: nie transmitować niezweryfikowanej Atlas continuity, body-category disputes ani basin-coordinate claims.
 
 ## Audio
 
-PL LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Odpowiedzieli pokojowi, który miałeś znaleźć, nie pokojowi, w którym stoisz.
 
 ## Field Note
 
-PL LOC HOLD: Place after first physical contradiction, not before.
+Umieścić po pierwszej fizycznej sprzeczności: gracz powinien mieć mokry dowód, zanim usłyszy stary publiczny skrypt.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/pl_PL. -->

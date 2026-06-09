@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Black Keel tonne-window保管
 
-Keelmarkの受領票は、Black Keelが救助より先に質量を語る理由を示す。キャリアはtonne-window保管で動く。物理ペイロード、保険上の露出、航路時計の位相に対応した法的スロットだ。生きた身体、封印された証拠コア、Xenon-Omega工程材の切り出し、回収可能な船殻箱は、契約が同じ行に置けば同じウィンドウを争う。制度は冷たいが、無作為ではない。フロンティアが何を評価し、どの選択が先に故郷へ届くかをプレイヤーに教える。
+tonne-windowはフロンティアの残酷さを最もきれいに表す。会計のように聞こえるのは、会計だからだ。ただし数えられるのは物理、狭い回収窓を通る質量だ。Black Keelは海の全てを上げない。航路、保険、検疫、保管記録が許すものだけを上げる。
+
+だからpayload選択は鋭くなる。生きた契約者には価値があるが、Deep Reachを傷つける証拠コアにも価値がある。Xenon-Omega片は普通のsalvageより高く、検疫を汚すこともある。船体片はworker dossierが正義を満たすより早く保険者を満たすかもしれない。
 
 ## Scanner
 
-保管ライン // 承認済みtonne-window質量はsalvage、証拠、身体、債務物件のいずれにもなり得る。聞かれたパケットはリフト優先を割り当てない。責任を割り当てる。
+Keelmark受領。1つのtonne-windowがpayload質量、航路位相、保険露出、検疫級、回収優先を単一carrier slotへ対応付ける。
 
 ## Terminal
 
-KEELMARK質量受領 // ウィンドウはスロットに保管権を与える。人に慈悲を与えるわけではない。過量ペイロードは請求価値、検疫階級、キャリア幾何がそろわない限り次の通過へ送られる。
+TONNE-WINDOW保管 // 4.8 tonne-window留置権有効。生存契約者、封印証拠コア、Xenon-Omega工程片、回収可能船体箱はcustody proofで再優先されるまで回収級を共有。人間状態だけではfull-window override不足。
 
 ## Audio
 
-Black Keel債務音声: 証拠、金属、君のどれかは運べる。台帳はどれが船を支払可能に保つかを尋ねる。
+Black Keelがトンで話すのは、窓が運べるものがトンだからだ。
 
 ## Field Note
 
-キャリアが承認済み質量と言う時、それは承認済み人物とは言っていない。台帳に選ばされる前に、証拠をスーツに結べ。
+Tonne-windowは金ではない。質量が去る許可だ。
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/ja_JP. -->

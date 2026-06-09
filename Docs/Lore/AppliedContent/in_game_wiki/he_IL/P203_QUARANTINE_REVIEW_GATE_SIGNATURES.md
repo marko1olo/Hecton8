@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Hold Signatures"
+title: "חתימות Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Hold Signatures
+# חתימות Quarantine Review Gate
 
-HE LOC HOLD: Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
+רשומות Quarantine Review Gate מראות איך שפת בטיחות הופכת לעיכוב. ה-gate לא צריך שורה שמורה למישהו למות. הוא משאיר חילוץ בהמתנה כל עוד סיכון pressure-biology, ביקורת חיצונית ובעלות משמורת לא נפתרו. בשרשרת הראיות של HECTON-8, הפרט הקשה הוא שחלק מציוד הפינוי עדיין קיבל כוח כשה-hold הוחל. החתימה של Ikenna Sor מסמנת את ה-gate שטיפל בנתיב פתוח כלא בטוח עד הגעת האישור. האישור לא היה יכול להגיע מספיק מהר דרך עיכוב הממסר של Aegir, ו-Deep Reach לא שמרה מספיק יכולת הרמה עצמאית כדי להמתין לעיכוב.
 
 ## Scanner
 
-HE LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+כרטיס ביקורת שוחזר: extraction state HELD, שדה סיכון BIO/PRESSURE-UNCERTAIN, אישור חיצוני חסר. שחרור מסלול חסום בקוד gate.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Action: hold extraction pending pressure-biology certificate and external review. Exception: no independent shuttle capacity assigned. Human tags remain local custody until gate clears.
 
 ## Audio
 
-HE LOC HOLD: Pending review is still a locked door.
+לדלת עוד היה כוח. ה-gate אומר review pending, והפתח נשאר אדום.
 
 ## Field Note
 
-HE LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+שים את זה ליד נתיבי ניצולים נעולים וציוד פינוי שעוד יש בו סוללה. שדה hold סגר משפטית דלת שעבדה.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/he_IL. -->

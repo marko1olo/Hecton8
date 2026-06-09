@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Sanitized Accident Reply Window"
+title: "정제된 사고 응답 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Sanitized Accident Reply Window
+# 정제된 사고 응답 창
 
-KO LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+정제된 사고 응답 창은 Deep Reach가 누군가 소리치기 전에 어떻게 거짓말하는지 보여 준다. 거짓말은 절차적이고 익숙하며 낡았다. 공개 손실 문구가 물리적 증거와 충돌한다. HECTON-8의 기업 공포는 공식 답변이 그것을 만든 장소에 비해 너무 깨끗할 때 가장 잘 작동한다.
 
 ## Scanner
 
-KO LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+응답 창이 열렸다. Deep Reach는 방이 아직 마른 것처럼 폭풍 붕괴, 지질 실패, 자율 대피 실패를 반복한다.
 
 ## Terminal
 
-KO LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: 폭풍 해일, 지질 붕괴, 자율 대피 실패 / RESTRICTED ADVICE: 검증되지 않은 Atlas continuity, body-category disputes, basin-coordinate claims 전송 금지.
 
 ## Audio
 
-KO LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+그들은 당신이 찾기로 되어 있던 방에 답했다. 당신이 서 있는 방이 아니다.
 
 ## Field Note
 
-KO LOC HOLD: Place after first physical contradiction, not before.
+첫 물리적 모순 뒤에 배치. 플레이어는 오래된 공개 스크립트를 듣기 전에 젖은 증거를 가져야 한다.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/ko_KR. -->

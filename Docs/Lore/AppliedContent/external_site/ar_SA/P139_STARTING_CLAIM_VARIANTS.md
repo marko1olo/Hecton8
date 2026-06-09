@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "تنويعات claim البداية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# تنويعات claim البداية
 
-AR LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+تنويعات claim البداية تسمح بإعادة لعب HECTON-8 بخطافات اقتصادية مختلفة مع الحفاظ على بطل واحد قوي.
 
 ## Scanner
 
-AR LOC HOLD: Same protagonist. Different claim pressure.
+تنويع CLAIM // نفس Marauder السابق من Deep Reach. دين أول مختلف، bounty، عتاد مسار، عهدة عينة أو تخفيف blacklist.
 
 ## Terminal
 
-AR LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+قاعدة البداية: التنويعات تغيّر الضغط الأول، وصول الشائعات، وزن الأدلة ومنطق الدفع. لا تخلق أبطالا بدلاء ولا تمحو عمود Deep Reach السابق.
 
 ## Audio
 
-AR LOC HOLD: You can change the job without changing who took it.
+يمكنك تغيير العمل من دون تغيير من قبله.
 
 ## Field Note
 
-AR LOC HOLD: Variants should color motive, not erase the canon character.
+غيّر claim. أبق الندبة.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/ar_SA. -->

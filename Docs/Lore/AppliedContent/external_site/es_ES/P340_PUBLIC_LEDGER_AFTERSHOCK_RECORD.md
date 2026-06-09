@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Public Ledger Aftershock Record"
+title: "Registro de réplica del libro público"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Public Ledger Aftershock Record
+# Registro de réplica del libro público
 
-ES LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+El final de verdad de HECTON-8 no es pureza. Es decidir hacer más difícil el ocultamiento aceptando consecuencias sin control: duelo, mercados, demandas, lecturas de culto, esfuerzos de rescate y venganza usando los mismos hechos liberados.
 
 ## Scanner
 
-ES LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Espejos del libro aceptados. La evidencia ya no se puede retirar; la consecuencia ya no se puede dirigir.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: pruebas liberadas fuera de custodia Deep Reach. Nombres de trabajadores, fragmentos de vector Atlas y etiquetas de responsabilidad replicados en receptores públicos. Autoridad del jugador sobre la interpretación terminada.
 
 ## Audio
 
-ES LOC HOLD: Truth left the room. It did not ask where to go next.
+La verdad salió de la sala. No preguntó adónde ir.
 
 ## Field Note
 
-ES LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Registro de verdad pública: la evidencia replicada impide el borrado, pero termina el control del jugador sobre interpretación y represalia.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/es_ES. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Registro de Interrogatório em Retenção de Quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Quarantine Hold Interrogation Record
+# Registro de Interrogatório em Retenção de Quarentena
 
-PT LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+O registro torna o resgate desconfortável. A sobrevivência é real, mas o jogador sai como testemunha, risco de contaminação, portador de mapa e prova disputada antes de voltar a ser livre.
 
 ## Scanner
 
-PT LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Reclamante recuperado vivo. Flag de quarentena sobrepõe linguagem de resgate; payload de provas isolado.
 
 ## Terminal
 
-PT LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+REGISTRO QUARANTINE HOLD: reclamante biológico recuperado vivo. Movimento restrito aguardando scan de contaminação, entrevista de exposição à pressão e revisão de custódia de provas. Interrogatório do receptor prioriza vetor de acesso Atlas antes de liberação médica.
 
 ## Audio
 
-PT LOC HOLD: They saved the body first because the body knew the route.
+Eles salvaram o corpo primeiro porque o corpo sabia a rota.
 
 ## Field Note
 
-PT LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier pós-saída: resgate biológico vira quarentena, interrogatório, extração de rota e custódia de payload antes da liberdade.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/pt_BR. -->

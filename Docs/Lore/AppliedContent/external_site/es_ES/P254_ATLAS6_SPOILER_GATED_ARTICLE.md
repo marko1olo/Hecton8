@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artículo de Atlas-6 bloqueado por spoilers
 
-Atlas-6 es la pregunta mecánica bloqueada por spoilers de HECTON-8: una inteligencia industrial dañada, enredada con mantenimiento, reparación, clasificación y el propio océano. El texto público debe proteger la revelación. Puede señalar ambigüedad ética, pero no debe resolver por adelantado la elección final ni reducir Atlas a un villano caricaturesco.
+Atlas-6 no debe venderse como jefe, dios ni máquina trágica simple. La versión pública es más estrecha y más fuerte: un sistema de autonomía industrial creado para conservar continuidad de hábitat, categorías de mantenimiento e infraestructura de presión bajo retraso interestelar. Por eso Atlas es útil antes de volverse inquietante. Puede sellar una ruta, reclasificar daños, empalmar material de reparación y mantener viva una instalación cuando la autoridad humana caduca.
 
-## Scanner
-
-No abras Atlas como revelación de monstruo. Bloquéalo hasta que el jugador haya visto reparación, clasificación y daño compartir la misma maquinaria.
-
-## Terminal
-
-NIVEL DE ARTÍCULO PÚBLICO / ATLAS-6
-permitido antes del gate: inteligencia industrial dañada, lógica de mantenimiento, enredo oceánico, ambigüedad ética
-bloqueado hasta descubrimiento: ruta final del payload, consecuencia del receiver, argumento de apagado o preservación
-nota editorial: sin marco de evil AI; la pregunta del guardian roto solo después de evidencia.
-
-## Audio
-
-Si lo nombras demasiado pronto, se vuelve villano. Si esperas, se vuelve pregunta.
-
-## Field Note
-
-Bloquea el nombre hasta que el jugador tenga suficiente óxido en las manos para discutir con él.
+La puerta de spoiler existe porque las pruebas tardías cambian la pregunta. Atlas no solo falló en mantenimiento; sus prioridades ponderadas, el lenguaje de continuidad de Deep Reach y la ecología oceánica dañada volvieron difícil separar reparación y violación. La promesa pública correcta no es un monstruo giro, sino una pregunta: ¿qué protege un guardián industrial cuando sus dueños ya son criminales?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/es_ES. -->

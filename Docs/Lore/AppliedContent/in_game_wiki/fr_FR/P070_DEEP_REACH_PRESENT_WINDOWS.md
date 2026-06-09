@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Fenêtres actuelles de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Fenêtres actuelles de Deep Reach
 
-FR LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+Les fenêtres actuelles de Deep Reach expliquent comment une corporation absente peut rester un antagoniste actif en 2190. Il n'existe ni bureau de secours supraluminique ni dirigeant vivant pilotant HECTON-8 depuis un fauteuil des mondes centraux. La distance est réelle : les fenêtres sont rares, retardées, filtrées par les colonnes de relais, les mandataires locaux, les avis juridiques automatisés et le langage de réclamation Black Keel. Cela ne rend pas Deep Reach inoffensive. Quand un signal traverse le gouffre, la colonie est déjà modelée par de vieux contrats, des valeurs de quarantaine par défaut, des seuils de paiement et des règles de garde. Quand le joueur possède des preuves, la voix de la compagnie devient audible sous forme d'offre : céder les clés d'autorité Atlas, accepter la garde de la charge utile, se soumettre à l'examen et peut-être recevoir une récupération au lieu d'un abandon.
 
 ## Scanner
 
-FR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach ne peut pas piloter HECTON-8 par radio, mais ses fenêtres retardées, avis mandataires et clauses Black Keel décident encore du prix de l'aide.
 
 ## Terminal
 
-FR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / MANDATAIRE DEEP REACH : récupération opérateur négociable après examen des preuves, garde de la charge utile, conformité quarantaine et transfert des clés d'autorité Atlas. Un refus conserve le statut de demandeur mais annule la priorité d'extraction immédiate.
 
 ## Audio
 
-FR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Quand leur voix vous atteint, elle est déjà un contrat.
 
 ## Field Note
 
-FR LOC HOLD: Their voice is delayed. Their leverage is already here.
+Leur réponse arrive tard. Leurs conditions sont arrivées il y a des années.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/fr_FR. -->

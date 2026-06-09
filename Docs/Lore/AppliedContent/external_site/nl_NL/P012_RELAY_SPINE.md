@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relaisspine"
+title: "Relay Spine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisspine
+# Relay Spine
 
-Menselijke ruimte is verbonden door relais, niet door wonderen. Hashes bewijzen ontvangst; juridische ketens houden claims levend.
+HECTON-8 heeft geen ansible, geen magisch noodkanaal en geen kernwereldrechtbank die live boven de oceaan spreekt. De menselijke ruimte is verbonden door een Relay Spine: geplande beams, pakketbewaring, getuigenhashes, lokale buffers en ontvangstketens. Het is sterk voor feiten bewaren. Het is slecht voor iemand redden die nu lucht nodig heeft.
 
-Het netwerk is krachtig en koud. De speler kan waarheid sturen en sterven voordat die helpt.
+De speler kan een waar bestand vinden, de oorsprong bewijzen, het de queue in duwen en toch de lokale situatie zien verslechteren. Black Keel hoort een burst en maakt er een lien van. Luyten authenticeert nadat het venster sluit. No FTL is geen voetnoot; het is waarom elke directe keuze hoort bij de persoon die nog onder water is.
 
 <!-- External Site; generated from P012_RELAY_SPINE/nl_NL. -->

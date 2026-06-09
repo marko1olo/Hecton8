@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Sonar Pinger Route Beacons"
+title: "Balizas de rota por sonar pinger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Sonar Pinger Route Beacons
+# Balizas de rota por sonar pinger
 
-PT LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+O sonar pinger é barato, mas não deixa de servir. Ele cria linha de retorno, marca caixas de prova, separa ecos falsos de paredes reais e guarda uma rota perdida como som. Ao mesmo tempo, conta ao oceano onde você está. Por isso é equipamento de segurança, marcador de dívida e às vezes isca.
 
 ## Scanner
 
-PT LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Um flutuador pinger marca geometria de retorno, expõe ecos falsos e atrai resgate e vida indesejada.
 
 ## Terminal
 
-PT LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-PT LOC HOLD: One ping is a promise. Two pings are a bill.
+Um ping é promessa. Dois pings são cobrança.
 
 ## Field Note
 
-PT LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+O pinger é a primeira ferramenta honesta: fala em som sobre distância, dívida, rota perdida e risco vivo.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/pt_BR. -->

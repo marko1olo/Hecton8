@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Mejor final: no hay manos limpias"
+title: "Mejor ruta: residuo visible"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mejor final: no hay manos limpias
+# Mejor ruta: residuo visible
 
-El mejor final de HECTON-8 no debe ser aquel donde todo queda reparado. Eso haría que el océano, los trabajadores muertos y la máquina contractual fueran más pequeños que la lista del jugador. La versión más fuerte permite salvar algo concreto: un registro público, una cuenca viva, un payload corporativo negado, un operador libre, un nombre que ya no puede borrarse.
+El final más fuerte de HECTON-8 no debe reparar el escenario hasta convertirlo en una pantalla de recompensa. Debe permitir que el operador haga trabajo concreto: salir de la custodia de Black Keel, publicar un registro, negar a Deep Reach una ruta de regreso, preservar una cuenca viva en cuarentena, sacar nombres de trabajadores o sellar un proof-hash de Atlas donde no pueda tasarse como carga.
 
-También debe dejar residuo. Atlas quizá sobreviva bajo cuarentena. El corte quizá salve personas y mate una forma de vida. La verdad quizá sea pública pero incontrolable. El jugador quizá salga sin deuda con evidencia que seguirá hiriendo. No hay manos limpias no es cinismo. Es respeto por la escala. El jugador puede actuar con sentido sin volverse inocente.
+El registro también debe mantener campos abiertos. Una salida pagada puede omitir nombres de trabajadores. Una publicación pública puede crear receptores armados con el archivo. El corte puede detener una autoridad dañada y herir vida de reparación. La preservación puede proteger la ecología de presión y mantener activo al viejo clasificador. Un buen registro final muestra lo salvado, el receptor, el efecto sobre la deuda, el estado de Atlas y el daño que aún se mueve por el sistema.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/es_ES. -->

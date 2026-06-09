@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Aegir-Routenfenster
 
-Ein Aegir-Fenster ist der kurze Moment, in dem feindliche Uhren zusammenpassen: Gasriesenstrahlung, Mondschatten, Sturmrauschen, Tidescherung, Linkqualität, Aufstiegsmasse und Black-Keel-Geometrie.
-
-Darum gehört der Himmel in den Survival-Loop. Daten können steigen, während Körper nicht steigen sollten. Ein Aufstieg kann gut sein, während Beweise im Rauschen verfaulen.
+Ein Aegir-Routenfenster ist kein schöner Wetterbericht. Es ist die kurze Zeit, in der feindliche Uhren genug übereinstimmen: Strahlung, Mondschatten, Sturm plume, Gezeitenscherung, akustische Verbindung, Black-Keel-Geometrie und Tonne-Window-Gewahrsam. Das Fenster kann für Daten offen und für einen Körper geschlossen sein. Ein Beweiskern kann Quarantäne passieren, während Blue-Debt-Material verzögert wird. Rettung ist kein Knopf, sondern Überlappung von Überleben, Recht und Masse.
 
 ## Scanner
 
-Lokale Ephemeridentabelle. Kommunikation, Tide, Strahlung, Mondschatten und Carriergeometrie teilen ein enges Aufstiegsfenster.
+Lokale Ephemeridentabelle. Aegir-Strahlung, Mondschatten, Sturm plume, Gezeitenscherung, akustische Linkqualität, Black-Keel-Geometrie und Tonne-Window-Gewahrsam passen kurz zusammen.
 
 ## Terminal
 
-AEGIR-FENSTERUPDATE // Kestrel-Schatten klärt. Uplinkrauschen fällt. Strahlungszahl steigt. Tidescherung in Servicecanyons nimmt zu. Black-Keel-Bergungsgeometrie wartet auf Aufstiegsmasse.
+AEGIR WINDOW SOLVER // Daten-Uplink teilweise. Körperbergung geschlossen. Payload-Aufstieg bedingt. Strahlungssurge im Driftband. Moon relay shutter im nächsten lokalen Zyklus aktiv. Black-Keel-Transfergeometrie verlangt Rechts- und Quarantäne-Handshake vor Massenzusage.
 
 ## Audio
 
-Klarer Himmel ist kein sicherer Himmel. Prüfe den Riesen.
+Der Himmel ist hier keine Kulisse. Er ist ein weiteres Schloss an der Tür.
 
 ## Field Note
 
-Auf HECTON-8 ist Wetter zugleich lokal und orbital.
+Offen für Signal heißt nicht offen für Körper.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/de_DE. -->

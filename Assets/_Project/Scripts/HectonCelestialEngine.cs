@@ -139,11 +139,17 @@ namespace Hecton8.Celestial
 
         // COLD ALLOC: ListenerSlot[8] - celestial listeners drained by SystemDispatcher without interface array dispatch - owner: CelestialEvents
         private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching celestial events - owner: CelestialEvents
+        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
+        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching celestial events - owner: CelestialEvents
+        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
         // COLD ALLOC: CelestialEventPayload[8] - fixed deferred celestial event lane without persistent NativeQueue ownership - owner: CelestialEvents
         private static readonly CelestialEventPayload[] _pendingEvents = new CelestialEventPayload[ExpectedPendingEventCapacity];
         // COLD ALLOC: CelestialEventPayload[8] - next-frame reentrant celestial event lane without persistent NativeQueue ownership - owner: CelestialEvents
         private static readonly CelestialEventPayload[] _nextFrameEvents = new CelestialEventPayload[ExpectedPendingEventCapacity];
         private static int _listenerCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _pendingEventReadIndex;
@@ -155,6 +161,23 @@ namespace Hecton8.Celestial
         private static bool _planetPhaseQueued;
         private static float _latestSunAngleDegrees;
         private static float _latestPlanetPhase;
+        private static int _droppedEventCount;
+        private static int _duplicateRegistrationCount;
+        private static int _listenerRejectCount;
+        private static int _listenerExceptionCount;
+        private static int _unregisterMissCount;
+        private static int _lastOverflowTelemetryFrame;
+        private static int _lastDuplicateTelemetryFrame;
+        private static int _lastListenerRejectedTelemetryFrame;
+        private static int _lastListenerExceptionTelemetryFrame;
+        private static int _lastUnregisterMissTelemetryFrame;
+        private static readonly uint _QueueOverflowWarningHash = unchecked((uint)LocHash.Compute("CelestialEvents.QueueOverflow"));
+        private static readonly uint _DuplicateListenerWarningHash = unchecked((uint)LocHash.Compute("CelestialEvents.DuplicateListener"));
+        private static readonly uint _ListenerRejectedWarningHash = unchecked((uint)LocHash.Compute("CelestialEvents.ListenerRejected"));
+        private static readonly uint _ListenerExceptionWarningHash = unchecked((uint)LocHash.Compute("CelestialEvents.ListenerException"));
+        private static readonly uint _UnregisterMissWarningHash = unchecked((uint)LocHash.Compute("CelestialEvents.UnregisterMiss"));
+        private static readonly uint _QueueContextHash = unchecked((uint)LocHash.Compute("CelestialEvents.Queue"));
+        private static readonly uint _ListenerContextHash = unchecked((uint)LocHash.Compute("CelestialEvents.Listener"));
 
         /// <summary>
         /// Number of queued celestial event payloads awaiting dispatch.
@@ -167,6 +190,12 @@ namespace Hecton8.Celestial
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
 
+            for (int i = 0; i < _deferredRegisterCount; i++)
+                _deferredRegisterListeners[i].Clear();
+
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+                _deferredUnregisterListeners[i].Clear();
+
             for (int i = 0; i < ExpectedPendingEventCapacity; i++)
             {
                 _pendingEvents[i] = default;
@@ -174,6 +203,8 @@ namespace Hecton8.Celestial
             }
 
             _listenerCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _pendingEventReadIndex = 0;
@@ -185,6 +216,16 @@ namespace Hecton8.Celestial
             _planetPhaseQueued = false;
             _latestSunAngleDegrees = 0f;
             _latestPlanetPhase = 0f;
+            _droppedEventCount = 0;
+            _duplicateRegistrationCount = 0;
+            _listenerRejectCount = 0;
+            _listenerExceptionCount = 0;
+            _unregisterMissCount = 0;
+            _lastOverflowTelemetryFrame = 0;
+            _lastDuplicateTelemetryFrame = 0;
+            _lastListenerRejectedTelemetryFrame = 0;
+            _lastListenerExceptionTelemetryFrame = 0;
+            _lastUnregisterMissTelemetryFrame = 0;
         }
 
         /// <summary>
@@ -192,8 +233,16 @@ namespace Hecton8.Celestial
         /// </summary>
         public static void Register(ICelestialEventListener listener)
         {
-            if (listener != null)
-                RegisterImmediate(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -201,8 +250,23 @@ namespace Hecton8.Celestial
         /// </summary>
         public static void Unregister(ICelestialEventListener listener)
         {
-            if (listener != null)
-                TryUnregisterImmediate(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!TryUnregisterImmediate(listener))
+            {
+                ReportUnregisterMiss();
+                return;
+            }
+
+            if (_listenerCount <= 0)
+                DrainQueuedEvents();
         }
 
         /// <summary>Queues an eclipse-start signal.</summary>
@@ -287,6 +351,13 @@ namespace Hecton8.Celestial
             if (_pendingEventCount <= 0 && _nextFrameEventCount <= 0)
                 return;
 
+            if (_listenerCount <= 0)
+            {
+                DrainQueuedEvents();
+                ApplyDeferredListenerMutations();
+                return;
+            }
+
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
             while (scanBudget-- > 0 && _pendingEventCount > 0)
@@ -308,6 +379,7 @@ namespace Hecton8.Celestial
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -321,7 +393,10 @@ namespace Hecton8.Celestial
                 return false;
 
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+            {
+                ReportQueueOverflow(eventType);
                 return false;
+            }
 
             CelestialEventPayload payload = new CelestialEventPayload { EventType = eventType };
             if (_isDispatching)
@@ -341,16 +416,16 @@ namespace Hecton8.Celestial
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
                         ICelestialEventListener listener = _listeners[i].Listener;
-                        if (listener != null)
-                            listener.OnCelestialEclipseStarted();
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, in payload);
                     }
                     break;
                 case EclipseEndedEventType:
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
                         ICelestialEventListener listener = _listeners[i].Listener;
-                        if (listener != null)
-                            listener.OnCelestialEclipseEnded();
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, in payload);
                     }
                     break;
                 case SunAngleChangedEventType:
@@ -358,8 +433,8 @@ namespace Hecton8.Celestial
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
                         ICelestialEventListener listener = _listeners[i].Listener;
-                        if (listener != null)
-                            listener.OnCelestialSunAngleChanged(_latestSunAngleDegrees);
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, in payload);
                     }
                     break;
                 case PlanetPhaseChangedEventType:
@@ -367,11 +442,47 @@ namespace Hecton8.Celestial
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
                         ICelestialEventListener listener = _listeners[i].Listener;
-                        if (listener != null)
-                            listener.OnCelestialPlanetPhaseChanged(_latestPlanetPhase);
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, in payload);
                     }
                     break;
             }
+        }
+
+        private static void DispatchToListener(ICelestialEventListener listener, in CelestialEventPayload payload)
+        {
+            try
+            {
+                switch (payload.EventType)
+                {
+                    case EclipseStartedEventType:
+                        listener.OnCelestialEclipseStarted();
+                        break;
+                    case EclipseEndedEventType:
+                        listener.OnCelestialEclipseEnded();
+                        break;
+                    case SunAngleChangedEventType:
+                        listener.OnCelestialSunAngleChanged(_latestSunAngleDegrees);
+                        break;
+                    case PlanetPhaseChangedEventType:
+                        listener.OnCelestialPlanetPhaseChanged(_latestPlanetPhase);
+                        break;
+                }
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogException(exception);
+#endif
         }
 
         private static void RegisterImmediate(ICelestialEventListener listener)
@@ -379,11 +490,20 @@ namespace Hecton8.Celestial
             for (int i = 0; i < _listenerCount; i++)
             {
                 if (ReferenceEquals(_listeners[i].Listener, listener))
+                {
+                    ReportDuplicateListenerRegistration();
                     return;
+                }
             }
 
+            if (IsDeferredUnregisterPending(listener))
+                CancelDeferredUnregister(listener);
+
             if (_listenerCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
                 return;
+            }
 
             _listeners[_listenerCount++].Listener = listener;
         }
@@ -402,6 +522,156 @@ namespace Hecton8.Celestial
             }
 
             return false;
+        }
+
+        private static void QueueDeferredRegister(ICelestialEventListener listener)
+        {
+            if (IsRegistered(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
+        }
+
+        private static void QueueDeferredUnregister(ICelestialEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!IsRegistered(listener))
+                return;
+
+            if (IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
+        }
+
+        private static bool CancelDeferredRegister(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount].Clear();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(ICelestialEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsRegistered(ICelestialEventListener listener)
+        {
+            if (listener == null)
+                return false;
+
+            for (int i = 0; i < _listenerCount; i++)
+            {
+                if (ReferenceEquals(_listeners[i].Listener, listener))
+                    return true;
+            }
+
+            return IsDeferredRegisterPending(listener) && !IsDeferredUnregisterPending(listener);
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                ICelestialEventListener listener = _deferredUnregisterListeners[i].Listener;
+                _deferredUnregisterListeners[i].Clear();
+                if (listener != null && !TryUnregisterImmediate(listener))
+                    ReportUnregisterMiss();
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                ICelestialEventListener listener = _deferredRegisterListeners[i].Listener;
+                _deferredRegisterListeners[i].Clear();
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listenerCount <= 0)
+                DrainQueuedEvents();
+        }
+
+        private static void DrainQueuedEvents()
+        {
+            for (int i = 0; i < ExpectedPendingEventCapacity; i++)
+            {
+                _pendingEvents[i] = default;
+                _nextFrameEvents[i] = default;
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _pendingEventReadIndex = 0;
+            _pendingEventWriteIndex = 0;
+            _nextFrameEventReadIndex = 0;
+            _nextFrameEventWriteIndex = 0;
+            _sunAngleQueued = false;
+            _planetPhaseQueued = false;
         }
 
         private static bool TryEnqueue(
@@ -452,6 +722,76 @@ namespace Hecton8.Celestial
 
                 TryEnqueue(_pendingEvents, ref _pendingEventWriteIndex, ref _pendingEventCount, in payload);
             }
+        }
+
+        private static void ReportQueueOverflow(byte eventType)
+        {
+            _droppedEventCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastOverflowTelemetryFrame == frame)
+                return;
+
+            _lastOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _QueueOverflowWarningHash,
+                _QueueContextHash ^ ((uint)eventType << 24),
+                math.max(1, _droppedEventCount));
+        }
+
+        private static void ReportDuplicateListenerRegistration()
+        {
+            _duplicateRegistrationCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastDuplicateTelemetryFrame == frame)
+                return;
+
+            _lastDuplicateTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DuplicateListenerWarningHash,
+                _ListenerContextHash,
+                math.max(1, _duplicateRegistrationCount));
+        }
+
+        private static void ReportListenerRejected()
+        {
+            _listenerRejectCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ListenerRejectedWarningHash,
+                _ListenerContextHash,
+                math.max(1, _listenerRejectCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ListenerExceptionWarningHash,
+                _ListenerContextHash,
+                math.max(1, _listenerExceptionCount));
+        }
+
+        private static void ReportUnregisterMiss()
+        {
+            _unregisterMissCount++;
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (_lastUnregisterMissTelemetryFrame == frame)
+                return;
+
+            _lastUnregisterMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _UnregisterMissWarningHash,
+                _ListenerContextHash,
+                math.max(1, _unregisterMissCount));
         }
     }
 
@@ -664,6 +1004,14 @@ namespace Hecton8.Celestial
             [FieldOffset(40)] private ulong _pad0;
             [FieldOffset(48)] private ulong _pad1;
             [FieldOffset(56)] private ulong _pad2;
+        }
+
+        private enum CelestialTruthReadFailure : byte
+        {
+            None = 0,
+            MissingVaultOrHandle = 1,
+            InvalidState = 2,
+            InvalidSnapshot = 3
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -1007,6 +1355,11 @@ namespace Hecton8.Celestial
         private float _lastCelestialSlowTickTime;
         private float _celestialTimelineAccumulator;
         private int _nextCelestialTimelineWarningFrame;
+        private int _celestialEventDropCount;
+        private int _lastCelestialEventDropWarningFrame;
+        private int _celestialTruthFallbackCount;
+        private int _nextCelestialTruthFallbackWarningFrame;
+        private int _nextAegirStormEmissionWarningFrame;
         private float _debugCelestialTimeScale = 1f;
 
         private float _previousBlendForColors;
@@ -1194,6 +1547,10 @@ namespace Hecton8.Celestial
         private const uint Shinobu345CelestialEventFlagEclipseActive = 1u << 1;
         private const uint CelestialBlackBoxFlagAbyssalCulled = 1u << 25;
         private const uint CelestialBlackBoxFlagStorm = 1u << 26;
+        private const uint CelestialBlackBoxFlagSavePhaseRestored = 1u << 27;
+        private const uint CelestialBlackBoxFlagSavePhaseFallback = 1u << 28;
+        private const uint CelestialBlackBoxFlagSavePhaseRejected = 1u << 29;
+        private const uint CelestialBlackBoxFlagSavePhaseNonFinite = 1u << 30;
         private const string CelestialBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_CELESTIAL_MECHANICS.bin";
         private static readonly double StopwatchTickToMilliseconds =
             1000.0d * math.rcp((double)System.Diagnostics.Stopwatch.Frequency);
@@ -1302,6 +1659,7 @@ namespace Hecton8.Celestial
         private static readonly int _ID_H8AegirOrbitScalars = Shader.PropertyToID("_H8AegirOrbitScalars");
         private static readonly int _ID_H8AegirFlowPhase = Shader.PropertyToID("_H8AegirFlowPhase");
         private static readonly int _ID_H8AegirFlowPhaseValid = Shader.PropertyToID("_H8AegirFlowPhaseValid");
+        private static readonly int _ID_H8AegirStormEmission = Shader.PropertyToID("_H8AegirStormEmission");
         private static readonly int _ID_H8GlobalQualityWeight = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int _ID_HectonAtmosphereColor = Shader.PropertyToID("_HectonAtmosphereColor");
         private static readonly int _ID_HectonStormCloudDensity = Shader.PropertyToID("_HectonStormCloudDensity");
@@ -1312,8 +1670,25 @@ namespace Hecton8.Celestial
         private static readonly uint _FirmamentBakeContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.FirmamentBake"));
         private static readonly uint _CelestialTimelineBudgetWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTimelineBudget"));
         private static readonly uint _CelestialTimelineContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.SlowTick"));
+        private static readonly uint _CelestialEventDropWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialEventDrop"));
+        private static readonly uint _CelestialEventContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialEvents"));
+        private static readonly uint _CelestialSunAngleEventHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.SunAngleChanged"));
+        private static readonly uint _CelestialPlanetPhaseEventHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.PlanetPhaseChanged"));
+        private static readonly uint _CelestialEclipseStartedEventHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.EclipseStarted"));
+        private static readonly uint _CelestialEclipseEndedEventHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.EclipseEnded"));
+        private static readonly uint _CelestialTruthFallbackWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTruthFallback"));
+        private static readonly uint _CelestialTruthMissingContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTruthMissing"));
+        private static readonly uint _CelestialTruthInvalidStateContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTruthInvalidState"));
+        private static readonly uint _CelestialTruthInvalidSnapshotContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTruthInvalidSnapshot"));
+        private static readonly uint _AegirPresentationContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.AegirPresentation"));
+        private static readonly uint _AegirDuplicateOwnerWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.AegirDuplicateOwner"));
+        private static readonly uint _AegirMissingMaterialWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.AegirMissingMaterial"));
+        private static readonly uint _AegirMissingBandTextureWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.AegirMissingBandTexture"));
+        private static readonly uint _AegirStormEmissionInvalidWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.AegirStormEmissionInvalid"));
         private const double CelestialTimelineBudgetMilliseconds = 0.2d;
         private const int CelestialTimelineWarningCooldownFrames = 30;
+        private const int CelestialTruthFallbackWarningCooldownFrames = 120;
+        private const int AegirStormEmissionWarningCooldownFrames = 120;
         private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
         private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
         private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
@@ -1490,6 +1865,7 @@ namespace Hecton8.Celestial
             {
                 s_duplicateRuntimeCelestialWarningPublished = true;
                 Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Duplicate runtime owner disabled; keeping the existing celestial source of truth.", this);
+                PublishAegirPresentationWarning(_AegirDuplicateOwnerWarningHash, 1f);
             }
 
             if (aegirRenderer != null)
@@ -1562,6 +1938,7 @@ namespace Hecton8.Celestial
             _gameTime = 0f;
             _lastCelestialSlowTickTime = 0f;
             _celestialTimelineAccumulator = 0f;
+            _nextAegirStormEmissionWarningFrame = 0;
             _firmamentStartupBakeAttempted = false;
             _nextCelestialSnapshotFrame = 0;
             _lastSunDirectionGlobalUploadMinute = int.MinValue;
@@ -1666,6 +2043,7 @@ namespace Hecton8.Celestial
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
             RestoreCelestialTextureDefaults();
+            ClearAegirMaterialRuntimeCache();
             RestoreSurfaceCloudShadowCookie();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
@@ -1713,6 +2091,8 @@ namespace Hecton8.Celestial
 
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
+            RestoreCelestialTextureDefaults();
+            ClearAegirMaterialRuntimeCache();
             RestoreSurfaceCloudShadowCookie();
             TryUnregisterFromTickManager();
             TryUnregisterLateFrameTickable();
@@ -1738,8 +2118,52 @@ namespace Hecton8.Celestial
             _cachedRandomEvents = GlobalRegistry.RandomEvents;
             _cachedDynamicResolution = GlobalRegistry.DynamicResolution;
             _cachedWorldSeedGenerator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CacheAtmosphereManager(GlobalRegistry.Atmosphere);
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
 
+        }
+
+        private void CacheAtmosphereManager(HectonAtmosphereManager atmosphereManager)
+        {
+            if (IsAtmosphereManagerUsable(atmosphereManager))
+            {
+                _atmosphereManager = atmosphereManager;
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
+                _atmosphereManager = IsAtmosphereManagerUsable(registeredAtmosphere)
+                    ? registeredAtmosphere
+                    : null;
+                return;
+            }
+
+            if (!IsAtmosphereManagerUsable(_atmosphereManager))
+                _atmosphereManager = null;
+        }
+
+        private HectonAtmosphereManager ResolveAtmosphereManagerForRead()
+        {
+            if (IsAtmosphereManagerUsable(_atmosphereManager))
+                return _atmosphereManager;
+
+            _atmosphereManager = null;
+            HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
+            if (!IsAtmosphereManagerUsable(registeredAtmosphere))
+                return null;
+
+            _atmosphereManager = registeredAtmosphere;
+            return _atmosphereManager;
+        }
+
+        private static bool IsAtmosphereManagerUsable(HectonAtmosphereManager atmosphereManager)
+        {
+            if (atmosphereManager == null)
+                return false;
+
+            return !Application.isPlaying || atmosphereManager.isActiveAndEnabled;
         }
 
         private void CacheCelestialTruthVault(IDataVault vault)
@@ -1757,6 +2181,8 @@ namespace Hecton8.Celestial
             _nightAtmosphereGradientSamplesHandle = default;
             _orbitJobOutputHandle = default;
             _celestialPresentationViews.Clear();
+            _celestialTruthFallbackCount = 0;
+            _nextCelestialTruthFallbackWarningFrame = 0;
 
             if (vault == null)
                 return;
@@ -1919,6 +2345,8 @@ namespace Hecton8.Celestial
             _celestialTruthStateRead = default;
             _celestialTruthEnvironmentRead = default;
             _celestialPresentationViews.Clear();
+            _celestialTruthFallbackCount = 0;
+            _nextCelestialTruthFallbackWarningFrame = 0;
             _cachedBiomeMatrix = null;
             _cachedOceanKinematicsService = null;
             _cachedWeatherService = null;
@@ -1928,6 +2356,30 @@ namespace Hecton8.Celestial
             _cachedDynamicResolution = null;
             _cachedWorldSeedGenerator = null;
             _cachedPlayerContext = null;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = IsPlayerContextUsable(playerContext) ? playerContext : null;
+        }
+
+        private IPlayerRuntimeContext ResolveCachedPlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                _cachedPlayerContext = null;
+
+            return _cachedPlayerContext;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterToTickManager()
@@ -2019,12 +2471,17 @@ namespace Hecton8.Celestial
                 case GlobalRegistryServiceSlot.DynamicResolutionRuntime:
                     _cachedDynamicResolution = currentService as DynamicResolutionScaler;
                     break;
+                case GlobalRegistryServiceSlot.AtmosphereRuntime:
+                    CacheAtmosphereManager(currentService as HectonAtmosphereManager);
+                    PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);
+                    FlushCelestialLightReadabilityShaderGlobals();
+                    break;
                 case GlobalRegistryServiceSlot.WorldSeedProvider:
                     _cachedWorldSeedGenerator = currentService as global::HectonWorldGenerator;
                     _firmamentStartupBakeAttempted = false;
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterFromTickManager();
@@ -2245,7 +2702,7 @@ namespace Hecton8.Celestial
             if (!Application.isPlaying)
                 return false;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();
             if (playerContext != null &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
@@ -2281,11 +2738,40 @@ namespace Hecton8.Celestial
             return depthMeters >= math.abs(AbyssalCelestialCullY);
         }
 
-        private static float ResolveProductionDepthFromRuntimeY(float runtimeY)
+        private float ResolveProductionDepthFromRuntimeY(float runtimeY)
         {
             return math.isfinite(runtimeY)
-                ? math.max(0f, OceanSurfaceAtmosphereConstants.DefaultSeaLevel - runtimeY)
+                ? math.max(0f, ResolveProductionSeaLevelY() - runtimeY)
                 : 0f;
+        }
+
+        private float ResolveProductionSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveProductionSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return seaLevelY;
+            }
+
+            return OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        }
+
+        private static bool TryResolveProductionSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
         }
 
         private void RunCelestialTimeline(float deltaTime)
@@ -2347,7 +2833,7 @@ namespace Hecton8.Celestial
             WriteCelestialBlackBoxTelemetry(ResolveTimeOfDay01(), _smoothedOcclusionFactor, ResolveCelestialBlackBoxRuntimeFlags(), _currentDepthMeters);
 
             if (Application.isPlaying)
-                CelestialEvents.TryRaiseSunAngleChanged(_currentSunAngle);
+                TryRaiseCelestialSunAngleChanged(_currentSunAngle);
         }
 
         private void AdvanceAegirVisualRotation(float celestialDeltaTime)
@@ -2482,6 +2968,66 @@ namespace Hecton8.Celestial
                 Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
         }
 
+        private static void PublishAegirPresentationWarning(uint warningHash, float scalarValue)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                warningHash,
+                _AegirPresentationContextHash,
+                scalarValue);
+        }
+
+        private void TryRaiseCelestialSunAngleChanged(float angleDegrees)
+        {
+            if (CelestialEvents.TryRaiseSunAngleChanged(angleDegrees))
+                return;
+
+            ReportCelestialEventDropIfBackpressured(_CelestialSunAngleEventHash);
+        }
+
+        private void TryRaiseCelestialPlanetPhaseChanged(float phase)
+        {
+            if (CelestialEvents.TryRaisePlanetPhaseChanged(phase))
+                return;
+
+            ReportCelestialEventDropIfBackpressured(_CelestialPlanetPhaseEventHash);
+        }
+
+        private void TryRaiseCelestialEclipseStarted()
+        {
+            if (CelestialEvents.TryRaiseEclipseStarted())
+                return;
+
+            ReportCelestialEventDropIfBackpressured(_CelestialEclipseStartedEventHash);
+        }
+
+        private void TryRaiseCelestialEclipseEnded()
+        {
+            if (CelestialEvents.TryRaiseEclipseEnded())
+                return;
+
+            ReportCelestialEventDropIfBackpressured(_CelestialEclipseEndedEventHash);
+        }
+
+        private void ReportCelestialEventDropIfBackpressured(uint eventHash)
+        {
+            if (!Application.isPlaying || CelestialEvents.PendingCount <= 0)
+                return;
+
+            _celestialEventDropCount++;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastCelestialEventDropWarningFrame == currentFrame)
+                return;
+
+            _lastCelestialEventDropWarningFrame = currentFrame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CelestialEventDropWarningHash,
+                _CelestialEventContextHash ^ eventHash,
+                math.max(1, _celestialEventDropCount));
+        }
+
         private void ValidateAegirRendererMaterialCold()
         {
             Material material = aegirRenderer.sharedMaterial;
@@ -2498,6 +3044,7 @@ namespace Hecton8.Celestial
                 {
                     _aegirMaterialWarningPublished = true;
                     Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Aegir renderer has no material; disabling mesh presentation and keeping sky projection globals authoritative.", this);
+                    PublishAegirPresentationWarning(_AegirMissingMaterialWarningHash, 1f);
                 }
 
                 aegirRenderer.enabled = false;
@@ -2508,6 +3055,7 @@ namespace Hecton8.Celestial
             {
                 _aegirMaterialWarningPublished = true;
                 Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Aegir material is missing its band texture; renderer will use shader fallback while sky projection remains authoritative.", this);
+                PublishAegirPresentationWarning(_AegirMissingBandTextureWarningHash, 1f);
             }
         }
 
@@ -4727,12 +5275,16 @@ namespace Hecton8.Celestial
             sunElevation = 0f;
             eclipseOcclusion01 = 0f;
 
-            if (!TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot))
+            if (!TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot, out CelestialTruthReadFailure failure))
+            {
+                ReportCelestialTruthFallbackIfNeeded(failure);
                 return false;
+            }
 
             if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u ||
                 !math.all(math.isfinite(snapshot.SunDirection)))
             {
+                ReportCelestialTruthFallbackIfNeeded(CelestialTruthReadFailure.InvalidSnapshot);
                 return false;
             }
 
@@ -4747,9 +5299,10 @@ namespace Hecton8.Celestial
             return true;
         }
 
-        private bool TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot)
+        private bool TryReadCelestialTruthSnapshot(out CelestialRuntimeSnapshot snapshot, out CelestialTruthReadFailure failure)
         {
             snapshot = default;
+            failure = CelestialTruthReadFailure.None;
             IDataVault vault = _celestialTruthVault;
             if (vault == null ||
                 !IsCelestialVaultHandle(in _celestialTruthStateRead, BufferID.Shinobu345CelestialStateRead) ||
@@ -4757,6 +5310,7 @@ namespace Hecton8.Celestial
                 !celestialStates.IsCreated ||
                 celestialStates.Length <= 0)
             {
+                failure = CelestialTruthReadFailure.MissingVaultOrHandle;
                 return false;
             }
 
@@ -4779,6 +5333,7 @@ namespace Hecton8.Celestial
                 !math.isfinite(celestialState.EclipseShadowScalar01) ||
                 !math.isfinite(celestialState.TimeOfDay01))
             {
+                failure = CelestialTruthReadFailure.InvalidState;
                 return false;
             }
 
@@ -4838,7 +5393,45 @@ namespace Hecton8.Celestial
 
             next.Flags = flags;
             snapshot = next;
-            return (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
+            bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
+            if (!valid)
+                failure = CelestialTruthReadFailure.InvalidSnapshot;
+
+            return valid;
+        }
+
+        private void ReportCelestialTruthFallbackIfNeeded(CelestialTruthReadFailure failure)
+        {
+            if (!Application.isPlaying || failure == CelestialTruthReadFailure.None)
+                return;
+
+            if (failure == CelestialTruthReadFailure.MissingVaultOrHandle && _celestialTruthVault == null)
+                return;
+
+            _celestialTruthFallbackCount++;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (currentFrame < _nextCelestialTruthFallbackWarningFrame)
+                return;
+
+            _nextCelestialTruthFallbackWarningFrame = currentFrame + CelestialTruthFallbackWarningCooldownFrames;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CelestialTruthFallbackWarningHash,
+                ResolveCelestialTruthFailureContextHash(failure),
+                math.max(1, _celestialTruthFallbackCount));
+        }
+
+        private static uint ResolveCelestialTruthFailureContextHash(CelestialTruthReadFailure failure)
+        {
+            switch (failure)
+            {
+                case CelestialTruthReadFailure.InvalidState:
+                    return _CelestialTruthInvalidStateContextHash;
+                case CelestialTruthReadFailure.InvalidSnapshot:
+                    return _CelestialTruthInvalidSnapshotContextHash;
+                case CelestialTruthReadFailure.MissingVaultOrHandle:
+                default:
+                    return _CelestialTruthMissingContextHash;
+            }
         }
 
         private bool TryReadCelestialEnvironmentState(IDataVault vault, out EnvironmentStateDTO environmentState)
@@ -5419,7 +6012,8 @@ namespace Hecton8.Celestial
 
         private void PublishCelestialLightReadabilitySnapshot(float depthMeters)
         {
-            AtmosphericLightingState state = _surfaceAtmosphericLightingState.IsValid != 0
+            bool lightingStateFallback = _surfaceAtmosphericLightingState.IsValid == 0;
+            AtmosphericLightingState state = !lightingStateFallback
                 ? _surfaceAtmosphericLightingState
                 : AtmosphericLightingState.Default;
             float3 directionalColor = new float3(
@@ -5436,7 +6030,8 @@ namespace Hecton8.Celestial
                 state.DirectionalLightIntensity,
                 directionalColor,
                 ResolveLightReadabilityQuality01(),
-                nextSequence);
+                nextSequence,
+                lightingStateFallback);
 
             _celestialLightReadabilitySnapshot = snapshot;
             if (Application.isPlaying)
@@ -5447,11 +6042,39 @@ namespace Hecton8.Celestial
 
         private float ResolveLightReadabilityQuality01()
         {
+            float quality = ResolveUnityQualityTierWeight01();
+
             DynamicResolutionScaler scaler = _cachedDynamicResolution;
             if (scaler != null && math.isfinite(scaler.CurrentRenderScale))
-                return math.saturate(scaler.CurrentRenderScale);
+                quality = math.min(quality, math.saturate(scaler.CurrentRenderScale));
 
-            return 1f;
+            return math.saturate(quality);
+        }
+
+        private static float ResolveUnityQualityTierWeight01()
+        {
+            int qualityCount = QualitySettings.count;
+            if (qualityCount <= 1)
+                return 1f;
+
+            int qualityLevel = math.clamp(QualitySettings.GetQualityLevel(), 0, qualityCount - 1);
+            return ResolveCelestialQualityFromUnityTier(qualityLevel, qualityCount);
+        }
+
+        private static float ResolveCelestialQualityFromUnityTier(int qualityLevel, int qualityCount)
+        {
+            switch (qualityLevel)
+            {
+                case 0: return 0.72f; // Surface (Medium)
+                case 1: return 0.55f; // Abyss (Low)
+                case 2: return 0.90f; // Orbit (High)
+                case 3: return 0.64f; // Quest (VR)
+                case 4: return 0.58f; // Handheld (UMA)
+                case 5: return 0.76f; // Compact PC
+                case 6: return 1.00f; // Leviathan (Ultra)
+                default:
+                    return math.lerp(0.55f, 1f, math.clamp(qualityLevel, 0, qualityCount - 1) * math.rcp(math.max(1f, qualityCount - 1f)));
+            }
         }
 
         private void QueueCelestialRuntimeSnapshotShaderGlobals(in CelestialRuntimeSnapshot snapshot)
@@ -6028,6 +6651,21 @@ namespace Hecton8.Celestial
             SetMaterialTexture(_aegirSharedMaterial, _ID_CelestialOcclusionTex, _aegirCelestialOcclusionTexDefault);
 
             _deepTextureResidencyReduced = false;
+        }
+
+        private void ClearAegirMaterialRuntimeCache()
+        {
+            if (aegirRenderer != null)
+                aegirRenderer.SetPropertyBlock(null);
+
+            if (_aegirMPB != null)
+                _aegirMPB.Clear();
+
+            _aegirSharedMaterial = null;
+            _aegirMainTexDefault = null;
+            _aegirDetailTexDefault = null;
+            _aegirEmissionMapDefault = null;
+            _aegirCelestialOcclusionTexDefault = null;
         }
 
         private static Texture GetMaterialTexture(Material material, int propertyId)
@@ -6810,8 +7448,9 @@ namespace Hecton8.Celestial
 
         private void PublishSkyRotationAndOccluders(Vector4 aegirDirection)
         {
-            float timeOfDay01 = _atmosphereManager != null
-                ? Mathf.Repeat(_atmosphereManager.TimeOfDay, 1f)
+            HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManagerForRead();
+            float timeOfDay01 = atmosphereManager != null
+                ? Mathf.Repeat(atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
             float skyAngleRad = timeOfDay01 * math.PI * 2f;
             float skyCos = FastCosRadians(skyAngleRad);
@@ -6899,12 +7538,14 @@ namespace Hecton8.Celestial
                 new Vector4(ringOuter, math.saturate(profile.ringShadowStrength), flowSpeed, quality));
             Shader.SetGlobalFloat(_ID_H8AegirFlowPhase, flowPhase);
             Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 1f);
+            Shader.SetGlobalFloat(_ID_H8AegirStormEmission, ResolveAegirSkyProjectionStormEmission());
             Shader.SetGlobalFloat(_ID_H8GlobalQualityWeight, quality);
         }
 
         private AegirSkyProjectionProfile ResolveAegirSkyProjectionProfile()
         {
             AegirSkyProjectionProfile profile = aegirSkyProjection;
+            AegirSkyProjectionProfile defaults = AegirSkyProjectionProfile.Default;
             bool looksUninitialized =
                 !profile.publishGlobals &&
                 profile.fallbackAngularRadius <= 0f &&
@@ -6912,7 +7553,37 @@ namespace Hecton8.Celestial
                 profile.ringInnerRadius <= 0f &&
                 profile.minimumQuality <= 0f &&
                 profile.visibilityFloor <= 0f;
-            return looksUninitialized ? AegirSkyProjectionProfile.Default : profile;
+            if (looksUninitialized)
+                return defaults;
+
+            profile.fallbackAngularRadius = SanitizeAegirProjectionScalar(profile.fallbackAngularRadius, defaults.fallbackAngularRadius, 0.05f, 0.65f);
+            profile.ringOuterRadius = SanitizeAegirProjectionScalar(profile.ringOuterRadius, defaults.ringOuterRadius, 0.05f, 1.35f);
+            profile.ringInnerRadius = SanitizeAegirProjectionScalar(profile.ringInnerRadius, defaults.ringInnerRadius, 0.05f, 1f);
+            profile.ringShadowStrength = SanitizeAegirProjectionScalar(profile.ringShadowStrength, defaults.ringShadowStrength, 0f, 1f);
+            profile.bandFlowSpeed = SanitizeAegirProjectionScalar(profile.bandFlowSpeed, defaults.bandFlowSpeed, 0f, 0.02f);
+            profile.minimumQuality = SanitizeAegirProjectionScalar(profile.minimumQuality, defaults.minimumQuality, 0f, 1f);
+            profile.visibilityFloor = SanitizeAegirProjectionScalar(profile.visibilityFloor, defaults.visibilityFloor, 0f, 0.25f);
+
+            Vector3 ringNormal = profile.ringPlaneNormal;
+            float3 normal = new float3(ringNormal.x, ringNormal.y, ringNormal.z);
+            if (!math.all(math.isfinite(normal)) || math.lengthsq(normal) <= 0.0001f)
+                profile.ringPlaneNormal = defaults.ringPlaneNormal;
+
+            return profile;
+        }
+
+        private static float SanitizeAegirProjectionScalar(float value, float fallback, float min, float max)
+        {
+            return math.isfinite(value)
+                ? math.clamp(value, min, max)
+                : fallback;
+        }
+
+        private static float SaturateAegirProjection01(float value, float fallback)
+        {
+            return math.isfinite(value)
+                ? math.saturate(value)
+                : math.saturate(fallback);
         }
 
         private float ResolveAegirSkyProjectionRadius(AegirSkyProjectionProfile profile)
@@ -6927,12 +7598,14 @@ namespace Hecton8.Celestial
 
         private float ResolveAegirSkyProjectionQuality01(AegirSkyProjectionProfile profile)
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            quality = math.isfinite(quality) ? math.saturate(quality) : 0f;
+            float quality = ResolveUnityQualityTierWeight01();
+            float pressureQuality = HomeostasisBrain.GlobalQualityWeight;
+            if (math.isfinite(pressureQuality) && pressureQuality > 0f)
+                quality = math.min(quality, math.saturate(pressureQuality));
 
             DynamicResolutionScaler scaler = _cachedDynamicResolution;
             if (scaler != null && math.isfinite(scaler.CurrentRenderScale))
-                quality = math.min(quality <= 0f ? 1f : quality, math.saturate(scaler.CurrentRenderScale));
+                quality = math.min(quality, math.saturate(scaler.CurrentRenderScale));
 
             return math.max(math.saturate(profile.minimumQuality), quality);
         }
@@ -6941,16 +7614,19 @@ namespace Hecton8.Celestial
         {
             float visibility = 1f;
             CelestialLightReadabilitySnapshot snapshot = _celestialLightReadabilitySnapshot;
-            if (snapshot.Sequence != 0u)
+            if (snapshot.Sequence != 0u &&
+                (snapshot.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u)
             {
-                float depthMeters = math.max(0f, snapshot.DepthMeters);
-                float ambient = math.saturate(math.max(snapshot.DirectSun01 * 0.75f, snapshot.AmbientReadability01));
-                float deepLoss = math.saturate(snapshot.DeepDarkness01);
-                float fogLoss = math.saturate((math.max(0f, snapshot.FogDensityMultiplier) - 1f) * 0.35f);
+                float depthMeters = math.max(0f, math.isfinite(snapshot.DepthMeters) ? snapshot.DepthMeters : 0f);
+                float direct = SaturateAegirProjection01(snapshot.DirectSun01, 0f);
+                float ambient = math.saturate(math.max(direct * 0.75f, SaturateAegirProjection01(snapshot.AmbientReadability01, 0f)));
+                float deepLoss = SaturateAegirProjection01(snapshot.DeepDarkness01, 0f);
+                float fogMultiplier = math.max(0f, math.isfinite(snapshot.FogDensityMultiplier) ? snapshot.FogDensityMultiplier : 1f);
+                float fogLoss = math.saturate((fogMultiplier - 1f) * 0.35f);
 
                 if (depthMeters > 0.01f)
                 {
-                    float waterRange = math.saturate(snapshot.UnderwaterVisibilityMeters * math.rcp(112f));
+                    float waterRange = SaturateAegirProjection01(snapshot.UnderwaterVisibilityMeters * math.rcp(112f), 0f);
                     visibility = waterRange * math.lerp(0.36f, 1f, ambient);
                     visibility *= 1f - deepLoss * 0.78f;
                 }
@@ -6966,6 +7642,34 @@ namespace Hecton8.Celestial
             return math.max(math.saturate(profile.visibilityFloor), math.saturate(visibility));
         }
 
+        private float ResolveAegirSkyProjectionStormEmission()
+        {
+            float emission = stormEmissionIntensity * ResolveStormEmissionMultiplier();
+            if (!math.isfinite(emission))
+            {
+                ReportAegirStormEmissionInvalidIfNeeded(-1f);
+                return 1f;
+            }
+
+            if (emission < 0f || emission > 4f)
+                ReportAegirStormEmissionInvalidIfNeeded(emission);
+
+            return math.clamp(emission, 0f, 4f);
+        }
+
+        private void ReportAegirStormEmissionInvalidIfNeeded(float scalarValue)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            if (currentFrame < _nextAegirStormEmissionWarningFrame)
+                return;
+
+            _nextAegirStormEmissionWarningFrame = currentFrame + AegirStormEmissionWarningCooldownFrames;
+            PublishAegirPresentationWarning(_AegirStormEmissionInvalidWarningHash, scalarValue);
+        }
+
         private void ClearAegirSkyProjectionGlobals()
         {
             Shader.SetGlobalVector(_ID_H8AegirSunDirection, Vector4.zero);
@@ -6974,6 +7678,7 @@ namespace Hecton8.Celestial
             Shader.SetGlobalVector(_ID_H8AegirOrbitScalars, Vector4.zero);
             Shader.SetGlobalFloat(_ID_H8AegirFlowPhase, 0f);
             Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 0f);
+            Shader.SetGlobalFloat(_ID_H8AegirStormEmission, 1f);
             Shader.SetGlobalFloat(_ID_H8GlobalQualityWeight, 0f);
         }
 
@@ -7031,7 +7736,7 @@ namespace Hecton8.Celestial
         {
             playerAup = default;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();
             if (playerContext == null)
                 return false;
 
@@ -7048,7 +7753,7 @@ namespace Hecton8.Celestial
         {
             runtimePosition = Vector3.zero;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();
             if (playerContext == null)
                 return false;
 
@@ -7159,7 +7864,7 @@ namespace Hecton8.Celestial
             block.SetFloat(_ID_EquatorialSpeed, equatorialRotationSpeed);
             block.SetFloat(_ID_PolarMultiplier, polarRotationMultiplier);
             block.SetFloat(_ID_PlanetPhase, _currentPhase);
-            block.SetFloat(_ID_StormEmission, stormEmissionIntensity * ResolveStormEmissionMultiplier());
+            block.SetFloat(_ID_StormEmission, ResolveAegirSkyProjectionStormEmission());
             block.SetFloat(_ID_SunBacklitFactor, _currentBacklitFactor);
             block.SetFloat(_ID_GlobalRotation, _rotationPhase);
             block.SetFloat(_ID_GameTime, _gameTime);
@@ -7179,7 +7884,7 @@ namespace Hecton8.Celestial
 
             aegirRenderer.SetPropertyBlock(block);
 
-            CelestialEvents.TryRaisePlanetPhaseChanged(_currentPhase);
+            TryRaiseCelestialPlanetPhaseChanged(_currentPhase);
         }
 
         // ─────────────────────────────────────────────
@@ -7302,11 +8007,11 @@ namespace Hecton8.Celestial
 
             if (!wasActive && isActive)
             {
-                CelestialEvents.TryRaiseEclipseStarted();
+                TryRaiseCelestialEclipseStarted();
             }
             else if (wasActive && !isActive)
             {
-                CelestialEvents.TryRaiseEclipseEnded();
+                TryRaiseCelestialEclipseEnded();
             }
         }
 
@@ -7459,8 +8164,9 @@ namespace Hecton8.Celestial
 
         private float ResolveTimeOfDay01()
         {
-            return _atmosphereManager != null
-                ? Mathf.Repeat(_atmosphereManager.TimeOfDay, 1f)
+            HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManagerForRead();
+            return atmosphereManager != null
+                ? Mathf.Repeat(atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
         }
 
@@ -7675,6 +8381,12 @@ namespace Hecton8.Celestial
             _surfaceWeatherSunDiscMultiplier = 1f;
             _surfaceWeatherSunScatterMultiplier = 1f;
             _surfaceWeatherSunMultiplier = 1f;
+
+            if (Application.isPlaying)
+            {
+                UpdateSkyMaterial();
+                UpdateAegirMaterial();
+            }
         }
 
         public float SunElevation => _currentSunAngle;
@@ -7700,6 +8412,92 @@ namespace Hecton8.Celestial
         public float RotationTimer => _rotationTimer;
         public float GameTime => _gameTime;
         public float DebugCelestialTimeScale => _debugCelestialTimeScale;
+
+        public bool TryApplyRuntimeTimeOfDay01(float timeOfDay01)
+        {
+            if (!math.isfinite(timeOfDay01))
+            {
+                WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseNonFinite);
+                return false;
+            }
+
+            float normalizedTimeOfDay01 = math.saturate(timeOfDay01);
+            HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManagerForRead();
+            if (atmosphereManager == null || !atmosphereManager.TrySetTimeOfDay(normalizedTimeOfDay01))
+            {
+                WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRejected);
+                return false;
+            }
+
+            RefreshCelestialRuntimeAfterTimeOfDayRestore();
+            WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRestored);
+            return true;
+        }
+
+        private void RefreshCelestialRuntimeAfterTimeOfDayRestore()
+        {
+            UpdateSunPosition(0f);
+            EnsureSunDirectionCache();
+            float sunElevation = CalculateSunElevation();
+            _currentSunAngle = sunElevation;
+
+            CalculateEclipseBacklight();
+            DetectEclipse();
+            DetectLunarResonance();
+            UpdateSunOcclusion(0f);
+
+            RefreshCelestialRuntimeSnapshotSunDirectionAfterTimeOfDayRestore();
+            QueueCelestialVisualSync(sunElevation, 0f);
+            PublishCelestialRuntimeSnapshot(publishGlobalSnapshot: true);
+            PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);
+            FlushCelestialRuntimeSnapshotShaderGlobals();
+
+            if (Application.isPlaying)
+                TryRaiseCelestialSunAngleChanged(_currentSunAngle);
+        }
+
+        private void RefreshCelestialRuntimeSnapshotSunDirectionAfterTimeOfDayRestore()
+        {
+            CelestialRuntimeSnapshot snapshot = _celestialRuntimeSnapshot;
+            if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u)
+            {
+                BuildFallbackCelestialRuntimeSnapshot();
+                return;
+            }
+
+            snapshot.SunDirection = NormalizeVisualRsqrt(_resolvedSunDirection, new float3(0f, 1f, 0f));
+            snapshot.Sequence = _celestialRuntimeSequence + 1u;
+            _celestialRuntimeSnapshot = snapshot;
+            _celestialRuntimeSequence = snapshot.Sequence;
+        }
+
+        internal void RecordCelestialLightPhaseLoadFallback(float timeOfDay01)
+        {
+            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseFallback);
+        }
+
+        internal void RecordCelestialLightPhaseLoadRejected(float timeOfDay01)
+        {
+            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseRejected);
+        }
+
+        internal void RecordCelestialLightPhaseLoadNonFinite(float timeOfDay01)
+        {
+            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseNonFinite);
+        }
+
+        private void WriteCelestialLightPhasePersistenceBlackBox(float timeOfDay01, uint persistenceFlag)
+        {
+            float recordedTimeOfDay01 = math.isfinite(timeOfDay01)
+                ? math.saturate(timeOfDay01)
+                : ResolveTimeOfDay01();
+
+            WriteCelestialBlackBoxTelemetry(
+                recordedTimeOfDay01,
+                _smoothedOcclusionFactor,
+                persistenceFlag,
+                _currentDepthMeters);
+        }
 
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {

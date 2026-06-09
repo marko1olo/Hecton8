@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Riskier Contract Seeds
 
-Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.
+Riskier contracts are how the dossier tempts an experienced Marauder without breaking survival. The board can offer better lien relief for a worse window, an early descent below comfort depth, a sample that must stay sealed, or evidence custody strict enough to make every shortcut expensive. The player chooses pressure, not inherited strength.
 
 ## Scanner
 
-You can choose a worse contract, not a stronger body.
+CONTRACT SEED // Worse window, deeper first target, stricter custody, rarer sample, larger lien relief. No inherited power.
 
 ## Terminal
 
-CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+SEED OPTION: increase payout by accepting worse orbital timing, deeper initial objectives, harsher evidence custody, rarer resource proof or tighter return accounting. Equipment power and inventory still reset.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The board pays more when it expects less of you to return.
 
 ## Field Note
 
-Replay should ask for greed, courage or stupidity, not grind.
+Replay should ask for greed, courage, or stupidity. Not grind.
 
 <!-- In-Game Wiki; generated from P137_RISKIER_CONTRACT_SEEDS/en_US. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Blue Debt Sample Quality"
+title: "Calidad de muestra Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Blue Debt Sample Quality
+# Calidad de muestra Blue Debt
 
-ES LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+La Calidad de muestra Blue Debt define la moral de recursos de HECTON-8. Las mejores muestras no solo valen más moneda. Llevan cadenas de custodia, historial de presión y valor probatorio. Eso permite que salvamento, craft, comercio y finales hablen el mismo idioma: lo que subes del océano puede pagarte, acusar a alguien o hacer más difícil que te liberen.
 
 ## Scanner
 
-ES LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+La calidad de Blue Debt es valor, riesgo y prueba en un solo número. Cuanto más rica es la muestra, menos se comporta como botín.
 
 ## Terminal
 
-ES LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+CLASES DE CALIDAD / shard: baja custodia, comercio seguro / casketed bloom: valor con clasificación de presión / harmonic glass: prueba acústica y alto interés de Deep Reach / live-contaminated sample: prioridad de prueba, manejo inestable / dead contaminated glass: bajo pago, fuerte olor legal.
 
 ## Audio
 
-ES LOC HOLD: The more it is worth, the less it is only loot.
+Cuanto más vale, menos es solo botín.
 
 ## Field Note
 
-ES LOC HOLD: Quality should affect payout, containment and ending pressure.
+La calidad cambia pago, coste de contención, presión de ruta y fuerza en el final. Un fragmento limpio paga; una muestra viva contaminada obliga a alguien a responder.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/es_ES. -->

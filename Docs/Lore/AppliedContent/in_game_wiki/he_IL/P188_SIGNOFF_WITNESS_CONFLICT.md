@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "התנגשות חתימה ועדות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# התנגשות חתימה ועדות
 
-HE LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+התנגשות חתימה ועדות היא הרגע שבו הסיפור הרשמי של Deep Reach מפסיק להיות רק חסר ומתחיל להיות שקרי. החתימה הציבורית מציגה את HECTON-8 כאסון גאות ללא סתירה מעשית לפני עיכוב הפינוי. האשים המקומיים של העדים אומרים אחרת: ייעוץ הפינוי, Atlas Safety ותפעול המסלול היו באותו חדר סקירה כאשר אובדן השוליים, מצוקת העובדים ותזמון המסלול כבר היו גלויים. ההתנגשות נותנת לשחקן צורת ראיה חזקה. לא מספיק למצוא חתימה רעה; צריך להציב את החתימה ליד יומני דלת, שעונים פגומים וחותמות שם עד שהאליבי נשבר.
 
 ## Scanner
 
-HE LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+החתימה אומרת שבסקירת הפינוי לא הייתה סתירה חיה. האשים של העדים אומרים שהסתירה הייתה בחדר.
 
 ## Terminal
 
-HE LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: חתימה ציבורית מסמנת כשל גאות כסיבה יחידה. hash עדות מקומי מציב ייעוץ פינוי, Atlas Safety ותפעול מסלול בחדר הסקירה לפני החזקת השחרור. להשוות יומן דלת, חותמת שם ושעון מסלול שבור.
 
 ## Audio
 
-HE LOC HOLD: The signatures line up. The bodies do not.
+הדו״ח אומר שאיש לא יכול היה לדעת. יומן הדלת חולק עליו.
 
 ## Field Note
 
-HE LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+חתימה נקייה רק עד שהחדר זוכר מי עמד לידה.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/he_IL. -->

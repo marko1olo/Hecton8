@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "سجل عائد المادة"
+title: "سجل تسوية المادة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سجل عائد المادة
+# سجل تسوية المادة
 
-مسار العائد المادي نجاح حقيقي من الاستخراج والتوثيق والصمت. ليس نهاية الحقيقة.
+سجل تسوية المادة هو طريق المحاسبة لعينة blue debt الموثقة. يدفع مقابل إثبات العينة وتاريخ الحيازة وبنود الصمت، ويترك شهادة Atlas ومسؤولية Deep Reach خارج الفاتورة.
 
 ## Scanner
 
-عينة blue debt موثقة. الدفع ممكن. الحقيقة اختيارية. Deep Reach تفضل هذا الترتيب.
+عينة blue debt موثقة: كتلة ونقاء وسجل ضغط وسلسلة حيازة. قد يصفو الرصيد قبل الدليل.
 
 ## Terminal
 
-جدول الدفع: الكتلة والنقاء وتاريخ الضغط وسلسلة الحيازة مقبولة. أرشيف الأدلة غير محسوم.
+تفتح التسوية عندما تطابق الحقيبة المختومة سجل العينة، ولا توجد فجوة في تاريخ ضغط الهبوط، ويقبل رمز عرض Deep Reach سلسلة الحيازة. الإغلاق المادي ينقل الرصيد إلى escrow ويضع وسم بقايا غير قابلة للفوترة على أرشيف Atlas.
 
 ## Audio
 
-يصفو الحساب. الماء لا.
+يصفو الحساب. الماء يحتفظ بالإيصال.
 
 ## Field Note
 
-قد يكون العقد الناجح حياة فاشلة.
+التحويل النظيف قد يكون دفنا آخر.
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/ar_SA. -->

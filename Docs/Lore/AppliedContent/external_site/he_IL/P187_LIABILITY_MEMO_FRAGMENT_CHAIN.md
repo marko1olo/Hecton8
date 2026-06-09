@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "שרשרת שברי מזכר האחריות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# שרשרת שברי מזכר האחריות
 
-HE LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+שרשרת שברי מזכר האחריות מגדירה את ראיות HECTON-8 כשחזור, לא כהסבר ישיר. המאמר נותן לשחקנים סיבה לדאוג לפיסות נייר, חותמות זמן וחדרי מנהלה פגועים: Deep Reach לא השאירה הודאה אחת, אלא הגנות עצמיות שאינן מתיישבות. כל שבר קטן מספיק כדי להיות אמין ומכוער מספיק כדי לשנות. יחד הם מראים כיצד החברה יכולה להאשים בפומבי את פיזיקת הגאות ובפרטי פרטים להזיז אחריות דרך סיכון, פינוי, רציפות Atlas, המרה ביטוחית ומשמורת מטען.
 
 ## Scanner
 
-HE LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+מזכר האחריות שרד כשברים מפני שכל משרד שמר את הפסקה שהגנה עליו.
 
 ## Terminal
 
-HE LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: טבלת שולי סיכון / הערת שחרור פינוי / עקיפת רציפות Atlas / המרת הפסד Keelmark / בקשת משמורת שחזור. יש להצליב זמן מסלול, נזק חדרים ושמות עובדים לפני קבלת הסיכום הציבורי.
 
 ## Audio
 
-HE LOC HOLD: Paper is weak alone. Put it against a flooded door.
+הם לא הסתירו את האמת בכספת. הם תייקו אותה בחלקים.
 
 ## Field Note
 
-HE LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+מזכר קרוע כן במקומות שבהם לא התכוון להיות כן.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/he_IL. -->

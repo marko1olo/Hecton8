@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Legal Insurance Automated Ping"
+title: "نبضة التأمين القانونية الآلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Legal Insurance Automated Ping
+# نبضة التأمين القانونية الآلية
 
-AR LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+نبضة التأمين القانونية الآلية تجعل ضغط الشركات قابلا للعب لأنها تصل كرسالة صغيرة مفيدة ومكروهة. لا يهدر النظام كلمات ليسأل إن كان اللاعب حيا. يطلب mass class وcontamination state وcoordinate proof وclaim priority وreceiver custody acceptance. يفعل ذلك عملين في وقت واحد. ميكانيكيا، يخبر اللاعب بأي فئات تهم الاسترداد. سرديا، يريه موقعه في اقتصاد الإنقاذ: الحياة ليست متجاهلة، لكنها ليست الأولى في الطابور. يجب أن تكون النبضة نادرة بما يكفي لتلسع. إن تكررت دائما صارت ضجيجا. إن وصلت عند عتبات الطريق، بعد أن خاطر اللاعب بنفسه لحمل دليل أو sample payload، أصبحت يدا مؤسسية نظيفة تمتد عبر الراديو لتزن الجسد قبل إنقاذه.
 
 ## Scanner
 
-AR LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+تم تلقي نبضة آلية. استُبدلت لغة الإنقاذ بإثبات المستقبل وفئة الكتلة وحالة الحيازة.
 
 ## Terminal
 
-AR LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / مطلوب قبل recovery-window assignment: mass class، contamination state، coordinate proof، claim priority، receiver custody acceptance.
 
 ## Audio
 
-AR LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+أول ما يسألون عنه ليس هل أنت حي. بل ماذا تحمل.
 
 ## Field Note
 
-AR LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+مرشح نداء قصير عند عتبات الطريق. استخدمه بندرة؛ القسوة في أول سؤال يطرحه النظام.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/ar_SA. -->

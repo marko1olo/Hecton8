@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Подписи Asset Silence Board
 
-RU LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+Подписи Asset Silence Board позволяют читать стирание Deep Reach без признания. Восстановленные карточки сохраняют корпоративный язык чистым: категории груза, видимость пакета, approval хранения, asset risk. Объекты HECTON-8 рядом делают этот язык грязным: шкафы с бирками, ведомости с именами и mute flags, которые не дают именам выйти из claim route. Ценность архива в расхождении между тем, что осталось оплачиваемым, и тем, что перестало нести имена.
 
 ## Scanner
 
-Silence vote не оружие. Но он все равно может заставить людей исчезнуть.
+Карточка redaction vote восстановлена: поле имени работника заглушено, категория asset-risk видима, число шкафов сохранено. Видимость пакета требует approval владельца хранения.
 
 ## Terminal
 
-SIGNATURE SEED: Brigit Senn, Asset Silence Board. Функция: маршрутизирует witness names в asset-risk silence categories после relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: перенести приложение witness-name в категорию asset-risk silence после relay review. Сохранить load class, locker count и claim value. Выпуск требует approval владельца хранения.
 
 ## Audio
 
-Сотри маршрут, и тело становится cargo math.
+Board оставил счет ящиков. Имена вырезали.
 
 ## Field Note
 
-Эти подписи нужны рядом с стертыми именами, приглушенными пакетами и странными accounting categories.
+Имя исчезло, бирка шкафа на месте. Asset Silence Board голосовал за видимость пакета, а не за то, существовал ли работник.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ru_RU. -->

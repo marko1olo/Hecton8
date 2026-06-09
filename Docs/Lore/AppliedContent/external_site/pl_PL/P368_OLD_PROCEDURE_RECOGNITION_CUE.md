@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sygnał rozpoznania starej procedury"
+title: "Sygnał Rozpoznania Starej Procedury"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sygnał rozpoznania starej procedury
+# Sygnał Rozpoznania Starej Procedury
 
-HECTON-8 osadza motywację postaci w procedurze. Protagonista rozpoznaje stary formularz bezpieczeństwa ewakuacji i widzi, jak go odwrócono: zdegradowane liczby pracowników, zapieczętowane pola świadków i język trasy bezpiecznej użyty do ochrony roszczeń zamiast życia.
+Sygnał Rozpoznania Starej Procedury osadza motyw postaci w dokumencie, który operator umie czytać. Formularz jest zwyczajny celowo: certyfikacja route-safe, declared occupants, tagi pompowni, pole drugiego sprawdzenia, pieczęć Continuity Office.
 
-## Scanner
-
-Stempel trasy bezpiecznej obecny. Liczba pracowników nadpisana dwoma atramentami. Pole świadka ręcznego zapieczętowane. Formularz zbudowano, by łapać takie kłamstwo, zanim ktoś zrobił z niego politykę.
-
-## Terminal
-
-FORMULARZ CIĄGŁOŚCI EWAKUACJI / CERTYFIKACJA TRASY BEZPIECZNEJ
-trasa: pomocnicza linia wyjścia
-zadeklarowani obecni: zdegradowany stan zaakceptowany
-świadek ręczny: zapieczętowany przez biuro ciągłości
-poprawka terenowa: wykaz pracowników niezgodny z tagami pompowni
-status: zachowanie roszczeń, brak zgody na wydobycie.
-
-## Audio
-
-Znasz ten formularz. Miał nie dopuścić, by pomieszczenie uznano za puste, gdy ludzie nadal w nim oddychali.
-
-## Field Note
-
-Formularz miał wymusić kolejne liczenie. Tutaj wymusił ciszę.
+Uszkodzenie jest w rozbieżności. Przyjęta liczba mówi, że trasa jest zamknięta. Tagi mówią, że ludzie nadal byli przypisani do sali. Pieczęć biura mówi, że drugiego sprawdzenia nie będzie. HECTON-8 używa tej sprzeczności proceduralnej jako dowodu: nie dramatycznego wyznania, ale formularza, który niszczy człowieka, bo rozumie każde pole.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/pl_PL. -->

@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guía de estratos de corteza ahogada
 
-La Guía de estratos de corteza ahogada hace que el lecho marino de HECTON-8 se sienta construido y roto: terrain, salvage routes y muestras minerales vienen de la misma historia de presión en capas.
+La corteza de HECTON-8 no se comporta como lecho marino virgen. La colonia la cortó, la calentó, la selló, la cargó con vidrio de presión y luego la abandonó a un océano que siguió trabajando cuando la nómina se detuvo. Una pared puede mostrar marcas de una perforación de servicio, una repisa pálida de hielo colapsado, una banda mineral verde-negra de una filtración y una costura fina donde Atlas encontró después un camino.
 
-## Scanner
-
-Los estratos inundados exponen viejas marcas de corte, costuras de pressure-glass y bandas minerales que no fallan dos veces en la misma dirección.
-
-## Terminal
-
-FIELD GUIDE: la corteza ahogada de HECTON-8 es roca de asentamiento apilada, memoria de hielo colapsado, pressure glass y extraction scars bajo brine móvil. Las líneas de fractura pesan más que las superficies limpias.
-
-## Audio
-
-El mapa no es terreno. Es una pila de ahogamientos.
-
-## Field Note
-
-Si una banda suena hueca, no confíes en la cara plana. Marca la fractura, toma la muestra y deja el muro sosteniéndose.
+Para una cuadrilla salvage, los estratos son navegación. Una cara plana puede sonar hueca. Un borde mineral hermoso puede ser lo único que mantiene unido un cañón de servicio. Leer bien la ruta significa tomar la muestra sin enseñarle a la pared a caer. Por eso la corteza ahogada importa en el campo: el fondo no es decorado. Es archivo, camino y a veces trampa.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/es_ES. -->

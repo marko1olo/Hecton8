@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conflicto de resumen seguro para reclamantes"
+title: "Conflicto de resumen seguro para reclamación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Conflicto de resumen seguro para reclamantes
+# Conflicto de resumen seguro para reclamación
 
-## Qué demuestra
+## Qué prueba el registro
 
-Un resumen seguro para reclamantes no es una version corta neutral. Es una reescritura protegida. Puede quitar nombres, redondear coordenadas, cambiar lesiones por categoria, suavizar verbos de ruta o sustituir la oficina autorizada a responder. Puede proteger personas; Deep Reach tambien puede usar ese lenguaje para enterrar palanca. El conflicto con el objeto crudo no es error: es evidencia de lo omitido.
+Un resumen seguro para reclamación no es una verdad más corta. Es una redacción autorizada para una ruta de reclamación. Puede quitar nombres de trabajadores, difuminar coordenadas, sustituir detalles de lesiones por una categoría de pago, cambiar retenido por en cola o mostrar solo la oficina autorizada a responder correo público. Algunas eliminaciones protegen a tripulaciones vivas, datos médicos o una ruta de recuperación sin cerrar. Otras protegen a Deep Reach de un problema de custodia. El conflicto entre resumen y objeto bruto es evidencia porque el corte tiene dueño, marca temporal y beneficiario.
+
+Lee el resumen junto al objeto que lo obligó: funda de etiqueta, casete de audio, bolsa de muestra, registro de puerta de presión, aro de traje o foto de bandeja. Mantén visible la lista de omisiones. Pregunta qué se quitó, a qué marcador de riesgo legal corresponde, quién pidió la redacción y si el objeto puede restaurar contexto sin inventar nombres ni coordenadas. Si el objeto bruto prueba más de lo que dice el resumen, conserva el hueco. No lo rellenes con una frase limpia.
 
 ## Cómo leerlo
 
-CONFLICTO DE RESUMEN SEGURO
-El resumen es seguro para manejo publico. El objeto crudo puede no serlo.
-No restaure nombres o coordenadas por conjetura.
-Conserve lista de omisiones, prueba de ruta y marcador de riesgo.
+CONFLICTO DE RESUMEN SEGURO PARA RECLAMACIÓN
+El resumen está autorizado para manejo público. El objeto bruto no.
+No restaures nombres, coordenadas ni detalles de lesiones por conjetura.
+Siguiente prueba: lista de omisiones, solicitante, marcador de riesgo legal, ruta del objeto, hora de custodia.
+Acción: mantener resumen y objeto bruto vinculados hasta que la omisión tenga dueño.
 
 ## Nota de campo
 
-Si el resumen dice seguro, pregunte para quien. Guarde la lista de omisiones.
+Un resumen puede proteger a un trabajador o a un despacho. La ruta del objeto dice cuál.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/es_ES. -->

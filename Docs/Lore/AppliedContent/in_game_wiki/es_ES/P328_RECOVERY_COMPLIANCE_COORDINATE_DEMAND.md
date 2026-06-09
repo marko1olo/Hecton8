@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Exigencia de coordenadas de Cumplimiento de Recuperación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Recovery Compliance Coordinate Demand
+# Exigencia de coordenadas de Cumplimiento de Recuperación
 
-ES LOC HOLD: Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.
+Esta exigencia convierte la presión actual de Deep Reach en mecánica: el jugador tiene coordenadas, prueba de custodia y conocimiento local que la compañía necesita. El mensaje ofrece recuperación, pero cada frase pone su precio en control de HECTON-8.
 
 ## Scanner
 
-ES LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paquete autenticado como Deep Reach Recovery Compliance: lenguaje de rescate envuelto en exigencias de coordenadas, custodia y contaminación.
 
 ## Terminal
 
-ES LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+AVISO RECOVERY COMPLIANCE DR-RC-8: transmita vector de acceso Atlas, prueba de custodia Xenon-Omega, estado de contaminación biológica y coordenadas actuales de la cuenca. La recuperación médica queda pendiente hasta conciliar cadena de activo, gravamen de salvamento y derechos de control del sitio. Una emisión no autorizada puede degradar la prioridad del superviviente a retención probatoria.
 
 ## Audio
 
-ES LOC HOLD: They can say rescue without meaning rescue.
+Encontraron la forma de hacer que rescate sonara a orden judicial.
 
 ## Field Note
 
-ES LOC HOLD: Use near payload authority decisions and receiver selection.
+Colocar donde el jugador pueda elegir qué transmite. La amenaza debe sentirse procedural, no teatral: nada de discurso de villano, solo una cola capaz de enterrar un cuerpo.
 
 <!-- In-Game Wiki; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/es_ES. -->

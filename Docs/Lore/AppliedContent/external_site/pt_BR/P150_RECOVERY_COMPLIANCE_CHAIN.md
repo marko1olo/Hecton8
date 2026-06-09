@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Cadeia Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Cadeia Recovery Compliance
 
-PT LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance deixa o fim mais frio. Soa ordenado porque é ordenado. Contratantes precisam de liberação, evidência de custódia, salvage de título, seguradoras de rota de registros, e escritórios públicos de palavras que não confessam.
 
-## Scanner
-
-PT LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-PT LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-PT LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-PT LOC HOLD: Delay does not make an order harmless.
+O horror é que a cadeia pode incluir vivos sem virar resgate. Um sobrevivente pode ser material de testemunha. Um traje de pressão pode ser massa de retorno. Uma confissão pode ser carga de dados. A cadeia pode tirar alguém de baixo e ainda servir ao escritório que o deixou lá.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/pt_BR. -->

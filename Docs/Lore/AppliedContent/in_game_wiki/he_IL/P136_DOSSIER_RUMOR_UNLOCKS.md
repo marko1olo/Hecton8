@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "זיכרון שמועות בתיק"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# זיכרון שמועות בתיק
 
-HE LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+תיק Marauder אינו ארון אחסון. הוא החלק בעבודה ששורד claim כושל: שמות שנשמעו רק בחצי דרך ממסר, סעיפי חוזה שהריחו לא נכון, משפחות סיום שכבר נחשפו, אזהרות שנקנו בדקות האחרונות של מישהו אחר. ריצה חדשה צריכה להתחיל בחשד טוב יותר, לא בצוללת טובה יותר.
 
 ## Scanner
 
-HE LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+זיכרון תיק // שמועות, אזהרות, הקשר חוזי ורשומות סיום נשארים. גוף, חמצן, כלים, מטען ומפה לא.
 
 ## Terminal
 
-HE LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+כלל התמדה: התיק רשאי לשמור משפחות שמועות, קטגוריות ראיה, סימוני סיום ואזהרות מסלול בין קמפיינים. הוא לא נושא ציוד, משאבים, גיאוגרפיית seed או בעלות על אמת.
 
 ## Audio
 
-HE LOC HOLD: Your file remembers what your hands cannot carry.
+הקובץ זוכר את מה שהידיים לא יכולות לשאת.
 
 ## Field Note
 
-HE LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+שהידע יישאר. שהלחץ יישאר.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/he_IL. -->

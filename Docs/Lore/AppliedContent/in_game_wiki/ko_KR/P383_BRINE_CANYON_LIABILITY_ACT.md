@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Brine Canyon Liability Act"
+title: "염수 협곡 책임 게이트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Brine Canyon Liability Act
+# 염수 협곡 책임 게이트
 
-KO LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+염수 협곡은 시간을 증거로 바꾼다. 센서, 시계, 대기열 상태, 부서진 경로 판은 침수가 실제였고 수락된 위험도 실제였음을 보여 준다. 오퍼레이터는 소문 수집을 멈추고 수신자 검토를 견딜 수 있는 문서 사슬을 운반하기 시작한다.
 
 ## Scanner
 
-KO LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+경로 게이트: 염수 협곡. 밀도층, 손상된 시계, 수락된 마진이 물리적 책임 증거가 된다.
 
 ## Terminal
 
-KO LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+캠페인 경로 // 염수 협곡. 필요: 마진 흔적, 대피 대기열, 경로 파손, 압력 시계 비교. 대조 사건 확인. 상업 예외와 Atlas 가중치는 논쟁 중.
 
 ## Audio
 
-KO LOC HOLD: The ocean did not lie. The timetable did.
+바다가 벽을 부쉈다. 시간표가 사람을 부쉈다.
 
 ## Field Note
 
-KO LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+약탈자 메모: 조류와 다투지 마라. 누군가 돈을 내고 지운 타임스탬프와 다투어라.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/ko_KR. -->

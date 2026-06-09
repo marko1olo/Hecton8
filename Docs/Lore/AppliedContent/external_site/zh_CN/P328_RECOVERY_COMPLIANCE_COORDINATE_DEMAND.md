@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "回收合规坐标要求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Recovery Compliance Coordinate Demand
+# 回收合规坐标要求
 
-ZH LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+殖民地消失后，Deep Reach 并不是伸手来救人的。它的第一条干净频道问的是资产在哪里、谁能证明所有权、活着的证人是否接受隔离和留置审查。在 HECTON-8，救援不会被明说拒绝；它会被拖到足以成为筹码。
 
 ## Scanner
 
-ZH LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+数据包经认证来自 Deep Reach Recovery Compliance：救援措辞里包着坐标、监管证明和污染状态要求。
 
 ## Terminal
 
-ZH LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+RECOVERY COMPLIANCE 通知 DR-RC-8：发送 Atlas 接入矢量、Xenon-Omega 监管证明、生物污染状态和当前盆地坐标。医疗回收将在资产链、打捞留置权和现场控制权完成核对后继续。未经授权的广播可能将幸存者优先级降为证据留置。
 
 ## Audio
 
-ZH LOC HOLD: They can say rescue without meaning rescue.
+他们把救援说得像一张搜查令。
 
 ## Field Note
 
-ZH LOC HOLD: Use near payload authority decisions and receiver selection.
+放在玩家可以选择发送内容的位置。威胁要像程序而不是舞台表演：没有反派演说，只有一条能把活人埋掉的队列。
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/zh_CN. -->

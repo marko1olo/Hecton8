@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "最終問い: 犯行現場の売却"
+title: "最終問い: 犯罪現場の売却"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最終問い: 犯行現場の売却
+# 最終問い: 犯罪現場の売却
 
-犯行現場の売却は物質的成功のルートである。プレイヤーは生き残り、債務を消し、金を持って出ることさえある。その代価として、植民地の証拠は、救助質量を絞り、遺体を契約上の天候として扱った権力網の武器になる。
+犯罪現場の売却は物質的成功の軸である。Keelmark/Recovery Complianceが座標、試料価値、XO証拠、輸送体保管ハッシュを認めるため、オペレーターは生存し、債務を閉じ、金を持って去ることができる。欠けた添付が重要だ。別の証人パケットがなければ、作業者名、救助質量会計、Deep Reach責任は有償受領書の外に残る。
 
 ## Scanner
 
-座標、XO証拠、清潔な保管連鎖があれば脱出は買える。同時に、殺害現場を値付けした側へ売り戻すことにもなる。
+犯罪現場売却軸 // KeelmarkはAtlas盆地座標、ブルーデット試料、XO証人証拠、輸送体保管ハッシュと引き換えに先取特権を閉じられる。作業者証拠は別途公証されない限り受領書に載らない。
 
 ## Terminal
 
-FINAL SALE AXIS: Atlas盆地座標、使用可能なblue debt試料、XO証言、carrier保管hashはオペレーターのlienを解除できる。証拠が別に公証されていなければ、Deep Reachは死んだ作業員よりも清潔な書類でHECTON-8へ戻る道を得る。
+最終軸 / 犯罪現場売却
+受領者: Keelmark/Recovery Compliance。
+受理: Atlas盆地座標、有効なブルーデット試料、XO証人証拠、輸送体保管ハッシュ。
+先取特権効果: 契約表によりオペレーター債務を閉鎖または減額。
+既定で欠落: 作業者名簿、救助質量監査、公開証人パケット。
+Deep Reachの利点: 接近幾何と試料評価が敵対的保管連鎖なしに届く。
+既知の損失: 墓の地図は証言になる前に所有物になり得る。
 
 ## Audio
 
-墓の地図で借金は払える。台帳はそれを仕事と呼ぶ。
+墓の地図は売れる。受領書はそれでも仕事と呼ぶ。
 
 ## Field Note
 
-これは冗談の失敗エンドではない。支払い、債務解除、そして下に残る者たちの悪い未来がそろった有効な結末だ。
+これは受領書付きの有償出口だ。危険なのは空欄である。作業者名簿が添付されていない。
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/ja_JP. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_storage_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS188_FIRST_STORAGE_RACK_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, storage bin note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter storage |
@@ -72,17 +72,17 @@ SORTING HISTORY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| ru_RU | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| ja_JP | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| zh_CN | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| fr_FR | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| es_ES | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| de_DE | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| pl_PL | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| uk_UA | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| ar_SA | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| id_ID | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| ko_KR | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| he_IL | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| pt_BR | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
-| nl_NL | draft_machine_or_llm | BIN DIVIDER // Straight grit line marks old divider slot. Sorting history, not stock count. |
+| ru_RU | draft_machine_or_llm | РАЗДЕЛИТЕЛЬ ЛОТКА // Прямая линия песка отмечает старый паз разделителя. История сортировки, не учет запасов. |
+| ja_JP | draft_machine_or_llm | ビン仕切り // まっすぐな砂線が古い仕切り溝を示す。分類履歴であり在庫数ではない。 |
+| zh_CN | draft_machine_or_llm | 料箱隔板 // 直砂线标出旧隔板槽。是分拣历史，不是库存数量。 |
+| fr_FR | draft_machine_or_llm | SEPARATEUR DE BAC // Ligne droite de grains sur ancien logement. Historique de tri, pas compte de stock. |
+| es_ES | draft_machine_or_llm | DIVISOR DE CONTENEDOR // Linea recta de arenilla marca antigua ranura. Historial de clasificacion, no recuento de existencias. |
+| de_DE | draft_machine_or_llm | BEHAELTERTRENNER // Gerade Splittlinie markiert alten Trennerschlitz. Sortierverlauf, keine Bestandszahl. |
+| pl_PL | draft_machine_or_llm | PRZEGRODA POJEMNIKA // Prosta linia piasku znaczy dawny rowek przegrody. Historia sortowania, nie liczba zapasu. |
+| uk_UA | draft_machine_or_llm | РОЗДІЛЮВАЧ ЛОТКА // Пряма лінія піску позначає старий паз. Історія сортування, не облік запасів. |
+| ar_SA | draft_machine_or_llm | فاصل صندوق // خط حبيبات مستقيم يحدد شق فاصل قديم. سجل فرز، لا عدد مخزون. |
+| id_ID | draft_machine_or_llm | PEMBATAS BIN // Garis pasir lurus menandai slot pembatas lama. Riwayat sortir, bukan jumlah stok. |
+| ko_KR | draft_machine_or_llm | 보관함 칸막이 // 곧은 모래선이 예전 칸막이 홈을 표시한다. 분류 이력이지 재고 수량은 아니다. |
+| he_IL | draft_machine_or_llm | מפריד תא // קו גרוס ישר מסמן חריץ מפריד ישן. היסטוריית מיון, לא ספירת מלאי. |
+| pt_BR | draft_machine_or_llm | DIVISORIA DE CAIXA // Linha reta de areia marca antigo encaixe. Historico de separacao, nao contagem de estoque. |
+| nl_NL | draft_machine_or_llm | BAKVERDELER // Rechte gruislijn markeert oude verdeelsleuf. Sorteergeschiedenis, geen voorraadtelling. |

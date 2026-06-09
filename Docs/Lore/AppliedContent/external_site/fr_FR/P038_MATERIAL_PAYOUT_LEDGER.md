@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Registre de paiement matière"
+title: "Registre de règlement matière"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre de paiement matière
+# Registre de règlement matière
 
-Ce registre pose une fausse réussite façon Stalker: profit possible, résolution morale absente.
+Le registre de règlement matière définit un départ payé. HECTON-8 peut être quitté avec un compte soldé si la matière certifiée est cédée, mais le récit des faits reste en quarantaine tant que l'archive de preuves n'est pas sortie.
 
 ## Scanner
 
-Échantillon blue debt certifié. Paiement possible. Vérité optionnelle. Deep Reach préfère cet ordre.
+Échantillon blue debt certifié: masse, pureté, journal de pression, chaîne de garde. Le crédit peut se solder avant les preuves.
 
 ## Terminal
 
-Barème: masse, pureté, historique pression et chaîne custody acceptés. Archive preuves non résolue.
+Le règlement s'ouvre quand le boîtier scellé correspond au registre d'échantillon, que l'historique de pression n'a pas de trou et que le code d'offre Deep Reach accepte la chaîne de garde. La clôture matière place le crédit en séquestre et marque l'archive Atlas comme résidu non facturable.
 
 ## Audio
 
-Le compte s'efface. Pas l'eau.
+Le compte se solde. L'eau garde le reçu.
 
 ## Field Note
 
-Un contrat réussi peut rester une vie ratée.
+Un virement propre peut aussi enterrer quelque chose.
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/fr_FR. -->

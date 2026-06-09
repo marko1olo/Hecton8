@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Набір штампів маршрутного дозволу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Набір штампів маршрутного дозволу
 
-UA LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+Набір штампів маршрутного дозволу дає руху візуальну мову. Штампи PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY і WITNESS не є знаками рангу. Це дозволи тиску: хто міг пройти через люк, узяти костюм, випустити crawler або зайти в ремонтний шлюз, коли колонія відмовляла. Штамп завжди має поєднуватися з фізичним станом: відкрито, запечатано, відмовлено, перезаписано, затоплено або пізніше виправлено рукою мародера. Так гравець відтворює рух колонії без персонажа, який усе пояснює.
 
 ## Scanner
 
-UA LOC HOLD: A route stamp is stronger than a diary line.
+Маршрутний штамп сильніший за рядок щоденника, бо доводить, кого пропустили через межу тиску.
 
 ## Terminal
 
-UA LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: маршрутний дозвіл має поєднати одного працівника, одні двері або машину, одну родину бригади й одну пізнішу суперечність. Штамп без фізичної межі це декор. Штамп на люку, стійці костюмів, рейці crawler або бірці ліфта стає доказом руху.
 
 ## Audio
 
-UA LOC HOLD: Access is biography under pressure.
+Доступ це біографія під тиском.
 
 ## Field Note
 
-UA LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Штампи: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Поєднувати зі станом люка й робочим предметом.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/uk_UA. -->

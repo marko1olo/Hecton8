@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Pressure Suit Service Grades"
+title: "压力服维护等级"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Pressure Suit Service Grades
+# 压力服维护等级
 
-CN LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+压力服维护等级让 HECTON-8 的装备成长保持硬科幻质感。更好的压力服意味着深度认证、耗材、污染限制和一串不太干净的服务记录。
 
 ## Scanner
 
-CN LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+压力服标签记录服役深度、密封疲劳、洗涤器余量、热容差和污染处理。
 
 ## Terminal
 
-CN LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-CN LOC HOLD: The suit does not make you brave. It only fails later.
+压力服不会让你勇敢，只会晚一点失效。
 
 ## Field Note
 
-CN LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+更深的压力服不是彩色护甲，而是文件、备件和难看的维护。
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/zh_CN. -->

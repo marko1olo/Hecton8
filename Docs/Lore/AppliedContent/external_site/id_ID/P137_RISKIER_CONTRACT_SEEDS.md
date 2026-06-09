@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Seed Kontrak Lebih Berisiko"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Seed Kontrak Lebih Berisiko
 
-ID LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+Seed Kontrak Lebih Berisiko membuat replay bersifat ekonomi dan prosedural: kontrak mengubah tuntutan samudra, bukan bawaan pemain.
 
 ## Scanner
 
-ID LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED KONTRAK // Jendela lebih buruk, target pertama lebih dalam, kustodi lebih ketat, sampel lebih langka, keringanan lien lebih besar. Tidak ada kekuatan warisan.
 
 ## Terminal
 
-ID LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+OPSI SEED: naikkan bayaran dengan menerima timing orbit buruk, objektif awal lebih dalam, kustodi bukti lebih keras, bukti sumber daya langka, atau akuntansi kembali lebih ketat. Kekuatan alat dan inventori tetap reset.
 
 ## Audio
 
-ID LOC HOLD: The board pays more when it expects less of you to return.
+Papan membayar lebih saat berharap lebih sedikit kau pulang.
 
 ## Field Note
 
-ID LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Replay harus meminta keserakahan, nyali, atau kebodohan. Bukan grind.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/id_ID. -->

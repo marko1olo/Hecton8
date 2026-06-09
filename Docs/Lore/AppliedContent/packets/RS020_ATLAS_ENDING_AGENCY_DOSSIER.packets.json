@@ -339,137 +339,137 @@
         "en_US": {
           "title": "False Ending Taxonomy",
           "scanner": "Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "Leaving is not the same as finishing.",
-          "in_game_wiki": "HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "field_note": "A false ending is not a trick. It is a valid bargain with a missing truth.",
+          "terminal": "ENDING FAMILIES: material payout; partial exit and same-seed return; corporate capture; quarantine hold; public ledger release; Atlas basin resolution. Outcome records must keep payload, proof, and debt state separate.",
+          "audio": "Leaving the water is not the same as finishing the work.",
+          "in_game_wiki": "HECTON-8 treats false and partial endings as real outcomes rather than fake-outs. A material payout can roll credits. A partial exit can send the player back into the same seed with retained dossier knowledge. Corporate capture and quarantine hold can punish bad payloads or dangerous evidence routing. The deeper endings require public proof, Atlas-state resolution, and a decision about what kind of rescue the player is willing to buy.",
+          "external_site": "False Ending Taxonomy explains the game's replay structure: exits can be physically real, profitable, and still morally incomplete. The dossier persists knowledge across attempts, while pressure, debt, and public truth decide whether an ending is only an escape or an actual reckoning."
         },
         "ru_RU": {
-          "title": "False Ending Taxonomy",
-          "scanner": "Ending board. Некоторые выходы достаточно реальны, чтобы считаться, и достаточно неправильны, чтобы болеть.",
-          "field_note": "False ending не должен быть обманкой. Это должна быть валидная плохая сделка.",
-          "terminal": "ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "Уйти - не значит закончить.",
-          "in_game_wiki": "HECTON-8 поддерживает false и partial endings, не делая их фейковыми. Material payout может дать титры. Partial exit может вернуть в тот же seed. Corporate capture и quarantine hold наказывают плохие payloads. Public ledger release и Atlas resolution требуют более глубокой правды.",
-          "external_site": "False Ending Taxonomy задает replayability и player agency: exits могут быть физически реальными, materially successful и morally incomplete одновременно."
+          "title": "Таксономия ложных концовок",
+          "scanner": "Доска исходов. Некоторые выходы достаточно реальны, чтобы засчитаться, и достаточно неправильны, чтобы ранить.",
+          "field_note": "Ложная концовка не должна быть фокусом. Это действительная сделка, из которой вынули правду.",
+          "terminal": "СЕМЕЙСТВА ИСХОДОВ: материальная выплата; частичный выход и возврат в тот же сид; корпоративный захват; карантинное удержание; публикация открытого реестра; разрешение бассейна Atlas. Записи исходов обязаны разделять груз, доказательство и состояние долга.",
+          "audio": "Выйти из воды не значит закончить работу.",
+          "in_game_wiki": "HECTON-8 обращается с ложными и частичными концовками как с реальными исходами, а не с обманками. Материальная выплата может запустить титры. Частичный выход может вернуть игрока в тот же сид с сохраненным знанием досье. Корпоративный захват и карантинное удержание наказывают плохой груз или опасный маршрут доказательств. Более глубокие концовки требуют публичного доказательства, решения состояния Atlas и выбора, какую цену спасения игрок готов купить.",
+          "external_site": "Таксономия ложных концовок объясняет структуру повторных заходов: выход может быть физически реальным, выгодным и все еще морально неполным. Досье переносит знание между попытками, а давление, долг и публичная правда решают, стал исход просто бегством или настоящим расчетом."
         },
         "ja_JP": {
-          "title": "False Ending Taxonomy",
-          "scanner": "JP LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "JP LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "JP LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "JP LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "JP LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "JP LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "偽エンディング分類",
+          "scanner": "結末ボード。成立するほど本物で、傷つくほど間違った出口がある。",
+          "field_note": "偽エンディングは手品ではない。真実を欠いた有効な取引だ。",
+          "terminal": "結末系統: 物資報酬、部分脱出と同一シード帰還、企業拘束、隔離保留、公開台帳の放出、Atlas盆地解決。結果記録ではペイロード、証拠、債務状態を分けて保持すること。",
+          "audio": "水から出ることは、仕事を終えることではない。",
+          "in_game_wiki": "HECTON-8の偽エンディングと部分エンディングは、ただの肩透かしではなく実際の結果として扱われる。物資報酬だけでクレジットに到達することもある。部分脱出では、ドシエの知識を持ったまま同じシードへ戻される。企業拘束と隔離保留は、悪いペイロードや危険な証拠経路への罰になる。より深い結末には、公的証拠、Atlas状態の解決、そしてプレイヤーがどんな救助の代金を支払うのかという選択が必要になる。",
+          "external_site": "偽エンディング分類は、ゲームのリプレイ構造を説明する。出口は物理的に本物で、利益を生み、それでも道徳的には未完であり得る。ドシエは試行をまたいで知識を残すが、圧力、債務、公的真実が、その結末をただの脱出にするか本当の清算にするかを決める。"
         },
         "zh_CN": {
-          "title": "False Ending Taxonomy",
-          "scanner": "CN LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "CN LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "CN LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "CN LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "CN LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "CN LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "假结局分类",
+          "scanner": "结局板。有些出口真实到可以结算，也错误到会留下伤口。",
+          "field_note": "假结局不是骗局。它是一笔有效交易，只是缺少真相。",
+          "terminal": "结局族群：物资兑付；部分撤离并返回同一世界种子；企业接管；隔离扣留；公开账本释放；Atlas盆地解决。结局记录必须分开保存载荷、证据和债务状态。",
+          "audio": "离开海水，不等于完成工作。",
+          "in_game_wiki": "HECTON-8把假结局和部分结局当作真实结果，而不是简单的欺骗。物资兑付可以进入字幕。部分撤离可以把玩家送回同一个世界种子，但保留档案里的知识。企业接管和隔离扣留会惩罚错误载荷或危险的证据流转。更深的结局需要公开证据、Atlas状态解决，以及玩家愿意用什么代价购买救援的选择。",
+          "external_site": "假结局分类解释了游戏的重复游玩结构：出口可以在物理上真实、在经济上有利，却仍然在道德上不完整。档案会在多次尝试之间保存知识，而压力、债务和公开真相决定一个结局只是逃离，还是一次真正的清算。"
         },
         "fr_FR": {
-          "title": "False Ending Taxonomy",
-          "scanner": "FR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "FR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "FR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "FR LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "FR LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "FR LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taxonomie des fausses fins",
+          "scanner": "Tableau des fins. Certaines sorties sont assez réelles pour compter, et assez mauvaises pour blesser.",
+          "field_note": "Une fausse fin n'est pas un tour. C'est un marché valable auquel il manque la vérité.",
+          "terminal": "FAMILLES DE FINS : paiement matériel ; sortie partielle et retour au même seed ; capture corporative ; maintien en quarantaine ; publication du registre public ; résolution du bassin Atlas. Les journaux d'issue doivent séparer charge utile, preuve et état de dette.",
+          "audio": "Sortir de l'eau n'est pas terminer le travail.",
+          "in_game_wiki": "HECTON-8 traite les fausses fins et les fins partielles comme de vraies issues, pas comme des tromperies. Un paiement matériel peut lancer les crédits. Une sortie partielle peut renvoyer le joueur dans le même seed avec le savoir du dossier conservé. La capture corporative et le maintien en quarantaine peuvent punir une mauvaise charge utile ou un routage dangereux des preuves. Les fins plus profondes exigent une preuve publique, la résolution de l'état d'Atlas et un choix sur le type de sauvetage que le joueur accepte d'acheter.",
+          "external_site": "La taxonomie des fausses fins explique la structure de rejouabilité : une sortie peut être physiquement réelle, rentable et pourtant moralement incomplète. Le dossier conserve le savoir entre les tentatives, tandis que la pression, la dette et la vérité publique décident si la fin n'est qu'une fuite ou un véritable règlement de comptes."
         },
         "es_ES": {
-          "title": "False Ending Taxonomy",
-          "scanner": "ES LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "ES LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "ES LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "ES LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "ES LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "ES LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taxonomía de finales falsos",
+          "scanner": "Tablero de finales. Algunas salidas son lo bastante reales para contar y lo bastante equivocadas para doler.",
+          "field_note": "Un final falso no es un truco. Es un trato válido al que le falta la verdad.",
+          "terminal": "FAMILIAS DE FINALES: pago material; salida parcial y regreso a la misma semilla; captura corporativa; retención de cuarentena; publicación del libro público; resolución de la cuenca Atlas. Los registros de resultado deben separar carga, prueba y estado de deuda.",
+          "audio": "Salir del agua no es lo mismo que terminar el trabajo.",
+          "in_game_wiki": "HECTON-8 trata los finales falsos y parciales como resultados reales, no como engaños. Un pago material puede activar los créditos. Una salida parcial puede devolver al jugador a la misma semilla con el conocimiento del dossier conservado. La captura corporativa y la retención de cuarentena pueden castigar una carga mala o una ruta peligrosa de pruebas. Los finales más profundos exigen prueba pública, resolución del estado de Atlas y una decisión sobre qué clase de rescate acepta comprar el jugador.",
+          "external_site": "La taxonomía de finales falsos explica la estructura de rejugabilidad: una salida puede ser físicamente real, rentable y aun así moralmente incompleta. El dossier conserva conocimiento entre intentos, mientras presión, deuda y verdad pública deciden si un final es solo una huida o un ajuste de cuentas real."
         },
         "de_DE": {
-          "title": "False Ending Taxonomy",
-          "scanner": "DE LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "DE LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "DE LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "DE LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "DE LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "DE LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taxonomie falscher Enden",
+          "scanner": "Endtafel. Manche Ausgänge sind echt genug, um zu zählen, und falsch genug, um weh zu tun.",
+          "field_note": "Ein falsches Ende ist kein Trick. Es ist ein gültiger Handel, dem die Wahrheit fehlt.",
+          "terminal": "END-FAMILIEN: Materialauszahlung; Teil-Ausgang und Rückkehr in denselben Seed; Konzernübernahme; Quarantäne-Hold; Freigabe des öffentlichen Ledgers; Atlas-Beckenlösung. Ergebnisakten müssen Nutzlast, Beweis und Schuldenzustand getrennt halten.",
+          "audio": "Aus dem Wasser zu kommen heißt nicht, die Arbeit zu beenden.",
+          "in_game_wiki": "HECTON-8 behandelt falsche und teilweise Enden als reale Ergebnisse, nicht als Täuschungen. Eine Materialauszahlung kann Credits auslösen. Ein Teil-Ausgang kann den Spieler mit erhaltenem Dossierwissen in denselben Seed zurückschicken. Konzernübernahme und Quarantäne-Hold können schlechte Nutzlasten oder gefährliche Beweisrouten bestrafen. Tiefere Enden verlangen öffentliche Beweise, eine Lösung des Atlas-Zustands und die Entscheidung, welche Art Rettung der Spieler zu kaufen bereit ist.",
+          "external_site": "Die Taxonomie falscher Enden erklärt die Replay-Struktur: Ein Ausgang kann physisch real, profitabel und trotzdem moralisch unvollständig sein. Das Dossier bewahrt Wissen zwischen Versuchen, während Druck, Schulden und öffentliche Wahrheit entscheiden, ob ein Ende nur Flucht oder echte Abrechnung ist."
         },
         "pl_PL": {
-          "title": "False Ending Taxonomy",
-          "scanner": "PL LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "PL LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "PL LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "PL LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "PL LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "PL LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taksonomia fałszywych zakończeń",
+          "scanner": "Tablica zakończeń. Niektóre wyjścia są dość realne, by się liczyć, i dość błędne, by boleć.",
+          "field_note": "Fałszywe zakończenie nie jest sztuczką. To ważna umowa bez brakującej prawdy.",
+          "terminal": "RODZINY ZAKOŃCZEŃ: wypłata materialna; częściowe wyjście i powrót do tego samego seeda; przejęcie korporacyjne; zatrzymanie kwarantannowe; ujawnienie publicznego rejestru; rozwiązanie basenu Atlas. Zapisy wyniku muszą oddzielać ładunek, dowód i stan długu.",
+          "audio": "Wyjście z wody to nie to samo, co skończenie pracy.",
+          "in_game_wiki": "HECTON-8 traktuje fałszywe i częściowe zakończenia jako realne wyniki, nie jako oszustwa. Wypłata materialna może uruchomić napisy. Częściowe wyjście może odesłać gracza do tego samego seeda z zachowaną wiedzą dossier. Przejęcie korporacyjne i zatrzymanie kwarantannowe karzą zły ładunek albo niebezpieczną trasę dowodów. Głębsze zakończenia wymagają publicznego dowodu, rozwiązania stanu Atlasa i decyzji, jaki rodzaj ratunku gracz chce kupić.",
+          "external_site": "Taksonomia fałszywych zakończeń wyjaśnia strukturę powtórek: wyjście może być fizycznie realne, opłacalne i nadal moralnie niepełne. Dossier przenosi wiedzę między próbami, a presja, dług i publiczna prawda decydują, czy zakończenie jest tylko ucieczką, czy prawdziwym rozliczeniem."
         },
         "uk_UA": {
-          "title": "False Ending Taxonomy",
-          "scanner": "UK LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "UK LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "UK LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "UK LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "UK LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "UK LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Таксономія хибних фіналів",
+          "scanner": "Дошка фіналів. Деякі виходи достатньо справжні, щоб зарахуватися, і достатньо неправильні, щоб боліти.",
+          "field_note": "Хибний фінал не є трюком. Це чинна угода, з якої прибрали правду.",
+          "terminal": "РОДИНИ ФІНАЛІВ: матеріальна виплата; частковий вихід і повернення в той самий seed; корпоративне захоплення; карантинне утримання; випуск публічного реєстру; розв'язання басейну Atlas. Записи результату мають окремо тримати вантаж, доказ і стан боргу.",
+          "audio": "Вийти з води не означає завершити роботу.",
+          "in_game_wiki": "HECTON-8 трактує хибні й часткові фінали як реальні результати, а не як обманки. Матеріальна виплата може запустити титри. Частковий вихід може повернути гравця в той самий seed зі збереженим знанням досьє. Корпоративне захоплення й карантинне утримання карають поганий вантаж або небезпечний маршрут доказів. Глибші фінали потребують публічного доказу, розв'язання стану Atlas і вибору, яку ціну порятунку гравець готовий купити.",
+          "external_site": "Таксономія хибних фіналів пояснює структуру повторних спроб: вихід може бути фізично реальним, прибутковим і все ще морально неповним. Досьє переносить знання між спробами, а тиск, борг і публічна правда вирішують, чи фінал є лише втечею, чи справжнім розрахунком."
         },
         "ar_SA": {
-          "title": "False Ending Taxonomy",
-          "scanner": "AR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "AR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "AR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "AR LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "AR LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "AR LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "تصنيف النهايات الزائفة",
+          "scanner": "لوحة النهايات. بعض المخارج حقيقية بما يكفي لتُحسب، وخاطئة بما يكفي لتؤذي.",
+          "field_note": "النهاية الزائفة ليست خدعة. إنها صفقة صحيحة ينقصها جزء من الحقيقة.",
+          "terminal": "عائلات النهايات: عائد مادي؛ خروج جزئي وعودة إلى البذرة نفسها؛ احتجاز الشركة؛ حجز الحجر؛ نشر السجل العام؛ حل حوض Atlas. يجب أن تفصل سجلات النتيجة بين الحمولة والدليل وحالة الدين.",
+          "audio": "الخروج من الماء لا يعني أن العمل انتهى.",
+          "in_game_wiki": "تتعامل HECTON-8 مع النهايات الزائفة والجزئية كوقائع حقيقية، لا كخداع للاعب. يمكن لعائد مادي أن يطلق شارة النهاية. ويمكن لخروج جزئي أن يعيد اللاعب إلى البذرة نفسها مع بقاء معرفة الملف. احتجاز الشركة وحجز الحجر يعاقبان الحمولة السيئة أو مسار الأدلة الخطر. أما النهايات الأعمق فتحتاج إلى دليل علني، وتسوية حالة Atlas، وقرار حول نوع الإنقاذ الذي يقبل اللاعب دفع ثمنه.",
+          "external_site": "يشرح تصنيف النهايات الزائفة بنية إعادة اللعب: قد يكون المخرج حقيقيا من الناحية المادية ومربحا، ومع ذلك يظل ناقصا أخلاقيا. يحتفظ الملف بالمعرفة بين المحاولات، بينما يقرر الضغط والدين والحقيقة العامة هل تكون النهاية مجرد هروب أم حسابا حقيقيا."
         },
         "id_ID": {
-          "title": "False Ending Taxonomy",
-          "scanner": "ID LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "ID LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "ID LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "ID LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "ID LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "ID LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taksonomi Akhir Palsu",
+          "scanner": "Papan akhir. Ada jalan keluar yang cukup nyata untuk dihitung, dan cukup salah untuk melukai.",
+          "field_note": "Akhir palsu bukan tipuan. Itu kesepakatan sah yang kehilangan kebenaran.",
+          "terminal": "KELUARGA AKHIR: pembayaran material; keluar sebagian dan kembali ke seed yang sama; penangkapan korporat; penahanan karantina; rilis buku besar publik; resolusi cekungan Atlas. Catatan hasil harus memisahkan muatan, bukti, dan status utang.",
+          "audio": "Keluar dari air bukan berarti pekerjaan selesai.",
+          "in_game_wiki": "HECTON-8 memperlakukan akhir palsu dan akhir parsial sebagai hasil nyata, bukan jebakan. Pembayaran material dapat memicu kredit akhir. Keluar sebagian dapat mengirim pemain kembali ke seed yang sama dengan pengetahuan dossier tetap tersimpan. Penangkapan korporat dan penahanan karantina dapat menghukum muatan buruk atau rute bukti yang berbahaya. Akhir yang lebih dalam menuntut bukti publik, penyelesaian status Atlas, dan keputusan tentang jenis penyelamatan yang mau dibeli pemain.",
+          "external_site": "Taksonomi Akhir Palsu menjelaskan struktur replay: sebuah jalan keluar dapat benar-benar terjadi, menguntungkan, dan tetap tidak lengkap secara moral. Dossier menyimpan pengetahuan antarpercobaan, sementara tekanan, utang, dan kebenaran publik menentukan apakah sebuah akhir hanya pelarian atau perhitungan yang nyata."
         },
         "ko_KR": {
-          "title": "False Ending Taxonomy",
-          "scanner": "KO LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "KO LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "KO LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "KO LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "KO LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "KO LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "거짓 엔딩 분류",
+          "scanner": "엔딩 보드. 어떤 출구는 기록될 만큼 진짜이고, 상처를 남길 만큼 잘못되어 있다.",
+          "field_note": "거짓 엔딩은 속임수가 아니다. 진실이 빠진 유효한 거래다.",
+          "terminal": "엔딩 계열: 물자 보상; 부분 탈출과 동일 시드 복귀; 기업 포획; 격리 보류; 공개 원장 방출; Atlas 분지 해결. 결과 기록은 적재물, 증거, 부채 상태를 분리해 보존해야 한다.",
+          "audio": "물 밖으로 나오는 것이 일을 끝냈다는 뜻은 아니다.",
+          "in_game_wiki": "HECTON-8은 거짓 엔딩과 부분 엔딩을 속임수가 아니라 실제 결과로 다룬다. 물자 보상만으로도 크레딧이 올라갈 수 있다. 부분 탈출은 dossier 지식을 보존한 채 플레이어를 같은 시드로 돌려보낼 수 있다. 기업 포획과 격리 보류는 나쁜 적재물이나 위험한 증거 경로를 처벌한다. 더 깊은 엔딩에는 공개 증거, Atlas 상태 해결, 그리고 플레이어가 어떤 구출의 대가를 치를 것인지에 대한 결정이 필요하다.",
+          "external_site": "거짓 엔딩 분류는 반복 플레이 구조를 설명한다. 출구는 물리적으로 진짜이고 이익이 될 수 있지만, 여전히 도덕적으로 미완성일 수 있다. dossier는 시도 사이에 지식을 보존하고, 압력과 부채와 공개된 진실은 그 결말이 단순한 탈출인지 실제 정산인지 결정한다."
         },
         "he_IL": {
-          "title": "False Ending Taxonomy",
-          "scanner": "HE LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "HE LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "HE LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "HE LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "HE LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "HE LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "טקסונומיית סופים כוזבים",
+          "scanner": "לוח סופים. יש יציאות אמיתיות מספיק כדי להיספר, ושגויות מספיק כדי להכאיב.",
+          "field_note": "סוף כוזב אינו תרגיל. זו עסקה תקפה שחסרה בה אמת.",
+          "terminal": "משפחות סיום: תשלום חומרי; יציאה חלקית וחזרה לאותו seed; תפיסה תאגידית; החזקת הסגר; פרסום פנקס ציבורי; פתרון אגן Atlas. רשומות תוצאה חייבות להפריד בין מטען, הוכחה ומצב חוב.",
+          "audio": "לצאת מן המים אינו אותו דבר כמו לסיים את העבודה.",
+          "in_game_wiki": "HECTON-8 מתייחס לסופים כוזבים וחלקיים כתוצאות אמיתיות, לא כהטעיה. תשלום חומרי יכול להפעיל כתוביות סיום. יציאה חלקית יכולה להחזיר את השחקן לאותו seed עם ידע dossier שנשמר. תפיסה תאגידית והחזקת הסגר יכולות להעניש מטען רע או ניתוב מסוכן של ראיות. הסופים העמוקים יותר דורשים הוכחה ציבורית, פתרון מצב Atlas, והחלטה איזה סוג של חילוץ השחקן מוכן לקנות.",
+          "external_site": "טקסונומיית הסופים הכוזבים מסבירה את מבנה המשחק החוזר: יציאה יכולה להיות ממשית, רווחית, ועדיין לא שלמה מוסרית. ה-dossier שומר ידע בין ניסיונות, בעוד לחץ, חוב ואמת ציבורית קובעים אם הסוף הוא רק בריחה או חשבון אמיתי."
         },
         "pt_BR": {
-          "title": "False Ending Taxonomy",
-          "scanner": "PT-BR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "PT-BR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "PT-BR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "PT-BR LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "PT-BR LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "PT-BR LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taxonomia dos finais falsos",
+          "scanner": "Quadro de finais. Algumas saídas são reais o bastante para contar e erradas o bastante para doer.",
+          "field_note": "Um final falso não é truque. É um acordo válido sem a verdade inteira.",
+          "terminal": "FAMÍLIAS DE FINAL: pagamento material; saída parcial e retorno à mesma seed; captura corporativa; retenção de quarentena; liberação do livro público; resolução da bacia Atlas. Registros de resultado devem separar carga, prova e estado da dívida.",
+          "audio": "Sair da água não é o mesmo que terminar o trabalho.",
+          "in_game_wiki": "HECTON-8 trata finais falsos e parciais como resultados reais, não como pegadinhas. Um pagamento material pode acionar os créditos. Uma saída parcial pode devolver o jogador à mesma seed com o conhecimento do dossiê preservado. Captura corporativa e retenção de quarentena podem punir carga ruim ou roteamento perigoso de provas. Os finais mais profundos exigem prova pública, resolução do estado de Atlas e uma decisão sobre que tipo de resgate o jogador aceita comprar.",
+          "external_site": "A Taxonomia dos finais falsos explica a estrutura de rejogabilidade: uma saída pode ser fisicamente real, lucrativa e ainda moralmente incompleta. O dossiê preserva conhecimento entre tentativas, enquanto pressão, dívida e verdade pública decidem se um final é apenas fuga ou acerto de contas real."
         },
         "nl_NL": {
-          "title": "False Ending Taxonomy",
-          "scanner": "NL LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.",
-          "field_note": "NL LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.",
-          "terminal": "NL LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.",
-          "audio": "NL LOC HOLD: Leaving is not the same as finishing.",
-          "in_game_wiki": "NL LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.",
-          "external_site": "NL LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time."
+          "title": "Taxonomie van valse eindes",
+          "scanner": "Eindbord. Sommige uitgangen zijn echt genoeg om te tellen en verkeerd genoeg om pijn te doen.",
+          "field_note": "Een vals einde is geen truc. Het is een geldige deal waar de waarheid uit ontbreekt.",
+          "terminal": "EINDFAMILIES: materiële uitbetaling; gedeeltelijke uitgang en terugkeer naar dezelfde seed; bedrijfsovername; quarantainehold; vrijgave van het publieke grootboek; oplossing van het Atlas-bekken. Uitkomstrapporten moeten lading, bewijs en schuldstatus gescheiden houden.",
+          "audio": "Uit het water komen is niet hetzelfde als het werk afmaken.",
+          "in_game_wiki": "HECTON-8 behandelt valse en gedeeltelijke eindes als echte uitkomsten, niet als nepwendingen. Een materiële uitbetaling kan de credits starten. Een gedeeltelijke uitgang kan de speler met bewaarde dossierkennis terugsturen naar dezelfde seed. Bedrijfsovername en quarantainehold kunnen een slechte lading of gevaarlijke bewijsroute bestraffen. Diepere eindes vragen om publiek bewijs, oplossing van de Atlas-status en een keuze over welk soort redding de speler bereid is te kopen.",
+          "external_site": "De taxonomie van valse eindes verklaart de replaystructuur: een uitgang kan fysiek echt zijn, winst opleveren en toch moreel onvolledig blijven. Het dossier bewaart kennis tussen pogingen, terwijl druk, schuld en publieke waarheid bepalen of een einde alleen ontsnapping is of een echte afrekening."
         }
       }
     },
@@ -495,136 +495,136 @@
           "title": "Marauder Dossier Persistence",
           "scanner": "Dossier spool. You keep knowledge, not superpowers.",
           "field_note": "The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
+          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.",
           "audio": "The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "in_game_wiki": "The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.",
+          "external_site": "Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure."
         },
         "ru_RU": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "Dossier spool. Ты сохраняешь знание, не суперсилы.",
-          "field_note": "RU LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "Следующий run начинается со шрамов в файле, а не мышц в костюме.",
-          "in_game_wiki": "RU LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "RU LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Постоянство мародерского досье",
+          "scanner": "Катушка досье. Ты сохраняешь знание, а не сверхсилы.",
+          "field_note": "Досье помнит доказательства и предупреждения; оно не делает давление милосердным.",
+          "terminal": "ПОСТОЯНСТВО ДОСЬЕ: записи концовок, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия публичного реестра сохраняются. Сила снаряжения, правда мира и локальное состояние давления сбрасываются для каждого seed.",
+          "audio": "Следующий заход начинается со шрамов в файле, а не с мышц в костюме.",
+          "in_game_wiki": "Мародерское досье — это память кампании, которая переживает новые попытки забора. Оно хранит концовки, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия того, что игрок уже опубликовал или спрятал. Оно не переносит силу костюма, безопасное давление, очищенные помещения или более добрый океан. Знание меняет решения. Оно не делает глубину безвредной.",
+          "external_site": "Постоянство мародерского досье задает договор HECTON-8 с повторными заходами: игрок наследует контекст, а не силу. Досье помогает быстрее читать старые ошибки, раньше узнавать контрактные ловушки и понимать, какие концовки были неполными, не превращая память в механическое преимущество, которое ломает давление выживания."
         },
         "ja_JP": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "JP LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "JP LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "JP LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "JP LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "JP LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "JP LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "略奪者ドシエの永続性",
+          "scanner": "ドシエスプール。残るのは知識であって、超能力ではない。",
+          "field_note": "ドシエは証拠と警告を覚える。圧力を優しくするわけではない。",
+          "terminal": "ドシエ永続項目: 結末記録、発見済み契約種別、噂系統、証拠カテゴリ、航路警告、公開台帳の影響を保持。装備出力、世界の真相、局所圧力状態はシードごとにリセット。",
+          "audio": "次の潜行は、スーツの筋肉ではなくファイルの傷跡から始まる。",
+          "in_game_wiki": "略奪者ドシエは、サルベージの試行をまたいで残るキャンペーン記憶だ。結末、発見済みの契約種別、噂系統、証拠カテゴリ、航路警告、そしてプレイヤーが公開または隠蔽した結果を保持する。だがスーツの強さ、安全な圧力、掃除済みの部屋、優しい海は持ち越さない。知識は判断を変える。深度を無害にはしない。",
+          "external_site": "略奪者ドシエの永続性は、HECTON-8のリプレイ契約を定義する。プレイヤーが引き継ぐのは力ではなく文脈だ。ドシエは後の試行で古い失敗を早く読み、契約の罠を早く見抜き、どの結末が未完だったかを理解させるが、生存圧を壊す機械的な優位にはならない。"
         },
         "zh_CN": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "CN LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "CN LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "CN LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "CN LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "CN LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "CN LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "掠夺者档案持久性",
+          "scanner": "档案卷轴。你保留的是知识，不是超能力。",
+          "field_note": "档案记住证据和警告；它不会让压力变得仁慈。",
+          "terminal": "档案持久项：结局记录、已发现合同类型、传闻族群、证据类别、路线警告以及公开账本后果保留。装备强度、世界真相和局部压力状态按世界种子重置。",
+          "audio": "下一轮开始时，伤痕在文件里，不在潜服肌肉里。",
+          "in_game_wiki": "掠夺者档案是跨越多次打捞尝试的战役记忆。它保存结局、已发现合同类型、传闻族群、证据类别、路线警告，以及玩家已经选择公开或隐藏的后果。它不会继承潜服强度、安全压力、清空过的房间或更温柔的海洋。知识会改变决策，但不会让深处变得无害。",
+          "external_site": "掠夺者档案持久性定义了HECTON-8的重复游玩契约：玩家继承的是语境，不是力量。档案让后续尝试更快读懂旧错误，更早识别合同陷阱，并理解哪些结局仍不完整，同时不会把记忆变成破坏生存压力的机械优势。"
         },
         "fr_FR": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "FR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "FR LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "FR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "FR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "FR LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "FR LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistance du dossier de maraudeur",
+          "scanner": "Bobine de dossier. Tu gardes le savoir, pas des superpouvoirs.",
+          "field_note": "Le dossier se souvient des preuves et des avertissements ; il ne rend pas la pression clémente.",
+          "terminal": "PERSISTANCE DU DOSSIER : fins enregistrées, types de contrats découverts, familles de rumeurs, catégories de preuves, avertissements de route et conséquences du registre public conservés. Puissance d'équipement, vérité du monde et état local de pression réinitialisés par seed.",
+          "audio": "La tentative suivante commence avec des cicatrices dans le fichier, pas des muscles dans la combinaison.",
+          "in_game_wiki": "Le dossier de maraudeur est la mémoire de campagne qui survit entre les tentatives de récupération. Il garde les fins, les types de contrats découverts, les familles de rumeurs, les catégories de preuves, les avertissements de route et les conséquences de ce que le joueur a déjà publié ou caché. Il ne conserve pas la puissance de la combinaison, une pression sûre, des salles nettoyées ni un océan plus doux. Le savoir change les décisions. Il ne rend pas la profondeur inoffensive.",
+          "external_site": "La persistance du dossier de maraudeur définit le contrat de rejouabilité de HECTON-8 : le joueur hérite du contexte, pas de la puissance. Le dossier permet aux tentatives suivantes de lire les anciennes erreurs plus vite, de reconnaître plus tôt les pièges contractuels et de comprendre quelles fins étaient incomplètes sans transformer la mémoire en avantage mécanique qui détruit la pression de survie."
         },
         "es_ES": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "ES LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "ES LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "ES LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "ES LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "ES LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "ES LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistencia del dossier de saqueador",
+          "scanner": "Bobina de dossier. Conservas conocimiento, no superpoderes.",
+          "field_note": "El dossier recuerda pruebas y avisos; no vuelve amable la presión.",
+          "terminal": "PERSISTENCIA DEL DOSSIER: registros de finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias del libro público retenidos. Potencia del equipo, verdad del mundo y estado local de presión se reinician por semilla.",
+          "audio": "La siguiente incursión empieza con cicatrices en el archivo, no con músculos en el traje.",
+          "in_game_wiki": "El dossier de saqueador es la memoria de campaña que sobrevive entre intentos de salvamento. Conserva finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias de lo que el jugador ya publicó u ocultó. No arrastra fuerza del traje, presión segura, salas limpias ni un océano más amable. El conocimiento cambia decisiones. No vuelve inocua la profundidad.",
+          "external_site": "La persistencia del dossier de saqueador define el contrato de rejugabilidad de HECTON-8: el jugador hereda contexto, no poder. El dossier permite leer errores antiguos más rápido, reconocer antes las trampas contractuales y entender qué finales quedaron incompletos sin convertir la memoria en una ventaja mecánica que rompa la presión de supervivencia."
         },
         "de_DE": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "DE LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "DE LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "DE LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "DE LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "DE LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "DE LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistenz des Plünderer-Dossiers",
+          "scanner": "Dossier-Spule. Du behältst Wissen, keine Superkräfte.",
+          "field_note": "Das Dossier erinnert Beweise und Warnungen; es macht Druck nicht gnädig.",
+          "terminal": "DOSSIER-PERSISTENZ: Endaufzeichnungen, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und Folgen des öffentlichen Ledgers bleiben erhalten. Ausrüstungsleistung, Weltwahrheit und lokaler Druckzustand werden pro Seed zurückgesetzt.",
+          "audio": "Der nächste Lauf beginnt mit Narben in der Datei, nicht mit Muskeln im Anzug.",
+          "in_game_wiki": "Das Plünderer-Dossier ist das Kampagnengedächtnis, das zwischen Bergungsversuchen überlebt. Es behält Enden, entdeckte Vertragstypen, Gerüchtefamilien, Beweiskategorien, Routenwarnungen und die Folgen dessen, was der Spieler bereits veröffentlicht oder verborgen hat. Es übernimmt keine Anzugstärke, keinen sicheren Druck, keine geräumten Räume und keinen freundlichere Ozean. Wissen verändert Entscheidungen. Es macht die Tiefe nicht harmlos.",
+          "external_site": "Die Persistenz des Plünderer-Dossiers definiert HECTON-8s Replay-Vertrag: Der Spieler erbt Kontext, nicht Macht. Das Dossier lässt spätere Versuche alte Fehler schneller lesen, Vertragsfallen früher erkennen und unvollständige Enden verstehen, ohne Erinnerung in einen mechanischen Vorteil zu verwandeln, der den Überlebensdruck bricht."
         },
         "pl_PL": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "PL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "PL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "PL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "PL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "PL LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "PL LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Trwałość dossier szabrownika",
+          "scanner": "Szpula dossier. Zachowujesz wiedzę, nie supermoce.",
+          "field_note": "Dossier pamięta dowody i ostrzeżenia; nie sprawia, że ciśnienie wybacza.",
+          "terminal": "TRWAŁOŚĆ DOSSIER: zapisane zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki publicznego rejestru zostają zachowane. Siła sprzętu, prawda świata i lokalny stan ciśnienia resetują się dla każdego seeda.",
+          "audio": "Następne podejście zaczyna się z bliznami w pliku, nie z mięśniami w skafandrze.",
+          "in_game_wiki": "Dossier szabrownika jest pamięcią kampanii, która przetrwa między próbami odzysku. Zachowuje zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki tego, co gracz już ujawnił lub ukrył. Nie przenosi siły skafandra, bezpiecznego ciśnienia, wyczyszczonych pomieszczeń ani łagodniejszego oceanu. Wiedza zmienia decyzje. Nie czyni głębi nieszkodliwą.",
+          "external_site": "Trwałość dossier szabrownika definiuje kontrakt powtórek HECTON-8: gracz dziedziczy kontekst, nie moc. Dossier pozwala w kolejnych próbach szybciej odczytywać stare błędy, wcześniej rozpoznawać pułapki kontraktowe i rozumieć, które zakończenia były niepełne, bez zamieniania pamięci w mechaniczną przewagę niszczącą presję przetrwania."
         },
         "uk_UA": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "UK LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "UA LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "UK LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "UK LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "UA LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "UA LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Сталість досьє мародера",
+          "scanner": "Котушка досьє. Ти зберігаєш знання, а не надсили.",
+          "field_note": "Досьє пам'ятає докази й попередження; воно не робить тиск милосердним.",
+          "terminal": "СТАЛІСТЬ ДОСЬЄ: записи фіналів, знайдені типи контрактів, родини чуток, категорії доказів, попередження маршрутів і наслідки публічного реєстру зберігаються. Сила спорядження, правда світу й локальний стан тиску скидаються для кожного seed.",
+          "audio": "Наступний захід починається зі шрамів у файлі, а не з м'язів у костюмі.",
+          "in_game_wiki": "Досьє мародера — це пам'ять кампанії, що переживає спроби збору. Воно зберігає фінали, знайдені типи контрактів, родини чуток, категорії доказів, маршрутні попередження й наслідки того, що гравець уже оприлюднив або приховав. Воно не переносить силу костюма, безпечний тиск, очищені кімнати чи лагідніший океан. Знання змінює рішення. Воно не робить глибину нешкідливою.",
+          "external_site": "Сталість досьє мародера визначає контракт HECTON-8 із повторними заходами: гравець успадковує контекст, а не силу. Досьє допомагає швидше читати старі помилки, раніше впізнавати контрактні пастки й розуміти, які фінали були неповними, не перетворюючи пам'ять на механічну перевагу, що ламає тиск виживання."
         },
         "ar_SA": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "AR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "AR LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "AR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "AR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "AR LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "AR LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "استمرارية ملف الناهب",
+          "scanner": "بكرة ملف. تحتفظ بالمعرفة، لا بالقوى الخارقة.",
+          "field_note": "يتذكر الملف الأدلة والتحذيرات؛ لكنه لا يجعل الضغط رحيما.",
+          "terminal": "استمرارية الملف: سجلات النهايات، أنواع العقود المكتشفة، عائلات الشائعات، فئات الأدلة، تحذيرات المسارات، وعواقب السجل العام محفوظة. قوة العتاد وحقيقة العالم وحالة الضغط المحلي تعاد ضبطها مع كل seed.",
+          "audio": "تبدأ المحاولة التالية بندوب في الملف، لا بعضلات في البدلة.",
+          "in_game_wiki": "ملف الناهب هو ذاكرة الحملة التي تبقى بين محاولات السلب. يحفظ النهايات، وأنواع العقود المكتشفة، وعائلات الشائعات، وفئات الأدلة، وتحذيرات المسارات، وعواقب ما اختار اللاعب نشره أو إخفاءه. لا ينقل قوة البدلة، ولا ضغطا آمنا، ولا غرفا مطهرة، ولا محيطا ألطف. المعرفة تغير القرارات. لكنها لا تجعل العمق بلا خطر.",
+          "external_site": "تحدد استمرارية ملف الناهب عقد إعادة اللعب في HECTON-8: يرث اللاعب السياق، لا القوة. يسمح الملف للمحاولات اللاحقة بقراءة الأخطاء القديمة أسرع، والتعرف إلى فخاخ العقود أبكر، وفهم أي النهايات ظل ناقصا، من دون تحويل الذاكرة إلى أفضلية ميكانيكية تكسر ضغط النجاة."
         },
         "id_ID": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "ID LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "ID LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "ID LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "ID LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "ID LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "ID LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistensi Dossier Penjarah",
+          "scanner": "Gulungan dossier. Kamu menyimpan pengetahuan, bukan kekuatan super.",
+          "field_note": "Dossier mengingat bukti dan peringatan; ia tidak membuat tekanan menjadi pemaaf.",
+          "terminal": "PERSISTENSI DOSSIER: catatan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi buku besar publik disimpan. Kekuatan perlengkapan, kebenaran dunia, dan keadaan tekanan lokal direset per seed.",
+          "audio": "Percobaan berikutnya dimulai dengan bekas luka di file, bukan otot di setelan.",
+          "in_game_wiki": "Dossier Penjarah adalah memori kampanye yang bertahan di antara percobaan salvage. Ia menyimpan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi dari hal yang sudah dipublikasikan atau disembunyikan pemain. Ia tidak membawa kekuatan setelan, tekanan aman, ruangan yang sudah bersih, atau laut yang lebih ramah. Pengetahuan mengubah keputusan. Ia tidak membuat kedalaman menjadi tidak berbahaya.",
+          "external_site": "Persistensi Dossier Penjarah menetapkan kontrak replay HECTON-8: pemain mewarisi konteks, bukan kekuatan. Dossier membuat percobaan berikutnya lebih cepat membaca kesalahan lama, lebih awal mengenali jebakan kontrak, dan memahami akhir mana yang belum lengkap tanpa mengubah memori menjadi keunggulan mekanis yang merusak tekanan bertahan hidup."
         },
         "ko_KR": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "KO LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "KO LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "KO LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "KO LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "KO LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "KO LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "약탈자 dossier 지속성",
+          "scanner": "dossier 스풀. 남는 것은 지식이지 초능력이 아니다.",
+          "field_note": "dossier는 증거와 경고를 기억한다. 압력을 관대하게 만들지는 않는다.",
+          "terminal": "DOSSIER 지속 항목: 엔딩 기록, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 공개 원장 결과 보존. 장비 출력, 세계 진실, 현지 압력 상태는 시드마다 초기화.",
+          "audio": "다음 잠수는 슈트의 근육이 아니라 파일의 흉터에서 시작된다.",
+          "in_game_wiki": "약탈자 dossier는 salvage 시도 사이에 살아남는 캠페인 기억이다. 엔딩, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 그리고 플레이어가 이미 공개하거나 숨긴 선택의 결과를 보존한다. 슈트의 힘, 안전한 압력, 정리된 방, 더 친절한 바다는 넘겨주지 않는다. 지식은 결정을 바꾼다. 깊이를 무해하게 만들지는 않는다.",
+          "external_site": "약탈자 dossier 지속성은 HECTON-8의 반복 플레이 계약을 정의한다. 플레이어가 물려받는 것은 힘이 아니라 맥락이다. dossier는 이후 시도에서 예전 실수를 더 빨리 읽고, 계약 함정을 더 일찍 알아보고, 어떤 엔딩이 미완성이었는지 이해하게 하지만 생존 압력을 깨는 기계적 이점으로 변하지 않는다."
         },
         "he_IL": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "HE LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "HE LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "HE LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "HE LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "HE LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "HE LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "התמדת תיק הבוזז",
+          "scanner": "סליל תיק. אתה שומר ידע, לא כוחות-על.",
+          "field_note": "התיק זוכר הוכחות ואזהרות; הוא לא הופך לחץ לסלחני.",
+          "terminal": "התמדת תיק: רשומות סיום, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות הפנקס הציבורי נשמרים. כוח ציוד, אמת עולם ומצב לחץ מקומי מתאפסים בכל seed.",
+          "audio": "הריצה הבאה מתחילה בצלקות בקובץ, לא בשרירים בחליפה.",
+          "in_game_wiki": "תיק הבוזז הוא זיכרון הקמפיין ששורד בין ניסיונות salvage. הוא שומר סופים, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות של מה שהשחקן כבר פרסם או הסתיר. הוא לא מעביר כוח חליפה, לחץ בטוח, חדרים שפונו או אוקיינוס רחמן יותר. ידע משנה החלטות. הוא לא הופך את העומק לבלתי מזיק.",
+          "external_site": "התמדת תיק הבוזז מגדירה את חוזה המשחק החוזר של HECTON-8: השחקן יורש הקשר, לא כוח. התיק מאפשר לניסיונות מאוחרים לקרוא טעויות ישנות מהר יותר, לזהות מלכודות חוזה מוקדם יותר ולהבין אילו סופים נשארו לא שלמים, בלי להפוך זיכרון ליתרון מכני ששובר את לחץ ההישרדות."
         },
         "pt_BR": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "PT-BR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "PT LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "PT-BR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "PT-BR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "PT LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "PT LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistência do dossiê de saqueador",
+          "scanner": "Carretel de dossiê. Você mantém conhecimento, não superpoderes.",
+          "field_note": "O dossiê lembra provas e avisos; ele não torna a pressão indulgente.",
+          "terminal": "PERSISTÊNCIA DO DOSSIÊ: registros de finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do livro público retidos. Poder do equipamento, verdade do mundo e estado local de pressão reiniciam por seed.",
+          "audio": "A próxima tentativa começa com cicatrizes no arquivo, não músculos no traje.",
+          "in_game_wiki": "O dossiê de saqueador é a memória de campanha que sobrevive entre tentativas de salvamento. Ele mantém finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do que o jogador já publicou ou escondeu. Ele não carrega força do traje, pressão segura, salas limpas nem um oceano mais gentil. Conhecimento muda decisões. Não torna a profundidade inofensiva.",
+          "external_site": "A Persistência do dossiê de saqueador define o contrato de replay de HECTON-8: o jogador herda contexto, não poder. O dossiê permite que tentativas posteriores leiam erros antigos mais rápido, reconheçam armadilhas contratuais mais cedo e entendam quais finais foram incompletos sem transformar memória em vantagem mecânica que quebre a pressão de sobrevivência."
         },
         "nl_NL": {
-          "title": "Marauder Dossier Persistence",
-          "scanner": "NL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.",
-          "field_note": "NL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.",
-          "terminal": "NL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.",
-          "audio": "NL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.",
-          "in_game_wiki": "NL LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.",
-          "external_site": "NL LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power."
+          "title": "Persistentie van het plunderaarsdossier",
+          "scanner": "Dossierspoel. Je behoudt kennis, geen superkrachten.",
+          "field_note": "Het dossier onthoudt bewijs en waarschuwingen; het maakt druk niet vergevingsgezind.",
+          "terminal": "DOSSIERPERSISTENTIE: eindregistraties, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en gevolgen van het publieke grootboek blijven bewaard. Uitrustingskracht, wereldwaarheid en lokale drukstatus resetten per seed.",
+          "audio": "De volgende run begint met littekens in het bestand, niet met spieren in het pak.",
+          "in_game_wiki": "Het plunderaarsdossier is het campagnegeheugen dat tussen salvagepogingen overleeft. Het bewaart eindes, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en de gevolgen van wat de speler al publiceerde of verborg. Het neemt geen pakkracht, veilige druk, opgeruimde kamers of vriendelijkere oceaan mee. Kennis verandert beslissingen. Het maakt de diepte niet ongevaarlijk.",
+          "external_site": "Persistentie van het plunderaarsdossier bepaalt het replaycontract van HECTON-8: de speler erft context, geen macht. Het dossier laat latere pogingen oude fouten sneller lezen, contractvallen eerder herkennen en begrijpen welke eindes onvolledig waren zonder geheugen te veranderen in een mechanisch voordeel dat de overlevingsdruk breekt."
         }
       }
     },
@@ -648,138 +648,138 @@
       "localized": {
         "en_US": {
           "title": "Final Choice Payload",
-          "scanner": "Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "The best ending should be defensible, not clean.",
-          "terminal": "FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "scanner": "FINAL PAYLOAD // Coordinates, samples, names, Atlas access, quarantine orders, public proof. What leaves HECTON-8 decides who can act afterward.",
+          "terminal": "PAYLOAD MATRIX: sell coordinates and XO proof; sever Atlas continuity; preserve or quarantine the ocean-machine ecology; publish evidence to the public ledger; withhold the payload and leave Deep Reach blind.",
+          "audio": "There is no clean ownership for a crime scene that learned to breathe.",
+          "in_game_wiki": "The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.",
+          "external_site": "Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas, and the ocean-machine ecology.",
+          "field_note": "The best ending should be defensible, not clean."
         },
         "ru_RU": {
-          "title": "Final Choice Payload",
-          "scanner": "Payload matrix. Продать, отсечь, quarantine, publish или оставить новое тело дышать.",
-          "field_note": "Лучшая концовка должна быть defendable, не чистой.",
-          "terminal": "FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "У crime scene, который стал живым неправильным способом, нет чистого владельца.",
-          "in_game_wiki": "Финальное решение спрашивает, что игрок отправляет наверх. Coordinates, samples, names, Atlas access, public proof и quarantine commands создают разные futures. Вопрос не в том, выигрывает ли игрок чисто. Вопрос в том, кто получает достаточно truth, чтобы действовать с HECTON-8 дальше.",
-          "external_site": "Final Choice Payload задает философию концовок HECTON-8: игрок выбирает, что покидает луну, кто это получает и что это делает возможным для Deep Reach, public law, Atlas и ocean-machine ecology."
+          "title": "Payload финального выбора",
+          "scanner": "ФИНАЛЬНЫЙ PAYLOAD // Координаты, образцы, имена, доступ Atlas, приказы карантина, публичное доказательство. То, что покинет HECTON-8, решит, кто сможет действовать потом.",
+          "terminal": "МАТРИЦА PAYLOAD: продать координаты и XO-доказательство; разорвать непрерывность Atlas; сохранить или закрыть на карантин океано-машинную экологию; опубликовать доказательства в публичный ledger; удержать payload и оставить Deep Reach слепыми.",
+          "audio": "У места преступления, которое научилось дышать, не бывает чистого владельца.",
+          "in_game_wiki": "Последнее решение - не чистый экран победы. Это задача доставки с моральным весом. Marauder решает, что поднимется с луны: координаты, образцы, имена рабочих, доступ Atlas, инструкции карантина, публичное доказательство или вообще ничего полезного. Каждый payload создает нового владельца последствий. Deep Reach может вернуть контроль. Публичное право может получить рану, которую наконец видно. Непрерывность Atlas можно перерезать или посадить в клетку. Океано-машинную экологию можно защитить, продать или оставить вне человеческого языка. Концовка - не о том, кто выбрался с чистыми руками. Она о том, кто первым получит достаточно правды, чтобы начать движение.",
+          "external_site": "Payload финального выбора задает философию концовок HECTON-8: игрок решает, что покинет луну, кто это получит и что это откроет для Deep Reach, публичного права, Atlas и океано-машинной экологии.",
+          "field_note": "Лучшая концовка должна быть защитимой, а не чистой."
         },
         "ja_JP": {
-          "title": "Final Choice Payload",
-          "scanner": "JP LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "JP LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "JP LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "JP LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "JP LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "JP LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "最終選択ペイロード",
+          "scanner": "FINAL PAYLOAD // 座標、試料、名前、Atlasアクセス、検疫命令、公的証明。HECTON-8を離れるものが、その後に動ける者を決める。",
+          "terminal": "PAYLOAD MATRIX: 座標とXO証拠を売る。Atlas連続性を断つ。海洋機械生態を保存または検疫する。証拠を公的台帳へ公開する。ペイロードを握り、Deep Reachを盲目のままにする。",
+          "audio": "呼吸を覚えた犯罪現場に、清潔な所有権はない。",
+          "in_game_wiki": "最後の決定は清潔な勝利画面ではない。道徳的な重さを持つ輸送問題だ。Marauderは月から何を上げるかを決める。座標、試料、労働者の名前、Atlasアクセス、検疫指示、公的証明、あるいは有用なものを何も渡さない。どのペイロードも、その後始末の所有者を変える。Deep Reachは支配を取り戻せる。公的法は、ようやく見える傷を得る。Atlas連続性は切断も隔離もできる。海洋機械生態は守られ、売られ、人間の言葉の外へ残される。結末は、誰が清い手で逃げるかではない。誰が最初に動けるだけの真実を受け取るかだ。",
+          "external_site": "最終選択ペイロードはHECTON-8のエンディング哲学を定義する。月から何が出るか、誰が受け取るか、それがDeep Reach、公的法、Atlas、海洋機械生態に何を可能にするかをプレイヤーが選ぶ。",
+          "field_note": "最良の結末は清潔ではなく、弁護可能であるべきだ。"
         },
         "zh_CN": {
-          "title": "Final Choice Payload",
-          "scanner": "CN LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "CN LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "CN LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "CN LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "CN LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "CN LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "最终选择 payload",
+          "scanner": "最终 PAYLOAD // 坐标、样本、姓名、Atlas 访问权、隔离命令、公共证明。离开 HECTON-8 的东西决定之后谁能行动。",
+          "terminal": "PAYLOAD 矩阵：出售坐标和 XO 证明；切断 Atlas 连续性；保存或隔离海洋机器生态；把证据发布到公共 ledger；扣留 payload，让 Deep Reach 继续失明。",
+          "audio": "一个学会呼吸的犯罪现场，没有干净的所有权。",
+          "in_game_wiki": "最后决定不是干净的胜利画面，而是带有道德重量的运输问题。Marauder 决定从这颗月球升上去的是什么：坐标、样本、工人姓名、Atlas 访问权、隔离指令、公共证明，或者根本没有任何有用信息。每一种 payload 都会为后果创造不同的所有者。Deep Reach 可以重新获得控制。公共法律可以得到一处终于看得见的伤口。Atlas 连续性可以被切断或关住。海洋机器生态可以被保护、出售，或被留在人类语言之外。结局不是谁带着干净双手逃走，而是谁最先得到足够真相来行动。",
+          "external_site": "最终选择 payload 定义 HECTON-8 的结局哲学：玩家选择什么离开月球，谁接收它，以及这让 Deep Reach、公共法律、Atlas 和海洋机器生态获得什么可能。",
+          "field_note": "最好的结局应该可辩护，而不是干净。"
         },
         "fr_FR": {
-          "title": "Final Choice Payload",
-          "scanner": "FR LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "FR LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "FR LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "FR LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "FR LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "FR LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload du choix final",
+          "scanner": "PAYLOAD FINAL // Coordonnées, échantillons, noms, accès Atlas, ordres de quarantaine, preuve publique. Ce qui quitte HECTON-8 décide qui peut agir ensuite.",
+          "terminal": "MATRICE PAYLOAD : vendre coordonnées et preuve XO ; couper la continuité Atlas ; préserver ou mettre en quarantaine l'écologie océan-machine ; publier les preuves au ledger public ; retenir le payload et laisser Deep Reach aveugle.",
+          "audio": "Il n'existe pas de propriété propre pour une scène de crime qui a appris à respirer.",
+          "in_game_wiki": "La dernière décision n'est pas un écran de victoire propre. C'est un problème d'expédition chargé de morale. Le Marauder décide ce qui remonte de la lune : coordonnées, échantillons, noms d'ouvriers, accès Atlas, consignes de quarantaine, preuve publique, ou rien d'utile. Chaque payload crée un propriétaire différent pour l'après-coup. Deep Reach peut reprendre le contrôle. Le droit public peut recevoir une blessure enfin visible. La continuité Atlas peut être coupée ou mise en cage. L'écologie océan-machine peut être protégée, vendue ou laissée hors du langage humain. La fin ne demande pas qui s'échappe les mains propres. Elle demande qui reçoit assez de vérité pour agir le premier.",
+          "external_site": "Le Payload du choix final définit la philosophie des fins de HECTON-8 : le joueur choisit ce qui quitte la lune, qui le reçoit et ce que cela rend possible pour Deep Reach, le droit public, Atlas et l'écologie océan-machine.",
+          "field_note": "La meilleure fin doit être défendable, pas propre."
         },
         "es_ES": {
-          "title": "Final Choice Payload",
-          "scanner": "ES LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "ES LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "ES LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "ES LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "ES LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "ES LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload de elección final",
+          "scanner": "PAYLOAD FINAL // Coordenadas, muestras, nombres, acceso Atlas, órdenes de cuarentena, prueba pública. Lo que sale de HECTON-8 decide quién puede actuar después.",
+          "terminal": "MATRIZ PAYLOAD: vender coordenadas y prueba XO; cortar continuidad Atlas; preservar o poner en cuarentena la ecología océano-máquina; publicar evidencia al ledger público; retener el payload y dejar ciego a Deep Reach.",
+          "audio": "No hay propiedad limpia para una escena del crimen que aprendió a respirar.",
+          "in_game_wiki": "La última decisión no es una pantalla de victoria limpia. Es un problema de envío con peso moral. El Marauder decide qué sube desde la luna: coordenadas, muestras, nombres de trabajadores, acceso Atlas, instrucciones de cuarentena, prueba pública o nada útil. Cada payload crea un dueño distinto para las consecuencias. Deep Reach puede recuperar control. La ley pública puede recibir una herida que por fin ve. La continuidad Atlas puede cortarse o encerrarse. La ecología océano-máquina puede protegerse, venderse o dejarse fuera del lenguaje humano. El final no trata de quién escapa con las manos limpias. Trata de quién recibe suficiente verdad para moverse primero.",
+          "external_site": "El Payload de elección final define la filosofía de finales de HECTON-8: el jugador elige qué sale de la luna, quién lo recibe y qué hace posible para Deep Reach, la ley pública, Atlas y la ecología océano-máquina.",
+          "field_note": "El mejor final debe poder defenderse, no estar limpio."
         },
         "de_DE": {
-          "title": "Final Choice Payload",
-          "scanner": "DE LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "DE LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "DE LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "DE LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "DE LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "DE LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload der letzten Wahl",
+          "scanner": "FINALER PAYLOAD // Koordinaten, Proben, Namen, Atlas-Zugriff, Quarantänebefehle, öffentliche Beweise. Was HECTON-8 verlässt, entscheidet, wer danach handeln kann.",
+          "terminal": "PAYLOAD-MATRIX: Koordinaten und XO-Beweis verkaufen; Atlas-Kontinuität trennen; Ozean-Maschinen-Ökologie bewahren oder quarantänisieren; Beweise ins öffentliche Ledger stellen; Payload zurückhalten und Deep Reach blind lassen.",
+          "audio": "Für einen Tatort, der atmen lernte, gibt es keinen sauberen Besitz.",
+          "in_game_wiki": "Die letzte Entscheidung ist kein sauberer Siegbildschirm. Sie ist ein Versandproblem mit moralischem Gewicht. Der Marauder entscheidet, was vom Mond aufsteigt: Koordinaten, Proben, Arbeiternamen, Atlas-Zugriff, Quarantäneanweisungen, öffentliche Beweise oder gar nichts Brauchbares. Jeder Payload schafft einen anderen Besitzer der Folgen. Deep Reach kann Kontrolle zurückgewinnen. Öffentliches Recht kann endlich eine sichtbare Wunde erhalten. Atlas-Kontinuität kann geschnitten oder eingesperrt werden. Die Ozean-Maschinen-Ökologie kann geschützt, verkauft oder außerhalb menschlicher Sprache gelassen werden. Das Ende fragt nicht, wer mit sauberen Händen entkommt. Es fragt, wer genug Wahrheit bekommt, um zuerst zu handeln.",
+          "external_site": "Der Payload der letzten Wahl definiert HECTON-8s Endphilosophie: Der Spieler wählt, was den Mond verlässt, wer es erhält und was das für Deep Reach, öffentliches Recht, Atlas und die Ozean-Maschinen-Ökologie möglich macht.",
+          "field_note": "Das beste Ende sollte verteidigbar sein, nicht sauber."
         },
         "pl_PL": {
-          "title": "Final Choice Payload",
-          "scanner": "PL LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "PL LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "PL LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "PL LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "PL LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "PL LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload wyboru finałowego",
+          "scanner": "FINALNY PAYLOAD // Współrzędne, próbki, nazwiska, dostęp Atlas, rozkazy kwarantanny, dowód publiczny. To, co opuszcza HECTON-8, decyduje, kto działa potem.",
+          "terminal": "MACIERZ PAYLOAD: sprzedać współrzędne i dowód XO; przeciąć ciągłość Atlas; zachować albo poddać kwarantannie ekologię ocean-maszyna; opublikować dowody w publicznym ledger; zatrzymać payload i zostawić Deep Reach ślepym.",
+          "audio": "Nie ma czystej własności dla miejsca zbrodni, które nauczyło się oddychać.",
+          "in_game_wiki": "Ostatnia decyzja nie jest czystym ekranem zwycięstwa. To problem wysyłki z moralnym ciężarem. Marauder decyduje, co wzniesie się z księżyca: współrzędne, próbki, nazwiska pracowników, dostęp Atlas, instrukcje kwarantanny, dowód publiczny albo nic użytecznego. Każdy payload tworzy innego właściciela następstw. Deep Reach może odzyskać kontrolę. Prawo publiczne może dostać ranę, którą wreszcie widzi. Ciągłość Atlas można przeciąć albo zamknąć. Ekologię ocean-maszyna można chronić, sprzedać albo zostawić poza ludzkim językiem. Zakończenie nie pyta, kto uciekł z czystymi rękami. Pyta, kto pierwszy dostaje dość prawdy, by działać.",
+          "external_site": "Payload wyboru finałowego definiuje filozofię zakończeń HECTON-8: gracz wybiera, co opuszcza księżyc, kto to otrzymuje i co to umożliwia Deep Reach, prawu publicznemu, Atlas oraz ekologii ocean-maszyna.",
+          "field_note": "Najlepsze zakończenie powinno dać się obronić, nie być czyste."
         },
         "uk_UA": {
-          "title": "Final Choice Payload",
-          "scanner": "UK LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "UK LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "UK LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "UK LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "UK LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "UK LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload фінального вибору",
+          "scanner": "ФІНАЛЬНИЙ PAYLOAD // Координати, зразки, імена, доступ Atlas, накази карантину, публічний доказ. Те, що покине HECTON-8, вирішить, хто діятиме потім.",
+          "terminal": "МАТРИЦЯ PAYLOAD: продати координати й XO-доказ; розірвати неперервність Atlas; зберегти або закрити на карантин океано-машинну екологію; опублікувати докази в публічний ledger; утримати payload і лишити Deep Reach сліпими.",
+          "audio": "У місця злочину, що навчилося дихати, не буває чистого власника.",
+          "in_game_wiki": "Останнє рішення - не чистий екран перемоги. Це задача доставки з моральною вагою. Marauder вирішує, що підніметься з місяця: координати, зразки, імена працівників, доступ Atlas, інструкції карантину, публічний доказ або взагалі нічого корисного. Кожен payload створює іншого власника наслідків. Deep Reach може повернути контроль. Публічне право може отримати рану, яку нарешті видно. Неперервність Atlas можна перерізати або замкнути. Океано-машинну екологію можна захистити, продати або лишити поза людською мовою. Кінцівка не про те, хто втік із чистими руками. Вона про те, хто першим отримає досить правди, щоб діяти.",
+          "external_site": "Payload фінального вибору задає філософію кінцівок HECTON-8: гравець обирає, що покине місяць, хто це отримає і що це відкриє для Deep Reach, публічного права, Atlas та океано-машинної екології.",
+          "field_note": "Найкраща кінцівка має бути захищуваною, а не чистою."
         },
         "ar_SA": {
-          "title": "Final Choice Payload",
-          "scanner": "AR LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "AR LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "AR LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "AR LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "AR LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "AR LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "حمولة الاختيار النهائي",
+          "scanner": "PAYLOAD نهائي // إحداثيات، عينات، أسماء، وصول Atlas، أوامر حجر، دليل عام. ما يغادر HECTON-8 يقرر من يستطيع الفعل بعد ذلك.",
+          "terminal": "مصفوفة PAYLOAD: بع الإحداثيات ودليل XO؛ اقطع استمرارية Atlas؛ احفظ أو احجر بيئة المحيط-الآلة؛ انشر الأدلة إلى ledger العام؛ احجب payload واترك Deep Reach عمياء.",
+          "audio": "لا توجد ملكية نظيفة لمسرح جريمة تعلم أن يتنفس.",
+          "in_game_wiki": "القرار الأخير ليس شاشة فوز نظيفة. إنه مشكلة شحن ذات وزن أخلاقي. يقرر Marauder ما يصعد من القمر: إحداثيات، عينات، أسماء عمال، وصول Atlas، تعليمات حجر، دليل عام، أو لا شيء مفيد. كل payload يخلق مالكا مختلفا لما بعده. يمكن لـ Deep Reach أن تستعيد السيطرة. يمكن للقانون العام أن يحصل على جرح يراه أخيرا. يمكن قطع استمرارية Atlas أو حبسها. يمكن حماية بيئة المحيط-الآلة أو بيعها أو تركها خارج لغة البشر. النهاية ليست من يهرب بيدين نظيفتين. إنها من يتلقى ما يكفي من الحقيقة ليتحرك أولا.",
+          "external_site": "حمولة الاختيار النهائي تحدد فلسفة نهايات HECTON-8: يختار اللاعب ما يغادر القمر، ومن يتلقاه، وما يتيحه ذلك لـ Deep Reach والقانون العام وAtlas وبيئة المحيط-الآلة.",
+          "field_note": "أفضل نهاية يجب أن تكون قابلة للدفاع، لا نظيفة."
         },
         "id_ID": {
-          "title": "Final Choice Payload",
-          "scanner": "ID LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "ID LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "ID LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "ID LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "ID LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "ID LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload Pilihan Akhir",
+          "scanner": "PAYLOAD AKHIR // Koordinat, sampel, nama, akses Atlas, perintah karantina, bukti publik. Apa yang meninggalkan HECTON-8 menentukan siapa bisa bertindak setelahnya.",
+          "terminal": "MATRIKS PAYLOAD: jual koordinat dan bukti XO; putus kontinuitas Atlas; lindungi atau karantina ekologi samudra-mesin; publikasikan bukti ke ledger publik; tahan payload dan biarkan Deep Reach buta.",
+          "audio": "Tidak ada kepemilikan bersih untuk TKP yang belajar bernapas.",
+          "in_game_wiki": "Keputusan terakhir bukan layar kemenangan bersih. Itu masalah pengiriman dengan beban moral. Marauder menentukan apa yang naik dari bulan: koordinat, sampel, nama pekerja, akses Atlas, instruksi karantina, bukti publik, atau tidak ada yang berguna. Setiap payload menciptakan pemilik berbeda atas akibatnya. Deep Reach bisa merebut kendali lagi. Hukum publik bisa mendapat luka yang akhirnya terlihat. Kontinuitas Atlas bisa diputus atau dikurung. Ekologi samudra-mesin bisa dilindungi, dijual, atau dibiarkan di luar bahasa manusia. Ending bukan tentang siapa lolos dengan tangan bersih. Ending tentang siapa menerima cukup kebenaran untuk bergerak pertama.",
+          "external_site": "Payload Pilihan Akhir mendefinisikan filosofi ending HECTON-8: pemain memilih apa yang meninggalkan bulan, siapa menerimanya, dan apa yang dimungkinkan bagi Deep Reach, hukum publik, Atlas, dan ekologi samudra-mesin.",
+          "field_note": "Ending terbaik harus bisa dibela, bukan bersih."
         },
         "ko_KR": {
-          "title": "Final Choice Payload",
-          "scanner": "KO LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "KO LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "KO LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "KO LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "KO LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "KO LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "최종 선택 payload",
+          "scanner": "최종 PAYLOAD // 좌표, 샘플, 이름, Atlas 접근, 격리 명령, 공개 증거. HECTON-8을 떠나는 것이 이후 누가 행동할 수 있는지 결정한다.",
+          "terminal": "PAYLOAD 매트릭스: 좌표와 XO 증거를 판다; Atlas 연속성을 끊는다; 해양-기계 생태를 보존하거나 격리한다; 증거를 공개 ledger에 낸다; payload를 숨기고 Deep Reach를 눈먼 채 둔다.",
+          "audio": "숨 쉬는 법을 배운 범죄 현장에는 깨끗한 소유권이 없다.",
+          "in_game_wiki": "마지막 결정은 깨끗한 승리 화면이 아니다. 도덕적 무게가 실린 배송 문제다. Marauder는 달에서 무엇이 올라갈지 결정한다. 좌표, 샘플, 노동자 이름, Atlas 접근, 격리 지침, 공개 증거, 또는 쓸모 있는 것은 아무것도 없을 수 있다. 모든 payload는 사후 결과의 다른 소유자를 만든다. Deep Reach는 통제를 되찾을 수 있다. 공적 법은 마침내 볼 수 있는 상처를 얻을 수 있다. Atlas 연속성은 끊기거나 갇힐 수 있다. 해양-기계 생태는 보호되거나 팔리거나 인간 언어 바깥에 남을 수 있다. 엔딩은 누가 깨끗한 손으로 탈출하는지가 아니다. 누가 먼저 움직일 만큼의 진실을 받는가다.",
+          "external_site": "최종 선택 payload는 HECTON-8의 엔딩 철학을 정의한다. 플레이어는 달을 떠나는 것, 그것을 받는 자, 그리고 그것이 Deep Reach, 공적 법, Atlas, 해양-기계 생태에 가능하게 하는 것을 고른다.",
+          "field_note": "최고의 엔딩은 깨끗한 것이 아니라 변호 가능한 것이어야 한다."
         },
         "he_IL": {
-          "title": "Final Choice Payload",
-          "scanner": "HE LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "HE LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "HE LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "HE LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "HE LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "HE LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "מטען הבחירה הסופית",
+          "scanner": "PAYLOAD סופי // קואורדינטות, דגימות, שמות, גישת Atlas, פקודות הסגר, ראיה ציבורית. מה שעוזב את HECTON-8 קובע מי יכול לפעול אחר כך.",
+          "terminal": "מטריצת PAYLOAD: למכור קואורדינטות והוכחת XO; לנתק רציפות Atlas; לשמר או להסגיר את אקולוגיית האוקיינוס-מכונה; לפרסם ראיות ל-ledger הציבורי; להחזיק את ה-payload ולהשאיר את Deep Reach עיוורת.",
+          "audio": "אין בעלות נקייה על זירת פשע שלמדה לנשום.",
+          "in_game_wiki": "ההחלטה האחרונה אינה מסך ניצחון נקי. זו בעיית משלוח עם משקל מוסרי. ה-Marauder מחליט מה עולה מן הירח: קואורדינטות, דגימות, שמות עובדים, גישת Atlas, הוראות הסגר, ראיה ציבורית או שום דבר שימושי. כל payload יוצר בעלים אחר לתוצאות. Deep Reach יכולה להשיב שליטה. החוק הציבורי יכול לקבל פצע שסוף סוף ניתן לראות. רציפות Atlas יכולה להיחתך או להיכלא. אקולוגיית האוקיינוס-מכונה יכולה להיות מוגנת, להימכר או להישאר מחוץ לשפה האנושית. הסוף אינו מי בורח בידיים נקיות. הוא מי מקבל מספיק אמת כדי לזוז ראשון.",
+          "external_site": "מטען הבחירה הסופית מגדיר את פילוסופיית הסופים של HECTON-8: השחקן בוחר מה עוזב את הירח, מי מקבל אותו ומה זה מאפשר ל-Deep Reach, לחוק הציבורי, ל-Atlas ולאקולוגיית האוקיינוס-מכונה.",
+          "field_note": "הסוף הטוב ביותר צריך להיות ניתן להגנה, לא נקי."
         },
         "pt_BR": {
-          "title": "Final Choice Payload",
-          "scanner": "PT-BR LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "PT-BR LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "PT-BR LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "PT-BR LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "PT-BR LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "PT-BR LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload da escolha final",
+          "scanner": "PAYLOAD FINAL // Coordenadas, amostras, nomes, acesso Atlas, ordens de quarentena, prova pública. O que sai de HECTON-8 decide quem pode agir depois.",
+          "terminal": "MATRIZ PAYLOAD: vender coordenadas e prova XO; cortar continuidade Atlas; preservar ou pôr em quarentena a ecologia oceano-máquina; publicar evidência no ledger público; reter o payload e deixar Deep Reach cega.",
+          "audio": "Não existe propriedade limpa para uma cena de crime que aprendeu a respirar.",
+          "in_game_wiki": "A última decisão não é uma tela de vitória limpa. É um problema de envio com peso moral. O Marauder decide o que sobe da lua: coordenadas, amostras, nomes de trabalhadores, acesso Atlas, instruções de quarentena, prova pública ou nada útil. Cada payload cria um dono diferente para as consequências. Deep Reach pode recuperar controle. A lei pública pode receber uma ferida que finalmente enxerga. A continuidade Atlas pode ser cortada ou enjaulada. A ecologia oceano-máquina pode ser protegida, vendida ou deixada fora da linguagem humana. O final não pergunta quem escapa de mãos limpas. Pergunta quem recebe verdade suficiente para agir primeiro.",
+          "external_site": "O Payload da escolha final define a filosofia de finais de HECTON-8: o jogador escolhe o que sai da lua, quem recebe e o que isso torna possível para Deep Reach, lei pública, Atlas e ecologia oceano-máquina.",
+          "field_note": "O melhor final deve ser defensável, não limpo."
         },
         "nl_NL": {
-          "title": "Final Choice Payload",
-          "scanner": "NL LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.",
-          "field_note": "NL LOC HOLD: The best ending should be defensible, not clean.",
-          "terminal": "NL LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.",
-          "audio": "NL LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.",
-          "in_game_wiki": "NL LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.",
-          "external_site": "NL LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology."
+          "title": "Payload van de laatste keuze",
+          "scanner": "FINALE PAYLOAD // Coördinaten, monsters, namen, Atlas-toegang, quarantainebevelen, openbaar bewijs. Wat HECTON-8 verlaat, bepaalt wie daarna kan handelen.",
+          "terminal": "PAYLOADMATRIX: coördinaten en XO-bewijs verkopen; Atlas-continuïteit verbreken; oceaan-machine-ecologie bewaren of in quarantaine zetten; bewijs naar het openbare ledger publiceren; payload achterhouden en Deep Reach blind laten.",
+          "audio": "Er bestaat geen schoon eigendom voor een plaats delict die leerde ademen.",
+          "in_game_wiki": "De laatste keuze is geen schoon overwinningsscherm. Het is een verzendprobleem met moreel gewicht. De Marauder beslist wat van de maan opstijgt: coördinaten, monsters, werknamen, Atlas-toegang, quarantaine-instructies, openbaar bewijs of helemaal niets bruikbaars. Elke payload schept een andere eigenaar voor de nasleep. Deep Reach kan controle terugkrijgen. Publiek recht kan eindelijk een zichtbare wond krijgen. Atlas-continuïteit kan worden doorgesneden of opgesloten. De oceaan-machine-ecologie kan worden beschermd, verkocht of buiten menselijke taal gelaten. Het einde gaat niet over wie met schone handen ontsnapt. Het gaat over wie genoeg waarheid krijgt om als eerste te handelen.",
+          "external_site": "Payload van de laatste keuze definieert HECTON-8s eindfilosofie: de speler kiest wat de maan verlaat, wie het ontvangt en wat dat mogelijk maakt voor Deep Reach, publiek recht, Atlas en de oceaan-machine-ecologie.",
+          "field_note": "Het beste einde moet verdedigbaar zijn, niet schoon."
         }
       }
     }

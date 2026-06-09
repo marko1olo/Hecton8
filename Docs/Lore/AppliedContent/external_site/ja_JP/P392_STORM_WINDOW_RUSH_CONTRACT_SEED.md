@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Storm Window Rush Contract Seed"
+title: "嵐窓ラッシュ契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Storm Window Rush Contract Seed
+# 嵐窓ラッシュ契約シード
 
-JA LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+嵐窓ラッシュは閉じるカバーマップから始まる。嵐帯、リレーシャッター時刻、bathydrop呼び戻しが支払い上限と同じ盤に載る。高い数字は親切ではない。安全帰還窓がすでに縮み始めた水へ入る値段だ。
 
-## Scanner
-
-JA LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-JA LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-JA LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-JA LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+この走行は工具の段階で圧力を変える。詰まったポンプは時間以上のものを奪う。修理を開いている間も呼び戻し時計が進むからだ。悪い溶接はルート許容を食う。リレーマークを逃すと回収がブラックアウトへ押し出される。同じ植民地を厳しくするのは、水が待つのをやめる時刻を変えるからだ。
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ja_JP. -->

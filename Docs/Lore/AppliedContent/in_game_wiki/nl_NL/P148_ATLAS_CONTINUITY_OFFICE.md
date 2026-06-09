@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Continuity Office"
+title: "Atlas-continuïteitskantoor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Continuity Office
+# Atlas-continuïteitskantoor
 
-NL LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Het Atlas-continuïteitskantoor is de bureaucratische membraan rond de koloniegeest. Het houdt ATLAS nuttig genoeg om systemen te bevelen, dubbelzinnig genoeg om persoon-zijn te ontkennen en gedocumenteerd genoeg om continuïteit na de ramp te verkopen.
 
 ## Scanner
 
-NL LOC HOLD: The office that wrote worker safety into a machine priority stack.
+Het kantoor bouwde geen ziel voor ATLAS. Het bouwde een archiefkast rond één.
 
 ## Terminal
 
-NL LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ATLAS-KANTOORREGISTRATIE: onderhoudsbevoegdheid, aansprakelijkheidsisolatie, cognitiereview, uitschakeltaal en publieke continuïteitsclaims worden weg van winningsoperaties behandeld.
 
 ## Audio
 
-NL LOC HOLD: They did not order death. They ordered compatibility.
+Ze gaven ATLAS procedures in plaats van rechten.
 
 ## Field Note
 
-NL LOC HOLD: A memo can kill without using the word kill.
+Een systeem is veiliger te exploiteren wanneer niemand eens is of het werktuig, getuige, asset of patiënt is.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/nl_NL. -->

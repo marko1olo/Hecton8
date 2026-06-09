@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Zestaw kotwiczących nazwisk pracowników A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Zestaw kotwiczących nazwisk pracowników A
 
-PL LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Zestaw kotwiczących nazwisk pracowników A definiuje pierwsze powracające nazwiska kolonii dla HECTON-8. Ta ósemka pracowników nie jest ciekawostką lore; to uchwyty pamięci. Gracz spotyka ich najpierw przez przedmioty i pracę, a potem powoli widzi, jak te same nazwiska przecinają rejestry utrzymania, zezwolenia, raporty uszkodzeń i fragmenty audio. Set A utrzymuje pierwsze godziny ludzkie bez zatrzymywania gry na ekspozycję.
 
 ## Scanner
 
-PL LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Wczesne nazwiska muszą wracać przez pracę, nie przemowy. Płytka trasa uczy pamięci przez powtórzenie.
 
 ## Terminal
 
-PL LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: powracanie na płyciznach i półce przemysłowej. Każde nazwisko powinno wiązać się z jednym narzędziem, jednym zezwoleniem trasy, jednym uszkodzonym obiektem pracy i jedną późniejszą sprzecznością. Te nazwiska są pierwszym dowodem gracza, że kolonia była miejscem pracy, zanim stała się łupem.
 
 ## Audio
 
-PL LOC HOLD: Do not mourn the name until the tool tells you why.
+Nie opłakuj nazwiska, dopóki narzędzie nie powie dlaczego.
 
 ## Field Note
 
-PL LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Kotwice Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/pl_PL. -->

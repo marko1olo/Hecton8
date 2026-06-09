@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Blackout Window Signal Decay"
+title: "Decaimento de Sinal na Janela de Blackout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Blackout Window Signal Decay
+# Decaimento de Sinal na Janela de Blackout
 
-PT LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+O silêncio de HECTON-8 é parte astronomia, parte infraestrutura danificada, parte automação corporativa. A sombra de Aegir, relés afogados, timing do carrier e filas jurídicas transformam comunicação em clima: algo em torno do qual o jogador planeja, teme, conserta e às vezes explora.
 
 ## Scanner
 
-PT LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Janela de sinal colapsando: espinha de relés molhada, sombra de Aegir, geometria do carrier vencida, fila jurídica ainda tentando.
 
 ## Terminal
 
-PT LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: perda de uplink acima da tolerância. Canal de voz suspenso. Fragmentos de texto podem chegar por nós acústicos reparados da espinha. A geometria do carrier orbital será atualizada após a sombra magnética de Aegir limpar. Temporizadores automatizados de gravame e custódia continuam sem contato de operador.
 
 ## Audio
 
-PT LOC HOLD: When the sky closes, the paperwork keeps breathing.
+O céu fica quieto primeiro. Os avisos de dívida continuam batendo.
 
 ## Field Note
 
-PT LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Ligar janelas de blackout ao ritmo da rota: menos voz, mais leitura de fragmentos, valor maior para relés reparados e beacons locais.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/pt_BR. -->

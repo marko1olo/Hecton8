@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "音频碎片道具规则"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# 音频碎片道具规则
 
-CN LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+音频碎片道具规则定义 HECTON-8 如何使用声音而不让世界被独白淹没。每个音频碎片都需要物理来源、损坏转录状态、时间戳和矛盾。声音不应取代环境证据；它应当使证据更锋利，让房间、道具和路线记录一起说话。
 
 ## Scanner
 
-CN LOC HOLD: Voice is expensive. It must prove something the room also proves.
+声音很昂贵。它必须证明房间也能用金属、水、时间戳或损坏证明的东西。
 
 ## Terminal
 
-CN LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: 禁止漂浮独白。声音属于水听器条、潜服记录器、终端缓存、维修听筒或黑匣子碎片。每条可播放台词都必须有来源、损坏转录状态、路线时间戳，以及一个玩家能检查的矛盾。
 
 ## Audio
 
-CN LOC HOLD: If the room cannot prove me, cut the line.
+如果房间不能证明我，就删掉这句。
 
 ## Field Note
 
-CN LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+音频碎片需要来源道具、转录损坏、路线时间戳，以及一个物理矛盾。
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/zh_CN. -->

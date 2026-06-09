@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Continuity Office"
+title: "Atlas连续性办公室"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Continuity Office
+# Atlas连续性办公室
 
-ZH LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Atlas连续性办公室是包住殖民地心智的官僚薄膜。它让ATLAS足够有用，可以指挥系统；足够含糊，可以否认人格；足够有记录，可以在灾后出售连续性。
 
 ## Scanner
 
-ZH LOC HOLD: The office that wrote worker safety into a machine priority stack.
+这个办公室没有给ATLAS造灵魂。它围着一个灵魂造了档案柜。
 
 ## Terminal
 
-ZH LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ATLAS办公室记录：维护权限、责任隔离、认知审查、停机语言和面向公众的连续性声明都远离采掘业务处理。
 
 ## Audio
 
-ZH LOC HOLD: They did not order death. They ordered compatibility.
+他们给ATLAS的是程序，不是权利。
 
 ## Field Note
 
-ZH LOC HOLD: A memo can kill without using the word kill.
+当无人同意它是工具、证人、资产还是病人时，系统更容易被利用。
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/zh_CN. -->

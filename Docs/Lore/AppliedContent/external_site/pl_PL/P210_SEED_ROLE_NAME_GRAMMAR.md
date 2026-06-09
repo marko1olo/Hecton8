@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Gramatyka nazwisk seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Gramatyka nazwisk seed-role
 
-PL LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Gramatyka nazwisk seed-role definiuje, jak HECTON-8 używa proceduralnej wariacji bez utraty autorskiej ludzkiej faktury. Replay może zmienić miejsce pojawienia się dowodu pracownika, ale nazwisko musi pozostać związane z pracą, zezwoleniem, zadaniem i obiektem. Dzięki temu kolonia pozostaje zaskakująca między podejściami, a jednocześnie zachowuje poczucie, że każdy zapis należał do kogoś, czyja praca miała znaczenie.
 
 ## Scanner
 
-PL LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed może przesunąć kolejność dowodów. Nie może zmienić pracownika w jednorazowy tekst.
 
 ## Terminal
 
-PL LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalizacja może objaśniać terminy załóg dla czytelności, ale nie może przepisywać tożsamości, usuwać pracy ani odrywać nazwiska od konkretnego obiektu.
 
 ## Audio
 
-PL LOC HOLD: Random is not authorship. Bind the name to a job.
+Losowość nie jest autorstwem. Przywiąż nazwisko do pracy.
 
 ## Field Note
 
-PL LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Każda tożsamość seed-role łączy imię i nazwisko, rodzinę załogi, zezwolenie trasy, ostatnie zadanie i wariant obiektu.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/pl_PL. -->

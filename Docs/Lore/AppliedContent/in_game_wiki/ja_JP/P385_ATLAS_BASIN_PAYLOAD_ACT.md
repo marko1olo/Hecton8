@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas盆地payloadゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Basin Payload Act
+# Atlas盆地payloadゲート
 
-JA LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+盆地ゲートは圧力下の受領者判断だ。payloadは座標を売り、Atlasを切り、検疫を保存し、編集済み台帳パケットを公開し、または領収なしでローカルに残れる。どのルートも保管、債務、生態、証拠アクセスを変える。盆地を無傷の状態へ戻すものはない。
 
 ## Scanner
 
-JA LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+ルートゲート: Atlas盆地。最終payloadにはルート、受領者、proof hash、生態状態、リーエン状態、生存窓が必要。
 
 ## Terminal
 
-JA LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+キャンペーンルート // ATLAS盆地PAYLOAD。解決または拒否: 座標売却、Atlas切断、検疫escrow、公開台帳、blind return。受領印は保管を変える。清潔な請求状態なし。
 
 ## Audio
 
-JA LOC HOLD: The last question is not what happened. It is who you send it to.
+最後のルート質問は、誰がパケットを受け取るかだ。
 
 ## Field Note
 
-JA LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+略奪者メモ: バッグが水を取る前に受領者を選べ。完全な答えはこのバッグに入らない。
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ja_JP. -->

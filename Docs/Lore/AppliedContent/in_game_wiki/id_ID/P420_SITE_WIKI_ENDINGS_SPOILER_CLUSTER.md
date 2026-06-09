@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 2
-title: "Akhir dan custody Payload"
+title: "Akhir dan Custody Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akhir dan custody Payload
+# Akhir dan Custody Payload
 
-Hub dossier akhir: custody, evidence, masa depan Atlas, dan harga meninggalkan tempat itu.
+Hub dossier akhir: setiap jalan keluar adalah custody transfer, bukan label moral.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, kebenaran publik, Atlas continuity, dan after-action records.
+Spoiler hub: custody payload, akibat receiver, false exits, public proof, tekanan karantina, dan Atlas continuity.
 
 ## Terminal
 
-SITE NAV: simpan final payload pages di balik spoiler gates. Susun berdasarkan receiver dan proof ownership.
+SITE NAV: simpan halaman final di balik spoiler gates; susun menurut siapa mengendalikan tubuh, koordinat, samples, Atlas records, dan worker proof.
 
 ## Audio
 
-Akhir adalah siapa yang memiliki bukti setelah naik.
+Keluar bukan akhir. Itu pemindahan custody.
 
 ## Field Note
 
-Akhir tetap spoiler-gated dan disusun menurut receiver serta custody consequence, bukan label moral.
+Jika tubuh lolos tetapi proof dimiliki orang lain, laut belum selesai dengan kasus itu.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/id_ID. -->

@@ -35,6 +35,6 @@ Kamu tidak kehilangan seluruh kapal. Kamu kehilangan satu rantai yang membuat ka
 
 ## Field Note
 
-Catatan kabur jam pertama: carrier hadir, tetapi rantai antara pemain, laut, permukaan, dan orbit rusak pada bagian bernama.
+Catatan kabur jam pertama: carrier hadir, tetapi rantai antara suit, laut, permukaan, dan orbit patah pada bagian-bagian bernama.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/id_ID. -->

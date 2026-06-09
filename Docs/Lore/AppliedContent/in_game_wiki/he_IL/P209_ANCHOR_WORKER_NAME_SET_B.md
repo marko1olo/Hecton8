@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "ערכת שמות עובדי עוגן B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# ערכת שמות עובדי עוגן B
 
-HE LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+ערכת שמות עובדי עוגן B נושאת את הרשימה לשכבות ראיה חשוכות יותר. Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung ו-Bram Kessel צריכים להופיע אחרי שהשחקן מבין שהכשלים חוזרים לפי תכנון. הרשומות שלהם שייכות לעבודת קניון תמלחת, שדות מכונה אביסליים, חריגות מיון, סתירות תיקון Atlas וחובות salvage. Set B צריכה להרגיש כמו הרגע שבו סיפור מקום עבודה מוכר הופך להאשמה עם שמות עדיין מחוברים.
 
 ## Scanner
 
-HE LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+שמות עמוקים יותר צריכים להגיע אחרי שהשחקן כבר מכיר את דפוס הנזק. הם עולים יותר כי המים התחילו להוכיח את הפשע.
 
 ## Terminal
 
-HE LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: חזרה בקניון התמלחת ובשדות המכונה האביסליים. קשר את השמות האלה ל witness hashes, החזקות נתיב, חריגות מיון, סתירות תיקון Atlas ושבילי חוב salvage. Set B הוא המקום שבו ראיית העובד מפסיקה להיות טרגדיה מקומית והופכת לסיבה תאגידית.
 
 ## Audio
 
-HE LOC HOLD: A deep name costs more because the water has already proved what happened.
+שם עמוק עולה יותר כי המים כבר הוכיחו מה קרה.
 
 ## Field Note
 
-HE LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+עוגני Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/he_IL. -->

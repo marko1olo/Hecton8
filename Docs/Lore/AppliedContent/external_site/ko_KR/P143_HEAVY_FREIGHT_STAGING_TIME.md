@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "중화물 스테이징 시간"
+title: "중화물 준비 시간"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 중화물 스테이징 시간
+# 중화물 준비 시간
 
-중화물은 시간을 인프라 안에 숨긴다. Atlas hardware, seed cargo, shield stock, braking parts는 공개 정착 언어가 따라오기 몇 년 전에 발사되기 때문에 일찍 도착할 수 있다. 그렇다고 긴급 구조가 쉬워지는 것은 아니다. 준비된 항로는 depot, beam window, pellet stream, catch stage가 기다리고 있었기 때문에 질량을 움직인다. 재난 항로에는 그런 인내가 남아 있지 않다. HECTON-8은 낡은 계획으로 도착한 기계와 새 시계로 도움을 필요로 한 사람들로 가득하다.
+중화물 준비는 성간 물류가 무기 없이 폭력이 되는 지점이다. 거주 링, 반응로 껍질, 절단 크롤러, 압력 리브, 식량 재고는 가벼운 약속으로 보기에는 너무 비싸다. Aegir에 닿기 전부터 보험자, 담보, 운송자, 검사관, 예비 조항을 끌어모은다.
+
+조건이 바뀌었을 때 Deep Reach는 잔혹함을 처음부터 발명할 필요가 없었다. 화물 사슬을 계속 존중하기만 하면 됐다. 이미 준비된 모든 톤은 수령자를 요구했고, 수령자는 작업장을 요구했으며, 작업장은 몸을 요구했다. 식민지는 이미 지불된 화물에 대한 인간의 답이 되었다.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ko_KR. -->

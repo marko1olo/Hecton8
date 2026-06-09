@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: P-63 Pump Room Work Order"
+title: "أمر عمل غرفة المضخات P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: P-63 Pump Room Work Order
+# أمر عمل غرفة المضخات P-63
 
-AR LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+يجعل أمر عمل غرفة المضخات P-63 أول إصلاح يبدو كإجراء موروث من المستعمرة، لا كنص تدريب. إنه مبلل وعملي وخائف في تفاصيل صغيرة. يأمر بتفريغ sump، وترقيع cold seam، وانتظار return pinger، وقطع fused latch فقط بعد ثبات الضغط. يعلّم هذا التسلسل اللاعب كيف فكر عمال HECTON-8: الماء أولا، ثم الإغلاق، الصوت قبل القوة، والثقة بالمسار أخيرا. تجعل أحرف المشرف المفقودة والدائرة المزدوجة حول سطر القطع الورقة مستعملة، لا مكتوبة للاعب. إنه أثر صغير، لكنه يحمل حلقة اللعبة كلها مصغرة: اقرأ الغرفة، أعد النظام، ولا تثق بالقطع السهل.
 
 ## Scanner
 
-AR LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+تقرأ أول عملية إصلاح كعادة استعمارية: اضخ، أغلق، استمع، واقطع فقط إذا توقفت الغرفة عن الكذب.
 
 ## Terminal
 
-AR LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: تنظيف sump؛ ترقيع cold seam؛ التحقق من return pinger؛ قطع fused latch فقط بعد ثبات الضغط؛ طباعة gasket من المخزون المحلي؛ وسم route safe بعد تكرار acoustic return ثلاث مرات. أحرف المشرف الأولى مفقودة تحت بقعة ماء.
 
 ## Audio
 
-AR LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+المضخة أولا. الإغلاق ثانيا. إذا غنى، توقف عن القطع.
 
 ## Field Note
 
-AR LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+النصف السفلي من اللوح مشبع بالماء. لا يزال سطر القطع مقروءا لأن أحدهم أحاطه بدائرتين وكتب إذا غنى، توقف.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/ar_SA. -->

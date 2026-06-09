@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Pressure Suit Service Grades"
+title: "Servicegrade der Druckanzüge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Pressure Suit Service Grades
+# Servicegrade der Druckanzüge
 
-DE LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+Die Servicegrade der Druckanzüge halten HECTON-8s Ausrüstungsfortschritt hart: Tiefenzertifikate, Verbrauchsteile, Wärmemargen, Kontaminationsgrenzen und unvollkommene Wartungshistorien.
 
 ## Scanner
 
-DE LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Anzugmarken erfassen Einsatztiefe, Dichtungsverschleiß, Scrubberreserve, Wärmetoleranz und Kontamination.
 
 ## Terminal
 
-DE LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-DE LOC HOLD: The suit does not make you brave. It only fails later.
+Der Anzug macht dich nicht mutig. Er versagt nur später.
 
 ## Field Note
 
-DE LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Ein tieferer Anzug ist keine farbige Rüstung. Er ist Papier, Ersatzteile und hässliche Wartung.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/de_DE. -->

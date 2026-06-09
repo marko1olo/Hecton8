@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Tool Certification Board"
+title: "Дошка сертифікації інструментів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Tool Certification Board
+# Дошка сертифікації інструментів
 
-UK LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Tool Certification Board фіксує культуру, де позначкам довіряли більше, ніж промовам. Голова різака проіндексована. Картридж sealant зважений. Pressure glove підписана двома. Ключ насоса пізній. Комплект спуску утримано. Кожен рядок грубий, бо груба процедура тримала людей живими там, де майже правильний інструмент міг убити тихо.
 
-## Scanner
+Дошка виглядає ritualistic, бо небезпечна праця повторює ті самі рухи, доки страх має куди подітися. Зважити, перевірити, підписати, повернути, перевірити знову. Другий підпис не був прикрасою; він робив довіру відповідальною. Якщо glove відмовляла під тиском, позначка казала, хто бачив, хто квапив і хто все одно намагався відправити її вниз.
 
-UK LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-UK LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-UK LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-UK LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Це робітнича віра без містики. Колонія не молилася над різаками. Вона змушувала іншу втомлену людину дивитися на кромку, шов, вагу і повернення ключа. Виживання ставало спільним, бо кожен інструмент ніс чуже ім'я до того, як торкався маршруту.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/uk_UA. -->

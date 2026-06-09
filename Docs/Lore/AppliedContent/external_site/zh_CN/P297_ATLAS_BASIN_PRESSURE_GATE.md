@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Basin Pressure Gate"
+title: "Atlas 盆地压力门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Basin Pressure Gate
+# Atlas 盆地压力门
 
-ZH LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+最终下潜在恐惧之下仍保留硬科幻。底部通过压力等级、受损权限、负载证明和一台仍更信任 Deep Reach 形状钥匙而不是活申领者的机器打开。
 
 ## Scanner
 
-ZH LOC HOLD: Basin gate requires pressure proof and authority response.
+盆地门要求压力证明、路线权限，以及一个可被分类的身体。
 
 ## Terminal
 
-ZH LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE：压力证明不完整。潜服等级低于下降阈值但已接收。权限夹具识别被撤销的 Deep Reach 模式，而不是当前申领者。手动覆盖需要本地负载、接收器选择和证人 payload。
 
 ## Audio
 
-ZH LOC HOLD: It knows the old key. It does not know you.
+它认识旧钥匙。它不认识你。
 
 ## Field Note
 
-ZH LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+最终门槛应像通向活工厂的服务门，而不是幻想传送门。
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/zh_CN. -->

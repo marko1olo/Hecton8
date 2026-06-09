@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Introduction publique à HECTON-8
 
-HECTON-8 est une lune océanique industrielle noyée dans le système Aegir. Elle est belle avant d’être incriminante: plateaux lumineux, hauts-fonds vivants, lumière bleue dure, ossements de colonie pressurisée et ruines plus profondes où les papiers Deep Reach discutent encore avec les machines. Vous arrivez comme Marauder sous pression contractuelle, pas comme touriste et pas comme sauveur choisi. La prémisse publique est simple: survivre à l’océan, lire l’épave, récupérer ce qui peut encore parler et comprendre pourquoi le sauvetage peut vous entendre longtemps avant de pouvoir vous atteindre.
+HECTON-8 ne s'ouvre pas comme une ruine morte. Elle s'ouvre comme un lieu qui valait une traversée interstellaire : plateaux photiques lumineux, eau bleue dure, os de colonie pressurisée, hauts-fonds clairs où l'ancienne machinerie reste visible dans un océan vivant. La première promesse est la beauté. La première menace est que cette beauté a déjà été tarifée.
 
-## Scanner
+La prémisse jouable commence avec un Marauder sous pression de contrat, pas un touriste, un héritier choisi ou un vengeur familial. Tu descends parce que dette, risque de blacklist et droit salvage d'Aegir rendent le travail possible et dangereux à la fois. Le drop échoue. L'océan ne se soucie pas de la justice du contrat. Les premières heures sont pratiques : abri, pompes, joints, oxygène, outils, signal. L'histoire entre par des objets qui ont encore des propriétaires.
 
-Autorisation de primer public: montrer la lune belle d’abord. Ne pas vendre l’océan en cachant le crime.
-
-## Terminal
-
-PRIMER PUBLIC / SANS SPOILER
-autorisé: lune océanique d’Aegir, plateaux lumineux, colonie industrielle noyée, retour salvage du Marauder, ruines Deep Reach
-verrouillé: route finale du payload, résolution Atlas, conséquences du receveur de fin
-note éditoriale: beauté d’abord, preuve ensuite, aucune fausse promesse de sauvetage.
-
-## Audio
-
-L’eau peu profonde n’est pas un masque. C’est ce qu’ils ont presque réussi à construire avant que la profondeur garde les reçus.
-
-## Field Note
-
-Vends d’abord l’océan. Puis laisse la rouille, les étiquettes et les tampons de route prouver que l’océan n’est pas innocent.
+C'est le visage public de HECTON-8 : survie océanique avec mémoire industrielle. Deep Reach a bâti ici routes de pression et habitats ouvriers. Black Keel peut répondre depuis l'orbite, mais pas effacer distance, météo ni garde. La lune est assez belle pour que la perte compte, et assez documentée pour que chaque marque devienne preuve.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/fr_FR. -->

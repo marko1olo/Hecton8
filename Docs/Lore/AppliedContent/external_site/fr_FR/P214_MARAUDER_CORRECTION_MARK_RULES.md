@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Règles des marques de correction maraudeuses"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Règles des marques de correction maraudeuses
 
-FR LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Les Règles des marques de correction maraudeuses expliquent comment HECTON-8 permet aux récupérateurs ultérieurs de toucher les vieilles preuves sans briser le canon. Les marques ajoutent une couche vivante sur la paperasse corporative : préserver un nom, contester une catégorie, avertir une route, chiffrer un échantillon, cacher un témoin ou marquer une dette. Elles donnent aux preuves de replay l'impression d'avoir été manipulées par d'autres travailleurs de réclamation, tout en gardant chaque changement manuscrit fonctionnel.
 
 ## Scanner
 
-FR LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Une marque de correction peut sauver un nom, contaminer une réclamation ou prévenir le prochain plongeur que la catégorie officielle ment.
 
 ## Terminal
 
-FR LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE : les marques maraudeuses doivent changer l'interprétation d'une preuve, le risque de route ou la pression de paiement. Les marques valides préservent un nom ouvrier, contestent une catégorie d'assurance, avertissent une route, chiffrent un échantillon, cachent un témoin ou marquent une dette. Le graffiti vide brise la chaîne de preuve.
 
 ## Audio
 
-FR LOC HOLD: Somebody came before you and still failed to leave clean.
+Quelqu'un est venu avant vous et n'a quand même pas réussi à partir propre.
 
 ## Field Note
 
-FR LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Marques : préserver nom, contester catégorie, avertir route, chiffrer échantillon, cacher témoin, marquer dette. L'écriture doit changer la lecture, pas décorer le prop.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/fr_FR. -->

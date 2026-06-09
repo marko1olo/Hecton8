@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "資材支払台帳"
+title: "資材精算台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 資材支払台帳
+# 資材精算台帳
 
-資材支払台帳はStalker的な偽成功レーンだ。利益を得てもHECTON-8を倫理的未解決のまま離れる。
+資材精算台帳は支払い済み離脱経路を定義する。認証資材を引き渡せばHECTON-8は清算済み口座で離れられるが、証拠アーカイブを運び出さない限り、出来事の記録は隔離されたままだ。
 
 ## Scanner
 
-blue debt試料認証済み。支払い可能。真実は任意。Deep Reachはその順序を好む。
+blue debt試料認証済み: 質量、純度、圧力ログ、保管連鎖。証拠より先にクレジットは精算される。
 
 ## Terminal
 
-支払条件: 質量、純度、圧力履歴、保管連鎖を承認。証拠アーカイブ未解決。
+封印ケースが試料台帳と一致し、降下圧力履歴に欠落がなく、Deep Reachの提示コードが保管連鎖を受け入れると精算が開く。資材閉鎖はクレジットをエスクローへ移し、Atlasアーカイブを請求不能な残滓としてタグ付けする。
 
 ## Audio
 
-口座は清算される。水はされない。
+口座は片付く。水は領収書を持つ。
 
 ## Field Note
 
-成功した契約でも、失敗した人生になり得る。
+清い送金も埋葬の一種になり得る。
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/ja_JP. -->

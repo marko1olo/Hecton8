@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Last Normal Day Evidence Set"
+title: "最後の平常日の証拠セット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Last Normal Day Evidence Set
+# 最後の平常日の証拠セット
 
-JA LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+最後の平常日の証拠セットは、HECTON-8 の沈んだ植民地を読むための現場手法だ。未受領のロッカー札、未署名の訂正、開いたポンプ作業、留められた食事トークン、待機中のルート時計。これらの物は、自分が証拠になったことを知らない。
 
-## Scanner
+強さは抑制にある。部屋には別れの録音も、完璧に配置された悲劇もいらない。故障が閾を越えた瞬間にも、通常手順がまだ生きていたことを示せばいい。人々は水を数え、工具を返し、掲示を直し、昼食を期待していた。その普通の連続が断絶をより重くする。
 
-JA LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-JA LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-JA LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-JA LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+このセットは責任も運ぶ。公式事故文は部屋を滑らかにしがちだが、物理的な矛盾が再びざらつかせる。ポンプ証明、シフト数、遺体分類、ドア時計の不一致。それらは平板な終了処理を、誰かが避けた質問へ戻す。HECTON-8 にとって最後の平常日とは、routine がまだ続くと信じている瞬間だ。
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ja_JP. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Seuils de défaillance sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Seuils de défaillance sous pression
 
-FR LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Les Seuils de défaillance sous pression définissent le bord lisible entre ressource et danger. Ils permettent à HECTON-8 de transformer la profondeur en grammaire visible : stress visuel, clics audio, alertes scanner, risque de récupération et conséquences de craft pointent vers la même règle physique. Un échantillon échoue parce que le monde appuie dessus, pas parce qu'un nombre d'inventaire a expiré en silence.
 
 ## Scanner
 
-FR LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Un bon échantillon devient un danger quand il franchit la mauvaise ligne de pression. L'océan se moque que l'étiquette ait presque raison.
 
 ## Terminal
 
-FR LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+DÉFAILLANCE PRESSION / shallow-rated : clic de joint et eau rampante / industrial-rated : dérive de gasket et cliquetis de pince / brine-rated : fissure fine et floraison saline / abyssal-rated : écho fantôme, brume d'échantillon mort / Atlas-rated : verrou de garde avant perte structurelle.
 
 ## Audio
 
-FR LOC HOLD: Pressure does not care that the label was almost right.
+La pression se moque que l'étiquette ait presque raison.
 
 ## Field Note
 
-FR LOC HOLD: Failure thresholds should be readable before they punish.
+Les seuils doivent être lisibles avant la punition : clic, dérive, fissure fine, floraison saline, brume d'échantillon mort. Si le joueur n'apprend qu'après la perte, le monde triche.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/fr_FR. -->

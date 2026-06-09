@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Suit Service Grades"
+title: "Grades de service des combinaisons de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Suit Service Grades
+# Grades de service des combinaisons de pression
 
-FR LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Les grades de combinaison sont des dossiers de service, pas des niveaux de couleur. Chaque profondeur réclame joints vérifiés, scrubber avec réserve, doublure thermique, limites de contamination et anciens tampons lisibles. Le joueur descend plus bas parce qu'il restaure une norme de sécurité, pas parce qu'il a trouvé une armure magique.
 
 ## Scanner
 
-FR LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Les étiquettes de combinaison classent profondeur, fatigue des joints, réserve de scrubber, marge thermique et contamination.
 
 ## Terminal
 
-FR LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE : shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-FR LOC HOLD: The suit does not make you brave. It only fails later.
+La combinaison ne te rend pas brave. Elle échoue seulement plus tard.
 
 ## Field Note
 
-FR LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Une combinaison plus profonde n'est pas une armure colorée. C'est du papier, des pièces et une maintenance laide.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/fr_FR. -->

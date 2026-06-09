@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Resource Yield Data Boundary"
+title: "Batas Data Hasil Sumber Daya"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Resource Yield Data Boundary
+# Batas Data Hasil Sumber Daya
 
-ID LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+Nilai sumber daya di HECTON-8 adalah rantai, bukan label. Tabel memiliki angkanya, tetapi fiksi memiliki alasan angka itu ada: siapa yang mengambil sampel, pada tekanan apa, dengan stempel kustodi apa, dan berapa banyak urat itu masih bisa dikupas rute dengan aman.
 
 ## Scanner
 
-ID LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Baris hasil menolak nilai lepas: kelas, pita tekanan, kustodi, deplesi, dan hash harus cocok.
 
 ## Terminal
 
-ID LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: tidak ada angka diterima tanpa packet hash, kelas sumber daya, pita tekanan, grade kustodi, kurva kelangkaan, dan perilaku deplesi. Sampel tanpa riwayat tekanan adalah bukti, bukan nilai.
 
 ## Audio
 
-ID LOC HOLD: A sample without pressure history is not a value.
+Sampel tanpa riwayat tekanan bukan nilai.
 
 ## Field Note
 
-ID LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Angka yield tetap sementara sampai pressure band, custody grade, depletion behavior, dan packet hash selaras.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/id_ID. -->

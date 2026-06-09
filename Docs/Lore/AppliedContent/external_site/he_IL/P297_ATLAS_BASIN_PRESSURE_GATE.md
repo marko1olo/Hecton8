@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Basin Pressure Gate"
+title: "שער לחץ אגן Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Basin Pressure Gate
+# שער לחץ אגן Atlas
 
-HE LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+הירידה האחרונה שומרת מדע בדיוני קשיח מתחת לאימה. הקרקעית נפתחת דרך דירוגי לחץ, סמכות פגועה, הוכחות עומס ומכונה שעדיין בוטחת במפתחות בצורת Deep Reach יותר מאשר בתובע חי.
 
 ## Scanner
 
-HE LOC HOLD: Basin gate requires pressure proof and authority response.
+שער האגן מבקש הוכחת לחץ, סמכות מסלול וגוף שניתן לסווג.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: הוכחת לחץ לא שלמה. דרגת חליפה התקבלה מתחת לסף ירידה. מהדק הסמכות מזהה דפוס Deep Reach שבוטל, לא את התובע הנוכחי. עקיפה ידנית דורשת עומס מקומי, בחירת מקלט ו-payload עד.
 
 ## Audio
 
-HE LOC HOLD: It knows the old key. It does not know you.
+הוא מכיר את המפתח הישן. הוא לא מכיר אותך.
 
 ## Field Note
 
-HE LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+הסף הסופי צריך להיקרא כשער שירות למפעל חי, לא כפורטל פנטזיה.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/he_IL. -->

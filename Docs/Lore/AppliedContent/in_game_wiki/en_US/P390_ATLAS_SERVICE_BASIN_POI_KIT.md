@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Service Basin POI Kit"
+title: "Atlas Service Basin Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Service Basin POI Kit
+# Atlas Service Basin Evidence Kit
 
-The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+The Atlas Service Basin grounds the final depth in engineering. Maintenance rails, living sealant and receiver sockets show a system trying to repair pressure infrastructure with the wrong category table still attached.
 
 ## Scanner
 
-POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+POI evidence kit: the service basin mixes industrial rails, living sealant, worker categories and receiver sockets.
 
 ## Terminal
 
-SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category table, payload receiver socket, severance risk marker, growth clamp, tool cradle.
 
 ## Audio
 
-It did not build a temple. It forgot the difference between temple and workshop.
+It did not pray. It scheduled maintenance until the categories broke.
 
 ## Field Note
 
-POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Marauder note: scan the category table before touching the socket. The basin may repair the route by changing what the route thinks you are.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/en_US. -->

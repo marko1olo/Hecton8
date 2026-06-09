@@ -56,7 +56,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(1, HabitatFluidIncursionConstants.MaxCompartments)] private int compartmentCount = 16;
         [SerializeField, Min(1f)] private float defaultCompartmentVolumeM3 = HabitatFluidIncursionConstants.DefaultCompartmentVolumeM3;
         [SerializeField] private float defaultFloorHeightLocal = HabitatFluidIncursionConstants.DefaultFloorHeightLocal;
-        [SerializeField, Min(0f)] private float externalWaterlineRuntimeY = DefaultExternalWaterlineRuntimeY;
+        [SerializeField] private float externalWaterlineRuntimeY = DefaultExternalWaterlineRuntimeY;
         [SerializeField, Min(1f)] private float baseMassKg = 18000f;
         [SerializeField, Min(0.0001f)] private float mockBreachAreaM2 = 0.08f;
         [SerializeField, Min(0f)] private int mockBreachIndex = 0;
@@ -65,6 +65,7 @@ namespace Hecton8.Physics
         [SerializeField] private bool drawHeatmapGizmos = true;
 
         private IDataVault _vault;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private VaultGenerationHandle<FluidCompartmentDTO> _frontHandle;
         private VaultGenerationHandle<FluidCompartmentDTO> _backHandle;
         private VaultGenerationHandle<IntegrityStateDTO> _integrityHandle;
@@ -124,6 +125,7 @@ namespace Hecton8.Physics
             _sourceBodyId = Hecton8.Core.RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             TryRegisterHotSwapListener();
             CacheDataVaultCold(GlobalRegistry.DataVault);
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _buffersReady = EnsureBuffersInitialized();
             _waterlineUploadDirty = true;
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
@@ -160,6 +162,7 @@ namespace Hecton8.Physics
             _buffersReady = false;
             _coreBlackboxWarmed = false;
             _cachedTransform = null;
+            _oceanKinematicsService = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -179,6 +182,13 @@ namespace Hecton8.Physics
                     WarmCoreBlackboxRoute();
                 }
                 _waterlineUploadDirty = true;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                CompleteScheduledSimulationForAuthoritativeWrite();
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 
@@ -1511,13 +1521,62 @@ namespace Hecton8.Physics
             return ToFluidAup48(in waterlineAup);
         }
 
-        private static float ResolveExternalWaterlineRuntimeY(float candidateWaterlineY)
+        private float ResolveExternalWaterlineRuntimeY(float candidateWaterlineY)
         {
-            return math.isfinite(candidateWaterlineY) &&
-                math.abs(candidateWaterlineY) > 0.0001f &&
-                math.abs(candidateWaterlineY) <= 1000f
-                ? candidateWaterlineY
+            return TryResolveOceanWaterlineRuntimeY(out float oceanWaterlineY)
+                ? oceanWaterlineY
+                : SanitizeExternalWaterlineRuntimeY(candidateWaterlineY);
+        }
+
+        private bool TryResolveOceanWaterlineRuntimeY(out float waterlineY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TrySanitizeOceanExternalWaterlineRuntimeY(oceanKinematics.SeaLevel, out waterlineY))
+            {
+                return true;
+            }
+
+            waterlineY = DefaultExternalWaterlineRuntimeY;
+            return false;
+        }
+
+        private static bool TrySanitizeOceanExternalWaterlineRuntimeY(float candidateWaterlineY, out float waterlineY)
+        {
+            if (math.isfinite(candidateWaterlineY) &&
+                math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterlineY = candidateWaterlineY;
+                return true;
+            }
+
+            waterlineY = DefaultExternalWaterlineRuntimeY;
+            return false;
+        }
+
+        private static float SanitizeExternalWaterlineRuntimeY(float candidateWaterlineY)
+        {
+            return TrySanitizeExternalWaterlineRuntimeY(candidateWaterlineY, out float waterlineY)
+                ? waterlineY
                 : DefaultExternalWaterlineRuntimeY;
+        }
+
+        private static bool TrySanitizeExternalWaterlineRuntimeY(float candidateWaterlineY, out float waterlineY)
+        {
+            if (math.isfinite(candidateWaterlineY) &&
+                math.abs(candidateWaterlineY) > 0.0001f &&
+                math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterlineY = candidateWaterlineY;
+                return true;
+            }
+
+            waterlineY = DefaultExternalWaterlineRuntimeY;
+            return false;
         }
 
         private static FluidAup48 ToFluidAup48(in AbsoluteUniversePosition position)

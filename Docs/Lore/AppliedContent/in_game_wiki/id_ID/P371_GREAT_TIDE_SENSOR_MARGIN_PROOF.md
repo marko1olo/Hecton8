@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Jejak Margin Pasang Besar"
+title: "Jejak Margin Pasang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Jejak Margin Pasang Besar
+# Jejak Margin Pasang
 
-Jejak ini membuktikan dua hal sekaligus: Pasang Besar nyata, dan margin mematikan terlihat sebelum laporan mengakuinya. Deep Reach tidak memerintah air naik. Mereka menerima jendela rute ketika selubung tekanan koloni sudah kehilangan cadangan, lalu menerbitkan cascade tanpa tanda tangan peringatan.
+Sensor ini tidak membuat Pasang Besar palsu. Sensor ini mengunci waktunya. Cadangan desain koloni habis sebelum Deep Reach mengakui risiko dalam laporan publik. Otoritas rute membiarkan jendela tetap terbuka lewat pengecualian komersial, lalu menerbitkan rantai kaskade tanpa pengecualian itu.
 
 ## Scanner
 
-Sensor pasang berhasil dipulihkan. Geser puncak melampaui desain koloni, tetapi pelanggaran margin peringatan tercatat sebelum stempel cascade publik.
+Sensor pasang ditemukan. Lonjakan geser itu nyata; pelanggaran margin muncul enam belas menit sebelum jam kaskade publik Deep Reach.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Ambang tail-risk diterima otoritas rute. Catatan operator dihapus dari rantai insiden publik. Jejak mentah bertahan di memori brine-buffer.
+ARRAY PASANG // PUNGGUNG UTARA P-63. Margin ekor di bawah lantai henti. Jendela rute dipertahankan lewat pengecualian komersial. Rantai insiden publik menghapus catatan pengecualian. Checksum brine-buffer utuh.
 
 ## Audio
 
-Laut tidak berbohong. Laporannya berbohong.
+Pasang mematahkan koridor. Kebohongan dimulai dari jam.
 
 ## Field Note
 
-Catatan Marauder: jangan cari pidato penjahat. Cari baris yang dihapus.
+Catatan perompak: simpan jejak mentah. Satu baris margin yang dihapus mengalahkan pidato apa pun.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/id_ID. -->

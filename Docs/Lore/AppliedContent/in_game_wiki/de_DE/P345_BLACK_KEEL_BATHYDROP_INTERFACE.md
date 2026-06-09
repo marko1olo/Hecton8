@@ -35,6 +35,6 @@ Du hast nicht das ganze Schiff verloren. Du hast die eine Kette verloren, die da
 
 ## Field Note
 
-Fluchtdatensatz der ersten Stunde: Der Träger ist da, aber die Kette zwischen Spieler, Meer, Oberfläche und Orbit ist in benannten Teilen gebrochen.
+Fluchtdatensatz der ersten Stunde: Der Träger ist da, aber die Kette zwischen Anzug, Meer, Oberfläche und Orbit ist in benannten Teilen gebrochen.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/de_DE. -->

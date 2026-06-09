@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder修正レイヤー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder修正レイヤー
 
-JP LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+Marauder修正レイヤーは、古い企業語が権威を失う場所だ。Deep Reachはvariance、custody、hold、asset、exposureと書く。Marauderは次の呼吸までに潜水員が必要なことを書く。CO2は手を遅くする。brineは段差を隠す。seal tapeは曲がりで死ぬ。きれいなハッチを信じるな。これらのメモは、システムに訓練され、その語彙を憎むことを覚えた人々が文化を再構築しているように感じるべきだ。
 
 ## Scanner
 
-JP LOC HOLD: Marauders turn corporate language back into survival facts.
+CORRECTION LAYER // 企業ラベル: temporary atmospheric variance。Marauderメモ: CO2は判断を最初に食う。
 
 ## Terminal
 
-JP LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+注釈規則: Deep Reach語を生存事実へ戻す。メモは短く、実用的で、怒っていて、圧力下で役に立つものにする。
 
 ## Audio
 
-JP LOC HOLD: A good note does not sound clever. It keeps someone alive.
+良いメモは賢く聞こえない。誰かを生かす。
 
 ## Field Note
 
-JP LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+古いDeep Reach語が死者数へ翻訳される感覚をプレイヤーに持たせる。
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/ja_JP. -->

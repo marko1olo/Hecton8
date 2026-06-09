@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Teilweiser Ausstieg: Rückkehr in denselben Seed"
+title: "Teilweiser Ausstieg: Rückkehr im selben Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Teilweiser Ausstieg: Rückkehr in denselben Seed
+# Teilweiser Ausstieg: Rückkehr im selben Seed
 
-Der teilweise Ausstieg schützt die lange Kampagne vor falschem Abschluss. Black Keel kann den Operator für ein begrenztes Fenster heben, den Anzug flicken, geborgene Pakete protokollieren und die Pause als Fürsorge verkaufen. Die Welt darunter wird nicht zu einer saubereren Version.
+Teilweiser Ausstieg ist ein Druckventil für eine lange Überlebensgeschichte. Der Auftragnehmer erhält ein Pickup-Fenster, geschlossene Wunden, reparierte Ausrüstung und den seltenen Klang von Luft, die nicht durch einen sterbenden Anzug gefiltert wird. Diese Erleichterung ist echt, und deshalb schmerzt die Rückkehr.
 
-Wenn der Spieler zurückkehrt, ist derselbe Seed noch da. Die Sole-Treppe hat dieselbe Falle, dasselbe Relais denselben schlechten Winkel, und derselbe Beweis bleibt gefährlich. Dieses Ende gibt Erleichterung ohne Absolution: Luft in der Lunge, mehr Schuld im Vertrag und kein Löschen dessen, was gefunden wurde.
+Black Keel verbucht die Pause als Wohlfahrt und lien-Wartung. Derselbe world seed bleibt aktiv, dieselben Beweise bleiben ungelöst, und derselbe Ozean wartet mit allen entdeckten Routen. Teilweiser Ausstieg ist keine Gnade des Systems. Es ist Wartung eines Vermögenswerts, der weiter hinabsteigen soll.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/de_DE. -->

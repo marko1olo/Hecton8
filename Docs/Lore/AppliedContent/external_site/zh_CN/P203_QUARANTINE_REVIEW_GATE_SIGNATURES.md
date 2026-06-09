@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quarantine Hold Signatures"
+title: "Quarantine Review Gate 签名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quarantine Hold Signatures
+# Quarantine Review Gate 签名
 
-CN LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+检疫签名层让 Deep Reach 的责任表现为程序。Great Tide 造成了真实的污染和压力风险；谎言在于把这种风险当作理由，在外部审查滞后时把人员和记录留在本地保管之下。公开报告称其为生物/压力检疫和授权失败。回收的 gate 卡片补上一条更硬的事实：即使路线硬件尚未失效，撤离也被证书语言冻结。
 
 ## Scanner
 
-ZH LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+已回收审查卡：extraction state 为 HELD，风险字段 BIO/PRESSURE-UNCERTAIN，缺少外部证书。路线放行被 gate code 阻断。
 
 ## Terminal
 
-ZH LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED：Ikenna Sor，Quarantine Review Gate。队列：Evacuation release。操作：在 pressure-biology 证书和外部审查完成前冻结撤离。例外：未分配独立航天器容量。Human tags 在 gate 清除前留在本地保管。
 
 ## Audio
 
-ZH LOC HOLD: Pending review is still a locked door.
+门还有电。gate 写着 review pending，舱门还是红的。
 
 ## Field Note
 
-CN LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+把它放在锁死的幸存者路线和仍有电池的撤离硬件旁边。hold 字段把能工作的门变成了法律上关闭的门。
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/zh_CN. -->

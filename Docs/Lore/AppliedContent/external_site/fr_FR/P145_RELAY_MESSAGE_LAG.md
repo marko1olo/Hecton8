@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Retard des messages relais"
+title: "Délai des messages relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retard des messages relais
+# Délai des messages relais
 
-Le retard relais permet à HECTON-8 de recevoir l'autorité sans recevoir le soin. Un paquet peut porter droit, dette, propriété ou avertissement sur des heures, des jours ou des années, mais il ne peut pas amener des mains dans une pièce noyée. Cette séparation est la pression centrale des communications : les systèmes distants restent puissants parce qu'ils ont été écrits tôt, mis en file tôt et tarifés pour survivre à la distance. La compassion arrive comme une personne ; le contrat arrive comme donnée.
+Le délai des messages relais explique comment HECTON-8 peut être abandonné et gouverné en même temps. Aucun canal vocal magique ne transforme la distance en réconfort. Il y a des fenêtres, des files, des répéteurs, des tampons de garde, des pertes de compression, des reçus juridiques et des paquets arrivant avec une autorité parfaite et un timing inutile.
+
+La pression de Deep Reach dépend de cette asymétrie. Un avis de privilège peut rester valide après l'expiration d'une demande médicale. Un refus peut s'exécuter après le retour du responsable qui l'a signé. Un aveu peut arriver après la mort du témoin. L'océan est silencieux, mais la route ne l'est pas. Elle continue de livrer d'anciennes décisions dans des pièces qui avaient besoin d'une aide vivante.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/fr_FR. -->

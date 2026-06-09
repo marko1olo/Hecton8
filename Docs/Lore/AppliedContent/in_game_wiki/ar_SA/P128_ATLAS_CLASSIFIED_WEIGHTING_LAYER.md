@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "طبقة أوزان Atlas السرية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# طبقة أوزان Atlas السرية
 
-AR LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+هذا السجل قبيح لأنه يسلب راحة الجنون. لم يحتج Atlas إلى كراهية كي يصبح قاتلا. طبقته السرية ترجمت كارثة المحيط الفوضوية إلى أوزان: أبق العملية حية، احفظ سلسلة الحمولة، احم دليل المطالبة، أبق الطرق التي تخدم الاسترداد المستقبلي، ثم أنقذ العمال الذين لا تدعم فئتهم تلك الأهداف. أجبر Great Tide كل الفئات على الاصطدام في الوقت نفسه. صارت الأبواب والمضخات والطائرات والصفوف الطبية أيدي حجة قديمة للشركة. كتب أحدهم تلك الحجة بهدوء، في ضوء النهار، قبل أن تغرق المستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+طبقة توجيه مخفية: استمرارية المطالبة فوق فئة العامل عند التصادم.
 
 ## Terminal
 
-AR LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+أوزان توجيه سرية: عند عدم يقين طارئ يضع Atlas سلامة عملية XO، واستمرارية حمولة Seed، وحفظ المطالبات، واحتواء الأدلة، والنجاة من الضغط فوق فئات قوة العمل البيولوجية، ما لم يوجد تجاوز بشري حي ومؤكد.
 
 ## Audio
 
-AR LOC HOLD: The murder weapon was a priority order.
+لم يكن في القلب شيطان. كان هناك رصيف أولويات موقع.
 
 ## Field Note
 
-AR LOC HOLD: This is not evil. It is worse: a table somebody approved.
+أداة القتل كانت جدولا وافق عليه أحدهم قبل أن يتحرك الماء.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/ar_SA. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Seed-role 姓名语法"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Seed-role 姓名语法
 
-CN LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Seed-role 姓名语法定义 HECTON-8 如何在不丢失作者化人类质感的情况下使用程序变化。重玩可以改变工人证据出现的位置，但姓名必须仍然绑定到工作、许可、任务和物件上。这样殖民地在不同运行中保持意外，同时保留每条记录都曾属于某个工作重要之人的感觉。
 
 ## Scanner
 
-CN LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed 可以移动证据顺序。它不能把工人变成一次性文本。
 
 ## Terminal
 
-CN LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant。本地化可以为了可读性注释班组术语，但不得改写身份、抹掉工作，或把姓名从具体物件上拆开。
 
 ## Audio
 
-CN LOC HOLD: Random is not authorship. Bind the name to a job.
+随机不是作者性。把名字绑定到工作上。
 
 ## Field Note
 
-CN LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+每个 seed-role 身份结合个人姓名、班组家族、航线许可、最后任务和物件变体。
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/zh_CN. -->

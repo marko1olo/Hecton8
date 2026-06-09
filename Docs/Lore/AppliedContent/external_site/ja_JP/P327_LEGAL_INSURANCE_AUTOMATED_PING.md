@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Legal Insurance Automated Ping"
+title: "法務保険自動ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Legal Insurance Automated Ping
+# 法務保険自動ping
 
-JA LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+法務保険自動pingは、HECTON-8の官僚的恐怖を凝縮した表現である。現代のDeep Reachは、人間を通すのと同じくらい効果的に、自動化された保険保管を通して語れる。システムは生存者を救うべきかと尋ねる前に、生存者が何を運んでいるかを尋ねる。
 
 ## Scanner
 
-JA LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+自動ping受信。救助の言語はreceiver proof、mass class、custody statusに置き換えられている。
 
 ## Terminal
 
-JA LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / 回収窓割当前に必要: mass class、contamination state、coordinate proof、claim priority、receiver custody acceptance。
 
 ## Audio
 
-JA LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+彼らが最初に聞くのは、生きているかではない。何を運んでいるかだ。
 
 ## Field Note
 
-JA LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+ルート閾値用の短いバーク候補。控えめに使うこと。残酷さは、システムが最初に何を尋ねるかにある。
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/ja_JP. -->

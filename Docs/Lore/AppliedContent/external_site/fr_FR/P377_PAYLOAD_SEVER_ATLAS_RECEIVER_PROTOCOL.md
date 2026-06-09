@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protocole de section Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protocole de section Atlas payload
 
-FR LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+La route de section donne au porteur un moyen de rendre Atlas inutile pour Deep Reach. C'est son attrait pratique. Une coupe dans l'épine de continuité peut briser des boucles de réparation endommagées, isoler la mémoire de route et empêcher un récepteur d'utiliser Atlas comme route automatique vers le bassin.
 
-## Scanner
-
-FR LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-FR LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-FR LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-FR LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Le coût est dans le même paquet. Atlas n'est pas seulement un râtelier d'outils; sa croissance endommagée est devenue partie de l'écologie locale et de la logique des routes. La section peut fermer un retour corporate tout en tuant données et organismes que personne ne peut reconstruire. Le payload conserve un hash de preuve parce que l'acte aura besoin d'un relevé après le changement des lumières.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/fr_FR. -->

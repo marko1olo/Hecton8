@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Юридическая лазейка мародеров
 
-Юридическая лазейка мародеров делает salvage профессией с зубами: достаточно полезной, чтобы нанять, и достаточно грязной, чтобы бросить.
+Слово «мародер» несет две правды сразу. Так чистые граждане называют людей, режущих запечатанные руины, и так экономика утиля прячет труд, без которого не может обойтись. На HECTON-8 каждое извлечение может быть законной работой, удобной кражей или первым честным спасением, которое колония видела за десятилетия.
 
 ## Scanner
 
-Лицензия действует в одном коридоре и становится преступлением в следующем.
+Лицензия действует в одном коридоре и становится обвинением в следующем.
 
 ## Terminal
 
-CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries; emergency responder only if the recovered record embarrasses nobody important.
 
 ## Audio
 
-Один и тот же резак может быть инструментом, преступлением или средством спасения.
+Один и тот же резак может быть инструментом, преступлением или единственным оставшимся средством спасения.
 
 ## Field Note
 
-Marauder - профессия только пока слушает правильный суд.
+Marauder — должность только пока правильный суд может на ней заработать.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ru_RU. -->

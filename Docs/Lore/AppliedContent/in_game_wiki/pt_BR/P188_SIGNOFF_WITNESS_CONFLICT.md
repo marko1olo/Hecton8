@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Conflito entre Assinatura e Testemunha"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Conflito entre Assinatura e Testemunha
 
-PT LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Conflito entre Assinatura e Testemunha é o momento em que a história oficial da Deep Reach deixa de ser apenas incompleta e começa a ser falsa. A assinatura pública apresenta HECTON-8 como desastre de maré sem contradição acionável antes do atraso de evacuação. Os hashes locais de testemunha dizem o contrário: jurídico de evacuação, Atlas Safety e operações de rota estavam na mesma sala de revisão enquanto perda de margem, sofrimento dos trabalhadores e tempo de rota já eram visíveis. O conflito dá ao jogador uma forma forte de evidência. Não basta encontrar uma assinatura ruim; a assinatura precisa ser colocada ao lado de logs de porta, relógios danificados e carimbos de nome até o álibi quebrar.
 
 ## Scanner
 
-PT LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+A assinatura diz que a revisão de evacuação não tinha contradição viva. Os hashes de testemunha dizem que a contradição estava na sala.
 
 ## Terminal
 
-PT LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: assinatura pública marca falha de maré como causa única. Hash local de testemunha coloca jurídico de evacuação, Atlas Safety e operações de rota na sala de revisão antes da retenção de liberação. Comparar log de porta, carimbo de nome e relógio de rota quebrado.
 
 ## Audio
 
-PT LOC HOLD: The signatures line up. The bodies do not.
+O relatório diz que ninguém podia saber. O log da porta discorda.
 
 ## Field Note
 
-PT LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Uma assinatura é limpa só até a sala lembrar quem estava ao lado dela.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/pt_BR. -->

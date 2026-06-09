@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Faction Message Split"
+title: "Deep-Reach-Nachrichtenspaltung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Faction Message Split
+# Deep-Reach-Nachrichtenspaltung
 
-DE LOC HOLD: Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+Die Spaltung hält Deep Reach institutionell statt karikaturhaft einheitlich. Ein Konzern kann gleichzeitig Rettungsbefehle, Vertuschungsbefehle und ehrliche technische Warnungen ausgeben, weil jedes Büro ein anderes Konto verteidigt.
 
 ## Scanner
 
-DE LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Drei Deep-Reach-Quellen widersprechen sich: Bergung will Koordinaten, Recht will Schweigen, Legacy Engineering warnt, dass das Becken antworten wird.
 
 ## Terminal
 
-DE LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance fordert navigierbare Koordinaten. Asset Silence befiehlt Beweissicherung und keine öffentliche Anerkennung. Legacy Engineering Node 4 wiederholt eine Warnung von vor dem Kollaps: die unteren Beckenrelais während des Aegir-Schattens nicht stören. Das sind keine Rebellen. Das sind Abteilungen, die unterschiedliche Verluste schützen.
 
 ## Audio
 
-DE LOC HOLD: A company can be one logo and three knives.
+Ein Logo. Drei Stimmen. Keine davon sauber.
 
 ## Field Note
 
-DE LOC HOLD: This is not redemption. It is pressure-source readability.
+Einsetzen, nachdem der Spieler mindestens zwei Deep-Reach-Tonlagen gehört hat. Der Schlag ist Mehrdeutigkeit mit Zähnen: widersprüchliche Anweisungen, gemeinsames Eigentum, kein sauberer Verbündeter.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/de_DE. -->

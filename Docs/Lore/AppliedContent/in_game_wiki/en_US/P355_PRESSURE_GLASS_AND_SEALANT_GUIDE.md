@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Pressure Glass and Sealant Guide
 
-Pressure glass is where geology meets Atlas. The repair network uses existing fractures, mineral edges and pressure memories as routes, so a useful lens can also be a living boundary.
+Pressure glass is where geology meets Atlas. Old fractures, mineral edges, biofilm seams, and stress memory become routes for repair chemistry, so a useful lens can also be a living boundary.
 
 ## Scanner
 
-Pressure-glass fracture sealed by Atlas chemistry. Safe lens stock only if the seal map stays intact.
+Pressure-glass fracture sealed by Atlas chemistry. Lens stock is safe only while the seal map stays intact.
 
 ## Terminal
 

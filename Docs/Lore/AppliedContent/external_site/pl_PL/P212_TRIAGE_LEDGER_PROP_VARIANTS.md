@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Warianty rekwizytów rejestru triażu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Warianty rekwizytów rejestru triażu
 
-PL LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Warianty rekwizytów rejestru triażu definiują dowód medyczny jako dowód procesu. HECTON-8 używa rejestrów, by łączyć uraz, awarię ciśnienia, odmowę trasy, stan sprzętu i luki świadków. Horror pozostaje systemowy: gracz nie tylko czyta, że ludzie ucierpieli, ale jak kolonia zamieniała krzywdę w decyzje trasowania.
 
 ## Scanner
 
-PL LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Dowód medyczny powinien ujawniać opóźnienie i trasowanie, nie dekorować pomieszczenie cierpieniem.
 
 ## Terminal
 
-PL LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: każdy wpis rejestru musi wiązać uraz z ciśnieniem, odmową trasy, stanem sprzętu, opóźnieniem certyfikacji albo brakującym łańcuchem świadka. Sam ból nie wystarczy. Rekwizyt musi pokazać, kto mógł się ruszyć, kogo zatrzymano i który system sprawił, że opóźnienie wyglądało proceduralnie.
 
 ## Audio
 
-PL LOC HOLD: Pain is not proof until the route bears the mark.
+Ból nie jest dowodem, dopóki trasa nie nosi znaku.
 
 ## Field Note
 
-PL LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Warianty: skrót crush-status, znak długu tlenowego, skreślony route hold, notatka stabilizacji Atlas, luka witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/pl_PL. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Transit menschlicher Crewrotation
 
-Menschentransit ist der Punkt, an dem die Route aufhört, abstrakt zu sein. Arbeiter werden nicht nach Aegir teleportiert; sie werden geplant, gekühlt, versichert, indexiert und über Jahre zwischen Autoritäten übergeben. Ein Vertrag kann in eine Richtung altern, während die Person darin in eine andere altert. Wenn eine Besatzung erwacht, können Arbeitgeber, Haftungseigentümer und der Notfall, für den sie trainierte, alle gewechselt haben.
+Transit menschlicher Crewrotation ist der Punkt, an dem die Route aufhört, Astronomie zu sein, und Arbeitskontrolle wird. Eine Person auf HECTON-8 ist nicht nur Passagier. Sie ist Kojenvolumen, Sauerstofflast, Strahlenexposition, psychiatrisches Risiko, Lohnpfand, Krankenakte, Gewahrsamskategorie und möglicher Zeuge. Jedes Rückfenster sortiert diese Werte, bevor es Angst sortiert.
+
+Die Tragödie ist, dass das Rotationssystem nicht völlig falsch war. Menschen verließen Aegir. Menschen kamen mit Drucknarben, Ersparnissen und für die Öffentlichkeit bearbeiteten Geschichten heim. Diese Geschichte machte spätere Versprechen glaubwürdig. Als die Kolonie zu versagen begann, musste Deep Reach Rückkehr nicht verweigern. Verzögern, umklassifizieren, bepreisen und noch einen Zyklus verlangen reichte.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/de_DE. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Domänenmarken 2190
 
-Im Jahr 2190 kann ein kaputtes Objekt mehrere Besitzer tragen: Sol-Standard, Barnard-Reparatur, Luyten-Gewahrsam, Aegir-Claim. HECTON-8 ist keine geschichtslose Ruine. Die Geschichte liegt als Stempel auf Metall, während der Raum vollläuft.
+2190 kann ein kaputtes Objekt mehrere juristische Eltern haben. Auf HECTON-8 kann ein Druckverschluss Sol-zertifiziert, von Barnard-Arbeitern repariert, durch Luyten-Gewahrsam geführt, mit Centauri-Sprache legitimiert und unter einer Aegir-Hülle beschlagnahmt sein. Die Marken machen die Kolonie nicht sicher. Sie machen sie dokumentiert.
+
+Das ist der Kern des Tons. HECTON-8 liegt nicht jenseits der Zivilisation, sondern unter ihrer kalten Seite: eine Seite, die eine Halterung benennen, einen Körper bepreisen, ein Paket erhalten und dennoch keine Rettungsmasse rechtzeitig bewegen kann.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/de_DE. -->

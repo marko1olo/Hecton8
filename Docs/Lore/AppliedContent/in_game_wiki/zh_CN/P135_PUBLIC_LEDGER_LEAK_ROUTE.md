@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 公共账册泄露
 
-公共账册泄露是部分真相结局。玩家发送足够证据，让抹除更困难，但不足以控制Atlas、Deep Reach报复，或公共机构会如何使用这份包。
+公共账册泄露是一条部分真相路线。数据包通过狭窄relay窗口离开，携带足以让否认变贵的witness hash，也带着太多缺口，远称不上安全。Deep Reach不能再简单抹除索赔，但HECTON-8上也没人能决定谁下一步使用这道伤口。保险方、公民法庭、敌对domain、Marauder池和企业办公室都会以不同方式读取同一份证据。公开把真相从干净埋葬中救出，却不会让真相变温柔。
 
 ## Scanner
 
-witness hash已接受。部分真相比完整custody先离开。
+witness hash已接受。部分真相先于完整custody离开。
 
 ## Terminal
 
-公共账册路线：Tau Ceti packet notary已接受witness hash；payload不完整；claimant挑战可能；relay确认后Deep Reach报复窗口开启。
+公共账册路线：Tau Ceti packet notary接受witness hash；payload不完整；claimant挑战可能；Deep Reach报复窗口在relay确认后开始。
 
 ## Audio
 
-真相先离开。你未必喜欢读到它的人。
+真相先离开，控制权不会同行。
 
 ## Field Note
 
-公开不等于安全。它只代表更难抹掉。
+公开并不安全，只是更难抹除。
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/zh_CN. -->

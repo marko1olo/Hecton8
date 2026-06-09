@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "התמדת תיק הבוזז"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# התמדת תיק הבוזז
 
-HE LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+תיק הבוזז הוא זיכרון הקמפיין ששורד בין ניסיונות salvage. הוא שומר סופים, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות של מה שהשחקן כבר פרסם או הסתיר. הוא לא מעביר כוח חליפה, לחץ בטוח, חדרים שפונו או אוקיינוס רחמן יותר. ידע משנה החלטות. הוא לא הופך את העומק לבלתי מזיק.
 
 ## Scanner
 
-HE LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+סליל תיק. אתה שומר ידע, לא כוחות-על.
 
 ## Terminal
 
-HE LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+התמדת תיק: רשומות סיום, סוגי חוזים שהתגלו, משפחות שמועות, קטגוריות הוכחה, אזהרות נתיב והשלכות הפנקס הציבורי נשמרים. כוח ציוד, אמת עולם ומצב לחץ מקומי מתאפסים בכל seed.
 
 ## Audio
 
-HE LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+הריצה הבאה מתחילה בצלקות בקובץ, לא בשרירים בחליפה.
 
 ## Field Note
 
-HE LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+התיק זוכר הוכחות ואזהרות; הוא לא הופך לחץ לסלחני.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/he_IL. -->

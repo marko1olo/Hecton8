@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Legal Insurance Automated Ping"
+title: "Ping automático legal de seguro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Legal Insurance Automated Ping
+# Ping automático legal de seguro
 
-ES LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+El Ping automático legal de seguro vuelve jugable la presión corporativa porque llega como un mensaje pequeño, útil y odioso. El sistema no gasta palabras preguntando si el jugador está vivo. Pide mass class, contamination state, coordinate proof, claim priority y receiver custody acceptance. Eso hace dos trabajos a la vez. Mecánicamente, dice al jugador qué categorías importan para la recuperación. Narrativamente, muestra dónde está en la economía del rescate: la vida no se ignora, pero no va primera en la cola. El ping debe ser lo bastante raro para doler. Si se repite constantemente, se vuelve ruido. Si llega en umbrales de ruta, después de que el jugador haya arriesgado la vida para cargar prueba o muestra, se convierte en una mano corporativa limpia entrando por la radio para pesar el cuerpo antes de salvarlo.
 
 ## Scanner
 
-ES LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Ping automático recibido. El lenguaje de rescate fue reemplazado por prueba de receptor, clase de masa y estado de custodia.
 
 ## Terminal
 
-ES LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / requerido antes de recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-ES LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Lo primero que preguntan no es si estás vivo. Es qué llevas.
 
 ## Field Note
 
-ES LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Candidato a bark corto en umbrales de ruta. Usar poco; la crueldad está en lo que el sistema pregunta primero.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/es_ES. -->

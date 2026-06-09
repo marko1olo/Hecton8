@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra : conversion des pertes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra : conversion des pertes
 
-FR LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra est la trace d'expert Keelmark Mutual qui change les ouvriers disparus en états comptables non résolus. La table n'est pas écrite pour le deuil. Elle est écrite pour le coût de clôture : corps non récupéré, état de pression non certifié, contamination en attente, identité de paie suspendue.
+
+C'est pourquoi les noms comptent dans HECTON-8. Une plaque de casier, une étiquette de combinaison, une ligne de registre de corps ou une horloge de route récupérée peut sortir un ouvrier de la charge non résolue et le remettre dans une réclamation. L'ambiguïté coûte moins cher que le sauvetage, moins cher que l'indemnisation et s'enterre mieux dans un litige de transporteur.
+
+Pour un Marauder, une identité récupérée n'est pas un décor. Elle abîme l'astuce comptable qui a fait disparaître une personne deux fois : d'abord dans l'eau, puis dans le registre.
 
 ## Scanner
 
-FR LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+TABLE D'EXPERT // M. Ibarra a converti les ouvriers disparus en classes de charge non résolues jusqu'à certification de l'état de pression, de contamination ou de paie.
 
 ## Terminal
 
-FR LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Conversion des pertes Keelmark Mutual // Les actifs biologiques non récupérés restent non résolus en attente de certification d'état de pression, de contamination ou de paie. Ne pas clôturer la classe demandeur sans preuve de garde.
 
 ## Audio
 
-FR LOC HOLD: A missing person became a pending category. That was cheaper.
+Une personne disparue est devenue une catégorie en attente. C'était moins cher.
 
 ## Field Note
 
-FR LOC HOLD: Insurance language should feel colder than gunfire.
+Le langage d'assurance doit être plus froid que les tirs. Un nom récupéré n'est pas une ambiance; il brise la catégorie la moins chère.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/fr_FR. -->

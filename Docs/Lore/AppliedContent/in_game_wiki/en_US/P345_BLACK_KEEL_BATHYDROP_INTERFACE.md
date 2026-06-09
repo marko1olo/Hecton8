@@ -35,6 +35,6 @@ You did not lose the whole ship. You lost the one chain that makes the ship matt
 
 ## Field Note
 
-First-hour escape record: the carrier is present, but the chain between player, sea, surface, and orbit is broken in named parts.
+First-hour escape record: the carrier is present, but the chain between suit, sea, surface, and orbit is broken in named parts.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/en_US. -->

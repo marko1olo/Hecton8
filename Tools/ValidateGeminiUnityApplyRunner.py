@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
 STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
+UNITY_PROCESS_GATE = ROOT / "Tools/ValidateUnityProcessGate.py"
 APPLIER = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
 APPLIER_META = APPLIER.with_suffix(APPLIER.suffix + ".meta")
 LEGACY_WRAPPERS = (
@@ -36,6 +37,8 @@ REQUIRED_APPLIER_STAGES = (
     "ToolSurfaceDetailGeminiIntegrator.Apply();",
     "Batch34UvAtlasMaterialHandoffBuilder.Apply();",
     "ConstructionInsulationBackingIntegrator.Apply();",
+    'RunStage("asset_database_save", delegate { AssetDatabase.SaveAssets(); });',
+    'RunStage("asset_database_refresh", delegate { AssetDatabase.Refresh(); });',
 )
 REQUIRED_POST_APPLY_VALIDATORS = (
     "Invoke-PythonValidator -ValidatorPath $materialAssetValidator",
@@ -69,14 +72,39 @@ def validate_runner(errors: list[str]) -> None:
         return
 
     text = RUNNER.read_text(encoding="utf-8-sig")
-    unity_invocations = re.findall(r"(?m)^\s*&\s+\$resolvedUnity\b", text)
+    unity_invocations = re.findall(r"(?m)^\s*\$unityProcess\s*=\s*Start-Process\s+-FilePath\s+\$resolvedUnity\b", text)
     if len(unity_invocations) != 1:
-        errors.append(f"runner must invoke Unity exactly once; found={len(unity_invocations)}")
+        errors.append(f"runner must start and wait for Unity exactly once; found={len(unity_invocations)}")
 
     if f'$executeMethod = "{EXPECTED_EXECUTE_METHOD}"' not in text:
         errors.append(f"runner executeMethod must stay {EXPECTED_EXECUTE_METHOD}")
-    if "Unity,'Unity Hub'" not in text:
-        errors.append("runner process gate must check both Unity and Unity Hub")
+    for token in (
+        "Tools\\ValidateUnityProcessGate.py",
+        "$unityProcessGateValidator",
+        "$PostPreflightCooldownSeconds",
+        "function Wait-AfterStaticPreflight",
+        "Start-Sleep -Seconds $PostPreflightCooldownSeconds",
+        "Wait-AfterStaticPreflight",
+        "function Invoke-UnityProcessGate",
+        "Invoke-UnityProcessGate",
+        "--max-cpu $CpuLimitPercent",
+        "--samples $CpuSamples",
+        "--interval-seconds $CpuSampleIntervalSeconds",
+        "--top-processes 8",
+        "$unityArguments = @(",
+        "Start-Process -FilePath $resolvedUnity -ArgumentList $unityArguments -Wait -PassThru -NoNewWindow",
+        "$unityExitCode = $unityProcess.ExitCode",
+    ):
+        if token not in text:
+            errors.append(f"runner must use canonical Unity process gate token: {token}")
+    for stale_token in (
+        "function Assert-NoBuildProcesses",
+        "function Assert-CpuBelowLimit",
+        "Get-Counter",
+        "function Get-TopCpuProcessSummary",
+    ):
+        if stale_token in text:
+            errors.append(f"runner must not keep duplicate local process gate implementation: {stale_token}")
     if "Get-UnityLogIssueSummary" not in text:
         errors.append("runner must summarize Unity log warning/error counts")
     for token in (
@@ -100,8 +128,9 @@ def validate_runner(errors: list[str]) -> None:
 
     order_patterns = (
         r"(?m)^\s*&\s+\$staticPreflightRunner\b",
+        r"(?m)^\s*Wait-AfterStaticPreflight\s*$",
         r"(?m)^\s*Wait-Or-Assert-Gate\s*$",
-        r"(?m)^\s*&\s+\$resolvedUnity\b",
+        r"(?m)^\s*\$unityProcess\s*=\s*Start-Process\s+-FilePath\s+\$resolvedUnity\b",
         r"(?m)^\s*Invoke-PythonValidator\s+-ValidatorPath\s+\$materialAssetValidator\b",
     )
     positions = []
@@ -113,9 +142,9 @@ def validate_runner(errors: list[str]) -> None:
         else:
             positions.append(match.start())
     if all(position >= 0 for position in positions) and positions != sorted(positions):
-        errors.append("runner order must be static preflight -> gate -> one Unity batch -> post-apply validators")
+        errors.append("runner order must be static preflight -> cooldown -> gate -> one Unity batch -> post-apply validators")
 
-    unity_match = re.search(r"(?m)^\s*&\s+\$resolvedUnity\b", text)
+    unity_match = re.search(r"(?m)^\s*\$unityProcess\s*=\s*Start-Process\s+-FilePath\s+\$resolvedUnity\b", text)
     unity_position = unity_match.start() if unity_match else -1
     for validator in REQUIRED_POST_APPLY_VALIDATORS:
         position = text.find(validator)
@@ -123,6 +152,42 @@ def validate_runner(errors: list[str]) -> None:
             errors.append(f"runner missing required post-apply validator: {validator}")
         elif unity_position >= 0 and position < unity_position:
             errors.append(f"post-apply validator must run after Unity batch: {validator}")
+
+
+def validate_unity_process_gate(errors: list[str]) -> None:
+    if not UNITY_PROCESS_GATE.exists():
+        errors.append(f"missing canonical Unity process gate: {display(UNITY_PROCESS_GATE)}")
+        return
+
+    text = UNITY_PROCESS_GATE.read_text(encoding="utf-8-sig")
+    required_process_gate_tokens = (
+        "dotnet",
+        "csc",
+        "MSBuild",
+        "VBCSCompiler",
+        "Unity",
+        "Unity Hub",
+        "Unity.ILPP.Runner",
+        "Unity.ILPP.Trigger",
+        "UnityShaderCompiler",
+        "UnityPackageManager",
+        "AssetImportWorker",
+        "Bee",
+        "UnityAutoQuitter",
+    )
+    for token in required_process_gate_tokens:
+        if token not in text:
+            errors.append(f"canonical Unity process gate must check blocker process token: {token}")
+    for token in (
+        "UNITY_PROCESS_GATE_GREEN",
+        "UNITY_PROCESS_GATE_RED",
+        "cpuError",
+        "topProcesses",
+        "--top-processes",
+        "--max-cpu",
+    ):
+        if token not in text:
+            errors.append(f"canonical Unity process gate missing diagnostic token: {token}")
 
 
 def validate_applier(errors: list[str]) -> None:
@@ -160,6 +225,8 @@ def validate_static_preflight(errors: list[str]) -> None:
     text = STATIC_PREFLIGHT.read_text(encoding="utf-8-sig")
     if "ValidateGeminiUnityApplyRunner.py" not in text:
         errors.append("static preflight must include ValidateGeminiUnityApplyRunner.py")
+    if "test_build_gemini_material_catalog.py" not in text:
+        errors.append("static preflight must include test_build_gemini_material_catalog.py")
 
 
 def validate_legacy_wrappers(errors: list[str]) -> None:
@@ -177,6 +244,7 @@ def validate_legacy_wrappers(errors: list[str]) -> None:
 def main() -> int:
     errors: list[str] = []
     validate_runner(errors)
+    validate_unity_process_gate(errors)
     validate_applier(errors)
     validate_static_preflight(errors)
     validate_legacy_wrappers(errors)

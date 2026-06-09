@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "ערכת ראיות לחצר ממסרי שונית הכבלים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Cable Reef Relay Yard POI Kit
+# ערכת ראיות לחצר ממסרי שונית הכבלים
 
-HE LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+חצר הממסרים הופכת גועל למשמעת כלים. מעטפות כבל נבקעו, בידוד התקלף, וסרט שירות Atlas חצה שקעים שלא נועדו לחלוק משטח. חיתוך נקי יכול להרוס את הנתיב היחיד שעוד נושא אות.
 
-## Scanner
-
-HE LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-HE LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-HE LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-HE LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+ערכת הראיות פיזית: תגובת פינגר, מפת זרוע מתה, אזהרת חיתוך, מזלג ממסר וסימן השירות שבו חומר חי השתלט על מסלול שבור. המקום צריך להרגיש שימושי לפני שהוא מרגיש מוזר. הסכנה שלו היא תיקון שיכול להציל את המפעיל ובאותו זמן לזהם את רשומת התביעה.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/he_IL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "De la culpabilité professionnelle à l’enjeu personnel"
+title: "De la Culpabilité Professionnelle à l'Enjeu Personnel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# De la culpabilité professionnelle à l’enjeu personnel
+# De la Culpabilité Professionnelle à l'Enjeu Personnel
 
-La culpabilité professionnelle devient enjeu personnel sans faire du protagoniste la cause de la catastrophe. Le joueur n’a pas besoin d’un frère disparu, d’une lignée de vengeance ou d’un rôle secret de témoin choisi. La pression est plus froide et plus adulte. Il reconnaît la procédure. Il sait pourquoi un champ de témoin compte, pourquoi un tampon route-sûre peut mentir, pourquoi un transporteur peut l’entendre sans le remonter. HECTON-8 devient personnel parce que l’ancien langage Deep Reach n’est pas abstrait pour lui. C’est un travail auquel il a déjà fait confiance, un travail près duquel il a déjà opéré, et ce travail est maintenant attaché aux noms récupérés dans des pièces noyées. L’arc n’est pas un aveu. C’est un refus: quand le joueur sait lire la machine de l’abandon, la laisser enterrée devient une autre participation.
+La culpabilité professionnelle devient enjeu personnel sans faire de l'opérateur la cause de la catastrophe. La pression est plus étroite et plus difficile à écarter. Il reconnaît le formulaire, l'omission route-safe, le champ de vérification scellé et le langage récepteur qui transforme une salle en claim réglé.
+
+Aucune vengeance familiale n'est nécessaire. Aucun rôle de commandement caché n'est nécessaire. Les tags récupérés attachent des noms à une procédure que l'opérateur a autrefois considérée comme du travail fiable. Une fois le motif lisible, le laisser enterré devient une autre omission déposée dans la même machine. L'enjeu n'est pas une lignée. C'est un savoir de métier face aux preuves des salles noyées.
 
 ## Scanner
 
-Le motif de signature correspond à l’ancien cache de procédure. Les noms ont changé. La pièce a échoué de la même façon. L’expertise n’est plus une distance.
+PROCEDURE MATCH // Ancienne séquence dans un nouveau dossier de panne. Les noms changent; même omission route-safe. L'expertise n'est plus une distance.
 
 ## Terminal
 
-RÉSOLUTION DE DOSSIER / ENJEU PROFESSIONNEL
-preuves déclencheuses: reconnaissance de procédure, étiquettes de travailleurs récupérées, conflit de receveur de réclamation
-motif exclu: lien familial, lignée de vengeance, statut de témoin choisi
-motif actif: ancien travailleur systèmes reconnaissant un abandon évitable et sachant encore lire la machine qui l’a classé.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Tu es venu pour une réclamation. Tu es resté parce que les papiers connaissaient tes mains.
+Tu venais pour un claim. Le formulaire a utilisé tes anciennes mains.
 
 ## Field Note
 
-Pas ta signature. Toujours ton métier. C’est pour cela que la pièce ne restera pas silencieuse.
+Pas ta signature. Toujours ton métier. Voilà pourquoi la salle ne restera pas enterrée.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/fr_FR. -->

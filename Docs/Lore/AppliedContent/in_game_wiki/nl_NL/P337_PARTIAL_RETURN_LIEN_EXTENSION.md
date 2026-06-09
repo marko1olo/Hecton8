@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Partial Return Lien Extension"
+title: "Verlenging retentierecht voor gedeeltelijke terugkeer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Partial Return Lien Extension
+# Verlenging retentierecht voor gedeeltelijke terugkeer
 
-NL LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+De verlenging legt replaypersistentie vast als kennis, niet als uitrustingsmacht. De speler keert terug omdat dossier en schuld veranderden, niet omdat HECTON-8 makkelijker werd.
 
 ## Scanner
 
-NL LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Terugkeer goedgekeurd onder verlengd retentierecht. Kennisflags blijven; uitrustingsinventaris wordt in quarantaine gezet en gestript.
 
 ## Terminal
 
-NL LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PARTIAL RETURN-ORDER: herintrede in dezelfde seed toegestaan onder verlengd retentierecht, herzien stormvenster en behouden kennisdossier. Fysieke inventaris gereset door bewaringsquarantaine; gereedschap blijft carrier-eigendom tot bewijsreview sluit.
 
 ## Audio
 
-NL LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+De route onthoudt wat je bewees. De oceaan houdt de rest.
 
 ## Field Note
 
-NL LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Herintredingsrecord: same-seed-terugkeer draagt kennis, schulddruk, stormwijzigingen en bewaringsreset in plaats van geërfde uitrusting.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/nl_NL. -->

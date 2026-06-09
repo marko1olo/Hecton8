@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Public Archive Carrier Primer
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Harga Jendela Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Harga Jendela Black Keel
 
-The carrier contact is real, priced and limited by orbit, weather and claim priority.
+Black Keel bisa menjawab sebelum bisa membantu. Tender ada di sistem Aegir, tetapi tindakan berguna masih bergantung pada cuaca, geometri bulan, keselarasan relai, prioritas lalu lintas, slot karantina, dan ledger klaim yang tidak ditulis untuk belas kasihan.
 
-## Scanner
-
-Relay mast aligned to a weak orbital window.
-
-## Terminal
-
-Black Keel confirms survival but keeps recovery pending window and claim state.
-
-## Audio
-
-One clean burst; choose what to send.
-
-## Field Note
-
-A priced packet is not mercy.
+Jendela kuat memungkinkan satu paket bagus terkirim. Status medis, status kerusakan, status sampel, dan koordinat berebut burst yang sama. Pertanyaan berguna pertama dari carrier bisa lebih dingin daripada nada gagal, karena ia bertanya apa yang dapat diangkat menurut kontrak, bukan siapa yang menderita.
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/id_ID. -->

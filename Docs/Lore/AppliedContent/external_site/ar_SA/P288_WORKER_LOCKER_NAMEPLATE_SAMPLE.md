@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Worker Locker Nameplate Sample"
+title: "عينة لوحة اسم خزانة عامل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Worker Locker Nameplate Sample
+# عينة لوحة اسم خزانة عامل
 
-AR LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+تحول عينة لوحة اسم خزانة عامل خزانة واحدة إلى سجل إنساني مكثف. ينجو Ren Okoye عبر وصول المسار، وشهادة الأداة، وقسيمة الطعام، وندبة المحو. يظهر الجسم أسلوب الأدلة الأساسي في HECTON-8: هوية تحفظها الوظيفة بعد فشل ذاكرة الرواتب.
 
 ## Scanner
 
-AR LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+احتفظت لوحة Ren Okoye بالاسم لأن محو سطر الأجر كان أسهل من محو العمل.
 
 ## Terminal
 
-AR LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-AR LOC HOLD: Name retained. Payline erased.
+الاسم محفوظ. سطر الأجر ممحو. العمل ما زال ملتصقا.
 
 ## Field Note
 
-AR LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / قسيمة طعام تحت الشريط. شريط الأجر مصقول حتى الزوال؛ علامة مقاس القفاز لا تزال مرئية.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ar_SA. -->

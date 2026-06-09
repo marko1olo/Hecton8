@@ -19,22 +19,22 @@ localization_flags: 1
 
 # HECTON-8: roszczenie pod ciśnieniem
 
-Notatki P-63 ustawiają początek jako pracę odzyskową pod długiem. Fakty są mechaniczne: zużyta zdolność wznoszenia, zalana awionika, uszkodzone uszczelnienia, skany i język urzędowy, który nie tłumaczy wgnieceń.
+HECTON-8 zaczyna się od zadłużonego Maraudera zrzuconego przez claim window Black Keel na P-63, gdzie każda naprawa, scan i zamknięte drzwi zmieniają przetrwanie w dowód.
 
 ## Scanner
 
-Rejestr przyjęcia Maraudera. Kontrakt Black Keel łączy P-63, uszkodzony bathydrop, zastaw 4.8 tonne-window i raport wypadku niezgodny z metalem.
+Publiczny artykuł główny: kontrakt przed mitem, okno Black Keel, uszkodzony bathydrop, jasny P-63, przemilczenia Deep Reach, pierwszy ślad Atlas.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // ROSZCZENIE H8. Okno: przekaźnik Aegir otwarty. Prace: przywrócić uszczelnienia, zeskanować P-63, odzyskać ładunek, zachować dowód, wrócić przed zamknięciem geometrii odbioru.
+SITE LONGFORM: pokazać grywalną trasę przez pracę pod ciśnieniem, custody dowodów, brak natychmiastowego ratunku i rodzinnego haczyka.
 
 ## Audio
 
-Przekaźnik Black Keel: "Okno jest wąskie. Napraw powłokę zrzutową, odczytaj ślady ciśnienia i przynieś dowód z ładunkiem."
+Na HECTON-8 nikt nie sprzedaje ci ratunku. Sprzedają claim, a resztę zostawiają wodzie.
 
 ## Field Note
 
-Notatka Maraudera: światło na P-63 nie znaczy bezpieczeństwa. Licz powietrze, uszczelniaj przed ładunkiem i nie ufaj raportowi bez odpowiedzi na wgniecenia.
+Jeśli papiery brzmią spokojnie, czytaj metal. Pierwsza prawda HECTON-8 żyje między linią kontraktu a pękniętym seal.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/pl_PL. -->

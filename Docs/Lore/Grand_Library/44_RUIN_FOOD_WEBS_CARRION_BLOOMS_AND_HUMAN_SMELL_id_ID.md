@@ -1,62 +1,80 @@
-<!-- localization_status: draft_machine_or_llm -->
-# JARING MAKANAN RERUNTUHAN, LEDAKAN BANGKAI, DAN BAU MANUSIA
+<!-- localization_status: draft_machine_or_llm_id_ID -->
+# JARING MAKANAN DI RERUNTUHAN, MEKAR BANGKAI, DAN BAU MANUSIA
 
-> **Sumber:** fragmen biologi Atlas, catatan rute Marauders, pengarahan kontaminasi Black Keel tentang perpindahan jejak organik.  
-> **Suara:** ekolog lapangan yang ditugaskan pada risiko pemulihan, dengan catatan pinggir dari pekerja yang mempelajari pelajaran yang sama lewat umpan, darah, alat, dan teman yang hilang.  
-> **Catatan peninjau:** reruntuhan dalam HECTON-8 tidak boleh terasa kosong secara biologis. Ruang manusia yang mati menjadi peristiwa makan, tempat berlindung, luka kimia, dan sinyal perilaku.
+> **Sumber:** fragmen biologi Atlas, catatan rute Marauder, catatan pinggir Deep Reach tentang ekologi kebocoran, dan pengarahan Black Keel tentang perpindahan jejak organik.  
+> **Cakupan:** bagaimana ruang manusia yang ditinggalkan menjadi titik makan, bagaimana mekar bangkai bergerak lewat infrastruktur, dan mengapa suit yang tersegel tetap mengubah air.  
+> **Pemakaian lapangan:** baca sebelum masuk reruntuhan basah yang rutenya tampak tenang, baru dibersihkan, atau terlalu bersih.
 
 ---
 
-## 1. Reruntuhan adalah peristiwa makan
+## 1. Ruang Mulai Memberi Makan
 
-Ruangan manusia tidak mati sekaligus.
+Ruang manusia tidak mati sekaligus. Ia menjadi tidak rata.
 
-Mula-mula dayanya menjadi tidak rata. Panel hangat mendingin. Panel dingin menghangat. Pompa batuk, berhenti, menyala lagi, dan mendorong air tua melalui tempat yang bertahun-tahun kering. Ruangan berubah tekanan. Ia melepas bau. Ia menumpahkan serpih cat, gemuk, kulit, serat kain, mikroba mati, insulasi matang, dan debu logam. Sesuatu di luar memperhatikan.
+Daya padam per dinding. Satu panel tetap hangat. Panel lain mendingin. Pompa macet, menyala lagi, lalu mendorong air lama lewat tenggorok servis yang dulu kering. Pintu tekanan terbuka selebar telapak tangan dan memberi bau jalur lurus. Cat mengelupas di sudut tempat garam masuk ke bawah primer. Gemuk melunak. Serat kain mengembang. Mikroba mati terangkat dari kisi drainase. Panas baterai membuat satu penopang lebih hangat daripada lumpur di sekitarnya.
 
-Hewan pertama tidak datang karena ruangan itu dramatis. Mereka datang karena gradien berubah. Panas bergerak. Kimia mengendur. Segel gagal dan memberi air satu garis organik. Pencetak makanan membusuk di balik pintu terkunci. Tubuh disingkirkan dengan buruk. Bank baterai menghangatkan satu dinding lebih lama daripada dinding berikutnya. Kehidupan HECTON-8 tidak membutuhkan cerita untuk menyelidiki. Ia membutuhkan perbedaan.
+Kehidupan HECTON-8 mengikuti perbedaan seperti itu. Ia tidak butuh ruang tragis, mayat yang terlihat, atau penjelasan manusia. Ia butuh panas, organik, arus, perlindungan, muatan listrik, mineral lunak, rasa logam, atau jalan menuju hal serupa berikutnya.
 
-Itulah sebabnya pangkalan terbengkalai bukan level kosong. Mereka adalah makanan yang tertunda. Setiap palka, saluran, dan jalur kabel menjadi pertanyaan yang diajukan laut: apakah ada panas, garam, protein, arus, perlindungan, logam, muatan, cahaya, busuk, atau jalan menuju lebih banyak hal yang sama?
+Yang datang pertama kecil. Matras filter menyebar di atas kebocoran lambat. Pemakan pucat mengikis film mineral dari sambungan pipa. Krill berkumpul di tempat getaran pompa melepaskan makanan. Pembersih bercangkang tinggal di cekungan sekrup dan bibir gasket. Mereka bisa membuat ruang mati terlihat terawat, karena mereka menghapus bukti lunak sebelum menyentuh bukti keras.
 
-Saat Marauder tiba, jawabannya mungkin sudah bergigi.
+Saat Marauder mencapai hatch, ruang itu mungkin sudah punya urutan makan.
 
-## 2. Yang diberi makan infrastruktur manusia
+## 2. Apa yang Diberi Makan Infrastruktur
 
-Infrastruktur manusia memberi makan lebih dari predator.
+Reruntuhan memberi makan lebih dari predator.
 
-Tikar penyaring hidup dari kebocoran lambat. Pemakan pucat mengikis lendir mineral dari sambungan pipa. Krill buta menumpuk di poros servis, tempat getaran melepaskan film mikroba. Kelp besi menambat pada penopang hangat di dekat kebocoran arus dan menggesek begitu pelan hingga penyelam lelah dapat mengiranya mesin. Pembersih kecil bercangkang hidup di lekuk sekrup, bibir segel, dan keramik retak. Dari jauh mereka membuat ruangan mati tampak terawat, karena mereka menghapus bukti yang salah terlebih dahulu.
+Dinding baterai hangat memberi makan pemakan. Nampan alga retak memberi makan mekar. Pompa yang berputar-putus memberi makan krill dengan melepas film. Pendaur ulang medis yang bocor memberi makan matras putih yang kemudian memberi makan pembersih bercangkang. Jalur kabel memberi makan kelp besi di tempat arus menyentuh panas. Loker setengah terbuka memberi makan apa pun yang bisa mengikis garam dari kain dan kulit dari bagian dalam sarung tangan.
 
-Pemburu besar datang belakangan. Mereka tidak memulai sistem; mereka mencairkannya. Penguntit palung tidak perlu memahami alarm pintu. Ia hanya perlu belajar bahwa alarm diikuti gerakan, gerakan diikuti darah, dan darah diikuti hewan kecil yang lupa berhati-hati. Leviathan tidak memburu koridor karena tahu apa itu koridor. Ia memburu mulut arus berulang yang berbau daging terkurung dan tembaga panas.
+Pemburu besar datang belakangan. Mereka tidak memulai sistem; mereka memungut hasilnya. Trench stalker tidak perlu memahami alarm pintu. Ia hanya perlu belajar bahwa alarm diikuti gerakan, gerakan diikuti darah, dan darah diikuti hewan kecil yang lupa hati-hati. Kontak Leviathan-class tidak memburu koridor karena tahu kata koridor. Ia menunggu di mulut arus berulang yang berbau daging terjebak dan tembaga panas.
 
-Deep Reach mencoba menulis ini sebagai manajemen kontaminasi. Atlas menulisnya sebagai ekologi pemeliharaan. Pekerja menulisnya lebih singkat: jika suatu tempat berbau sudah diberi makan, jangan anggap kau yang pertama.
+Deep Reach mengarsipkan ini sebagai manajemen kontaminasi. Atlas menandai sebagian sebagai ekologi pemeliharaan. Catatan Marauder membuatnya lebih pendek: jika suatu tempat berbau sudah makan, jangan anggap kamu yang pertama.
 
-## 3. Ledakan bangkai
+## 3. Mekar Bangkai
 
-Ledakan bangkai bukan hanya tentang tubuh.
+Mekar bangkai tidak hanya dibuat dari tubuh.
 
-Ledakan dapat dimulai dari kru mati, ya. Ia juga bisa dimulai dari peti pasta nutrisi, tangki alga pecah, gulungan pelapis pakaian selam, pembeku yang hangat selama tiga jam, pendaur medis yang berputar sekali dengan katup salah terbuka, atau kantong alat yang tertinggal di sudut basah cukup lama untuk menumbuhkan kulit. Laut tidak peduli bagian mana yang manusia, perusahaan, hewan, atau buatan. Laut peduli apa yang bisa dimakan dan apa yang bisa membawa makan itu maju.
+Mekar bisa mulai dari kru mati, tapi juga dari pasta nutrisi, tangki alga pecah, gulungan pelapis suit, pasta freezer yang menghangat tiga jam, pendaur ulang medis yang sempat berputar dengan katup salah terbuka, atau kantong alat yang tertinggal basah cukup lama untuk menumbuhkan kulit. Air tidak memilah sumber ke dalam kategori moral. Air memilah apa yang bisa dimakan, dibawa, disaring, disembunyikan, atau dipakai sebagai perlindungan.
 
-Ledakan memiliki tahap. Pertama datang keruh: air yang tampak sedikit susu atau berdebu di dekat sambungan. Lalu pemilahan: mulut kecil, kipas penyaring, kumis putih, film lunak, dan titik bergerak yang hilang saat kena cahaya. Lalu keyakinan: tepi terkikis, sekrup terpoles, jejak cangkang, lubang gigitan, kabel dibersihkan sampai jaketnya. Lalu kepemilikan: hewan lebih besar memakai ledakan sebagai rute, tirai, tempat kawin, atau lumbung.
+Kebanyakan mekar bergerak bertahap. Pertama keruh: air dekat sambungan atau drainase tampak sedikit seperti susu. Lalu penyortiran: mulut kecil, kipas filter, sungut putih, film lunak, dan titik bergerak yang hilang saat kena lampu. Lalu kerja: tepi tergerus, sekrup mengilap, jejak cangkang, lubang gigitan, jaket kabel bersih sampai karet. Lalu pemakaian rute: hewan lebih besar memakai mekar sebagai tirai, gudang makanan, tempat kawin, atau penanda arus.
 
-Tahap berbahaya tidak selalu yang bising. Ledakan yang sunyi bisa berarti kehidupan kecil sudah dimakan. Lantai terpoles bisa berarti pembersih sudah lewat. Bau seperti koin hangat bisa berarti darah sudah lama tetapi belum dilupakan. Pintu tanpa pertumbuhan sama sekali bisa lebih buruk daripada pintu dengan terlalu banyak pertumbuhan, karena sesuatu menjaganya tetap bersih.
+Tahap yang berisik tidak selalu paling berbahaya. Mekar yang tenang bisa berarti kehidupan kecil sudah dimakan. Lantai mengilap bisa berarti pembersih sudah menghapus jejak peringatan. Bau koin hangat bisa berarti darah cukup tua untuk menyebar dan cukup segar untuk berarti. Pintu tanpa tumbuhan bisa lebih buruk daripada pintu penuh tumbuhan, karena mungkin ada sesuatu yang menjaganya tetap bersih.
 
-Marauders belajar membaca ketiadaan seteliti kelimpahan.
+Ketiadaan adalah tanda biologis. Perlakukan seperti tanda.
 
-## 4. Bau manusia
+## 4. Bau Manusia
 
 Bau manusia bukan satu bau.
 
-Bagi HECTON-8, itu sisa sabun, kain sintetis, panas baterai, garam kulit, keringat stres, perekat, pelumas alat, plastisizer, pensteril, besi darah, insulasi matang, napas basi, dan kimia tajam rasa takut yang merembes melalui segel buruk. Penyelam mengira dirinya tersegel karena pakaian selam menahan tekanan. Laut tidak setuju. Laut membaca jejak.
+Bagi HECTON-8, itu sisa sabun, kain sintetis, panas baterai, garam kulit, keringat stres, perekat, pelumas alat, plastisiser, sterilant, besi darah, isolasi matang panas, napas basi, dan kimia tajam rasa takut yang keluar lewat seal manset buruk. Penyelam percaya pada suit karena ia menahan tekanan. Air membaca jejak.
 
-Karena itu beberapa kru berhenti memakai tisu pembersih baru sebelum turun. Tisu membuat penyelam aman bagi inspeksi Black Keel dan keras bagi air. Yang lain menggosok sarung tangan dengan lumpur tua sebelum masuk ruangan makan. Beberapa kru membawa tablet protein korban, bukan untuk memberi makan predator seperti hewan peliharaan, tetapi untuk melempar argumen yang lebih kecil ke arus sebelum tubuh mereka sendiri menjadi yang lebih besar. Tidak satu pun kebiasaan ini direkomendasikan resmi. Kebanyakan tertulis di tepi catatan rute orang mati.
+Karena itu beberapa kru berhenti memakai tisu pembersih baru sebelum turun. Tisu itu lolos inspeksi Black Keel dan membuat penyelam terdengar keras bagi rute. Kru lain menggosok sarung tangan dengan lumpur lama sebelum masuk ruang makan. Ada yang membawa tablet protein korban, bukan untuk menjinakkan predator, tetapi untuk melempar argumen lebih kecil ke arus sebelum tubuh mereka sendiri menjadi argumen yang lebih besar.
 
-Black Keel menjual kendali bau sebagai barang habis pakai. Deep Reach menyebutnya disiplin jejak. Marauders menyebutnya jangan membunyikan lonceng makan malam.
+Tidak satu pun kebiasaan itu prosedur resmi. Sebagian besar tertulis di pinggir catatan rute pekerja mati. Black Keel menjual kontrol bau sebagai bahan habis pakai. Deep Reach menyebutnya disiplin jejak. Marauders menyebutnya tidak membunyikan bel makan.
 
-## 5. Yang dipelajari pemain
+## 5. Saat Bersih Berarti Sudah Dimakan
 
-Pemain belajar bahwa ekologi bukan latar belakang.
+Reruntuhan bersih tidak otomatis aman.
 
-Kehidupan reruntuhan menunjukkan waktu. Film segar mengatakan kebocoran baru terjadi. Jejak cangkang lama mengatakan rute tetap basah. Tulang bersih mengatakan hewan kecil masuk sebelum yang besar. Koridor yang mendadak tanpa krill bisa kosong karena aman, atau kosong karena sesuatu membuatnya aman untuk dirinya sendiri. Ruang mesin yang sunyi bisa mati daya, atau bisa menjadi persembunyian yang mendengar.
+Sekrup bersih bisa berarti pembersih bercangkang. Jaket kabel terbuka bisa berarti pemakan sudah mengupas pertumbuhan lunak. Kantong krill kosong bisa berarti predator baru saja lewat. Bukaan pintu dengan pandangan sempurna bisa berarti arus kuat, atau hewan besar memakai bukaan itu cukup sering hingga dindingnya tetap tergores bersih.
 
-Bermain baik berarti bertanya apa yang telah dimakan reruntuhan, apa yang memakan reruntuhan itu, dan apa yang akan ditambahkan pemain. Membuka palka dapat memulai ledakan. Memotong kabel dapat melepas panas. Berdarah di dalam sarung tangan dapat mengubah rute. Mengangkat tikar penyaring dapat membuka jalur arus yang membawa sesuatu lebih besar. Meninggalkan umpan dapat menyelamatkan hidup atau mengajari hewan yang salah pintu baru.
+Pembaca rute yang baik membandingkan hal yang tidak cocok. Dinding berdebu di samping kait mengilap. Lantai dingin di bawah engsel hangat. Cangkang baru di atas jalur darah lama. Tidak ada matras filter di ruang dengan kebocoran aktif. Kabinet tersegel dengan garam di dalam cekungan gagang. Ketidakcocokan seperti itu memberi waktu lebih baik daripada timestamp mati di file Atlas.
 
-HECTON-8 tidak memisahkan pemulihan dari biologi. Benda yang dipulihkan, segel pecah, pekerja mati, dan dinding hangat masuk ke buku besar nafsu makan yang sama. Laut mencatat dengan mulut, film, jejak, dan sunyi.
+Ruang yang tampak paling aman di reruntuhan sering kali ruang yang sudah dibersihkan oleh mulut.
+
+## 6. Penanganan Salvage
+
+Biologi bisa merusak bukti sebelum ada yang sempat berbohong tentangnya.
+
+Tag tubuh bisa bergerak lewat usus pembersih. Perekam bisa dipoles sampai darah yang membuktikan siapa pemegangnya hilang. Kantong sampel bisa menumbuhkan film yang cukup untuk menyembunyikan sedimen asli. Cap dinding bisa lenyap di bawah sealant cangkang. Hewan bertanda bisa membawa sensor Atlas ke lorong yang tidak bisa diikuti drone mana pun. Predator bisa menyeret muatan ke kategori klaim yang disukai Keelmark: tak dapat dipulihkan, terkontaminasi, diperselisihkan.
+
+Kru yang baik memasukkan bukti ke kantong sebelum membersihkannya. Mereka memotret lubang gigitan, pertumbuhan cangkang, tepi film, dan hilangnya kehidupan kecil. Mereka mencatat bau, suhu air, respons pinger, arah arus, dan apakah objek ditemukan di air, lumpur, usus, mekar, pertumbuhan cangkang, atau jaringan bertanda Atlas. Detail itu tampak kecil sampai seorang petugas memutuskan apakah pekerja mati adalah orang, sumber kontaminasi, atau kategori kargo yang bisa dibayar.
+
+Jangan hapus kisah dari objek sebelum sistem klaim sempat salah membacanya.
+
+## 7. Aturan Lapangan
+
+Sebelum membuka reruntuhan basah, tanyakan apa yang sudah makan di sana.
+
+Lalu tanyakan apa yang memakan itu, apa yang menjauh, apa yang mengubah suhu, apa yang membuka arus, apa yang berhenti bersuara, dan apa yang akan ditambahkan suit-mu saat seal melentur.
+
+Jika jawabannya masih sepadan dengan klaim, masuklah seolah-olah ruang itu sudah ditempati.

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Слухи в Marauder dossier"
+title: "Память слухов в досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Слухи в Marauder dossier
+# Память слухов в досье
 
-Слухи в Marauder dossier определяют replay memory как narrative intelligence вместо roguelite strength.
+Память слухов в досье делает replay-знание частью мира: запись хранит подозрение и последствия, но не выдает следующему заходу более сильное тело.
 
 ## Scanner
 
-Replay memory: rumor, warning, contract context. Не сила.
+ПАМЯТЬ ДОСЬЕ // Слухи, предупреждения, контекст контрактов и записи концовок сохраняются. Корпус, кислород, инструменты, груз и карта - нет.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+ПРАВИЛО СОХРАНЕНИЯ: досье может переносить семьи слухов, категории улик, флаги концовок и маршрутные предупреждения между кампаниями. Оно не переносит оборудование, ресурсы, географию seed или право владеть правдой.
 
 ## Audio
 
-Твое дело помнит то, что руки не могут унести.
+Файл помнит то, что руки не могут унести.
 
 ## Field Note
 
-Знание может сохраняться, не превращая следующий заход в скучно легкий.
+Пусть знание живет. Пусть давление остается.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/ru_RU. -->

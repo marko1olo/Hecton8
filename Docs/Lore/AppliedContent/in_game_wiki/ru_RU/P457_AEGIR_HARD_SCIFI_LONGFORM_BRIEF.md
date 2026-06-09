@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir: небо, которое отказывает в спасении
 
-Aegir - рабочее небо. Skarn, Vela, Kestrel, HECTON, Mute и остальная лунная лестница могут задержать или испортить чистый пакет, не превращая поверхность в вечную тьму. Спасение ломают расстояние, геометрия, право и цена.
+Aegir - орбитальная машина над HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window и причина, почему rescue движется медленнее бумаг.
 
 ## Scanner
 
-Навигационный праймер. FTL и ansible отсутствуют. Окна Aegir проходят через луны, мусор, custody реле, штормы и учет массы Black Keel.
+Публичная астрономия: без FTL и ansible, relay geometry Aegir, hazards лунной лестницы, orbital custody Black Keel, route windows до закона.
 
 ## Terminal
 
-ПРАЙМЕР НАВИГАЦИИ AEGIR // ПУБЛИЧНЫЙ ДИАПАЗОН. Использовать классы угроз, не финальные константы: тень маршрута, заряженный всплеск, ледяное рассеяние, штормовой шлейф, задержка наведения, custody приемника.
+SITE LONGFORM: сделать небо практичным и враждебным; у каждого packet, drop, pickup и claim есть physics, timing, mass и custody.
 
 ## Audio
 
-Фрагмент расписания Black Keel: "Истинный сигнал еще не полезный сигнал. Окно держится на массе, погоде, custody и фиксации приемника."
+Небо над HECTON-8 не пустое. Это расписание с зубами.
 
 ## Field Note
 
-Правило мародера: не спрашивай, был ли сигнал отправлен. Спроси, какая луна его закрыла, какой ledger его поймал и услышал ли приемник человека или класс массы.
+Смотри вверх за timing, не за утешением. На HECTON-8 moonlight может быть relay opening, storm warning или claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ru_RU. -->

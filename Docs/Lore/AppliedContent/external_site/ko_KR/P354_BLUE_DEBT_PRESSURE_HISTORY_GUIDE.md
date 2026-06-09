@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "블루 데트 압력 이력 안내서"
+title: "블루 데트 압력 이력 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 블루 데트 압력 이력 안내서
+# 블루 데트 압력 이력 가이드
 
-salvager들이 blue debt라 부르는 Xenon-Omega는 HECTON-8의 지질을 computation, debt law, 그리고 Deep Reach가 잠긴 청구를 아직 되찾으려는 이유와 묶는다.
+블루 데트는 보석도 아니고 마법 광석도 아니다. Xenon-Omega를 품은 압력 안정 기질의 현장명이다. 바다가 올바른 순서로 압축하고, 가열하고, 냉각하고, 전기적으로 상처를 낸 뒤에야 가치가 생기는 광물 구조다. 밝은 샘플은 무가치할 수 있다. 둔탁하게 봉인된 덩어리는 압력 이력이 깨끗하고 신호 드리프트가 조용하다면 한 달 치 산소 값을 낼 수 있다.
 
-## Scanner
-
-blue debt 표본 태그 완료. export 전 pressure history, containment stage, signal drift 확인.
-
-## Terminal
-
-MARAUDER NOTE: blue debt는 Xenon-Omega-bearing pressure-stable substrate에 대한 salvage 은어다. 빛나서가 아니라 extreme computation과 energy isolation이 선호해서 가치가 있다.
-
-## Audio
-
-blue debt는 청구서가 도착한 뒤 사람들이 붙인 이름이다.
-
-## Field Note
-
-색은 grade가 아니다. clean custody를 가진 조용한 용기는 돈을 내고, 노래하는 용기는 drone wake를 산다.
+그래서 블루 데트 발견은 즉시 법적 재료가 된다. Atlas는 드리프트를 원한다. Deep Reach는 청구 이력을 원한다. Salvage 팀은 드론을 깨울 만큼 크게 노래하지 않는 컨테이너를 원한다. 이 자원은 지질, 계산, 보관, 부채의 교차점에 놓여 있기 때문에 위험하다. HECTON-8이 단순히 물에 잠긴 식민지가 아니었다는 증거다. 압력이 숫자를 쓴, 묻힌 장부였다.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ko_KR. -->

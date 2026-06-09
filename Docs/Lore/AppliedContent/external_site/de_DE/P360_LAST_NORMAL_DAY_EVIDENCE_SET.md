@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Last Normal Day Evidence Set"
+title: "Beweissatz des letzten normalen Tages"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Last Normal Day Evidence Set
+# Beweissatz des letzten normalen Tages
 
-DE LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+Der Beweissatz des letzten normalen Tages ist eine Feldmethode zum Lesen der ertrunkenen Kolonie von HECTON-8. Er sammelt kleine Unterbrechungszeichen: eine unbeanspruchte Spindplatte, eine unsignierte Korrektur, eine offene Pumpenaufgabe, einen geklemmten Essenstoken, eine wartende Routenuhr. Keines dieser Dinge weiß, dass es Beweis geworden ist.
 
-## Scanner
+Die Stärke liegt in Zurückhaltung. Der Raum braucht keine Abschiedsaufnahme und keine perfekt platzierte Tragödie. Er muss nur zeigen, dass normale Prozedur noch lebte, als der Fehler die Schwelle überschritt. Menschen zählten Wasser, gaben Werkzeuge zurück, korrigierten Bretter und erwarteten Mittagessen. Diese gewöhnliche Kontinuität macht den Bruch schlimmer.
 
-DE LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-DE LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-DE LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-DE LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Der Satz trägt auch Schuld. Offizielle Unfallworte glätten den Raum oft; die physischen Widersprüche machen ihn wieder rau. Pumpenzertifikat, Schichtzahl, Körperkategorie, Tür-Uhr-Abweichung: zusammen verwandeln sie einen flachen Abschluss in eine Frage, die jemand vermeiden wollte. Auf HECTON-8 ist der letzte normale Tag der Moment, in dem Routine noch glaubt, weiterzugehen.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/de_DE. -->

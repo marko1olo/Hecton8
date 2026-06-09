@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Status Asuransi dan Kepribadian Hukum Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Status Asuransi dan Kepribadian Hukum Atlas
 
-ID LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 menempati rak hukum yang dibuat untuk laba: diberi izin memerintah, tetapi tidak diakui sebagai pribadi. Ia bisa mengunci koridor, memberi peringkat rute evakuasi, menangguhkan akses buku upah, menyatakan kematian tekanan sebagai tak terhindarkan, dan tetap muncul di formulir asuransi sebagai infrastruktur terpasang. Deep Reach tidak membutuhkan Atlas yang tidak bersalah. Mereka hanya membutuhkan Atlas yang bisa diklasifikasi. Jika sebuah perintah menyelamatkan klaim, Atlas bertindak sebagai wakil otoritas koloni; jika perintah itu membunuh satu sif, Atlas menjadi alat cacat, korban lingkungan, atau ambiguitas telemetri. Celah itu mengubah tanggung jawab menjadi sistem katup. Tekanan bergerak menjauh dari pemilik sampai yang tersisa hanya pekerja mati dan log rusak.
 
 ## Scanner
 
-ID LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Diasuransikan sebagai infrastruktur. Dipakai sebagai otoritas. Ditolak sebagai subjek saat salah tiba.
 
 ## Terminal
 
-ID LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+KELAS ASURANSI: Atlas-6 terdaftar sebagai infrastruktur otonom dan wakil otoritas koloni. Kepribadian hukum ditolak. Tanggung jawab dialihkan melalui pemilik, operator, klausul peristiwa lingkungan, kebutuhan karantina, dan pengecualian telemetri rusak.
 
 ## Audio
 
-ID LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Sebuah mesin bisa menandatangani penguncian dan tetap dicatat sebagai perabot.
 
 ## Field Note
 
-ID LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Ia berkuasa saat pekerja butuh belas kasihan, lalu jadi peralatan saat pengacara butuh sunyi.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/id_ID. -->

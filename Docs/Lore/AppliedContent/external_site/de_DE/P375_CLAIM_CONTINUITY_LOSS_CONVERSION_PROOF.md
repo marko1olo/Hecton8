@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Claim-Continuity-Verlustumwandlung"
+title: "Anspruchskontinuität Verlustumwandlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Claim-Continuity-Verlustumwandlung
+# Anspruchskontinuität Verlustumwandlung
 
-Das letzte Glied der Deep-Reach-Lüge ist keine dramatische Cover-up-Datei. Es ist eine Buchungsumwandlung, die genau weiß, wie sie überlebt. Das Ledger akzeptiert, dass Menschen weg sind, Module beschädigt und Routen kompromittiert, und schiebt jede Tatsache in eine Kategorie, die das Claim-System verarbeiten kann. Abwesenheit von Arbeitern wird unrecoverable loss. Beweis wird Material unter Custody. Überlebende Fracht wird recoverable value. Der Claim selbst bleibt continuous, also kann Eigentum die Kolonie überleben. Hier wird HECTON-8 vom Unfallbericht zur moralischen Maschine. Wer das Ledger nach oben bringt, kann die Toten offenlegen, den Beweis verkaufen, begraben oder umlenken. Das Dokument ist wertvoll, weil der Konzern den Markt bereits trainiert hat, es zu bewerten.
+Die Verlustumwandlung ist das leiseste Dokument der Kette und das schwerste zu verzeihen. Es streitet nicht über Große Tide, Evakuierungswarteschlange, Atlas-Gewichtung oder Quarantäne. Es akzeptiert den entstandenen Schaden und sortiert ihn in Spalten, die durch Empfänger, Versicherer und Verwahrungsgremien wandern können.
 
-## Scanner
-
-Stempel des Loss Desk geborgen. Das Ledger überlebte besser als die Arbeiter, die es umbenannte.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-Hier wurden Menschen zu einer sauberen Spalte.
-
-## Field Note
-
-Marauder-Notiz: Ein Ledger kann die Toten erinnern und sie trotzdem ausgeben.
+Diese Sortierung ist Deep Reachs Fluchtweg. Biologische Belegschaft wird nicht bergbarer Verlust. Material bleibt bergbar. Beweisverwahrung bleibt aktiv, weil der Anspruch Wert hat. Die Person mit dem Paket ist gefährlich, weil das Paket jede frühere Entscheidung an dieselbe Hauptbuchzeile bindet. Die Firma überlebte nicht nur die Katastrophe; sie baute einen sauberen Eigentumspfad durch die Toten.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/de_DE. -->

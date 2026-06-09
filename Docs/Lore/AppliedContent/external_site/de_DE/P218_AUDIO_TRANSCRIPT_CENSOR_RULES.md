@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Schadensbänder für Audiotranskripte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Schadensbänder für Audiotranskripte
 
-DE LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Ein HECTON-8-Voice-Log ist nicht vollständig, nur weil Ton vorhanden ist. Das Transkript muss seine Wunden zeigen.
 
-## Scanner
+Schadensbänder machen diese Wunden ehrlich. Sie können Rauschen, Paketverlust, juristische Schwärzung, Druckverzerrung, schlechte Sprechertrennung, fehlgeschlagene Maschinenübersetzung oder spätere Bearbeitung markieren. Ohne diese Schicht wird jede kaputte Aufnahme entweder falsche Klarheit oder falsches Mysterium. Mit ihr sieht der Spieler den Unterschied zwischen dem, was die Welt verloren hat, und dem, was jemand entfernte.
 
-DE LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+Die Regel ist streng, weil das Spiel auf Beweisen steht. Schaden kann Namen, Seriennummern und spoilernde Fracht verbergen. Er kann Verdacht erzeugen. Er kann eine Route gefährlich wirken lassen, bevor man die Tür sieht. Aber das übrige Transkript muss die Handlung tragen: öffne die Schleuse nicht, geh über die Serviceleiter zurück, zähle Sauerstoff manuell, ignoriere die grüne Statuslampe, lass die offizielle Zeile sichtbar.
 
-## Terminal
-
-DE LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-DE LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-DE LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Für Lokalisierung und Barrierefreiheit ist das Band Teil des Inhalts. Ein übersetztes Transkript muss Sprecherrolle, Zeitdruck und lesbare Warnungen bewahren. Schwärzung ist Atmosphäre nur, wenn der Spieler weiter handeln kann. Sonst ist es bloß ein kaputtes Interface, das Lore spielt.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/de_DE. -->

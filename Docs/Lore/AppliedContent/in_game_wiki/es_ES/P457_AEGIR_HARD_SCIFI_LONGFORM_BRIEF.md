@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir: el cielo que niega el rescate"
+title: "Aegir: el cielo que rechaza el rescate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: el cielo que niega el rescate
+# Aegir: el cielo que rechaza el rescate
 
-Aegir es un cielo operativo. La escalera de lunas puede retrasar o corromper paquetes sin oscurecer siempre la superficie. El rescate falla por distancia, geometría, ley y coste.
+Aegir es la máquina orbital sobre HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window y la razón por la que rescue viaja más lento que el papeleo.
 
 ## Scanner
 
-Guía de ruta celeste. No existe FTL ni ansible. Las ventanas de Aegir pasan por lunas, escombros, custodia de relé, tormentas y contabilidad de masa de Black Keel.
+Astronomía pública: sin FTL, sin ansible, relay geometry de Aegir, peligros de moon ladder, custody orbital de Black Keel, route windows antes de la ley.
 
 ## Terminal
 
-GUÍA DE NAVEGACIÓN AEGIR // BANDA PÚBLICA. Usar clases de peligro: sombra de ruta, pulso cargado, dispersión de hielo, penacho de tormenta, retraso de guiado, custodia de receptor.
+SITE LONGFORM: hacer el cielo práctico y hostil; cada packet, drop, pickup y claim debe tener physics, timing, mass y custody.
 
 ## Audio
 
-Planificación Black Keel: "Señal verdadera no es señal útil. La ventana depende de masa, clima, custodia y bloqueo de receptor."
+El cielo sobre HECTON-8 no está vacío. Es un schedule con dientes.
 
 ## Field Note
 
-Regla de saqueador: no preguntes si se envió la señal. Pregunta qué luna la bloqueó, qué registro la capturó y si el receptor oyó a una persona o una clase de masa.
+Mira arriba por timing, no por consuelo. En HECTON-8, moonlight puede ser relay opening, storm warning o claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/es_ES. -->

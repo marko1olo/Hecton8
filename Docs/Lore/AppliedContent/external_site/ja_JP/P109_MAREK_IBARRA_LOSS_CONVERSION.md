@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "マレク・イバラの損失変換"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# マレク・イバラの損失変換
 
-JP LOC HOLD: Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+マレク・イバラの損失変換は、コロニーの第二の消失についての記事である。第一の消失は物理的だった。圧力扉、浸水ルート、未回収の遺体。第二は行政的だった。作業員は未解決荷重クラスになった。
 
-## Scanner
+イバラの表は、技術的な保険用語を武器として使う。圧力状態、汚染状態、給与状態、管理証拠が、人を請求、遅延、または無期限に開いたままのカテゴリへ分ける。残酷さは演説ではない。開いた方が安いから開いたままの表にある。
 
-JP LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
-
-## Terminal
-
-JP LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
-
-## Audio
-
-JP LOC HOLD: A missing person became a pending category. That was cheaper.
-
-## Field Note
-
-JP LOC HOLD: Insurance language should feel colder than gunfire.
+この記事は証拠ループを支える。名前、タグ、寝台記録は、死んだ作業員を未解決貨物として扱うことをシステムにやめさせる。
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/ja_JP. -->

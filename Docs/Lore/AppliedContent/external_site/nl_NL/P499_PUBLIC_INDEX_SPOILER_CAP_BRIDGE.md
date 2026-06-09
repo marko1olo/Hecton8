@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Spoilerlimiet van openbare index"
+title: "Redactieregel voor openbare index"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,23 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Spoilerlimiet van openbare index
+# Redactieregel voor openbare index
 
 ## Wat het dossier bewijst
 
-De openbare index bestaat om het archief bruikbaar te maken zonder de route te verbranden. Een titel mag een bewijsfamilie noemen: bewaarroute, bewijsklasse, redactiestatus, claimtaal, scannergate. Dat is genoeg om te weten welk soort bewijs de speler zoekt en waarom een ander pakket telt.
+Een openbare indexrij is een toegangsrecord, geen samenvatting. Ze mag dossierfamilie, bewaarlijn, bewijstype, redactievlag, scannergate en het volgende object tonen dat nodig is om het pakket te openen. Dat is genoeg om een zoektocht te sturen zonder de ontvanger bloot te leggen.
 
-De index mag niet onthullen wie de lading ontvangt, waar de eindroute landt, in welke toestand de lading is, wat Atlas ermee doet, welke eindtak onder druk komt of welk juridisch resultaat volgt. Die betekenissen horen bij het verdiende bewijspad. Als een titel de ontvangerlijn weggeeft, is de index geen archief meer maar een spoilermachine. De juiste publieke belofte is simpel: deze plank bestaat, de laatste pagina is gemaskeerd.
+De gemaskeerde velden zijn belangrijker dan de titel. Ontvangerketen, eindcoördinaten, ladingtoestand, Atlas-reactie, einddruk en juridisch resultaat blijven achter het redactiezegel tot de route ze verdient. Als de index te vroeg een ontvangeradres afdrukt, informeert hij de zaak niet; hij lekt de route aan iedereen die de spiegel bekijkt.
 
 ## Hoe je het leest
 
-STEMPEL OPENBARE INDEXLIMIET
-Toon: categorietitel, bewaarroute, bewijsklasse, redactiestatus, scannergate, volgend bewijsdoel.
-Houd vast: ontvangerketen, eindcoordinaten, ladingtoestand, Atlas-gevolg, eindtak, juridisch resultaat.
-Regel: toon de plank, maskeer de laatste pagina. De index mag zeggen welk soort bewijs bestaat, niet wat het aan het einde van de route doet.
+STEMPEL OPENBARE INDEXREDACTIE
+Toon: titel, dossierfamilie, bewaarlijn, bewijstype, redactievlag, scannergate, volgend bewijsobject.
+Maskeer: ontvangerketen, eindcoördinaten, ladingtoestand, Atlas-reactie, einddruk, juridisch resultaat.
+Fout: ontvangeradres zichtbaar voor bewaarbegrenzing.
+Actie: routevelden verzegeld houden tot pakkethash en objectbewijs overeenkomen.
 
 ## Veldnotitie
 
-Categorietitels reizen verder dan lichamen. Lees de plank, maar doe niet alsof de plank de laatste pagina is. Als de laatste pagina gratis is, heeft iemand de route al verkocht.
+Gebruik de index om het volgende bewijsobject te kiezen. Een zichtbare categorie is geen bewaring, oordeel of bestemming.
 
 <!-- External Site; generated from P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE/nl_NL. -->

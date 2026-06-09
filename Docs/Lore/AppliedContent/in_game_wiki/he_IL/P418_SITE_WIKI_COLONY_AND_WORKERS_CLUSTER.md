@@ -19,22 +19,22 @@ localization_flags: 1
 
 # המושבה והעובדים
 
-worker index ששוחזר: water ledgers, relay witness trays, brine route stamps, triage repair tags ו-vent-forge rejects משמרים שמות דרך עבודה.
+מרכז תיקי עובדים: HECTON-8 זוכרת אנשים דרך shift boards, maintenance debts, pressure calls, handoff marks ורשומות ש-Deep Reach ניסתה לשטח לקטגוריות אובדן.
 
 ## Scanner
 
-WORKER INDEX // חמישה רשומי שמות קשורי מסלול. Pump, relay, brine, triage, forge. לשמור tag chain לפני הסרת hardware.
+WORKER INDEX // pump boards, relay trays, brine stamps, triage tags ו-vent-forge rejects משמרים אנשים כ-route evidence.
 
 ## Terminal
 
-KEELMARK LOSS DESK: לשמור name tags כשהם קשורים ל-route, claim, custody או pressure work.
+KEELMARK LOSS DESK: לשמור name tags כשהם מסבירים pressure decision, delay, custody claim או repair route.
 
 ## Audio
 
-Mara Venn, pump chief: אם המשאבה שרה נקי, רשום. אם היא מפסיקה לשיר, רוץ למעלה.
+שם על pump card אינו תפאורה. הוא הסיבה שהדלת נשארה פתוחה.
 
 ## Field Note
 
-לא משפחה. עבודה. שם על pump card מסביר למה דלת נשארה פתוחה.
+לא פיתיון משפחתי. עבודה, לחץ, חתימות, טעויות. כך המתים עדיין מתווכחים.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/he_IL. -->

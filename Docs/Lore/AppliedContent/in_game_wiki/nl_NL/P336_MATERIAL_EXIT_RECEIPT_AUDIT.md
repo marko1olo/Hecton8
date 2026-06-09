@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Material Exit Receipt Audit"
+title: "Audit van materiaaluitgangsbon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Material Exit Receipt Audit
+# Audit van materiaaluitgangsbon
 
-NL LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+De audit maakt het geldeinde legitiem en bitter. De speler heeft waarde gewonnen en het contract overleefd, maar de instelling bezit nog steeds het dossier, de namen en de officiële vorm van de ramp.
 
 ## Scanner
 
-NL LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Uitgangsbon valideert geborgen massa. Bewijsbewaring is verbroken; werknamen blijven onaanvaard.
 
 ## Terminal
 
-NL LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+AFTER-ACTION-BON: salvagebetaling vrijgegeven voor terugwinbare massa en contractueel gevaar. Coördinatenwaarheid onopgelost. Aansprakelijkheidsstatus Deep Reach ongewijzigd. Werknamenregister afgewezen als niet-bewaard bewijs. Uitgang verleend; zaak blijft eigendom van de carrier.
 
 ## Audio
 
-NL LOC HOLD: You got paid. That is not the same as getting out clean.
+Je bent betaald. Dat is niet hetzelfde als schoon wegkomen.
 
 ## Field Note
 
-NL LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Na-actieverslag voor een betaalde maar moreel onvolledige uitgang: beloning gaat door, bewijsketen faalt, namen blijven buiten officiële bewaring.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/nl_NL. -->

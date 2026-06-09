@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Zespół ładunku energii wznoszenia"
+title: "Zespół Ładunku Energii Wznoszenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zespół ładunku energii wznoszenia
+# Zespół Ładunku Energii Wznoszenia
 
-Zespół ładunku energii wznoszenia wiąże ekonomię zasobów z konsekwencją narracyjną: blue debt i vent-forged hardware decydują o niezawodności ucieczki, custody dowodów i kompromisie.
+Zespół Ładunku Energii Wznoszenia to miejsce, w którym gospodarka salvage HECTON-8 przestaje być abstrakcją. Ten sam materiał wyrosły pod ciśnieniem, który kupuje uwagę carrier, może stać się ładunkiem impulsowym wynoszącym kapsułę z morza.
 
-## Scanner
+Ta wymiana jest niebezpieczna, bo blue debt nie jest magicznym paliwem. To materiał procesowy Xenon-Omega z historią ciśnienia, stanem skażenia, zachowaniem pojemnika i wartością prawną. Vent-forged heat cell może dać kontrolowaną energię. Surowa próbka może pęknąć, zatruć zapis custody albo zmienić ważny odzysk w sporny ładunek.
 
-Kołyska energii porysowana przez pressure pulse. Tani ładunek robi czystą trumnę.
-
-## Terminal
-
-ASCENT CHARGE: wymagane vent-forged heat cell, pressure-history insulator i custody stamp. Raw fuel odrzucony. Niecertyfikowany blue debt pęka pod launch impulse i unieważnia recovery claim.
-
-## Audio
-
-Możesz sprzedać nośność albo na niej polecieć. Nie oba.
-
-## Field Note
-
-Każdy gram w kołysce to ucieczka, dowód albo blue-debt payout. Kapsuła nie wybacza chciwości.
+Pełny ładunek zawiera więc sprzęt i język roszczeń w tej samej kołysce: heat cell, izolator, tuleję impulsu, zapis masy i podpisany custody stamp. Zachowaj go w całości, a kapsuła ma certyfikowaną nośność. Rozbij go dla wypłaty, a ocean może jeszcze pozwolić silnikowi odpalić, ale nikt powyżej nie musi zaakceptować tego, co dotrze.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pl_PL. -->

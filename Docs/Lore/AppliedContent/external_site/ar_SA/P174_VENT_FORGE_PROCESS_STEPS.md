@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Vent Forge Process Steps"
+title: "خطوات التشكيل عند الفتحة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Vent Forge Process Steps
+# خطوات التشكيل عند الفتحة
 
-AR LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+تصف خطوات التشكيل عند الفتحة خيال التصنيع الصلب في HECTON-8. يقدم الكوكب الحرارة والضغط، وتقدم المستعمرة مشابك مكسورة وذاكرة عملية، ويقدم اللاعب الحكم. يمكن لهذه السلسلة المقروءة أن تدعم إيقاعات تصنيع مستقبلية وسردا بيئيا وردود صوتية.
 
 ## Scanner
 
-AR LOC HOLD: Vent forging should feel like using the planet against itself.
+التشكيل عند الفتحة ليس حدادة سحرية. إنه استعارة حرارة الكوكب وضغطه وتوقيته من دون أن تدع الكوكب يحتفظ بالقطعة.
 
 ## Terminal
 
-AR LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+خطوات تشكيل الفتحة / 01 طرد المحلول الملحي من الخام / 02 التثبيت قبل النبضة / 03 التسخين على صعود الفتحة / 04 الختم أثناء هدوء الضغط / 05 التبريد في تيار بارد / 06 التصديق برنين صوتي / فشل: خردة ملتوية أو تفتح ملحي أو قطعة مشققة بالضغط.
 
 ## Audio
 
-AR LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+القمر هو الفرن. مسموح لك فقط أن تستعيره.
 
 ## Field Note
 
-AR LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+يجب أن تُقرأ العملية كتنقية، تثبيت، تسخين، ختم، تبريد، اختبار رنين. الخطر ليس اللهب؛ الخطر هو تفويت هدوء الضغط.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/ar_SA. -->

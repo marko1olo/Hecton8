@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Assemblage de charge énergétique d'ascension"
+title: "Assemblage de Charge Énergétique d'Ascension"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Assemblage de charge énergétique d'ascension
+# Assemblage de Charge Énergétique d'Ascension
 
-La charge d'ascension transforme les ressources profondes en échange mécanique et moral. Les matériaux haute pression peuvent soulever la capsule, préserver les preuves en custody ou devenir un paiement qui affaiblit la route du retour.
+La charge énergétique d'ascension transforme les matériaux profonds de HECTON-8 en impulsion de lancement contrôlée. Ce n'est pas un tas de carburant. C'est un berceau de heat cells vent-forged, d'isolant à historique de pression, de manchons d'impulsion étagés et de marques de custody qui indiquent au récepteur quel matériau a survécu à la combustion.
+
+Le blue debt devient précieux avant de devenir sûr. Un échantillon Xenon-Omega grandi sous pression peut payer une facture carrier, ancrer une amélioration, prouver ce que Deep Reach a laissé fonctionner, ou se fracturer sous la charge de lancement si son historique a été traité comme du butin libre. La charge doit porter énergie et papiers en même temps: masse, état de pression, classe de contamination et custody stamp.
+
+C'est pourquoi l'assemblage crée une vraie décision de salvage. Dépouille le berceau pour une prime et la capsule perd sa portance certifiée. Charge de la matière brute et le profil d'impulsion devient instable. Garde la charge signée et la route d'ascension devient plus lourde, plus pauvre et beaucoup plus difficile à nier.
 
 ## Scanner
 
-Berceau énergétique marqué par une pressure pulse. Une charge bon marché fait un cercueil propre.
+BERCEAU D'ÉNERGIE // Rayures de pulse de pression, poches de heat-cell voilées, prise de custody stamp vide. Le blue debt brut peut brûler; il ne certifiera pas la portance.
 
 ## Terminal
 
-ASCENT CHARGE : vent-forged heat cell, pressure-history insulator et custody stamp requis. Raw fuel rejeté. Blue debt non certifiée se fracture sous launch impulse et annule la recovery claim.
+ASCENT CHARGE: charger heat cell vent-forged, isolant à historique de pression, manchon d'impulsion étagé et custody stamp signé. Rejeter carburant brut, isolant ébréché et blue debt sans tampon.
 
 ## Audio
 
-Tu peux vendre la portance ou monter dessus. Pas les deux.
+Vends la portance et la capsule devient inventaire.
 
 ## Field Note
 
-Chaque gramme dans le berceau est fuite, preuve ou blue-debt payout. La capsule ne pardonne pas l'avidité.
+La charge est la pièce que tout le monde veut voler, parce que c'est aussi celle qui t'arrache au fond.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/fr_FR. -->

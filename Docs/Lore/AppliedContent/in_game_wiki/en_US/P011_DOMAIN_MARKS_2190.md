@@ -19,24 +19,24 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-Domain marks are how HECTON-8 shows the larger human sphere without a classroom. A safety plate may carry Sol Core formatting. A pump tool may bear a Barnard Yards service bite. A cargo tag may route through Luyten Junction custody, then land under Aegir local claim law. The player finds civilization as stamps, fonts, torque marks, insurance codes and incompatible old permissions.
+Domain marks are the small legal scars that make HECTON-8 feel far away without making it feel primitive. A single bracket can carry Sol Core safety grammar, a Centauri charter phrase, a Barnard Yards repair bite, a Luyten custody hash and an Aegir local claim code. None of those marks are decoration. Each one tells the player who certified the part, who repaired it, who can prove a packet, who can insure a loss and who will argue over the salvage after the room floods.
 
-The marks matter because they make the colony distant, not primitive. Human law reached the water. Human industry reached the pressure hulls. Human debt reached the workers before rescue ever did. A Marauder can read those marks to learn who built a door, who owns the salvage and which authority might still answer after the room floods.
+The useful detail is not the list of domains. It is the way they stack on tired metal. Sol can still certify an object it cannot save. Barnard can normalize dead-claim work. Luyten can preserve custody without caring whether the evidence is merciful. Aegir can execute dirty local law under everyone else's paperwork. When a Marauder reads the marks, the ocean stops being empty. It becomes a place where human authority arrived before human warmth.
 
 ## Scanner
 
-Mixed human-domain marks. Sol safety plate, Barnard tool stamp, Luyten custody route and Aegir claim code share the same corroded bracket.
+Mixed human-domain marks on one corroded bracket: Sol Core safety format, Centauri charter seal, Barnard Yards repair bite, Luyten custody hash and Aegir claim code.
 
 ## Terminal
 
-DOMAIN RECONCILIATION // Sol Core safety format accepted. Barnard Yards repair stamp valid. Luyten Junction packet custody attached. Aegir local claim law overrides recovery priority after descent loss.
+DOMAIN RECONCILIATION // Sol Core safety format accepted. Centauri charter language present. Barnard Yards repair authority valid. Luyten Packet Ladder custody attached. Aegir local claim law supersedes open salvage after descent loss.
 
 ## Audio
 
-This place is not beyond civilization. It is civilization after distance has taken the warm parts out.
+Civilization reached this room. It arrived as stamps first, debt second, and help last.
 
 ## Field Note
 
-Humanity got big. Rescue still has to travel.
+Humanity got wide. Rescue still has to travel.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/en_US. -->

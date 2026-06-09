@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Service Basin POI Kit"
+title: "ערכת ראיות לאגן השירות Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Service Basin POI Kit
+# ערכת ראיות לאגן השירות Atlas
 
-HE LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+אגן השירות Atlas צריך לעגן את העומק הסופי בהנדסה. מסילות תחזוקה, אטם חי ושקעי מקלט מראים מערכת שמנסה לתקן תשתית לחץ כשעדיין מחוברת אליה טבלת קטגוריות שגויה.
 
 ## Scanner
 
-HE LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+ערכת ראיות לנקודת עניין: אגן השירות מערב מסילות תעשייתיות, אטם חי, קטגוריות עובדים ושקעי מקלט.
 
 ## Terminal
 
-HE LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+ערכת אגן שירות: מסילת תחזוקה, אטם רקמה-ברזל, טבלת קטגוריות ישנה של המושבה, שקע מקלט מטען, סמן סיכון ניתוק, מהדק צמיחה, עריסת כלי.
 
 ## Audio
 
-HE LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+הוא לא התפלל. הוא תזמן תחזוקה עד שהקטגוריות נשברו.
 
 ## Field Note
 
-HE LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+הערת מרודר: סרוק את טבלת הקטגוריות לפני נגיעה בשקע. האגן עשוי לתקן את המסלול באמצעות שינוי מה שהמסלול חושב שאתה.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/he_IL. -->

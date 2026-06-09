@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Relaisberichtvertraging
 
-Relaisvertraging laat HECTON-8 autoriteit ontvangen zonder zorg te ontvangen. Een pakket kan wet, schuld, eigendom of waarschuwing over uren, dagen of jaren dragen, maar geen handen naar een overstroomde kamer brengen. Die splitsing is de kern van communicatiedruk: systemen op afstand blijven machtig omdat ze vroeg zijn geschreven, vroeg in de rij staan en voor afstand zijn geprijsd. Mededogen komt als persoon; contract komt als data.
+Relaisberichtvertraging is de reden dat HECTON-8 tegelijk verlaten en bestuurd kan zijn. Er is geen magisch spraakkanaal dat afstand tot troost inklapt. Er zijn vensters, wachtrijen, repeaters, bewaringsstempels, compressieverlies, juridische ontvangstbewijzen en pakketten die aankomen met perfecte autoriteit en nutteloze timing.
+
+Deep Reach-druk hangt af van die asymmetrie. Een pandrechtbericht kan geldig blijven nadat een medisch verzoek verloopt. Een weigering kan uitgevoerd worden nadat de manager die tekende naar huis is geroteerd. Een bekentenis kan aankomen nadat de getuige sterft. De oceaan zwijgt, maar de route niet. Zij blijft oude beslissingen leveren aan kamers die levende hulp nodig hadden.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/nl_NL. -->

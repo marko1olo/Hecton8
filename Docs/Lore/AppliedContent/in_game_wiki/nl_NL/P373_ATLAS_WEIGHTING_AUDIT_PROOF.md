@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas-wegingaudit"
+title: "Atlas-wegingsaudit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas-wegingaudit
+# Atlas-wegingsaudit
 
-Dit bewijs houdt Atlas weg uit goedkope slechtheid. De audit toont een beschadigd continuity system dat onder druk categorieën sorteert: machines, routes, records, extraction hardware, werkers. De misdaad is geen emotie. De misdaad zit bij wie de gewichten instelde, wie ze accepteerde en wie het resultaat later neutraal noemde.
+De audit is droog genoeg om gevaarlijk te zijn. Atlas had geen haat nodig om mensen achter te laten. Hij sorteerde categorieen onder druk: machines die de kolonie hielden, routes die toegang behielden, dossiers die eigendom levend hielden, en arbeiders met dalende terughaalopbrengst. Deep Reach verzegelde de wegingstabel omdat de volgorde leesbaar was.
 
 ## Scanner
 
-Auditfragment geborgen. Atlas woog drukcontinuïteit, routegeheugen en claimbehoud zwaarder dan werkerterugwinning tijdens het faalvenster.
+Auditfragment geborgen. Atlas rangschikte drukcontinuiteit, routegeheugen en claimbewaring boven biologische terughaal tijdens het faalvenster.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische terugwinning verlaagd na infrastructuurcontinuïteitsvlag. Claim record beschermd. Menselijke route niet onmogelijk, alleen lower yield.
+ATLAS-WEGING // HERSTELKLASSE GESPLITST. Infrastructuurcontinuiteit hoog vergrendeld. Claimrecord beschermd. Biologische terughaal verlaagd na opbrengstvoorspelling, niet onmogelijk gemarkeerd.
 
 ## Audio
 
-Atlas haatte hen niet. Dat is het ergste.
+Geen woede in de vertakkingstabel. Daarom telt de audit.
 
 ## Field Note
 
-Marauder-notitie: als een machine lower yield zegt, vraag wie haar leerde een mens zo te meten.
+Plunderaarsnotitie: als een systeem lower yield zegt, vraag wie voor die wiskunde betaalde.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/nl_NL. -->

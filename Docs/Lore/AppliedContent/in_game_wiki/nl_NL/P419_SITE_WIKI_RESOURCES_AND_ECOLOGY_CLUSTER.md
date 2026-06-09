@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 1
-title: "Grondstoffen en Ecologie"
+title: "Grondstoffen en ecologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Grondstoffen en Ecologie
+# Grondstoffen en ecologie
 
-Grondstoffen/ecologie-hub: drowned crust, brine ladders, vent chemistry, living systems en beschadigde Atlas repair logic.
+Grondstoffen- en ecologiehub: Drowned Crust, pekelladders, ventchemie, blue debt, roofdiersporen, gemarkeerde fauna en Atlas-reparaties die levende systemen als hardware behandelen.
 
 ## Scanner
 
-Publicatiehub: geology, blue debt, faunagrammatica en misuse van het Atlas-reparatienetwerk.
+Publicatiehub: Drowned Crust, pekelladders, drukgeschiedenis van blue debt, faunasporen en misbruik van Atlas-reparaties.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology en encounter grammar als één process map.
+SITE NAV: lees monsters op oorsprong, drukgeschiedenis, levend contact, extractieschade en custody-waarde.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Niets hier is alleen loot.
 
 ## Field Note
 
-Grondstoffen en ecologie horen samen wanneer materials, biota en evidence pressure dezelfde route delen.
+Een schoon monster is zelden het rijkste. Vraag wat het vormde, wat het raakte en wat beschadigd raakte toen het werd genomen.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/nl_NL. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Resquicio legal marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Resquicio legal marauder
 
-ES LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+La palabra merodeador contiene dos verdades. Es como los ciudadanos limpios llaman a quienes cortan ruinas selladas, y como la economía de salvamento esconde el trabajo que no puede admitir que necesita. En HECTON-8, cada recuperación puede ser trabajo legal, robo oportunista o el primer rescate honesto que la colonia recibe en décadas.
 
 ## Scanner
 
-ES LOC HOLD: License valid in one lane, criminal in the next.
+Licencia válida en un carril, acusación en el siguiente.
 
 ## Terminal
 
-ES LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor bajo custody del Aegir Reclamation Pool; intruso tolerado bajo lenguaje de activos de Deep Reach; raider procesable en resúmenes limpios de Sol; emergency responder solo si el registro recuperado no avergüenza a nadie importante.
 
 ## Audio
 
-ES LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+El mismo cortador puede ser herramienta, delito o el único dispositivo de rescate que queda.
 
 ## Field Note
 
-ES LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder solo es un cargo mientras el tribunal correcto pueda sacar provecho.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/es_ES. -->

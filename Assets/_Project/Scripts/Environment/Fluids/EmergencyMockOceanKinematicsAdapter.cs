@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -8,7 +9,7 @@ namespace Hecton8.Environment.Fluids
 {
     public readonly struct EmergencyMockOceanKinematicsAdapter : IHectonOceanKinematics
     {
-        private const float DefaultSeaLevel = 14.02f;
+        private const float DefaultSeaLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
         private readonly float _seaLevel;
 
@@ -70,8 +71,7 @@ namespace Hecton8.Environment.Fluids
         private static float ResolveSeaLevel(float seaLevel)
         {
             return math.isfinite(seaLevel) &&
-                math.abs(seaLevel) > 0.0001f &&
-                math.abs(seaLevel) <= 1000f
+                math.abs(seaLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? seaLevel
                 : DefaultSeaLevel;
         }

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Corporate Coordinate Capture Record"
+title: "Запись корпоративного захвата координат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Corporate Coordinate Capture Record
+# Запись корпоративного захвата координат
 
-RU LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+Вопрос не только в том, покинул ли игрок HECTON-8. Вопрос в том, кто получает карту после его ухода и была ли выживаемость куплена тем, что старому владельцу дали путь обратно.
 
 ## Scanner
 
-RU LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Координатный payload принят. Приоритет приемника Deep Reach восстановлен; публичный отчет не изменен.
 
 ## Terminal
 
-RU LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+ЗАХВАТ КООРДИНАТ: вектор бассейна Atlas передан приемнику Deep Reach. Извлечение разрешено по отметке сотрудничества. Публичная запись аварии не изменена. Будущие операции возвращают корпоративный маршрутный приоритет.
 
 ## Audio
 
-RU LOC HOLD: You opened the door from the inside.
+Ты открыл дверь изнутри.
 
 ## Field Note
 
-RU LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Корпоративная частичная концовка: координаты покупают эвакуацию, заново открывая место преступления под контроль Deep Reach.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ru_RU. -->

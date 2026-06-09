@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ressourcen und Ökologie
 
-Ressourcen/Ökologie-Hub: drowned crust, brine ladders, vent chemistry, living systems und beschädigte Atlas-repair logic.
+Hub für Ressourcen und Ökologie: Drowned Crust, Brine-Leitern, Vent-Chemie, blue debt, Räuberzeichen, markierte Fauna und Atlas-Reparaturen, die lebende Systeme wie Hardware behandeln.
 
 ## Scanner
 
-Publikationshub: geology, blue debt, Faunagrammatik und misuse des Atlas-Reparaturnetzes.
+Publikationshub: Drowned Crust, Brine-Leitern, Druckgeschichte von blue debt, Faunazeichen und Atlas-Reparaturmissbrauch.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology und encounter grammar als eine process map.
+SITE NAV: Proben nach Ursprung, Druckgeschichte, Lebendkontakt, Entnahmeschaden und custody-Wert lesen.
 
 ## Audio
 
-Hier ist nichts bloß loot.
+Hier ist nichts nur loot.
 
 ## Field Note
 
-Ressourcen und Ökologie gehören zusammen, wenn Materialien, Biota und evidence pressure dieselbe Route teilen.
+Eine saubere Probe ist selten die reichste. Frage, was sie formte, was sie berührte und was verletzt wurde, als sie genommen wurde.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/de_DE. -->

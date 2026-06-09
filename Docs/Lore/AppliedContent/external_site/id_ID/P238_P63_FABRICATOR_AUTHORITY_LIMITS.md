@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: P-63 Fabricator Authority Limits"
+title: "Batas Otoritas Fabricator P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: P-63 Fabricator Authority Limits
+# Batas Otoritas Fabricator P-63
 
-ID LOC HOLD: P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence.
+Batas otoritas P-63 menjaga crafting awal HECTON-8 sebagai triage bertahan hidup: pemain cepat kompeten, tetapi bagian untuk pulang menuntut sertifikat, material, dan risiko nyata.
 
 ## Scanner
 
-ID LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 menerima gasket, clamp, pinger, dan kontak cutter, tetapi menolak komponen ascent-rated tanpa bukti lebih dalam.
 
 ## Terminal
 
-ID LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair butuh pressure certificate, material olahan vent, atau route authority stamp.
 
 ## Audio
 
-ID LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+Mesin ini bisa menyelamatkan pagimu. Ia tidak bisa memaafkan orbitmu.
 
 ## Field Note
 
-ID LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+Ini bukan dinding crafting acak. Mesin menolak membuat bagian pelarian tanpa bukti tekanan.
 
 <!-- External Site; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/id_ID. -->

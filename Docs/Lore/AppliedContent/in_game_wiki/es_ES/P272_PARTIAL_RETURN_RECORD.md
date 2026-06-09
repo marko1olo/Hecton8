@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Partial Return Record"
+title: "Registro de retorno parcial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Partial Return Record
+# Registro de retorno parcial
 
-ES LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.
+El Registro de retorno parcial anota alivio sin escape. Black Keel puede subir al operador para reparar traje, aire, decon y sincronización de libro, pero la orden de retorno al mismo seed mantiene gravamen, término de cuarentena, memoria de escaneo, paquetes de prueba abiertos y carga sin resolver atados al mismo océano.
 
 ## Scanner
 
-ES LOC HOLD: Extraction granted. Claim unresolved.
+REGISTRO DE RETORNO PARCIAL // Recogida de Black Keel aceptada. Retorno al mismo seed autorizado bajo gravamen ampliado; memoria de escaneo y paquetes de prueba abiertos persisten.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+REGISTRO DE FINAL / RETORNO PARCIAL
+Recogida: extracción temporal de Black Keel.
+Propósito: reparación de traje, recarga de aire, decon, sincronización de libro.
+Estado de custodia: gravamen ampliado; término de cuarentena adjunto.
+Autoridad de retorno: mismo seed, mismo océano, avisos de ruta retenidos.
+Datos persistentes: memoria de escaneo, paquetes de prueba abiertos, carga sin resolver.
+Pérdida conocida: el alivio se factura antes de volverse libertad.
 
 ## Audio
 
-ES LOC HOLD: Out is not away.
+La presión soltó. El contrato guardó el asiento.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Un traje limpio y un ciclo de sueño no cierran un contrato. La ruta de abajo conserva sus avisos antiguos.
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/es_ES. -->

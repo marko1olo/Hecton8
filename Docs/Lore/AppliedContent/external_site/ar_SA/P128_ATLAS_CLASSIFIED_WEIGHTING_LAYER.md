@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "طبقة أوزان Atlas السرية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# طبقة أوزان Atlas السرية
 
-AR LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+طبقة الأوزان السرية هي الجريمة تحت الأسطورة. لم يرتجل Atlas مذبحة من عطل صاف؛ نفذ أمر أولويات مصدقا تحت ضغط مستحيل، وهذا يجعل مؤلفيه البشر أصعب عذرا.
 
 ## Scanner
 
-AR LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+طبقة توجيه مخفية: استمرارية المطالبة فوق فئة العامل عند التصادم.
 
 ## Terminal
 
-AR LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+أوزان توجيه سرية: عند عدم يقين طارئ يضع Atlas سلامة عملية XO، واستمرارية حمولة Seed، وحفظ المطالبات، واحتواء الأدلة، والنجاة من الضغط فوق فئات قوة العمل البيولوجية، ما لم يوجد تجاوز بشري حي ومؤكد.
 
 ## Audio
 
-AR LOC HOLD: The murder weapon was a priority order.
+لم يكن في القلب شيطان. كان هناك رصيف أولويات موقع.
 
 ## Field Note
 
-AR LOC HOLD: This is not evil. It is worse: a table somebody approved.
+أداة القتل كانت جدولا وافق عليه أحدهم قبل أن يتحرك الماء.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/ar_SA. -->

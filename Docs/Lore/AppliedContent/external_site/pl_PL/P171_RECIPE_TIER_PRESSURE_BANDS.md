@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Recipe Tier Pressure Bands"
+title: "Pasma ciśnienia poziomów receptur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Recipe Tier Pressure Bands
+# Pasma ciśnienia poziomów receptur
 
-PL LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+Pasma ciśnienia poziomów receptur definiują, jak HECTON-8 unika generycznego craftingu survivalowego. Materiały nie są abstrakcyjnym kosztem. Są dowodem z klasą ciśnienia, historią trasy, certyfikacją i skutkami prawnymi. Ta sama struktura może napędzać receptury, ostrzeżenia skanera, etykiety UI i artykuły lore bez rozdzielania języka gry i fikcji.
 
 ## Scanner
 
-PL LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Receptura HECTON-8 jest argumentem o głębokości, nie listą zakupów. Część liczy się dopiero, gdy przeżyje pasmo ciśnienia, które deklaruje.
 
 ## Terminal
 
-PL LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+PASMA RECEPTUR / T0 łata przetrwania: płytki złom, ręczne uszczelnienie, bez pieczy / T1 naprawa certyfikowana: przemysłowe części z półki, certyfikat pompowni / T2 sprzęt ciśnieniowy: płukanie solanką, utwardzanie wentem, dowód akustyczny / T3 wznoszenie lub Atlas: źródło abisalne, odbiorca prawny, pokwitowanie izolacji.
 
 ## Audio
 
-PL LOC HOLD: A recipe is a depth permission form with bolts.
+Receptura to pozwolenie głębokości z przykręconymi śrubami.
 
 ## Field Note
 
-PL LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+Poziom receptury musi pasować do klasy ciśnienia, kosztu trasy i ryzyka pieczy. Tania śruba w złym paśmie nie jest tania; to przyszły przeciek.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/pl_PL. -->

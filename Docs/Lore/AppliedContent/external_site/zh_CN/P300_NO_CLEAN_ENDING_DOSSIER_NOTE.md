@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: No Clean Ending Dossier Note"
+title: "无干净结局档案备注"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: No Clean Ending Dossier Note
+# 无干净结局档案备注
 
-ZH LOC HOLD: Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost.
+HECTON-8 的结局设计上就会留下伤痕：受保护的生态、被拒绝的公司、释放的证人记录、未偿债务，以及改变了海洋却没有权利将其关闭的玩家。
 
 ## Scanner
 
-ZH LOC HOLD: Dossier note: closure denied; consequence retained.
+档案备注：拒绝结案；后果保留。
 
 ## Terminal
 
-ZH LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD：结果已存储。在当前证据状态下无法干净结案。债务、生态、责任和证人监管仍为活跃记录。
 
 ## Audio
 
-ZH LOC HOLD: You saved something. That is not the same as clearing it.
+你救下了某些东西。这不等于清除了它。
 
 ## Field Note
 
-CN LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+结局后档案保持桥梁打开：结果已记录，债务和证据未解决，没有完美胜利。
 
 <!-- External Site; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/zh_CN. -->

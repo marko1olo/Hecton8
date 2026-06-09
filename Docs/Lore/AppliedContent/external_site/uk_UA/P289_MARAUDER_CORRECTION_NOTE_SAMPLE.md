@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Marauder Correction Note Sample"
+title: "Зразок мародерської правки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Marauder Correction Note Sample
+# Зразок мародерської правки
 
-UK LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Мародерські нотатки є сильними доказовими поверхнями HECTON-8, бо сперечаються з офіційними системами, не стаючи всезнаючим лором. Цей зразок тримає підозру через практичні позначки: час, сертифікати, хибну категорію і затримку черги. Він не розв'язує справу за гравця. Він учить читати брехню, подану як техобслуговування.
 
 ## Scanner
 
-UK LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Жирним олівцем поверх акта аварії: не погода, не паніка, а затримка допуску з кількістю тіл у справі.
 
 ## Terminal
 
-UK LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+МАРОДЕРСЬКА ПРАВКА / ОФІЦІЙНА ПРИЧИНА: ВІДХИЛЕНА / ДО ЗАЯВИ ПЕРЕВІРИТИ: сертифікат насоса, склад зміни, категорію тіл, розсинхрон годинника дверей, чергу дозволу на порятунок.
 
 ## Audio
 
-UK LOC HOLD: Someone else smelled the paperwork rot.
+Хтось відчув гниль у паперах ще до того, як відсік висох.
 
 ## Field Note
 
-UK LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+НЕ ПОГОДА. ЗАТРИМКА ДОПУСКУ. Перевірити сертифікат насоса, склад зміни, категорію тіл. Годинник дверей випереджає штамп заяви на шість хвилин.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/uk_UA. -->

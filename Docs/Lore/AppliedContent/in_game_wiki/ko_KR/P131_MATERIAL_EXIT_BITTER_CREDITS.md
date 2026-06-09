@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "물자 탈출: 쓴 정산"
+title: "물자 탈출: 쓴 크레딧"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 물자 탈출: 쓴 정산
+# 물자 탈출: 쓴 크레딧
 
-물자 탈출은 HECTON-8을 유급 작업으로 보는 Marauder에게 진짜 결말이다. 플레이어는 빚을 줄이고 carrier 장부를 만족시킨 채 떠날 수 있다. 대가는 보인다. 식민지는 청구 가치로 변환된 범죄 현장으로 남고, Deep Reach는 작업자들이 받은 탈출로보다 더 나은 귀환 경로를 얻는다.
+이것은 HECTON-8에서 가장 차가운 합법적 탈출이다. Marauder는 Black Keel이 무게를 재고, 청구하고, 상승 창구로 보낼 수 있는 압력 물질을 가지고 돌아온다. 부채는 줄고 운송 원장은 맞아떨어지며 작업 파일은 숫자를 조작하지 않고 닫힐 수 있다. 영수증에는 직접적인 거짓이 없다. 샘플은 진짜이고 custody 사슬도 충분히 깨끗하다. 실패는 빠진 칸에 산다. 대조되지 않은 노동자 이름, 기소하기엔 너무 얇은 증거 사슬, 청구 가치로 바뀐 익사한 식민지, 그리고 Deep Reach에 더 깨끗한 귀환 명분을 주는 경로 데이터. 여기서 전문적 성공은 살아남지만 그 맛은 금속과 오래된 공기다.
 
 ## Scanner
 
-압력 물질 수락. 탈출 창구 구매 가능. 작업자 이름은 아직 대조되지 않음.
+압력 물질 수락. 탈출 창구 판매됨. 이름들은 아직 미결.
 
 ## Terminal
 
-물자 탈출 영수증: custody-grade 압력 물질 수락; lien 감소; 증거 payload 불완전; 실종 작업자 장부는 청구자 분쟁 상태; Recovery Compliance 우선순위 상승.
+물자 탈출 영수증: custody-grade 압력 물질 수락; lien 감소; 상승 질량 승인; 증거 payload 불완전; 실종 노동자 원장 미해결; Deep Reach 회수 관심 상승.
 
 ## Audio
 
-청구서는 이름보다 먼저 지워진다.
+청구서는 이름들보다 먼저 공기에 닿는다.
 
 ## Field Note
 
-Black Keel은 죽은 사람보다 샘플을 먼저 가격 매긴다. 그것은 계약 오류가 아니다.
+Black Keel은 기억보다 먼저 질량을 정산한다. 계약은 그것을 성공이라 부른다.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/ko_KR. -->

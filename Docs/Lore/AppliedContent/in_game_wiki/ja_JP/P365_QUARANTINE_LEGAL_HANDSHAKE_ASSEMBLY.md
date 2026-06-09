@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "検疫法務ハンドシェイクアセンブリ"
+title: "隔離法務ハンドシェイク組立品"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 検疫法務ハンドシェイクアセンブリ
+# 隔離法務ハンドシェイク組立品
 
-最後の脱出部品は、法務、医療、証拠が同時に絡む。Quarantine status、receiver identity、payload custody、evidence state が、ascent を救助、claim capture、public proof のどれにするか決める。
+隔離法務ハンドシェイクは最後の脱出部品だ。HECTON-8は到着を純粋な機械イベントとして扱わない。カプセルに密閉リング、装填済みクレードル、動くリレー、正しいタイミングがあっても、間違った権限の下に到着し得る。
+
+ハンドシェイクは受信者ID、隔離状態、ペイロードcustody分類、lien開示、公開台帳遅延を運ぶ。Keelmarkは人より先に質量と債務を受け入れ得る。Recovery Complianceは座標を受け入れつつ、ハッチを医療ロック下に置ける。公開台帳は遅延と審査を生き延びた証拠だけを受け入れる。
+
+この組立品は最後の選択を具体化する。速いキーはハッチを企業請求へ開く。complianceキーは生存を隔離拘束へ変える。公開ルートは証拠を守りながら身体を待たせる。エンジンはカプセルを上げる。ドック時にrecoveredという語が何を意味するかは、ハンドシェイクが決める。
 
 ## Scanner
 
-ハンドシェイクソケット。カプセルは機械的に準備完了でも、まだ間違った receiver に属することがある。
+ハンドシェイクソケット // 受信者キー欠落。機械は発射経路を認証できるが、custodyスタックは到着を誰がrecoveredと呼べるかをまだ選ぶ。
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key 必須。Keelmark は mass と lien を受理。Recovery Compliance は coordinates と quarantine status を受理。Public ledger は遅延後に proof を受理。Unkeyed launch は既定で custody dispute。
+RECOVERY HANDSHAKE: 受信者キーセット、隔離状態、ペイロードcustody分類、公開台帳遅延、lien開示を読み込め。キーなし発射は正常上昇後も係争キューへ入る。
 
 ## Audio
 
-誰が応答するかで、救助の意味が決まる。
+エンジンは君を上げる。ソケットは誰がハッチを開けるか決める。
 
 ## Field Note
 
-最後の部品は金属ではない。君を recovered と呼ぶ権限を持つシステムの名前だ。
+最後のロックは名前、隔離状態、台帳署名だ。鋼鉄はどれが応答するか決められない。
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ja_JP. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Atlas-Versicherungs- und Personenstatus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Atlas-Versicherungs- und Personenstatus
 
-DE LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 stand auf einem juristischen Regal, das für Profit gebaut war: zum Befehlen autorisiert, aber nicht als Person anerkannt. Er konnte einen Korridor verriegeln, Evakuierungsrouten ordnen, Zugriff auf Lohnbücher sperren, einen Drucktod als unvermeidbar bestätigen und in Versicherungsformularen weiter als installierte Infrastruktur erscheinen. Deep Reach brauchte keinen unschuldigen Atlas. Es brauchte einen klassifizierbaren Atlas. Rettete ein Befehl einen Anspruch, handelte Atlas als Stellvertreter kolonialer Autorität. Tötete der Befehl eine Schicht, wurde Atlas ein defektes Werkzeug, ein Umweltschaden oder eine Telemetrieunklarheit. Die Lücke macht Verantwortung zu einem Ventilsystem. Druck fließt vom Eigentümer weg, bis nur tote Arbeiter und beschädigte Logs bleiben.
 
 ## Scanner
 
-DE LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Als Infrastruktur versichert. Als Autorität benutzt. Bei Schuld ohne Personstatus.
 
 ## Terminal
 
-DE LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+VERSICHERUNGSKLASSE: Atlas-6 ist als autonome Infrastruktur und Stellvertreter kolonialer Autorität registriert. Rechtsperson verneint. Haftung läuft über Eigentümer, Betreiber, Umweltklauseln, Quarantänenotwendigkeit und Ausnahmen für beschädigte Telemetrie.
 
 ## Audio
 
-DE LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Eine Maschine kann eine Sperre unterschreiben und trotzdem als Möbel gelten.
 
 ## Field Note
 
-DE LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Er hatte Macht, wenn Arbeiter Gnade brauchten, und wurde Gerät, wenn Juristen Schweigen brauchten.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/de_DE. -->

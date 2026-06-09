@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Öffentlicher Artikel zur Ressource Blue Debt
 
-Blue debt ist der Grenzname für Xenon-Omega-bearing pressure substrate auf HECTON-8. Es kann als salzlösungsreiches Mineral, Clathrat-Tasche, pressure-glass-Kontamination, biofilmgebundenes Gitter oder beschädigtes industrielles Containment-Material erscheinen. Sein Wert kommt aus Rechnen, Containment und Extremumgebungsspeicherung. Seine Gefahr kommt aus Verwahrung: Jede Probe fragt, wem sie gehört, wer sie zertifiziert hat und wer beschuldigt wird, wenn sie den Zustand ändert.
+Blue debt ist kein Zaubererz. Es ist Grenzslang für Xenon-Omega-tragendes Drucksubstrat: salzreiche Mineraltaschen, Clathratschichten, Druckglas-Kontamination, biofilmgebundene Gitter und beschädigtes Containmentmaterial, das Bedingungen überstand, an denen normale Ausrüstung scheitert. Sein Wert kommt aus Geschichte unter Druck. Eine Probe kann Rechenspuren, Containmentverhalten, Sensorspeicher oder chemische Zustände bewahren, die nur HECTON-8 erzeugen konnte.
 
-## Scanner
-
-Der Slang ist ehrlich. Der offizielle Name versteckt die Haftung: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-ÖFFENTLICHE ARTIKELSTUFE / BLUE DEBT
-erlaubt: Probenverhalten, Druckchemie, Clathrat- und Salzträger, Containment-Wert, Rechennutzung, Verwahrungsrisiko
-gesperrt: exakte Rezepttabellen, Payout-Tuning, späte Atlas-Substrate-Routen
-Redaktionsnotiz: kein magisches Erz, keine leuchtende Loot-Fantasie, kein sauberes Eigentum.
-
-## Audio
-
-Sie nannten es blue debt, weil jedes nützliche Gramm bereits jemandem Druck, Papierkram oder Blut schuldete.
-
-## Field Note
-
-Wenn es wie Schatz leuchtet, schreib es neu. Blue debt soll nützlich, nass, reguliert, instabil und bereits umstritten wirken.
+Das Wort debt zählt. Jemand hat die Entstehung dieser Materie bereits mit Infrastruktur, Arbeit, Zeit und Risiko bezahlt. Ein sauber wirkendes Stück kann Quarantäneexposition, Deep-Reach-Gewahrsam, Black-Keel-Massestrafen und Beweiswert zugleich tragen. Es mitzunehmen ist kein Bergbau, sondern ein Streit mit dem Routenbuch.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/de_DE. -->

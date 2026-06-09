@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przewodnik po pressure glass i sealant"
+title: "Przewodnik po szkle ciśnieniowym i uszczelniaczu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik po pressure glass i sealant
+# Przewodnik po szkle ciśnieniowym i uszczelniaczu
 
-Przewodnik po pressure glass i sealant osadza biomechaniczny horror HECTON-8 w logice naprawy: Atlas podąża za pęknięciami, kablami, biofilms i pressure scars, bo zepsute systemy już dostarczają ścieżek.
+Szkło ciśnieniowe zaczynało jako praktyczny materiał kolonii: dość przejrzysty na iluminatory, dość mocny na drzwi ciśnieniowe i dość tani, by odlewać go w szwach serwisowych. Lata pod wodą zmieniły jego rolę. Pływy zapisały naprężenia w taflach. Minerały zmętniły krawędzie. Biofilm nauczył się pęknięć. Gdy przyszła chemia Atlasu, nie musiała wymyślać drogi przez kolonię. Rozbite szkło już ją narysowało.
 
-## Scanner
-
-Fraktura pressure-glass uszczelniona chemią Atlas. Bezpieczny lens stock tylko jeśli seal map pozostaje nienaruszona.
-
-## Terminal
-
-FIELD GUIDE: pressure glass zapisuje stary tide stress. Atlas sealant podąża tymi pęknięciami, bo pęknięcia już opisują linie awarii systemu.
-
-## Audio
-
-Sieć naprawcza czyta pęknięcia tak, jak ty czytasz mapę.
-
-## Field Note
-
-Nie szlifuj ładnej krawędzi. Idź za fracture map i tnij od martwej strony seal.
+Dlatego magazyn soczewek może być jednocześnie cenny i groźny. Tnij od martwej strony uszczelki, a szkło staje się salvage. Szlifuj żywą krawędź, a sieć naprawcza dostaje czystszą ścieżkę. Uszczelniacz w HECTON-8 nie jest tylko klejem. To decyzja o tym, które awarie mogą się zamknąć, które zostają na mapie i które stają się drzwiami dla czegoś, co wciąż próbuje naprawić niewłaściwe ciało.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ordem de Limpeza Deep Reach"
+title: "Ordem de Limpeza Ativa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ordem de Limpeza Deep Reach
+# Ordem de Limpeza Ativa Deep Reach
 
-Liga a cobertura corporativa à pressão atual: custódia de recurso, acesso Atlas e apagar provas.
+Ordem de Limpeza Ativa Deep Reach torna a pressão corporativa procedural: proxies ativos podem comprar amostras, abrir rotas Atlas e apagar prova de responsabilidade enquanto registros públicos ainda descrevem HECTON-8 como local perdido.
 
 ## Scanner
 
-Pilha de ordens: recurso, acesso Atlas, apagar provas. Resgate abaixo de controle de ativo.
+Ordem ativa recuperada: apreender amostras certificadas, abrir canal Atlas, isolar sobreviventes, apagar prova de responsabilidade.
 
 ## Terminal
 
-Diretiva proxy: contratante negável. Preservar amostras. Abrir canal Atlas se risco local aceitável. Apagar corpus de responsabilidade.
+A ordem proxy DR-CLEANSE-19 segue ativa. Contratados negáveis recebem primeiro custódia de amostras, depois acesso Atlas, e recuperação de testemunhas por último. Se Black Keel ou o ledger do local expõe responsabilidade, a fila purge move arquivos de prova para cold delete e retaggeia mortes de campo como perda climática.
 
 ## Audio
 
-A Deep Reach não está te caçando. Está te usando como sonda barata.
+Essa voz não é tráfego de resgate. É uma oferta de limpeza.
 
 ## Field Note
 
-Eles não voltaram para pedir desculpa.
+O campo de desculpas está vazio.
 
 <!-- External Site; generated from P039_DEEP_REACH_CLEANSE_ORDER/pt_BR. -->

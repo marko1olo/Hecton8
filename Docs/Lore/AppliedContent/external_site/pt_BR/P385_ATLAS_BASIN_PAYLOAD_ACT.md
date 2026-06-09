@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Basin Payload Act"
+title: "Portão payload da bacia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Basin Payload Act
+# Portão payload da bacia Atlas
 
-PT LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+A bacia Atlas é onde a rota para de perguntar o que aconteceu e começa a perguntar quem recebe o pacote utilizável. Cadeia de provas, vetor da bacia, classe salvage e proof hash não podem ficar todos intocados. Um receptor precisa ser escolhido, negado ou substituído por retenção local.
 
-## Scanner
-
-PT LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-PT LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-PT LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-PT LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Essa é a pressão final: nenhuma rota limpa a cena. Venda de coordenadas paga e expõe a bacia. Corte fecha caminhos de retorno e mata estrutura útil. Quarentena preserva e retém. Livro público publica sem mapa. Blind return recusa todos e arrisca perder o pacote. A campanha termina com custódia, não com conforto.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/pt_BR. -->

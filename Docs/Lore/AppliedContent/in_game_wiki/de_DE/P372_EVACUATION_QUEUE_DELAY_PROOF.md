@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Verzögerungsakte der Evakuierungswarteschlange"
+title: "Evakuierungswarteschlangen-Verzug"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Verzögerungsakte der Evakuierungswarteschlange
+# Evakuierungswarteschlangen-Verzug
 
-Dieser Beweis macht aus Evakuierung eine Sequenz. Das Tor war nicht bloß durch Flutwasser abgeschnitten; es blieb im Review-Zustand, während Druckalarme bewohnte Korridore erreichten. Das leere Zeugenfeld zählt, weil das System menschliche Bestätigung verlangte, nachdem Menschen das Panel schon nicht mehr erreichen konnten.
+Dieser Datensatz macht aus der Evakuierung kein fehlendes Ergebnis, sondern eine geordnete Verzögerung. Erst Alarm, dann Prüfung, dann Dichtungsüberschreitung, dann zu späte Freigabe. Deep Reach kann die Evakuierung unvollständig nennen; die Warteschlangenuhr zeigt ein Tor, das nach Überschreiten der sicheren Drucklinie durch Verfahren geschlossen blieb.
 
 ## Scanner
 
-Queue-Uhr geborgen. Das Freigabetor blieb verriegelt, nachdem Druckalarme von Prognose zu Korridor wechselten.
+Warteschlangenuhr geborgen. Das Freigabetor blieb in manueller Prüfung, nachdem Druckalarme besetzte Korridorabschnitte erreicht hatten.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Manuelle Bestätigung fehlt. Quarantäneprüfung offen. Routendruck überschritt Siegelklasse vor Abschluss der Autorisierung.
+EVAK-WARTESCHLANGE // DOCK E-7. Manuelle Bestätigung leer. Quarantänegremium ausstehend. Dichtungsklasse vor Freigabe überschritten. Torschloss reagierte auf Warteschlangenstatus, nicht auf Flutschaden.
 
 ## Audio
 
-Sie scheiterten nicht daran, alle zu retten. Sie warteten, bis irgendwen zu retten schwerer wurde.
+Sie warteten auf Genehmigung, während die Route Luft verlor.
 
 ## Field Note
 
-Marauder-Notiz: Ein geschlossenes Tor mit offenem Feld ist kein Unfall. Es ist eine Entscheidung, die auf Unterschrift wartet.
+Plünderernotiz: Ein geschlossenes Tor mit leerem Bestätigungsfeld ist eine Entscheidung, die auf einen Namen wartet.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/de_DE. -->

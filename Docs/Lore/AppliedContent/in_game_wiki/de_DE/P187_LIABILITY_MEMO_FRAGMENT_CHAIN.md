@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Fragmentkette des Haftungsmemos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Fragmentkette des Haftungsmemos
 
-DE LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+Die Fragmentkette des Haftungsmemos lehrt den Spieler, Deep-Reach-Beweise zu lesen. Kein einzelnes Memo enthält das ganze Verbrechen; jedes Büro bewahrte den Satz, der die eigene Handlung prozedural wirken ließ. Eine Risikotabelle gibt zu, dass die Gezeitenmarge versagte. Eine Evakuierungsnotiz verwandelt Verzögerung in Kanaldisziplin. Ein Atlas-Override lässt Kontinuität sicherer klingen als Flucht. Ein Keelmark-Fragment wandelt vermisste Arbeiter in erstattbaren Verlust um. Der Spieler muss Papier mit überfluteten Räumen, kaputten Routenzeitgebern und Arbeiternamen abgleichen. Die Kette wird erst lesbar, wenn die Fragmente ihre Büros nicht mehr verteidigen und einander widersprechen.
 
 ## Scanner
 
-DE LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Das Haftungsmemo überlebte als Fragmente, weil jedes Büro den Absatz aufbewahrte, der es selbst schützte.
 
 ## Terminal
 
-DE LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: Risikomargentabelle / Evakuierungsfreigabenotiz / Atlas-Kontinuitäts-Override / Keelmark-Verlustumwandlung / Recovery-Verwahrungsantrag. Routenzeit, Raumschäden und Arbeiternamen gegenprüfen, bevor die öffentliche Zusammenfassung akzeptiert wird.
 
 ## Audio
 
-DE LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Sie versteckten die Wahrheit nicht in einem Tresor. Sie legten sie in Stücken ab.
 
 ## Field Note
 
-DE LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Ein zerrissenes Memo ist an den Stellen ehrlich, an denen es das nie sein wollte.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/de_DE. -->

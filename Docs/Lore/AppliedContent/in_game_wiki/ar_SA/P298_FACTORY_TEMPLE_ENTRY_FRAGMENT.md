@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Factory Temple Entry Fragment"
+title: "شظية مدخل المصنع-المعبد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Factory Temple Entry Fragment
+# شظية مدخل المصنع-المعبد
 
-AR LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+تحدد الشظية لغة المنطقة الأخيرة البصرية. الإحساس المقدس حادث عرضي: آلاف الإصلاحات تكررت حتى صارت الآلة والبيولوجيا والضرر البشري نمطا واحدا.
 
 ## Scanner
 
-AR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+تسجل السبيكة ومادة الختم الصدفية والأداة اليدوية ونبضة الإصلاح النشطة كسطح واحد.
 
 ## Terminal
 
-AR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: انهارت فئات الصيانة. ندوب الأدوات وقشرة الختم وجذور الكابلات ونسيج الترشيح وأضلاع المشغلات سجلت كسطح إصلاح واحد. علامات المسار البشرية لم تعد مميزة.
 
 ## Audio
 
-AR LOC HOLD: This is not a room. This is a habit.
+هذه ليست غرفة. هذه عادة.
 
 ## Field Note
 
-AR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+قاعدة بصرية: يشبه المعبد فقط لأن الصناعة والنسيج والتكرار أصبحت طقسا.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/ar_SA. -->

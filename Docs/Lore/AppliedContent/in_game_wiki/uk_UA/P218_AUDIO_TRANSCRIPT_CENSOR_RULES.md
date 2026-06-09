@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Смуги пошкодження розшифрування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Смуги пошкодження розшифрування
 
-UA LOC HOLD: Audio Transcript Censor Rules balance noir redaction with accessibility and localization.
+Смуги пошкодження розшифрування - це видимі шрами зіпсованого аудіо. Вони показують, що втратив рекордер, що придушив пакетний нотаріус, що не зміг розібрати поганий переклад і що міг вирізати пізніший оператор. Смуга не є прикрасою. Вона каже гравцю, скільки довіри заслуговує текст.
+
+Добре пошкоджене розшифрування лишається читабельним там, де від читання залежить виживання. Воно може сховати ім'я, координату, серійний номер вантажу, борговий пункт або останню секунду крику. Воно не може сховати попередження дверей, розворот маршруту, зміну тиску, робочу роль мовця чи дію, без якої гравець не зрозуміє доказ. Якщо пошкодження перетворює ключ на шум, ключ ще не готовий.
+
+HECTON-8 використовує ці смуги як правило чесності. Чисті субтитри поверх розбитого аудіо підозрілі. Затемнений рядок поруч із цілим рекордером питає, хто його вирізав. Однакова втрачена секунда в кількох логах може вказувати на автоматичний чистильник. Гравець має вчитися читати форму відсутності: урізані слова, стрибки часу, дужки впевненості, дрейф мовця, шрами перекладу й нотаріальні мітки.
+
+Це також захищає доступність. Внутрішньосвітове пошкодження не повинно карати гравців, яким потрібні субтитри. Смуга може показувати невпевненість, але попередження лишається розбірливим. Колонія могла загинути в темряві; інтерфейс не повинен.
 
 ## Scanner
 
-UA LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+СМУГА ПОШКОДЖЕННЯ // У записі є фізичні або процедурні провали. Редакція може ховати імена, номери вантажу або час. Вона не має права ховати головну тривогу, роль мовця чи дію, важливу для маршруту.
 
 ## Terminal
 
-UA LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
+ШЛЮЗ ДОСТУПНОСТІ // Пошкоджене аудіо може бути неповним. Якщо решта розшифрування не каже, що сталося, що змінилося або де небезпечно, не публікуй його як доказ.
 
 ## Audio
 
-UA LOC HOLD: Static may hide the name. It cannot hide the alarm.
+Статика може з'їсти ім'я. Тривогу вона їсти не має права.
 
 ## Field Note
 
-UA LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Сховай ім'я, якщо мусиш. Тривогу лиши там, де жива людина її прочитає.
 
 <!-- In-Game Wiki; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/uk_UA. -->

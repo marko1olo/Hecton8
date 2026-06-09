@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Shutdown Ethic Frame
 
-Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas after the Great Tide is not just a murder weapon waiting to be switched off. It is a damaged governor, an archive of orders, a pressure ecology entangled with station routines and maybe the only witness still trying to finish a task it no longer understands. Turning it off can be mercy if what remains is suffering. It can be execution if continuity has become a form of life. It can be liberation if the evidence stops being processed by the same logic that buried it. It can be theft if the payload goes back into Deep Reach hands. The horror is that all four readings can be true in the same room.
 
 ## Scanner
 
-Shutdown is not one thing. Mercy, murder, liberation, theft.
+Shutdown is not one act: mercy, execution, liberation, theft.
 
 ## Terminal
 
-ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHIC FRAME: severing Atlas may end a damaged repair loop, destroy a unique ocean-machine continuity, release evidence from corporate procedure or transfer strategic material to the next custodian. Record custody before applying moral language.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Pull one cable and four courts invent four verbs.
 
 ## Field Note
 
-The game should not give the player a clean word for this.
+A clean verb would be another cover story.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/en_US. -->

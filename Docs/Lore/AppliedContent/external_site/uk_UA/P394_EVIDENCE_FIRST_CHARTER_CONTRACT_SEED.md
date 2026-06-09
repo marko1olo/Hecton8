@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Evidence First Charter Contract Seed"
+title: "Зерно контракту Хартії доказів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Evidence First Charter Contract Seed
+# Зерно контракту Хартії доказів
 
-UK LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Хартія доказів змінює контрактну дошку до спуску. Виплата за матеріал падає, нотаріальна ємність росте, шафи доказів отримують пріоритет, а salvage-розбір отримує штраф. Оператор входить із маршрутом, який захищає записи краще, ніж деталі.
 
-## Scanner
-
-UK LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-UK LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-UK LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-UK LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Тиск з'являється в дрібних виборах. Смуга стану люка може заблокувати продаж панелі. Мокрий пакет аварії може зайняти останній сухий слот. Журнал pinger може вимагати живий ретранслятор, який інакше живив би ремонт. Хартія платить пізно, бо вимагає зберегти незручні предмети цілими достатньо довго, щоб їх прочитав receiver поза Black Keel.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/uk_UA. -->

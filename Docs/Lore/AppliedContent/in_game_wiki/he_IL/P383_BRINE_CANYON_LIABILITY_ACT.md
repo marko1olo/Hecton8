@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Canyon Liability Act"
+title: "שער אחריות קניון מי מלח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Canyon Liability Act
+# שער אחריות קניון מי מלח
 
-HE LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+קניון מי המלח הופך זמן לראיה. חיישנים, שעונים, מצבי תור ולוחות מסלול שבורים מראים שההצפה הייתה אמיתית וגם הסיכון שהתקבל היה אמיתי. המפעיל מפסיק לאסוף שמועות ומתחיל לשאת שרשרת מסמכים שיכולה לשרוד בדיקת מקבל.
 
 ## Scanner
 
-HE LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+שער מסלול: קניון מי מלח. שכבות צפיפות, שעונים פגומים ומרווחים שהתקבלו הופכים לראיה פיזית של אחריות.
 
 ## Terminal
 
-HE LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+מסלול קמפיין // קניון מי מלח. נדרש: השווה עקבת מרווח, תור פינוי, שבר מסלול ושעון לחץ. אירוע הגאות הגדולה אושר. חריגה מסחרית ושקלול Atlas במחלוקת.
 
 ## Audio
 
-HE LOC HOLD: The ocean did not lie. The timetable did.
+האוקיינוס שבר את הקיר. לוח הזמנים שבר את האנשים.
 
 ## Field Note
 
-HE LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+הערת בוזז: אל תתווכח עם הגאות. תתווכח עם חותמת הזמן שמישהו שילם כדי להסיר.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/he_IL. -->

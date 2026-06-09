@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cooling_loop |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS184_FIRST_COOLING_LOOP_TRACE_ARTICLES.md |
 | Speaker | Service scanner, exchanger fin note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first service-corner inspection |
@@ -33,7 +33,7 @@ Forbidden facts: no performance value, no current cooling state, no repair unloc
 
 ### Scanner
 
-EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict.
+EXCHANGER FIN // Salt bridge between fins. Inspect contamination before judging cooling.
 
 ### Codex
 
@@ -71,18 +71,18 @@ CONTAMINATION TRACE
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| ru_RU | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| ja_JP | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| zh_CN | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| fr_FR | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| es_ES | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| de_DE | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| pl_PL | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| uk_UA | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| ar_SA | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| id_ID | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| ko_KR | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| he_IL | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| pt_BR | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
-| nl_NL | draft_machine_or_llm | EXCHANGER FIN // Salt bridge between fins. Mark contamination before thermal verdict. |
+| en_US | source_authority | EXCHANGER FIN // Salt bridge between fins. Inspect contamination before judging cooling. |
+| ru_RU | draft_machine_or_llm | РЕБРО ТЕПЛООБМЕННИКА // Соляной мост между ребрами. Проверь загрязнение перед оценкой охлаждения. |
+| ja_JP | draft_machine_or_llm | 熱交換器フィン // フィン間に塩の橋。冷却判断の前に汚染を確認。 |
+| zh_CN | draft_machine_or_llm | 换热器鳍片 // 鳍片之间有盐桥。判断冷却前先检查污染。 |
+| fr_FR | draft_machine_or_llm | AILETTE D'ECHANGEUR // Pont de sel entre ailettes. Controler la contamination avant de juger le refroidissement. |
+| es_ES | draft_machine_or_llm | ALETA DE INTERCAMBIADOR // Puente de sal entre aletas. Inspecciona contaminacion antes de juzgar enfriamiento. |
+| de_DE | draft_machine_or_llm | TAUSCHERLAMELLE // Salzbruecke zwischen Lamellen. Verschmutzung pruefen, bevor Kuehlung bewertet wird. |
+| pl_PL | draft_machine_or_llm | ZEBRO WYMIENNIKA // Mostek soli miedzy zebrami. Sprawdz zabrudzenie przed ocena chlodzenia. |
+| uk_UA | draft_machine_or_llm | РЕБРО ТЕПЛООБМІННИКА // Соляний міст між ребрами. Перевір забруднення перед оцінкою охолодження. |
+| ar_SA | draft_machine_or_llm | زعنفة مبادل // جسر ملح بين الزعانف. افحص التلوث قبل الحكم على التبريد. |
+| id_ID | draft_machine_or_llm | SIRIP PENUKAR // Jembatan garam di antara sirip. Periksa kontaminasi sebelum menilai pendinginan. |
+| ko_KR | draft_machine_or_llm | 교환기 핀 // 핀 사이에 소금 다리. 냉각 판단 전에 오염을 점검한다. |
+| he_IL | draft_machine_or_llm | צלע מחליף // גשר מלח בין צלעות. בדוק זיהום לפני שיפוט הקירור. |
+| pt_BR | draft_machine_or_llm | ALETA DO TROCADOR // Ponte de sal entre aletas. Inspecione contaminacao antes de julgar resfriamento. |
+| nl_NL | draft_machine_or_llm | WISSELAARVIN // Zoutbrug tussen vinnen. Inspecteer vervuiling voor koelingsoordeel. |

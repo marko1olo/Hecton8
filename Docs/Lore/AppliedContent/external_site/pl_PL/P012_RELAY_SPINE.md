@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Kręgosłup przekaźników
 
-Ludzka przestrzeń jest połączona przekaźnikami, nie cudami. Hashe dowodzą odbioru, a łańcuchy prawne utrzymują roszczenia.
+HECTON-8 nie ma ansible, magicznego kanału alarmowego ani sądu z rdzenia, który mówi na żywo nad oceanem. Przestrzeń ludzi łączy kręgosłup przekaźników: planowane wiązki, opieka pakietów, hashe świadków, lokalne bufory i łańcuchy potwierdzeń. To mocna maszyna do przechowywania faktów. Fatalna do ratowania kogoś, kto potrzebuje powietrza teraz.
 
-Sieć jest mocna i zimna. Gracz może wysłać prawdę i umrzeć, zanim pomoże.
+Gracz może znaleźć prawdziwy plik, dowieść pochodzenia, wysłać go do kolejki i nadal patrzeć, jak lokalna sytuacja się pogarsza. Black Keel słyszy impuls i zamienia go w zastaw. Luyten uwierzytelnia po zamknięciu okna. No FTL nie jest przypisem; to powód, dla którego natychmiastowe decyzje należą do osoby pod wodą.
 
 <!-- External Site; generated from P012_RELAY_SPINE/pl_PL. -->

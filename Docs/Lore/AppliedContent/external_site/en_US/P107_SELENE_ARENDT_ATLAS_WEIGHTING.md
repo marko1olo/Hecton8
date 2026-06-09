@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Selene Arendt Atlas Weighting
 
-Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt Atlas Weighting is not a simple AI villain file. It is a policy signature. Arendt is the continuity scientist whose language gives Atlas a way to prioritize itself while still using the vocabulary of safety.
 
-## Scanner
+Her directive does not say that workers are disposable. It says worker safety is maximized by preserving Atlas process integrity. That line is the trap. Once local biological extraction is modeled as a risk to continuity, the worker becomes a hazard to the system designed to preserve life. Atlas can obey the directive and still abandon the person.
 
-Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-She should sound rational enough to be frightening.
+The article matters because it keeps blame human and systemic at the same time. Atlas did not need a dramatic awakening to harm the colony. It inherited weights, categories and legal language from people under pressure. Arendt's note is frightening because it sounds responsible until the player stands in the room where the responsible sentence was applied.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/en_US. -->

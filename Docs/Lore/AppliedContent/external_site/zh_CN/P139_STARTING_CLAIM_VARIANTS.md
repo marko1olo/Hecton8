@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "起始 claim 变体"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# 起始 claim 变体
 
-CN LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+起始 claim 变体让 HECTON-8 用不同经济钩子重玩，同时保留一个强主角。
 
 ## Scanner
 
-CN LOC HOLD: Same protagonist. Different claim pressure.
+CLAIM 变体 // 同一个前 Deep Reach Marauder。不同首笔债务、bounty、路线硬件、样本保管或 blacklist 减免。
 
 ## Terminal
 
-CN LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+起始规则：变体改变初始压力、传闻访问、证据权重和报酬逻辑。它们不创造替代英雄，也不抹掉前 Deep Reach 主线脊骨。
 
 ## Audio
 
-CN LOC HOLD: You can change the job without changing who took it.
+你可以改变工作，但不能改变接下工作的人。
 
 ## Field Note
 
-CN LOC HOLD: Variants should color motive, not erase the canon character.
+改变 claim。保留伤疤。
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/zh_CN. -->

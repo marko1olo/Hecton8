@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Протокол карантинного сохранения payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Протокол карантинного сохранения payload
 
-RU LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+Протокол сохранения удерживает бассейн вне прямого корпоративного восстановления, но не освобождает его. Payload запечатывает координаты, держит экологию Atlas под карантинным escrow и выталкивает рассмотрение в отложенную публичную линию. Это может защитить живые системы от немедленной добычи. Это также может построить более чистую клетку.
 
 ## Scanner
 
-RU LOC HOLD: Preserve route. No clean owner. No clean release.
+Маршрут сохранения взведен. Payload назначает custody получателя отложенному карантинному рассмотрению и блокирует прямую передачу Deep Reach.
 
 ## Terminal
 
-RU LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+ПОЛУЧАТЕЛЬ PAYLOAD // СОХРАНИТЬ КАРАНТИН. Получатель: карантинный escrow lane. Удерживать вектор бассейна запечатанным, сохранить непрерывность экологии Atlas, отказать прямому корпоративному восстановлению. Публичное рассмотрение отложено. Власть выпуска не решена.
 
 ## Audio
 
-RU LOC HOLD: Keeping it alive does not mean keeping it free.
+Сохранено живым - не то же самое, что выпущено.
 
 ## Field Note
 
-RU LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Заметка мародера: запертая дверь может защищать комнату. Она также может стать комнатой.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ru_RU. -->

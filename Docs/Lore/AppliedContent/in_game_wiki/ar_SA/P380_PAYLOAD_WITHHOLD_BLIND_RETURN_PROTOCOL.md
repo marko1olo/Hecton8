@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "بروتوكول blind return مع حجز payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Withhold Blind Return Protocol
+# بروتوكول blind return مع حجز payload
 
-AR LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+بروتوكول blind return يرفض كل مستقبل. لا شركة ولا سجل ولا مسار حجر ولا هدف قطع يتلقى payload النهائي. الحامل يبقي الخريطة والأدلة محلية، فيحرم Deep Reach من طريق نظيف للعودة. ويترك الدين نشطا، والأدلة العامة غير مقدمة، والحزمة معرضة للماء أو الموت أو التخزين السيئ.
 
 ## Scanner
 
-AR LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+مسار blind return مسلح. لا مستقبل معين. متجه الحوض وproof hashes وفئة الوصول تبقى محلية؛ الرهن ونافذة الاسترجاع غير محلولين.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+مستقبل PAYLOAD // BLIND RETURN WITHHOLD. المستقبل: لا أحد. احتفظ بمتجه الحوض، proof hashes، فئة salvage، حزمة الأدلة المحلية. امنع Deep Reach من خريطة الوصول وإيصال الدفع وحيازة المستقبل. كلفة معروفة: رهن غير محلول، خطر فقدان الحزمة كامل.
 
 ## Audio
 
-AR LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+لا مستقبل، لا إيصال. إذا غرقت الحقيبة، تذهب الأدلة معها.
 
 ## Field Note
 
-AR LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+ملاحظة نهب: الاحتفاظ بالخريطة اختيار. لكنه لا يعطيك مستقبلا تلومه إذا تمزقت الحقيبة.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ar_SA. -->

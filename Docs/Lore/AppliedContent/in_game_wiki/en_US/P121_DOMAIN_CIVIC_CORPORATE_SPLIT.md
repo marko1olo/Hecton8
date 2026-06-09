@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Domain Civic-Corporate Split
 
-Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+Human space in 2190 is thin, old and badly compartmentalized. Sol Core still decides which papers count as ownership. Centauri gives Deep Reach the language of early legitimacy. Barnard Yards explains why marauder work can look like a trade instead of piracy. Tau Ceti can make evidence public, but only after relay delay and political review. Luyten moves packets and decides which custody chain survives the trip. Aegir sits where every jurisdiction becomes useful and nobody arrives fast enough to settle the argument.
 
 ## Scanner
 
-Legal map. Same species, different owners of truth.
+Legal map: one species, several owners of record.
 
 ## Terminal
 
-DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core holds old-law finance and certification; Centauri carries the first colony charters; Barnard Yards normalized salvage labor; Tau Ceti can turn evidence into public law; Luyten controls packet custody; Aegir remains a corporate claim until someone proves otherwise.
 
 ## Audio
 
-The farther you go, the more the law becomes a receipt.
+The farther the signal travels, the more law sounds like accounting.
 
 ## Field Note
 
-The domains do not need dozens of names. They need enough pressure to make rescue political.
+Rescue is not blocked by distance alone. It is blocked by who is allowed to call the stranded people citizens.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/en_US. -->

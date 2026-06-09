@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Catatan Interogasi Tahanan Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Hold Interrogation Record
+# Catatan Interogasi Tahanan Karantina
 
-ID LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+Catatan ini membuat penyelamatan terasa tidak nyaman. Bertahan hidup itu nyata, tetapi pemain keluar sebagai saksi, risiko kontaminasi, pembawa peta, dan bukti yang diperdebatkan sebelum kembali menjadi orang bebas.
 
 ## Scanner
 
-ID LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Pengklaim pulih dalam keadaan hidup. Flag karantina menimpa bahasa penyelamatan; payload bukti diisolasi.
 
 ## Terminal
 
-ID LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+CATATAN QUARANTINE HOLD: pengklaim biologis dipulihkan hidup. Gerak dibatasi menunggu scan kontaminasi, wawancara paparan tekanan, dan tinjauan kustodi bukti. Interogasi penerima memprioritaskan vektor akses Atlas sebelum izin medis.
 
 ## Audio
 
-ID LOC HOLD: They saved the body first because the body knew the route.
+Mereka menyelamatkan tubuh dulu karena tubuh tahu rutenya.
 
 ## Field Note
 
-ID LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier pasca-keluar: penyelamatan biologis menjadi karantina, interogasi, ekstraksi rute, dan kustodi payload sebelum kebebasan.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/id_ID. -->

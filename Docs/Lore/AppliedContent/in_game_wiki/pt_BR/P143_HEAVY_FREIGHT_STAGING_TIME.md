@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Tempo de preparação de frete pesado"
+title: "Tempo de preparação de carga pesada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tempo de preparação de frete pesado
+# Tempo de preparação de carga pesada
 
-O timing de frete pesado protege a linha do tempo sem FTL. Hardware Atlas pode chegar antes do assentamento em massa porque corporações lançam carga precursora cedo, adiantam o staging, aceitam risco não tripulado e enterram janelas de falha em linguagem de programa. O resgate não pode tomar esse truque emprestado depois que a emergência começa.
+Carga pesada transformou HECTON-8 de alvo de sondagem em objeto de dívida. Carga grande não podia perseguir uma verdade em mudança; precisava ser preparada, vinculada, segurada, estacionada, freada e recebida por alguém com autoridade. Quando um trem de módulos cruzou a rota, o contrato por trás dele tinha mais inércia que as objeções da colônia.
 
 ## Scanner
 
-Frete classe Atlas é paciência pré-paga envolta em blindagem.
+Pilha de manifestos: carga comprometida antes de o local receptor provar estar vivo.
 
 ## Terminal
 
-NOTA DE FRETE: Atlas e carga seed usam staging, assistência de fusão por pellets, longas derivas e infraestrutura de frenagem. Datas públicas podem esconder lançamentos precursores e partidas forward-domain.
+PREPARAÇÃO DE CARGA: cascos de pressão, blindagem cerâmica, massa de reator, estoque seed, armações de crawlers e anéis de habitat exigem janelas de lançamento separadas por anos. Depois de vinculada, a carga vira argumento legal em movimento.
 
 ## Audio
 
-Uma nave tão pesada não simplesmente viaja. Vira uma fatura com esteira.
+O envio já estava pago. Isso tornou pará-lo mais difícil que salvar pessoas.
 
 ## Field Note
 
-Uma rota pesada é montada com depósitos, janelas de feixe, massa de frenagem e coragem política.
+Carga não tem pressa. Ela torna cara a pressa dos outros.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/pt_BR. -->

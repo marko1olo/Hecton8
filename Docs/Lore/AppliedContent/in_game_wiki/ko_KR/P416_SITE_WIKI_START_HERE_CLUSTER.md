@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 여기서 시작: HECTON-8
 
-시작 클러스터: 계약, 플레이어 역할, HECTON-8 생존 압력, Deep Reach 이야기의 첫 모순.
+여기서 시작: HECTON-8은 침수된 식민지, 빚에 묶인 Marauder, 너무 깔끔한 Deep Reach 설명을 둘러싼 salvage contract로 시작된다.
 
 ## Scanner
 
-공개 허브: 전제, 플레이어 역할, 첫 제약, Deep Reach의 첫 거짓말.
+공개 입구: salvage contract, 빚에 묶인 Marauder, 손상된 capsule, Deep Reach 모순, 첫 Atlas 수리 흔적.
 
 ## Terminal
 
-SITE NAV: 계약 접근, 전 Deep Reach 전문가, 채무 Marauder, 손상 캡슐, 가족 훅 없음, 첫 Atlas 수리 흔적.
+SITE NAV: 계약 언어, 압력 생존, no family hook, no instant rescue, evidence before endings부터 시작한다.
 
 ## Audio
 
-당신은 salvage를 위해 왔다. 바다는 그 동기를 너무 작게 만들 것이다.
+첫 기록은 구조 요청이 아니다. claim이다.
 
 ## Field Note
 
-Spoiler-light 내비게이션은 여기서 시작한다. 먼저 전제, 다음은 증거, 엔딩은 접근을 얻은 뒤에만.
+먼저 서류를 읽어라. HECTON-8에서는 모든 문장에 진실이 조금 있기 때문에 거짓말이 살아남는다.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ko_KR. -->

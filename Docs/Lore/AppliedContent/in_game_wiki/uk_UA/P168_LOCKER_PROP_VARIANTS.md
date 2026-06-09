@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "Варіанти доказів у шафці"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# Варіанти доказів у шафці
 
-UA LOC HOLD: Locker variants let procedural placement carry human texture without custom cutscenes.
+Шафка на HECTON-8 не має бути сентиментальною купою речей. Це малий архів напірної кімнати: до чого працівник торкався, що йому дозволяли носити, що він ховав від старшого зміни і що пізній Marauder вирішив виправити.
+
+Добрі варіанти говорять поєднаннями. Герметична стрічка біля рукавиці вказує на роботу з протіканням. Стерта прокладка серед особистих інструментів каже, що людина надто часто мала справу з дверима, щоб довіряти запасним деталям. Обідній кредит поруч із маршрутною крейдою означає, що вона ще чекала наступної зміни. Відмова medlock перетворює кімнату на доказ: тіло вже стало витратною проблемою, але графік не зупинили.
+
+Для гри шафка є сидованим людським слідом. Вміст може мінятися між проходженнями, не змінюючи великого канону. Стале правило: спершу читати, потім брати. Якщо гравець забирає жетон, прокладку й записку як звичайний лом, кімната втрачає граматику, що робила працівника присутнім без катсцени.
 
 ## Scanner
 
-UA LOC HOLD: A locker should say what a worker touched before the flood.
+ШАФКА // Герметична стрічка, стерта прокладка, смужка обіднього кредиту, жетон інструментальної, маршрутна крейда й відмова medlock лежать на одній полиці. Це останній практичний набір працівника, не декор.
 
 ## Terminal
 
-UA LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+ВАРІАНТИ ШАФКИ // Читати порядок до salvage: стрічка біля рукавиць - робота з течією; стерта прокладка - часті люки; обідній кредит - борг зміни; крейда - імпровізований маршрут; відмова medlock - робота попри хворобу; нотатка Marauder - пізній спір про доказ.
 
 ## Audio
 
-UA LOC HOLD: The best memorial is a tool still dirty from the last shift.
+Найкращий пам'ятник не табличка. Це інструмент, який ще пам'ятає, котра рука втомилася.
 
 ## Field Note
 
-UA LOC HOLD: Avoid sentimental clutter. Use work marks.
+Не прикрашай шафки. Збирай їх з речей, яких втомлена рука справді мала торкатися.
 
 <!-- In-Game Wiki; generated from P168_LOCKER_PROP_VARIANTS/uk_UA. -->

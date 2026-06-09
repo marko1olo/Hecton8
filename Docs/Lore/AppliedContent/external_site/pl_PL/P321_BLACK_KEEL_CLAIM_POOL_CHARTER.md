@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Karta puli roszczeń Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Black Keel Claim-Pool Charter
+# Karta puli roszczeń Black Keel
 
-PL LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel to hard-sci-fi odpowiedź HECTON-8 na problem statku ucieczkowego. Gracz ma dostęp do aktywa orbitalnego, ale dostęp to nie własność, a bliskość to nie ratunek. Carrier jest infrastrukturą długu: dość użyteczną, by ucieczka była wyobrażalna, i dość ograniczoną, by każda droga powrotu wikłała się w roszczenia, kwarantannę i wartość odzysku.
 
 ## Scanner
 
-PL LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel nie jest twoim statkiem. To aktywo odzyskowe puli roszczeń z twoim nazwiskiem w księdze długu.
 
 ## Terminal
 
-PL LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+FRAGMENT KARTY / BLACK KEEL: autonomiczny carrier salvage / piecza: Aegir Reclamation Pool / transport kontraktora: dozwolony / własność kadłuba: odmowa / priorytet ratunku: podrzędny wobec insured receiver state, handshake kwarantanny i claim value.
 
 ## Audio
 
-PL LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Carrier nie przyleciał po ciebie. Przyleciał po roszczenie z twoim nazwiskiem.
 
 ## Field Note
 
-PL LOC HOLD: Use this on the first contract or carrier-status screen.
+Użyć na pierwszym ekranie statusu carrier: dostęp przyznany, własność odrzucona, priorytet ratunku warunkowy, lien aktywny.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/pl_PL. -->

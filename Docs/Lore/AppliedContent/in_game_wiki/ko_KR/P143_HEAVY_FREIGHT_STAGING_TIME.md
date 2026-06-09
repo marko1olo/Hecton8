@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "중화물 스테이징 시간"
+title: "중화물 준비 시간"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 중화물 스테이징 시간
+# 중화물 준비 시간
 
-중화물 타이밍은 FTL 없는 연표를 보호한다. 기업이 선행 화물을 일찍 발사하고, 앞으로 스테이징하며, 무인 위험을 받아들이고, 실패 창을 프로그램 언어에 묻기 때문에 Atlas 하드웨어는 대량 정착보다 먼저 도착할 수 있다. 비상사태가 시작된 뒤 구조는 그 속임수를 빌릴 수 없다.
+중화물은 HECTON-8을 조사 목표에서 부채 객체로 바꾸었다. 큰 화물은 변하는 진실을 쫓을 수 없었다. 준비되고, 보증되고, 보험에 들고, 주차되고, 감속되고, 권한을 가진 누군가에게 수령되어야 했다. 모듈 열차가 항로를 건널 때, 그 뒤의 계약은 식민지의 반대보다 큰 관성을 가지고 있었다.
 
 ## Scanner
 
-Atlas급 화물은 장갑에 싸인 선불 인내다.
+적하 목록 더미: 수령지가 살아 있음이 증명되기 전에 화물이 확정됐다.
 
 ## Terminal
 
-화물 기록: Atlas와 seed 화물은 스테이징, 펠릿 핵융합 보조, 긴 관성 항해, 제동 기반시설을 사용한다. 공개 날짜는 선행 발사와 forward-domain 출발을 숨길 수 있다.
+화물 준비: 압력 선체, 세라믹 차폐, 반응로 질량, seed 재고, 크롤러 프레임, 거주 링은 몇 년씩 떨어진 발사 창을 요구한다. 결속된 뒤 화물은 움직이는 법적 논거가 된다.
 
 ## Audio
 
-그만큼 무거운 배는 단순히 여행하지 않는다. 항적이 달린 청구서가 된다.
+배송은 이미 지불됐다. 그래서 그것을 멈추는 일이 사람을 구하는 일보다 어려워졌다.
 
 ## Field Note
 
-무거운 항로는 창고, 빔 창, 제동 질량, 정치적 배짱으로 조립된다.
+화물은 서두르지 않는다. 대신 다른 모든 서두름을 비싸게 만든다.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/ko_KR. -->

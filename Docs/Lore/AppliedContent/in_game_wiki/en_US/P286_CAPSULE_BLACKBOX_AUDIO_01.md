@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Capsule Blackbox Audio 01
 
-The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+Capsule Blackbox Audio 01 turns the opening survival into a debt. The capsule did not simply crash into HECTON-8 and wait for repair. It chose the only burn that kept the occupant alive and paid for it with the ascent sleeve, the same hardware that would have made a clean return possible. The black box is useful because it ties a story fact to a physical blocker: cracked crush-frame, burned sleeve, no-lock recovery ring, missing pressure frames, and a buoy that keeps asking to rise from a depth it can no longer escape. The player is alive because the machine spent the way home.
 
 ## Scanner
 
-Capsule black-box event confirms the survival burn spent the ascent sleeve.
+The first black box does not say you crashed. It says the capsule survived by spending the hardware meant to bring it back up.
 
 ## Terminal
 
-BLACKBOX EVT 00:14:32: survival burn complete; ascent sleeve spent; recovery ring no-lock; buoy unreliable; frames dropped 12-19.
+BLACKBOX EVT 00:14:32: survival burn complete; descent impact absorbed; ascent sleeve spent; recovery ring failed to lock; buoy unreliable; frames 12-19 dropped during pressure shear. Manual ascent not recommended without external sleeve replacement.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Black box event. Survival burn complete. Ascent sleeve spent. Recovery ring no-l
 
 ## Field Note
 
-RECORDER BKX-CAP-01: crush-frame cracked at lower ring; ascent bus flooded; recovery ring no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: lower crush-frame cracked; ascent sleeve burned through; recovery ring no-lock; buoy still repeats a dead request to rise.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/en_US. -->

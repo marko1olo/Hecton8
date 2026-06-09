@@ -19,22 +19,8 @@ localization_flags: 1
 
 # 盐水峡谷密度梯指南
 
-盐水峡谷密度梯指南把 HECTON-8 的海沟当作工程地理：向下的路由密度构成，而不是由风景构成。
+盐水峡谷看起来像空水，直到灯缘弯折、仪表迟疑，或者掉落的工具停在不该停的位置。HECTON-8的高密度层把深度变成建筑。淡水、盐负载、冷渗残留、黏土淤泥和化学薄膜堆成看不见的楼层，既能托住矿物碎片云，也能把无人机信号整个吞掉。
 
-## Scanner
-
-检测到 brine ladder：分层密度、假地板、声呐弯折。沿边走；这里的开阔水域会撒谎。
-
-## Terminal
-
-FIELD GUIDE: brine 峡谷隐藏 pressure shelves、current ledges、resource pockets 和 scanner false positives。Hull rating 与 density transition 决定哪条岩架是路，哪条是坠落。
-
-## Audio
-
-如果你的船壳能为每一级付费，峡谷就是楼梯。
-
-## Field Note
-
-把 vane 阴影当台阶用。brine 中的空白读数不是空处，而是仪器输掉了争论。
+峡谷先教生存，后教利润。沿着导流片阴影走。看泥线。在盐水里，对安静仪器的信任要比外面更少。资源口袋聚集在密度减慢有用物质下沉的地方，但同样的口袋也藏着滞留气体、死亡传感器，以及足以惩罚廉价船壳的压力突变。下行从来不只是更深。它是在穿过流体之间的协议。
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/zh_CN. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "גבולות האוטונומיה של carrier salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Salvage Carrier Autonomy Limits
+# גבולות האוטונומיה של carrier salvage
 
-HE LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+גבולות האוטונומיה של carrier salvage משאירים את HECTON-8 מקורקע. Black Keel מסוכנת כי היא שימושית ומוגבלת בעת ובעונה אחת. היא יכולה לבצע את עבודת החשבונאות והשחזור שהופכת בריחה לאפשרית, אבל הכללים שלה אוסרים את החילוץ הבלתי אפשרי ששחקנים מצפים מספינה אישית. התוצאה היא תשתית עם דופק, לא בן לוויה.
 
 ## Scanner
 
-HE LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel יכולה להזיז חוב, טלמטריה והשלכות אספקה בסיכון נמוך בלי לשאול אותך. היא לא יכולה לאשר חילוץ עמוק.
 
 ## Terminal
 
-HE LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+גבולות אוטונומיה / מותר: claim processing, מכירת טלמטריה, recovery-window scheduling, ballast או supply drop בסיכון נמוך, contaminated-mass rejection / אסור: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-HE LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+אוטונומי לא אומר חופשי. זה אומר שהחוב יכול לזוז בלי לשאול אותך.
 
 ## Field Note
 
-HE LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+להשאיר בסטטוס carrier וב-UI חוזה, לא בקריאות קרב. אוטונומיה מכסה חשבונאות, תזמון שחזור והיגיון סירוב.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/he_IL. -->

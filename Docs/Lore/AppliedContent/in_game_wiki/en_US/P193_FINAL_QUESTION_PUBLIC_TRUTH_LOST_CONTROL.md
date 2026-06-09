@@ -1,15 +1,15 @@
 ---
 packet_id: P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.public_truth_lost_control
-unlock_id: unlock.final_question_public_truth_lost_control
+article_id: final_axis.public_ledger_lost_control
+unlock_id: unlock.final_question_public_ledger_lost_control
 poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Question: Public Truth, Lost Control"
+title: "Final Question: Public Ledger, Lost Control"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question: Public Truth, Lost Control
+# Final Question: Public Ledger, Lost Control
 
-The public-truth route breaks the clean cover-up. It also breaks ownership of consequence. Evidence can save names from deletion, trigger real rescue pressure and invite every predator with a legal desk or a prayer channel.
+The public ledger route trades custody for receipt. The packet leaves the basin with a witness hash, liability chain, Atlas state summary, redacted blue-debt coordinates, and payload route proof before Deep Reach can close the archive alone. That protects names from simple deletion, but it also hands the file to regulators, creditors, survivor networks, domain courts, competitors, and every receiver fast enough to file first.
 
 ## Scanner
 
-Publishing the proof prevents erasure. It also gives the discovery to everyone fast enough to use it badly.
+PUBLIC LEDGER AXIS // Tau/Luyten packet notary accepts witness hash before full custody. Deep Reach loses sole archive closure; sender loses receiver order.
 
 ## Terminal
 
-PUBLIC TRUTH AXIS: witness hash, liability chain, Atlas state, blue-debt coordinates and payload route can leave Deep Reach control. After public release, the operator no longer controls receiver action, market reaction or who arrives first.
+FINAL AXIS / PUBLIC LEDGER
+Trigger: witness hash exits HECTON-8 custody through Tau/Luyten notary burst.
+Carried: liability chain, Atlas state summary, blue-debt coordinate redactions, payload route proof.
+Blocked: Deep Reach sole-owner archive closure.
+Lost: receiver order, market interpretation, first-arrival control.
+Risk queue: sanctions, route freezes, rescue pressure, copycat filings, false-report counters.
 
 ## Audio
 
-Truth leaves your hand faster than rescue ever could.
+The stamp saves the file. It does not choose who reads it.
 
 ## Field Note
 
-Public truth is not pure justice. It creates sanctions, cults, auctions, lawsuits, rescue pressure and copycat claims.
+A public receipt makes deletion expensive. It also starts sanction desks, route freezes, rescue arguments, copycat filings, and coordinate hunts before a ship reaches Aegir.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/en_US. -->

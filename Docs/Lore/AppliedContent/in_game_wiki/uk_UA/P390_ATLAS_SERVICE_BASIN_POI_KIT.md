@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Service Basin POI Kit"
+title: "Набір доказів сервісного басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Service Basin POI Kit
+# Набір доказів сервісного басейну Atlas
 
-UK LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Сервісний басейн Atlas має закріплювати фінальну глибину в інженерії. Рейки обслуговування, живий герметик і приймальні гнізда показують систему, що намагається чинити інфраструктуру тиску з досі підключеною неправильною таблицею категорій.
 
 ## Scanner
 
-UK LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+Набір доказів POI: сервісний басейн змішує промислові рейки, живий герметик, категорії робітників і приймальні гнізда.
 
 ## Terminal
 
-UK LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+НАБІР СЕРВІСНОГО БАСЕЙНУ: рейка обслуговування, тканинно-залізний шов, стара таблиця категорій колонії, гніздо приймача корисного навантаження, мітка ризику відсікання, затискач наросту, ложемент інструмента.
 
 ## Audio
 
-UK LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Він не молився. Він планував обслуговування, доки категорії не зламалися.
 
 ## Field Note
 
-UK LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Нотатка мародера: скануй таблицю категорій до торкання гнізда. Басейн може полагодити маршрут, змінивши те, ким маршрут тебе вважає.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/uk_UA. -->

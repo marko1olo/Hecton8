@@ -1,80 +1,100 @@
 <!-- localization_status: draft_machine_or_llm -->
 # OVERSTROMINGSLIJNEN, VALSE DROOGTE EN LEKDISCIPLINE
 
-> **Bron:** Deep Reach-standaard voor drukhabitatonderhoud, Black Keel-prijstabel voor toegangsschade, Marauder-wandnotities over overstromingslijnen.  
-> **Stem:** drukhabitattechnicus, later aangevuld door crews die kamers moesten betreden waarvan de standaard nooit verwachtte dat ze zouden overleven.  
-> **Reviewnoot:** een droge kamer op HECTON-8 is geen belofte. Het is een lopende onderhandeling tussen romp, druk, pekel, stroom en degene die het laatst over onderhoud heeft gelogen.
+> **Bron:** onderhoudsnorm voor Deep Reach-habitats, Black Keel-prijstabel voor binnendringingsschade, muurkrabbels van marauders over overstromingslijnen en retourkaarten uit pompkamers in ondiepe annexen.  
+> **Bereik:** hoe droge kamers falen, hoe oude watersporen routegeschiedenis blootleggen en hoe lekbehandeling bergingswaarde, veiligheid en bewijs verandert.  
+> **Veldgebruik:** lezen voordat je een droge vloer vertrouwt, een kast verwarmt, een deur cyclust, een paneel doorsnijdt of een zoutlijn van een muur veegt.
 
 ---
 
-## 1. Droogte is een tijdelijke afspraak
+## 1. Droog is een huidige toestand
 
-Op HECTON-8 is water niet buiten. Water wacht.
+Op HECTON-8 betekent droog niet veilig. Droog betekent dat het water voorlopig ergens anders wordt tegengehouden.
 
-Deep Reach verkocht de eerste habitats als verzegelde architectuur: keramische drukschillen, servicegangen met pakkingen, luchtsluizen met pompondersteuning, inspectiegoten, noodmembranen en dubbele afvoerroutes. In de brochures was een kamer droog of overstroomd. In de kolonie stierf dat onderscheid voor de eerste auditcyclus.
+Deep Reach verkocht de eerste habitats als verzegelde architectuur: keramische drukschillen, gangen met pakkingen, sluizen met pompsteun, inspectiegoten, noodmembranen en dubbele afvoerbanen. In folders was een ruimte droog of overstroomd. Op de kolonievloer stierf die scheiding voor de eerste auditcyclus.
 
-Een module kon droog zijn op vloerniveau en tegelijk verdrinken in zijn plafondgoten. Een gang kon lucht vasthouden omdat de deuren aan beide kanten in een gelukkige afdichting waren kromgetrokken. Een voorraadkast kon droog lijken tot een Marauder hem met een werklamp verwarmde en de pekel wakker maakte die in de isolatie zat opgesloten. Een kinderkamer kon schoon ruiken terwijl de muur erachter elke zes minuten door één boutgat zweette. De oceaan had geen dramatische scheur nodig. Hij had geduld, zout en drukverschil nodig.
+Een module kan op laarshoogte droog zijn en in zijn plafondgoten verdrinken. Een gang kan lucht vasthouden omdat twee kromgetrokken deuren toevallig in een afdichting klemmen. Een voorraadkast kan schoon lijken totdat een werklamp de pekel in de isolatie verwarmt. Een kinderkamer kan naar schrobmiddel ruiken terwijl een boutgat achter de muur elke zes minuten zweet. De zee heeft geen filmische breuk nodig. Ze heeft druk, zout en geduld nodig.
 
-Oude crews leerden droogte te behandelen als een bewegende toestand. Ze vroegen niet: "Is deze kamer veilig?" Ze vroegen: "Wat houdt het water nu buiten, en wat verandert er als ik het aanraak?"
+Oude ploegen stopten met vragen of een kamer veilig was. Ze vroegen wat het water buiten hield, waar dat systeem stroom van leende en wat er zou veranderen wanneer de volgende persoon het aanraakte.
 
-Met die vraag begint lekdiscipline nog steeds.
+Dat is lekdiscipline voordat de reparatieset opengaat.
 
-## 2. Overstromingslijnen zijn geheugen
+## 2. Overstromingslijnen
 
-Een overstromingslijn is het spoor dat water achterlaat nadat het al één keer heeft gewonnen.
+Een overstromingslijn is het spoor van water dat al eens heeft gewonnen.
 
-Sommige lijnen zijn duidelijk: zoutkorst langs de muren, roesttongen onder leidingbeugels, bleek mineraalkant op kastdeuren, een bruinzwarte band waar microbiële film een lucht-watergrens vond en er een levende rand van maakte. Andere zijn stiller. Een label krult alleen onderaan. Eén vloerschroef bloeit groen terwijl de rest dofgrijs blijft. Stof ligt te schoon boven een plank omdat alles eronder ooit werd weggespoeld. Een kindhoge slijtplek stopt bij een deur omdat de gang erachter eerst volliep.
+Sommige lijnen zijn duidelijk: zoutkorst langs muren, roesttongen onder kabelbeugels, bleke mineraalkant op kastdeuren, bruinzwarte banden waar microbiele film een lucht-watergrens vond en er een levende rand van maakte. Andere zijn kleiner. Een label krult alleen onderaan. Een vloerschroef bloeit groen terwijl de rest dof blijft. Stof ligt te netjes boven een plank omdat alles eronder is weggespoeld. Het schuurspoor van een kinderschoen stopt bij een deur omdat de gang erachter eerst volliep.
 
-Deep Reach-onderhoudslogboeken noemden dit "historische bevochtigingsindicatoren". Marauders noemen ze overstromingslijnen, omdat een simpel woord de belediging bewaart. De kamer is verdronken. Iemand heeft hem leeggepompt. Iemand besloot dat heropenen goedkoper was dan herbouwen. De muur herinnert zich, zelfs als het huurarchief dat niet doet.
+Deep Reach-logboeken noemden dit `historische bevochtigingsindicatoren`. Marauder-notities gebruiken plattere taal omdat platte taal de belediging bewaart. De kamer is verdronken. Iemand heeft hem leeggepompt. Iemand besloot dat heropenen goedkoper was dan herbouwen. De muur hield het verslag bij toen het huurcontract dat niet deed.
 
-Overstromingslijnen zijn belangrijk omdat ze gedrag tonen, niet alleen schade. Een hoge lijn met schone lage muren betekent snelle overstroming en snel pompen. Een lage lijn met dikke mineraaltanden betekent langzaam sijpelen en lange verwaarlozing. Een lijn die achter apparatuur stijgt maar bij de deur zakt, wijst op slechte helling, verstopte afvoeren of een crew die de uitgang verzegelde voor het lek. Een lijn door een archiefkast vertelt de speler welke records onder water stonden en welke per ongeluk overleefden.
+Overstromingslijnen tonen gedrag, niet alleen schade. Een hoge lijn met schone ondermuren betekent snelle overstroming en snel pompen. Een lage lijn met dikke mineraaltanden betekent langzaam sijpelen en lang verwaarlozen. Een lijn die achter apparatuur stijgt maar bij de deur daalt, betekent slechte helling, verstopte drains of een ploeg die de uitgang afsloot voordat het lek werd afgedicht. Een lijn door een archiefkast zegt welke dossiers onder water stonden en welke per ongeluk overleefden.
 
-Goede Marauders lezen overstromingslijnen voordat ze kamernamen lezen.
+Lees de overstromingslijn voordat je de kamernaam leest.
 
 ## 3. Valse droogte
 
-De gevaarlijkste natte kamer is de kamer die doet alsof hij droog is.
+De gevaarlijkste natte kamer is de kamer die geleerd heeft droog te lijken.
 
-Valse droogte ontstaat wanneer zichtbaar water weg is, maar de omstandigheden die het binnenbrachten blijven. Pompen kunnen een vloer leegmaken terwijl ze druk achterlaten in een plafondblaar. Verwarmers kunnen het gezicht van een paneel drogen terwijl de isolatie erachter zuur en zwaar blijft. Noodschaum kan pekel tegen kabelbundels vangen tot koper zacht groen meel wordt. Een gebarsten kijkvenster kan houden omdat een mineraalvlies over de wond is gevormd, en dan bezwijken wanneer een gereedschapskoffer het frame raakt.
+Valse droogte ontstaat wanneer zichtbaar water weg is maar de redenen voor water blijven. Pompen kunnen een vloer vrijmaken terwijl druk in een plafondblaar zit. Verwarmers kunnen het gezicht van een paneel drogen terwijl de isolatie erachter zuur en zwaar blijft. Noodschuim kan pekel tegen kabelbundels vangen tot koper groene kruimel wordt. Een gebarsten viewport kan houden omdat een mineraalvlies over de wond is gegroeid, en dan falen wanneer een gereedschapskist het frame raakt.
 
-Er zijn ook juridische vormen van valse droogte. Black Keel kan een compartiment als "droog toegankelijk" markeren omdat een drone er één keer doorheen is gegaan. Een koper kan een geborgen werktuig als schoon prijzen omdat de buitenkant voor bewaring is afgeveegd. Een Deep Reach-archief kan een geslaagde ontwateringscyclus tonen en weglaten dat de pomp draaide op geleende stroom uit een dode kliniek. De woorden zijn niet altijd leugens. Soms zijn ze gewoon te klein voor de kamer.
+Er bestaan ook papierwerkversies. Black Keel kan een compartiment als `droog toegankelijk` markeren omdat een drone er een keer doorheen ging. Een koper kan een geborgen stuk gereedschap als schoon waarderen omdat de buitenkant voor bewaring is afgeveegd. Een Deep Reach-archief kan een geslaagde droogpompronde tonen en weglaten dat de pomp stroom leende van een dode kliniek. Woorden liegen niet altijd. Soms zijn ze te klein voor de kamer.
 
-Marauders wantrouwen schone vloeren. Ze wantrouwen stille afvoeren. Ze wantrouwen elke luchtzak die geen reden heeft om levend te zijn. Een kamer die toegeeft dat hij nat is, is vaak vriendelijker dan een kamer die de speler vraagt erin te geloven.
+Ploegen wantrouwen schone vloeren, stille drains en luchtzakken zonder reden om te leven. Een kamer die toegeeft dat hij nat is, is vaak vriendelijker dan een kamer die om vertrouwen vraagt.
 
-Daarom dragen crews kleurstoftabletten, krijt, vochtdraad, goedkope drukstickers en slechte grappen. Het gereedschap is klein omdat de waarheid meestal klein begint.
+Daarom overleven kleurtabletten, krijt, vochtdraad, goedkope drukstickers en slechte grappen in elke kit. De hulpmiddelen zijn klein omdat de waarheid meestal klein begint.
 
 ## 4. Lekdiscipline
 
-Lekdiscipline is geen heldhaftige reparatie. Het is de volgorde die voorkomt dat een nuttige kamer een graf wordt.
+Lekdiscipline is de volgorde van handelen die voorkomt dat een bruikbare kamer een graf wordt.
 
-Eerst: maak de kamer niet erger. Snijd geen paneel omdat het in de weg zit. Open geen kast omdat hij droog lijkt. Bedien geen deur voordat iemand weet welke kant druk heeft, welke kant water heeft en welke kant de betere leugen heeft.
+Eerst: maak de kamer niet erger. Snijd geen paneel door omdat het in de weg zit. Open geen kast omdat hij droog lijkt. Cyclus geen deur voordat iemand weet welke kant druk heeft, welke kant water heeft en welke kant de betere leugen vertelt.
 
-Ten tweede: vind de bron, de route en de toekomst. Water uit een gescheurde pijp boven het hoofd is een ander probleem dan water dat door een vloernaad omhoog kruipt. Pekel die uit een kabelgoot drupt, kan twintig meter hebben gereisd voordat hij die plek koos om te vallen. Een lek onder druk kan zichzelf met zout afsluiten en daarna breken wanneer hitte, trilling of een onvoorzichtige laars de voorwaarden verandert. Een lek is geen punt. Het is een route.
+Ten tweede: vind de bron, het pad en de toekomst. Water uit een scheur boven je hoofd is niet hetzelfde probleem als water dat door een vloernaad omhoogkomt. Pekel die uit een kabelgoot drupt, kan twintig meter hebben gereisd voordat ze die valplek koos. Een lek onder druk kan zichzelf met zout afdichten en daarna breken wanneer hitte, trilling of een slordige laars de voorwaarden verandert. Een lek is geen punt. Het is een route.
 
-Ten derde: markeer de waarheid waar de volgende persoon haar kan zien. Marauder-markeringen zijn expres lelijk: pijlen, tijd, diepte, smaak als iemand een monster riskeerde, pompstatus, "plafond zwaar", "niet verwarmen", "afvoer praat", "afdichting hoort bij deur, niet muur". Mooie labels nodigen vertrouwen uit. Veldmarkeringen nodigen wantrouwen uit, en dat is nuttiger.
+Ten derde: markeer de waarheid waar de volgende persoon haar ziet. Marauder-markeringen zijn expres lelijk: pijlen, tijd, diepte, smaak als iemand een monster riskeerde, pompstatus, `plafond zwaar`, `niet verwarmen`, `drain praat`, `afdichting hoort bij deur niet muur`. Mooie labels nodigen uit tot vertrouwen. Veldmarkeringen nodigen uit tot wantrouwen, en dat is nuttiger.
 
-Ten vierde: repareer alleen wat de missie kan verdedigen. Een patch die lang genoeg houdt om medicijnen terug te halen, kan goed zijn. Een patch die een crew uitnodigt om onder een beladen plafond te slapen, is moord met mooier handschrift. Deep Reach hield van permanente taal. Marauders geven voorkeur aan vervaltijden.
+Ten vierde: repareer alleen wat de missie kan verdedigen. Een patch die lang genoeg houdt om medicijnen te halen, kan goed zijn. Een patch die een ploeg uitnodigt om onder een geladen plafond te slapen, is moord met netter handschrift. Deep Reach hield van permanente taal. Marauders verkiezen vervaltijden.
 
-De beste lekreparatie zegt waarvoor hij niet sterk genoeg is.
+De beste lekreparatie zegt waarvoor ze niet sterk genoeg is.
 
 ## 5. Water als bewijs
 
-Water is een getuige die het meeste papierwerk verpest.
+Water is een getuige die het meeste papierwerk ruineert.
 
-Het verplaatst stof, laat lichamen drijven, kleurt prioriteit, eet handtekeningen, bewaart voetsporen in slib en wist ze bij de volgende drukhoest. Het kan bewijzen dat een deur open was voor een breuk. Het kan bewijzen dat een krat werd verplaatst nadat een kamer overstroomde. Het kan tonen dat een zogenaamd "verzegelde route" werd gebruikt door iemand met natte laarzen en geen recht om daar te zijn.
+Het verplaatst stof, laat lichamen drijven, kleurt prioriteiten, eet handtekeningen, bewaart voetsporen in slib en wist ze bij de volgende drukhoest. Het kan bewijzen dat een deur open was voor een breuk. Het kan bewijzen dat een krat werd verplaatst nadat een kamer overstroomde. Het kan tonen dat een zogenaamd verzegelde route is gebruikt door iemand met natte laarzen en geen recht om daar te zijn.
 
-Black Keel waardeert dit wanneer het bewaring helpt. Het negeert het wanneer de vlek marge verlaagt. Kopers verkiezen schone berging omdat schone objecten minder verhalen vertellen. Rechtbanken verkiezen schone ketens omdat water volgorde in debat verandert. De oceaan geeft om niets van dit alles. Hij blijft gewoon binnenkomen.
+Black Keel waardeert watersporen wanneer ze bewaring ondersteunen en geeft korting wanneer de vlek marge kost. Kopers willen schone berging omdat schone voorwerpen minder verhalen vertellen. Rechtbanken willen schone ketens omdat water volgorde in twist verandert. HECTON-8 blijft toch natte twisten maken.
 
-Voor de speler kan waterbewijs hefboom worden. Een mineraallijn op een kluis kan tonen wanneer die werd geopend. Een opgedroogde runnel over de vloer kan naar een verborgen serviceholte wijzen. Een nat handvat kan een andere crew verraden. Een droge plek onder een lijk kan zeggen dat het lichaam werd verplaatst. Een overstromingslijn door een herdenkingswand kan een oude officiële versie onmogelijk maken.
+Een mineraallijn op een kluis kan tonen wanneer die is geopend. Een opgedroogde geul over de vloer kan naar een verborgen servicelucht wijzen. Een nat handvat kan een andere ploeg verraden. Een droge plek onder een lichaam kan zeggen dat het lichaam is verplaatst. Een overstromingslijn door een herdenkingsmuur kan een oude officiele versie onmogelijk maken.
 
-Daarom wissen sommige crews watersporen, en betere crews kopiëren ze eerst.
+Sommige ploegen wissen watersporen. Betere ploegen kopieren ze eerst.
 
-## 6. Wat de speler leert
+## 6. Deur, vloer, plafond
 
-De speler leert dat water geen achtergrond is. Het is druk met handschrift.
+Een lek verandert de volgorde van een kamer.
 
-Een lek kan een route openen, een route sluiten, een cache blootleggen, een batterij bederven, fauna aantrekken, geluid verbergen, een kaart vervalsen of bewijzen dat iemand eerder aankwam dan de speler. Een droge kamer kan toevlucht, val, verkoopbaar bezit, juridisch risico of tijdelijke vriendelijkheid zijn van machines die bijna geen geduld meer hebben.
+Deuren zijn niet alleen uitgangen. Een deur kan de sterkste afdichting in de kamer zijn, de zwakste afdichting of het ding dat per ongeluk een drukzak op zijn plaats houdt. Als het scharnier warm is, heeft het water erachter werk. Als de handgreep droog is maar de onderste pakking naar zout smaakt, is de deur afgeveegd, niet vertrouwd. Als er gruis aan de droge kant van de drempel ligt, is iets overgestoken nadat het water wegging.
 
-Goed spel is niet alleen lekken afdichten. Soms draineert de speler een kamer om te ademen. Soms laat hij hem nat omdat overstroming het enige is dat een slechte deur dicht houdt. Soms snijdt hij een ontlastingspad voordat hij de prijs neemt. Soms markeert hij een waarheid die hij zich niet kan veroorloven te herstellen.
+Vloeren liegen omdat zwaartekracht ze eerlijk laat lijken. Een droge vloer kan water onder panelen, slib in leidingen, gezwollen isolatie, geladen plassen onder roosters en een drain verbergen die alleen werkt terwijl een stervende pomp stroom uit een andere kamer steelt. Stap waar de vloer een reden heeft om te houden. Stap niet waar hij alleen glans heeft.
 
-Op HECTON-8 wordt de oceaan niet verslagen door muren. Hij wordt vertraagd door competente gewoonten. Elke overstromingslijn is een zin uit een eerdere mislukking, en elke droge vloer stelt dezelfde vraag: wie betaalt voor deze stilte, en hoelang kan die blijven betalen?
+Plafonds doden geduldige mensen. Gotens dragen pekel boven ooghoogte. Kabelbundels zakken voordat ze druppelen. Noodmembranen bollen in hoeken waar niemand kijkt totdat de lamp ze raakt. De eerste waarschuwing kan een zwetende schroefkop zijn of een buigende stoflijn. Verwarm nooit een plafond dat je niet hebt gelezen.
+
+## 7. Prijs van een droge kamer
+
+Een droge kamer is waardevol omdat je haar kunt gebruiken. Om dezelfde reden is ze gevaarlijk.
+
+Een droge locker kan medicijnen, schone pakkingen, routetags, batterijen, bewijsbuisjes of de laatste gereedschapsrol van een arbeider bewaren. Een droge gang kan lucht verplaatsen, een slang verlengen, een terugweg verbergen of een moe pak nog een plek geven om te staan. Een droog archief kan gerucht in bewaring veranderen.
+
+Black Keel prijst droogte als bezit. Deep Reach prijste haar als naleving. Marauders prijzen haar in tijd: hoe lang de vloer bruikbaar blijft, hoeveel lucht hij kost, wat hij verbergt en of de leugen breekt voordat het werk klaar is.
+
+Koop geen kamer omdat ze droog is. Koop de reden waarom ze nog droog is, of vertrek voordat die reden verandert.
+
+## 8. Veldregel
+
+Fotografeer de lijn voordat je pompt.
+
+Vind de route voordat je afdicht.
+
+Vraag wat voor de droogte betaalt voordat je een droge vloer vertrouwt.
+
+Water verliest op HECTON-8 niet van muren. Het verliest tijd aan bekwame gewoonten. Elke overstromingslijn is een eerdere mislukking die de kamer nog steeds beter kent dan het formulier.

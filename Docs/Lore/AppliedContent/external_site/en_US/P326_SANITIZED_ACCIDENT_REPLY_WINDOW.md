@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Sanitized Accident Reply Window
 
-Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+Sanitized Accident Reply Window shows how Deep Reach lies before anyone starts shouting. The lie is procedural, familiar and stale: a public loss line colliding with physical evidence. HECTON-8's corporate horror works best when the official answer arrives too clean for the place that produced it.
 
 ## Scanner
 
-Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Reply window open. Deep Reach repeats storm collapse, geological failure and autonomous evacuation, as if the room is still dry.
 
 ## Terminal
 
-DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure / RESTRICTED ADVICE: do not transmit unverified Atlas continuity, body-category disputes or basin-coordinate claims.
 
 ## Audio
 
@@ -35,6 +35,6 @@ They answered the room you were supposed to find, not the room you are standing 
 
 ## Field Note
 
-Place after first physical contradiction, not before.
+Place after the first physical contradiction: the player should have wet proof before hearing the stale public script.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/en_US. -->

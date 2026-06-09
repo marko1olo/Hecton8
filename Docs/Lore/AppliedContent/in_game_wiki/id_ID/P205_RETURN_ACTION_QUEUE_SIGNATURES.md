@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Tanda Tangan Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Tanda Tangan Return Action Queue
 
-ID LOC HOLD: Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.
+Tanda tangan Return Action Queue menghubungkan kasus lama HECTON-8 dengan tekanan yang masih ada pada 2190. Queue ini bukan arsip sejarah. Ia menangani paket tertunda selama jendela Aegir aktif dan mengurutkan apa yang harus dilakukan Black Keel atau pemilik relai terlebih dahulu. Dalam strip yang dipulihkan, payload custody, coordinate receipt, dan quarantine handshake berada di atas contractor recovery. Itu membuat Deep Reach tetap berbahaya tanpa komandan di ruangan: kantor bawah masih bisa mengarahkan jendela penyelamatan dengan memutuskan tindakan mana yang cukup bersih untuk dijalankan.
 
 ## Scanner
 
-ID LOC HOLD: The old crime has a live queue.
+Live return strip diterima: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 terbuka dua belas menit.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Tindakan: prioritaskan payload custody, coordinate receipt, dan quarantine handshake sebelum contractor recovery. Carrier clause: Black Keel boleh menunda pickup sampai custody state bersih.
 
 ## Audio
 
-ID LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+Antrean Keene masih aktif. Rescue berada di belakang payload custody kecuali kita mengubah handshake.
 
 ## Field Note
 
-ID LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Ini bukan kertas lama. Cap antrean masih baru: paket tertunda, carrier clause, perintah payload-first. Periksa bahasa pemulihan Black Keel sebelum percaya pickup.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/id_ID. -->

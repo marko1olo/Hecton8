@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Kantinen-Wasserledger
 
-Das Kantinen-Wasserledger ist eines der einfachsten menschlichen Artefakte in HECTON-8: eine Essraumtafel fuer Trinkwasser, Markenrueckgabe, Pumpenzugang und medizinische Ausnahmen. Es erklaert die Katastrophe nicht. Es zeigt die Kolonie unmittelbar bevor die Katastrophe zur Geschichte wurde.
+Das Kantinen-Wasserbuch ist eine aufgequollene Speiseraumtafel aus einer Kolonie, die Trinkwasser mit derselben Ernsthaftigkeit zählte wie Werkzeugverwahrung. Sechs fehlende Tokens, zwei medizinische Overrides und eine Pumpenraumkorrektur reichen, um den Raum lebendig zu machen: nicht heroisch, nicht sauber, noch über Becher streitend, während das Drucksystem bereits versagte.
 
-Sein Wert liegt in Textur und Beweis. Sechs fehlende Marken klingen klein, bis der Spieler versteht, was Wasser in einer Druckkolonie bedeutete. Trinkwasser lief durch Filter, Schichtbuchhaltung, medizinische Ausnahmen und Pumpenraumnachweis. Ein fehlender Becher konnte ein mueder Arbeiter sein. Er konnte auch ein kranker Trupp sein, eine kontaminierte Leitung, ein umgangener Rationsbefehl oder ein Supervisor, der einen lokalen Ausfall vor Deep-Reach-Berichten versteckte.
+Wasser auf HECTON-8 war nie nur Wasser. Es lief durch Filter, Schichtleiter, medizinische Ausnahmen, Pumpenschlüssel und Kantinenvertrauen. Ein fehlender Token konnte Vergessen, Diebstahl, Krankheit, Kontamination oder ein Aufseher sein, der einen lokalen Ausfall noch eine Schicht aus Deep-Reach-Papieren hielt.
 
-Es geht nicht um Melodrama. Das Ledger macht die Kolonie als Arbeit lesbar: Menschen kamen von Schicht, stritten, korrigierten Eintraege, liehen Werkzeuge, schuetzten ihre Leute und versuchten, den Raum normal zu halten, waehrend der Ozean schon ins System kam. In HECTON-8 kann so eine gewoehnliche Spur Beweis werden.
+Wisch den Fettstiftrand nicht sauber. Dort wird der Raum menschlich. Er zeigt Arbeiter, die Freunde schützen, Symptome verstecken, über Rationen streiten und verhindern wollen, dass ein saurer Filter vor dem nächsten Abstiegston zur kolonieweiten Panik wird.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/de_DE. -->

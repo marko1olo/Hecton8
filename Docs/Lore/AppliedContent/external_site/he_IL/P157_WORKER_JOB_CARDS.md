@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "כרטיסי עבודה של עובדים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# כרטיסי עבודה של עובדים
 
-HE LOC HOLD: Worker Job Cards turn names into evidence objects.
+כרטיסי עבודה של עובדים הופכים שמות לאובייקטי ראיה: רמזים משחקיים שמאנישים את המושבה בלי לעצור את לולאת ההישרדות.
 
 ## Scanner
 
-HE LOC HOLD: A job card is a face the budget could read.
+JOB CARD // שם, תפקיד, משימה אחרונה, הרשאת מסלול, אישור כלי. פנים שהתקציב יכול לקרוא.
 
 ## Terminal
 
-HE LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+כלל ראיה: כל שם שנמצא צריך להיצמד לדבר שנעשה: מסלול משאבה, ledger מטבח, קריאת מד-ביי, משמורת cutter, בדיקת לחץ, אצוות ייצור. משימה הופכת שם לראיה.
 
 ## Audio
 
-HE LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+שם בלי משימה הופך למקדש. משימה עושה ממנו ראיה.
 
 ## Field Note
 
-HE LOC HOLD: Make names useful before making them tragic.
+הפוך שמות לשימושיים לפני שאתה הופך אותם לטרגיים.
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/he_IL. -->

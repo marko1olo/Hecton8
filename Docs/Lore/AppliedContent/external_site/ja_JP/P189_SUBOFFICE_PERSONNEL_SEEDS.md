@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "下位オフィス人員シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# 下位オフィス人員シード
 
-JP LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+下位オフィス人員シードは、HECTON-8 のロアで Deep Reach の下位名をどう出すべきかを定義する。目的は別の悪役名簿を発明することではない。官僚制を読み取れる、人間的なものにすることだ。プレイヤーは損傷したメモのイニシャル、繰り返されるデスク印、証人ハッシュ、矛盾する署名に出会ううちに、Deep Reach をロゴではなく、間違ったものを守るよう訓練された人々の建物として感じ始める。これらのシードは将来の記事の一貫性も保つ。名前は機能に、機能は証拠に、証拠はプレイヤーが理解できる部屋につながる。
 
 ## Scanner
 
-JP LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+下位の Deep Reach の名前が重要なのは、惨事を運んだのが抽象的な企業ロゴではなく、手、イニシャル、受信箱だったからだ。
 
 ## Terminal
 
-JP LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: リスク余裕受付／避難待機列法務／Atlas 継続性分析官／パケット公証人／回収保管クラーク。名前は署名の固定点、証人矛盾、部屋の証拠として使うこと。単純な命令階段として使わない。
 
 ## Audio
 
-JP LOC HOLD: A clerk can damage a life without owning the whole disaster.
+机には名前があった。だから紙が痛む。
 
 ## Field Note
 
-JP LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+判の向こうに疲れた人間が見えるとき、企業は現実になる。
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/ja_JP. -->

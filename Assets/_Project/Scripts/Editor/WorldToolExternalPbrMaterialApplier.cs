@@ -57,12 +57,15 @@ namespace Hecton8.EditorTools
                 try
                 {
                     int changed = AssignMatchingRenderers(prefabRoot, rule.rendererNameContains, material);
-                    if (changed == 0)
+                    if (CountMatchingRenderers(prefabRoot, rule.rendererNameContains) == 0)
                         throw new InvalidOperationException($"[WorldToolExternalPbrMaterialApplier] No renderer matched '{rule.rendererNameContains}' in {rule.prefabPath}");
 
-                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, rule.prefabPath);
-                    prefabCount++;
-                    assigned += changed;
+                    if (changed > 0)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(prefabRoot, rule.prefabPath);
+                        prefabCount++;
+                        assigned += changed;
+                    }
                 }
                 finally
                 {

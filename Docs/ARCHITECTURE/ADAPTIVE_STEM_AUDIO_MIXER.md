@@ -1,8 +1,8 @@
 ﻿# Adaptive Stem Audio Mixer
 
-Date: 2026-05-18
+Date: 2026-06-09
 
-Status: STATIC_SOURCE ORIENTATION / RUNTIME PROOF PENDING
+Status: CURRENT STATIC SOURCE ROUTE / RUNTIME PROOF PENDING
 
 ## Source Anchors
 
@@ -17,6 +17,8 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 - `Assets/_Project/Data/Audio/Music/Configs/MusicDirectorConfig_Global.asset`
 
 - `Assets/_Project/Data/Audio/Music/Profiles`
+
+- `Docs/Audio/audio_stem_rules.csv`
 
 ## Runtime Contract
 
@@ -42,6 +44,28 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
   - `AudioStemCsvScratch` - 4096-byte ASCII CSV scratch.
 
+## Current Owner Boundary
+
+- `AdaptiveStemAudioMixer` owns the adaptive stem mix frame, rules, commands, telemetry ring/cursor, CSV rule support, and mock depth/predator/tension input lanes used to keep the solver deterministic while upstream gameplay truth is still incomplete.
+
+- It consumes `BufferID.ShinobuScalabilityState` for `ScalabilityStateDTO.GlobalQualityWeight` and preserves the last sanitized weight if the quality lane is temporarily absent.
+
+- It consumes player/survival/damage/biome/narrative/acoustic signals through bounded routes and publishes `DynamicMusicScalarSignal`; it is not the source of truth for survival, predator proximity, terrain depth, biome, narrative state, or music profile selection.
+
+- `HectonMusicDirector` remains the long-form music/stinger owner. The stem mixer is the adaptive layer/mix-frame owner and must not be documented as replacing the director.
+
+- The mock depth/predator/tension lanes, generated emergency profiles, and runtime component repair are authoring/debug/recovery support. They are not release proof and must not be cited as real gameplay integration.
+
+## Lifecycle And Failure Contract
+
+- On DataVault replacement, the mixer releases its old handles before rebinding and reacquiring the stem buffers.
+
+- `OnDisable` must publish a neutral mix frame, unregister runtime slots, and release DataVault-owned buffers so the next scene does not inherit stale tension, damage, oxygen, or quality pressure.
+
+- Mutation guards must be released on every failure path around frame/rule writes. A guard leak blocks adjacent systems sharing DataVault ownership lanes.
+
+- Missing DataVault, missing scalability handle, missing clips, invalid CSV values, non-finite mix values, queue pressure on `DynamicMusicScalarSignal`, and fallback/emergency profile activation are degraded states, not evidence of production-ready playback.
+
 ## Hot Path
 
 - No coroutine fades.
@@ -55,6 +79,7 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 - Solver depends on mock/tension through `JobHandle.CombineDependencies`; the predator/depth/tension mock producer is Burst, not a managed oscillator.
 
 - Unity `AudioSource.volume` and `AudioLowPassFilter.cutoffFrequency` assignment is cold/low-cadence legacy endpoint only.
+
 - Primary audio truth remains DSPGraph/ParamSnapshot. Runtime, profiler, GC, and platform proof remain absent.
 
 - Runtime frame labels use the dispatcher's local simulation counter, not `Time.frameCount`.

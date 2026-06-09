@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Hinweis auf alte Verfahrenskenntnis"
+title: "Signal Alter Verfahrens­erkennung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Hinweis auf alte Verfahrenskenntnis
+# Signal Alter Verfahrens­erkennung
 
-Die Wiedererkennung alter Verfahren macht die Vergangenheit des Protagonisten zu einem spielbaren Werkzeug. Der Spieler folgt keinem mystischen Hinweis und keiner persönlichen Prophezeiung. Er liest ein Sicherheitsformular, dem er einst vertrauen musste. Ein Routen-Safe-Stempel sagt, die Linie sei zertifiziert. Die Beweise im Raum sagen, die Arbeiterzahl wurde geändert. Das manuelle Zeugenfeld, das eine zweite menschliche Prüfung erzwingen sollte, wurde von einem Kontinuitätsbüro versiegelt. Dieser Widerspruch ist der Haken. Deep Reach hat nicht nur eine Route versteckt. Es nutzte Arbeiterschutzsprache, um Zurücklassen administrativ abgeschlossen aussehen zu lassen. Der Einsatz des Protagonisten beginnt als berufliche Wiedererkennung: Dieses Formular wurde entwickelt, um genau dieses Versagen zu verhindern.
+Alte Verfahrenserkennung beginnt mit einem Sicherheitsformular, nicht mit einem Geständnis. Eine route-safe-Zertifizierung sollte einen Korridor an eine Zählung, Pumpenraum-Tags und eine zweite menschliche Prüfung binden, wenn Zahlen nicht passen. In diesem Datensatz wurden die gemeldeten occupants degradiert, die Tags aus dem Raum widersprechen weiter, und das Zweitprüffeld ist vom Continuity Office versiegelt.
+
+Dieser Widerspruch reicht. Der Operator braucht keinen Kommandogriff, um ihn zu lesen. Deep Reach benutzte Arbeiterschutzsprache, damit Verlassen administrativ geschlossen aussah. Das Formular versagte nicht, weil jemand eine Zeile vergaß. Die Zeile, die die Zählung stoppen sollte, wurde zur Zeile, die den claim schützt.
 
 ## Scanner
 
-Routen-Safe-Stempel vorhanden. Arbeiterzahl in zwei Tinten überschrieben. Manuelles Zeugenfeld versiegelt. Das Formular sollte genau solche Lügen auffangen, bevor jemand daraus Richtlinie machte.
+ROUTE-SAFE-FORMULAR // Gemeldete occupants degradiert. Pumpenraum-Tags widersprechen Arbeiterzählung. Manuelles Zweitprüffeld von Continuity Office versiegelt.
 
 ## Terminal
 
-EVAKUIERUNGSKONTINUITÄTSFORMULAR / ROUTEN-SAFE-ZERTIFIZIERUNG
-Route: Hilfsausstiegslinie
-gemeldete Insassen: degradierte Zählung akzeptiert
-manueller Zeuge: durch Kontinuitätsbüro versiegelt
-Feldkorrektur: Arbeiterzählung widerspricht Pumpenraum-Tags
-Status: anspruchserhaltend, nicht für Extraktion freigegeben.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-Du kennst dieses Formular. Es sollte verhindern, dass ein Raum leer gezählt wird, während darin noch Menschen atmen.
+Du kennst dieses Formular. Wenn die Tags nicht passen, ist der Raum nicht cleared.
 
 ## Field Note
 
-Das Formular sollte eine weitere Zählung erzwingen. Hier erzwang es Schweigen.
+Das Formular sollte eine weitere Zählung erzwingen. Hier machte es die falsche Zählung vollständig.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/de_DE. -->

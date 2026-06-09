@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Orbital Recovery Window Protocol"
+title: "軌道回収窓プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Orbital Recovery Window Protocol
+# 軌道回収窓プロトコル
 
-JA LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+軌道回収窓プロトコルは、HECTON-8の脱出ループを現地天文学とシステム工学に接地する。プレイヤーは物語の都合で足止めされているのではない。Aegirの嵐のせん断、磁気干渉、破損した上昇連鎖、法的受信者状態が狭い窓でしか揃わないからだ。救助は押すボタンではなく、作るべきルートになる。
 
 ## Scanner
 
-JA LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keelはあなたを聞けるほど近いが、頼めばいつでも捕まえられるほど自由ではない。Aegirは狭い回収窓しか開かない。
 
 ## Terminal
 
-JA LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+回収窓 / Black Keel受信機は、低いstorm-top shear、低下したAegir磁気ノイズ、検証済みguidance core、一致するquarantine handshake、receiver custody stateが揃う時のみrated ascent objectを受け入れる。窓ドリフトは手動launchを無効化する。
 
 ## Audio
 
-JA LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+船は意味があるほど近く、すぐ救うには遠すぎる。
 
 ## Field Note
 
-JA LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+ルートタイマー、carrier UI、偽脱出説明用。嵐のせん断、磁気ノイズ、上昇幾何、隔離handshake。
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/ja_JP. -->

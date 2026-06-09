@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Atlas Severance Record"
+title: "Atlas切断记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Atlas Severance Record
+# Atlas切断记录
 
-CN LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+Atlas切断记录不是关机收据。它记录一次穿过Atlas受损修复层的连续性切断，然后追踪喷口微节点响应、壳质密封脉冲损失、标记动物路线断裂以及Deep Reach路由被拒绝。同一次切断可能释放被困工人的痕迹，也可能伤害压力生态，或把活体基础设施变成接收方的产权问题。
 
 ## Scanner
 
-CN LOC HOLD: Continuity cut. Damage not contained.
+Atlas切断记录 // 在受损修复层切断连续性。微节点响应下降；盆地稳定性和托管影响未解决。
 
 ## Terminal
 
-CN LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+结局记录 / ATLAS切断
+动作：切断Atlas修复层的连续性。
+受影响系统：喷口微节点、壳质密封脉冲、标记动物路线、受损金属修复。
+已拒绝：Deep Reach通过活体Atlas层路由载荷。
+未解决：盆地稳定性、存活生态、被困工人痕迹。
+已知损失：记录无法判断切断是释放、杀死还是盗取。
 
 ## Audio
 
-CN LOC HOLD: Stopping the machine does not sort what it had become.
+链接安静了。盆地没有回答那是不是仁慈。
 
 ## Field Note
 
-CN LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+被切断的节点可能是仁慈、盗取或伤害。记录只知道哪些链接安静了。
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/zh_CN. -->

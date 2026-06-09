@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "عتبات فشل الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# عتبات فشل الضغط
 
-AR LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+تحدد عتبات فشل الضغط الحافة المقروءة بين المورد والخطر. إنها تسمح لـ HECTON-8 بتحويل العمق إلى نحو يراه اللاعب: إجهاد بصري، طقطقات صوتية، تحذيرات ماسح، خطر salvage، ونتائج تصنيع كلها تشير إلى القاعدة الفيزيائية نفسها. تفشل العينة لأن العالم يضغط عليها، لا لأن رقما في الجرد انتهى بصمت.
 
 ## Scanner
 
-AR LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+تصبح العينة الجيدة خطرا عندما تعبر خط الضغط الخطأ. المحيط لا يهتم بأن الملصق كان قريبا من الصواب.
 
 ## Terminal
 
-AR LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+فشل الضغط / shallow-rated: طقطقة ختم وتسرب زاحف / industrial-rated: انجراف حشية وثرثرة مشبك / brine-rated: شرخ شعري وتفتح ملحي / abyssal-rated: شبح صوتي وضباب عينة ميتة / Atlas-rated: قفل حيازة قبل الفقد البنيوي.
 
 ## Audio
 
-AR LOC HOLD: Pressure does not care that the label was almost right.
+الضغط لا يهتم بأن الملصق كان صحيحا تقريبا.
 
 ## Field Note
 
-AR LOC HOLD: Failure thresholds should be readable before they punish.
+يجب أن تكون عتبات الفشل مقروءة قبل العقاب: طقطقة، انجراف، شرخ شعري، تفتح ملحي، ضباب عينة ميتة. إن تعلّم اللاعب بعد الخسارة فقط، فالعالم يغش.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/ar_SA. -->

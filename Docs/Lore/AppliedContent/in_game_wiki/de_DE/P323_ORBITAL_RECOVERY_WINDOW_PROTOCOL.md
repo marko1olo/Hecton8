@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protokoll für orbitale Rückholfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Orbital Recovery Window Protocol
+# Protokoll für orbitale Rückholfenster
 
-DE LOC HOLD: Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.
+Das Protokoll für orbitale Rückholfenster ist die harte Grenze, die Rettung in Technik statt Hoffnung verwandelt. Black Keel kann oft genug über HECTON-8 ziehen, um wichtig zu sein, aber der Carrier kann kein nasses, unverifiziertes Objekt einfach aus einem mondgroßen Sturmfeld schöpfen. Aegirs obere Atmosphäre zerreißt schlechte Aufstiegswinkel, magnetisches Rauschen frisst schwache Führung, und der Empfänger akzeptiert keine Masse, die am Quarantäne-Handshake scheitert. Das Protokoll verlangt deshalb mehrere Beweise zugleich: ein rated ascent object, einen guidance core, der das Fenster treffen kann, eine Druckhistorie, der der Empfänger vertraut, und einen rechtlichen Verwahrungszustand, der dem Carrier sagt, was er fangen darf. Darum ist eine fast funktionierende Flucht noch gefährlich. Zu früh gestartet, nimmt der Sturm das Objekt. Zu spät gestartet, wird Black Keel zu einer Stimme, die über der Wolkendecke verschwindet. Ohne Quarantäne-Sync gestartet, kann der Carrier dich hören, markieren und die Masse dennoch verweigern. Das Fenster macht den Himmel real: sichtbar, erreichbar, getaktet und gnadenlos.
 
 ## Scanner
 
-DE LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel ist nah genug, um dich zu hören, und zu eingeschränkt, um dich jederzeit zu fangen. Aegir öffnet nur schmale Rückholfenster.
 
 ## Terminal
 
-DE LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RÜCKHOLFENSTER / Black-Keel-Empfänger akzeptiert rated ascent object nur bei geringer storm-top shear, reduziertem Aegir-Magnetrauschen, verifiziertem guidance core, passendem quarantine handshake und receiver custody state. Fensterdrift macht manuellen launch ungültig.
 
 ## Audio
 
-DE LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Das Schiff ist nah genug, um zu zählen, und zu weit, um dich schnell zu retten.
 
 ## Field Note
 
-DE LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Für Routentimer, Carrier-UI und False-Exit-Erklärung: Sturmscherung, magnetisches Rauschen, Aufstiegsgeometrie, Quarantäne-Handshake.
 
 <!-- In-Game Wiki; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/de_DE. -->

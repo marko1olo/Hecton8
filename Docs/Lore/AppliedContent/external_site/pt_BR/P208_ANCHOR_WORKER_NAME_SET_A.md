@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Conjunto A de Nomes Âncora de Trabalhadores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Conjunto A de Nomes Âncora de Trabalhadores
 
-PT LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+O Conjunto A de Nomes Âncora de Trabalhadores define os primeiros nomes recorrentes da colônia em HECTON-8. Esses oito trabalhadores não são trivia de lore; são alças de memória. O jogador os encontra primeiro por objetos e trabalho, depois vê aos poucos os mesmos nomes cruzarem registros de manutenção, permissões, relatórios de dano e fragmentos de áudio. Set A mantém as primeiras horas humanas sem parar o jogo para exposição.
 
 ## Scanner
 
-PT LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Nomes iniciais devem voltar por meio do trabalho, não de discursos. A rota rasa ensina memória pela repetição.
 
 ## Terminal
 
-PT LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: recorrência nos rasos e na plataforma industrial. Cada nome deve se ligar a uma ferramenta, uma permissão de rota, um objeto de trabalho danificado e uma contradição posterior. Esses nomes são a primeira prova do jogador de que a colônia era um local de trabalho antes de virar salvage.
 
 ## Audio
 
-PT LOC HOLD: Do not mourn the name until the tool tells you why.
+Não lamente o nome até a ferramenta dizer por quê.
 
 ## Field Note
 
-PT LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Âncoras Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/pt_BR. -->

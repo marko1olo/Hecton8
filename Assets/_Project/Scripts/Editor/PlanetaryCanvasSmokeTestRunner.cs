@@ -35,7 +35,12 @@ namespace Hecton8.Editor
             builder.Append("  \"steepRockWeight\": ").Append(result.SteepRockWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             builder.Append("  \"siltWeight\": ").Append(result.SiltWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
             builder.Append("  \"cavityWeight\": ").Append(result.CavityWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
-            builder.Append("  \"checksum\": ").Append(result.Checksum).AppendLine();
+            builder.Append("  \"macroMaterialDelta\": ").Append(result.MacroMaterialDelta.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
+            builder.Append("  \"macroSandWeight\": ").Append(result.MacroSandWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
+            builder.Append("  \"macroRockWeight\": ").Append(result.MacroRockWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
+            builder.Append("  \"macroSiltWeight\": ").Append(result.MacroSiltWeight.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).AppendLine(",");
+            builder.Append("  \"checksum\": ").Append(result.Checksum).AppendLine(",");
+            builder.Append("  \"macroChecksum\": ").Append(result.MacroChecksum).AppendLine();
             builder.AppendLine("}");
             File.WriteAllText(ArtifactPath, builder.ToString(), new UTF8Encoding(false));
         }

@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Варианты стартового claim
 
-Варианты стартового claim позволяют HECTON-8 переигрываться с разными economic hooks, сохраняя одного сильного protagonist.
+Варианты стартового claim дают HECTON-8 replay с разными экономическими крючками, сохраняя одного сильного протагониста.
 
 ## Scanner
 
-Тот же protagonist. Другое давление claim.
+ВАРИАНТ CLAIM // Тот же бывший Deep Reach Marauder. Другой первый долг, bounty, маршрутное железо, хранение образца или снятие blacklist.
 
 ## Terminal
 
-CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+СТАРТОВОЕ ПРАВИЛО: варианты меняют начальное давление, доступ к слухам, вес улик и логику выплат. Они не создают альтернативных героев и не стирают бывший Deep Reach spine.
 
 ## Audio
 
@@ -35,6 +35,6 @@ CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous
 
 ## Field Note
 
-Variants должны окрашивать мотив, а не стирать канон персонажа.
+Меняй claim. Оставь шрам.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/ru_RU. -->

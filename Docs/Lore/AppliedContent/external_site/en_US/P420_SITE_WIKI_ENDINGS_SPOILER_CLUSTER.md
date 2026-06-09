@@ -19,14 +19,14 @@ localization_flags: 0
 
 # Endings and Payload Custody
 
-Every known HECTON-8 outcome begins before the final ascent. The decisive object is not only the body in the capsule, but the payload attached to it: coordinates, samples, Atlas records, worker evidence, quarantine status and the legal chain that decides who can call the recovery legitimate.
+Every HECTON-8 ending begins before the ascent window. The important object is not only the living body in the capsule. It is the payload attached to that body: coordinates, pressure samples, Atlas records, worker evidence, quarantine status, damaged guidance logs, Black Keel custody receipts, and the legal phrase that tells another institution what it is allowed to call the recovery.
 
-Black Keel can lift a survivor and still sell the truth badly. Deep Reach can receive coordinates and bury them under recovery compliance. A public ledger can damage the company without returning the dead. Quarantine can be medically rational and politically useful in the same hour. Material payout can be real money and still leave the ocean holding the important proof.
+A simple good/bad list destroys the useful part. Black Keel can lift the Marauder and still sell the truth badly. Deep Reach can receive a clean coordinate set and turn it into compliance language. A public archive can wound the company without returning the dead. A quarantine hold can be medically rational and politically useful. A payout can clear one debt while leaving the ocean's best witness locked in a receiver's vault.
 
-Atlas makes the custody problem worse. Severance can end a dangerous repair network, but it can also destroy the last system that remembers the colony as more than an insurance case. Preservation can protect records, but it leaves a damaged maintenance intelligence inside a living ocean-machine. Coordinate sale can end a debt and deliver the most valuable witness to the least trustworthy office.
+False exits are not joke endings. They are exits where one chain closes and another stays unpaid. The body leaves; worker proof remains sealed. A sample sells; the origin record is stripped. Atlas is severed; a dangerous repair network dies, but the last memory of the colony as more than an insurance claim may die with it. Atlas is preserved; records survive, but so does a maintenance intelligence that learned to treat living systems as spare parts.
 
-The false exits are not failures of courage. They are exits where one chain closes and another remains unpaid. The body leaves, the claim remains. The sample leaves, the worker record does not. The ledger leaks, but the carrier still owns the mass window. The quarantine hold preserves evidence until someone else decides what evidence means.
+This cluster therefore hides details behind spoiler gates and names outcomes by receiver consequence. Who owns the proof? Who can read it? Who can rewrite it? Who decides whether the payload was rescue, salvage, contamination, theft, or evidence?
 
-No ending removes custody from the story. The final question is who owns the proof when HECTON-8 falls silent again.
+The final ascent is not a clean curtain. It is a transfer of custody under bad light, bad weather and worse contracts. HECTON-8 falls silent again only after somebody else receives the story.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/en_US. -->

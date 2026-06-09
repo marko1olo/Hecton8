@@ -6,11 +6,11 @@ Lock concrete ending records for material, partial, public, severance and quaran
 
 ## Packets
 
-- `P271_MATERIAL_PAYOUT_RECORD` - Material Payout Record: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
-- `P272_PARTIAL_RETURN_RECORD` - Partial Return Record: Partial Return Record explains HECTON-8's bitter early extraction ladder.
-- `P273_PUBLIC_LEDGER_RECORD` - Public Ledger Record: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
-- `P274_ATLAS_SEVERANCE_RECORD` - Atlas Severance Record: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
-- `P275_PRESERVE_QUARANTINE_RECORD` - Preserve Quarantine Record: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+- `P271_MATERIAL_PAYOUT_RECORD` - Material Payout Record: Material Payout Record records the paid exit receipt: coordinates and sample accepted, lien reduced, worker evidence left outside notarized custody.
+- `P272_PARTIAL_RETURN_RECORD` - Partial Return Record: Partial Return Record logs temporary Black Keel pickup without contract closure, preserving scan memory, open evidence and same-seed return authority.
+- `P273_PUBLIC_LEDGER_RECORD` - Public Ledger Record: Public Ledger Record tracks a custody break: a coordinate-redacted evidence packet reaches public receipt before Deep Reach can close the archive.
+- `P274_ATLAS_SEVERANCE_RECORD` - Atlas Severance Record: Atlas Severance Record lists the cut links, failing micronodes and denied Deep Reach route before any receiver labels the act mercy, theft or damage.
+- `P275_PRESERVE_QUARANTINE_RECORD` - Preserve Quarantine Record: Preserve Quarantine Record holds the payload out of Deep Reach custody while Atlas damage, ecology protection and future filings remain active.
 
 ## Runtime Rule
 

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Anker-Arbeiternamenssatz B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Anker-Arbeiternamenssatz B
 
-DE LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+Anker-Arbeiternamenssatz B ist die tiefere wiederkehrende Arbeiterschicht für HECTON-8. Diese Namen sollen den Horror nicht abmildern, sondern das System lesbarer machen. Wenn der Spieler Set B sieht, haben Druckausfälle, Routenhalte und Triage-Verzögerungen bereits ein Muster. Die wiederholten Namen verbinden dieses Muster mit Menschen und dann mit der Verantwortung von Deep Reach.
 
 ## Scanner
 
-DE LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Tiefere Namen sollen erscheinen, nachdem der Spieler das Schadensmuster bereits kennt. Sie kosten mehr, weil das Wasser begonnen hat, das Verbrechen zu beweisen.
 
 ## Terminal
 
-DE LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: Wiederkehr in Salzlaken-Canyon und abyssalen Maschinenfeldern. Binde diese Namen an witness hashes, Routenhalte, Triage-Ausnahmen, Atlas-Reparaturwidersprüche und Spuren von Bergungsschuld. Set B ist der Punkt, an dem Arbeiterbeweis keine lokale Tragödie mehr ist, sondern Konzernursache wird.
 
 ## Audio
 
-DE LOC HOLD: A deep name costs more because the water has already proved what happened.
+Ein tiefer Name kostet mehr, weil das Wasser schon bewiesen hat, was geschah.
 
 ## Field Note
 
-DE LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Set-B-Anker: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- External Site; generated from P209_ANCHOR_WORKER_NAME_SET_B/de_DE. -->

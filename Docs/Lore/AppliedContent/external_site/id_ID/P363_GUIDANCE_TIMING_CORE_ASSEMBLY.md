@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rakitan Inti Timing Panduan"
+title: "Rangkaian Inti Waktu Pandu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rakitan Inti Timing Panduan
+# Rangkaian Inti Waktu Pandu
 
-Rakitan Inti Timing Panduan menjaga penerbangan antariksa HECTON-8 tetap keras: extraction adalah masalah rute yang tersusun dari jam, bayangan, dan kepercayaan rusak.
+Rangkaian Inti Waktu Pandu mengubah pelarian menjadi rekayasa orbit, bukan dorongan sederhana ke atas. Kapsul pendakian HECTON-8 harus menyeberangi air, cuaca, geometri bulan, dan aturan penerima korporat sebelum pembakaran dapat disebut dapat dipulihkan.
 
-## Scanner
+Komponen ini memegang peta berwaktu: efemeris Aegir, jalur penerima Black Keel, cache shutter relai bulan, drift plume badai, dan toleransi jam custody. Tidak ada yang dekoratif. Kapsul bisa tersegel, bermuatan, dan sehat secara mekanis, lalu tetap gagal dipulihkan karena paketnya mencapai jalur yang salah pada waktu yang salah.
 
-Timing core kosong. Geometri Aegir menentukan apakah pendakian menjadi recovery, capture, atau sunyi.
-
-## Terminal
-
-GUIDANCE CORE: selaraskan jam kapsul dengan Aegir window, Black Keel receiver lane, moon relay shutter, dan drift storm-plume. Packets terlambat menjadi kehilangan bukti; packets terlalu awal menjadi capture noise.
-
-## Audio
-
-Atas bukan arah. Ia jendela dengan saksi.
-
-## Field Note
-
-Tidak ada atas yang sederhana dari HECTON-8. Ada penerima, bayangan, drift badai, dan packet queue yang sudah lebih tua dari panikmu.
+Di situlah bagian pahit dari kesepakatan kabur HECTON-8. Penyintas tidak keluar dari kedalaman menuju kebebasan. Kapsul masuk ke jendela akuntansi sempit di atas laut yang masih membengkokkan setiap sinyal. Memperbaiki inti waktu memberi peluncuran tempat di jendela itu. Ia tidak membuat jendela itu baik hati.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/id_ID. -->

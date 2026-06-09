@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Factory-Temple Threshold
 
-Factory-Temple Threshold describes the final zone target: not a boss room, but the place where industry, ocean and damaged AI become one body.
+Factory-Temple Threshold is HECTON-8's final lower-gate handoff: a load-sharing plant threshold where trusswork, brine return, pressure sealing, and Atlas routing keep the failed colony reachable.
 
 ## Scanner
 
-The bottom structure is not a base. It is a factory hull, shrine logic and living pressure tissue sharing one load path.
+Lower gate read: factory truss, return pipe, pressure seal, and Atlas routing bus all carry load. No clean wall/door boundary remains.
 
 ## Terminal
 
-Threshold warning: industrial truss, biogenic sealing, xenon lattice heat and Atlas routing share structural authority.
+THRESHOLD LOAD NOTICE
+Truss: stressed
+Return pipe: active
+Pressure seal: carbonate overgrowth
+Routing bus: ATLAS-6 continuity channel
+Human access: unverified
+Action: mark clamp order before opening any seam
 
 ## Audio
 
-The ocean did not bury the factory. It made the factory a body.
+Do not call it a door. Find which line is holding the pressure before you ask it to open.
 
 ## Field Note
 
-This is where the map stops pretending to be colony ruins.
+The map label says threshold. Check the clamps, not the word. The gate is holding because four systems are taking the same load.
 
 <!-- External Site; generated from P035_FACTORY_TEMPLE_THRESHOLD/en_US. -->

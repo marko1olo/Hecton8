@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Maintien de libération quarantaine"
+title: "Maintien de sortie quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Maintien de libération quarantaine
+# Maintien de sortie quarantaine
 
-La quarantaine est crédible sur HECTON-8 parce que la contamination n'est pas fausse. Exposition à la pression, chimie de saumure et croissance compatible Atlas peuvent rendre un secours négligent mortel. Cette vérité couvre Deep Reach. Le release hold montre comment le langage de protection se déplaçait dans le système après que la sortie pratique s'était déjà resserrée. La porte ne disait pas exécutez quelqu'un. Elle disait hold until review, gardez l'incertitude biologique, acceptez la masse asset, maintenez insurance ping. Chaque phrase se défend seule. Ensemble, dans une colonie qui se noie, elles deviennent custody. Ce packet doit mettre mal à l'aise : la quarantaine peut être nécessaire, et pourtant servir à retarder des gens jusqu'à ce qu'il ne reste que leur claim.
+Les dossiers de quarantaine font partie des documents les plus défendables pour Deep Reach. Sur HECTON-8, la contamination n'est pas une politique décorative. Croissance réactive à la saumure, dégâts de pression et biofilms compatibles Atlas peuvent transformer un couloir de sauvetage en seconde zone de pertes. Un vrai système de sortie a besoin de maintiens.
 
-## Scanner
-
-Plaque de maintien quarantaine. Le langage de protection apparaît après verrouillage de la route de sortie.
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
-
-## Audio
-
-La quarantaine peut sauver un corps. Elle peut aussi le faire attendre jusqu'à le transformer en dossier.
-
-## Field Note
-
-Note de maraudeur : le mot protection ne prouve pas la protection. Regarde l'horloge.
+La plaque récupérée montre un maintien utilisé après la fermeture de la route. La libération des travailleurs attend la confirmation du conseil. La masse d'actifs entre d'abord dans la file de récupération. Le ping assurance reste actif. La compagnie n'a pas eu à falsifier le danger; elle a dû le placer sur l'horloge là où le retard servait la réclamation.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/fr_FR. -->

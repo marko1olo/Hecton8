@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tekanan Kontrak Utang dan Daftar Hitam"
+title: "Tekanan Kontrak Blacklist Utang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tekanan Kontrak Utang dan Daftar Hitam
+# Tekanan Kontrak Blacklist Utang
 
-HECTON-8 membingkai protagonis lewat ekonomi perbatasan, bukan takdir. Utang, daftar hitam, kustodi claim-pool, kredit oksigen, akses ranjang, dan kredensial Deep Reach lama membuat kontrak salvage terasa memaksa tanpa membuat pemain tak berdaya.
+Tekanan Kontrak Blacklist Utang menjelaskan mengapa bekas pekerja Deep Reach yang mampu menjadi Marauder di HECTON-8. Kontrak tidak perlu penculikan. Ia memerlukan blacklist, ledger berth, oxygen credit, dan jendela rute yang tidak menunggu.
 
-## Scanner
-
-Pemberitahuan hak tanggungan terikat pada kustodi Black Keel. Menolak tetap legal, tetapi membuatmu tertahan: tanpa ranjang, tanpa kredit oksigen bersih, tanpa jendela rute keluar dari Aegir.
-
-## Terminal
-
-PENERIMAAN KLAIM / JENDELA KERINGANAN DAFTAR HITAM
-status kontraktor: Marauder terikat utang
-pengangkut: kustodi claim-pool Black Keel
-syarat keringanan: massa dapat dipulihkan, bukti kustodi, kepatuhan penerima
-status gagal: daftar hitam tetap aktif; akses ranjang ditolak; dukungan kesejahteraan oksigen menjadi layanan tertagih.
-
-## Audio
-
-Ini bukan penculikan. Ini jenis pilihan yang dijual perbatasan sebagai kebebasan: tanda tangan, menyelam, atau tetap bersih di kertas dan terjebak dalam praktik.
-
-## Field Note
-
-Hak tanggungan tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar ranjang, dan jendela rute berikutnya.
+Black Keel menawarkan kerja di dalam tekanan itu. Menerima claim memberi operator jalan kembali ke gerak, tetapi setiap bagian jalan diukur: recoverable mass, custody proof, receiver compliance, debt relief. Menolak membuat tangan tetap bersih di atas kertas sementara rute praktis menutup. Itulah kekejaman kontrak: ia menyisakan pilihan dan memberi harga satu sisi sampai nyaris bukan pilihan.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/id_ID. -->

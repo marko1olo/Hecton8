@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cooling_loop |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS184_FIRST_COOLING_LOOP_TRACE_ARTICLES.md |
 | Speaker | Service scanner, coolant trace note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first service-corner inspection |
@@ -72,17 +72,17 @@ CONTACT, NOT LEVEL
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| ru_RU | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| ja_JP | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| zh_CN | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| fr_FR | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| es_ES | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| de_DE | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| pl_PL | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| uk_UA | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| ar_SA | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| id_ID | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| ko_KR | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| he_IL | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| pt_BR | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
-| nl_NL | draft_machine_or_llm | COOLANT RIM // Pale blue stain at fill lip. Treat as past contact, not level proof. |
+| ru_RU | draft_machine_or_llm | ОБОД ОХЛАДИТЕЛЯ // Бледно-синий след у заливной кромки. Считать прошлым контактом, не доказательством уровня. |
+| ja_JP | draft_machine_or_llm | 冷却液リム // 注入口の縁に淡い青い染み。過去の接触として扱い、液量証拠にはしない。 |
+| zh_CN | draft_machine_or_llm | 冷却液边缘 // 加注口有淡蓝色污痕。按过去接触处理，不作液位证明。 |
+| fr_FR | draft_machine_or_llm | REBORD DE REFROIDISSANT // Tache bleu pale au col de remplissage. Contact passe, pas preuve de niveau. |
+| es_ES | draft_machine_or_llm | BORDE DE REFRIGERANTE // Mancha azul palido en el labio de llenado. Tratar como contacto pasado, no prueba de nivel. |
+| de_DE | draft_machine_or_llm | KUEHLMITTELRAND // Blassblauer Fleck an Einfuelllippe. Als frueherer Kontakt lesen, nicht als Pegelbeweis. |
+| pl_PL | draft_machine_or_llm | KRAWEDZ CHLODZIWA // Bladoniebieska plama przy wlewie. To dawny kontakt, nie dowod poziomu. |
+| uk_UA | draft_machine_or_llm | ОБІД ОХОЛОДЖУВАЧА // Блідо-синій слід біля заливної крайки. Вважати минулим контактом, не доказом рівня. |
+| ar_SA | draft_machine_or_llm | حافة مبرد // بقعة زرقاء باهتة عند شفة التعبئة. عاملها كتماس سابق، لا كدليل مستوى. |
+| id_ID | draft_machine_or_llm | BIBIR PENDINGIN // Noda biru pucat di bibir isi. Anggap kontak lama, bukan bukti level. |
+| ko_KR | draft_machine_or_llm | 냉각수 림 // 주입구 가장자리에 옅은 파란 얼룩. 과거 접촉으로 보고 수위 증거로 보지 않는다. |
+| he_IL | draft_machine_or_llm | שפת נוזל קירור // כתם כחול חיוור בשפת המילוי. להתייחס כמגע עבר, לא כהוכחת מפלס. |
+| pt_BR | draft_machine_or_llm | BORDA DO FLUIDO // Mancha azul palida no bocal. Trate como contato passado, nao prova de nivel. |
+| nl_NL | draft_machine_or_llm | KOELVLOEISTOFRAND // Bleekblauwe vlek bij vulrand. Lees als oud contact, niet als peilbewijs. |

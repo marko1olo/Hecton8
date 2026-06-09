@@ -980,6 +980,7 @@ namespace Hecton8.Gameplay
         private IMeteorShowerAudioSink _cachedSpatialAudioManager;
         private IObjectPoolService _cachedObjectPool;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private HectonVoxelEngine _cachedVoxelEngine;
         private SargassumGlobalDragManager _cachedSargassumDrag;
         private IPhysicsService _cachedPhysicsService;
@@ -1072,6 +1073,7 @@ namespace Hecton8.Gameplay
             ClearEventLaneDiagnostics();
             _cachedSpatialAudioRuntime = null;
             _cachedSpatialAudioManager = null;
+            _cachedOceanKinematicsService = null;
             _cachedSargassumDrag = null;
         }
 
@@ -1085,6 +1087,7 @@ namespace Hecton8.Gameplay
             ClearEventLaneDiagnostics();
             _cachedSpatialAudioRuntime = null;
             _cachedSpatialAudioManager = null;
+            _cachedOceanKinematicsService = null;
             _cachedSargassumDrag = null;
         }
 
@@ -1556,6 +1559,9 @@ namespace Hecton8.Gameplay
                         currentService as IPlayerRuntimeContext,
                         previousService as IPlayerRuntimeContext);
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
                 case GlobalRegistryServiceSlot.Physics:
                     _cachedPhysicsService = currentService as IPhysicsService;
                     break;
@@ -1594,6 +1600,7 @@ namespace Hecton8.Gameplay
             CacheMeteorShowerAudioSink(GlobalRegistry.Audio);
             CacheObjectPoolService(null);
             CachePlayerRuntimeContext(GlobalRegistry.Player, null);
+            _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
             WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _cachedSargassumDrag);
             _cachedPhysicsService = GlobalRegistry.Physics;
@@ -2101,9 +2108,33 @@ namespace Hecton8.Gameplay
                 meteorBoomLowPassCutoffHz);
         }
 
-        private static float ResolveCurrentSeaLevelY()
+        private float ResolveCurrentSeaLevelY()
         {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return seaLevelY;
+            }
+
             return MeteorWaterPlaneY;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = MeteorWaterPlaneY;
+            return false;
         }
 
         private void PublishMeteorWaterImpactGlobals(Vector3 impactPosition, float radius, float duration, float intensity)

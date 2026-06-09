@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Canyon Liability Act"
+title: "Gerbang Liabilitas Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Canyon Liability Act
+# Gerbang Liabilitas Ngarai Brine
 
-ID LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+Di ngarai, rute berhenti terasa seperti dokumen salvage dan mulai berlaku seperti berkas kasus. Lapisan densitas menyimpan jam buruk. Brine menahan jejak yang akan dihapus air biasa. Pelat evakuasi patah dapat berada di sebelah log margin dan membuat kedua dokumen lebih kuat.
 
-## Scanner
-
-ID LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-ID LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-ID LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-ID LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Rantai itu penting karena tidak menyangkal fisika. Pasang Besar menghantam. Dinding gagal. Kebohongan perusahaan berada dalam urutan keputusan di sekitar fakta itu: margin diterima, antrean tertunda, rute rusak, klaim terlindungi. Pekerjaan yang terlihat tetap fisik: pindai jejak, cocokkan jam, bawa bukti keluar.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/id_ID. -->

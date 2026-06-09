@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Documentation Index
 
-Date: 2026-06-02
+Date: 2026-06-09
 Status: STATIC INDEX
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
@@ -32,7 +32,7 @@ Use this order when gathering documentation context:
 7. task-relevant files under `.agents-skills/`
 8. this index plus the active stable files listed below
 9. current C# source under `Assets/_Project` for source reality checks
-10. fresh proof artifacts under `Docs/Reports`
+10. fresh proof artifacts under `Docs/Reports`, explicit owned output paths under `Docs/AgentLogs`, exact-ID task context under `Docs/Tasks`, and exact packet paths under `taskslocal` only when cited, requested, or creating/judging a standalone batch
 11. archives under `Docs/DEPRECATED`, `Docs/_Archive`, and `Docs/Archive`
 
 After rule-surface edits, run `python -B Tools/Docs/TestAgentRuleRouting.py` before reporting. After mandate edits, run `python -B Tools/Docs/TestMandateRegistry.py`.
@@ -137,6 +137,9 @@ Content and support corpora:
 Evidence and archive boundaries:
 
 - `Docs/Reports/README.md`
+- `Docs/AgentLogs/` - explicit-mode tool, validator, telemetry, dump, and proof-output surface. It is not active authority; keep reusable output paths that tools reference, and move only verified orphan one-off outputs after exact path/name searches.
+- `Docs/Tasks/README.md`
+- `taskslocal/README.md`
 - `Docs/DEPRECATED/README.md`
 - `Docs/_Archive/README.md`
 - `Docs/Archive/README.md`

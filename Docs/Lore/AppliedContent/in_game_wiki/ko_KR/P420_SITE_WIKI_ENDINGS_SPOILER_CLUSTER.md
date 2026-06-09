@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 엔딩과 payload custody
 
-엔딩 dossier 허브: custody, evidence, Atlas의 미래, 떠나는 대가.
+엔딩 dossier 허브: 모든 출구는 도덕 색표가 아니라 custody transfer다.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, 공개 진실, Atlas continuity, after-action records.
+Spoiler hub: payload custody, receiver consequences, false exits, public proof, quarantine leverage, Atlas continuity.
 
 ## Terminal
 
-SITE NAV: final payload pages는 spoiler gates 뒤에 둔다. receiver와 proof ownership으로 정리.
+SITE NAV: 최종 페이지는 spoiler gates 뒤에 둔다. 신체, 좌표, samples, Atlas records, worker proof의 통제자로 결과를 정리한다.
 
 ## Audio
 
-엔딩은 상승 뒤 누가 증거를 소유하는가다.
+탈출은 끝이 아니다. custody transfer다.
 
 ## Field Note
 
-엔딩은 spoiler-gated로 남고, 도덕 라벨이 아니라 receiver와 custody consequence로 정리된다.
+몸이 빠져나가도 proof가 소유되었다면 바다는 아직 사건을 끝내지 않았다.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ko_KR. -->

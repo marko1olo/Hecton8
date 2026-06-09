@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "电缆礁中继场证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Cable Reef Relay Yard POI Kit
+# 电缆礁中继场证据套件
 
-ZH LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+电缆礁中继场是一座修理场，已经长出自己的故障模式。导电膜、电缆护套和声学插座可以恢复信号，但如果操作员不扫描就切割，同一座桥也会把航路送进旧服务支路。
 
 ## Scanner
 
-ZH LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+POI证据套件：中继场通过活体桥膜导通，又通过受损电缆记忆误导航路。
 
 ## Terminal
 
-ZH LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+中继场套件：声学脊柱插座、生物膜桥、切割警告、信标响应、Atlas服务标记、剥落绝缘层、中继叉、死支路地图。
 
 ## Audio
 
-ZH LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+不要剥掉所有生长物。有些正在传递你的信号。
 
 ## Field Note
 
-ZH LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+掠夺者备注：如果探针下的膜在嗡鸣，切割前先标记。漂亮电缆经常是死电缆。
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/zh_CN. -->

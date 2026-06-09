@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Photic Shelf Survival Act"
+title: "透光陆棚生存门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Photic Shelf Survival Act
+# 透光陆棚生存门
 
-ZH LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+透光陆棚用物件教学，而不是用舒适感。操作员会知道哪些泵壳还存着空气，哪些补片能买到几分钟，哪些明亮生物会弄脏工具。Atlas 首次以修复残留出现：有用，局部错误，并近到可以触碰。
 
 ## Scanner
 
-ZH LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+路线门：透光陆棚。氧气袋、泵房、第一次切割和浅层 Atlas 修复残留在日光水中可读。
 
 ## Terminal
 
-ZH LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+战役路线 // 透光陆棚。需要：重启泵、修补密封、切断缆线、扫描器 ping。上升硬件不可用；已消耗电池路由至生存系统。Atlas 残留分类为有用，但有污染警告。
 
 ## Audio
 
-ZH LOC HOLD: The shallow water is not safe. It is only readable.
+浅水并不安全。它只是可读。
 
 ## Field Note
 
-ZH LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+拾荒者记录：日光有帮助。它不会让开裂的氧气线变得慷慨。
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/zh_CN. -->

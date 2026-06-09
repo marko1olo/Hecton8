@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Ланцюг фрагментів службової записки про відповідальність"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Ланцюг фрагментів службової записки про відповідальність
 
-UA LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Ланцюг фрагментів службової записки про відповідальність задає докази HECTON-8 як реконструкцію, а не переказ. Стаття дає гравцю причину дбати про уривки, часові мітки й пошкоджені адміністративні кімнати: Deep Reach залишила не одне зізнання, а несумісні самозахисти. Кожен фрагмент достатньо малий, щоб бути правдоподібним, і достатньо брудний, щоб мати вагу. Разом вони показують, як компанія може публічно звинувачувати фізику припливу, а приватно рухати відповідальність через ризик, евакуацію, безперервність Atlas, страхову конвертацію й зберігання вантажу.
 
 ## Scanner
 
-UA LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Службова записка про відповідальність вижила фрагментами, бо кожен офіс зберіг абзац, який захищав саме його.
 
 ## Terminal
 
-UA LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: таблиця запасу ризику / нотатка про випуск евакуації / override безперервності Atlas / конвертація збитку Keelmark / запит зберігання відновлення. Звірити час маршруту, пошкодження кімнат і імена працівників перед прийняттям публічного підсумку.
 
 ## Audio
 
-UA LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Вони не сховали правду в сейфі. Вони розклали її по шматках.
 
 ## Field Note
 
-UA LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Розірвана службова записка чесна там, де не збиралася бути чесною.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/uk_UA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Gemaskerde Deep Reach-begunstigdenclausule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Gemaskerde Deep Reach-begunstigdenclausule
 
-NL LOC HOLD: Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+De Gemaskerde Deep Reach-begunstigdenclausule definieert de moderne vorm van HECTON-8s samenzwering. Deep Reach is geen almachtige poppenspeler. Het is een begunstigde, verborgen in recoveryprioriteit, verzekeringsrouting en shell custody. Het resultaat is enger omdat het gewoon is: papierwerk met tanden rond een ramp die nooit ophield uit te betalen.
 
 ## Scanner
 
-NL LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach staat niet op het huursheet. Het verschijnt waar geld, ontvangerprioriteit en coördinaattoegang samenkomen.
 
 ## Terminal
 
-NL LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+BEGUNSTIGDENSPOOR / zichtbare huurder: proxy loss desk / gemaskerde begunstigde: Deep Reach-linked shell / aansprakelijkheid: geïsoleerd / coordinate access: behouden / priority recovery channel: opent voor contractor distress lane.
 
 ## Audio
 
-NL LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Als de naam ontbreekt maar het kanaal eerst opent, is de eigenaar nog steeds in de kamer.
 
 ## Field Note
 
-NL LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Procedureel houden: redactie, proxy loss desk, begunstigdenspoor, recoverykanaal. Laat de speler de druk afleiden.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/nl_NL. -->

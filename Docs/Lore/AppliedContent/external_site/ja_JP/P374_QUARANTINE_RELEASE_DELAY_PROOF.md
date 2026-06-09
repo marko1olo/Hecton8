@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "検疫解放保留"
+title: "検疫解放ホールド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 検疫解放保留
+# 検疫解放ホールド
 
-HECTON-8で検疫が信じられるのは、汚染が偽物ではないからだ。圧力曝露、塩水化学、Atlas互換成長は不用意な救助を致命的にする。その真実がDeep Reachに隠れ場所を与える。release holdは、実用的な出口がすでに狭まった後で、保護の言葉がどうシステムを流れたかを示す。ゲートは誰かを処刑せよとは言わない。hold until review、生物学的不確実性を保持、asset massを受理、insurance pingを維持、と言う。各句は単独なら弁護できる。沈むコロニーでは、それらがcustodyになる。このpacketはプレイヤーを不安にさせるべきだ。検疫は必要であり得る。その同じ道具で、人を遅らせ、claimだけを残すこともできる。
+検疫記録はDeep Reachが最も守りやすい文書の一つだ。HECTON-8では汚染は飾りの方針ではない。塩水反応成長、圧力損傷、Atlas関連バイオフィルムは、救助通路を第二の損耗区画に変える。実在する解放システムにはホールドが必要だ。
 
-## Scanner
-
-検疫保留プレート。出口経路がすでに施錠された後で、保護という言葉が現れる。
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY。reviewまで保留。worker releaseより先にasset massをrecovery queueへ受理。insurance ping有効。
-
-## Audio
-
-検疫は身体を救える。身体を紙になるまで待たせることもできる。
-
-## Field Note
-
-Marauderメモ: protectionという言葉だけで保護は証明されない。時計を見ろ。
+回収プレートは、経路閉鎖後に使われたホールドを示す。作業者解放は委員会確認待ち。資産質量は先に回収キューへ入る。保険pingは有効のまま。会社は危険を偽造する必要がなかった。遅延が請求に役立つ位置へ、危険を時計上で置くだけでよかった。
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ja_JP. -->

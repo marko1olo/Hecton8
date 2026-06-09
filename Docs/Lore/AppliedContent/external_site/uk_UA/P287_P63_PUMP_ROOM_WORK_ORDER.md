@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: P-63 Pump Room Work Order"
+title: "Робочий наказ насосної P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: P-63 Pump Room Work Order
+# Робочий наказ насосної P-63
 
-UK LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+Робочий наказ насосної P-63 це HECTON-8 у малому масштабі: вода в кімнаті, один інструмент у руці, acoustic return line і маршрут, якому не можна довіряти, доки середовище не відповість. Він робить механіки звичкою колонії.
 
 ## Scanner
 
-UK LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Перший ремонт читається як звичка колонії: качай, герметизуй, слухай, ріж лише якщо кімната перестала брехати.
 
 ## Terminal
 
-UK LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: очистити sump; залатати cold seam; перевірити return pinger; різати fused latch лише після утримання тиску; друкувати gasket з місцевого запасу; позначати route safe після трьох повторів acoustic return. Ініціали старшого зникли під водяною плямою.
 
 ## Audio
 
-UK LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Спочатку насос. Потім герметизація. Якщо співає, припини різати.
 
 ## Field Note
 
-UK LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Нижня половина планшета промокла наскрізь. Рядок про різання все ще читається, бо хтось обвів його двічі й написав якщо співає, зупинись.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/uk_UA. -->

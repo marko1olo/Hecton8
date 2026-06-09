@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Registre de retard de file d'évacuation"
+title: "Enregistrement de retard d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre de retard de file d'évacuation
+# Enregistrement de retard d'évacuation
 
-Cette preuve transforme l'évacuation en séquence. La porte n'a pas seulement été coupée par l'eau ; elle est restée en état de review pendant que les alarmes de pression atteignaient les couloirs occupés. Le champ témoin vide compte parce que le système exigeait une confirmation humaine après que les humains avaient perdu l'accès au panneau.
+Cet enregistrement transforme l'évacuation en retard ordonné, pas en résultat manquant. Alarme d'abord, revue ensuite, dépassement de classe de joint, puis sortie trop tardive. Deep Reach peut parler d'évacuation incomplète; l'horloge de file montre une porte gardée fermée par procédure après le passage de la pression au-delà de la ligne sûre.
 
 ## Scanner
 
-Horloge de file récupérée. La porte de libération est restée verrouillée après le passage des alarmes de pression de la prévision au couloir.
+Horloge de file récupérée. La porte de sortie est restée en revue manuelle après l'arrivée des alarmes de pression dans les sections occupées du couloir.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Confirmation manuelle absente. Révision quarantaine en attente. Pression de route au-delà de la classe de joint avant résolution d'autorisation.
+FILE ÉVAC // DOCK E-7. Confirmation manuelle vide. Conseil de quarantaine en attente. Classe de joint dépassée avant autorisation de sortie. Le verrou a répondu à l'état de file, pas aux dégâts d'inondation.
 
 ## Audio
 
-Ils n'ont pas échoué à sauver tout le monde. Ils ont attendu jusqu'à rendre plus difficile de sauver qui que ce soit.
+Ils ont attendu l'accord pendant que la route perdait son air.
 
 ## Field Note
 
-Note de maraudeur : une porte fermée avec un champ en attente n'est pas un accident. C'est une décision qui attend une signature.
+Note de pillard: une porte fermée avec confirmation vide est une décision qui attend un nom.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/fr_FR. -->

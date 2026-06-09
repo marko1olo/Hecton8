@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Tránsito de rotación de tripulación humana"
+title: "Tránsito de rotación humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tránsito de rotación de tripulación humana
+# Tránsito de rotación humana
 
-El tránsito humano es donde la ruta deja de ser abstracta. Los trabajadores no se teletransportan a Aegir; se programan, se enfrían, se aseguran, se indexan y se entregan entre autoridades durante años. Un contrato puede envejecer en una dirección mientras la persona dentro envejece en otra. Cuando una tripulación despierta, el empleador, el dueño de la responsabilidad y la emergencia para la que entrenó pueden haber cambiado.
+El tránsito de rotación humana es donde la ruta deja de ser astronomía y se vuelve control laboral. Una persona en HECTON-8 no es solo pasajera. Es volumen de litera, carga de oxígeno, exposición a radiación, riesgo psiquiátrico, gravamen salarial, expediente médico, categoría de custodia y posible testigo. Cada ventana de regreso ordena esos valores antes de ordenar el miedo.
+
+La tragedia es que el sistema de rotación no era del todo falso. Hubo gente que salió de Aegir. Hubo gente que volvió con cicatrices de presión, ahorros e historias editadas para el público. Esa historia hizo creíbles las promesas posteriores. Cuando la colonia empezó a fallar, Deep Reach no tuvo que negar el regreso. Bastó retrasar, reclasificar, poner precio y pedir un ciclo más.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/es_ES. -->

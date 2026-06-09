@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_walkway_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS195_FIRST_WALKWAY_RAIL_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, deck grate note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first exterior walkway |
@@ -72,17 +72,17 @@ RUNOFF HISTORY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| ru_RU | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| ja_JP | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| zh_CN | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| fr_FR | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| es_ES | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| de_DE | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| pl_PL | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| uk_UA | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| ar_SA | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| id_ID | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| ko_KR | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| he_IL | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| pt_BR | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
-| nl_NL | draft_machine_or_llm | DECK GRATE // Silt wedge caught at low corner. Runoff history, not flow proof. |
+| ru_RU | draft_machine_or_llm | ПАЛУБНАЯ РЕШЕТКА // Клин ила застрял в низком углу. История стока, не доказательство потока. |
+| ja_JP | draft_machine_or_llm | デッキグレーチング // 低い角にシルトのくさび。流下履歴であり流量証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 甲板格栅 // 低角卡住一楔淤泥。是径流历史，不是流动证明。 |
+| fr_FR | draft_machine_or_llm | CAILLEBOTIS DE PONT // Amas de limon dans un coin bas. Historique de ruissellement, pas preuve de débit. |
+| es_ES | draft_machine_or_llm | REJILLA DE CUBIERTA // Cuña de limo atrapada en esquina baja. Historial de escorrentía, no prueba de flujo. |
+| de_DE | draft_machine_or_llm | DECKROST // Schlammkeil in tiefer Ecke. Abflussverlauf, kein Strömungsbeweis. |
+| pl_PL | draft_machine_or_llm | KRATA POKLADU // Klin mulu utknal w niskim rogu. Historia splywu, nie dowod przeplywu. |
+| uk_UA | draft_machine_or_llm | ПАЛУБНА РЕШІТКА // Клин мулу застряг у низькому куті. Історія стоку, не доказ потоку. |
+| ar_SA | draft_machine_or_llm | شبكة سطح // وتد طمي عالق عند زاوية منخفضة. سجل جريان، لا دليل تدفق. |
+| id_ID | draft_machine_or_llm | KISI DEK // Baji lanau tersangkut di sudut rendah. Riwayat limpasan, bukan bukti aliran. |
+| ko_KR | draft_machine_or_llm | 갑판 그레이팅 // 낮은 모서리에 실트 쐐기가 걸렸다. 유출 이력이지 흐름 증거가 아니다. |
+| he_IL | draft_machine_or_llm | סבכת סיפון // טריז סחף נתפס בפינה נמוכה. היסטוריית נגר, לא הוכחת זרימה. |
+| pt_BR | draft_machine_or_llm | GRADE DO DECK // Cunha de silte presa no canto baixo. Historico de escoamento, nao prova de fluxo. |
+| nl_NL | draft_machine_or_llm | DEKROOSTER // Slibwig vast in lage hoek. Afloopgeschiedenis, geen stroombewijs. |

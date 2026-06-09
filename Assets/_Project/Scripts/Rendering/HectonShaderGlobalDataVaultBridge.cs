@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -91,7 +92,7 @@ namespace Hecton8.Core
             _fallbackBiolumMasterPhase = default;
             _fallbackAupTotalUniverseOffset = default;
             _fallbackAupShiftOffset = default;
-            _fallbackWaterExtinctionRuntime = CreateFloat4(0f, 1f, 1f, 0f);
+            _fallbackWaterExtinctionRuntime = CreateFloat4(WorldWaterLevelCalibrationMath.DefaultWaterLevelY, 1f, 1f, 0f);
             _fallbackWaterExtinctionWeather = default;
             _fallbackWaterExtinctionParams = CreateFloat4(1500f, 2.5f, 0f, 0f);
             _fallbackUberNoirRuntime = CreateFloat4(0f, 1f, 0f, 0f);
@@ -169,7 +170,11 @@ namespace Hecton8.Core
         /// <param name="runtimeVector">x=sea surface y, y=turbidity, z=post blend, w=active.</param>
         public static void PublishWaterExtinctionRuntime(Vector4 runtimeVector)
         {
-            float4 value = ToFiniteFloat4(runtimeVector);
+            float4 value = default;
+            value.x = ResolveWaterExtinctionSurfaceY(runtimeVector.x);
+            value.y = math.isfinite(runtimeVector.y) ? runtimeVector.y : 0f;
+            value.z = math.isfinite(runtimeVector.z) ? runtimeVector.z : 0f;
+            value.w = math.isfinite(runtimeVector.w) ? runtimeVector.w : 0f;
             value.y = math.max(0f, value.y);
             value.z = math.saturate(value.z);
             value.w = math.saturate(value.w);
@@ -204,7 +209,7 @@ namespace Hecton8.Core
         public static void ResetWaterExtinctionGlobals()
         {
             PublishWaterExtinctionParams(CreateVector4(1500f, 2.5f, 0f, 0f));
-            PublishWaterExtinctionRuntime(CreateVector4(0f, 1f, 1f, 0f));
+            PublishWaterExtinctionRuntime(CreateVector4(ResolveFallbackWaterExtinctionSurfaceY(), 1f, 1f, 0f));
             PublishWaterExtinctionWeather(Vector4.zero);
         }
 
@@ -214,8 +219,28 @@ namespace Hecton8.Core
         public static void PublishWaterExtinctionAnalyticalFallback()
         {
             PublishWaterExtinctionParams(CreateVector4(1500f, 2.5f, 1f, 0f));
-            PublishWaterExtinctionRuntime(CreateVector4(0f, 1f, 1f, 1f));
+            PublishWaterExtinctionRuntime(CreateVector4(ResolveFallbackWaterExtinctionSurfaceY(), 1f, 1f, 1f));
             PublishWaterExtinctionWeather(Vector4.zero);
+        }
+
+        private static float ResolveWaterExtinctionSurfaceY(float requestedSurfaceY)
+        {
+            return math.isfinite(requestedSurfaceY) &&
+                   math.abs(requestedSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
+                ? requestedSurfaceY
+                : ResolveFallbackWaterExtinctionSurfaceY();
+        }
+
+        private static float ResolveFallbackWaterExtinctionSurfaceY()
+        {
+            if (WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO snapshot) &&
+                math.isfinite(snapshot.ResolvedWaterLevelY) &&
+                math.abs(snapshot.ResolvedWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                return snapshot.ResolvedWaterLevelY;
+            }
+
+            return WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         }
 
         /// <summary>

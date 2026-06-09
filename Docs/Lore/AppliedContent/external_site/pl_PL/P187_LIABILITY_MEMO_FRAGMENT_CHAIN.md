@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Łańcuch fragmentów noty odpowiedzialności"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Łańcuch fragmentów noty odpowiedzialności
 
-PL LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Łańcuch fragmentów noty odpowiedzialności definiuje dowody HECTON-8 jako rekonstrukcję, nie ekspozycję. Artykuł daje graczom powód, by interesować się strzępami, znacznikami czasu i uszkodzonymi pokojami administracji: Deep Reach nie zostawiła jednego wyznania, lecz niezgodne autoprotekcje. Każdy fragment jest dość mały, by być wiarygodny, i dość brzydki, by mieć znaczenie. Razem pokazują, jak firma może publicznie obwiniać fizykę pływów, a prywatnie przesuwać odpowiedzialność przez ryzyko, ewakuację, ciągłość Atlas, konwersję ubezpieczeniową i depozyt ładunku.
 
 ## Scanner
 
-PL LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Nota odpowiedzialności przetrwała jako fragmenty, bo każde biuro zachowało akapit chroniący właśnie je.
 
 ## Terminal
 
-PL LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: tabela marginesu ryzyka / notatka zwolnienia ewakuacji / override ciągłości Atlas / konwersja straty Keelmark / wniosek o depozyt odzysku. Sprawdzić czas trasy, uszkodzenia pomieszczeń i nazwiska pracowników przed przyjęciem publicznego streszczenia.
 
 ## Audio
 
-PL LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Nie ukryli prawdy w sejfie. Złożyli ją w kawałkach.
 
 ## Field Note
 
-PL LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Podarta nota jest szczera tam, gdzie nie zamierzała taka być.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/pl_PL. -->

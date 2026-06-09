@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Vals Publiek Rapportpakket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Vals Publiek Rapportpakket
 
-NL LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
+Vals Publiek Rapportpakket geeft de publieke Deep Reach-versie van het kolonieverlies en de weglatingen die haar vals maken. Dit is geen propaganda die de ramp ontkent; het is propaganda die de ramp monteert tot een ongeluk zonder verantwoordelijke handen. Het artikel telt omdat HECTON-8 zijn hard-scifi-catastrofe kan behouden en tegelijk een dekkingsverhaal kan bewijzen. Oceaanfysica verklaart waarom de kolonie kwetsbaar was. De ontbrekende memo's verklaren waarom kwetsbaarheid achterlating werd.
 
 ## Scanner
 
-NL LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Het publieke rapport werkte omdat het de echte oceaan behield en de menselijke keuzes erin verwijderde.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: verlies van HECTON-8 toegeschreven aan uitzonderlijke getijdencascade, relaisvertraging en quarantaineonzekerheid. Weggelaten: aanvaarde risicomarges, evacuatievrijgavehold, Atlas-continuïteitsoverride, claimconversie en recoveryverzoek met vracht eerst.
 
 ## Audio
 
-NL LOC HOLD: They did not fake the storm. They buried the choice.
+Ze vertelden de waarheid over het water en logen over de handen.
 
 ## Field Note
 
-NL LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+De beste leugen ontkende het getij niet. Ze gebruikte het getij als dekking.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/nl_NL. -->

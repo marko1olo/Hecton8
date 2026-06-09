@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "普通公民对艾吉尔的记忆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# 普通公民对艾吉尔的记忆
 
-CN LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+对普通公民来说，Aegir 不是被禁止的秘密。更糟的是，它是学校读本、保险警告和航线费率表里的陈旧条目。人们记得海洋行星、失落殖民地和“隔离”这个词，却不记得轮班工人、孩子、厨师、压力技师，也不记得死亡清单上的名字。正是这种距离让 Deep Reach 还能留在公共生活里。一个众所周知的灾难，只要没人必须看见尸体，就能变成背景。
 
 ## Scanner
 
-CN LOC HOLD: Public memory: old disaster, distant resource, no faces.
+公共档案残片：人人都听过 Aegir，几乎没人记得一个名字。
 
 ## Terminal
 
-CN LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE：HECTON-8 损失事件，2147。官方原因：风暴级联、撤离失败、自动化腐败、生物隔离、遥测不可靠。当前状态：索赔休眠，保险指数仍在，民用航行不建议进入。
 
 ## Audio
 
-CN LOC HOLD: Most people know the place as a line under insurance rates.
+多数人认识 Aegir，只是因为它压在自己的保险费率下面。
 
 ## Field Note
 
-CN LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+灾难被算进账单之后，就会变成日常。
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/zh_CN. -->

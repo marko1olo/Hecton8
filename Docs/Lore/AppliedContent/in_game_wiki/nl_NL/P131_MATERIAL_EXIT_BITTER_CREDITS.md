@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Materiële uitgang: bittere kredieten"
+title: "Materiële exit: bittere credits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Materiële uitgang: bittere kredieten
+# Materiële exit: bittere credits
 
-De Materiële Uitgang is een echt einde voor een Marauder die HECTON-8 als betaald werk behandelt. De speler kan vertrekken met lagere schuld en een tevreden carrier-ledger. De prijs blijft zichtbaar: de kolonie blijft een misdaadlocatie omgezet in claimwaarde, en Deep Reach krijgt een betere terugweg dan de arbeiders ooit naar buiten kregen.
+Dit is de koudste legitieme exit uit HECTON-8. Een Marauder keert terug met drukmateriaal dat Black Keel kan wegen, factureren en door een opstijgvenster kan bewegen; de schuld daalt, het carrier-ledger klopt en het werkdossier kan sluiten zonder cijfers te vervalsen. Niets op het ontvangstbewijs is direct gelogen. Het monster is echt. De custody-keten is schoon genoeg. De mislukking leeft in de weggelaten kolom: niet-verzoende arbeidersnamen, een te dunne bewijsketen, een verdronken kolonie omgezet in claimwaarde en routegegevens die Deep Reach een schonere reden geven om terug te keren. Professioneel succes overleeft hier, maar het smaakt naar metaal en oude lucht.
 
 ## Scanner
 
-Drukmateriaal geaccepteerd. Uitgangsvenster koopbaar. Namen van arbeiders nog niet verrekend.
+Drukmateriaal geaccepteerd. Exitvenster verkocht. Namen blijven onbetaald.
 
 ## Terminal
 
-BEWIJS MATERIËLE UITGANG: custody-grade drukmateriaal geaccepteerd; lien verlaagd; bewijs-payload onvolledig; vermiste-arbeidersledger blijft onder claimant-geschil; prioriteit Recovery Compliance verhoogd.
+ONTVANGSTBEWIJS MATERIËLE EXIT: custody-grade drukmateriaal geaccepteerd; lien verlaagd; opstijgmassa goedgekeurd; bewijs-payload onvolledig; ledger vermiste arbeiders onopgelost; Deep Reach-terugwinningsbelang verhoogd.
 
 ## Audio
 
-De factuur wordt eerder vereffend dan de namen.
+De factuur bereikt de lucht vóór de namen.
 
 ## Field Note
 
-Black Keel zal het monster eerder prijzen dan de doden. Dat is geen fout in het contract.
+Black Keel vereffent massa vóór geheugen; het contract noemt dat succes.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/nl_NL. -->

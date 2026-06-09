@@ -19,22 +19,26 @@ localization_flags: 1
 
 # Akoestische relaisspine-assemblage
 
-Ontsnapping begint onder water. De akoestische relaisspine laat een beschadigde capsule positie, klok en overlevingsstatus bewijzen voordat orbitale ontvangers haar als recoverable mass behandelen.
+De akoestische relaisspine is het eerste bewijs dat de capsule bestaat. Een spraakkanaal is te kwetsbaar na inslag, mastverlies en stormruis. De spine gebruikt low-band pressure-code door water: keramische ribben, kabelhuid, pinger floats en een klok stabiel genoeg om positie te herhalen zonder als willekeurig wrakgeluid te klinken.
+
+Dat telt omdat de baan niet elk geluid redt. Black Keel kan drukgebeurtenissen van HECTON-8 horen, maar filtert ze nog steeds via claim custody, routegeometrie en ontvangsttiming. Een beschadigde tap zonder route proof wordt achtergrond. Een schone tap op de verkeerde klok wordt evidence loss. De assemblage maakt van geluid een terughaalbaar object: positie, survival state, klok, checksum.
+
+Salvage aan de spine is smal en hard. Een Marauder kan cable jacket vervangen, gebarsten ribben zetten, pinger floats ballasten en packet cadence uitlijnen, maar de oceaan blijft multipath delay, brine distortion en rompklop toevoegen. De gerepareerde spine vraagt niet om medelijden. Hij geeft de ontvanger genoeg herhaalde feiten om een recovery window te riskeren.
 
 ## Scanner
 
-Gebroken akoestische spine. Hij kan pressure-code door water tikken; de baan hoort het nog steeds als beschadigd custody noise.
+GEBROKEN AKOESTISCHE SPINE // Keramische ribstapel, gespleten kabelhuid, twee pinger floats. Low-band tap mogelijk; orbitale ontvanger negeert zonder passende timing en route proof.
 
 ## Terminal
 
-ASCENT RELAY: herstel laagbandige akoestische spine vóór recovery window. High-gain mast verloren. Emergency buoy onbetrouwbaar. Black Keel-ontvanger accepteert pressure-code pas na route proof.
+ASCENT RELAY: herstel low-band acoustic spine voor recovery window. High-gain mast verloren. Emergency buoy onbetrouwbaar. Black Keel-ontvanger accepteert pressure-code alleen met route proof, clock match en custody checksum.
 
 ## Audio
 
-Als de Keel ons hoort, hoort hij een wond op een pijp tikken.
+Als de Keel ons hoort, hoort hij keramiek coördinaten door slecht water tikken.
 
 ## Field Note
 
-De eerste roep van de capsule is geen stem. Het zijn keramische ribben, kabelhuid, pinger floats en genoeg timingdiscipline om de oceaan je correct te laten herhalen.
+De eerste oproep uit de capsule is geen stem. Het zijn ribben, cable jacket, ballast-float en genoeg klokdiscipline om water hetzelfde feit twee keer te laten herhalen.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Vent Forge Process Steps"
+title: "Етапи вент-кування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Vent Forge Process Steps
+# Етапи вент-кування
 
-UK LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+Етапи вент-кування описують hard-sci-fi фантазію виробництва HECTON-8. Планета дає тепло і тиск, колонія - зламані затискачі та пам'ять процесу, гравець - судження. Такий читабельний ланцюг може підтримати майбутній крафт, environmental storytelling і аудіофідбек.
 
 ## Scanner
 
-UK LOC HOLD: Vent forging should feel like using the planet against itself.
+Вент-кування - не магічна металургія. Це позика тепла, тиску і ритму планети без права дати планеті забрати деталь.
 
 ## Terminal
 
-UK LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ЕТАПИ ВЕНТ-КУВАННЯ / 01 видути розсіл із заготовки / 02 затиснути до імпульсу / 03 прогріти на підйомі вента / 04 запечатати у провалі тиску / 05 загартувати в холодній зворотній течії / 06 підтвердити акустичним дзвоном / відмова: гнутий брухт, сольовий bloom або тріснута від тиску деталь.
 
 ## Audio
 
-UK LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Місяць - це піч. Тобі лише дозволили позичити її.
 
 ## Field Note
 
-UK LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Процес має читатися як продувка, затиск, прогрів, герметизація, гартування, ring-test. Ризик не у вогні; ризик у пропущеному провалі тиску.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/uk_UA. -->

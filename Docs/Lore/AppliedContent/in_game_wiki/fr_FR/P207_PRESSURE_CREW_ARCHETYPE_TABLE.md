@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Table des archétypes d'équipes de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Table des archétypes d'équipes de pression
 
-FR LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.
+La Table des archétypes d'équipes de pression rend les preuves de la colonie fonctionnelles avant de les rendre sentimentales. Un ouvrier Pump doit mener le joueur vers l'eau, les vannes, les pics de pression et les mensonges de maintenance. Un ouvrier Seal appartient aux portes, aux rustines de coque, aux rituels de sas et aux pièces restées sèches trop longtemps. Relay, Brine Map, Vent Forge, Triage, Pressure Botany et Payload Witness font la même chose pour les signaux, routes, fabrications, délais médicaux, survie alimentaire et la chose que Deep Reach ne voulait pas nommer. La table garde le deuil attaché à des systèmes que le joueur peut toucher.
 
 ## Scanner
 
-FR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Les équipes sont des verbes avant d'être des biographies : pomper, sceller, relayer, cartographier, forger, trier, cultiver, témoigner.
 
 ## Terminal
 
-FR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES : Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany et Payload Witness. Chaque identité ouvrière se lie à une famille d'équipe avant le détail personnel. Les preuves restent ainsi attachées aux machines, routes, ruptures de pression, culture alimentaire, droit de récupération et chaîne finale du payload.
 
 ## Audio
 
-FR LOC HOLD: Job first. Memory second. That is how the colony survives.
+Le travail d'abord. La mémoire ensuite. C'est ainsi que la colonie survit sur papier.
 
 ## Field Note
 
-FR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Un ouvrier mort se lit plus clairement quand la pièce a encore besoin du travail qu'il connaissait.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/fr_FR. -->

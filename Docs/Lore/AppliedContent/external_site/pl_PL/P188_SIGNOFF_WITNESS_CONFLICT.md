@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Konflikt podpisu i świadka"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Konflikt podpisu i świadka
 
-PL LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Konflikt podpisu i świadka definiuje sprzeczność stojącą za publicznym raportem Deep Reach. Firma może twierdzić, że ocean uniemożliwił ratunek; nie może bezpiecznie twierdzić, że nikt nie widział konfliktu przed zatrzymaniem uprawnień zwolnienia. Ten artykuł zamienia dowody z pokoju w presję narracyjną: log drzwi, hash świadka i uszkodzony zegar trasy sprawiają, że oficjalny podpis brzmi mniej jak niepewność, a bardziej jak kontrolowane przemilczenie. Zachowuje fizyczność katastrofy, a jednocześnie dowodzi, że historia osłonowa była ludzka.
 
 ## Scanner
 
-PL LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Podpis twierdzi, że przegląd ewakuacji nie miał żywej sprzeczności. Hashe świadków mówią, że sprzeczność była w pokoju.
 
 ## Terminal
 
-PL LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: publiczny podpis oznacza awarię pływu jako jedyną przyczynę. Lokalny hash świadka umieszcza prawników ewakuacji, Atlas Safety i operacje trasy w pokoju przeglądu przed wstrzymaniem zwolnienia. Porównać log drzwi, stempel nazwiska i uszkodzony zegar trasy.
 
 ## Audio
 
-PL LOC HOLD: The signatures line up. The bodies do not.
+Raport mówi, że nikt nie mógł wiedzieć. Log drzwi się nie zgadza.
 
 ## Field Note
 
-PL LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Podpis jest czysty tylko do chwili, gdy pokój przypomni sobie, kto stał obok.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/pl_PL. -->

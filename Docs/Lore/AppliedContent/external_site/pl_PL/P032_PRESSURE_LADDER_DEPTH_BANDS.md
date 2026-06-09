@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Drabina ciśnienia
 
-Zmienia progres głębi HECTON-8 w twardą strukturę survivalu hard-sci-fi.
+Drabina ciśnienia opisuje dostęp do głębi HECTON-8 jako łańcuch serwisowy, a nie umowną bramkę: każdy pas otwiera się dopiero, gdy uszczelnienie, klasa skafandra, zasilanie, tlen, izolacja, sygnał i plan powrotu przejdą razem.
 
 ## Scanner
 
-Głębokość dzieli się ratingami ciśnienia, nie nazwami poziomów. Każdy pas wymaga inżynierii.
+ODCZYT BRAMY GŁĘBOKOŚCI // Pas: zejście serwisowe 250-1200 m. Margines uszczelki 11%. Płyta skafandra przyjmuje Grade C dopiero po zatrzaśnięciu pakietu B2. Ping powrotny słaby pod trzecią obejmą. Nie otwierać dolnej śluzy odwagą.
 
 ## Terminal
 
-Drabina: sprzęt półki, wzmocnienie kanionu, izolacja solanki, dyscyplina kadłuba, hartowanie sygnału fabryki.
+TABLICA DOSTĘPU GŁĘBOKOŚCI
+0-250 m: półka fotyczna / krótka praca z uszkodzonym sprzętem dopuszczona
+250-1200 m: półka serwisowa / wymagana uszczelka skafandra Grade C, zatrzaśnięta bateria i ping liny
+1200-2800 m: kanion solanki / wymagana owijka izolacyjna i trymer wyporu
+2800-4300 m: abisalne pole maszyn / wymagany utwardzony sygnał i dyscyplina kadłuba
+4300-5600 m: basen Atlas / plan powrotu musi przeżyć utratę ciśnienia i szum magistrali
+Błąd: następny pas zablokowany do naprawy najsłabszego odczytu
 
 ## Audio
 
-Nie schodzisz, bo jesteś odważny. Schodzisz, bo następna uszczelka trzyma.
+Przestań kłócić się z drzwiami. Margines uszczelki jest czerwony, a ping powrotny już się spóźnia.
 
 ## Field Note
 
-Ocean bramkuje postęp matematyką.
+Brama nie pyta, po co ci trasa. Czyta uszczelkę, zasilanie, tlen, izolację, sygnał, a potem daje zielone albo zabija pomysł.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/pl_PL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload фінального вибору"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload фінального вибору
 
-UK LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+Останнє рішення - не чистий екран перемоги. Це задача доставки з моральною вагою. Marauder вирішує, що підніметься з місяця: координати, зразки, імена працівників, доступ Atlas, інструкції карантину, публічний доказ або взагалі нічого корисного. Кожен payload створює іншого власника наслідків. Deep Reach може повернути контроль. Публічне право може отримати рану, яку нарешті видно. Неперервність Atlas можна перерізати або замкнути. Океано-машинну екологію можна захистити, продати або лишити поза людською мовою. Кінцівка не про те, хто втік із чистими руками. Вона про те, хто першим отримає досить правди, щоб діяти.
 
 ## Scanner
 
-UK LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+ФІНАЛЬНИЙ PAYLOAD // Координати, зразки, імена, доступ Atlas, накази карантину, публічний доказ. Те, що покине HECTON-8, вирішить, хто діятиме потім.
 
 ## Terminal
 
-UK LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+МАТРИЦЯ PAYLOAD: продати координати й XO-доказ; розірвати неперервність Atlas; зберегти або закрити на карантин океано-машинну екологію; опублікувати докази в публічний ledger; утримати payload і лишити Deep Reach сліпими.
 
 ## Audio
 
-UK LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+У місця злочину, що навчилося дихати, не буває чистого власника.
 
 ## Field Note
 
-UK LOC HOLD: The best ending should be defensible, not clean.
+Найкраща кінцівка має бути захищуваною, а не чистою.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/uk_UA. -->

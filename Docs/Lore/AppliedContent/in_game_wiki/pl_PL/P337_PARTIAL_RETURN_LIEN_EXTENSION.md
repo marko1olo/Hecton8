@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Partial Return Lien Extension"
+title: "Przedłużenie zastawu dla częściowego powrotu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Partial Return Lien Extension
+# Przedłużenie zastawu dla częściowego powrotu
 
-PL LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+Przedłużenie zastawu ustawia trwałość powtórek jako wiedzę, nie siłę sprzętu. Gracz wraca, bo zmieniły się dossier i dług, nie dlatego, że HECTON-8 stała się łatwiejsza.
 
 ## Scanner
 
-PL LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Powrót zatwierdzony pod przedłużonym zastawem. Flagi wiedzy trwają; ekwipunek jest objęty kwarantanną i zdjęty.
 
 ## Terminal
 
-PL LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ROZKAZ PARTIAL RETURN: ponowne wejście w ten sam seed dozwolone pod przedłużonym zastawem, zmienionym oknem burzy i zachowanym dossier wiedzy. Fizyczny ekwipunek resetowany przez kwarantannę dozoru; narzędzia pozostają własnością nośnika do zamknięcia przeglądu dowodów.
 
 ## Audio
 
-PL LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+Trasa pamięta, co udowodniłeś. Ocean zatrzymuje resztę.
 
 ## Field Note
 
-PL LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Rejestr ponownego wejścia: powrót w tym samym seed niesie wiedzę, presję długu, zmiany burzy i reset dozoru zamiast dziedziczonego sprzętu.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/pl_PL. -->

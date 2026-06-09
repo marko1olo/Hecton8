@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Catatan Tunda Antrean Evakuasi"
+title: "Rekam Tunda Antrean Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Catatan Tunda Antrean Evakuasi
+# Rekam Tunda Antrean Evakuasi
 
-Bukti ini mengubah evakuasi menjadi urutan. Gerbang bukan sekadar terputus oleh air; ia tetap dalam status review ketika alarm tekanan memasuki koridor berpenghuni. Kolom saksi kosong penting karena sistem meminta konfirmasi manusia setelah manusia sudah kehilangan akses ke panel.
+Rekaman ini mengubah evakuasi dari hasil yang hilang menjadi penundaan yang berurutan. Alarm dulu, tinjauan kedua, pelampauan kelas segel ketiga, pelepasan terlambat. Deep Reach dapat menyebut evakuasi tidak lengkap; jam antrean menunjukkan gerbang ditahan prosedur setelah tekanan koridor melewati garis aman.
 
 ## Scanner
 
-Jam antrean dipulihkan. Gerbang pelepasan tetap terkunci setelah alarm tekanan berpindah dari prakiraan ke koridor.
+Jam antrean ditemukan. Gerbang pelepas tetap dalam tinjauan manual setelah alarm tekanan mencapai bagian koridor yang berpenghuni.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Konfirmasi manual tidak ada. Tinjauan karantina tertunda. Tekanan rute melampaui kelas segel sebelum otorisasi selesai.
+ANTREAN EVAK // DOK E-7. Konfirmasi manual kosong. Dewan karantina tertunda. Kelas segel terlampaui sebelum izin pelepasan. Kunci gerbang merespons status antrean, bukan kerusakan banjir.
 
 ## Audio
 
-Mereka bukan gagal menyelamatkan semua orang. Mereka menunggu sampai menyelamatkan siapa pun menjadi lebih sulit.
+Mereka menunggu persetujuan saat rute kehilangan udara.
 
 ## Field Note
 
-Catatan Marauder: gerbang tertutup dengan kolom tertunda bukan kecelakaan. Itu keputusan yang menunggu tanda tangan.
+Catatan perompak: gerbang tertutup dengan kolom konfirmasi kosong adalah keputusan yang menunggu nama.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/id_ID. -->

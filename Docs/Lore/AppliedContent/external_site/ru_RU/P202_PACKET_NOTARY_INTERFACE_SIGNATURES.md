@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Подписи Packet Notary Interface
 
-RU LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+Межзвездная задержка не делала каждое сообщение HECTON-8 бесполезным. Она делала хранение сообщения дорогим. Лента Packet Notary записывает, какое окно ретрансляции несло пакет, какой hash его засвидетельствовал и какой владелец держал запись до выпуска. В восстановленных материалах HECTON-8 этот механизм может защитить рабочий лог или оставить его в claim material, пока не появится второй свидетель. Архивная пометка: запись определяет маршрут доказательства, а не всю командную цепочку Deep Reach.
 
 ## Scanner
 
-Пакетная печать может защитить правду или похоронить ее под custody delay.
+Пакетная печать восстановлена: хеш-лента цела, метка окна ретрансляции 17-A, владелец хранения не назначен. Считать доказательством только после совпадения witness chain.
 
 ## Terminal
 
-SIGNATURE SEED: Som Varela, Packet Notary Interface. Функция: заверяет packet hashes, relay delay и custody status. Это маршрутизация доказательства, не мотив.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Маршрут: Relay Spine / witness hash strip. Действие: заверить packet hash, локальную задержку ретрансляции и владельца хранения. Исключение: отсутствие приложения с именем работника удерживает пакет в очереди claim material. Эскалация: public ledger только после второго witness hash.
 
 ## Audio
 
-Печать не милосердие. Это часы с ценой.
+Печать цела. Метка времени опоздала на два окна. Если witness hash совпадет, они уже не назовут это помехами.
 
 ## Field Note
 
-Нотариальная поверхность ценна тем, что в одном месте дает relay time, witness hash и custody owner.
+Не продавай это как лог. Продавай как часы плюс свидетель: время ретрансляции, packet hash, владелец хранения. Без трех полей Deep Reach спишет запись на шум канала.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/ru_RU. -->

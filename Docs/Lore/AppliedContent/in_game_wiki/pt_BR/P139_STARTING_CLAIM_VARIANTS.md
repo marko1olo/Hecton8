@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Variantes de claim inicial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Variantes de claim inicial
 
-PT LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+Um claim inicial é a mentira escrita no topo da ordem de serviço. Salvage de dívida, bounty de evidência, hardware de rota desaparecido, custódia de amostra perigosa, alívio de blacklist: cada variante muda por que o quadro deixa o Marauder descer para a água. Deve colorir motivo e primeira pressão, não trocar o protagonista por uma máscara nova.
 
 ## Scanner
 
-PT LOC HOLD: Same protagonist. Different claim pressure.
+VARIANTE CLAIM // Mesmo Marauder ex-Deep-Reach. Primeira dívida, bounty, hardware de rota, custódia de amostra ou alívio de blacklist diferentes.
 
 ## Terminal
 
-PT LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+REGRA DE INÍCIO: variantes alteram pressão inicial, acesso a rumores, peso das evidências e lógica de pagamento. Não criam heróis alternativos nem apagam a espinha dorsal ex-Deep Reach.
 
 ## Audio
 
-PT LOC HOLD: You can change the job without changing who took it.
+Você pode mudar o trabalho sem mudar quem aceitou.
 
 ## Field Note
 
-PT LOC HOLD: Variants should color motive, not erase the canon character.
+Mude o claim. Preserve a cicatriz.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/pt_BR. -->

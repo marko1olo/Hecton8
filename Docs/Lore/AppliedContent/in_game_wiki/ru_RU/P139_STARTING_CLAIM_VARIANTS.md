@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Варианты стартового claim
 
-Starting claim variants - контекст контракта, а не alternate heroes. Игрок остается ex-Deep-Reach Marauder. Варианты меняют initial pressure, rumor access, evidence weighting и payout logic, давая replayable tone без разлома истории.
+Стартовый claim - это ложь, написанная вверху рабочего ордера. Долговой salvage, bounty за улику, пропавшее маршрутное железо, опасное хранение образца, снятие blacklist: каждый вариант меняет причину, по которой доска пускает Marauder вниз. Он должен окрашивать мотив и первое давление, а не заменять протагониста новой маской.
 
 ## Scanner
 
-Тот же protagonist. Другое давление claim.
+ВАРИАНТ CLAIM // Тот же бывший Deep Reach Marauder. Другой первый долг, bounty, маршрутное железо, хранение образца или снятие blacklist.
 
 ## Terminal
 
-CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+СТАРТОВОЕ ПРАВИЛО: варианты меняют начальное давление, доступ к слухам, вес улик и логику выплат. Они не создают альтернативных героев и не стирают бывший Deep Reach spine.
 
 ## Audio
 
@@ -35,6 +35,6 @@ CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous
 
 ## Field Note
 
-Variants должны окрашивать мотив, а не стирать канон персонажа.
+Меняй claim. Оставь шрам.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/ru_RU. -->

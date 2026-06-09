@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Legal Insurance Automated Ping"
+title: "Ping Automático Legal de Seguro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Legal Insurance Automated Ping
+# Ping Automático Legal de Seguro
 
-PT LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+O Ping Automático Legal de Seguro é uma expressão compacta do horror burocrático de HECTON-8. Deep Reach no presente pode falar por sistemas automatizados de custódia de seguro tão bem quanto por uma pessoa. O sistema pergunta o que o sobrevivente carrega antes de perguntar se ele deve ser salvo.
 
 ## Scanner
 
-PT LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Ping automático recebido. A linguagem de resgate foi substituída por prova de receptor, classe de massa e status de custódia.
 
 ## Terminal
 
-PT LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / exigido antes de recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-PT LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+A primeira coisa que perguntam não é se você está vivo. É o que você está carregando.
 
 ## Field Note
 
-PT LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Candidato a bark curto em limites de rota. Usar pouco; a crueldade está no que o sistema pergunta primeiro.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/pt_BR. -->

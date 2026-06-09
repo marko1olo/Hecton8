@@ -19,22 +19,22 @@ localization_flags: 1
 
 # النهايات وcustody الخاصة بالحمولة
 
-محور ملفات النهايات: custody وevidence ومستقبل Atlas وثمن المغادرة.
+مركز ملفات النهايات: كل خروج هو custody transfer، لا بطاقة أخلاقية ملونة.
 
 ## Scanner
 
-Spoiler hub: payload receivers وfalse exits وcustody والحقيقة العامة وAtlas continuity وafter-action records.
+Spoiler hub: custody للـpayload، عواقب receiver، false exits، public proof، ضغط الحجر واستمرارية Atlas.
 
 ## Terminal
 
-SITE NAV: أبق final payload pages خلف spoiler gates. نظمها حسب receiver وproof ownership.
+SITE NAV: إبقاء الصفحات النهائية خلف spoiler gates؛ ترتيب النتائج حسب من يسيطر على الجسد والإحداثيات وsamples وAtlas records وworker proof.
 
 ## Audio
 
-النهاية هي من يملك الدليل بعد الصعود.
+الخروج ليس النهاية. إنه نقل custody.
 
 ## Field Note
 
-تبقى النهايات spoiler-gated ومنظمة حسب receiver وcustody consequence لا حسب ملصقات أخلاقية.
+إذا خرج الجسد لكن proof أصبح مملوكا، فالمحيط لم ينه القضية.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ar_SA. -->

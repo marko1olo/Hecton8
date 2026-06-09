@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Contract Approach Act Gate"
+title: "Contractbenadering-poort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Contract Approach Act Gate
+# Contractbenadering-poort
 
-NL LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+De eerste poort is papierwerk met druk erachter. Black Keel stuurt geen toerist Aegir-water in. De operator accepteert claimoverdracht, schuldblootstelling, bathydrop-slot en gereedschapsrekening voor de eerste dieptescan. Het oude Deep Reach-profiel telt omdat procedureherkenning begint voordat de route persoonlijk lijkt.
 
 ## Scanner
 
-NL LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Routepoort: contract aanvaard. Lienblootstelling, bathydrop-timing en oude Deep Reach-procedure zijn actief voor de afdaling.
 
 ## Terminal
 
-NL LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+CAMPAGNEROUTE // CONTRACTBENADERING. Eigenaar: Black Keel-claimbord. Aanvaard claimoverdracht, lienblootstelling, bathydrop-slot en gereedschapsschuld. Resten van Deep Reach-rechten gedetecteerd in operatorprofiel. Herstel voorwaardelijk.
 
 ## Audio
 
-NL LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Je kwam voor werk. Het contract weet al waar je eerder werkte.
 
 ## Field Note
 
-NL LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Plunderaarsnotitie: lees het contractbord twee keer. De tweede keer zie je welke oude rechten nog in je handen passen.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/nl_NL. -->

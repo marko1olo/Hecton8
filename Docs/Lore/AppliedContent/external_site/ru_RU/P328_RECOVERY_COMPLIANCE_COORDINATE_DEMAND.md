@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Требование координат Recovery Compliance
 
-Текущая цель Deep Reach - вернуть HECTON-8 как ресурс, evidence и control surface. Игрок полезен, потому что может отправить координаты.
+После исчезновения колонии Deep Reach вернулась не с протянутой рукой. Первый чистый канал спрашивает, где актив, кто докажет право собственности и согласится ли живой свидетель на карантин и проверку удержаний. В HECTON-8 спасение не запрещают; его задерживают, пока оно не станет рычагом.
 
 ## Scanner
 
-Compliance packet: coordinates requested before medical recovery language.
+Пакет подтвержден как Deep Reach Recovery Compliance: язык спасения обернут вокруг требований координат, цепочки владения и статуса заражения.
 
 ## Terminal
 
-RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+УВЕДОМЛЕНИЕ RECOVERY COMPLIANCE DR-RC-8: передайте вектор доступа Atlas, подтверждение владения Xenon-Omega, статус биологического заражения и текущие координаты бассейна. Медицинское извлечение остается в ожидании, пока не будут согласованы цепочка актива, сальважное удержание и права контроля площадки. Самовольная передача может понизить приоритет выжившего до доказательного удержания.
 
 ## Audio
 
-Они умеют говорить rescue и не иметь в виду rescue.
+Они нашли способ заставить спасение звучать как ордер.
 
 ## Field Note
 
-Использовать рядом с payload authority decisions и receiver selection.
+Ставить там, где игрок выбирает, что передавать. Угроза должна звучать процедурно, не театрально: не речь злодея, а очередь, способная похоронить живого человека.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/ru_RU. -->

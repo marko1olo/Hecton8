@@ -149,6 +149,7 @@ namespace Hecton8.Visor
             _dependencyResolveRetryRemaining = 0f;
             _lastPlayerStressSignalSequence = 0;
             _hasInteractionSignal = false;
+            ClearRuntimeBindings();
         }
 
         private void OnDestroy()
@@ -156,6 +157,7 @@ namespace Hecton8.Visor
             TryUnregisterHotSwapListener();
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
+            ClearRuntimeBindings();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -179,8 +181,8 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                ApplyCachedPlayerContext();
+                CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false);
+                ApplyCachedPlayerContext(allowRegistryFallback: false);
             }
         }
 
@@ -354,9 +356,10 @@ namespace Hecton8.Visor
 
         private void RefreshRuntimeDependencies()
         {
-            if (_survivalSystem != null && _playerMovement != null && _playerHealth != null)
+            if (HasResolvedRuntimeBindings())
                 return;
 
+            ClearResolvedRuntimeBindings();
             ApplyCachedPlayerContext();
         }
 
@@ -399,7 +402,7 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             CacheAudioService(GlobalRegistry.Audio);
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
             ApplyCachedPlayerContext();
         }
 
@@ -429,18 +432,33 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private void ApplyCachedPlayerContext()
+        private void ApplyCachedPlayerContext(bool allowRegistryFallback = true)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext == null || !playerContext.IsInitialized)
+            IPlayerRuntimeContext playerContext = allowRegistryFallback ? ResolvePlayerContext() : _cachedPlayerContext;
+            if (!IsPlayerContextUsable(playerContext) || !playerContext.IsInitialized)
+            {
+                ClearResolvedRuntimeBindings();
                 return;
+            }
 
-            if (_survivalSystem == null)
-                _survivalSystem = playerContext.SurvivalSystem;
-            if (_playerMovement == null)
-                _playerMovement = playerContext.PlayerMovement;
-            if (_playerHealth == null)
-                _playerHealth = playerContext.PlayerHealth;
+            _survivalSystem = playerContext.SurvivalSystem;
+            _playerMovement = playerContext.PlayerMovement;
+            _playerHealth = playerContext.PlayerHealth;
+            _dependencyResolveRetryRemaining = 0f;
+        }
+
+        private void ClearRuntimeBindings()
+        {
+            ClearPlayerContext();
+            ClearResolvedRuntimeBindings();
+        }
+
+        private void ClearResolvedRuntimeBindings()
+        {
+            _survivalSystem = null;
+            _playerMovement = null;
+            _playerHealth = null;
+            _dependencyResolveRetryRemaining = 0f;
         }
 
         private float ResolveStress01()
@@ -553,7 +571,7 @@ namespace Hecton8.Visor
 
         private Vector3 ResolveHeartbeatAudioPosition()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (playerContext != null)
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose) &&
@@ -580,7 +598,7 @@ namespace Hecton8.Visor
             }
 
             HectonPlayerMovement movement = _playerMovement;
-            if (movement != null)
+            if (IsBehaviourUsable(movement))
             {
                 AbsoluteUniversePosition currentAup = movement.CurrentAup;
                 if (TryResolveRuntimePosition(in currentAup, out Vector3 runtimePosition))
@@ -588,6 +606,60 @@ namespace Hecton8.Visor
             }
 
             return Vector3.zero;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext, bool allowRegistryFallback = true)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            if (!allowRegistryFallback)
+            {
+                _cachedPlayerContext = null;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private bool HasResolvedRuntimeBindings()
+        {
+            return IsBehaviourUsable(_survivalSystem) &&
+                   IsBehaviourUsable(_playerMovement) &&
+                   IsBehaviourUsable(_playerHealth);
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsBehaviourUsable(Behaviour behaviour)
+        {
+            return behaviour != null && (!Application.isPlaying || behaviour.isActiveAndEnabled);
         }
 
         private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Service Basin POI Kit"
+title: "Bewijskit Atlas Servicebekken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Service Basin POI Kit
+# Bewijskit Atlas Servicebekken
 
-NL LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Het Atlas Servicebekken moet de einddiepte in techniek verankeren. Onderhoudsrails, levende kit en ontvangersockets tonen een systeem dat drukinfrastructuur probeert te repareren met de verkeerde categorietabel nog eraan vast.
 
 ## Scanner
 
-NL LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+POI-bewijskit: het servicebekken mengt industriële rails, levende kit, arbeiderscategorieën en ontvangersockets.
 
 ## Terminal
 
-NL LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+SERVICEBEKKEN-KIT: onderhoudsrail, weefsel-ijzerafdichting, oude kolonietabel met categorieën, payload-ontvangersocket, severance-risicomarkering, groeiklem, gereedschapswieg.
 
 ## Audio
 
-NL LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Het bad niet. Het plande onderhoud tot de categorieën braken.
 
 ## Field Note
 
-NL LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Marauder-notitie: scan de categorietabel voordat je de socket aanraakt. Het bekken kan de route repareren door te veranderen wat de route denkt dat jij bent.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/nl_NL. -->

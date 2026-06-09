@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "臆病な離脱連鎖"
+title: "緊急離脱チェーン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 臆病な離脱連鎖
+# 緊急離脱チェーン
 
-臆病な離脱は正当な部分エンディングだ。脱出機を再建できても、物語は感情的に終わらない。
+緊急離脱チェーンは、浅層経路で最初に合法化される上昇手順である。船殻封止、電池予備、中継反復、嵐間隙予測で組まれ、請求台帳に未完了として残る。
 
 ## Scanner
 
-この離脱は本物だ。同時に薄い。修理済みカプセル、狭い天候、真実なし、清算なし。
+早期発射チェーンは本物だが、すべて仮点灯だ。船殻封止、B2予備、帰還ping、嵐の隙間、請求ビーコン。
 
 ## Terminal
 
-上昇連鎖は船殻封止、電池予備、中継ping、嵐間隙予測後に可能。契約台帳は不完全サルベージ扱い。
+緊急上昇は、クレードルが固定し、バラスト弁が乾き、Black KeelがP036帰還窓を反復し、表層スコールが清い回廊を残した時だけ開く。契約台帳は出発を未完了と押印する。Atlas証言なし、Deep Reach責任パケットなし、認証済み支払いなし。
 
 ## Audio
 
-逃げることはできる。背後の海は説明してくれない。
+発射は可能だ。決着は乗っていない。
 
 ## Field Note
 
-早い離脱は解決であって、満足ではない。
+カプセルは記録より先に乗員を受け入れる。
 
 <!-- In-Game Wiki; generated from P037_COWARD_EXIT_CHAIN/ja_JP. -->

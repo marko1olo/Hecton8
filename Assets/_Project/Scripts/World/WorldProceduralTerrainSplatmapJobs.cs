@@ -22,6 +22,9 @@ namespace Hecton8.World
         public float SlopeBlendWidthDegrees;
         public float CavityStrength;
         public float SedimentStrength;
+        public uint UseMacroGeology;
+        public WorldMacroGeologyParams MacroGeologyParams;
+        public double2 WorldOriginXZ;
 
         public void Execute(int index)
         {
@@ -61,6 +64,9 @@ namespace Hecton8.World
             float silt = math.saturate(sediment * channelBottom * (1f - rock));
             float sand = math.saturate((1f - rock) * (1f - silt));
 
+            if (UseMacroGeology != 0u)
+                ApplyMacroGeologySurfaceWeights(x, z, safeCellSize, ref sand, ref rock, ref silt, ref cavity);
+
             float total = math.max(0.0001f, sand + rock + silt);
             Weights[index] = new float4(sand / total, rock / total, silt / total, cavity);
 
@@ -85,12 +91,172 @@ namespace Hecton8.World
             return math.saturate(Sediment01[index]);
         }
 
+        private void ApplyMacroGeologySurfaceWeights(
+            int x,
+            int z,
+            float cellSizeMeters,
+            ref float sand,
+            ref float rock,
+            ref float silt,
+            ref float cavity)
+        {
+            float absoluteX = (float)(WorldOriginXZ.x + x * (double)cellSizeMeters);
+            float absoluteZ = (float)(WorldOriginXZ.y + z * (double)cellSizeMeters);
+            WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(absoluteX, absoluteZ, in MacroGeologyParams);
+            WorldTerrainSurfaceMaterialWeights materialWeights = WorldTerrainSurfaceMaterialResolver.Resolve(
+                in sample,
+                absoluteX,
+                absoluteZ,
+                MacroGeologyParams.Seed);
+            WorldTerrainMesoDetailParams mesoParams = ResolveMesoDetailParams(cellSizeMeters);
+            WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(
+                in sample,
+                absoluteX,
+                absoluteZ,
+                in mesoParams);
+            materialWeights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(materialWeights, in meso);
+            float4 control = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in materialWeights);
+
+            const float geologyBlend = 0.78f;
+            rock = math.saturate(math.lerp(rock, control.x, geologyBlend));
+            sand = math.saturate(math.lerp(sand, control.y, geologyBlend));
+            silt = math.saturate(math.lerp(silt, control.z, geologyBlend));
+            cavity = math.saturate(math.max(cavity, math.max(control.w, meso.TributaryCanyonMask * 0.30f + meso.SlumpScarMask * 0.22f)));
+        }
+
+        private WorldTerrainMesoDetailParams ResolveMesoDetailParams(float cellSizeMeters)
+        {
+            WorldTerrainMesoDetailParams meso = WorldTerrainMesoDetailFields.CreateDefaultParams(MacroGeologyParams.Seed);
+            meso.PreviewExtentMeters = math.max(
+                WorldTerrainDetailContracts.MesoProofExtentMeters,
+                cellSizeMeters * math.max(math.max(Width, Height), 1));
+            return meso;
+        }
+
         private static float FastMagnitudeApprox(float2 value)
         {
             float2 abs = math.abs(value);
             float max = math.max(abs.x, abs.y);
             float min = math.min(abs.x, abs.y);
             return max + (min * 0.41421356f);
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct WorldTerrainSurfaceMaterialMaskJob : IJobParallelFor
+    {
+        [WriteOnly, NoAlias] public NativeArray<float4> Primary;
+        [WriteOnly, NoAlias] public NativeArray<float4> Secondary;
+        [WriteOnly, NoAlias] public NativeArray<float4> PackedControl;
+
+        public int Width;
+        public int Height;
+        public float CellSizeMeters;
+        public double2 WorldOriginXZ;
+        public WorldMacroGeologyParams MacroGeologyParams;
+        public float MaskContrast;
+
+        public void Execute(int index)
+        {
+            if ((uint)index >= (uint)Primary.Length ||
+                (uint)index >= (uint)Secondary.Length ||
+                (uint)index >= (uint)PackedControl.Length)
+            {
+                return;
+            }
+
+            int safeWidth = math.max(1, Width);
+            int x = index % safeWidth;
+            int z = index / safeWidth;
+            float safeCellSize = math.max(0.001f, CellSizeMeters);
+            float absoluteX = (float)(WorldOriginXZ.x + x * (double)safeCellSize);
+            float absoluteZ = (float)(WorldOriginXZ.y + z * (double)safeCellSize);
+            WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(absoluteX, absoluteZ, in MacroGeologyParams);
+            WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(
+                in sample,
+                absoluteX,
+                absoluteZ,
+                MacroGeologyParams.Seed);
+            WorldTerrainMesoDetailParams mesoParams = ResolveMesoDetailParams(safeCellSize);
+            WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(
+                in sample,
+                absoluteX,
+                absoluteZ,
+                in mesoParams);
+            weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
+
+            ApplyContrastAndNormalize(ref weights, math.max(0.05f, MaskContrast));
+
+            Primary[index] = new float4(
+                weights.ShellSand,
+                weights.LimestoneShelf,
+                weights.ClaySilt,
+                weights.HardRock);
+
+            Secondary[index] = new float4(
+                weights.BrineSaltCrust,
+                weights.ManganeseNodulePlain,
+                weights.ReefRubble,
+                weights.SeepCrust);
+
+            PackedControl[index] = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in weights);
+        }
+
+        private WorldTerrainMesoDetailParams ResolveMesoDetailParams(float cellSizeMeters)
+        {
+            WorldTerrainMesoDetailParams meso = WorldTerrainMesoDetailFields.CreateDefaultParams(MacroGeologyParams.Seed);
+            meso.PreviewExtentMeters = math.max(
+                WorldTerrainDetailContracts.MesoProofExtentMeters,
+                cellSizeMeters * math.max(math.max(Width, Height), 1));
+            return meso;
+        }
+
+        private static void ApplyContrastAndNormalize(ref WorldTerrainSurfaceMaterialWeights weights, float contrast)
+        {
+            if (math.abs(contrast - 1f) <= 0.0001f)
+                return;
+
+            weights.ShellSand = math.pow(math.saturate(weights.ShellSand), contrast);
+            weights.LimestoneShelf = math.pow(math.saturate(weights.LimestoneShelf), contrast);
+            weights.ClaySilt = math.pow(math.saturate(weights.ClaySilt), contrast);
+            weights.HardRock = math.pow(math.saturate(weights.HardRock), contrast);
+            weights.BrineSaltCrust = math.pow(math.saturate(weights.BrineSaltCrust), contrast);
+            weights.ManganeseNodulePlain = math.pow(math.saturate(weights.ManganeseNodulePlain), contrast);
+            weights.ReefRubble = math.pow(math.saturate(weights.ReefRubble), contrast);
+            weights.SeepCrust = math.pow(math.saturate(weights.SeepCrust), contrast);
+
+            float total =
+                weights.ShellSand +
+                weights.LimestoneShelf +
+                weights.ClaySilt +
+                weights.HardRock +
+                weights.BrineSaltCrust +
+                weights.ManganeseNodulePlain +
+                weights.ReefRubble +
+                weights.SeepCrust;
+
+            if (total <= 0.0001f || !math.isfinite(total))
+            {
+                weights.ShellSand = 1f;
+                weights.LimestoneShelf = 0f;
+                weights.ClaySilt = 0f;
+                weights.HardRock = 0f;
+                weights.BrineSaltCrust = 0f;
+                weights.ManganeseNodulePlain = 0f;
+                weights.ReefRubble = 0f;
+                weights.SeepCrust = 0f;
+                return;
+            }
+
+            float invTotal = 1f / total;
+            weights.ShellSand *= invTotal;
+            weights.LimestoneShelf *= invTotal;
+            weights.ClaySilt *= invTotal;
+            weights.HardRock *= invTotal;
+            weights.BrineSaltCrust *= invTotal;
+            weights.ManganeseNodulePlain *= invTotal;
+            weights.ReefRubble *= invTotal;
+            weights.SeepCrust *= invTotal;
         }
     }
 }

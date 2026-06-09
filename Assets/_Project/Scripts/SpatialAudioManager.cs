@@ -1451,6 +1451,7 @@ namespace Hecton8.Audio
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
         private IPlayerMovementTraumaSink _listenerPlayerMovementTrauma;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private int _delayedAudioIngressCount;
         private int _delayedAudioIngressHead;
         private DelayedAudioEvent[] _delayedAudioIngress;
@@ -1688,6 +1689,7 @@ namespace Hecton8.Audio
             _cachedHabitatGraph = null;
             _cachedPlayerRuntimeContext = null;
             _cachedWeatherService = null;
+            _cachedOceanKinematicsService = null;
             _cachedAcousticZone = null;
             _cachedSurfaceWeatherDirector = null;
             _cachedSpatialAudioQualityWeight01 = 1f;
@@ -2592,11 +2594,40 @@ namespace Hecton8.Audio
 #endif
         }
 
-        private static float ResolveVirtualListenerDepthMeters(Vector3 listenerAupRuntimePosition)
+        private float ResolveVirtualListenerDepthMeters(Vector3 listenerAupRuntimePosition)
         {
+            float seaLevelY = ResolveAudioWaterLevelY();
             return math.isfinite(listenerAupRuntimePosition.y)
-                ? math.max(0f, DefaultSeaLevelY - listenerAupRuntimePosition.y)
+                ? math.max(0f, seaLevelY - listenerAupRuntimePosition.y)
                 : 0f;
+        }
+
+        private float ResolveAudioWaterLevelY()
+        {
+            IHectonOceanKinematicsService service = _cachedOceanKinematicsService;
+            IHectonOceanKinematics provider = service != null && service.IsInitialized
+                ? service.ActiveProvider
+                : null;
+
+            if (provider != null &&
+                provider.IsAvailable &&
+                TryResolveAudioWaterLevel(provider.SeaLevel, out float providerSeaLevelY))
+                return providerSeaLevelY;
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveAudioWaterLevel(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         /// <summary>
@@ -5319,9 +5350,11 @@ namespace Hecton8.Audio
             int nextResolveFrame = SystemDispatcher.CurrentFrameIndex + SpatialAudioRegistryRetryFrames;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             IWeatherService weatherService = GlobalRegistry.Weather;
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
 
             _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
+            _cachedOceanKinematicsService = oceanKinematicsService != null && oceanKinematicsService.IsInitialized ? oceanKinematicsService : null;
             _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
             _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
             CachePlayerCriticalAudio(GlobalRegistry.PlayerCriticalAudioSignals);
@@ -5356,6 +5389,10 @@ namespace Hecton8.Audio
                     IWeatherService weatherService = currentService as IWeatherService;
                     _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
                     _weatherServiceResolveFrame = nextResolveFrame;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    IHectonOceanKinematicsService oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    _cachedOceanKinematicsService = oceanKinematicsService != null && oceanKinematicsService.IsInitialized ? oceanKinematicsService : null;
                     break;
                 case GlobalRegistryServiceSlot.AcousticZoneRuntime:
                     _cachedAcousticZone = currentService as IAcousticZoneReadModel;

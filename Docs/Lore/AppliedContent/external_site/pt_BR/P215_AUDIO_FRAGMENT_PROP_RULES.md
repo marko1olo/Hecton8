@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Regras de Props de Fragmentos de Áudio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Regras de Props de Fragmentos de Áudio
 
-PT LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+As Regras de Props de Fragmentos de Áudio definem como HECTON-8 usa voz sem inundar o mundo com monólogos. Cada fragmento de áudio precisa de fonte física, estado de transcrição danificada, timestamp e contradição. Voz não deve substituir evidência ambiental; deve afiá-la, fazendo salas, props e registros de rota falarem juntos.
 
 ## Scanner
 
-PT LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Voz é cara. Deve provar algo que a sala também consiga provar com metal, água, timestamp ou dano.
 
 ## Terminal
 
-PT LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: nada de monólogos soltos. Voz pertence a strip de hidrofone, gravador de suit, cache de terminal, handset de manutenção ou fragmento de black-box. Toda linha reproduzível deve ter fonte, estado de transcrição danificada, timestamp de rota e uma contradição que o jogador possa inspecionar.
 
 ## Audio
 
-PT LOC HOLD: If the room cannot prove me, cut the line.
+Se a sala não pode me provar, corte a linha.
 
 ## Field Note
 
-PT LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Fragmentos de áudio precisam de prop de origem, dano de transcrição, timestamp de rota e uma contradição física.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/pt_BR. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "بروتوكول قطع Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Sever Atlas Receiver Protocol
+# بروتوكول قطع Atlas payload
 
-AR LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+بروتوكول القطع مسار مستقبل تدميري، لا خروج نظيف. يستطيع إيقاف منطق إصلاح تالف وحرمان Deep Reach من متجه استرجاع. ويمكنه أيضا تدمير بيئة آلية، ومحو ذاكرة مسار نافعة، وصنع أثر أدلة يقرأ حسب قانون المستقبل كاحتواء أو تخريب أو سرقة أو رحمة.
 
 ## Scanner
 
-AR LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+مسار القطع مسلح. يحمل payload مفاتيح قطع لاستمرارية Atlas وعزل ذاكرة المسار وحفظ proof hash.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+مستقبل PAYLOAD // قطع ATLAS. الهدف: عمود استمرارية Atlas. قطع حلقة الإصلاح، عزل ذاكرة المسار، حفظ proof hash، رفض متجه الاسترجاع المؤسسي. التسلسل البيئي غير محسوم. التصنيف القانوني محل نزاع.
 
 ## Audio
 
-AR LOC HOLD: If this is mercy, it still leaves a body.
+يمكن قطع Atlas. القطع يترك علامات حيازة رغم ذلك.
 
 ## Field Note
 
-AR LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+ملاحظة نهب: القطع النظيف يظل قطعا. صور علامات الحيازة قبل أن تسحب.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/ar_SA. -->

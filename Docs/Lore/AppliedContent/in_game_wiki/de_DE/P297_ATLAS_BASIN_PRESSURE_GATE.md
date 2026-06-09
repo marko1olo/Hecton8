@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Basin Pressure Gate"
+title: "Atlas-Becken-Drucktor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Basin Pressure Gate
+# Atlas-Becken-Drucktor
 
-DE LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+Das Drucktor verankert die finale Schwelle in Anzugklasse, Drucknachweis und Autoritätskonflikt. Die Tür ist nicht mystisch; sie ist ein Industriesystem, das entscheidet, ob der Spieler Zugriff, Beweis oder Kontamination ist.
 
 ## Scanner
 
-DE LOC HOLD: Basin gate requires pressure proof and authority response.
+Das Beckentor verlangt Drucknachweis, Routenautorität und einen Körper, den es klassifizieren kann.
 
 ## Terminal
 
-DE LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: Drucknachweis unvollständig. Anzugklasse unter Abstiegsschwelle akzeptiert. Authority Clamp erkennt widerrufenes Deep-Reach-Muster, nicht aktuellen Anspruchsteller. Manuelle Überbrückung erfordert lokale Last, Empfängerwahl und Zeugenpayload.
 
 ## Audio
 
-DE LOC HOLD: It knows the old key. It does not know you.
+Es kennt den alten Schlüssel. Es kennt dich nicht.
 
 ## Field Note
 
-DE LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Die finale Schwelle soll wie ein Servicetor zu einer lebenden Fabrik wirken, nicht wie ein Fantasyportal.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/de_DE. -->

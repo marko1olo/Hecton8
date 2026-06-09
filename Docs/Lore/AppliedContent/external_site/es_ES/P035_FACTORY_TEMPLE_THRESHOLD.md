@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Umbral fábrica-templo
 
-Describe la zona final: no sala de jefe, sino cuerpo común de industria, océano e IA dañada.
+El Umbral fábrica-templo es el último traspaso de compuerta inferior de HECTON-8: un umbral de planta con carga compartida donde cerchas, retorno de salmuera, sellado de presión y rutas Atlas mantienen alcanzable la colonia fallida.
 
 ## Scanner
 
-La estructura del fondo no es una base. Casco de fábrica, lógica de santuario y tejido de presión comparten carga.
+Lectura de compuerta inferior: cercha de fábrica, tubo de retorno, sello de presión y bus de rutas Atlas cargan el mismo esfuerzo. Ya no queda una frontera limpia entre muro y puerta.
 
 ## Terminal
 
-Aviso: cercha industrial, sello biogénico, calor xenon lattice y rutas Atlas comparten autoridad estructural.
+THRESHOLD LOAD NOTICE
+Cercha: bajo esfuerzo
+Tubo de retorno: activo
+Sello de presión: sobrecrecimiento de carbonato
+Bus de rutas: canal de continuidad ATLAS-6
+Acceso humano: sin verificar
+Acción: marcar orden de abrazaderas antes de abrir cualquier junta
 
 ## Audio
 
-El océano no enterró la fábrica. La volvió cuerpo.
+No lo llames puerta. Encuentra qué línea sostiene la presión antes de pedirle que se abra.
 
 ## Field Note
 
-Aquí el mapa deja de fingir ruinas coloniales.
+La etiqueta del mapa dice umbral. Revisa las abrazaderas, no la palabra. La compuerta aguanta porque cuatro sistemas toman la misma carga.
 
 <!-- External Site; generated from P035_FACTORY_TEMPLE_THRESHOLD/es_ES. -->

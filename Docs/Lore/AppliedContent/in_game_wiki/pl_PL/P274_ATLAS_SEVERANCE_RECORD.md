@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Severance Record"
+title: "Zapis odcięcia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Severance Record
+# Zapis odcięcia Atlas
 
-PL LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+Zapis odcięcia Atlas nie jest pokwitowaniem wyłączenia. Loguje przecięcie ciągłości w uszkodzonej warstwie naprawczej Atlas, potem śledzi odpowiedź mikrowęzłów wentów, utratę impulsów uszczelniacza, przerwy tras oznaczonej fauny i odmowę routingu Deep Reach. To samo cięcie może uwolnić ślady uwięzionych pracowników, zranić ekologię ciśnienia albo zmienić żywą infrastrukturę w problem własności odbiorcy.
 
 ## Scanner
 
-PL LOC HOLD: Continuity cut. Damage not contained.
+ZAPIS ODCIĘCIA ATLAS // Ciągłość przecięta w uszkodzonej warstwie naprawczej. Odpowiedź mikrowęzłów spada; stabilność basenu i skutki pieczy nierozwiązane.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ZAPIS KOŃCOWY / ODCIĘCIE ATLAS
+Działanie: przecięcie ciągłości przez warstwę naprawczą Atlas.
+Systemy dotknięte: mikrowęzły wentów, impulsy uszczelniacza muszlowego, trasy oznaczonej fauny, naprawa uszkodzonego metalu.
+Odmówiono: routingu ładunku Deep Reach przez żywą warstwę Atlas.
+Nierozwiązane: stabilność basenu, ocalała ekologia, ślady uwięzionych pracowników.
+Znana strata: zapis nie rozstrzyga, czy cięcie uwolniło, zabiło czy ukradło.
 
 ## Audio
 
-PL LOC HOLD: Stopping the machine does not sort what it had become.
+Łącze ucichło. Basen nie odpowiedział, czy to była łaska.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Odcięty węzeł może być łaską, kradzieżą albo uszkodzeniem. Zapis wie tylko, które łącza ucichły.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/pl_PL. -->

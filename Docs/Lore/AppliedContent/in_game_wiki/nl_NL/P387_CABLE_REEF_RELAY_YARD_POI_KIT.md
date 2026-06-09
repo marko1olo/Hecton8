@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Bewijskit Kabelrif Relaiswerf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Cable Reef Relay Yard POI Kit
+# Bewijskit Kabelrif Relaiswerf
 
-NL LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+De Kabelrif Relaiswerf is een reparatiewerf die in zijn eigen foutmodus is gegroeid. Geleidende film, kabelmantels en akoestische sockets kunnen signaal herstellen, maar dezelfde brug kan de route naar een oude servicepoot sturen als de operator zonder scan snijdt.
 
 ## Scanner
 
-NL LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+POI-bewijskit: de relaiswerf geleidt via levende brugfilm en misrouteert via beschadigd kabelgeheugen.
 
 ## Terminal
 
-NL LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+RELAISWERF-KIT: akoestische spine-socket, biofilmbrug, snijwaarschuwing, pingerantwoord, Atlas-servicemarkering, isolatieschil, relaisvork, doodpootkaart.
 
 ## Audio
 
-NL LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Strip niet alle groei weg. Een deel draagt je signaal.
 
 ## Field Note
 
-NL LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Marauder-notitie: als de film onder de probe zoemt, markeer hem voor het snijden. Mooie kabel is vaak dode kabel.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/nl_NL. -->

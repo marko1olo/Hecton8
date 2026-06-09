@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Okno nieba drabiny księżyców Aegira"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Okno nieba drabiny księżyców Aegira
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Drabina księżyców Aegira to informacja trasowa. Tagi księżyców uczą jakości sygnału, ciśnienia pływów, cienia przekaźnika i ryzyka okna transfer bez symulacji orbitalnej na żywo.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+TAG KSIĘŻYCA // Szum przekaźnika spada. Okno użyteczne, jeśli pas burzy wytrzyma.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+NOTA EFEMERYD // Pas okna HECTON-8 korzystny. Cień przekaźnika Kestrel rośnie. Silne okno pakietu krótkie.
 
 ## Audio
 
-Read the sky, then send.
+Nie gap się w niebo. Przeczytaj je, potem wyślij.
 
 ## Field Note
 
-Pretty moons are weights.
+Ładne księżyce nadal są ciężarem na linie.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/pl_PL. -->

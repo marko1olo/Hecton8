@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "حدود استقلال carrier salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Salvage Carrier Autonomy Limits
+# حدود استقلال carrier salvage
 
-AR LOC HOLD: Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.
+حدود استقلال carrier salvage تعرف Black Keel كبنية تحتية قابلة للتصديق لا كذكاء إنقاذ سحري. carrier كفء داخل مساراته المسموحة. يستطيع جدولة نوافذ الاسترداد، ورفض الكتلة الملوثة، وبيع claim telemetry، وتحديث lien، وإسقاط ballast، وإطلاق مؤن منخفضة الخطر، وحماية receiver state. تجعل هذه القدرات وجوده محسوسا فوق المحيط. الحد المهم هو أن أيا منها لا يساوي وكالة أخلاقية. لا يستطيع Black Keel أن يقرر أن اللاعب يستحق الإنقاذ. لا يستطيع إلغاء الدين لأن الوضع غير عادل. لا يستطيع تفويض crewed descent عبر طقس ضغط Aegir أو تجاوز الحجر لأن صوتا بشريا يبدو خائفا. استقلاله مؤسسي وإجرائي: الدين يتحرك أسرع مما يستطيع الإنسان أن يتوسل. هذا يصنع علاقة أحدّ مع اللاعب من ذكاء صديق أو آلة عدوة. carrier يساعد ويرفض ويراقب بالقواعد نفسها.
 
 ## Scanner
 
-AR LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+يستطيع Black Keel تحريك الدين والقياس وإسقاطات الإمداد منخفضة الخطر من دون سؤالك. لا يستطيع تفويض إنقاذ عميق.
 
 ## Terminal
 
-AR LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+حدود الاستقلال / مسموح: claim processing، بيع القياس، recovery-window scheduling، ballast أو supply drop منخفض الخطر، contaminated-mass rejection / محظور: crewed descent، deep-rated rescue، lien cancellation، quarantine override، receiver ownership transfer.
 
 ## Audio
 
-AR LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+مستقل لا يعني حرا. يعني أن الدين يستطيع التحرك من دون أن يسألك.
 
 ## Field Note
 
-AR LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+أبق هذا في حالة carrier وواجهة العقد، لا في نداءات القتال. يغطي الاستقلال المحاسبة وجدولة الاسترداد ومنطق الرفض.
 
 <!-- In-Game Wiki; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/ar_SA. -->

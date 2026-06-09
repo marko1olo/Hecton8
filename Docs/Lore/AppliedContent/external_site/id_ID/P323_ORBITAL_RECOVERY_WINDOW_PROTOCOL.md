@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protokol Window Recovery Orbital"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Orbital Recovery Window Protocol
+# Protokol Window Recovery Orbital
 
-ID LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+Protokol Window Recovery Orbital membumikan loop kabur HECTON-8 pada astronomi lokal dan rekayasa sistem. Pemain tidak terdampar karena cerita berkata begitu. Mereka terdampar karena shear badai Aegir, interferensi magnetik, rantai ascent rusak, dan status receiver legal hanya selaras dalam window sempit. Penyelamatan menjadi rute yang harus dibangun, bukan tombol yang ditekan.
 
 ## Scanner
 
-ID LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel cukup dekat untuk mendengarmu dan terlalu dibatasi untuk menangkapmu kapan saja diminta. Aegir hanya membuka window recovery sempit.
 
 ## Terminal
 
-ID LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RECOVERY WINDOW / receiver Black Keel menerima rated ascent object hanya saat storm-top shear rendah, noise magnetik Aegir berkurang, guidance core terverifikasi, quarantine handshake cocok, dan receiver custody state sah. Window drift membatalkan launch manual.
 
 ## Audio
 
-ID LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Kapal itu cukup dekat untuk berarti, dan terlalu jauh untuk menyelamatkanmu cepat.
 
 ## Field Note
 
-ID LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Untuk route timer, UI carrier, dan penjelasan false-exit: shear badai, noise magnetik, geometri ascent, handshake karantina.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/id_ID. -->

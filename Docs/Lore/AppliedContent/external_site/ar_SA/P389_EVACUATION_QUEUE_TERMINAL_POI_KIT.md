@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "عدة أدلة محطة طابور الإخلاء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Evacuation Queue Terminal POI Kit
+# عدة أدلة محطة طابور الإخلاء
 
-AR LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+يجب أن تبدو محطة الطابور كغرفة صممت لجعل المعاناة مرتبة إداريا. تسرد المحطة حجوزات المسار، وتأخير إطلاق الحجر، ووزن Atlas، وأعداد العمال، لكن الجدران تحمل السجل الأقذر: شريط حالة فتحة، بقايا شارات، علامات سعة مفقودة، ووسم salvage على لوحة ما زال أحدهم يريد بيعها.
 
-## Scanner
-
-AR LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-AR LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-AR LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-AR LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+يكتسب المكان وزنه من الصراع. نزع قطعة قد يفتح طريقا أو يسدد دينا، لكنه قد يدمر السطح الذي يثبت التأخير. القراءة الصحيحة ليست اعترافا. إنها مجموعة أشياء غير متطابقة تجبر المشغل على اختيار ما ينجو من الغوص.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ar_SA. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Stagingtijd voor zware vracht
 
-Zware vracht verbergt tijd in infrastructuur. Atlas-hardware, seedlading, schildvoorraad en remonderdelen kunnen vroeg aankomen omdat ze jaren worden gelanceerd voordat publieke kolonietaal ze inhaalt. Dat maakt noodredding niet makkelijk. Een voorbereide route kan massa verplaatsen omdat depots, bundelvensters, pelletstromen en vangstadia al stonden te wachten. Een rampenroute heeft die geduld niet meer.
+Staging van zware vracht is waar interstellaire logistiek geweld wordt zonder wapen. Een habitatring, reactorhuls, snijcrawler, drukrib of voedselvoorraad is te duur om als losse belofte te behandelen. Nog vóór Aegir verzamelt het verzekeraars, pandrechten, carriers, inspecteurs en terugvalclausules.
+
+Toen omstandigheden veranderden, hoefde Deep Reach geen wreedheid uit niets te verzinnen. Het hoefde alleen de vrachtketen te blijven eren. Elke ton die al gestaged was eiste een ontvanger, elke ontvanger eiste een werkplek, en elke werkplek eiste lichamen. De kolonie werd het menselijke antwoord op vracht die al betaald was.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/nl_NL. -->

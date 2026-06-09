@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Probe Packet Travel Times
 
-Probe travel time is why Deep Reach could value HECTON-8 before it could protect people there. The first records were narrow, old on arrival, and already financial. A packet can make a claim look mature while the human plan behind it is still a guess.
+Probe packets made Aegir look governable before any worker stood under its water. Seed maps, mineral hints, hazard bands, and route permissions arrived in layers, each stamped with a launch truth that had already aged. HECTON-8 inherited those ghosts. A current-looking chart could be a decade-old argument with better formatting.
 
 ## Scanner
 
-The first Aegir witnesses were packets, not colonists.
+Recovered packet header: arrival date older than the colony map it updated.
 
 ## Terminal
 
-SURVEY CHAIN: beam-assisted probes and packet craft cross first, return stale truth, establish braking math, and let corporations sell a route before it is humane.
+PROBE PACKET NOTE: Ran-Aegir survey bundles travel on staged burns, sleeps, relay catches, and cheap patience. A packet may be accurate when launched, obsolete when opened, and still expensive enough to become policy.
 
 ## Audio
 
-The probe saw the ocean before anyone had a grave there.
+The map was true when it left. That was the problem.
 
 ## Field Note
 
-A probe can spend a human career crossing a route before anyone risks a body.
+A probe does not bring the present. It brings a fossil with telemetry attached.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/en_US. -->

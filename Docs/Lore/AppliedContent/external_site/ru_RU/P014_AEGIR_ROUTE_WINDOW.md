@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Маршрутное окно Aegir"
+title: "Окно маршрута Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Маршрутное окно Aegir
+# Окно маршрута Aegir
 
-На HECTON-8 небо - часть подземелья. Газовый гигант задает радиацию, луны дают тень, приливы проходят через каньоны и шахты.
-
-Игрок учится, когда сообщение может подняться, когда может подняться тело и когда открытое небо становится ловушкой.
+HECTON-8 — океаническая луна, но небо здесь часть подземелья. Радиация Aegir, лунные тени, relay shutters, storm plume, приливы и геометрия carrier решают, что может уйти: сигнал, тело, образец или ядро доказательства. Главное правило — разделение. Окно данных не равно окну спасения. Окно спасения не равно окну зараженного груза. Black Keel считает, но спрашивает, кто владеет массой, кто принимает карантин и какая оговорка защищает Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/ru_RU. -->

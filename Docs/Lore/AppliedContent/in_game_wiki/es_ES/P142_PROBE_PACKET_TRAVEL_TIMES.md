@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tiempos de viaje de paquetes sonda
 
-El tiempo de las sondas explica cómo Deep Reach pudo valorar HECTON-8 antes de proteger personas allí. Los primeros registros eran estrechos, viejos al llegar y ya financieros. Un paquete puede hacer que una reclamación parezca madura mientras el plan humano sigue siendo una conjetura.
+Los paquetes sonda hicieron que Aegir pareciera gobernable antes de que ningún trabajador pisara su agua. Mapas seed, indicios minerales, bandas de peligro y permisos de ruta llegaron por capas, cada una sellada con una verdad de lanzamiento ya envejecida. HECTON-8 heredó esos fantasmas. Una carta con aspecto actual podía ser una discusión de diez años con mejor formato.
 
 ## Scanner
 
-Los primeros testigos de Aegir fueron paquetes, no colonos.
+Cabecera recuperada: fecha de llegada más antigua que el mapa colonial que actualizó.
 
 ## Terminal
 
-CADENA DE ESTUDIO: sondas asistidas por haz y naves paquete cruzan primero, devuelven verdad rancia, establecen matemáticas de frenado y dejan a las corporaciones vender una ruta antes de que sea humana.
+NOTA DE PAQUETE SONDA: los lotes de estudio Ran-Aegir viajan con encendidos escalonados, sueño, capturas de relé y paciencia barata. Un paquete puede ser exacto al lanzarse, obsoleto al abrirse y aún lo bastante caro para volverse política.
 
 ## Audio
 
-La sonda vio el océano antes de que nadie tuviera una tumba allí.
+El mapa era verdad cuando salió. Ese era el problema.
 
 ## Field Note
 
-Una sonda puede gastar una carrera humana cruzando una ruta antes de que alguien arriesgue un cuerpo.
+Una sonda no trae el presente. Trae un fósil con telemetría.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/es_ES. -->

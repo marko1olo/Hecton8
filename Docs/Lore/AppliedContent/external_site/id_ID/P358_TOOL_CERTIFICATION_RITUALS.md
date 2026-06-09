@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Tool Certification Board"
+title: "Papan Sertifikasi Alat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Tool Certification Board
+# Papan Sertifikasi Alat
 
-ID LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Papan Sertifikasi Alat mencatat budaya yang lebih percaya tanda daripada pidato. Kepala pemotong diindeks ulang. Kartrid sealant ditimbang. Sarung tangan tekanan ditandatangani ganda. Kunci pompa terlambat. Kit turun ditahan. Tiap baris keras karena prosedur keras menjaga orang hidup di tempat alat yang hampir benar bisa membunuh diam-diam.
 
-## Scanner
+Papan itu tampak seperti ritual karena kerja berbahaya mengulang gerakan yang sama sampai ketakutan punya tempat untuk pergi. Timbang, periksa, tanda tangani, kembalikan, periksa ulang. Tanda tangan kedua bukan hiasan; ia membuat kepercayaan dapat dimintai tanggung jawab. Jika sarung tangan gagal di bawah tekanan, tanda di papan mengatakan siapa melihatnya, siapa terburu-buru, dan siapa tetap mencoba mengirimnya turun.
 
-ID LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-ID LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-ID LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-ID LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Ini iman pekerja tanpa mistik. Koloni tidak berdoa di atas pemotong. Ia membuat orang lelah lain melihat tepi, segel, berat, dan pengembalian kunci. Bertahan hidup menjadi komunal karena setiap alat membawa nama orang lain sebelum menyentuh rute.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/id_ID. -->

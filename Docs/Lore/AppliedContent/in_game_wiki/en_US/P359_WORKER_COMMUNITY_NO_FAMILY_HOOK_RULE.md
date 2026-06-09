@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Community Notice"
+title: "Worker Contact Notice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Community Notice
+# Worker Contact Notice
 
-Worker community notices keep colony stakes grounded in labor, proximity and obligation. The dead matter through work evidence, not a rescue-family premise.
+The worker contact notice is not cold bureaucracy. It is how a colony under an ocean admits a simple fact: love at light delay cannot open a hatch in six minutes. A mother, spouse or old friend offworld could matter deeply and still be useless during a pressure alarm. The board asked for bunk row, route lead, medlock witness, pump partner and tool-crib contact because those were the people close enough to hear a missed tone.
+
+That made the station intimate in a practical way. D. Rivas was not only a name on a bunk slate; he was a pump key someone expected back before meal. Mara Venn was not only a correction in a water ledger; she was the hand that knew which filter had gone sour and which supervisor was pretending it had not. A route lead could sign a contact swap because one worker trusted another to notice tremor, panic breathing or a glove seal that had begun to talk.
+
+Personal calls were delayed behind relay traffic, not erased. The difference mattered. The notice board did not deny the lives people had beyond HECTON-8; it recorded the lives that could save them before the next bulkhead cycle. In that place, community was proximity plus competence plus repeated return. If someone missed a tone, the board knew who should move first.
+
+The notice turns the colony human without asking for a secret bloodline. The people on it are tied by wet boots, shared tools, owed water, bad sleep and the habit of checking one another before descent. The ocean made distance expensive. The roster made nearness a duty.
 
 ## Scanner
 
-Notice board fragment. It records work contacts, not bloodline drama.
+COMMUNITY CONTACT NOTICE // Bunk row, route lead, medlock witness, tool-crib contact. Personal calls queued behind relay traffic; emergency contact means the person who can hear the next tone.
 
 ## Terminal
 
-COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
+COMMUNITY NOTICE: update station-contact column before pump tone 3. Route leads approve contact swaps. Offworld personal calls wait for relay window. Emergency contact must be on-station, trained, reachable by tone, and cleared for the worker's route.
 
 ## Audio
 
-They built a roster, not a legend.
+They made a roster because the ocean did not wait for families.
 
 ## Field Note
 
-NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+The board never asked who loved whom. It asked who could open a hatch, stop a kit, sign a tremor report, or notice an unanswered pump tone.
 
 <!-- In-Game Wiki; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/en_US. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: P-63 Fabricator Authority Limits"
+title: "גבולות הסמכות של fabricator P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: P-63 Fabricator Authority Limits
+# גבולות הסמכות של fabricator P-63
 
-HE LOC HOLD: P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.
+P-63 הוא שולחן העבודה הראשון, לא דרך החוצה מהכוכב. הוא יכול לסתום דליפות, להרכיב מהדקים, להציל כלים ולייצר pinger זול. שרוולי עלייה, אטמים מוסמכי עומק ומגעי הנעה נשארים נעולים עד שהשחקן מביא חומרים עמוקים יותר, חותמות סמכות והיסטוריית לחץ. כך crafting נעשה הוכחה והנדסה, לא רק תפריט התקדמות.
 
 ## Scanner
 
-HE LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 מקבל אטמים, מהדקים, pinger ומגעי חותך, אך דוחה רכיבי עלייה בלי הוכחה עמוקה יותר.
 
 ## Terminal
 
-HE LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair דורש pressure certificate, חומר שעבר עיבוד vent או route authority stamp.
 
 ## Audio
 
-HE LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+המכונה יכולה להציל את הבוקר שלך. היא לא יכולה לסלוח למסלול שלך.
 
 ## Field Note
 
-HE LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+זה לא קיר crafting שרירותי. המכונה פשוט לא בונה חלקי בריחה בלי הוכחת לחץ.
 
 <!-- In-Game Wiki; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/he_IL. -->

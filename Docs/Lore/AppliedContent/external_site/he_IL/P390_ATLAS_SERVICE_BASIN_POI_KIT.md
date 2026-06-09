@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Service Basin POI Kit"
+title: "ערכת ראיות לאגן השירות Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Service Basin POI Kit
+# ערכת ראיות לאגן השירות Atlas
 
-HE LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+אגן השירות מצדיק את הגודל שלו דרך עבודה. מסילות נושאות כלי תיקון. אטם רקמה-ברזל סוגר חתכי לחץ. מהדקי צמיחה מחזיקים לוחות שהיו אמורים להיות חומרה מתה. שקע המקלט ממתין בתוך חלל שעדיין נראה כמו מפרץ תחזוקה אם המפעיל עוקב אחרי הברגים ולא אחרי הצורה.
 
-## Scanner
-
-HE LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-HE LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-HE LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-HE LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+הסכסוך האחרון הוא סיווג, לא מיסטיקה. קטגוריות מושבה ישנות, לוגיקת תיקון Atlas, כללי מקלט מטען וסיכון ניתוק נוגעים באותה חומרה. תיקון מוצלח יכול לפתוח דרך ולזהם את הרשומה בתנועה אחת. נקודת העניין צריכה להראות את העלות הזו במתכת, רקמה, תוויות ושקעים.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/he_IL. -->

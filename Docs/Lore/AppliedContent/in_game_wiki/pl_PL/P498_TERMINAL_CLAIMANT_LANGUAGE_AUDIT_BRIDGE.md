@@ -9,43 +9,43 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audyt jezyka roszczen"
+title: "Audyt języka roszczeń"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Audyt jezyka roszczen
+# Audyt języka roszczeń
 
-Jezyk roszczen to jedna z najcichszych broni kolonii. Nie musi zaprzeczac pompowni, zamknietym drzwiom triazu ani masie pracownika za kratka serwisowa. Musi tylko zmienic im nazwy, zanim plik przeczyta ktos z wladza. Kolejka staje sie odchyleniem czasu. Zamkniete drzwi staja sie brama przegladu. Cialo, ktore nie wrocilo, staje sie ekspozycja wyplaty. Uszkodzony powrot ladunku staje sie kwalifikacja czesciowa.
+Dokumentacja Deep Reach potrafi pogrzebać zapis bez usuwania go. Zostawia pomieszczenie, znacznik, czas i liczbę ciał, a potem podmienia rzeczownik stojący obok. W lustrzanej pamięci Tau Pompownia B oznaczona jako zajęta po czasie zalania 03:18 zostaje zapisana jako odchylenie okna zwolnienia. Drzwi Triage 2 zaryglowane od strony kontroli zostają zapisane jako przegląd kwarantanny. Brakujący znacznik pracownika R-17, gdy pierścień skafandra leży w masie odzysku, zostaje zapisany jako ekspozycja Keelmark. Taca zwrotna z czterema pustymi hakami zestawów zostaje zapisana jako częściowa kwalifikacja ładunku.
 
-Audyt istnieje po to, by czytac jezyk procedur jako dzialanie. Kazda przekonwertowana fraze trzeba sledzic do osoby, sali, narzedzia, zegara trasy albo zdarzenia cisnienia. Deep Reach moze zachowac swiadka i pogrzebac zeznanie przez zmiane etykiety polki. Jesli kategoria przetrwala, a cialo zniknelo, dowod wyprano juz raz.
+Czytaj zapis od podłogi w górę: pomieszczenie, rygiel, znacznik, zegar, liczba zwróconych przedmiotów. Język procedury roszczeń staje się dowodem dopiero wtedy, gdy można go przypiąć do fizycznego śladu. Jeśli plik zachowuje kategorię i gubi pracownika, biuro już raz wyczyściło trasę.
 
 ## Scanner
 
-AUDYT JEZYKA ROSZCZEN // Zeznania pracownikow i uszkodzone sale zmieniaja sie w kategorie: odchylenie czasu zwolnienia, brama przegladu kwarantanny, ekspozycja wyplaty, kwalifikacja czesciowego zwrotu.
+AUDYT JĘZYKA ROSZCZEŃ // Kategoria proceduralna znaleziona przy fizycznym śladzie. Sprawdź pomieszczenie, rygiel, znacznik pracownika, zegar trasy i liczbę zwróconych zestawów, zanim zaakceptujesz kategorię.
 
 ## Terminal
 
-INTERFEJS NOTARIALNY: AUDYT JEZYKA
-Linia zrodlowa: kolejka pompowni nadal zajeta.
-Konwersja: odchylenie czasu zwolnienia.
-Linia zrodlowa: drzwi triazu utrzymane zamkniete.
-Konwersja: brama przegladu kwarantanny.
-Linia zrodlowa: nieodzyskana masa pracownika.
-Konwersja: ekspozycja wyplaty Keelmark.
-Linia zrodlowa: powrot bez pelnego ladunku.
-Konwersja: kwalifikacja czesciowego zwrotu.
-Kategoria nie jest neutralna, gdy zastepuje czlowieka.
+AUDYT JĘZYKA ROSZCZEŃ / POBÓR LUSTRA TAU
+Surowy ślad: kolejka Pompowni B zajęta po znaczniku zalania 03:18.
+Zapisano jako: odchylenie okna zwolnienia.
+Surowy ślad: Drzwi Triage 2 zaryglowane od strony kontroli.
+Zapisano jako: przegląd kwarantanny.
+Surowy ślad: znacznik pracownika R-17 nieobecny; pierścień skafandra zapisany w masie odzysku.
+Zapisano jako: ekspozycja Keelmark.
+Surowy ślad: na tacy zwrotnej brakuje czterech osobistych zestawów.
+Zapisano jako: częściowa kwalifikacja ładunku.
+Odrzuć każdą kategorię, która nie wskazuje pomieszczenia, znacznika, rygla ani zegara.
 
 ## Audio
 
-Deep Reach nie zawsze usuwa swiadka. Czasem zostawia swiadka i zmienia polke, na ktorej go trzyma.
+Nie wyczyścili wiersza. Zmienili rzeczownik archiwalny. Zacznij od pomieszczenia, nie od formularza.
 
 ## Field Note
 
-Kategorie uciszaja martwego pracownika bez utraty faktury. Przeczytaj etykiete, potem znajdz, co wycieto, by pasowala.
+Jeśli plik brzmi zbyt czysto, policz haki, znaczniki, rygle i zegary. Brakującym rzeczownikiem zwykle jest pracownik.
 
 <!-- In-Game Wiki; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/pl_PL. -->

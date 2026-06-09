@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Quiet Salvage Contract Seed"
+title: "Rustige Salvage Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Quiet Salvage Contract Seed
+# Rustige Salvage Contractseed
 
-NL LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Rustige Salvage is een contractfamilie met minder vroege alarmen en hardere eigendomstaal. De route geeft de operator tijd om te repareren, ademen en lezen, maar sampletags, pingerlogs en bewijskluizen binden aan een receiver vóór de eerste grote claim wordt betaald.
 
 ## Scanner
 
-NL LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Contractseed: rustige salvage. Lage stormblootstelling, schone eerste uitbetaling, beperkte custody op alles wat routegeschiedenis bewijst.
 
 ## Terminal
 
-NL LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: stormvenster kalm, bathydrop-slot vooraf vrijgegeven, vroeg faunacontact verminderd, custody-lock sterker, receiver-first auditclausule actief.
 
 ## Audio
 
-NL LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Rustig water betekent dat iemand het risico al naar papierwerk heeft verplaatst.
 
 ## Field Note
 
-NL LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Marauder-notitie: kalm water laat je de leugen van het contractbord met betere dictie horen.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/nl_NL. -->

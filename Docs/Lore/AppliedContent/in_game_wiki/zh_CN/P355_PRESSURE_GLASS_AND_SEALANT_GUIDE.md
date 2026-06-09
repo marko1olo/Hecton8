@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 压力玻璃与密封剂指南
 
-pressure glass 是地质与 Atlas 相遇的地方。repair network 把既有裂纹、矿物边缘和 pressure memories 当作路径，所以有用镜片也可能是一道活边界。
+压力玻璃是地质与Atlas相遇的地方。旧裂缝、矿物边缘、生物膜接缝和应力记忆会变成修复化学的路线，所以有用的镜片也可能是活边界。
 
 ## Scanner
 
-pressure-glass 裂纹被 Atlas chemistry 封住。只有 seal map 保持完整时，lens stock 才安全。
+压力玻璃裂缝已被Atlas化学封住。只有密封图保持完整时，镜片库存才安全。
 
 ## Terminal
 
-FIELD GUIDE: pressure glass 记录旧 tide stress。Atlas sealant 沿这些裂纹前进，因为裂纹已经描述了系统失效线。
+现场指南：压力玻璃记录旧潮汐应力。Atlas密封剂沿着这些裂缝走，因为裂缝已经描出了系统故障线。
 
 ## Audio
 
-修复网络阅读裂纹，就像你阅读地图。
+修复网络读裂缝，就像你读地图。
 
 ## Field Note
 
-不要打磨漂亮边缘。跟随 fracture map，从 seal 的死亡侧切入。
+不要打磨漂亮边缘。跟随裂缝图，从密封的死亡侧切入。
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/zh_CN. -->

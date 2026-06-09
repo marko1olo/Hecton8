@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "取り消されたアクセス文言の痕跡"
+title: "剥奪アクセス言語痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 取り消されたアクセス文言の痕跡
+# 剥奪アクセス言語痕跡
 
-主人公はDeep Reachのロックアウトを証拠として読む。取り消された資格情報はアクセスを塞ぐが、文言はなお埋められた経路を露出させる。劣化人数算定、代替証人、保守再分類、請求保全の言葉が残っている。
+剥奪アクセス言語痕跡は、HECTON-8の単純な規則に基づく。施錠された扉も自分の正体を漏らすことがある。Deep Reachのシステムは、慎重な言語で拒否し、分類し、請求を守るよう設計された。古い資格が失敗しても、その言語は残る。
 
-## Scanner
+有用な手掛かりはパスワードではない。maintenance reclassification、degraded counts、substitute checks、claim-preservation routesといった、物理的結果を持つ企業語句だ。普通の訪問者には拒否に見える。元field systems作業員には、扉が何を隠せと命じられたかの記録に見える。
 
-ロックアウトは「禁止」とは言わない。保守再分類、継続性保留、経路資料と記す。古いDeep Reachの言い回しだ。拒否でありながら、埋められた扉を指している。
-
-## Terminal
-
-アクセス応答 / ルート安全アーカイブ
-資格情報: 取り消し済み
-理由: 避難継続性資料は認定済みDeep Reach職員に限定
-表示語句: 劣化人数算定、代替証人、請求保全経路、保守再分類
-注記: 旧現場職員は事故照合の目的に限り拒否文言を閲覧できる。
-
-## Audio
-
-彼らは通路を消していない。罪を知る職員だけが今も読める語彙で包んだだけだ。
-
-## Field Note
-
-バッジは死んだ。ロックアウトは、経路を埋めた事務方言をまだ話す。
+これにより調査は労働と責任に接地する。オペレーターに魔法の鍵や悪役の自白は必要ない。死んだバッジ、拒否画面、間違ったmaintenance語だけで、Deep Reachが手順の下に埋めようとしたルートを追い始められる。
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "避難待機端末証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Evacuation Queue Terminal POI Kit
+# 避難待機端末証拠キット
 
-JA LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+避難待機端末に価値があるのは、人々が待ったと書いてあるからではない。ドア状態、時計 drift、作業員数、ルート容量が現地で確認できる形で食い違うからだ。
 
 ## Scanner
 
-JA LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+POI証拠キット: 待機端末はドア状態、時計 drift、作業員不一致、ルート容量で遅延を証明する。
 
 ## Terminal
 
-JA LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+待機端末キット: ルート保留リスト、隔離解除遅延、Atlas重み付けメモ、作業員数不一致、サルベージ競合タグ、ハッチ状態ストリップ、バッジ残留物。
 
 ## Audio
 
-JA LOC HOLD: A queue is a body count with cleaner formatting.
+待機列とは、よりきれいな形式の死者数だ。
 
 ## Field Note
 
-JA LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+マローダーメモ: バッジ残留物をスキャンするまでハッチストリップをこじるな。金属はタイムスタンプより安い。
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ja_JP. -->

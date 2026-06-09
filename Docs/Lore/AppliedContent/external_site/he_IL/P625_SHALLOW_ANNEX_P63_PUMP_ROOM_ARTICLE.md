@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "חדר המשאבות של נספח רדוד P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# חדר המשאבות של נספח רדוד P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+נספח רדוד P-63 הוא החדר הראשון שאפשר להחזיר לתועלת. זה אינו חדר פרס אלא מכונה עייפה: ידית בילג ידנית, גרון שסתום תקוע, צלקת מהדק איטום קר ומייצר שמכבד רק עבודות תיקון בסיכון נמוך עד שהמים יורדים מתחת לקו היניקה.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+החדר מלמד את הכלל הראשון של salvage ב-HECTON-8: אוויר מגיע מתיקון, לא ממזל. משאבה עובדת מורידה את המים מגובה הקרסול, חושפת ארונות כלים ישנים ונותנת סיבה פיזית לסמוך על הנספח עוד כמה דקות. הטרמינל עדיין קורא למשימה חדירת מים קלה. הקירות אומרים אחרת.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/he_IL. -->

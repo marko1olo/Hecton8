@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Hold Signatures"
+title: "Signatures de la porte de revue de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Hold Signatures
+# Signatures de la porte de revue de quarantaine
 
-FR LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+La couche de signatures de quarantaine rend la culpabilité de Deep Reach procédurale. La Great Tide a créé un vrai risque de contamination et de pression; le mensonge consistait à utiliser ce risque pour maintenir personnes et dossiers sous garde locale pendant que la revue externe prenait du retard. Les rapports publics ont appelé cela quarantaine biologique/pression et échec d'autorisation. Les cartes gate récupérées ajoutent un fait plus dur : l'extraction a été retenue par langage de certificat même là où le matériel de route n'avait pas encore cédé.
 
 ## Scanner
 
-FR LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Carte de revue récupérée : extraction state HELD, champ BIO/PRESSURE-UNCERTAIN, certificat externe absent. Libération de route bloquée par gate code.
 
 ## Terminal
 
-FR LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. File : Evacuation release. Action : retenir l'extraction jusqu'au certificat pressure-biology et à la revue externe. Exception : aucune capacité navette indépendante assignée. Human tags en garde locale jusqu'à levée du gate.
 
 ## Audio
 
-FR LOC HOLD: Pending review is still a locked door.
+La porte avait encore du courant. Le gate dit review pending, et l'écoutille est restée rouge.
 
 ## Field Note
 
-FR LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+À placer près des routes de survivants verrouillées et du matériel d'évacuation encore alimenté. Le champ de retenue a fermé légalement une porte qui fonctionnait.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/fr_FR. -->

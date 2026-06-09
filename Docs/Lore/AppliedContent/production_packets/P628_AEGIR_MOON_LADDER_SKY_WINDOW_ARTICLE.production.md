@@ -123,56 +123,56 @@ Text: The Aegir moon ladder is route information. Moon tags teach signal quality
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: Draft ar_SA: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: سلم أقمار Aegir معلومات طريق. وسوم الأقمار تعلم جودة الإشارة، ضغط المد، ظل المرحل، وخطر نافذة transfer من دون طلب محاكاة مدارية حية.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Draft de_DE: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Die Aegir-Mondleiter ist Routeninformation. Mondtags zeigen Signalqualität, Gezeitendruck, Relaisschatten und Transferfenster-Risiko, ohne Live-Orbitsimulation zu verlangen.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Draft es_ES: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: La escalera lunar de Aegir es información de ruta. Las etiquetas lunares enseñan calidad de señal, presión de marea, sombra de relé y riesgo de ventana transfer sin exigir simulación orbital en vivo.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Draft fr_FR: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: L’échelle lunaire d’Aegir est une information de route. Les balises lunaires indiquent qualité du signal, pression de marée, ombre relais et risque de fenêtre de transfer sans simulation orbitale en direct.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: Draft he_IL: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: סולם ירחי Aegir הוא מידע נתיב. תגי ירחים מלמדים איכות אות, לחץ גאות, צל ממסר וסיכון חלון transfer בלי לדרוש סימולציית מסלול חיה.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Draft id_ID: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Tangga bulan Aegir adalah informasi rute. Tag bulan mengajarkan kualitas sinyal, tekanan pasang, bayangan relai, dan risiko jendela transfer tanpa membutuhkan simulasi orbit langsung.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: Draft ja_JP: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Aegirの月梯子は経路情報だ。月タグは信号品質、潮汐圧、中継影、transferウィンドウの危険を示し、ライブ軌道シミュレーションを要求しない。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: Draft ko_KR: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Aegir 달 사다리는 경로 정보다. 달 태그는 실시간 궤도 시뮬레이션 없이 신호 품질, 조석 압력, 릴레이 그림자, transfer 창 위험을 알려 준다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Draft nl_NL: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: De Aegir-maanladder is route-informatie. Maantags leren signaalkwaliteit, getijdruk, relaisschaduw en transfer-vensterrisico zonder live orbitale simulatie te eisen.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Draft pl_PL: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Drabina księżyców Aegira to informacja trasowa. Tagi księżyców uczą jakości sygnału, ciśnienia pływów, cienia przekaźnika i ryzyka okna transfer bez symulacji orbitalnej na żywo.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Draft pt_BR: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: A escada lunar de Aegir é informação de rota. Tags de lua ensinam qualidade de sinal, pressão de maré, sombra de relé e risco de janela transfer sem exigir simulação orbital ao vivo.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Draft ru_RU: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Лунная лестница Aegir - это маршрутная информация. Метки лун показывают качество сигнала, приливное давление, релейную тень и риск окна transfer без живой орбитальной симуляции.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Draft uk_UA: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Місячна драбина Aegir - це маршрутна інформація. Мітки місяців показують якість сигналу, припливний тиск, релейну тінь і ризик transfer-вікна без живої орбітальної симуляції.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: Draft zh_CN: The Aegir moon ladder is route information for signal quality, tide pressure and transfer-window risk.
+Text: Aegir 的卫星阶梯是路线信息。卫星标签显示信号质量、潮汐压力、中继阴影和 transfer 窗口风险，而不要求实时轨道模拟。

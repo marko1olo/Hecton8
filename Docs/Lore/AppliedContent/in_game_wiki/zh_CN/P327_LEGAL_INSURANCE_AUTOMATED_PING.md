@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Legal Insurance Automated Ping"
+title: "法律保险自动 ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Legal Insurance Automated Ping
+# 法律保险自动 ping
 
-ZH LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+法律保险自动 ping 让公司压力变得可玩，因为它作为一条有用又可恨的小消息抵达。系统不浪费字句询问玩家是否活着。它要求 mass class、contamination state、coordinate proof、claim priority 和 receiver custody acceptance。这同时完成两件事。机制上，它告诉玩家哪些类别对回收重要。叙事上，它展示玩家在救援经济里的位置：生命没有被无视，但不是队列第一位。Ping 应该足够少，才会刺痛。如果它不停重复，就会变成噪音。如果它在路线阈值出现，在玩家冒险携带证据或样本载荷之后出现，它就像一只干净的公司之手穿过无线电，在救人之前先称量身体。
 
 ## Scanner
 
-ZH LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+收到自动 ping。救援语言已被接收器证明、质量类别和保管状态取代。
 
 ## Terminal
 
-ZH LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status：insufficient / 分配 recovery-window 前需要：mass class、contamination state、coordinate proof、claim priority、receiver custody acceptance。
 
 ## Audio
 
-ZH LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+他们最先问的不是你是否活着，而是你携带了什么。
 
 ## Field Note
 
-ZH LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+路线阈值处的短 bark 候选。少用；残酷之处在于系统最先问什么。
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/zh_CN. -->

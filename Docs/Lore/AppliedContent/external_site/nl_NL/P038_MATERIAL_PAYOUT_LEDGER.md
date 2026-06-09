@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Materiaaluitbetalingsboek"
+title: "Materiaalafrekenboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Materiaaluitbetalingsboek
+# Materiaalafrekenboek
 
-Legt een Stalker-achtige valse succesroute vast: winst mogelijk, morele afronding niet.
+Het materiaalafrekenboek definieert een betaalde vertrekroute. HECTON-8 kan met gesloten rekening worden verlaten als gecertificeerd materiaal wordt ingeleverd, maar het gebeurtenissenrecord blijft in quarantaine tenzij het bewijsarchief meegaat.
 
 ## Scanner
 
-Blue debt-monster gecertificeerd. Uitbetaling mogelijk. Waarheid optioneel. Deep Reach verkiest die volgorde.
+Blue debt-monster gecertificeerd: massa, zuiverheid, druklog, custody-keten. Krediet kan eerder sluiten dan bewijs.
 
 ## Terminal
 
-Schema: massa, zuiverheid, drukgeschiedenis en custody geaccepteerd. Bewijsarchief open.
+Afrekening opent wanneer de verzegelde koffer bij het monsterboek past, de afdaaldrukgeschiedenis geen gat heeft en de Deep Reach-aanbiedcode de custody-keten accepteert. Materiële sluiting verplaatst krediet naar escrow en tagt het Atlas-archief als niet-factureerbaar residu.
 
 ## Audio
 
-De rekening klaart. Het water niet.
+De rekening sluit. Het water bewaart de bon.
 
 ## Field Note
 
-Een succesvol contract kan nog steeds een mislukt leven zijn.
+Een schone overboeking kan ook begraven.
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/nl_NL. -->

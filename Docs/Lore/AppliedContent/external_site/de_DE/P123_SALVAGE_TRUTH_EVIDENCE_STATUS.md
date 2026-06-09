@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Beweisstatus geborgener Wahrheit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Beweisstatus geborgener Wahrheit
 
-DE LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Geborgene Beweise geben HECTON-8 seine langsam brennende Verschwörung. Die Kolonie schweigt nicht, weil nichts passiert ist, sondern weil jedes Beweisstück Marktwert, Haftungswert und Rechtswert besitzt. Wahrheit steigt durch Verwahrungsrouten und beschädigte Objekte auf, nicht durch ein bequemes Geständnis.
 
 ## Scanner
 
-DE LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Blackbox-Paket: Wahrheit, bis der Anspruchsschalter es berührt.
 
 ## Terminal
 
-DE LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: Rohbergung wird standardmäßig Anspruchsmaterial. Öffentliche Beweise brauchen intakten Quellhash, Druck-Zeitstempel, Zeugenpaket, Relaisnotar außerhalb der Kontrolle des Anspruchstellers und eine Verwahrungskette, die Schiffsverlust, Solekontakt und manuelle Änderungen übersteht.
 
 ## Audio
 
-DE LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Eine Leiche ist erst Beweis, wenn jemand sie nicht falsch ablegen konnte.
 
 ## Field Note
 
-DE LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Eine Tatsache aus der Tiefe ist nur gefährlich, wenn sie ihre Zeugen behält.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/de_DE. -->

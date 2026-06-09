@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Leiter der falschen Enden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Leiter der falschen Enden
 
-DE LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 darf viele Wege hinaus haben, ohne Wahrheit zu Lärm zu machen. Das Dossier soll falsche oder teilweise Ausgänge in wenige lesbare Familien sortieren: Material nehmen und gehen, entkommen und zurückgezogen werden, in Konzernverwahrung oder Quarantäne fallen, oder genug Ledger-Wahrheit leaken, um die Maschine zu verletzen, ohne sie zu beenden. Jeder Ausgang ist echt. Keiner ist der Grund.
 
 ## Scanner
 
-DE LOC HOLD: Four major false families before the deep Atlas resolutions.
+ENDLEITER // Materialauszahlung, Teilrückkehr, Konzernfang oder Quarantäne, öffentliches Ledger-Leck. Vier falsche Familien vor den tiefen Atlas-Antworten.
 
 ## Terminal
 
-DE LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIER-UMFANG: viele Ausgänge markieren, aber in klare Familien gruppieren. Materialauszahlung, Teilausstieg/Rückkehr, Konzernfang/Quarantäne und öffentliches Ledger-Leck liegen unter den Payload-Lösungen im Atlas-Becken.
 
 ## Audio
 
-DE LOC HOLD: The dossier can mark many exits before it marks an answer.
+Das Dossier kann Ausgänge markieren, bevor es eine Antwort markiert.
 
 ## Field Note
 
-DE LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Genug Enden für Spielstile. Nicht genug, um Wahrheit billig zu machen.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/de_DE. -->

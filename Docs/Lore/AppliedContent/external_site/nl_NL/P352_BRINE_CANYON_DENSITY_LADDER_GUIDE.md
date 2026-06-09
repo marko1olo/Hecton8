@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Gids voor dichtheidsladder van pekelkloof"
+title: "Gids voor de dichtheidsladder van pekelcanyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gids voor dichtheidsladder van pekelkloof
+# Gids voor de dichtheidsladder van pekelcanyons
 
-De Gids voor dichtheidsladder van pekelkloof behandelt HECTON-8's sleuven als technische geografie: de weg omlaag is gemaakt van dichtheid, niet van decor.
+Een pekelcanyon lijkt leeg water totdat een lamprand buigt, een meter aarzelt of een gevallen gereedschap stopt met vallen waar het niet zou moeten. HECTON-8s dichte lagen veranderen diepte in architectuur. Zoet water, zoutlast, koude seep-resten, kleislib en chemische film stapelen zich tot onzichtbare vloeren die een wolk mineraalschilfers kunnen dragen of een dronesignaal volledig kunnen inslikken.
 
-## Scanner
-
-Brine ladder gedetecteerd: gelaagde dichtheid, valse vloer, sonarbuiging. Volg de randen; open water liegt hier.
-
-## Terminal
-
-FIELD GUIDE: brine-kloven verbergen pressure shelves, current ledges, resource pockets en scanner false positives. Hull rating en density transition bepalen welke richel route is en welke val.
-
-## Audio
-
-Een kloof is een trap als je romp voor elke trede kan betalen.
-
-## Field Note
-
-Gebruik vane-schaduwen als treden. Een lege meting in brine is geen lege ruimte; het instrument verliest het argument.
+De canyon leert overleven voordat hij winst leert. Volg schaduwen van vinnen. Let op de modderlijn. Vertrouw in pekel een stil instrument minder dan daarbuiten. Resource-zakken verzamelen zich waar dichtheid de val van nuttig materiaal vertraagt, maar dezelfde zakken verbergen stilstaand gas, dode sensoren en drukveranderingen scherp genoeg om goedkope rompen te straffen. Omlaag gaan is nooit alleen dieper gaan. Het is afspraken tussen vloeistoffen oversteken.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/nl_NL. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Contract Approach Act Gate"
+title: "Contract Approach Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Contract Approach Act Gate
+# Contract Approach Gate
 
-The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+The first gate is paperwork with pressure behind it. Black Keel does not send a tourist into Aegir water. The operator accepts a claim transfer, debt exposure, a bathydrop slot and a tool bill before the first deep scan. The old Deep Reach profile matters because procedure recognition starts before the route looks personal.
 
 ## Scanner
 
-Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Route gate: contract accepted. Lien exposure, bathydrop timing and old Deep Reach procedure are active before descent.
 
 ## Terminal
 
-CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+CAMPAIGN ROUTE // CONTRACT APPROACH. Owner: Black Keel claim board. Accept claim transfer, lien exposure, bathydrop slot and tool debt. Deep Reach credential residue detected in operator profile. Recovery conditional.
 
 ## Audio
 
-You came for work. The paperwork already knows you worked for Deep Reach.
+You came for work. The contract already knows where you worked before.
 
 ## Field Note
 
-Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Marauder note: read the contract board twice. The second pass shows which old permissions still fit your hands.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/en_US. -->

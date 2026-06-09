@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Forge Process Steps"
+title: "שלבי תהליך חישול בפתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Forge Process Steps
+# שלבי תהליך חישול בפתח
 
-HE LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+שלבי תהליך חישול בפתח מתארים את פנטזיית המדע הבדיוני הקשה מאחורי הייצור ב-HECTON-8. הפלנטה מספקת חום ולחץ, המושבה מספקת מלחציים שבורים וזיכרון תהליך, והשחקן מספק שיקול דעת. השרשרת הקריאה הזו יכולה לתמוך בקצבי יצירה עתידיים, סיפור סביבתי ומשוב אודיו.
 
 ## Scanner
 
-HE LOC HOLD: Vent forging should feel like using the planet against itself.
+חישול בפתח אינו עבודת מתכת קסומה. זו שאילת החום, הלחץ והתזמון של הפלנטה בלי לתת לה לשמור את החלק.
 
 ## Terminal
 
-HE LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+שלבי חישול פתח / 01 לטהר תמלחת מן הגולם / 02 להדק לפני פעימה / 03 לחמם בעליית הפתח / 04 לאטום בזמן רגיעת לחץ / 05 לקרר בזרם קר / 06 לאשר בצלצול אקוסטי / כשל: גרוטאה מעוותת, פריחת מלח או חלק סדוק מלחץ.
 
 ## Audio
 
-HE LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+הירח הוא הכבשן. מותר לך רק לשאול אותו.
 
 ## Field Note
 
-HE LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+התהליך צריך להיקרא כטיהור, הידוק, חימום, איטום, קירור ובדיקת צלצול. הסיכון אינו להבה; הסיכון הוא לפספס את רגיעת הלחץ.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/he_IL. -->

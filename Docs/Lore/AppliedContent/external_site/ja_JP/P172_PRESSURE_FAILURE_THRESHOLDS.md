@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "圧力破損しきい値"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# 圧力破損しきい値
 
-JP LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+圧力破損しきい値は、資源と危険の読める境界を定義する。HECTON-8は深度を、視覚ストレス、音のクリック、スキャナー警告、サルベージリスク、クラフト結果というプレイヤー向け文法に変える。試料が壊れるのは、インベントリの数字が静かに期限切れになったからではない。世界がそれを押しているからだ。
 
 ## Scanner
 
-JP LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+良い試料も、間違った圧力線を越えれば危険物になる。表示が惜しかったことなど、海は気にしない。
 
 ## Terminal
 
-JP LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+圧力破損 / shallow-rated: 封止クリック、水のにじみ / industrial-rated: ガスケットずれ、クランプ震え / brine-rated: 細亀裂、塩ブルーム / abyssal-rated: 音響ゴースト、死試料霧 / Atlas-rated: 構造損失前の保管ロックアウト。
 
 ## Audio
 
-JP LOC HOLD: Pressure does not care that the label was almost right.
+圧力は、ラベルがほぼ正しかったことを気にしない。
 
 ## Field Note
 
-JP LOC HOLD: Failure thresholds should be readable before they punish.
+破損しきい値は罰の前に読めるべきだ。クリック音、ずれ、髪の毛ほどの亀裂、塩のブルーム、死試料の霧。失ってからしか学べないなら、世界が不正をしている。
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/ja_JP. -->

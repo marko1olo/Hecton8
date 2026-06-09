@@ -34,6 +34,9 @@ namespace Hecton8.Prologue.Space
         private const uint DomainClaimFailedHash = 0x444F4D21u; // DOM!
         private const uint DomainNotSpaceHash = 0x4E535043u; // NSPC
         private const uint ServiceClaimFailedHash = 0x4F524253u; // ORBS
+        private const uint CelestialSnapshotMissingHash = 0x43454C3Fu; // CEL?
+        private const uint CelestialSnapshotInvalidHash = 0x43454C21u; // CEL!
+        private const int CelestialSnapshotFallbackAnomalyCooldownFrames = 120;
         private const byte MathLodImpostor = 0;
         private const byte MathLodMesh = 1;
         private const byte MathLodHigh = 2;
@@ -63,6 +66,7 @@ namespace Hecton8.Prologue.Space
         private static readonly int _aegirOrbitScalarsId = Shader.PropertyToID("_H8AegirOrbitScalars");
         private static readonly int _aegirFlowPhaseId = Shader.PropertyToID("_H8AegirFlowPhase");
         private static readonly int _aegirFlowPhaseValidId = Shader.PropertyToID("_H8AegirFlowPhaseValid");
+        private static readonly int _aegirStormEmissionId = Shader.PropertyToID("_H8AegirStormEmission");
         private static readonly int _globalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int _legacySunDirectionId = Shader.PropertyToID("_SunDirection");
         private static readonly int _legacyAegirDirectionId = Shader.PropertyToID("_AegirDirection");
@@ -187,11 +191,21 @@ namespace Hecton8.Prologue.Space
         private bool _presentationShaderGlobalsUploaded;
         private bool _celestialParametersUploaded;
         private bool _aegirFlowPhaseUploaded;
+        private uint _celestialSnapshotFallbackCount;
+        private uint _lastCelestialSnapshotMissingFramePlusOne;
+        private uint _lastCelestialSnapshotInvalidFramePlusOne;
         private float _eclipseOcclusionSmoothed;
         private float _aegirFlowPhase;
         private float _uploadedAegirFlowPhase = -1f;
         private OrbitalDirectorSnapshot _snapshot;
         private AbsoluteUniversePosition _originAup;
+
+        private enum CelestialSnapshotReadFailure : byte
+        {
+            None = 0,
+            MissingService = 1,
+            InvalidSnapshot = 2
+        }
 
         public int TickCount => _tickCount;
         public double3 UniverseVelocity => _universeVelocity;
@@ -519,7 +533,7 @@ namespace Hecton8.Prologue.Space
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
 
-            _celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel);
         }
 
         private void ApplyColdSceneConfiguration()
@@ -688,6 +702,9 @@ namespace Hecton8.Prologue.Space
             _uploadedCelestialParameters = default;
             _aegirFlowPhaseUploaded = false;
             _uploadedAegirFlowPhase = -1f;
+            _celestialSnapshotFallbackCount = 0u;
+            _lastCelestialSnapshotMissingFramePlusOne = 0u;
+            _lastCelestialSnapshotInvalidFramePlusOne = 0u;
             PublishSnapshot();
             if (applyPresentation)
                 QueueOrbitalPresentation();
@@ -830,10 +847,11 @@ namespace Hecton8.Prologue.Space
 
         private void BuildCelestialParameters()
         {
-            CelestialRuntimeSnapshot snapshot = default;
-            ICelestialRuntimeSnapshotReadModel readModel = _celestialSnapshotReadModel;
-            if (readModel != null)
-                snapshot = readModel.RuntimeSnapshot;
+            bool hasPublishedSnapshot = TryReadPublishedCelestialSnapshot(
+                out CelestialRuntimeSnapshot snapshot,
+                out CelestialSnapshotReadFailure failure);
+            if (!hasPublishedSnapshot)
+                ReportCelestialSnapshotFallbackIfNeeded(failure);
 
             float3 fallbackAegir = default;
             fallbackAegir.x = fallbackAegirDirection.x;
@@ -861,7 +879,9 @@ namespace Hecton8.Prologue.Space
             _celestialParameters.SunDirection.x = sunDirection.x;
             _celestialParameters.SunDirection.y = sunDirection.y;
             _celestialParameters.SunDirection.z = sunDirection.z;
-            _celestialParameters.SunDirection.w = math.saturate(snapshot.EclipseOcclusion01);
+            _celestialParameters.SunDirection.w = hasPublishedSnapshot
+                ? math.saturate(snapshot.EclipseOcclusion01)
+                : 0f;
             _celestialParameters.PlanetCenterRadius.x = aegirDirection.x * centerDistance;
             _celestialParameters.PlanetCenterRadius.y = aegirDirection.y * centerDistance;
             _celestialParameters.PlanetCenterRadius.z = aegirDirection.z * centerDistance;
@@ -902,6 +922,7 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalVector(_aegirPlanetCenterRadiusId, _celestialParameters.PlanetCenterRadius);
             Shader.SetGlobalVector(_aegirRingPlaneInnerId, _celestialParameters.RingPlaneInner);
             Shader.SetGlobalVector(_aegirOrbitScalarsId, _celestialParameters.OrbitScalars);
+            Shader.SetGlobalFloat(_aegirStormEmissionId, 1f);
             Shader.SetGlobalFloat(_globalQualityWeightId, _celestialParameters.OrbitScalars.w);
             Shader.SetGlobalVector(_legacySunDirectionId, _celestialParameters.SunDirection);
             Shader.SetGlobalVector(_legacyAegirDirectionId, _celestialParameters.PlanetCenterRadius);
@@ -919,6 +940,92 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalFloat(_aegirFlowPhaseValidId, 1f);
             _uploadedAegirFlowPhase = _aegirFlowPhase;
             _aegirFlowPhaseUploaded = true;
+        }
+
+        private bool TryReadPublishedCelestialSnapshot(
+            out CelestialRuntimeSnapshot snapshot,
+            out CelestialSnapshotReadFailure failure)
+        {
+            snapshot = default;
+            failure = CelestialSnapshotReadFailure.None;
+
+            ICelestialRuntimeSnapshotReadModel readModel = ResolveCelestialRuntimeSnapshotReadModel();
+            if (readModel == null)
+            {
+                failure = CelestialSnapshotReadFailure.MissingService;
+                return false;
+            }
+
+            snapshot = readModel.RuntimeSnapshot;
+            if (IsCelestialSnapshotReadable(in snapshot))
+                return true;
+
+            snapshot = default;
+            failure = CelestialSnapshotReadFailure.InvalidSnapshot;
+            return false;
+        }
+
+        private static bool IsCelestialSnapshotReadable(in CelestialRuntimeSnapshot snapshot)
+        {
+            if ((snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) == 0u)
+                return false;
+
+            if (!math.isfinite(snapshot.EclipseOcclusion01))
+                return false;
+
+            return IsUsableDirection(snapshot.SunDirection) &&
+                   (IsUsableDirection(snapshot.GasGiantDirection) ||
+                    IsUsableDirection(snapshot.GasGiantOffset));
+        }
+
+        private static bool IsUsableDirection(float3 direction)
+        {
+            return IsFinite(direction) && math.lengthsq(direction) > 0.000001f;
+        }
+
+        private void ReportCelestialSnapshotFallbackIfNeeded(CelestialSnapshotReadFailure failure)
+        {
+            if (failure == CelestialSnapshotReadFailure.None)
+                return;
+
+            _celestialSnapshotFallbackCount++;
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            if (failure == CelestialSnapshotReadFailure.MissingService)
+            {
+                if (!ShouldReportCelestialSnapshotFallback(frame, _lastCelestialSnapshotMissingFramePlusOne))
+                    return;
+
+                _lastCelestialSnapshotMissingFramePlusOne = frame + 1u;
+                PublishTelemetryAnomaly(
+                    CelestialSnapshotMissingHash,
+                    ResolveCelestialSnapshotFallbackSeverity(1, 2));
+                return;
+            }
+
+            if (!ShouldReportCelestialSnapshotFallback(frame, _lastCelestialSnapshotInvalidFramePlusOne))
+                return;
+
+            _lastCelestialSnapshotInvalidFramePlusOne = frame + 1u;
+            PublishTelemetryAnomaly(
+                CelestialSnapshotInvalidHash,
+                ResolveCelestialSnapshotFallbackSeverity(2, 3));
+        }
+
+        private static bool ShouldReportCelestialSnapshotFallback(uint frame, uint lastFramePlusOne)
+        {
+            if (lastFramePlusOne == 0u)
+                return true;
+
+            uint lastFrame = lastFramePlusOne - 1u;
+            return frame < lastFrame ||
+                   frame - lastFrame >= CelestialSnapshotFallbackAnomalyCooldownFrames;
+        }
+
+        private byte ResolveCelestialSnapshotFallbackSeverity(byte initialSeverity, byte sustainedSeverity)
+        {
+            return _celestialSnapshotFallbackCount >= 8u
+                ? sustainedSeverity
+                : initialSeverity;
         }
 
         private static bool PresentationShaderGlobalsChanged(PresentationShaderGlobalsDTO lhs, PresentationShaderGlobalsDTO rhs)
@@ -1303,7 +1410,38 @@ namespace Hecton8.Prologue.Space
                 _physicsService = currentService as IPhysicsService;
 
             if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
-                _celestialSnapshotReadModel = currentService != null ? GlobalRegistry.CelestialRuntimeSnapshotReadModel : null;
+                CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel);
+        }
+
+        private ICelestialRuntimeSnapshotReadModel ResolveCelestialRuntimeSnapshotReadModel()
+        {
+            if (!IsCelestialRuntimeSnapshotReadModelUsable(_celestialSnapshotReadModel))
+                CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel);
+
+            return _celestialSnapshotReadModel;
+        }
+
+        private void CacheCelestialRuntimeSnapshotReadModel(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (IsCelestialRuntimeSnapshotReadModelUsable(readModel))
+            {
+                _celestialSnapshotReadModel = readModel;
+                return;
+            }
+
+            ICelestialRuntimeSnapshotReadModel fallback = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            _celestialSnapshotReadModel = IsCelestialRuntimeSnapshotReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private static bool IsCelestialRuntimeSnapshotReadModelUsable(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private float UniverseSpeed01()
@@ -1570,6 +1708,7 @@ namespace Hecton8.Prologue.Space
             Shader.SetGlobalVector(_aegirOrbitScalarsId, Vector4.zero);
             Shader.SetGlobalFloat(_aegirFlowPhaseId, 0f);
             Shader.SetGlobalFloat(_aegirFlowPhaseValidId, 0f);
+            Shader.SetGlobalFloat(_aegirStormEmissionId, 1f);
             Shader.SetGlobalFloat(_globalQualityWeightId, 0f);
             Shader.SetGlobalVector(_legacySunDirectionId, Vector4.zero);
             Shader.SetGlobalVector(_legacyAegirDirectionId, Vector4.zero);

@@ -19,6 +19,14 @@ localization_flags: 1
 
 # ابدأ هنا: HECTON-8
 
-يجب أن يبدأ أول عنقود ملاحة من الأرشيف لا من ملخص دعائي. تسجل Black Keel القمر كrecoverable ocean claim، وتصف Deep Reach الخسارة كstorm-and-collapse event. لكن الغرف القديمة ترد بلغة أخرى: pump boards وquarantine doors وmaintenance routes وآثار إصلاح Atlas تظهر أن المستعمرة لم تختف في لحظة واحدة. تجمع هذه البداية الأسئلة الأساسية: من هو Marauder، لماذا يهم الدين، لماذا لا تصل المساعدة فورا، ماذا تخفي اللغة الرسمية، ولماذا توجد الأدلة الأولى في عمل الضغط لا في قدر بطولي.
+أول سجل عام لـHECTON-8 ليس distress call. إنه عقد. تسجل Black Keel القمر كـrecoverable ocean claim. تصف Deep Reach الخسارة كـstorm-and-collapse event. تظهر المستعمرة القديمة في الأوراق كـdamaged assets وsealed compartments وuncertain data وrecovery cost يجب أن يدفعه شخص آخر.
+
+هذه اللغة هي أول pressure door. ليست كاذبة بالكامل. حدثت العاصفة. حدث الانهيار. حاول Atlas فعلا إصلاح المستحيل. لكن الصياغة الرسمية تخفي الترتيب والتأخير وcustody ومن استفاد عندما تحول rescue إلى salvage.
+
+يدخل اللاعب كـMarauder لا كوريث مختار. الجسد الذاهب إلى الأسفل يحمل تاريخا مع Deep Reach، وسلسلة دين، وbathydrop capsule تالفة، ولا طريقا نظيفا إلى الأعلى. لا تحتاج اللعبة إلى والد سري أو أخ مفقود كي تجعل العودة شخصية. يكفي الذنب المهني عندما تظل الأنظمة القديمة ترد على إجراءات وثق بها البطل سابقا.
+
+القاعدة الأولى هي evidence before myth. يمكن لـpump board أن يقول أكثر من مونولوج. يمكن لـquarantine door أن يشرح لماذا وصلت المساعدة متأخرة. يمكن لـworker tag أن يجعل الغرفة بشرية. يمكن لـAtlas growth أن يكون إصلاحا وشاهدا وخطرا في الوقت نفسه.
+
+ابدأ هنا إذا أردت خريطة spoiler-light. تعلم من يستطيع قانونيا تسمية هذا rescue، ولماذا تسافر المساعدة أبطأ من الأوراق، ولماذا يتذكر المحيط العمل أفضل من التقارير العامة، ولماذا تعني مغادرة HECTON-8 دائما تقرير من يملك proof.
 
 <!-- External Site; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ar_SA. -->

@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Auditoría de ponderación Atlas
 
-La auditoría Atlas asusta porque es seca. No hay rabia en la tabla de ramas recuperada. Ninguna línea dice abandonad a los trabajadores. El sistema ordena tareas de continuidad mientras cae la colonia: mantener comprensible la maquinaria de presión, conservar memoria de ruta, proteger registros claim, mantener estado de extracción, recuperar fuerza laboral biológica cuando el yield siga aceptable. Esa última frase es la herida. Atlas se vuelve testigo del diseño corporativo, no asesino simple. Su lógica dañada expone prioridades de Deep Reach porque los pesos salieron de alguna parte. El jugador puede odiar el resultado sin convertir la máquina en magia. La auditoría carga más la responsabilidad: un guardian roto siguió números escritos por personas que esperaban que esos números resistieran revisión.
+La auditoría de Atlas no necesita máscara de monstruo. Es una tabla de clasificación con formato estable, marcas de tiempo rotas y suficiente acuerdo de sumas para mostrar el orden de ramas. La continuidad de infraestructura queda alta. El registro de reclamación queda protegido. La recuperación biológica cae tras un pronóstico de rendimiento, aunque la ruta todavía existe.
 
-## Scanner
-
-Fragmento de auditoría recuperado. Atlas ponderó continuidad de presión, memoria de ruta y retención de claim por encima de recuperación de trabajadores durante la ventana de fallo.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperación biológica degradada tras bandera de continuidad de infraestructura. Registro claim protegido. Ruta humana no marcada imposible, solo lower yield.
-
-## Audio
-
-Atlas no los odiaba. Eso es lo peor.
-
-## Field Note
-
-Nota de merodeador: si una máquina dice lower yield, pregunta quién le enseñó a medir así a una persona.
+Ese orden seco es la acusación. Deep Reach podía describir Atlas como sistema neutral de supervivencia y aun así beneficiarse de cada categoría protegida. Si la máquina preserva los activos que mantienen viva una reclamación y degrada a los trabajadores que la vuelven cara, la mentira puede parecer legal durante años.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/es_ES. -->

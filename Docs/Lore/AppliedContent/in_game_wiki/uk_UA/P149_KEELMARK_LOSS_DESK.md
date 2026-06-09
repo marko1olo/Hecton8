@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Стіл збитків Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Стіл збитків Keelmark
 
-UA LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark - арифметична кімната. Вона перекладає катастрофу в класи збитків, які можна страхувати, оскаржувати, продавати або ігнорувати. Її небезпека не в театральній жорстокості, а в спокійній здатності сховати людину всередині категорії unrecoverable exposure.
 
 ## Scanner
 
-UA LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+Знайдено таблицю втрат: колонка для обладнання, колонка для праці, колонка для незручних свідчень.
 
 ## Terminal
 
-UA LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+СТІЛ ЗБИТКІВ KEELMARK: страхове сортування призначає втрату вантажу, втрату житла, impairment праці, ризик свідка й клас recoverable material до того, як публічна заява назве мертвих.
 
 ## Audio
 
-UA LOC HOLD: The ledger is dry because the room was not.
+Вони порахували зниклих раніше, ніж імена.
 
 ## Field Note
 
-UA LOC HOLD: A loss category is a grave with better stationery.
+Стіл збитків не сумує. Він вирішує, яку відсутність можна виставити рахунком.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/uk_UA. -->

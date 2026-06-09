@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Evidence First Charter Contract Seed"
+title: "זרע חוזה אמנת ראיות תחילה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Evidence First Charter Contract Seed
+# זרע חוזה אמנת ראיות תחילה
 
-HE LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+אמנת ראיות תחילה משנה את לוח החוזה לפני הירידה. תשלום החומר יורד, קיבולת הנוטריון עולה, ארונות ראיה מקבלים עדיפות ופירוק salvage נושא קנס. המפעיל נכנס עם מסלול שמגן על רשומות טוב יותר מאשר על חלקים.
 
-## Scanner
-
-HE LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-HE LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-HE LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-HE LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+הלחץ מופיע בבחירות קטנות. פס מצב צוהר יכול לחסום מכירת פאנל. תיק תאונה רטוב יכול לתפוס את החריץ היבש האחרון. יומן pinger עשוי להזדקק לממסר חי שהיה מזין תיקון. האמנה משלמת מאוחר כי היא דורשת לשמור חפצים לא נוחים שלמים מספיק זמן כדי שמקלט מחוץ ל-Black Keel יקרא אותם.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/he_IL. -->

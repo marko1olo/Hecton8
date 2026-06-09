@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties: 
+  m_LockedProperties:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -50,6 +50,7 @@ Material:
     - _RimPower: 2.6
     - _RimStrength: 0.92
     - _Rotation: 0.18
+    - _StormEmission: 1
     - _StormStrength: 0.32
     m_Colors:
     - _AtmosphereVeilColor: {r: 0.78, g: 0.86, b: 1.12, a: 1}

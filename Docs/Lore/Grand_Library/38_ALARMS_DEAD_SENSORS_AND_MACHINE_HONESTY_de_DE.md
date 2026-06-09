@@ -1,58 +1,84 @@
 <!-- localization_status: draft_machine_or_llm -->
 # ALARME, TOTE SENSOREN UND MASCHINENEHRLICHKEIT
 
-> **Quelle:** Deep Reach-Wartungspsychologienotiz, Black Keel-Inspektionsanhang, Marauder-Anzug-Audioänderungen.  
-> **Stimme:** Ausbilder für Systemsicherheit, wiederholt von Feldcrews korrigiert.  
-> **Prüfernotiz:** Eine Maschine auf HECTON-8 ist nicht ehrlich, weil sie sich kümmert. Sie ist nur ehrlich, solange ihre Sensoren, Energie und Annahmen noch die Realität berühren.
+> **Quelle:** Alarmreaktionskarten von Deep Reach, Kalibrierungsregister, Black-Keel-Inspektionsanhang und Marauder-Anzugmitschnitte von wieder geöffneten Wartungsdecks.  
+> **Umfang:** Alarmvertrauen, tote Sensoren, veraltete Puffer, schlechte Schwellen, Feldprüfung und Maschinenaufzeichnungen für Routenentscheidungen, Bergungsansprüche und Überlebensarbeit.  
+> **Feldeinsatz:** Vor dem Stummschalten eines Alarms, dem Vertrauen in ein grünes Panel, dem Öffnen eines versiegelten Raums nach Fernstatus, dem Versetzen einer Sonde oder dem Einsatz eines Sensorlogs als Beweis lesen.
 
 ---
 
-## 1. Der Alarm Ist Nicht Die Gefahr
+## 1. Ein Panel wiederholt, was es erreicht
 
-Neue Arbeiter hassen Alarme, weil Alarme mit Angst kommen. Alte Arbeiter hassen stille Panels mehr.
+Ein Alarm auf HECTON-8 ist nicht die Gefahr. Er ist eine Aussage einer Kette.
 
-Ein Alarm ist nicht die Gefahr. Er ist das Eingeständnis einer Maschine, dass eine gemessene Bedingung eine erwartete Grenze überschritten hat. Diese Grenze kann nützlich, veraltet, schlecht kalibriert, politisch weichgemacht oder von jemandem gesetzt worden sein, der annahm, der Raum würde alle dreizehn Tage gewartet. Der Alarm ist keine Weisheit. Er ist Beweis mit Ton.
+Etwas im Raum berührt Druck, Wärme, Gas, Salzgehalt, Vibration, Strom, Scharnierstellung, Pumpenfluss oder Tierbewegung. Ein Sensor macht daraus einen Wert. Ein Controller vergleicht den Wert mit einer Schwelle. Ein Panel, Anzug oder Lautsprecher verwandelt den Vergleich in Ton, Farbe, haptisches Ticken oder Logereignis. Jedes Glied kann ehrlich sein. Jedes Glied kann aber auch spät, nass, unterversorgt, geflickt, falsch benannt oder von einer Leitung gespeist sein, die niemand notiert hat.
 
-HECTON-8 brachte Menschen bei, Klang zu fürchten, und bestrafte dann diejenigen, die ihn zu einfach fürchteten. Eine kreischende Druckwarnung kann falsch liegen. Ein stilles grünes Panel kann schlimmer sein. Ein Anzug, der zwanzig Minuten dieselbe Warnung wiederholt, versucht vielleicht den Arbeiter zu retten, oder er steckt im letzten Ding fest, das er verstand, bevor Wasser den Bus erreichte.
+Darum fragen alte Arbeiter nicht, ob ein Alarm wahr ist. Sie fragen, was ihn erreicht hat.
 
-Gute Crews gehorchen Alarmen nicht. Sie verhören sie schnell.
+Ein Druckalarm kann an der Membran wahr und an der Tür nutzlos sein. Saubere Luft kann an der Decke stimmen und am Sumpf tödlich sein. Ein grüner Lukenzustand kann heißen, dass der Riegel geschlossen ist, dass der Riegelsensor geschlossen ist, dass der Riegelsensor geschlossen festhängt oder dass der Controller aus einem Puffer erwachte, der zuletzt vor der Flutung des Anbaus gültig war. Das Panel weiß nicht, welche Geschichte für einen lebenden Menschen wichtig ist. Es wiederholt, was ankam.
 
-## 2. Was Maschinen Wissen Können
+Deep Reach lehrte ruhige Reaktion, nicht blinden Gehorsam. Black Keel bearbeitete die Karten später zum Schutz von Ansprüchen. Marauder kürzten sie, weil Atem teuer ist. Die brauchbare Fassung bleibt dieselbe: das Panel nicht verehren und nicht verachten. Die Kette finden.
 
-Maschinen wissen nur, was ihr Kontakt mit der Welt erlaubt.
+## 2. Wahrheit beginnt an der Sensorfläche
 
-Ein Druckwandler kennt den Druck an seiner Membran, nicht ob es moralisch sicher ist, die Tür dahinter zu öffnen. Ein Gassensor kennt seine eigene vergiftete Oberfläche. Eine Salinitätssonde kennt das Wasser, das sie berührt, nicht die Solentasche fünf Zentimeter tiefer. Ein Thermostreifen kennt Wärme nahe dem Streifen. Ein Faunascanner kennt Bewegungsmuster, die er zu bemerken gelernt hat, nicht das neue Ding, das gelernt hat zu warten.
+Maschinenehrlichkeit beginnt dort, wo die Maschine die Welt berührt.
 
-Deep Reach baute Systeme für gewartete Infrastruktur. Sensoren sollten gereinigt, rotiert, herausgefordert, ersetzt und protokolliert werden. Ihre Ehrlichkeit hing von Händen ab. Nach der Aufgabe sprachen die Maschinen weiter mit alter Sicherheit, während die Bedingungen, die Sicherheit vernünftig gemacht hatten, um sie herum verrotteten.
+Ein Druckwandler kennt Druck an seiner Membran. Salzfilm auf dieser Membran verändert, welche Wahrheit ihn erreicht. Ein Gassensor kennt die Chemie auf seiner vergifteten Oberfläche, nicht die Luft hinter einem geschlossenen Schrank. Eine Salzsonde kennt das Wasser an ihren Kontakten, nicht die dichtere Sole fünf Zentimeter tiefer. Ein Thermostreifen kennt das Metall unter seinem Kleber. Eine Kamera sieht, was die Linse noch nicht überwachsen hat. Ein Faunascanner erkennt Bewegungsmuster, auf die er trainiert wurde, nicht das geduldige Tier, das warten gelernt hat.
 
-Black Keel interessiert das, weil ein schlechter Sensor Bergung in Haftung verwandeln kann. Marauders interessiert es, weil Haftung gewöhnlich eintrifft, nachdem das Wasser seine Version schon versucht hat.
+Die Kolonie wurde für gewarteten Kontakt gebaut. Sonden wurden gereinigt, gegen bekannte Proben geprüft, ausgetauscht, bevor Drift peinlich wurde, und mit dem Namen eines Technikers geloggt. Das war kein Papierkram. Es war Teil des Sensors. Ohne das spricht dasselbe Instrument weiter im Ton einer gewarteten Maschine, während sein Kontakt zur Wirklichkeit verfault.
 
-## 3. Tote Sensoren
+HECTON-8 bestraft Reinraumdenken. Eine perfekte Anzeige aus einer versiegelten Box kann weniger nützlich sein als eine schmutzige Halterung, ein Kabelknick, Mineralblüte oder der Geruch heißer Isolierung. Feldcrews lesen das Instrument und den Körper des Instruments. Der Fleck um die Schraube kann aktueller sein als der Bildschirm.
 
-Ein toter Sensor sieht aus der Entfernung selten tot aus.
+## 3. Wie ein Sensor lügt
 
-Er kann auf dem letzten guten Wert einfrieren. Er kann sanft in Richtung Komfort driften. Er kann einen permanenten Fehler werfen, den Crews zu stummschalten lernen. Er kann nur aufwachen, wenn Energie zurückkehrt, einen Normalzustand aus einem alten Puffer verkünden und wieder verstummen. Er kann physisch sauber sein, weil nichts Lebendiges gewagt hat, nahe dem Leck zu wachsen, das ihn tötete.
+Die meisten toten Sensoren melden ihren Tod nicht.
 
-Darum zählen Sensorgehäuse im Feld. Rost um eine Halterung kann eine grüne Anzeige überstimmen. Mineralblüte auf einer Sonde kann ein falsches Sicher erklären. Ein Kabel mit frischer Spannung kann bedeuten, dass jemand dem Gerät kürzlich genug vertraute, um es zu bewegen. Ein sauber geschnittenes Kabel kann das Gegenteil bedeuten.
+Manche frieren auf dem letzten guten Wert ein. Das sind die höflichen Mörder. Ein Korridor bleibt für immer "trocken", weil das Wasser kam, nachdem der Bus starb. Ein Gefrierschrank bleibt "kalt", weil das Temperaturpaket nie alterte. Eine Tür bleibt "versiegelt", weil der Reedkontakt des Riegels in der sicheren Position brach.
 
-Marauders markieren tote Sensoren, wenn sie können. Nicht weil Black Keel Höflichkeit belohnt, sondern weil ein unmarkierter toter Sensor zur Falle wird, die offizielle Zuversicht als Köder benutzt.
+Manche driften zum Bequemen. Ein Drucksensor mit verschmutzter Membran lernt langsam den Druck, den alle sehen wollen. Eine Gaszelle am Ende ihrer Lebensdauer riecht genau das nicht mehr, wovor sie warnen sollte. Eine von Mineralien verkrustete Salzsonde meldet mildes Meer, während Sole unter dem Gitter liegt.
+
+Manche fallen laut aus. Diese werden zuerst stummgeschaltet. Nach drei Wochen falschen Kreischens hören Crews die vierte Woche nicht mehr. Dann nimmt ein echter Leck denselben Kanal.
+
+Manche fallen durch schlechte Speisung aus. Brownout-Strom kann einen Controller in alte Schwellen rebooten lassen. Geliehene Energie kann eine Warnlampe am Leben halten, nachdem die Sensorschiene tot ist. Eine beschädigte Masse kann jeden Vibrationssensor im Korridor mit einer Pumpe einig werden lassen, die sich nicht mehr dreht. Maschinen brauchen keine Bosheit, um zu lügen. Sie brauchen nur einen gebrochenen Weg von der Welt zur Aufzeichnung.
 
 ## 4. Alarmkultur
 
-Alarmkultur ist eines der ersten Dinge, die Touristen von Arbeitern trennen.
+Alarmkultur trennt Stationstouristen von Menschen, die unter den sicheren Linien gearbeitet haben.
 
-Touristen fragen, wie man einen Klang abstellt. Arbeiter fragen, was sonst aufgehört hat zu klingen, als er begann. Ein Druckzirpen kann einen Lüfterstillstand verstecken. Eine Anzugwarnung kann einen nahen Empfänger maskieren. Ein Habitatalarm kann nutzlos werden, wenn jede Tür, jede Pumpe und jeder alte Medizinschrank im selben Bereich schreit. Deep Reach versuchte Töne zu standardisieren. HECTON-8 brachte Crews jahrelang bei, sie trotzdem zu personalisieren.
+Touristen fragen, wie man einen Ton abstellt. Arbeiter fragen, was sich noch änderte, als der Ton begann. Fiel der Lüfterton vor dem Gaszirpen ab? Begann der Anzughaptik vor dem Wandlautsprecher? Wurde das Panel bernsteinfarben, nachdem das Relais klickte, oder klickte das Relais, weil dem Panel Spannung fehlte? Wurde der Alarm von einem unabhängigen System wiederholt oder nur über denselben nassen Bus gespiegelt?
 
-Marauders verändern Alarme mit hässlicher Zweckmäßigkeit. Sie senken einige Schwellen, heben andere, routen eine Warnung auf Vibration, lassen eine andere als Klick im linken Ohr, machen eine dritte zu Licht, weil der Ort voraus voller lärmempfindlicher Fauna ist. Nichts davon ist elegant. Das meiste würde ein Reinraum-Audit nicht bestehen. Vieles davon hält Menschen am Leben.
+Deep Reach wollte Töne nach Klasse und Dringlichkeit standardisieren. HECTON-8 erzwang Ausnahmen auf jedem Deck. Manche Alarme wurden Vibration, weil lärmempfindliche Fauna nahe der Route nistete. Manche wurden ein Klick im linken Ohr, weil Anzugfunk schon zu viel Sprache trug. Manche wurden schwaches Licht, weil Dunkelheit Menschen langsam und Geräusch Räuber schnell machte. Saubere Auditoren nannten das inkonsistent. Arbeitscrews nannten es Überleben.
 
-Der beste Alarm ist nicht der lauteste. Es ist der, dem der Arbeiter noch glaubt, wenn er müde, beschämt, gierig und fast ohne Luft ist.
+Der gefährliche Alarm ist nicht immer laut. Laute Alarme bekommen Aufmerksamkeit und Groll. Leise Alarme können unter Müdigkeit liegen, bis der Raum den Preis schon festgelegt hat. Der beste Alarm ist einer, dem ein müder Arbeiter noch glaubt, nachdem Scham, Gier, Streit und wenig Sauerstoff das Urteil bearbeiten.
 
-## 5. Was Der Spieler Lernt
+## 5. Tote Sensoren als Routengefahr
 
-Der Spieler lernt, dass Vertrauen Wartung ist.
+Ein toter Sensor kann eine Route geschlossen halten. Ein schlechterer kann sie öffnen.
 
-Ein funktionierender Sensor kann eine Route öffnen, einen Anspruch beweisen, ein Bergungslos bepreisen oder ein Leben retten. Ein schlechter Sensor kann dieselben Dinge schlecht genug tun, dass es zählt. Der Spieler kann einen Sensor wiederherstellen, umgehen, vergleichen, bewegen, ignorieren oder daneben eine Warnung hinterlassen. Jede Wahl verändert, wie der Raum später spricht.
+Fernstatus ist billig, also lügt er billig. Ein verschlossener Anbau kann klar aussehen, weil alle Innensonden auf derselben sauberen Zahl starben. Ein gefluteter Korridor kann blockiert wirken, weil ein Druckwandler noch die Druckwelle von vor zwei Tagen erinnert. Ein Medizinschrank kann das Öffnen verweigern, weil ein Verderbssensor gefährlich ausfiel. Ein Probentresor kann zu leicht öffnen, weil der Kühlkettenalarm vor dem Inhalt starb.
 
-Maschinenehrlichkeit ist auf HECTON-8 nie rein. Sie besteht aus Kalibrierdaten, Korrosion, Energiequalität, alten Annahmen und der Bereitschaft des Spielers, das Ding zu prüfen, das zu sicher klingt. Ein falscher Alarm kann Atem verschwenden. Ein wahrer Alarm, ignoriert, kann einen Einsatz beenden. Ein stiller Alarm kann der teuerste Klang der Kolonie sein.
+Routencrews behandeln tote Sensoren als physische Objekte, nicht als abstrakte Warnungen. Sie markieren Gehäuse, fotografieren Kabelschäden, hinterlassen Kratzspuren an überbrückten Panels und schreiben kurze Hinweise dort, wo die nächste Crew wirklich hinsieht. "Schlechter Gaswert auf Knöchelhöhe." "Tür grün lügt, wenn Pumpe zwei aus ist." "Kamera nicht vertrauen; Linsenhaut bewegt sich." Das ist nicht elegant. So wird eine Ruine lesbar, ohne sicher zu werden.
 
-Die Lektion lautet nicht "vertrau Maschinen" oder "vertrau Instinkt." Die Lektion ist härter: Lerne, was jede Maschine wissen sollte, was der Ozean mit ihrem Wissen gemacht hat und ob der nächste Schritt von Wahrheit abhängt oder nur davon, dass man will, dass das Panel grün ist.
+Black Keel bezahlt für Sensorzustände, wenn sie Wert beeinflussen. Ein funktionierendes Feuchtigkeitslog kann beweisen, dass eine Kiste verkäuflich blieb. Ein schlechter Dichtungssensor kann erklären, warum eine Luke geschnitten statt geöffnet wurde. Ein stiller Biohazard-Alarm kann ein profitables Fach in Beweismaterial verwandeln. Dasselbe tote Instrument, das beinahe einen Arbeiter tötet, kann der Unterschied zwischen Bergung und Diebstahl sein, wenn sein Ausfall gut genug aufgezeichnet ist.
+
+## 6. Maschinenaufzeichnungen sind Ansprüche
+
+Auf HECTON-8 sind Logs nicht neutral. Sie sind Ansprüche mit Zeitstempeln.
+
+Deep Reach schrieb Logs, um Betrieb zu schützen. Black Keel liest sie, um Besitz, Haftung und Preis zuzuweisen. Marauder lesen sie, um zu erfahren, welche Tür das letzte Team tötete, welche Pumpe noch Strom trinkt, welches Fach eine Batterie wert ist und welchen Alarm jemand stummschaltete, der zurückkommen wollte.
+
+Das macht Sensorwahrheit politisch. Ein veralteter Puffer kann einen Anbau unberührt aussehen lassen. Ein manueller Bypass kann einen legalen Einstieg wie gewaltsames Eindringen wirken lassen. Ein zurückgesetzter Alarmzähler kann die Stunde löschen, in der eine Probe warm wurde. Ein sauberer grüner Snapshot kann eine Route an eine schwächere Crew verkaufen. Die Maschine verhandelte den Preis nicht, aber der Datensatz, den sie hielt, kann entscheiden, wer bezahlt und wer beschuldigt wird.
+
+Gute Crews bewahren schlechte Nachrichten. Sie behalten Screenshots hässlicher Panels. Sie zeichnen widersprüchliche Werte auf. Sie markieren Unsicherheit, statt sie wegzupolieren. Ein sauberer Anspruch aus einer schmutzigen Ruine braucht oft einen sorgfältigen Satz: "Sensorzustand nach Wasserlinie unzuverlässig; physische Prüfung ersetzt Panel." Dieser Satz hat mehr Sauerstoff, Geld und Blut gespart als viele lautere Warnungen.
+
+## 7. Feldregeln
+
+Vertraue einem Sensor erst, wenn klar ist, was er berührt, wie er gespeist wird und wann er zuletzt Grund hatte, die Wahrheit zu kennen.
+
+Vergleiche unterschiedliche Instrumente, wenn der nächste Schritt unumkehrbar ist. Druck plus Türrahmen. Gas plus Luftstrom. Salzgehalt plus Bodenfleck. Temperatur plus Kondensat. Kamera plus verkratztes Linsengehäuse. Eine zweite Kopie derselben schlechten Annahme ist keine Bestätigung.
+
+Behandle Stille als Messwert. Wenn der Raum schreien müsste und es nicht tut, finde heraus, was die Stimme verlor. Ein stummer Kanal, eine tote Schiene, ein geschnittener Lautsprecher oder ein eingefrorener Puffer kann wichtiger sein als der Alarm, der noch funktioniert.
+
+Markiere jeden Bypass, der künftige Bedeutung ändert. Wenn ein Panel nur grün bleibt, weil eine Sonde abgezogen wurde, braucht die nächste Crew diese Tatsache mehr als Zuversicht.
+
+Beschäme Vorsicht nicht zum Schweigen. HECTON-8 ist voller Räume, in denen die erste ehrliche Maschine nervte und das letzte ruhige Panel log. Die Arbeit besteht nicht darin, Maschinen zu vertrauen oder ihnen zu misstrauen. Die Arbeit besteht darin, die Kette zwischen Welt, Sensor, Aufzeichnung und Hand kurz genug zu halten, damit ein lebender Mensch sie noch beurteilen kann.

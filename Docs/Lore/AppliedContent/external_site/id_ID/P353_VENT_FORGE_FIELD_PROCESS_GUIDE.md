@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Panduan Proses Lapangan Vent-Forge
 
-Panduan Proses Lapangan Vent-Forge mengikat nilai sumber daya pada penanganan lapangan: yang penting bukan hanya apa yang ditemukan, tetapi bagaimana pressure dan cooling membuatnya selamat sampai recovery.
+Vent-forge bukan peti harta di dasar laut. Ia reaktor lambat dari aliran seep panas, kepadatan brine, umpan mineral remuk, dan tekanan yang tidak memaafkan terburu-buru. Material berguna sering berada di antara endapan alami dan batch industri rusak: butir keramik tumbuh di tenggorokan mineral, prekursor sealant terpanggang ke retakan, film bermuatan hanya stabil jika pendinginan terjadi dalam urutan yang benar.
 
-## Scanner
-
-Vent-forge chemistry aktif. Kualitas mengikuti pressure history, heat pulse, dan pendinginan lambat, bukan kilau sampel.
-
-## Terminal
-
-FIELD GUIDE: vent forges memasak sulfides, noble-gas pockets, ceramics, dan sealant precursors. Rute sampel melalui heat, brine, dan pressure lebih penting daripada namanya.
-
-## Audio
-
-Vent tidak membuat bijih. Ia membuat proses yang kau sela.
-
-## Field Note
-
-Jangan angkat lot segar langsung ke air dingin. Biarkan vent menyelesaikan anneal atau shell akan retak halus.
+Karena itu penanganan lapangan menjadi bagian dari sumber daya. Tarik lot segar ke air dingin dan cangkangnya retak. Lepaskan panas terlalu cepat dan sampel bersih menjadi bubuk. Tunggu terlalu lama dan vent menulis kimia lain di atas lapisan yang diinginkan. Tim salvage menghargai vent-forge karena membuat HECTON-8 terasa dikerjakan oleh planet itu sendiri: samudra tidak hanya menyembunyikan material, ia masih memproduksinya.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/id_ID. -->

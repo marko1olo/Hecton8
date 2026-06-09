@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Severance Record"
+title: "سجل قطع Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Severance Record
+# سجل قطع Atlas
 
-AR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+سجل قطع Atlas ليس إيصال إيقاف. يسجل قطع استمرارية عبر طبقة إصلاح Atlas المتضررة، ثم يتابع استجابة العقد الدقيقة عند الفتحات وفقد نبضات العازل القشري وانقطاع مسارات الحيوانات الموسومة ورفض توجيه Deep Reach. القطع نفسه قد يحرر آثار عمال محاصرين، أو يجرح بيئة الضغط، أو يحول بنية حية إلى مشكلة ملكية عند المستلم.
 
 ## Scanner
 
-AR LOC HOLD: Continuity cut. Damage not contained.
+سجل قطع Atlas // قُطعت الاستمرارية في طبقة الإصلاح المتضررة. استجابة العقد الدقيقة تهبط؛ استقرار الحوض وآثار العهدة غير محسومة.
 
 ## Terminal
 
-AR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+سجل النهاية / قطع ATLAS
+الفعل: قطع استمرارية عبر طبقة إصلاح Atlas.
+الأنظمة المتأثرة: عقد فتحات دقيقة، نبضات عازل قشري، مسارات حيوانات موسومة، إصلاح معدن متضرر.
+المرفوض: توجيه حمولة Deep Reach عبر طبقة Atlas الحية.
+غير محسوم: استقرار الحوض، البيئة الباقية، آثار عمال محاصرين.
+الخسارة المعروفة: السجل لا يقرر هل حرر القطع أم قتل أم سرق.
 
 ## Audio
 
-AR LOC HOLD: Stopping the machine does not sort what it had become.
+صمت الرابط. لم يجب الحوض هل كان ذلك رحمة.
 
 ## Field Note
 
-AR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+العقدة المقطوعة قد تكون رحمة أو سرقة أو ضرراً. السجل يعرف فقط أي روابط صمتت.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/ar_SA. -->

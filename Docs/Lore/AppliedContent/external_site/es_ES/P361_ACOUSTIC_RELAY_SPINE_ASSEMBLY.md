@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Conjunto de espina de relé acústico
 
-El Conjunto de espina de relé acústico ancla el bucle de escape de HECTON-8 en ingeniería de salvage: el sonido debe sobrevivir presión, geometría de ruta y custody antes de que la órbita lo crea.
+El conjunto de espina de relé acústico es la primera pieza de la cadena de escape de HECTON-8 que convierte supervivencia en señal medible. No es un mástil de radio ni una plegaria de socorro. Es una pressure-code spine de costillas cerámicas, funda de cable, floats de lastre y timing de pinger.
 
-## Scanner
+El problema es la confianza. El agua de HECTON-8 lleva ruido de impacto, golpes de bomba, brine scatter y ecos de ruta. Black Keel recibe más sonido del que puede aceptar con seguridad. Una cápsula que quiere recovery debe probar que su tap pertenece a una ruta, un reloj y una cadena de custody, no a un panel suelto golpeando un marco inundado.
 
-Espina acústica rota. Puede golpear pressure-code a través del agua; la órbita aún lo oye como custody noise dañado.
-
-## Terminal
-
-ASCENT RELAY: restaurar espina acústica de baja banda antes de la recovery window. High-gain mast perdida. Emergency buoy poco fiable. El receptor Black Keel acepta pressure-code solo tras route proof.
-
-## Audio
-
-Si el Keel nos oye, oye una herida golpeando una tubería.
-
-## Field Note
-
-La primera llamada de la cápsula no es una voz. Son costillas cerámicas, piel de cable, pinger floats y disciplina de sincronía suficiente para que el océano te repita bien.
+Reparar la espina da a la cápsula de ascenso una voz estrecha: coordenadas, survival state, clock match, checksum. Basta para iniciar una conversación de recovery, no para garantizar rescate. El océano aún puede doblar la señal. El carrier aún puede tratar el paquete como damaged claim noise. El componente consigue la primera escucha; no gana el caso.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/es_ES. -->

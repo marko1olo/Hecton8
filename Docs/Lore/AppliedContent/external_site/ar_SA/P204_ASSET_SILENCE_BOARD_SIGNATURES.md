@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "توقيعات مجلس صمت الأصول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# توقيعات مجلس صمت الأصول
 
-AR LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+تسمح توقيعات Asset Silence Board بقراءة محو Deep Reach من دون انتظار اعتراف. تبقي البطاقات المستعادة لغة الشركة نظيفة: فئات حمولة، رؤية الحزمة، custody approval، asset risk. تجعل أشياء HECTON-8 القريبة هذه اللغة قبيحة: خزائن عليها وسوم، دفاتر فيها أسماء، وmute flags تمنع تلك الأسماء من مغادرة claim route. قيمة الأرشيف في الفارق بين ما بقي قابلا للفوترة وما توقف عن حمل الأسماء.
 
 ## Scanner
 
-AR LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+تمت استعادة بطاقة redaction vote: حقل اسم العامل صامت، فئة asset-risk ما زالت ظاهرة، وعدد الخزائن محفوظ. رؤية الحزمة تتطلب custody approval.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: move witness-name attachment to asset-risk silence category after relay review. Retain load class, locker count and claim value. Release requires custody owner approval.
 
 ## Audio
 
-AR LOC HOLD: Erase the route and the body becomes cargo math.
+أبقى المجلس عدد الصناديق. قصوا الأسماء.
 
 ## Field Note
 
-AR LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+اختفى الاسم وبقي وسم الخزانة. صوت Asset Silence Board على رؤية الحزمة، لا على وجود العامل.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ar_SA. -->

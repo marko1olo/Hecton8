@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "签核与见证冲突"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# 签核与见证冲突
 
-CN LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+《签核与见证冲突》定义了 Deep Reach 公开报告背后的矛盾。公司可以声称海洋让救援不可能；但它无法安全地声称，在放行权限被扣住之前，没有人看见冲突。文章把房间证据转化为叙事压力：门禁日志、见证哈希和损坏的路线钟，让官方签核读起来不再像不确定，而像受控的省略。它保留灾害的物理性，同时证明遮掩故事是人写出来的。
 
 ## Scanner
 
-CN LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+签核说撤离审查中没有实时矛盾。见证哈希说，矛盾就在房间里。
 
 ## Terminal
 
-CN LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT：公开签核把潮汐失效标为唯一原因。本地见证哈希显示，撤离法律顾问、Atlas Safety 和路线运营在放行冻结前就在审查室。比对门禁日志、姓名戳和损坏的路线钟。
 
 ## Audio
 
-CN LOC HOLD: The signatures line up. The bodies do not.
+报告说没人可能知道。门禁日志不同意。
 
 ## Field Note
 
-CN LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+签名只有在房间还没想起谁站在旁边时，才是干净的。
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/zh_CN. -->

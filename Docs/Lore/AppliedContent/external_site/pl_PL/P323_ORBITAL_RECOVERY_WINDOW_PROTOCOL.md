@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protokół orbitalnego okna odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Orbital Recovery Window Protocol
+# Protokół orbitalnego okna odzysku
 
-PL LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+Protokół orbitalnego okna odzysku osadza pętlę ucieczki HECTON-8 w lokalnej astronomii i inżynierii systemów. Gracz nie jest uwięziony, bo tak chce historia. Jest uwięziony, bo ścinanie burz Aegir, zakłócenia magnetyczne, uszkodzony łańcuch wznoszenia i prawny stan odbiorcy wyrównują się tylko w wąskich oknach. Ratunek staje się trasą do zbudowania, nie przyciskiem do naciśnięcia.
 
 ## Scanner
 
-PL LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel jest dość blisko, by cię słyszeć, i zbyt ograniczony, by złapać cię na żądanie. Aegir otwiera tylko wąskie okna odzysku.
 
 ## Terminal
 
-PL LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+OKNO ODZYSKU / odbiornik Black Keel akceptuje rated ascent object tylko przy niskim storm-top shear, zmniejszonym szumie magnetycznym Aegir, zweryfikowanym guidance core, zgodnym quarantine handshake i receiver custody state. Dryf okna unieważnia ręczny launch.
 
 ## Audio
 
-PL LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Statek jest dość blisko, by mieć znaczenie, i zbyt daleko, by szybko cię ocalić.
 
 ## Field Note
 
-PL LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Do timerów tras, UI carrier i wyjaśnienia fałszywego wyjścia: ścinanie burzy, szum magnetyczny, geometria wznoszenia, handshake kwarantanny.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/pl_PL. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Worker Job Cards
 
-Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+A job card is the colony's smallest biography. It does not need childhood, romance, or a speech to matter. It needs a role, a permission stamp, a last task, and the thing the worker expected to finish after the next tone. When the player finds these cards, people stop being background casualties and become route evidence: someone held the pump key, delayed a hatch, cooked for a crew, signed a cutter out, certified a seal, or missed the return because the system made help wait.
 
 ## Scanner
 
-A job card is a face the budget could read.
+JOB CARD // Name, role, last task, route permission, tool certification. A face the budget could read.
 
 ## Terminal
 
-JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+EVIDENCE RULE: every recovered name should attach to something done: pump route, kitchen ledger, med bay call, cutter custody, pressure check, fabrication batch. A task turns a name into proof.
 
 ## Audio
 

@@ -35,6 +35,6 @@ Você não perdeu a nave inteira. Perdeu a única cadeia que faz a nave importar
 
 ## Field Note
 
-Registro de fuga da primeira hora: a transportadora está presente, mas a cadeia entre jogador, mar, superfície e órbita está quebrada em peças nomeadas.
+Registro de fuga da primeira hora: a transportadora está presente, mas a cadeia entre traje, mar, superfície e órbita está quebrada em peças nomeadas.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/pt_BR. -->

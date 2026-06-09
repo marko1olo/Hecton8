@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Drukafdichting-klemringassemblage
 
-De Drukafdichting-klemringassemblage maakt capsulereparatie een drukonderhandeling: deep-rated metaal, glaszitting en Atlas bio-sealant kunnen het opstijgpad redden of vangen.
+De drukafdichting-klemringassemblage is de tweede harde grens in HECTON-8s opstijgketen. De akoestische spine kan de baan laten luisteren, maar de klemring beslist of de capsule fysiek kan loskomen van de verdronken structuur.
 
-## Scanner
+De fout is geloofwaardig omdat de verkeerde reparatie succesvol kan lijken. Een shallow seal kan lucht houden, een lek stoppen en een kamer bruikbaar laten. Hij kan ook de separation seam van de capsule overbruggen, de pressure-glass seat vervuilen of Atlas shell-sealant achterlaten op een oppervlak dat onder launch impulse moet loslaten. Static pressure is niet dezelfde test als ascent.
 
-Klemringlitteken. De opstijghuls overleefde de impact door de afdichting te verbruiken die haar thuis had moeten brengen.
-
-## Terminal
-
-SEAL CERT: shallow patch houdt alleen compartimentdruk. Ascent seal vereist deep-rated clamp ring, pressure-glass seat, shell-sealant map en geverifieerd Deep Reach-profiel. Atlas-grown sealant kan habitat bewaren terwijl het schone scheiding blokkeert.
-
-## Audio
-
-De nuttige afdichting leeft de verkeerde kant op.
-
-## Field Note
-
-Een safe-room-lap kan een uur lucht kopen. Hij houdt geen lanceerimpuls.
+Deze component vraagt deep-rated metal, geverifieerd crush profile, schone seat geometry en een sealant map met een opzettelijke rand. Het is niet genoeg om de capsule te laten stoppen met lekken. De reparatie moet weten wanneer ze loslaat.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/nl_NL. -->

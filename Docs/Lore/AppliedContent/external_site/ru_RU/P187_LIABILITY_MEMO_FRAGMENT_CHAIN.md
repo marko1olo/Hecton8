@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Цепочка фрагментов liability memo"
+title: "Цепочка фрагментов служебки об ответственности"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Цепочка фрагментов liability memo
+# Цепочка фрагментов служебки об ответственности
 
-Цепочка фрагментов liability memo задает, как работают доказательства Deep Reach в HECTON-8.
+Цепочка фрагментов служебки об ответственности задает доказательства HECTON-8 как реконструкцию, а не пересказ. Статья дает игроку причину заботиться об обрывках, временных метках и поврежденных административных комнатах: Deep Reach оставила не одно признание, а несовместимые самозащиты. Каждый фрагмент достаточно мал, чтобы быть правдоподобным, и достаточно мерзок, чтобы иметь вес. Вместе они показывают, как компания может публично винить физику прилива, а частно двигать ответственность через риск, эвакуацию, непрерывность Atlas, страховую конвертацию и хранение груза.
 
 ## Scanner
 
-Liability memos должны быть фрагментами, совпадающими с физическими rooms, а не lore speeches.
+Служебка об ответственности выжила фрагментами, потому что каждый офис сохранил абзац, защищавший именно его.
 
 ## Terminal
 
-MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal и present return-action clause. Один memo - подозрение. Цепочка - evidence.
+FRAGMENT CHAIN: таблица запаса риска / заметка о выпуске эвакуации / override непрерывности Atlas / конвертация убытка Keelmark / запрос хранения восстановления. Сверить время маршрута, повреждения комнат и имена рабочих до принятия публичной сводки.
 
 ## Audio
 
-Бумага слаба одна. Приложи ее к затопленной двери.
+Они не спрятали правду в сейфе. Они разложили ее по папкам.
 
 ## Field Note
 
-Полезный memo называет один margin, одну delay, один office и одно видимое consequence.
+Разорванная служебка честна в тех местах, где не собиралась быть честной.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/ru_RU. -->

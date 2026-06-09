@@ -24,7 +24,7 @@ REQUIRED_COLUMNS = (
     "ReadWhen",
     "NotProofOf",
 )
-EXPECTED_ROW_COUNT = 193
+EXPECTED_ROW_COUNT = 196
 CSV_ROW_PATTERN = re.compile(r"^(?P<count>\d+)_rows$")
 REQUIRED_FILE_PATHS = (
     "Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv",
@@ -54,6 +54,9 @@ REQUIRED_FILE_PATHS = (
     "Tools/test_validate_asset_front_file_map.py",
     "Tools/RunAssetStaticValidators.py",
     "Tools/test_run_asset_static_validators.py",
+    "Tools/BuildAegirGasGiantProofContactSheet.py",
+    "Tools/ValidateAegirGasGiantSourceContract.py",
+    "Tools/test_validate_aegir_gas_giant_source_contract.py",
     "Tools/ValidateBatch31LocalPbrImportIntentArtifacts.py",
     "Tools/test_validate_batch31_local_pbr_import_intent_artifacts.py",
     "Tools/ValidateBatch31PromotionPrepArtifacts.py",

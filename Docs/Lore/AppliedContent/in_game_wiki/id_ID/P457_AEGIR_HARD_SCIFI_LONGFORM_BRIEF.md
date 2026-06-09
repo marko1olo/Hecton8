@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir: Langit yang Menolak Penyelamatan"
+title: "Aegir: Langit Yang Menolak Rescue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: Langit yang Menolak Penyelamatan
+# Aegir: Langit Yang Menolak Rescue
 
-Aegir adalah langit operasional. Moon ladder bisa menunda atau merusak paket bersih tanpa membuat permukaan gelap permanen. Penyelamatan gagal karena jarak, geometri, hukum, dan biaya.
+Aegir adalah mesin orbital di atas HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window, dan alasan rescue bergerak lebih lambat dari dokumen.
 
 ## Scanner
 
-Primer rute langit. Tidak ada FTL atau ansible. Jendela Aegir melewati bulan, serpihan, custody relai, keadaan badai, dan pembukuan massa Black Keel.
+Artikel astronomi publik: tanpa FTL, tanpa ansible, Aegir relay geometry, bahaya moon ladder, Black Keel orbital custody, route windows sebelum hukum.
 
 ## Terminal
 
-PRIMER NAVIGASI AEGIR // BAND PUBLIK. Pakai kelas bahaya: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
+SITE LONGFORM: jadikan langit praktis dan memusuhi; setiap packet, drop, pickup, dan claim punya physics, timing, mass, dan custody.
 
 ## Audio
 
-Jadwal Black Keel: "Sinyal benar belum tentu sinyal berguna. Jendela bertahan pada massa, cuaca, custody, dan kunci penerima."
+Langit di atas HECTON-8 tidak kosong. Itu schedule dengan gigi.
 
 ## Field Note
 
-Aturan langit Marauder: jangan tanya apakah sinyal dikirim. Tanya bulan mana yang menghalangi, ledger mana yang menangkap, dan apakah penerima mendengar orang atau kelas massa.
+Lihat ke atas untuk timing, bukan kenyamanan. Di HECTON-8, moonlight bisa berarti relay opening, storm warning, atau claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/id_ID. -->

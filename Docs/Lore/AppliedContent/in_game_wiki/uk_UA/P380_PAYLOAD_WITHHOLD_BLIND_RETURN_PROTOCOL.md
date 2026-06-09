@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Протокол blind return з утриманням payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Withhold Blind Return Protocol
+# Протокол blind return з утриманням payload
 
-UK LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Протокол blind return відмовляє кожному отримувачу. Ні корпорація, ні реєстр, ні карантинна лінія, ні ціль відсічення не отримують фінальний payload. Носій тримає карту й докази локально, що відмовляє Deep Reach у чистому шляху назад. Це також лишає борг активним, публічні докази неподаними, а пакет уразливим до води, смерті чи поганого зберігання.
 
 ## Scanner
 
-UK LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Маршрут blind return зведено. Отримувача не призначено. Вектор басейну, proof hashes і клас доступу лишаються локальними; застава й вікно відновлення не вирішені.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+ОТРИМУВАЧ PAYLOAD // BLIND RETURN WITHHOLD. Отримувач: none. Утримувати вектор басейну, proof hashes, salvage class, локальний пакет доказів. Відмовити Deep Reach у карті доступу, квитанції виплати й custody отримувача. Відома ціна: застава не вирішена, ризик втрати пакета повний.
 
 ## Audio
 
-UK LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Немає отримувача, немає квитанції. Якщо сумку заллє, докази підуть із нею.
 
 ## Field Note
 
-UK LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Нотатка мародера: тримати карту - це вибір. Просто тобі нікого звинуватити, якщо сумка порветься.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/uk_UA. -->

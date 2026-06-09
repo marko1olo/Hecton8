@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "ערכת ראיות לקתדרלת המשאבות בקניון התמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# ערכת ראיות לקתדרלת המשאבות בקניון התמלחת
 
-HE LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+קתדרלת המשאבות בקניון התמלחת היא נפח תעשייתי שנבנה סביב לחץ, צפיפות ועיכוב. המכונות שלה אינן מאשימות לבדן, אבל חלון הצפיפות, שעון ההחזקה, צלקות המשאבה ופנקס התור מתחברים לשרשרת אחריות שמישה.
 
 ## Scanner
 
-HE LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+ערכת ראיות לנקודת עניין: קתדרלת המשאבות מצמידה זכוכית צפיפות, נזק משאבה, שעוני מסלול ורשומות תור עובדים.
 
 ## Terminal
 
-HE LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+ערכת קתדרלת משאבות: חלון צפיפות, חריץ משאבת תמלחת, הערת מרווח מקובל, שעון החזקת מסלול, פנקס תור עובדים, מפתח התנעת משאבה, סימן גשר מוצף.
 
 ## Audio
 
-HE LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+המשאבות הזיזו מים. החדר שמר רשומות טוב יותר מהמשרד.
 
 ## Field Note
 
-HE LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+הערת מרודר: צלם את חלון הצפיפות לפני ניקוז הכיס. אחרי שהתמלחת זזה, קו המרווח שוכב שטוח יותר.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/he_IL. -->

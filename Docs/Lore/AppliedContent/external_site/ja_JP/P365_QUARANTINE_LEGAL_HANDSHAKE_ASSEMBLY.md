@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "検疫法務ハンドシェイクアセンブリ"
+title: "隔離法務ハンドシェイク組立品"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 検疫法務ハンドシェイクアセンブリ
+# 隔離法務ハンドシェイク組立品
 
-検疫法務ハンドシェイクアセンブリは extraction を意図的に汚す。動くエンジンでも、生存者を corporate custody、遅延した公共の真実、未解決の検疫へ届けることがある。
+隔離法務ハンドシェイク組立品が最後の部品なのは、HECTON-8の脱出路が真空ではなく権限で終わるからだ。カプセルは機械的に準備できていても、到着に名前を与える受信者が必要になる。
 
-## Scanner
+ソケットはその名前を決める事実を読み込む。受信者キー、隔離状態、ペイロードcustody、債務lien、公開台帳遅延。同じカプセルでも、各ルートは違う版を受け入れる。Keelmarkは質量とlienを求める。Recovery Complianceは座標と汚染状態を求める。公開台帳は時間と係争を耐える証拠を求める。
 
-ハンドシェイクソケット。カプセルは機械的に準備完了でも、まだ間違った receiver に属することがある。
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key 必須。Keelmark は mass と lien を受理。Recovery Compliance は coordinates と quarantine status を受理。Public ledger は遅延後に proof を受理。Unkeyed launch は既定で custody dispute。
-
-## Audio
-
-誰が応答するかで、救助の意味が決まる。
-
-## Field Note
-
-最後の部品は金属ではない。君を recovered と呼ぶ権限を持つシステムの名前だ。
+だから抽出は意図的に居心地が悪い。最も綺麗な発射でも、生存者を請求事務所、閉ざされた医療拘束、または遅い公開案件へ届け得る。ハンドシェイク修理はカプセルを政治から解放しない。Marauderに、どの政治が最初にハッチへ手をかけるか選ばせる。
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ja_JP. -->

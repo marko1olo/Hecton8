@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit Bukti Terminal Antrean Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit Bukti Terminal Antrean Evakuasi
 
-ID LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+Terminal antrean harus terasa seperti ruangan yang dibuat untuk merapikan penderitaan secara administratif. Terminal mencantumkan tahan rute, penundaan lepas karantina, pembobotan Atlas, dan hitung pekerja, tetapi dinding membawa catatan yang lebih kotor: strip status hatch, residu lencana, tanda kapasitas hilang, dan tag salvage pada panel yang masih ingin dijual seseorang.
 
-## Scanner
-
-ID LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-ID LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-ID LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-ID LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+POI ini berbobot karena konflik. Mengambil bagian dapat membuka rute atau membayar utang, tetapi juga dapat menghancurkan permukaan yang membuktikan penundaan. Bacaan yang benar bukan pengakuan. Ia adalah kumpulan benda yang tidak cocok dan memaksa operator memilih apa yang selamat dari penyelaman.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/id_ID. -->

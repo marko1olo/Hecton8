@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Public Archive Carrier Primer
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "מחיר החלון של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# מחיר החלון של Black Keel
 
-The carrier contact is real, priced and limited by orbit, weather and claim priority.
+Black Keel יכולה לענות לפני שהיא יכולה לעזור. ה-tender נמצא במערכת Aegir, אבל כל פעולה שימושית עדיין תלויה במזג אוויר, גאומטריית ירחים, יישור ממסר, עדיפות תנועה, מקומות הסגר ופנקס תביעות שלא נכתב לרחמים.
 
-## Scanner
-
-Relay mast aligned to a weak orbital window.
-
-## Terminal
-
-Black Keel confirms survival but keeps recovery pending window and claim state.
-
-## Audio
-
-One clean burst; choose what to send.
-
-## Field Note
-
-A priced packet is not mercy.
+חלון חזק מאפשר לשלוח חבילה טובה אחת. מצב רפואי, מצב נזק, מצב דגימה וקואורדינטות מתחרים על אותה פריצה. השאלה השימושית הראשונה של carrier יכולה להיות קרה יותר מצליל כישלון, כי היא שואלת מה אפשר להרים לפי חוזה, לא מי סובל.
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/he_IL. -->

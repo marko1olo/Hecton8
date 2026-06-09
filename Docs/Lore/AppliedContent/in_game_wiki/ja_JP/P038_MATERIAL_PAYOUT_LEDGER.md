@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "資材支払台帳"
+title: "資材精算台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 資材支払台帳
+# 資材精算台帳
 
-資材支払いは採取、認証、沈黙から作る本物の成功状態だ。真実エンドではない。
+資材精算台帳は認証済みblue debtの会計経路である。試料証明、保管履歴、沈黙条項に支払い、Atlas証言とDeep Reach責任は請求書の外に残る。
 
 ## Scanner
 
-blue debt試料認証済み。支払い可能。真実は任意。Deep Reachはその順序を好む。
+blue debt試料認証済み: 質量、純度、圧力ログ、保管連鎖。証拠より先にクレジットは精算される。
 
 ## Terminal
 
-支払条件: 質量、純度、圧力履歴、保管連鎖を承認。証拠アーカイブ未解決。
+封印ケースが試料台帳と一致し、降下圧力履歴に欠落がなく、Deep Reachの提示コードが保管連鎖を受け入れると精算が開く。資材閉鎖はクレジットをエスクローへ移し、Atlasアーカイブを請求不能な残滓としてタグ付けする。
 
 ## Audio
 
-口座は清算される。水はされない。
+口座は片付く。水は領収書を持つ。
 
 ## Field Note
 
-成功した契約でも、失敗した人生になり得る。
+清い送金も埋葬の一種になり得る。
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/ja_JP. -->

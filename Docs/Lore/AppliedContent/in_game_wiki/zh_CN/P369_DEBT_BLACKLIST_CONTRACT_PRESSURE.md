@@ -19,26 +19,28 @@ localization_flags: 1
 
 # 债务黑名单合同压力
 
-债务压力让开场保持诚实。主角不是被情节剧拖到HECTON-8来的，但在任何有用意义上也并不自由。Black Keel能够提供合同，是因为索赔池、债务窗口、氧气额度、铺位访问和监管证明都属于同一套边境经济。拒绝索赔是合法的。它也会让玩家留在黑名单里，被困在原地，并被路线价格排除在外。接受合同不会把Black Keel变成有面孔的反派。它让承运方成为一台把风险转换成文件的机器。玩家下潜，是因为合同丑陋、可承受，而且很可能是重新获得行动能力的唯一路线。
+债务压力让合同丑陋，但不让它戏剧化。操作员不是被锁链拖到HECTON-8的，但拒绝路径被设计成会在周围合拢。Black Keel能够提供claim，是因为债务窗口、oxygen credit、berth访问、路线定时和custody proof都在同一套边境账本里。
+
+拒绝仍然合法。它也会让Marauder留在blacklist里，被困住，并被下一个Aegir路线窗口的价格排除。接受带来移动，但不是怜悯：recoverable mass必须交付，custody必须成立，receiver compliance决定claim值多少。Carrier不需要反派面孔。合同本身已经知道怎样把风险变成文书。
 
 ## Scanner
 
-留置通知绑定Black Keel监管。拒绝仍然合法，但会被困住：没有铺位，没有干净氧气额度，没有离开Aegir的路线窗口。
+LIEN NOTICE // Black Keel claim-pool custody。拒绝仍合法；berth访问、oxygen credit和Aegir路线窗口保持关闭。
 
 ## Terminal
 
-索赔接受 / 黑名单减免窗口
-承包者状态: 债务绑定Marauder
-承运方: Black Keel索赔池监管
-减免条件: 可回收质量、监管证明、接收方合规
-失败状态: 黑名单保持激活；铺位访问拒绝；氧气福利转为可计费支持。
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-这不是绑架。这是边境把它包装成自由的那种选择：签字，下潜，或者在纸面上保持清白，在现实里被困住。
+签字、下潜，或者保持双手干净，看泊位名单关上。
 
 ## Field Note
 
-留置权没有举枪。它指向空气账单、铺位名单和下一个路线窗口。
+Lien没有举枪。它指向空气账单、泊位名单和下一个路线窗口。
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/zh_CN. -->

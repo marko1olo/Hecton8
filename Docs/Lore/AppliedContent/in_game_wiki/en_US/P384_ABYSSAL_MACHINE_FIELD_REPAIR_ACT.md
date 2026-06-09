@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Abyssal Machine Field Repair Act"
+title: "Abyssal Machine Field Repair Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Abyssal Machine Field Repair Act
+# Abyssal Machine Field Repair Gate
 
-The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+The abyssal field makes the operator use the system that damaged the claim. Atlas growth can bridge power, patch route hardware and carry signal through living material. Every successful repair also changes classification: tool, organism, asset, contamination and evidence keep crossing fields.
 
 ## Scanner
 
-Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Route gate: abyssal machine field. Atlas repair ecology becomes usable route hardware with custody risk attached.
 
 ## Terminal
 
-REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+CAMPAIGN ROUTE // ABYSSAL MACHINE FIELD. Required: conductive film, acoustic organ, service basin, pressure-safe reroute. Repair output can restore hardware and corrupt ownership class in same pass.
 
 ## Audio
 
-It fixed the wall before it decided what the wall was.
+It fixed the wall before it named the wall.
 
 ## Field Note
 
-Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Marauder note: if it grows across the panel, scan before cutting. It may be the only reason the panel still works.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/en_US. -->

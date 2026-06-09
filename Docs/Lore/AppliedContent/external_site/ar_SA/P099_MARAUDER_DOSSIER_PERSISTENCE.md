@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "استمرارية ملف الناهب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# استمرارية ملف الناهب
 
-AR LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+تحدد استمرارية ملف الناهب عقد إعادة اللعب في HECTON-8: يرث اللاعب السياق، لا القوة. يسمح الملف للمحاولات اللاحقة بقراءة الأخطاء القديمة أسرع، والتعرف إلى فخاخ العقود أبكر، وفهم أي النهايات ظل ناقصا، من دون تحويل الذاكرة إلى أفضلية ميكانيكية تكسر ضغط النجاة.
 
 ## Scanner
 
-AR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+بكرة ملف. تحتفظ بالمعرفة، لا بالقوى الخارقة.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+استمرارية الملف: سجلات النهايات، أنواع العقود المكتشفة، عائلات الشائعات، فئات الأدلة، تحذيرات المسارات، وعواقب السجل العام محفوظة. قوة العتاد وحقيقة العالم وحالة الضغط المحلي تعاد ضبطها مع كل seed.
 
 ## Audio
 
-AR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+تبدأ المحاولة التالية بندوب في الملف، لا بعضلات في البدلة.
 
 ## Field Note
 
-AR LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+يتذكر الملف الأدلة والتحذيرات؛ لكنه لا يجعل الضغط رحيما.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ar_SA. -->

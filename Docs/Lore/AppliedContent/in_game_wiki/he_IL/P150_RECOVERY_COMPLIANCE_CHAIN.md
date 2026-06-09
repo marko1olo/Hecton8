@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "שרשרת Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# שרשרת Recovery Compliance
 
-HE LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+שרשרת Recovery Compliance הופכת אתר אסון לשדה נכסים מבוקר. היא יכולה לאשר כניסה, חיתוך, דגימה, איסוף עדים, איטום נתונים ומסת חזרה. היא יכולה גם להמשיך לשאול אם אדם חי הוא ראיה, אחריות, מטען או מכשול.
 
 ## Scanner
 
-HE LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+פקודת recovery התקבלה. שפת חילוץ אינה קיימת בשרשרת.
 
 ## Terminal
 
-HE LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+שרשרת RECOVERY: פעולה אחרי אירוע עוברת דרך אישור קבלנים, משמורת ראיות, זכויות salvage, טיפול בעדים, ביטוח נתיב וניסוח ציבורי ללא הודאה. חילוץ אינו הפועל השולט.
 
 ## Audio
 
-HE LOC HOLD: You are not rescued. You are classified.
+הם באו לציית ל-recovery. זה לא אותו דבר כמו לחזור בשבילנו.
 
 ## Field Note
 
-HE LOC HOLD: Delay does not make an order harmless.
+Compliance מגיעה עם כפפות, חותמות וללא הבטחה שמישהו עדיין אדם.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/he_IL. -->

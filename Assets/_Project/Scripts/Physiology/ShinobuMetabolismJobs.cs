@@ -42,10 +42,15 @@ namespace Hecton8.Physiology
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveSeaLevelDepthMeters(double absoluteY)
+        public static float ResolveSeaLevelDepthMeters(double absoluteY, double seaLevelAupY)
         {
+            double resolvedSeaLevelAupY = math.isfinite(seaLevelAupY) &&
+                                         math.abs(seaLevelAupY) > 0.0001d &&
+                                         math.abs(seaLevelAupY) <= 1000d
+                ? seaLevelAupY
+                : DefaultSeaLevelAupY;
             return math.isfinite(absoluteY)
-                ? (float)math.max(0d, DefaultSeaLevelAupY - absoluteY)
+                ? (float)math.max(0d, resolvedSeaLevelAupY - absoluteY)
                 : 0f;
         }
 
@@ -508,6 +513,7 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicExposureSignalDTO* ExposureSignals;
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicDetailTelemetryEntry* DetailTelemetry;
         public MetabolismTuningDTO Tuning;
+        public double SeaLevelAupY;
         public double3 ThermalGridRootAup;
         public double3 ChemicalGridRootAup;
         public int3 ThermalGridResolution;
@@ -720,7 +726,7 @@ namespace Hecton8.Physiology
             float safeDt = math.max(0.0001f, ShinobuMetabolismJobMath.SanitizeFinite(dt, ShinobuMetabolismConstants.NominalSlowTickSeconds));
             MetabolicDetailTelemetryEntry entry = default;
             entry.PlayerAup = playerAup;
-            entry.PlayerDepthMeters = ShinobuMetabolismJobMath.ResolveSeaLevelDepthMeters(playerAup.y);
+            entry.PlayerDepthMeters = ShinobuMetabolismJobMath.ResolveSeaLevelDepthMeters(playerAup.y, SeaLevelAupY);
             entry.ActiveCalorieBurnPerSecond = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(calorieDrainPerSecond, 0f));
             entry.AmbientCelsius = ShinobuMetabolismJobMath.SanitizeFinite(ambient, 0f);
             entry.ThermalK = math.max(0f, ShinobuMetabolismJobMath.SanitizeFinite(thermalK, 0f));

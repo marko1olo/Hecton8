@@ -1,0 +1,23 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS271_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE",
+  "status": "source_candidate_pending_importer_bake_route_card_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS271_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE.packets.json"
+  ],
+  "packets": [
+    "P1324_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE"
+  ],
+  "route_cards": [
+    "Docs/Lore/AppliedContent/route_cards/271_paint_chip_scratch_decal_route_cards.csv"
+  ],
+  "binding_maps": [
+    "Docs/Lore/AppliedContent/binding_maps/RS271_paint_chip_scratch_decal_runtime_binding_map.csv"
+  ],
+  "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS271_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE_evidence_graph.csv",
+  "canonical_importer_ready": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "notes": "Paint chip and scratch decal field article for evidence-reading on pressure bases, wreck interiors, service decks and salvage hulls. Runtime consumes baked DataMonolith rows and hash constants only."
+}

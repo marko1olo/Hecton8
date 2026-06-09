@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Vent Forge Process Steps"
+title: "שלבי תהליך חישול בפתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Vent Forge Process Steps
+# שלבי תהליך חישול בפתח
 
-HE LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+שלבי תהליך חישול בפתח הופכים את היצירה ב-HECTON-8 לטקס תעשייתי שעדיין מרגיש פיזי. השחקן אינו נושא כבשן אגדי בכיס. הכבשן הוא מקום שבו האוקיינוס, פתח גיאותרמי וחומרת מושבה הרוסה מסכימים לרגע קצר. תחילה מטהרים את הגולם כדי שתמלחת ישנה לא תרתח בתוכו. אחר כך מהדקים אותו לפני עליית הפעימה, מחממים בעליית הלחץ, אוטמים ברגיעה הקצרה ומקררים בזרם החוזר הקר. הצלצול האקוסטי הסופי אינו קישוט; הוא מוכיח שהחלק נושא גוף נקי אחד במקום סדקים מוסתרים. כך היצירה מקבלת קצב שהעולם יכול לתמוך בו דרך VFX, אודיו ו-UI. חום חשוב, אך תזמון חשוב יותר. חלון שהוחמץ אינו מייצר מצב כשל מסתורי. הוא מייצר גרוטאה מעוותת, פריחת מלח או רכיב סדוק מלחץ שאומר לשחקן בדיוק מה השתבש.
 
 ## Scanner
 
-HE LOC HOLD: Vent forging should feel like using the planet against itself.
+חישול בפתח אינו עבודת מתכת קסומה. זו שאילת החום, הלחץ והתזמון של הפלנטה בלי לתת לה לשמור את החלק.
 
 ## Terminal
 
-HE LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+שלבי חישול פתח / 01 לטהר תמלחת מן הגולם / 02 להדק לפני פעימה / 03 לחמם בעליית הפתח / 04 לאטום בזמן רגיעת לחץ / 05 לקרר בזרם קר / 06 לאשר בצלצול אקוסטי / כשל: גרוטאה מעוותת, פריחת מלח או חלק סדוק מלחץ.
 
 ## Audio
 
-HE LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+הירח הוא הכבשן. מותר לך רק לשאול אותו.
 
 ## Field Note
 
-HE LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+התהליך צריך להיקרא כטיהור, הידוק, חימום, איטום, קירור ובדיקת צלצול. הסיכון אינו להבה; הסיכון הוא לפספס את רגיעת הלחץ.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/he_IL. -->

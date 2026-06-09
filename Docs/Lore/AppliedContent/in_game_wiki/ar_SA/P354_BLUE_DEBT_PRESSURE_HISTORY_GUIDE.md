@@ -19,22 +19,22 @@ localization_flags: 1
 
 # دليل تاريخ ضغط الدين الأزرق
 
-Blue debt لغة عقود ملفوفة حول substrate خطير. يقرر pressure history وcustody marks وsignal drift هل يصبح دفعا نظيفا، أو رافعة Atlas، أو دافع Deep Reach للعودة.
+الدين الأزرق لغة عقود ملفوفة حول ركيزة خطرة. تاريخ الضغط وعلامات الحيازة وانحراف الإشارة تحدد هل يصبح دفعة نظيفة، أو نفوذ Atlas، أو دافعا لعودة Deep Reach.
 
 ## Scanner
 
-تم وسم عينة blue debt. تحقق من pressure history وcontainment stage وsignal drift قبل export.
+تم وسم عينة الدين الأزرق. تحقق من تاريخ الضغط ومرحلة الاحتواء وسلسلة الحيازة وانحراف الإشارة قبل التصدير.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt لغة salvage عامية لـ Xenon-Omega-bearing pressure-stable substrate. قيمته لأن extreme computation وenergy isolation تحبانه، لا لأنه يتوهج.
+ملاحظة مارودر: الدين الأزرق هو slang salvage لركيزة مستقرة الضغط تحمل Xenon-Omega. قيمتها لأن الحوسبة القصوى وعزل الطاقة يفضلانها، لا لأنها تلمع.
 
 ## Audio
 
-الدين الأزرق هو ما يسميه الناس بعد وصول الفاتورة.
+يسمونه الدين الأزرق بعد وصول الفاتورة.
 
 ## Field Note
 
-اللون ليس grade. الحاوية الصامتة ذات custody نظيفة تدفع؛ والحاوية التي تغني تشتري لك drone wake.
+اللون ليس درجة. حاوية صامتة بحيازة نظيفة تدفع؛ وحاوية تغني تشتري لك أثر طائرات مسيرة.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ar_SA. -->

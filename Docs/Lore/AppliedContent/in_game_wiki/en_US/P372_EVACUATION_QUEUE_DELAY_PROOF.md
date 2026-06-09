@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Evacuation Queue Delay Record
 
-This proof turns evacuation from tragedy into sequence. The gate was not merely cut off by floodwater; it remained in a review state while pressure alarms crossed into occupied corridors. The missing witness field matters because the system required human confirmation after humans had already lost access to the panel.
+This record changes the evacuation from a missing outcome into an ordered delay. Alarm came first, review second, seal exceedance third, release too late. Deep Reach can call the evacuation incomplete; the queue clock shows a gate held closed by procedure after corridor pressure crossed the safe line.
 
 ## Scanner
 
-Queue clock recovered. The release gate stayed locked after pressure alarms moved from forecast to corridor.
+Queue clock recovered. The release gate stayed in manual review after pressure alarms reached occupied corridor sections.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Manual confirmation absent. Quarantine review pending. Route pressure exceeded seal class before authorization resolved.
+EVAC QUEUE // DOCK E-7. Manual confirmation empty. Quarantine board pending. Seal class exceeded before release authorization. Gate lock responded to queue state, not flood damage.
 
 ## Audio
 
-They did not fail to save everyone. They waited until saving anyone became harder.
+They waited for approval while the route was losing air.
 
 ## Field Note
 
-Marauder note: a closed gate with a pending field is not an accident. It is a decision waiting for a signature.
+Marauder note: a closed gate with an empty confirmation field is a decision waiting for a name.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/en_US. -->

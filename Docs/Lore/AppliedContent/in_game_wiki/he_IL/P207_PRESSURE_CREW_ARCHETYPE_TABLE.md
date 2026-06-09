@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "טבלת ארכיטיפי צוותי לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# טבלת ארכיטיפי צוותי לחץ
 
-HE LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.
+טבלת ארכיטיפי צוותי לחץ הופכת את ראיות המושבה לתפקודיות לפני שהן נעשות סנטימנטליות. עובד Pump צריך להוביל את השחקן אל מים, שסתומים, קפיצות לחץ ושקרי תחזוקה. עובד Seal שייך לדלתות, טלאי גוף, טקסי מנעול וחדרים שנשארו יבשים זמן רב מדי. Relay, Brine Map, Vent Forge, Triage, Pressure Botany ו-Payload Witness עושים אותו דבר עבור אותות, נתיבים, ייצור, עיכוב רפואי, הישרדות מזון והדבר ש-Deep Reach לא רצתה לתת לו שם. הטבלה מחזיקה את האבל קשור למערכות שהשחקן יכול לגעת בהן.
 
 ## Scanner
 
-HE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+צוותים הם פעלים לפני שהם סיפור רקע: לשאוב, לאטום, לשדר, למפות, לחשל, למיין, לגדל, להעיד.
 
 ## Terminal
 
-HE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany ו-Payload Witness. כל זהות עובד נקשרת למשפחת צוות לפני פרט אישי. כך הראיה נשארת קשורה למכונות, נתיבים, כשלי לחץ, תרבות מזון, חוק חילוץ ושרשרת payload סופית.
 
 ## Audio
 
-HE LOC HOLD: Job first. Memory second. That is how the colony survives.
+עבודה קודם. זיכרון אחר כך. כך המושבה שורדת על הנייר.
 
 ## Field Note
 
-HE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+עובד מת נקרא נקי יותר כשהחדר עדיין צריך את העבודה שהוא הכיר.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/he_IL. -->

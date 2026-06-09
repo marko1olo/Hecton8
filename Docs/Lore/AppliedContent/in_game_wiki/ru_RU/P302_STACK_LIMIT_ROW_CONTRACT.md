@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Stack Limit Data Boundary"
+title: "Граница данных лимита стака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Stack Limit Data Boundary
+# Граница данных лимита стака
 
-RU LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+Граница лимита делает инвентарь физическим. Предметы складываются только тогда, когда контейнер, давление, масса и заражение могут пережить один маршрут, не солгав save-файлу.
 
 ## Scanner
 
-RU LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Строка стака отвергает кучи иконок: сосуд, давление, заражение и масса решают количество.
 
 ## Terminal
 
-RU LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+КОНТРАКТ СТАКА: количество требует тип сосуда, рейтинг давления, стадию заражения, класс массы, уровень предупреждения и save-stable identity. Ящик не является напорным сосудом.
 
 ## Audio
 
-Ящик не является сосудом давления.
+Ящик не является напорным сосудом.
 
 ## Field Note
 
-RU LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Лимиты стака остаются table-owned и стабильными для save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/ru_RU. -->

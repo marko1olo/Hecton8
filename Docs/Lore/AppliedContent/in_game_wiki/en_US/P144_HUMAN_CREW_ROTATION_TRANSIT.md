@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Human Crew Rotation Transit
 
-Human rotation makes HECTON-8's abandonment believable. Workers, specialists, and replacement crews move slower than claim language. A person can leave Sol under one contract, wake under another, and discover that the emergency they trained for has already become evidence.
+Human rotation was the promise that made Aegir survivable on paper. Workers accepted long cycles because return windows existed, medical custody existed, and the carrier ledger described them as recoverable people rather than abandoned mass. In practice, every rotation depended on berth scarcity, route debt, legal clearance, and whether Deep Reach still wanted the witness alive.
 
 ## Scanner
 
-Humans do not commute to Aegir. They spend years as cargo with opinions.
+Crew schedule stamped valid after half the names were already unreachable.
 
 ## Terminal
 
-CREW ROTATION: human transport uses slow windows, shielded habitat sections, low-metabolic cycles, and staged rotations. A missing worker becomes a delayed custody problem.
+CREW ROTATION: human transfers require berth mass, radiation allowance, sleep supervision, med debt, legal custody, and return-window insurance. Emergency extraction is not a button; it is a prepriced exception almost nobody can afford.
 
 ## Audio
 
-By the time home asks where you are, the room has already flooded.
+A rotation plan is not a rescue plan. It only looks similar from a desk.
 
 ## Field Note
 
-A frontier worker sells time before they sell labor.
+People were rotated like inventory until the route reminded everyone they were bodies.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/en_US. -->

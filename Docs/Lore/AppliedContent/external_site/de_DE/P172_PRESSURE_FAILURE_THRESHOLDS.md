@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Druckversagensschwellen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Druckversagensschwellen
 
-DE LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Druckversagensschwellen definieren die lesbare Kante zwischen Ressource und Gefahr. Sie lassen HECTON-8 Tiefe in spielerseitige Grammatik verwandeln: visuelle Belastung, Audioticks, Scannerwarnungen, Bergungsrisiko und Craftingfolgen zeigen auf dieselbe physische Regel. Eine Probe versagt, weil die Welt auf sie drückt, nicht weil eine Inventarzahl still ablief.
 
 ## Scanner
 
-DE LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Eine gute Probe wird zur Gefahr, wenn sie die falsche Drucklinie überschreitet. Dem Ozean ist egal, dass das Etikett fast stimmte.
 
 ## Terminal
 
-DE LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+DRUCKVERSAGEN / shallow-rated: Dichtungstick und Wasserkriechen / industrial-rated: Dichtungsdrift und Klammerklappern / brine-rated: Haarriss und Salzblüte / abyssal-rated: akustisches Geistern, Totprobennebel / Atlas-rated: Verwahrungssperre vor Strukturverlust.
 
 ## Audio
 
-DE LOC HOLD: Pressure does not care that the label was almost right.
+Druck interessiert nicht, dass das Etikett fast richtig war.
 
 ## Field Note
 
-DE LOC HOLD: Failure thresholds should be readable before they punish.
+Versagensschwellen müssen vor der Strafe lesbar sein: Ticken, Drift, Haarriss, Salzblüte, Totprobennebel. Wenn der Spieler erst nach Verlust lernt, betrügt die Welt.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/de_DE. -->

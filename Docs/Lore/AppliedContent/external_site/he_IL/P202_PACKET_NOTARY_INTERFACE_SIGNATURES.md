@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "חתימות Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# חתימות Packet Notary Interface
 
-HE LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+עיכוב בין-כוכבי לא הפך כל הודעת HECTON-8 לחסרת ערך. הוא הפך משמורת הודעות ליקרה. רצועת Packet Notary מתעדת איזה חלון ממסר נשא חבילה, איזה hash העיד עליה, ואיזה בעלים החזיק בה לפני שחרור. ברשומות HECTON-8 ששוחזרו, המנגנון הזה יכול להגן על יומן עובד או להשאיר אותו בתוך claim material עד שמצורף עד שני. הערת ארכיון ציבורית: הרשומה מזהה את מסלול הראיה, לא את כל שרשרת הפיקוד של Deep Reach.
 
 ## Scanner
 
-HE LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+חותם חבילה שוחזר: רצועת hash שלמה, חותמת חלון ממסר 17-A, בעל משמורת לא פתור. לטפל כראיה רק אחרי התאמת witness chain.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Route: Relay Spine / witness hash strip. Action: seal packet hash, local relay delay, custody owner. Exception: missing worker-name attachment keeps packet in claim-material queue. Escalation: public ledger only after second witness hash.
 
 ## Audio
 
-HE LOC HOLD: A seal is not mercy. It is a clock with a price.
+החותם שלם. חותמת הזמן מאחרת בשני חלונות. אם witness hash יתאים, הם לא יוכלו לקרוא לזה סטטי.
 
 ## Field Note
 
-HE LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+אל תמכור את זה כיומן. תמכור את זה כשעון עם עד: זמן ממסר, packet hash, בעל משמורת. בלי שלושת השדות Deep Reach תקרא לזה רעש נשא רופף.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/he_IL. -->

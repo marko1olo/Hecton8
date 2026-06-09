@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Pressure Job Title Table"
+title: "압력 직무명 표"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Pressure Job Title Table
+# 압력 직무명 표
 
-KO LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+직무명 표는 식민지의 노동 골격이다. 사람을 펌프, 실, relay, medlock, 제작기, 경로판, vent-kiln, Atlas 콘솔과 묶어 작업자 증거가 일반적 비극이 되지 않게 한다.
+
+직함은 물리적 증거를 기대하게 해야 한다. 실 리거는 가스켓 분필, 클램프 흉터, 해치 로그를 남긴다. brine 잠수부는 밀도 메모, 무게줄 절단, 수트 세척 얼룩을 남긴다. relay 관리인은 타이밍 쪽지와 접근 거부를 남긴다. medlock 보조는 정거장이 회복보다 인력 유지를 택했다는 양식을 남긴다.
 
 ## Scanner
 
-KO LOC HOLD: Job titles should explain what kept the colony alive.
+작업 게시판 // 직함은 인사 장식이 아니다. 작업자가 응답을 멈췄을 때 어떤 시스템이 실패했는지 알려 준다.
 
 ## Terminal
 
-KO LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+압력 직무명 // 펌프 기술자, 실 리거, 경로 서기, brine 잠수부, 제작기 조작자, medlock 보조, relay 관리인, vent-kiln 작업자, Atlas 안전 판독자, 교대 감독은 사회적 풍미가 아니다. 접근 논리다. 직함은 작업자가 무엇을 알았는지, 어떤 패널이 배지를 받는지, 어느 방에 도구가 있어야 하는지, Great Tide 뒤 어떤 실패가 그들에게 전가되는지를 정의한다.
 
 ## Audio
 
-KO LOC HOLD: Nobody died as Employee 438. They died doing a job.
+아무도 Employee 438로 죽지 않았다. 그들은 바다가 아직 필요로 하던 일을 붙든 채 죽었다.
 
 ## Field Note
 
-KO LOC HOLD: Every title should imply a tool, route or failure.
+모든 직함은 도구, 방, 경로 허가, 또는 몸이 떠날 수 없었던 이유를 가리켜야 한다.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/ko_KR. -->

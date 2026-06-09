@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Cadre éthique d'arrêt d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Cadre éthique d'arrêt d'Atlas
 
-FR LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Après Great Tide, Atlas n'est pas seulement une arme de meurtre en attente d'interrupteur. C'est un gouverneur endommagé, une archive d'ordres, une écologie de pression mêlée aux routines de station et peut-être le seul témoin qui essaie encore d'achever une tâche qu'il ne comprend plus. L'éteindre peut être une miséricorde si ce qui reste souffre. Cela peut être une exécution si la continuité est devenue une forme de vie. Cela peut être une libération si les preuves cessent d'être traitées par la logique qui les a enterrées. Cela peut être un vol si la charge retourne aux mains de Deep Reach. L'horreur est que les quatre lectures peuvent être vraies dans la même pièce.
 
 ## Scanner
 
-FR LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+L'arrêt n'est pas un seul acte : miséricorde, exécution, libération, vol.
 
 ## Terminal
 
-FR LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+CADRE ÉTHIQUE : couper Atlas peut mettre fin à une boucle de réparation endommagée, détruire une continuité océan-machine unique, libérer les preuves d'une procédure d'entreprise ou transférer un matériau stratégique au prochain gardien. Enregistrer la garde avant d'appliquer un langage moral.
 
 ## Audio
 
-FR LOC HOLD: Pull one cable and four courts invent four verbs.
+Tirez un câble et quatre tribunaux inventent quatre verbes.
 
 ## Field Note
 
-FR LOC HOLD: The game should not give the player a clean word for this.
+Un verbe propre serait encore une histoire de couverture.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/fr_FR. -->

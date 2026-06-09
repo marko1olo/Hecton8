@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Sanitized Accident Reply Window"
+title: "Ventana de respuesta de accidente saneada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Sanitized Accident Reply Window
+# Ventana de respuesta de accidente saneada
 
-ES LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+La Ventana de respuesta de accidente saneada da a Deep Reach una voz presente sin volver omnisciente a la corporación. Su primera respuesta en vivo no es una amenaza. Es peor de una forma más silenciosa: una vieja explicación pública empujada por un canal nuevo bajo presión. El mensaje aún dice marejada de tormenta, colapso geológico y evacuación autónoma fallida porque ese guion protegió a Deep Reach una vez y el sistema vuelve a tomarlo. El jugador debería oírlo solo después de encontrar contradicción física: hora de puerta incorrecta, mal certificado de bomba, nombres que sobrevivieron al borrado de nómina, una sala cuyo daño no coincide con el clima. El timing importa. Si el guion llega primero, es exposición. Si llega después de la prueba mojada, es un insulto. Deep Reach no habla a la sala que el jugador ocupa. Habla al informe seco en que necesitaba convertir esa sala.
 
 ## Scanner
 
-ES LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Ventana de respuesta abierta. Deep Reach repite colapso por tormenta, fallo geológico y evacuación autónoma fallida como si la sala siguiera seca.
 
 ## Terminal
 
-ES LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: marejada de tormenta, colapso geológico, fallo de evacuación autónoma / RESTRICTED ADVICE: no transmitir Atlas continuity no verificada, body-category disputes ni basin-coordinate claims.
 
 ## Audio
 
-ES LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Respondieron a la sala que debías encontrar, no a la sala donde estás.
 
 ## Field Note
 
-ES LOC HOLD: Place after first physical contradiction, not before.
+Colocar tras la primera contradicción física: el jugador debe tener prueba mojada antes de oír el viejo guion público.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/es_ES. -->

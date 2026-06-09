@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Panduan Riwayat Tekanan Blue Debt"
+title: "Panduan Riwayat Tekanan Utang Biru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Panduan Riwayat Tekanan Blue Debt
+# Panduan Riwayat Tekanan Utang Biru
 
-Blue debt adalah bahasa kontrak yang membungkus substrate berbahaya. Pressure history, custody marks, dan signal drift menentukan apakah ia menjadi pembayaran bersih, daya tawar Atlas, atau alasan Deep Reach kembali.
+Utang biru adalah bahasa kontrak yang membungkus substrat berbahaya. Riwayat tekanan, tanda kustodi, dan drift sinyal menentukan apakah ia menjadi bayaran bersih, tuas Atlas, atau alasan Deep Reach kembali.
 
 ## Scanner
 
-Sampel blue debt ditandai. Verifikasi pressure history, containment stage, dan signal drift sebelum export.
+Sampel utang biru ditandai. Periksa riwayat tekanan, tahap containment, rantai kustodi, dan drift sinyal sebelum ekspor.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt adalah slang salvage untuk Xenon-Omega-bearing pressure-stable substrate. Ia berharga karena extreme computation dan energy isolation menyukainya, bukan karena ia bersinar.
+CATATAN MARAUDER: utang biru adalah slang salvage untuk substrat stabil tekanan yang membawa Xenon-Omega. Ia bernilai karena komputasi ekstrem dan isolasi energi menyukainya, bukan karena bercahaya.
 
 ## Audio
 
-Blue debt adalah sebutan orang setelah faktur datang.
+Orang menyebutnya utang biru setelah faktur tiba.
 
 ## Field Note
 
-Warna bukan grade. Kontainer tenang dengan custody bersih membayar; yang bernyanyi membeli drone wake.
+Warna bukan grade. Kontainer sunyi dengan kustodi bersih membayar; yang bernyanyi membeli jejak drone.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/id_ID. -->

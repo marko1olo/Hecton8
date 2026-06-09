@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Preserve Quarantine Record"
+title: "保存隔離記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Preserve Quarantine Record
+# 保存隔離記録
 
-JP LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+この隔離記録で重要なのは、保留されたもの、保護されたもの、後で壊れ得るものの列挙だ。ペイロード保管、座標ブラインド、部分公開受領書、Atlas損傷、生態保留、作業者名、責任、ブラインド後続請求である。
 
 ## Scanner
 
-JP LOC HOLD: Payload withheld. Consequence deferred.
+保存隔離記録 // ペイロードはDeep Reachから保留。Atlasは損傷したまま稼働。生態保留命令が清潔な所有移転を遮断。
 
 ## Terminal
 
-JP LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+エンディング記録 / 保存隔離
+ペイロード: Deep Reach直接保管から保留。
+命令: 生態保留、座標ブラインド、部分公開受領書。
+Atlas状態: 損傷修復ロジック稼働。
+保護: 圧力生態と生存保守生命。
+未解決: 作業者名、盆地責任、将来のsalvage提出。
+既知の損失: 保存は無罪にならない。
 
 ## Audio
 
-JP LOC HOLD: Leaving something alive is not the same as saving it.
+生きたまま残した。それは救ったことと同じではない。
 
 ## Field Note
 
-JP LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+パケット保留は一部の生きた系を守り、壊れた権限に呼吸を残す。ブラインド請求キューを監視しろ。
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/ja_JP. -->

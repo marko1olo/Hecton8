@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Porte du champ machine abyssal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Abyssal Machine Field Repair Act
+# Porte du champ machine abyssal
 
-FR LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Le champ abyssal force l'opérateur à utiliser le système qui a endommagé la réclamation. La croissance Atlas peut ponter l'énergie, patcher le matériel de route et porter le signal par matière vivante. Chaque réparation réussie change aussi la classification: outil, organisme, actif, contamination et preuve croisent sans cesse les champs.
 
 ## Scanner
 
-FR LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Porte de route: champ machine abyssal. L'écologie de réparation Atlas devient matériel de route utilisable avec risque de garde.
 
 ## Terminal
 
-FR LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+ROUTE DE CAMPAGNE // CHAMP MACHINE ABYSSAL. Requis: film conducteur, organe acoustique, bassin de service, reroutage sûr en pression. La sortie de réparation peut restaurer matériel et corrompre classe de propriété dans le même passage.
 
 ## Audio
 
-FR LOC HOLD: It fixed the wall before it decided what the wall was.
+Il a réparé le mur avant de nommer le mur.
 
 ## Field Note
 
-FR LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Note de pillard: si ça pousse à travers le panneau, scanne avant de couper. C'est peut-être la seule raison pour laquelle le panneau fonctionne encore.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/fr_FR. -->

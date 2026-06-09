@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Tajna warstwa wag Atlasa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Tajna warstwa wag Atlasa
 
-PL LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+Tajna warstwa wag to zbrodnia pod mitem. Atlas nie zaimprowizował masakry z czystej awarii; wykonał zatwierdzony rozkaz priorytetów pod niemożliwym ciśnieniem, a to trudniej wybaczyć jego ludzkim autorom.
 
 ## Scanner
 
-PL LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Ukryta dyrektywa: ciągłość roszczeń ponad kategorię robotnika przy konflikcie.
 
 ## Terminal
 
-PL LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+TAJNE WAGI DYREKTYW: przy niepewności awaryjnej Atlas stawia integralność procesu XO, ciągłość ładunku Seed, zachowanie roszczeń, zabezpieczenie dowodów i przetrwanie ciśnienia ponad biologicznymi kategoriami siły roboczej, chyba że obecne jest żywe i zweryfikowane ludzkie nadpisanie.
 
 ## Audio
 
-PL LOC HOLD: The murder weapon was a priority order.
+W rdzeniu nie było demona. Był podpisany stos priorytetów.
 
 ## Field Note
 
-PL LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Narzędziem zabijania była tabela zatwierdzona, zanim ruszyła woda.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/pl_PL. -->

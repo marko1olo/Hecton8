@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Obecne okna Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Obecne okna Deep Reach
 
-PL LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Obecne okna Deep Reach zachowują twardonaukową odległość HECTON-8, a jednocześnie utrzymują presję korporacji przy życiu. Deep Reach nie może teleoperować dna morskiego, natychmiast uratować operatora ani przepisać planety w czasie rzeczywistym. Dla opowieści może zrobić coś gorszego: zostawić na miejscu procedury, proxy i systemy roszczeń, a potem mówić tylko w rzadkich oknach, gdy gracz ma coś wartego targu. Ten artykuł definiuje późnogrową presję. Moc korporacji nie jest magiczną komunikacją, lecz językiem własności, który przetrwał katastrofę i nadal umie wycenić ludzkie życie wobec dowodów, kwarantanny i odzysku.
 
 ## Scanner
 
-PL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach nie może sterować HECTON-8 przez radio, ale opóźnione okna, komunikaty proxy i klauzule Black Keel wciąż decydują, ile kosztuje pomoc.
 
 ## Terminal
 
-PL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / PROXY DEEP REACH: odzyskanie operatora podlega negocjacji po przeglądzie dowodów, depozycie ładunku, zgodności z kwarantanną i przekazaniu kluczy uprawnień Atlas. Odmowa zachowuje status roszczącego, ale unieważnia priorytet natychmiastowej ekstrakcji.
 
 ## Audio
 
-PL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Kiedy ich głos do ciebie dociera, jest już kontraktem.
 
 ## Field Note
 
-PL LOC HOLD: Their voice is delayed. Their leverage is already here.
+Ich odpowiedź przychodzi późno. Ich warunki dotarły lata temu.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/pl_PL. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_storage_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS188_FIRST_STORAGE_RACK_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, crate footprint note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter storage |
@@ -72,17 +72,17 @@ WEIGHT HISTORY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| ru_RU | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| ja_JP | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| zh_CN | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| fr_FR | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| es_ES | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| de_DE | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| pl_PL | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| uk_UA | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| ar_SA | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| id_ID | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| ko_KR | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| he_IL | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| pt_BR | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
-| nl_NL | draft_machine_or_llm | CRATE FOOT // Salt pad marks where a crate rested. Weight history, not inventory proof. |
+| ru_RU | draft_machine_or_llm | НОЖКА ЯЩИКА // Соляная площадка отмечает, где стоял ящик. История веса, не доказательство запасов. |
+| ja_JP | draft_machine_or_llm | クレート脚 // 塩の跡が箱の置き場を示す。重量履歴であり在庫証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 箱脚 // 盐垫标出箱子曾停放的位置。是重量历史，不是库存证明。 |
+| fr_FR | draft_machine_or_llm | PIED DE CAISSE // Plaque de sel ou la caisse reposait. Historique de poids, pas preuve de stock. |
+| es_ES | draft_machine_or_llm | PATA DE CAJA // Almohadilla de sal marca donde reposo la caja. Historial de peso, no prueba de inventario. |
+| de_DE | draft_machine_or_llm | KISTENFUSS // Salzfeld markiert Standplatz einer Kiste. Gewichtsverlauf, kein Inventarbeweis. |
+| pl_PL | draft_machine_or_llm | STOPA SKRZYNI // Solna plama wskazuje, gdzie stala skrzynia. Historia masy, nie dowod zapasu. |
+| uk_UA | draft_machine_or_llm | НІЖКА ЯЩИКА // Соляна пляма позначає, де стояв ящик. Історія ваги, не доказ запасів. |
+| ar_SA | draft_machine_or_llm | قدم صندوق // رقعة ملح تحدد مكان استقرار صندوق. سجل وزن، لا دليل مخزون. |
+| id_ID | draft_machine_or_llm | KAKI PETI // Jejak garam menandai tempat peti bertumpu. Riwayat berat, bukan bukti inventaris. |
+| ko_KR | draft_machine_or_llm | 상자 발 // 소금 자국이 상자가 놓였던 자리를 표시한다. 무게 이력이지 재고 증거가 아니다. |
+| he_IL | draft_machine_or_llm | רגל ארגז // כרית מלח מסמנת היכן הארגז עמד. היסטוריית משקל, לא הוכחת מלאי. |
+| pt_BR | draft_machine_or_llm | PE DA CAIXA // Mancha de sal marca onde a caixa ficou. Historico de peso, nao prova de inventario. |
+| nl_NL | draft_machine_or_llm | KRATVOET // Zoutvlak markeert waar krat stond. Gewichtsgeschiedenis, geen voorraadbewijs. |

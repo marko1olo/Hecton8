@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 APPLIER = ROOT / "Assets/_Project/Scripts/Editor/ResourcePickupGeminiMaterialApplier.cs"
 APPLY_ALL = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
 BOOTSTRAP = ROOT / "Assets/_Project/Scripts/Editor/ResourceWorldBootstrapAuthoring.cs"
+UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 RESOURCE_MATERIAL_ROOT = ROOT / "Assets/_Project/Art/Materials/Resources"
 GENERATED_MATERIAL_ROOT = ROOT / "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607"
 GEMINI_SINGLE_MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json"
@@ -194,6 +196,19 @@ def validate_static(errors: list[str]) -> None:
         errors.append("Gemini apply-all is missing importer, player-suit, resource-pickup, or held-tool call")
     elif not (importer_index < suit_index < resource_index < held_index):
         errors.append("resource pickup material applier must run after generated material import/player-suit palette and before downstream tool appliers")
+
+    if not UNITY_APPLY_RUNNER.exists():
+        errors.append(f"missing Unity apply runner: {display(UNITY_APPLY_RUNNER)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $resourcePickupMaterialValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate resource pickup material route")
+
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display(STATIC_PREFLIGHT)}")
+    elif "ValidateResourcePickupGeminiMaterialRoute.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateResourcePickupGeminiMaterialRoute.py")
 
     material_assets = iter_material_assets()
     for target, material_id, provider in EXPECTED_ASSIGNMENTS:

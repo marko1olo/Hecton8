@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomie des fausses fins"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomie des fausses fins
 
-FR LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 traite les fausses fins et les fins partielles comme de vraies issues, pas comme des tromperies. Un paiement matériel peut lancer les crédits. Une sortie partielle peut renvoyer le joueur dans le même seed avec le savoir du dossier conservé. La capture corporative et le maintien en quarantaine peuvent punir une mauvaise charge utile ou un routage dangereux des preuves. Les fins plus profondes exigent une preuve publique, la résolution de l'état d'Atlas et un choix sur le type de sauvetage que le joueur accepte d'acheter.
 
 ## Scanner
 
-FR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Tableau des fins. Certaines sorties sont assez réelles pour compter, et assez mauvaises pour blesser.
 
 ## Terminal
 
-FR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+FAMILLES DE FINS : paiement matériel ; sortie partielle et retour au même seed ; capture corporative ; maintien en quarantaine ; publication du registre public ; résolution du bassin Atlas. Les journaux d'issue doivent séparer charge utile, preuve et état de dette.
 
 ## Audio
 
-FR LOC HOLD: Leaving is not the same as finishing.
+Sortir de l'eau n'est pas terminer le travail.
 
 ## Field Note
 
-FR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Une fausse fin n'est pas un tour. C'est un marché valable auquel il manque la vérité.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/fr_FR. -->

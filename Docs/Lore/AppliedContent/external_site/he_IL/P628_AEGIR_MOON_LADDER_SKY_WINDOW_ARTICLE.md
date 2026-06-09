@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "חלון שמים של סולם ירחי Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# חלון שמים של סולם ירחי Aegir
 
-The Aegir moon ladder is route grammar, not decoration.
+ירחי Aegir אינם קישוט לוח שנה. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 ו-Mute מסמנים נתיבי תנועה, צללי ממסר, תזמון גאות, סיכון blackout ועלות transfer. השחקן קורא את השמים כלחץ נתיב, לא כמתמטיקה מסלולית מדויקת.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+השחקן אינו צריך קבועי מסלול מדויקים כדי להשתמש בשמים. ירח מאחורי מזג אוויר עדיין יכול לומר נתיב relay רע. חלון בהיר יכול לומר חבילה נקייה אחת. צמידות יכולה לומר עומס גאות, לא פלא. הסולם הופך את השמים לקריאים בלי להפוך אותם להרצאה.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/he_IL. -->

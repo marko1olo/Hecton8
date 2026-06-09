@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Verhörakte der Quarantänehaltung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Quarantine Hold Interrogation Record
+# Verhörakte der Quarantänehaltung
 
-DE LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.
+Ein HECTON-8-Ausgang kann körperlich erfolgreich und politisch katastrophal sein. Der Spieler verlässt vielleicht den Ozean und betritt doch einen Raum, in dem jede Frage seinen Körper als einzig überlebendes Routenlog behandelt.
 
 ## Scanner
 
-DE LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Geborgener Anspruchsteller lebt. Quarantäneflag überschreibt Rettungssprache; Beweispayload isoliert.
 
 ## Terminal
 
-DE LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+QUARANTINE-HOLD-AKTE: biologischer Anspruchsteller lebend geborgen. Bewegung eingeschränkt bis Kontaminationsscan, Druckexpositionsinterview und Prüfung der Beweisverwahrung. Empfängerverhör priorisiert Atlas-Zugangsvektor vor medizinischer Freigabe.
 
 ## Audio
 
-DE LOC HOLD: They saved the body first because the body knew the route.
+Sie retteten zuerst den Körper, weil der Körper die Route kannte.
 
 ## Field Note
 
-DE LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Nachausgangsdossier: biologische Rettung wird vor Freiheit zu Quarantäne, Verhör, Routenextraktion und Payload-Verwahrung.
 
 <!-- External Site; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/de_DE. -->

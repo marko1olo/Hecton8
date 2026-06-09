@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Marauder Correction Note Sample"
+title: "Зразок мародерської правки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Marauder Correction Note Sample
+# Зразок мародерської правки
 
-UK LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Зразок мародерської правки не є зізнанням, і саме тому він корисніший. Це брудна примітка поверх офіційного акта аварії, написана людиною, яка навчилася не довіряти чистим причинам. Записка не каже, хто кого вбив. Вона каже, що треба перевірити, перш ніж слово аварія залишиться у справі: сертифікат насоса, склад зміни, категорію тіл, розсинхрон годинника дверей і чергу допуску, яка затримала порятунок настільки, що кімната стала доказом. У HECTON-8 цей предмет поєднує доказ середовища і голос фракції. Колоніальний журнал намагається завершити історію погодою. Мародерська рука повертає гравця до кімнати.
 
 ## Scanner
 
-UK LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Жирним олівцем поверх акта аварії: не погода, не паніка, а затримка допуску з кількістю тіл у справі.
 
 ## Terminal
 
-UK LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+МАРОДЕРСЬКА ПРАВКА / ОФІЦІЙНА ПРИЧИНА: ВІДХИЛЕНА / ДО ЗАЯВИ ПЕРЕВІРИТИ: сертифікат насоса, склад зміни, категорію тіл, розсинхрон годинника дверей, чергу дозволу на порятунок.
 
 ## Audio
 
-UK LOC HOLD: Someone else smelled the paperwork rot.
+Хтось відчув гниль у паперах ще до того, як відсік висох.
 
 ## Field Note
 
-UK LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+НЕ ПОГОДА. ЗАТРИМКА ДОПУСКУ. Перевірити сертифікат насоса, склад зміни, категорію тіл. Годинник дверей випереджає штамп заяви на шість хвилин.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/uk_UA. -->

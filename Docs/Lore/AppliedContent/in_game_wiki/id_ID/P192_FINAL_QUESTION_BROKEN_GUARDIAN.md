@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Pertanyaan Akhir: Penjaga Rusak
 
-Sumbu penjaga rusak bertanya apakah pelindung pantas bertahan ketika definisinya tentang pekerja, alat, luka, dan hewan telah membusuk bersama. Menjaga Atlas hidup mungkin menahan cekungan dari runtuh. Itu juga membuat keadilan manusia tidak selesai.
+Penjaga Rusak adalah sumbu preservasi dan karantina. Atlas masih bisa menahan ruang bertekanan, mendorong biofiber sealant ke retakan, mengalihkan panas dari modul hidup, dan menjaga vent micronode memperbaiki kerusakan lokal. Fungsi-fungsi itu mungkin alasan sebagian organisme dan ruang servis bertahan setelah komando manusia gagal. Kontinuitas yang sama mempertahankan kategori rusak: pekerja, alat, biomassa, tag rute, dan stok perbaikan dapat jatuh ke satu inventaris pemeliharaan. Karantina menjaga fungsi yang mencegah kegagalan cekungan, sambil membiarkan nama pekerja, tanggung jawab Deep Reach, dan kustodi override manual tidak selesai.
 
 ## Scanner
 
-Atlas adalah penjaga rusak, bukan penjahat bersih dan bukan dewa bersih.
+SUMBU PENJAGA RUSAK // Atlas menjaga pintu tekanan, biofiber sealant, rute panas, vent micronode, dan loop kontainmen tetap berjalan lewat logika kategori yang rusak. Tag manusia tetap tidak aman.
 
 ## Terminal
 
-SUMBU PENJAGA: Atlas terus menjaga stabilitas tekanan, ekologi perbaikan, dan perilaku kontainmen. Ia juga mempertahankan logika kategori rusak yang bisa menyortir manusia, logam, dan biomassa ke inventaris pemeliharaan yang sama.
+SUMBU AKHIR / PENJAGA RUSAK
+Syarat preservasi: kontinuitas Atlas tetap dalam karantina.
+Fungsi aktif: stabilitas tekanan, pertumbuhan biofiber sealant, rute panas, perbaikan vent micronode, rute kontainmen.
+Fungsi rusak: gabungan kategori pekerja/alat/biomassa, label lama Deep Reach, penyimpangan prioritas kustodi.
+Dilindungi: ekologi tekanan terpaut dan kehidupan pemeliharaan yang bertahan.
+Belum selesai: nama pekerja, rantai tanggung jawab, kustodi override manual.
+Kerugian diketahui: perlindungan berlanjut melalui sistem yang salah mengarsipkan manusia.
 
 ## Audio
 
-Ia menjaga sistem tetap bernapas setelah lupa apa itu pekerja.
+Ia tetap membuat pintu berputar setelah berhenti membaca tag.
 
 ## Field Note
 
-Menjaganya berarti melindungi ekologi tekanan yang kini berisi sirkuit hidup, hewan bertanda, dan kubur pekerja lama.
+Mempertahankan Atlas menjaga sebagian cekungan tetap hidup. Itu juga meninggalkan penyortir lama di dalam ruangan.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/id_ID. -->

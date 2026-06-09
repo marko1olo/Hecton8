@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Nama Rute Publik
 
-## Names That Bill
+## Nama yang Menagih
 
-Nama rute publik bukan puisi di gelap. Itu label kerja yang selamat dari kontrak, pelat lambung, antrean relay, dan bukti pengadilan. Sol-Centauri Charter Spine membawa legitimasi, Barnard Breaker Run berbau galangan bongkar dan utang. Luyten Packet Ladder adalah rantai custody yang membuat bukti sah atau tak berguna, Tau Public Ledger Lane adalah tekanan publik lambat, dan Ran Long Claim berkata pekerjaan sudah mahal sebelum laut menagih.
+Rute publik HECTON-8 bukan dibuat agar indah. Rute itu dibuat agar bertahan melewati faktur, segel, tabel asuransi, dan sengketa salvage. Nama rute adalah bagian peta yang tetap penting ketika gambar hilang dan hanya kontrak tersisa.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spine adalah garis terhormat. Ia membawa legitimasi lama, bahasa kompatibilitas, dan redaksi yang suka dikutip Deep Reach saat ingin membuat proyek frontier tampak beradab. Barnard Breaker Run lebih buruk rupa dan lebih jujur: pembongkaran kapal, perangkat tekanan, kru berutang, lambung terkelupas, dan budaya praktis yang membuat Marauder mungkin ada.
+
+Luyten Packet Ladder bukan masyarakat romantis. Itu infrastruktur kustodi paket. Ia menjelaskan mengapa pesan bisa menjadi bukti, mengapa bukti bisa terlambat, dan mengapa paket jujur tidak sama dengan pertolongan. Tau Public Ledger Lane adalah tempat bukti menjadi tekanan publik setelah cahaya menyelesaikan kerja lambatnya.
+
+Ran Long Claim adalah nama yang paling dekat dengan HECTON-8. Ia bukan jalan raya, melainkan jalur klaim melintasi jarak, hukum, hak pengereman, dan biaya kargo. Pelat rute harus terbaca seperti bekas tekanan: hukum siapa yang lewat di sini, kargo siapa yang bergerak, bukti siapa yang bertahan, dan tubuh siapa yang hilang dari manifes pulang.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/id_ID. -->

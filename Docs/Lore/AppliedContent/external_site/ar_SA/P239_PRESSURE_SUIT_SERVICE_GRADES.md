@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Suit Service Grades"
+title: "درجات خدمة بدلات الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Suit Service Grades
+# درجات خدمة بدلات الضغط
 
-AR LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+درجات خدمة بدلات الضغط تبقي تقدم معدات HECTON-8 في الخيال العلمي الصلب: شهادات عمق، مواد مستهلكة، هوامش حرارية، حدود تلوث وسجلات صيانة ناقصة.
 
 ## Scanner
 
-AR LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+تصنف بطاقات البدلة عمق الخدمة وتعب الأختام واحتياطي scrubber والهامش الحراري والتعامل مع التلوث.
 
 ## Terminal
 
-AR LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-AR LOC HOLD: The suit does not make you brave. It only fails later.
+البدلة لا تجعلك شجاعا. إنها تفشل في وقت لاحق فقط.
 
 ## Field Note
 
-AR LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+البدلة الأعمق ليست درعا ملونة. إنها أوراق وقطع وصيانة قبيحة.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/ar_SA. -->

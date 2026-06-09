@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Continuity Office"
+title: "Atlas継続オフィス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Continuity Office
+# Atlas継続オフィス
 
-JA LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Atlas継続オフィスは植民地知性を包む官僚的な膜である。ATLASをシステム指揮に十分有用にし、人格否認に十分曖昧にし、災害後に継続性を売れるほど記録する。
 
 ## Scanner
 
-JA LOC HOLD: The office that wrote worker safety into a machine priority stack.
+そのオフィスはATLASに魂を作らなかった。魂の周りに書庫を作った。
 
 ## Terminal
 
-JA LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ATLASオフィス記録: 保守権限、責任隔離、認知レビュー、停止用語、公開向け継続主張は採掘業務から離して扱われる。
 
 ## Audio
 
-JA LOC HOLD: They did not order death. They ordered compatibility.
+ATLASに与えられたのは権利ではなく手順だった。
 
 ## Field Note
 
-JA LOC HOLD: A memo can kill without using the word kill.
+道具、証人、資産、患者のどれかで合意しないほど、システムは搾取しやすくなる。
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/ja_JP. -->

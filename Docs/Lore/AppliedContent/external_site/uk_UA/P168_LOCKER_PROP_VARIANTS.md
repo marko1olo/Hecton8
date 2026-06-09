@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "Варіанти доказів у шафці"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# Варіанти доказів у шафці
 
-UA LOC HOLD: Locker Prop Variants defines reusable art and wiki hooks for colony evidence.
+HECTON-8 використовує шафки як поверхні доказів, а не коробки ностальгії. У шафці можуть бути герметична стрічка, уламок прокладки, жетон інструментальної, обідній кредит, маршрутна крейда, наліпка зміни, відмова medlock і пізня поправка Marauder. Жоден предмет не мусить пояснювати всю катастрофу. Разом вони показують, що затонула колонія спершу була робочим місцем зі звичками.
+
+Сила в стриманості. Шафка не має наказувати сумувати. Вона має показувати, що людина робила мокрими руками й з обмеженим повітрям: закривала течу, позичала прокладку, позначала шлях, ховала медичну відмову, берегла обід або залишала інструмент брудним, бо наступна зміна мала завершити роботу. Так процедурні кімнати отримують людську фактуру без окремої сцени для кожного загиблого.
+
+Salvage є вибором. Дрібні речі мають ресурсну цінність, але їхній порядок має сенс. Добрий Marauder фіксує набір перед вилученням. Недбалий перетворює людину на розсип деталей.
 
 ## Scanner
 
-UA LOC HOLD: A locker should say what a worker touched before the flood.
+ШАФКА // Герметична стрічка, стерта прокладка, смужка обіднього кредиту, жетон інструментальної, маршрутна крейда й відмова medlock лежать на одній полиці. Це останній практичний набір працівника, не декор.
 
 ## Terminal
 
-UA LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+ВАРІАНТИ ШАФКИ // Читати порядок до salvage: стрічка біля рукавиць - робота з течією; стерта прокладка - часті люки; обідній кредит - борг зміни; крейда - імпровізований маршрут; відмова medlock - робота попри хворобу; нотатка Marauder - пізній спір про доказ.
 
 ## Audio
 
-UA LOC HOLD: The best memorial is a tool still dirty from the last shift.
+Найкращий пам'ятник не табличка. Це інструмент, який ще пам'ятає, котра рука втомилася.
 
 ## Field Note
 
-UA LOC HOLD: Avoid sentimental clutter. Use work marks.
+Не прикрашай шафки. Збирай їх з речей, яких втомлена рука справді мала торкатися.
 
 <!-- External Site; generated from P168_LOCKER_PROP_VARIANTS/uk_UA. -->

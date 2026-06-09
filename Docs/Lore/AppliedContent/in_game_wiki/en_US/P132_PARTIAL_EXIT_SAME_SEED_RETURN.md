@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Partial Exit: Same-Seed Return
 
-Partial Exit is a recovery window, not a reset. The player gets air, repair time and distance from the water, then returns to the same HECTON-8 with the same routes, scars and unresolved evidence. Knowledge persists as pressure, not as inherited power.
+Partial Exit is not a reset. Black Keel can lift the operator for suit repair, air, decon and ledger synchronization, then send the same body back toward the same ocean under an extended lien. The station below does not become cleaner because someone slept above it. The brine stair keeps its trap. The relay keeps its bad angle. The evidence keeps its bite. This ending gives relief without absolution: lungs full, tools patched, debt alive, and knowledge returning as pressure instead of power.
 
 ## Scanner
 
-Temporary pickup vector confirmed. Same ocean remains under the same contract.
+Temporary pickup confirmed. Same ocean remains under the same contract.
 
 ## Terminal
 
-PARTIAL EXIT NOTICE: temporary Black Keel pickup accepted; same-seed return authorized under lien extension; route warnings, custody records and open evidence packets persist; geology and world truth remain unchanged.
+PARTIAL EXIT NOTICE: temporary Black Keel pickup accepted; same-seed return authorized under lien extension; route warnings, custody records, scan memory and open evidence packets persist.
 
 ## Audio
 
-You left the pressure. The contract kept your chair warm.
+The pressure lets go. The contract keeps the chair warm.
 
 ## Field Note
 

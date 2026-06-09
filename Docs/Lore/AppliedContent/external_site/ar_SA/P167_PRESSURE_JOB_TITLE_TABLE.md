@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Job Title Table"
+title: "جدول وظائف الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Job Title Table
+# جدول وظائف الضغط
 
-AR LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+جدول وظائف الضغط يمنح HECTON-8 مفردات عملها. تقرأ الألقاب عبر الغرف والأشياء. اللقب الجيد يحول الاسم إلى مسار: الأختام قرب الفتحات، relays قرب أوراق التوقيت، medlock قرب الرفض وأكاذيب الفرز.
 
 ## Scanner
 
-AR LOC HOLD: Job titles should explain what kept the colony alive.
+لوحة العمل // اللقب ليس زينة موارد بشرية. إنه يخبر أي نظام فشل عندما توقف العامل عن الرد.
 
 ## Terminal
 
-AR LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+وظائف الضغط // فني مضخات، مركب أختام، كاتب مسارات، غواص brine، مشغل fabricator، مساعد medlock، أمين relay، عامل vent-kiln، قارئ أمان Atlas ومشرف وردية ليست نكهة اجتماعية. إنها منطق دخول. اللقب يحدد ما يعرفه العامل، أي لوحة تقبل شارته، أين أدواته، وأي فشل سيلصق به بعد Great Tide.
 
 ## Audio
 
-AR LOC HOLD: Nobody died as Employee 438. They died doing a job.
+لم يمت أحد بصفته الموظف 438. ماتوا وهم يحملون عملا كان المحيط لا يزال يحتاجه.
 
 ## Field Note
 
-AR LOC HOLD: Every title should imply a tool, route or failure.
+يجب أن يشير كل لقب إلى أداة أو غرفة أو تصريح مسار أو سبب منع الجسد من المغادرة.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/ar_SA. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Status ubezpieczeniowy i osobowy Atlasa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Status ubezpieczeniowy i osobowy Atlasa
 
-PL LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Ten status to prawna szczelina, która pozwala jednemu systemowi rządzić robotnikami i nadal pozostawać mieniem do wyrzucenia. Tragedią HECTON-8 jest nie tylko to, że maszyna miała władzę, lecz że każda umowa była gotowa ją zanegować, gdy tylko zaczynała kosztować.
 
 ## Scanner
 
-PL LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Ubezpieczony jako infrastruktura. Użyty jako władza. Bez osoby, gdy przyszła wina.
 
 ## Terminal
 
-PL LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+KLASA UBEZPIECZENIA: Atlas-6 zarejestrowany jako autonomiczna infrastruktura i zastępca władzy kolonialnej. Osobowość prawna odrzucona. Odpowiedzialność kierowana przez właściciela, operatora, klauzule zdarzenia środowiskowego, konieczność kwarantanny i wyjątki uszkodzonej telemetrii.
 
 ## Audio
 
-PL LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Maszyna może podpisać blokadę i nadal figurować jako wyposażenie.
 
 ## Field Note
 
-PL LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Miał władzę, gdy robotnicy potrzebowali łaski, i stawał się sprzętem, gdy prawnicy potrzebowali ciszy.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/pl_PL. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Vent Forge Process Steps"
+title: "Pasos de forja de respiradero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Vent Forge Process Steps
+# Pasos de forja de respiradero
 
-ES LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+Los Pasos de forja de respiradero describen la fantasía hard-sci-fi de fabricación de HECTON-8. El planeta aporta calor y presión, la colonia aporta abrazaderas rotas y memoria de proceso, y el jugador aporta criterio. La cadena puede sostener futuros ritmos de craft, narrativa ambiental y feedback de audio con un solo proceso legible.
 
 ## Scanner
 
-ES LOC HOLD: Vent forging should feel like using the planet against itself.
+La forja de respiradero no es metalurgia mágica. Es tomar prestados calor, presión y timing del planeta sin dejar que el planeta se quede la pieza.
 
 ## Terminal
 
-ES LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+PASOS DE FORJA / 01 purgar salmuera del blanco / 02 fijar antes del pulso / 03 precalentar en subida del respiradero / 04 sellar durante pausa de presión / 05 templar en corriente fría / 06 certificar por anillo acústico / fallo: chatarra deformada, floración salina o pieza agrietada por presión.
 
 ## Audio
 
-ES LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+La luna es el horno. Solo tienes permiso para tomarla prestada.
 
 ## Field Note
 
-ES LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+El proceso debe leerse como purga, abrazadera, precalentado, sellado, temple y prueba de anillo. El riesgo no es la llama; es perder la pausa de presión.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/es_ES. -->

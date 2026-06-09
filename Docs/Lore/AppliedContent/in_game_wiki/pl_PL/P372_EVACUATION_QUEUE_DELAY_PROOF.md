@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Zapis opóźnienia kolejki ewakuacji
 
-Ten dowód zmienia ewakuację w sekwencję. Bramy nie odcięła po prostu woda; została w trybie review, gdy alarmy ciśnienia weszły do zajętych korytarzy. Puste pole świadka ma znaczenie, bo system żądał potwierdzenia człowieka po tym, jak ludzie stracili dostęp do panelu.
+Ten zapis zmienia ewakuację z brakującego wyniku w uporządkowane opóźnienie. Najpierw alarm, potem przegląd, potem przekroczenie uszczelnienia, potem zbyt późne zwolnienie. Deep Reach może nazwać ewakuację niepełną; zegar kolejki pokazuje bramę trzymaną procedurą po przejściu ciśnienia za bezpieczną linię.
 
 ## Scanner
 
-Odzyskano zegar kolejki. Brama zwolnienia pozostała zamknięta po tym, jak alarmy ciśnienia przeszły z prognozy do korytarza.
+Odzyskano zegar kolejki. Brama zwolnienia pozostała w ręcznym przeglądzie po tym, jak alarmy ciśnienia dotarły do zajętych sekcji korytarza.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Brak ręcznego potwierdzenia. Przegląd kwarantanny w toku. Ciśnienie trasy przekroczyło klasę uszczelnienia przed końcem autoryzacji.
+KOLEJKA EWAK // DOK E-7. Ręczne potwierdzenie puste. Rada kwarantanny oczekuje. Klasa uszczelnienia przekroczona przed autoryzacją wyjścia. Zamek bramy odpowiadał na stan kolejki, nie na szkody od zalania.
 
 ## Audio
 
-Oni nie zawiedli przy ratowaniu wszystkich. Czekali, aż uratowanie kogokolwiek stanie się trudniejsze.
+Czekali na zgodę, gdy trasa traciła powietrze.
 
 ## Field Note
 
-Notatka Maraudera: zamknięta brama z oczekującym polem to nie wypadek. To decyzja czekająca na podpis.
+Notatka szabrownika: zamknięta brama z pustym polem potwierdzenia to decyzja czekająca na nazwisko.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pl_PL. -->

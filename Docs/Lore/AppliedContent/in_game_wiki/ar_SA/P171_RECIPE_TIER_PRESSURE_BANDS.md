@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Recipe Tier Pressure Bands"
+title: "نطاقات الضغط لدرجات الوصفات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Recipe Tier Pressure Bands
+# نطاقات الضغط لدرجات الوصفات
 
-AR LOC HOLD: Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
+نطاقات الضغط لدرجات الوصفات هي نحو التصنيع في HECTON-8. لم تقسّم المستعمرة الوصفات بحسب الراحة، بل بحسب ما سيفعله الضغط بالقطعة بعد أن يترك اللاعب طاولة العمل. Tier 0 يبقي اللاعب حيا في المياه الضحلة برقع وأختام يدوية وخردة تفشل بصدق. Tier 1 يخص الإصلاحات المصنفة: قطع غرفة المضخات، مخزون صناعي قديم، وعلامات شهادة تثبت أن الجسم صُمم للعمل تحت حمل. Tier 2 يدخل عتاد الضغط، حيث يقرر الغسل بالمحلول الملحي والتقسية عند الفتحة والإثبات الصوتي إن كان المكون آمنا أم مجرد شيء يشبه مكونا. Tier 3 يخص الصعود وواجهات Atlas والسلطة السحيقة: تحتاج الوصفة إلى مواد، لكنها تحتاج أيضا إلى حالة مستقبل، وحيازة قانونية، وإثبات احتواء. هكذا يبقى التصنيع مربوطا بمنطق الطريق. السؤال ليس فقط ماذا تملك. بل أين كان، وأي ضغط ينجو منه، ومن سيقبل النتيجة.
 
 ## Scanner
 
-AR LOC HOLD: Recipes should be depth arguments, not shopping lists.
+وصفة HECTON-8 حجة عمق، لا قائمة مشتريات. لا تُحسب القطعة إلا إذا نجت من نطاق الضغط الذي تدعيه.
 
 ## Terminal
 
-AR LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+نطاقات الوصفات / T0 رقعة نجاة: خردة ضحلة، إغلاق يدوي، بلا حيازة / T1 إصلاح مصنف: قطع صناعية من الرف، شهادة غرفة المضخات / T2 عتاد ضغط: غسل بمحلول ملحي، تقسية عند الفتحة، إثبات صوتي / T3 صعود أو Atlas: مصدر سحيق، مستقبل قانوني، إيصال احتواء.
 
 ## Audio
 
-AR LOC HOLD: A recipe is a depth permission form with bolts.
+الوصفة استمارة إذن عمق لها مسامير.
 
 ## Field Note
 
-AR LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+يجب أن تطابق درجة الوصفة تصنيف الضغط وكلفة الطريق وخطر الحيازة. مسمار رخيص في النطاق الخطأ ليس رخيصا؛ إنه تسريب مؤجل.
 
 <!-- In-Game Wiki; generated from P171_RECIPE_TIER_PRESSURE_BANDS/ar_SA. -->

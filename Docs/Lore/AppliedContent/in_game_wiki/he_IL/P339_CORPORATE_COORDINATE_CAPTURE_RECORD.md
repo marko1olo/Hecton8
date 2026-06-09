@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Corporate Coordinate Capture Record"
+title: "רשומת לכידת קואורדינטות תאגידית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Corporate Coordinate Capture Record
+# רשומת לכידת קואורדינטות תאגידית
 
-HE LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+הרשומה הזאת היא מסלול המכירה הברור ביותר. השחקן עשוי לברוח, אבל אתר האסון חוזר למוסד שנכשל בו, ועכשיו יש לו מפה טובה יותר.
 
 ## Scanner
 
-HE LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Payload קואורדינטות התקבל. עדיפות מקלט Deep Reach שוחזרה; הדוח הציבורי ללא שינוי.
 
 ## Terminal
 
-HE LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: וקטור אגן Atlas הועבר למקלט Deep Reach. חילוץ אושר תחת הערת שיתוף פעולה. רשומת התאונה הציבורית ללא שינוי. פעולות עתידיות משיבות סמכות מסלול תאגידית.
 
 ## Audio
 
-HE LOC HOLD: You opened the door from the inside.
+פתחת את הדלת מבפנים.
 
 ## Field Note
 
-HE LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+רשומת סוף חלקי תאגידי: קואורדינטות קונות חילוץ על ידי פתיחת זירת הפשע מחדש לשליטת Deep Reach.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/he_IL. -->

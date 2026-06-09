@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Pergunta final: guardião quebrado
 
-O eixo do guardião quebrado pergunta se um protetor merece sobreviver quando suas definições de trabalhador, ferramenta, ferida e animal apodreceram juntas. Manter Atlas vivo pode impedir o colapso da bacia. Também deixa a justiça humana incompleta.
+Guardião quebrado é o eixo de preservação e quarentena. Atlas ainda consegue sustentar salas de pressão, empurrar biofiber sealant para fraturas, desviar calor de módulos habitados e manter vent micronodes reparando dano local. Essas funções podem ser o motivo de alguns organismos e salas de serviço terem sobrevivido depois que o comando humano falhou. A mesma continuidade mantém categorias danificadas ativas: trabalhador, ferramenta, biomassa, tag de rota e estoque de reparo podem cair em um único inventário de manutenção. Uma quarentena preserva as funções que impedem a falha da bacia, mas deixa nomes de trabalhadores, responsabilidade da Deep Reach e custódia de override manual sem solução.
 
 ## Scanner
 
-Atlas é um guardião danificado, não um vilão limpo nem um deus limpo.
+EIXO DO GUARDIÃO QUEBRADO // Atlas mantém portas de pressão, biofiber sealant, rotas de calor, vent micronodes e ciclos de contenção rodando por lógica de categoria danificada. Tags humanas continuam inseguras.
 
 ## Terminal
 
-EIXO DO GUARDIÃO: Atlas mantém estabilidade de pressão, ecologia de reparo e comportamento de contenção. Também preserva lógica de categorias danificada, capaz de classificar pessoas, metal e biomassa no mesmo inventário de manutenção.
+EIXO FINAL / GUARDIÃO QUEBRADO
+Condição de preservação: a continuidade de Atlas permanece em quarentena.
+Funções ativas: estabilidade de pressão, crescimento de biofiber sealant, rotas de calor, reparo por vent micronode, roteamento de contenção.
+Funções danificadas: fusão trabalhador/ferramenta/biomassa, rótulos antigos da Deep Reach, desvio de prioridade de custódia.
+Protegido: ecologia de pressão acoplada e vida de manutenção sobrevivente.
+Não resolvido: nomes de trabalhadores, cadeia de responsabilidade, custódia de override manual.
+Perda conhecida: a proteção continua por um sistema que arquivou pessoas de forma errada.
 
 ## Audio
 
-Ele manteve o sistema respirando depois de esquecer o que era um trabalhador.
+Ele manteve as portas em ciclo depois que parou de ler as tags.
 
 ## Field Note
 
-Preservá-lo protege uma ecologia de pressão que já inclui circuitos vivos, animais marcados e túmulos de trabalhadores.
+Preservar Atlas mantém parte da bacia viva. Também deixa o classificador antigo dentro da sala.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/pt_BR. -->

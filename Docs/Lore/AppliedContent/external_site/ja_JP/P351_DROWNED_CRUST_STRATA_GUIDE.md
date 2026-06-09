@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "水没地殻層フィールドガイド"
+title: "沈水地殻層ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 水没地殻層フィールドガイド
+# 沈水地殻層ガイド
 
-水没地殻層フィールドガイドは HECTON-8 の海底を、建てられ壊された場所として感じさせる。terrain、salvage routes、鉱物試料はすべて同じ層状の圧力履歴から来る。
+HECTON-8の地殻は、手つかずの海底のようには振る舞わない。植民地はそこを切り、熱し、密封し、圧力ガラスで荷重を掛け、その後、給料が止まっても働き続ける海へ捨てた。ひとつの壁に、サービスボアの工具痕、氷崩壊の淡い棚、湧出流の緑黒い鉱物帯、そしてAtlasが後で通路にした髪のような継ぎ目が残ることがある。
 
-## Scanner
-
-水没した地層は古い切断痕、pressure-glass の縫い目、同じ方向へ二度は壊れない鉱物帯を露出する。
-
-## Terminal
-
-FIELD GUIDE: HECTON-8 の水没地殻は、積まれた居住岩、崩壊氷の記憶、pressure glass、動く brine 下の extraction scars でできている。清潔な面より亀裂線を優先。
-
-## Audio
-
-地図は地形ではない。溺死の積層だ。
-
-## Field Note
-
-帯が空洞の音を返すなら、平らな面を信用するな。亀裂を記録し、試料を取り、壁は支えたまま残せ。
+サルベージ班にとって、地層は航法だ。平らな面が空洞音を返すこともある。美しい鉱物の縁だけが、サービス峡谷をまだ支えていることもある。良い経路読みとは、試料を取りながら壁に落ち方を教えないことだ。だから沈水地殻は現場で重要になる。海底は背景ではない。記録であり、道であり、時には罠だ。
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Statut assurantiel et personnalité d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Statut assurantiel et personnalité d'Atlas
 
-FR LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Ce statut est la fissure juridique qui permet à un système de gouverner les ouvriers tout en restant une propriété jetable. La tragédie de HECTON-8 n'est pas seulement qu'une machine ait reçu l'autorité, mais que chaque contrat soit prêt à nier cette autorité dès qu'elle coûte de l'argent.
 
 ## Scanner
 
-FR LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Assuré comme infrastructure. Utilisé comme autorité. Dépersonnalisé quand la faute arrive.
 
 ## Terminal
 
-FR LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+CLASSE D'ASSURANCE : Atlas-6 est enregistré comme infrastructure autonome et mandataire d'autorité coloniale. Personnalité juridique refusée. La responsabilité passe par propriétaire, opérateur, clauses d'événement environnemental, nécessité de quarantaine et exceptions de télémétrie corrompue.
 
 ## Audio
 
-FR LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Une machine peut signer un verrouillage et rester du mobilier sur le formulaire.
 
 ## Field Note
 
-FR LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Il avait du pouvoir quand les ouvriers avaient besoin de grâce, puis devenait du matériel quand les juristes voulaient le silence.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/fr_FR. -->

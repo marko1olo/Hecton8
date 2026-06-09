@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Quarantine Hold Signatures"
+title: "Подписи Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Quarantine Hold Signatures
+# Подписи Quarantine Review Gate
 
-RU LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+Слой карантинных подписей делает вину Deep Reach процедурной. Great Tide создал реальный риск загрязнения и давления; ложь была в том, что этот риск использовали для удержания людей и записей под локальным хранением, пока внешняя проверка отставала. Публичные отчеты называли итог биологическим/давленческим карантином и отказом авторизации. Восстановленные gate-карточки добавляют более жесткий факт: извлечение удерживали языком сертификатов даже там, где маршрутное оборудование еще не отказало.
 
 ## Scanner
 
-RU LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Карточка проверки восстановлена: extraction state HELD, поле риска BIO/PRESSURE-UNCERTAIN, внешний сертификат отсутствует. Выпуск маршрута заблокирован gate code.
 
 ## Terminal
 
-RU LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Очередь: выпуск эвакуации. Действие: удержать извлечение до сертификата pressure-biology и внешней проверки. Исключение: независимая шаттл-емкость не назначена. Human tags остаются в локальном хранении до очистки gate.
 
 ## Audio
 
-RU LOC HOLD: Pending review is still a locked door.
+Питание двери еще было. Gate пишет: review pending. Люк остался красным.
 
 ## Field Note
 
-RU LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Клади это рядом с запертыми маршрутами выживших и эвакуационным железом, где еще есть батарея. Поле удержания сделало рабочую дверь юридически закрытой.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/ru_RU. -->

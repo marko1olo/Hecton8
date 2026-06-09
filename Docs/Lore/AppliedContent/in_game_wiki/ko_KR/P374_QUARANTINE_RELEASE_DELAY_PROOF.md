@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 격리 해제 보류
 
-보류 기록은 격리를 악으로 만들지 않는다. 시간을 보이게 한다. Deep Reach는 불확실성을 명명하고, 해제를 늦추고, 보험 위치를 보존하고, 경로가 죽을 때까지 작업자를 구역 안에 둘 수 있었다.
+HECTON-8에서 오염은 실제다. 압력 노출, 염수 화학, Atlas 호환 성장은 부주의한 구조를 치명적으로 만들 수 있다. 보류 플레이트는 그 실제 위험이 어떻게 엄폐가 되었는지 보여 준다. Deep Reach는 출구 경로가 잠긴 뒤 격리를 발동하고, 회수 가능한 자산 질량을 받아들이며, 노동자 해제를 선 아래에 두었다.
 
 ## Scanner
 
-격리 보류판. 출구 경로가 이미 잠긴 뒤에 보호라는 말이 나타난다.
+보류 플레이트 회수. 오염 검토는 출구 경로가 이미 잠긴 뒤 시작되며 노동자 해제는 자산 회수 아래에 남아 있다.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. review 전까지 보류. recovery queue는 작업자 해제보다 asset mass를 먼저 수락. insurance ping 활성.
+해제 게이트 // 생체 압력 불확실. 위원회 확인까지 보류. 자산 질량은 노동자 해제 전에 회수 대기열로 수락. 보험 ping 활성.
 
 ## Audio
 
-격리는 몸을 살릴 수 있다. 몸이 서류가 될 때까지 기다리게 할 수도 있다.
+격리는 누군가를 구하기 전에 회사의 시간을 샀다.
 
 ## Field Note
 
-Marauder 메모: protection이라는 단어가 보호를 증명하지 않는다. 시계를 확인하라.
+약탈자 메모: 보호는 단어가 아니라 시계다. 언제 시작되는지 확인하라.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ko_KR. -->

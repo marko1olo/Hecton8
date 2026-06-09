@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Simbiosis de arrecife cable"
+title: "Simbiosis de arrecife de cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Simbiosis de arrecife cable
+# Simbiosis de arrecife de cable
 
-Los arrecifes cable son aviso de media profundidad: la vida usa industria como hueso, sombra, rompe-corriente y línea nutritiva.
+Los arrecifes de cable se forman donde las zanjas de servicio de media profundidad dan forma estable al crecimiento vivo: troncos de energía, pares de relé, anillos de abrazadera y bandejas de cable antiguas. Algunas matas reducen la abrasión y calman la corriente alrededor de una línea. Cierta fauna pastadora mantiene la baba lejos de conductores expuestos. La misma manga también puede ocultar aislante agrietado, atrapar calor o llevar tráfico de drones a una ruta que el buzo había marcado como tranquila.
+
+Trata el arrecife de cable como infraestructura activa hasta que el escaneo demuestre lo contrario. Una manga verde puede ser lo único que mantiene seco un relé; también puede cubrir el fallo que se romperá bajo carga. Comprueba continuidad de señal, color del aislante, orden de abrazaderas y movimiento de drones antes de cortar. Es el puente entre la primera cicatriz de reparación y la fauna reparada posterior: el crecimiento vivo sigue la corriente antes de que Atlas empiece a enrutar reparación por cuerpos vivos.
 
 ## Scanner
 
-La flora crece sobre troncos de energía y líneas de señal. El arrecife usa el cableado como esqueleto.
+La mata de cable-raíz agarra el tronco de energía P63 en tres anillos de abrazadera. La señal aún pasa bajo la manga verde. Falla de aislante visible en el borde inferior. Peligro: tráfico de drones y pastadores sigue la corriente viva.
 
 ## Terminal
 
-Mantenimiento: las mantas raíz-cable reducen abrasión y preservan señal, pero atraen drones y fauna pastadora.
+NOTA DE ZANJA DE SERVICIO
+Línea: tronco de energía P63 / par de relé C
+Estado: manga biológica que reduce abrasión
+Fallo: aislante naranja expuesto bajo la mata inferior
+Tráfico: pastadores y drones de mantenimiento cerca de corriente viva
+Acción: escanear continuidad antes de cortar crecimiento
 
 ## Audio
 
-Un arrecife vivo aprendió la forma de un pasillo de servicio.
+El arrecife no es decoración. Mantiene seco ese relé, y los drones saben que la corriente está viva.
 
 ## Field Note
 
-La primera fusión es útil antes de ser horrible.
+No arranques el crecimiento verde solo porque parece incorrecto. Si mantiene seca la funda, marca el fallo y rodea la ruta.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/es_ES. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Escape Recipe Cost Boundary
 
-Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake, and payload custody. The recipe table carries exact costs; the lore carries why each cost has teeth.
 
 ## Scanner
 
-Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Escape recipe row binds component class, pressure tier, route proof, and authority state.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: qualified costs must name relay, seal, guidance, ascent energy, legal handshake, payload authority, and receiver risk. The way up has parts; the parts have owners.
 
 ## Audio
 

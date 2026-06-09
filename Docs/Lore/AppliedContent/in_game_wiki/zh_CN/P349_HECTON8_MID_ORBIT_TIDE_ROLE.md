@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 中轨潮汐角色"
+title: "HECTON-8中轨潮汐角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 中轨潮汐角色
+# HECTON-8中轨潮汐角色
 
-HECTON-8 是 Aegir 轨道数学变成私人问题的卫星。它离最坏内侧辐射足够远，适合长期作业；又足够近，让潮汐持续推动海洋；也足够有价值，让 Deep Reach 在压力下建造。同一位置让救援变脏。潮汐相位、carrier 质量、风暴噪声和法律保管在玩家头顶相遇。
+HECTON-8是Aegir的轨道数学变成私人压力的月亮。它离最糟的内侧辐射足够远，可以维持长期作业；又离潮汐足够近，让海洋不停运动；也足够值钱，值得Deep Reach在压力下建造。同一位置也让救援变脏。潮汐相位、载体质量、风暴噪声和法律托管在潜水服上方汇成一层移动天花板。
 
 ## Scanner
 
@@ -35,6 +35,6 @@ HECTON-8 潮汐记录。中轨让海洋足以开采，也暴烈到足以埋掉�
 
 ## Field Note
 
-HECTON-8 付钱，因为压力、潮汐和责任在那里重叠。
+HECTON-8会付钱，是因为压力、潮汐和责任重叠在同一根水柱里。
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/zh_CN. -->

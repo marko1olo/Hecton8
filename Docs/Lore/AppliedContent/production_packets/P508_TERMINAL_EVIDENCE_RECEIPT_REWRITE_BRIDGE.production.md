@@ -42,7 +42,7 @@ Runtime layer: Narrative
 
 Surface targets: terminal note, PDA/codex note, public archive article, wiki procedure note, scanner receipt tag, evidence caption
 
-Spoiler level: receipt conflict visible at level 1; exact rewrite order and final consequence held until later proof gates.
+Spoiler level: receipt conflict visible at level 1; exact rewrite order and final consequence held until later evidence receipts contradict it.
 
 Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
@@ -78,129 +78,117 @@ Localization status: English authority row; non-English draft rows require futur
 
 **Website article seed:**
 
-Terminal receipts are dangerous because they look smaller than the decisions behind them. A receipt may show only a header, a clerk mark, a timestamp, and a packet hash. That is enough to move evidence between offices. It is also enough to hide a route if the header is rewritten after the object has already traveled.
+Terminal receipts look small, but they can move evidence between offices. A receipt may show only a header, clerk mark, relay timestamp, drawer number, and packet hash. That is enough to file a packet under a new public title. It is also enough to hide the old route if the header changes after the object has already traveled.
 
-Public archive editors mark these receipts as rewrite conflicts when the header and body disagree. The header may say "claimant-safe summary." The body may still carry the older relay timestamp, drawer number, witness hash, or custody mark. Deep Reach procedure treats the rewrite as a safer public title. Marauder field notes treat it as pressure. Neither reading is final until the object, custody order, and witness route are compared.
+Public archive editors mark a receipt as a rewrite conflict when header and body disagree. The header may say claimant-safe summary. The body may still carry the older relay timestamp, drawer number, witness hash, custody stamp, or clerk override. Deep Reach calls the rewrite harm reduction. Marauder notes treat it as pressure until object proof, custody order, and witness route are compared.
 
 **Wiki article seed:**
 
-Terminal evidence receipt rewrite: a condition where a terminal receipt header, title, or category was changed while older body fields remained. Common surviving fields include relay timestamp, packet hash, drawer number, claimant-safe line, witness hash, and clerk override mark. A rewrite is evidence of handling conflict, not proof of final custody by itself.
+Terminal evidence receipt rewrite: a condition where a terminal receipt header, title, or category changed while older body fields remained. Common surviving fields: relay timestamp, packet hash, drawer number, claimant-safe line, witness hash, custody stamp, clerk override. A rewrite proves handling conflict, not final custody by itself.
 
-**PDA / codex entry:**
+**PDA/codex seed:**
 
-Terminal note: if the receipt header is cleaner than the body, keep the body. Headers answer the office that wanted to file the packet. Hashes, timestamps, drawer numbers, and custody stamps answer where the packet passed before it became safe to read.
+Terminal rule: if the header is cleaner than the body, keep the body. A header says how an office wanted the packet filed. Hashes, relay times, drawer numbers, witness lines, and custody stamps say where the packet moved before that title became safe.
 
-**Scanner entry:**
+**Scanner seed:**
 
-Receipt rewrite signature detected. Header and body fields disagree. Confidence: partial. Required next evidence: original hash, relay timestamp, custody stamp, or claimant-safe line.
+RECEIPT REWRITE // Header and body fields disagree. Confidence: partial. Required next evidence: original packet hash, relay timestamp, drawer number, custody stamp, claimant-safe line, or clerk override.
 
-**Terminal note:**
+**Terminal seed:**
 
 TERMINAL RECEIPT REWRITE
+Header: changed.
+Body fields: retained.
+Do not overwrite packet hash, relay time, drawer number, witness line, or custody stamp.
+Action: preserve body until custody route is resolved.
 
-Header changed.
-
-Body fields retained.
-
-Do not overwrite packet hash, relay time, drawer number, or witness line.
-
-Action: preserve receipt body until custody route is resolved.
-
-**Evidence caption:**
+**Evidence caption seed:**
 
 Rewritten terminal receipt. The public header changed, but the body still carries older route fields. This proves handling conflict, not final custody.
 
-**Spoiler policy:**
+**Spoiler policy seed:**
 
-Receipt rewrite language may appear early. Exact rewrite authority, final receiver, protected claimant, Atlas consequence, and legal result stay masked until later proof gates.
-
-**String-pool key plan:**
-
-Use hashed LocIDs in the Narrative layer. Keep terminal receipt text compact, procedural, and route-focused. Longer article/wiki text stays tied to this packet ID. Runtime must not parse this Markdown.
-
-## Future Integration Notes
-
-Proposed LocID rows:
-
-| LocID | Layer | Category | Purpose |
-|---|---|---|---|
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_TITLE | Narrative | codex_title | Canonical title string |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_WEBSITE | Narrative | website_article | Public article seed |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_WIKI | Narrative | wiki_article | Wiki note |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_PDA | Narrative | pda_codex | PDA note |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner receipt tag |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal receipt note |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_CAPTION | Narrative | evidence_caption | Evidence caption |
-| LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_SPOILER | Narrative | spoiler_policy | Spoiler policy |
-
-P498 relation: claimant language audits can expose whether the rewrite protected a person or an office.
-
-P500 relation: receiver ambiguity often starts when terminal headers and body fields diverge.
-
-P506 relation: proof order says the old receipt body must be read before the clean header.
-
-P507 relation: wiki relation edges can show receipt conflict without exposing the final rewrite authority.
-
-Runtime boundary: future runtime systems must consume baked string-pool rows or binary source data only, never this Markdown.
+Receipt rewrite language may appear early. Exact rewrite authority, final receiver, protected claimant, Atlas consequence, legal result, and ending branch stay hidden until later evidence records open.
 
 ## Locale Rows
 
+Live locale text is source-owned by:
+
+`Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json::P508_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE.localized`
+
+Do not maintain duplicate translated prose in this production brief. Edit the packet JSON, then regenerate or resync this brief.
+
 ### en_US
 Status: source_authority
-Text: A rewritten terminal receipt is not a clean receipt. If the header changed but packet hash, relay time, drawer number, witness line, or custody stamp survived in the body, keep the body fields. The header says how an office wanted the packet filed. The body says where the packet moved before that title became safe.
+Title: Terminal Evidence Receipt Rewrite
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_en_US_PRIMARY`
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: إيصال الطرفية المعاد كتابته ليس إيصالا نظيفا. اذا تغير العنوان وبقي هاش الحزمة او وقت الترحيل او رقم الدرج او سطر الشاهد او ختم الحيازة في المتن، فاحفظ حقول المتن. العنوان يقول كيف اراد المكتب حفظ الحزمة. المتن يقول اين تحركت قبل ان يصبح ذلك العنوان آمنا.
+Title: إعادة كتابة إيصال دليل طرفي
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ar_SA_PRIMARY`
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Ein umgeschriebener Terminalbeleg ist kein sauberer Beleg. Wenn der Header geaendert wurde, aber Pakethash, Relaiszeit, Schubladennummer, Zeugenzeile oder Verwahrungsstempel im Koerper blieben, behalte die Koerperfelder. Der Header sagt, wie ein Amt das Paket ablegen wollte. Der Koerper sagt, wohin es sich vorher bewegte.
+Title: Umschrift eines Terminal-Beweisbelegs
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_de_DE_PRIMARY`
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Un recibo de terminal reescrito no es un recibo limpio. Si cambio el encabezado pero quedaron hash del paquete, hora de relevo, numero de cajon, linea de testigo o sello de custodia en el cuerpo, conserva esos campos. El encabezado dice como una oficina quiso archivar el paquete. El cuerpo dice por donde se movio antes.
+Title: Reescritura de recibo terminal de evidencia
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_es_ES_PRIMARY`
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Un recu terminal reecrit n'est pas un recu propre. Si l'en-tete change mais que hash de paquet, heure de relais, numero de tiroir, ligne temoin ou cachet de garde restent dans le corps, gardez ces champs. L'en-tete dit comment l'office voulait classer le paquet. Le corps dit ou il est passe avant ce titre.
+Title: Réécriture de reçu terminal de preuve
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_fr_FR_PRIMARY`
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: קבלת מסוף ששוכתבה אינה קבלה נקייה. אם הכותרת השתנתה אבל גיבוב החבילה, זמן הממסר, מספר המגירה, שורת העד או חותמת המשמורת שרדו בגוף, שמרו את שדות הגוף. הכותרת אומרת איך משרד רצה לתייק את החבילה. הגוף אומר איפה היא עברה לפני שהכותרת נעשתה בטוחה.
+Title: שכתוב קבלת ראיה במסוף
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_he_IL_PRIMARY`
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Tanda terima terminal yang ditulis ulang bukan tanda terima bersih. Jika header berubah tetapi hash paket, waktu relai, nomor laci, baris saksi, atau cap kustodi bertahan di isi, simpan bidang isi. Header mengatakan bagaimana kantor ingin mengarsipkan paket. Isi mengatakan ke mana paket bergerak sebelum judul itu aman.
+Title: Penulisan Ulang Resi Bukti Terminal
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_id_ID_PRIMARY`
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: 書き換えられた端末受領票は、きれいな受領票ではない。見出しが変わっても、パケットハッシュ、中継時刻、引き出し番号、証人行、保管印が本文に残るなら本文を残す。見出しは事務所がどう保管したかったかを示す。本文はその安全な題名の前にパケットがどこを通ったかを示す。
+Title: 端末証拠レシート書き換え
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ja_JP_PRIMARY`
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: 다시 쓰인 터미널 영수증은 깨끗한 영수증이 아니다. 헤더가 바뀌었어도 패킷 해시, 중계 시각, 서랍 번호, 증인 줄, 보관 도장이 본문에 남아 있으면 본문 필드를 보존한다. 헤더는 사무실이 패킷을 어떻게 분류하고 싶었는지 말한다. 본문은 그 안전한 제목 전 이동 경로를 말한다.
+Title: 터미널 증거 영수증 재작성
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ko_KR_PRIMARY`
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Een herschreven terminalbon is geen schone bon. Als de header veranderde maar pakkethash, relaytijd, ladenummer, getuigenregel of bewaarstempel in de body bleven, bewaar de bodyvelden. De header zegt hoe een kantoor het pakket wilde indienen. De body zegt waar het pakket bewoog voordat die titel veilig werd.
+Title: Herschreven terminalbewijsbon
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_nl_NL_PRIMARY`
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Przepisany paragon terminala nie jest czystym paragonem. Jesli naglowek sie zmienil, ale hash pakietu, czas przekazu, numer szuflady, linia swiadka albo pieczec depozytu zostaly w tresci, zachowaj pola tresci. Naglowek mowi, jak biuro chcialo zlozyc pakiet. Tresc mowi, gdzie pakiet przeszedl przed bezpiecznym tytulem.
+Title: Przepisany paragon dowodowy terminala
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_pl_PL_PRIMARY`
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Um recibo de terminal reescrito nao e um recibo limpo. Se o cabecalho mudou, mas hash do pacote, horario de rele, numero de gaveta, linha de testemunha ou carimbo de custodia ficaram no corpo, preserve esses campos. O cabecalho diz como um escritorio quis arquivar o pacote. O corpo diz por onde ele passou antes.
+Title: Reescrita de recibo terminal de evidência
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_pt_BR_PRIMARY`
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Переписанная терминальная квитанция не является чистой квитанцией. Если заголовок изменили, но хэш пакета, время ретрансляции, номер ящика, строка свидетеля или печать хранения остались в теле, сохрани поля тела. Заголовок говорит, как офис хотел подшить пакет. Тело говорит, где пакет прошел до безопасного названия.
+Title: Перезапись терминальной квитанции улики
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_ru_RU_PRIMARY`
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Переписана термінальна квитанція не є чистою квитанцією. Якщо заголовок змінили, але хеш пакета, час ретрансляції, номер шухляди, рядок свідка або печатка зберігання лишилися в тілі, збережи поля тіла. Заголовок каже, як офіс хотів підшити пакет. Тіло каже, де пакет пройшов до безпечної назви.
+Title: Перезапис термінальної квитанції доказу
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_uk_UA_PRIMARY`
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: 被改写的终端收据不是干净收据。如果标题改变，但包哈希、中继时间、抽屉编号、见证行或保管印仍在正文中，就保留正文字段。标题说明办公室想怎样归档这个包。正文说明在这个安全标题出现前，包曾经经过哪里。
+Title: 终端证据收据改写
+String pool key: `LORE_EVIDENCE_TERMINAL_EVIDENCE_RECEIPT_REWRITE_BRIDGE_zh_CN_PRIMARY`

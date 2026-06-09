@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "部分撤离：同一seed返回"
+title: "部分撤离：同seed返回"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 部分撤离：同一seed返回
+# 部分撤离：同seed返回
 
-部分撤离是恢复窗口，不是重置。玩家获得空气、修理时间和离开水面的距离，然后返回同一个HECTON-8，面对同样的路线、伤痕和未解决证据。知识以压力的形式保留，而不是继承力量。
+部分撤离不是重置。Black Keel可以把操作者带上去修补潜服、呼吸、去污、同步账册，然后在延期lien下把同一具身体送回同一片海。有人在上方睡了一觉，并不会让下方站点变干净。Brine Stair仍保留陷阱，relay仍保留坏角度，证据仍有咬人的牙。这一结局提供的是喘息，不是赦免：装满的肺、修好的工具、活着的债务，以及作为压力而非权力返回的知识。
 
 ## Scanner
 
-临时接回向量确认。同一片海仍在同一份合同之下。
+临时pickup确认。同一片海仍在同一合同之下。
 
 ## Terminal
 
-部分撤离通知：Black Keel临时接回已接受；在lien延长下授权返回同一seed；路线警告、custody记录和未关闭证据包保留；地质与世界真相不变。
+部分撤离通知：Black Keel临时pickup已接受；在lien延期下授权同seed返回；路线警告、custody记录、扫描记忆和开放证据包保留。
 
 ## Audio
 
-你离开了压力。合同替你留着座位。
+压力松手了。合同把椅子捂热。
 
 ## Field Note
 
-如果返回槽位已经计费，轨道上的一口气就不是自由。
+返回槽位已经入账时，轨道上的一口气不是自由。
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/zh_CN. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Payload-Protokoll Öffentliches Hauptbuch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Public Ledger Receiver Protocol
+# Payload-Protokoll Öffentliches Hauptbuch
 
-DE LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+Die Public-Ledger-Lane ist der am wenigsten private und am wenigsten gehorsame Empfänger. Sie verweigert Koordinatenverkauf, direkten Recovery-Anspruch und sauberen Auszahlungsbeleg. Sie akzeptiert ein Ereignispaket ohne Routenkarte: Attestierungs-Hashes, Haftungskette, Atlas-Gewichtungsdigest und Empfängerzeitstempel.
 
-## Scanner
-
-DE LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-DE LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-DE LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-DE LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Die Verzögerung zählt. Das Paket ruft keine sofortige Rettung und kein sofortiges Urteil. Es reist durch eine langsame Lane, die einstweilige Verfügungen, Empfängerstreit und Verwahrungsdruck überstehen soll. Nach Annahme kann der Träger es nicht zurückholen. Dieser Kontrollverlust ist der Preis dafür, dass die Beweise schwerer zu kaufen sind.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/de_DE. -->

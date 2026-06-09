@@ -1,0 +1,46 @@
+---
+packet_id: P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+release_set_id: RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+article_id: applied_lore.transcript_damage_band_offset_field_article
+unlock_id: unlock.transcript_damage_band_offset_field_article
+poi_tags: poi.transcript_damage_band;poi.hydrophone_log_strip
+biome_tags: biome.drowned_colony;biome.pressure_base
+locale: ja_JP
+surface: in_game_wiki
+source_voice: PDA Forensic Object Article
+spoiler_tier: 0
+title: "転写損傷帯のずれ"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# 転写損傷帯のずれ
+
+転写損傷帯は、音声が失われた場所を示すためのものだ。正しい帯は、レコーダー、カセット端、packet notaryのいずれかに対応する物理的な痕を持つ。悪い帯は浮く。きれいな音節を覆い、帯の擦過を外し、損傷物が存在しないクロックラダーの刻みの間に落ちる。画面上では小さい。保管記録では大きい。
+
+圧力室レコーダーでは、帯は音だけでなく物にも合わなければならない。ハイドロフォン帯にはヘッドが引きずった白い擦過が出る。カセット歯は同じ圧力スパイクの横で一歯飛ぶ。インク車は欠落の前に乾いて切れるか、後で濡れてにじむ。packet notaryは名前や座標を隠せるが、媒体の傷は動かせない。黒い帯が1.8秒遅れるなら、きれいな転写は汚れた物から後で作られた。
+
+Deep Reachの書式なら、この問題を「音声劣化」と呼べる。その言葉は安い。実際のずれには順番がある。室内事象、媒体損傷、コピー処理、notaryマスク、公開転写。公開された帯がマスクには従い、媒体には従わないなら、記録が存在した後でソースが扱われたことになる。route permission stampだけを隠し、機械痕が読めるなら、欠落は偶然ではなく手続きだ。
+
+現場では、言葉を信じる前に帯を比べる。損傷帯がカセット傷と合うなら転写を証拠列に残す。傷より遅れるなら後のコピーとして扱う。route holdと人物を結ぶ一行だけを隠すなら、きれいな文章より先に物理媒体を探す。
+
+## Scanner
+
+転写帯ずれ // 黒い損傷帯がカセットの擦過より1.8秒遅れ、packet notaryのマスクより前にある。物理的な帯損傷と位置が合っていない。
+
+## Terminal
+
+転写QA記録 // 損傷帯をカセット傷、クロックラダー、ハイドロフォン欠落、packet notary印と照合。帯が物理マークの間で浮く場合、転写を主証拠にしない。
+
+## Audio
+
+傷が先です。黒塗りはその後に動いています。
+
+## Field Note
+
+黒い帯が媒体の傷より遅いなら、転写を引用する前に媒体を袋に入れろ。
+
+<!-- In-Game Wiki; generated from P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE/ja_JP. -->

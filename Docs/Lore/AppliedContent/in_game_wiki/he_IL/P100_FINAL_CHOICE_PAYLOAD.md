@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "מטען הבחירה הסופית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# מטען הבחירה הסופית
 
-HE LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+ההחלטה האחרונה אינה מסך ניצחון נקי. זו בעיית משלוח עם משקל מוסרי. ה-Marauder מחליט מה עולה מן הירח: קואורדינטות, דגימות, שמות עובדים, גישת Atlas, הוראות הסגר, ראיה ציבורית או שום דבר שימושי. כל payload יוצר בעלים אחר לתוצאות. Deep Reach יכולה להשיב שליטה. החוק הציבורי יכול לקבל פצע שסוף סוף ניתן לראות. רציפות Atlas יכולה להיחתך או להיכלא. אקולוגיית האוקיינוס-מכונה יכולה להיות מוגנת, להימכר או להישאר מחוץ לשפה האנושית. הסוף אינו מי בורח בידיים נקיות. הוא מי מקבל מספיק אמת כדי לזוז ראשון.
 
 ## Scanner
 
-HE LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD סופי // קואורדינטות, דגימות, שמות, גישת Atlas, פקודות הסגר, ראיה ציבורית. מה שעוזב את HECTON-8 קובע מי יכול לפעול אחר כך.
 
 ## Terminal
 
-HE LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+מטריצת PAYLOAD: למכור קואורדינטות והוכחת XO; לנתק רציפות Atlas; לשמר או להסגיר את אקולוגיית האוקיינוס-מכונה; לפרסם ראיות ל-ledger הציבורי; להחזיק את ה-payload ולהשאיר את Deep Reach עיוורת.
 
 ## Audio
 
-HE LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+אין בעלות נקייה על זירת פשע שלמדה לנשום.
 
 ## Field Note
 
-HE LOC HOLD: The best ending should be defensible, not clean.
+הסוף הטוב ביותר צריך להיות ניתן להגנה, לא נקי.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/he_IL. -->

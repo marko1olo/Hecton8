@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "トリアージ台帳小道具変種"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# トリアージ台帳小道具変種
 
-JP LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+トリアージ台帳小道具変種は、医療証拠をプロセス証拠として定義する。HECTON-8 は台帳を使い、負傷、圧力障害、ルート拒否、装備状態、証人欠落を結びつける。これにより恐怖はシステム的なままになる。プレイヤーは人々が傷ついた事実だけでなく、コロニーが被害を経路判断へ変換した方法を読む。
 
 ## Scanner
 
-JP LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+医療証拠は遅延と経路を露出させるべきで、苦痛で部屋を飾るべきではない。
 
 ## Terminal
 
-JP LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: すべての台帳項目は、負傷を圧力、ルート拒否、装備状態、認証遅延、または失われた証人連鎖へ結びつける必要がある。痛みだけでは足りない。小道具は、誰が移動でき、誰が保留され、どのシステムが遅延を手続きに見せたかを示すべきだ。
 
 ## Audio
 
-JP LOC HOLD: Pain is not proof until the route bears the mark.
+ルートに印がつくまで、痛みは証拠ではない。
 
 ## Field Note
 
-JP LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+変種: 圧潰状態略記、酸素債務印、ルート保留取消線、Atlas 安定化メモ、witness hash 欠落。
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/ja_JP. -->

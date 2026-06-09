@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Basin Payload Act"
+title: "Шлюз payload басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Basin Payload Act
+# Шлюз payload басейну Atlas
 
-UK LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+Шлюз басейну - рішення про отримувача під тиском. Payload може продати координати, різати Atlas, зберегти карантин, опублікувати редагований пакет реєстру або лишитися локальним без квитанції. Кожен маршрут змінює custody, борг, екологію й доступ до доказів. Жоден не повертає басейн у недоторканий стан.
 
 ## Scanner
 
-UK LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Маршрутний шлюз: басейн Atlas. Фінальний payload вимагає маршрут, отримувача, proof hash, стан екології, статус застави й вікно виживання.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+МАРШРУТ КАМПАНІЇ // PAYLOAD БАСЕЙНУ ATLAS. Вирішити або відмовити: продаж координат, відсічення Atlas, карантинний escrow, публічний реєстр, blind return. Штамп отримувача змінює custody. Чистий стан претензії недоступний.
 
 ## Audio
 
-UK LOC HOLD: The last question is not what happened. It is who you send it to.
+Останнє питання маршруту - хто отримає пакет.
 
 ## Field Note
 
-UK LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Нотатка мародера: вибери отримувача до того, як сумка набере води. Ідеальна відповідь не вміщається в цю сумку.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/uk_UA. -->

@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Korporacyjne przejęcie: czysty ratunek
 
-Korporacyjne przejęcie działa, bo zaczyna się jak pomoc. Sygnał jest czysty, podjęcie profesjonalne, w pokoju jest powietrze. Potem widać kolejność działań: najpierw współrzędne, potem custody XO, potem dostęp Atlas, dobrostan kontraktora po przeglądzie.
+Korporacyjne przejęcie przeraża, bo jest kompetentne. Zespół ratunkowy nie wygląda jak rabusie. Ma procedury, czyste powierzchnie, język medyczny i wiarygodne prawo do żądania custody. Dlatego pułapka zamyka się bez strzału.
 
-Ocean przestaje miażdżyć gracza, ale Deep Reach zaczyna konserwować historię. Zeznanie zostaje zapieczętowane językiem skażenia, custody payloadu przesuwa się przed odprawą medyczną, a każde imię niesione przez gracza staje się ekranem odpowiedzialności. To nie śmierć. To przeżycie wewnątrz maszyny, która potrzebowała ciszy.
+Sekwencja mówi prawdę. Współrzędne są żądane przed pulsem. Custody XO i dostęp Atlas ruszają przed zeznaniem. Kontraktor żyje, lecz historia zostaje zapieczętowana pod przeglądem skażenia, a każde niesione nazwisko staje się ekranem odpowiedzialności. To nie śmierć. To przetrwanie wewnątrz instytucji, która potrzebowała ciszy.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/pl_PL. -->

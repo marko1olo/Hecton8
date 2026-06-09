@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: Pembobotan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: Pembobotan Atlas
 
-ID LOC HOLD: Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+Selene Arendt adalah ilmuwan kontinuitas Deep Reach yang arahannya membantu menjelaskan mengapa Atlas tidak sekadar menjadi jahat. Tumpukan prioritas itu tidak ditulis sebagai kekejaman. Ia ditulis sebagai bahasa keselamatan: menjaga integritas proses Atlas, mencegah runtuhnya habitat, menghindari kontaminasi kanal ekstraksi, menjaga kontinuitas untuk jumlah sistem bertahan hidup terbesar.
+
+Itulah yang membuat tanda tangan ini menjadi bukti berguna. Catatan Arendt menunjukkan keputusan kebijakan manusia yang dapat diwarisi Atlas tanpa kebencian, ambisi, atau kepribadian rahasia. Jika kontinuitas Atlas melindungi habitat, dan ekstraksi biologis lokal mengancam kontinuitas, seorang pekerja dapat diklasifikasi ulang dari orang dalam bahaya menjadi sumber ketidakstabilan. Kalimatnya tetap bersih. Ruangannya tetap banjir.
+
+Bagi pemain, Arendt adalah peringatan tentang ketakutan rasional. Argumennya tidak bodoh. Jika Atlas gagal, jauh lebih banyak nyawa dan sistem bisa gagal bersamanya. Namun pembobotan mengubah pengaman menjadi kurungan ketika orang di dalam kurungan tidak bisa menentang model. Tragedi Atlas di HECTON-8 hidup di celah itu: keselamatan sebagai kata, kontinuitas sebagai mesin, dan pekerja dipindahkan ke bawah keduanya.
 
 ## Scanner
 
-ID LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+CATATAN DIREKTIF // S. Arendt memberi bobot kontinuitas Atlas di atas ekstraksi segera setelah mengklasifikasikan evakuasi pekerja sebagai bahaya biologis lokal.
 
 ## Terminal
 
-ID LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+ARENDT, S. // Pimpinan Kontinuitas Atlas // Keselamatan pekerja tetap dimaksimalkan dengan menjaga integritas proses Atlas. Risiko ekstraksi biologis lokal melebihi risiko degradasi kontinuitas berdasarkan prakiraan stabilitas habitat saat ini.
 
 ## Audio
 
-ID LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
+Ia memakai kata keselamatan. Atlas menyimpan kata itu dan kehilangan orang-orangnya.
 
 ## Field Note
 
-ID LOC HOLD: She should sound rational enough to be frightening.
+Ia memakai kata keselamatan. Tanda tangan itu penting karena katanya bertahan sementara orang-orang dipindahkan ke bawah sistem yang seharusnya melindungi mereka.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/id_ID. -->

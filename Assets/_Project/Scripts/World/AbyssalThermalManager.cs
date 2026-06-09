@@ -10,6 +10,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Unity.Burst;
@@ -32,7 +33,7 @@ namespace Hecton8.World
     {
         private static AbyssalThermalManager s_activeRuntimeInstance;
         private static int s_x001AbyssalThermalManagerSignalPushDropCount;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
         internal static AbyssalThermalManager ActiveRuntimeInstance => s_activeRuntimeInstance;
 
@@ -701,6 +702,7 @@ namespace Hecton8.World
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IPhysicsService _physicsService;
         private IGasDynamicsSolver _gasDynamics;
         private IObjectPoolService _objectPoolService;
@@ -1124,6 +1126,7 @@ namespace Hecton8.World
             _hasSmokeData = false;
             _frameParity = 0;
             _simulationBucketer = null;
+            _oceanKinematicsService = null;
             _gasDynamics = null;
             cutManager = null;
             _voxelDeltaProcessor = null;
@@ -1151,6 +1154,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             _simulationBucketer = null;
+            _oceanKinematicsService = null;
             _gasDynamics = null;
             cutManager = null;
             _voxelDeltaProcessor = null;
@@ -2095,9 +2099,38 @@ namespace Hecton8.World
             receiver.ReceiveDamage(in packet);
         }
 
-        private static float ResolveDamageDepthMeters(Vector3 positionWS)
+        private float ResolveDamageDepthMeters(Vector3 positionWS)
         {
-            return math.isfinite(positionWS.y) ? math.max(0f, DefaultSeaLevelY - positionWS.y) : 0f;
+            return math.isfinite(positionWS.y) ? math.max(0f, ResolveDamageSeaLevelY() - positionWS.y) : 0f;
+        }
+
+        private float ResolveDamageSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveDamageSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return seaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveDamageSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private static double3 ResolveCombatImpactAup(Vector3 positionWS)
@@ -3775,6 +3808,7 @@ namespace Hecton8.World
             _dataVault = GlobalRegistry.DataVault;
             _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _physicsService = GlobalRegistry.Physics;
             _gasDynamics = GlobalRegistry.GasDynamics;
             CacheObjectPoolService(null);
@@ -3859,6 +3893,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
                     RebindSubmarineRuntimeContext(currentService as ISubmarineRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;

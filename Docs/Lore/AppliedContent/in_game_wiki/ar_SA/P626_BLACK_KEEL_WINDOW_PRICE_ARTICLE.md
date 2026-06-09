@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "ثمن نافذة Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# ثمن نافذة Black Keel
 
-Black Keel can answer without granting immediate rescue.
+يمكن لـ Black Keel تأكيد النجاة من دون منح إنقاذ فوري. النافذة المدارية القوية تحمل حزمة مفيدة واحدة، وسجل المطالبة يقرر قيمتها.
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+سارية ترحيل // مضبوطة على نافذة مدارية ضعيفة. اختر حزمة واحدة قبل أن يرتفع ضجيج الطقس.
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+مخزن اتصال // المشغل حي؛ المطالبة مفتوحة؛ الاسترداد ينتظر نافذة. حالة العينة وثقة الإحداثيات مطلوبتان قبل جدولة الاستخراج.
 
 ## Audio
 
-One clean burst; choose what to send.
+النافذة نظيفة لدفعة واحدة. قل أين أنت، أو قل ماذا وجدت.
 
 ## Field Note
 
-A priced packet is not mercy.
+عندما يسعر carrier أنفاسك بالحزمة، لا تهدر الحزمة في السؤال هل يهتم.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/ar_SA. -->

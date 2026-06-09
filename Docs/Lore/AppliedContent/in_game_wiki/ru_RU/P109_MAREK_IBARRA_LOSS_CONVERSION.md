@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra: loss conversion"
+title: "Марек Ибарра: конверсия убытков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra: loss conversion
+# Марек Ибарра: конверсия убытков
 
-Marek Ibarra - след adjuster Keelmark Mutual, превращающий тела в unresolved accounting states. Его файлы объясняют, почему имена важны: найденное имя ломает conversion, которая делала мертвого работника дешевле спасенного.
+Марек Ибарра — след оценщика Keelmark Mutual, превращающий пропавших рабочих в нерешенные учетные состояния. Таблица написана не для горя, а для стоимости закрытия: тело не восстановлено, состояние давления не сертифицировано, загрязнение ожидает, payroll-личность приостановлена.
+
+Поэтому имена в HECTON-8 важны. Табличка шкафчика, метка костюма, строка телесного реестра или восстановленные маршрутные часы могут вывести рабочего из нерешенной нагрузки обратно в претензию, на которую кому-то придется ответить. Двусмысленность дешевле спасения, дешевле компенсации и проще хоронится в споре перевозчиков.
+
+Для Marauder восстановленная личность не украшение. Она повреждает бухгалтерский трюк, который стер человека дважды: сначала в воде, потом в реестре.
 
 ## Scanner
 
-Adjuster table. M. Ibarra превратил пропавших работников в unresolved load classes.
+ТАБЛИЦА ОЦЕНЩИКА // М. Ибарра переводил пропавших рабочих в нерешенные классы нагрузки, пока не будет сертифицировано состояние давления, загрязнения или payroll-статус.
 
 ## Terminal
 
-IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+ИБАРРА, М. // Keelmark Mutual, конверсия убытков // Невосстановленные биологические активы остаются нерешенными до сертификации состояния давления, загрязнения или payroll-статуса. Не закрывать класс заявителя без доказательства опеки.
 
 ## Audio
 
-Пропавший человек стал pending category. Так было дешевле.
+Пропавший человек стал ожидающей категорией. Так было дешевле.
 
 ## Field Note
 
-Язык страховки должен быть холоднее выстрелов.
+Страховой язык должен быть холоднее выстрелов. Восстановленное имя не деталь вкуса; оно ломает более дешевую категорию.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/ru_RU. -->

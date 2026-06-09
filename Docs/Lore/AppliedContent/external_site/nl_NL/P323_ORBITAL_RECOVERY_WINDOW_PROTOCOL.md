@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protocol voor orbitaal recoveryvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Orbital Recovery Window Protocol
+# Protocol voor orbitaal recoveryvenster
 
-NL LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+Het Protocol voor orbitaal recoveryvenster verankert HECTON-8s ontsnappingsloop in lokale astronomie en systeemengineering. De speler is niet gestrand omdat het verhaal dat zegt. Hij is gestrand omdat Aegirs stormshear, magnetische interferentie, beschadigde opstijgketen en wettelijke receiver state alleen in smalle vensters uitlijnen. Redding wordt een route om te bouwen, geen knop om in te drukken.
 
 ## Scanner
 
-NL LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel is dichtbij genoeg om je te horen en te beperkt om je op verzoek te vangen. Aegir opent alleen smalle recoveryvensters.
 
 ## Terminal
 
-NL LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RECOVERYVENSTER / Black Keel receiver accepteert rated ascent object alleen bij lage storm-top shear, verminderde Aegir-magnetische ruis, geverifieerde guidance core, passende quarantine handshake en receiver custody state. Vensterdrift maakt handmatige launch ongeldig.
 
 ## Audio
 
-NL LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Het schip is dichtbij genoeg om ertoe te doen en te ver om je snel te redden.
 
 ## Field Note
 
-NL LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Voor routetimers, carrier-UI en false-exit-uitleg: stormshear, magnetische ruis, opstijggeometrie, quarantaine-handshake.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/nl_NL. -->

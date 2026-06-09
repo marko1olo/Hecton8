@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Worker Community Notice"
+title: "Avis des contacts de travail"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Worker Community Notice
+# Avis des contacts de travail
 
-FR LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+L'avis des contacts de travail est un petit document social à bord dur. Il liste rangées de couchettes, chefs de route, témoins médicaux, contacts d'outillage et fenêtres relais. Il ressemble à une fiche administrative jusqu'à ce que la logique de pression apparaisse: un contact hors monde peut pleurer, contester et se souvenir, mais il n'atteint pas l'écoutille avant l'eau.
 
-## Scanner
+Sur HECTON-8, contact d'urgence signifie donc sur site, formé, joignable au ton et autorisé sur la route du travailleur. La définition est sévère, pas sans amour. Quand un retour manqué peut devenir un chemin d'inondation, le soin prend cette forme.
 
-FR LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-FR LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-FR LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-FR LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Le tableau relie aussi les preuves quotidiennes en réseau communautaire. Une clé de pompe dans un artefact, une correction d'eau dans un autre, une signature d'outil dans un troisième: chaque marque attache un travailleur fatigué à un autre. Ce n'est pas du mélodrame, mais une colonie de pression crédible où la responsabilité devient une forme d'intimité.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/fr_FR. -->

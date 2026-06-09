@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Great Tide Margin Trace
 
-The first useful Deep Reach proof is not a confession. It is a sensor margin that kept recording after the corridor drowned. The numbers do not make the disaster artificial: hydrostatic load, tide shear and failing infrastructure really did overwhelm HECTON-8. That is why the evidence matters. The lie begins in the gap between raw trace and public report. The raw trace marks a warning-margin breach before the approved route window closed. The published report keeps the geotechnical cascade and drops the accepted-tail-risk note. A player who finds the trace learns the correct shape of guilt: physics struck the colony, then people with authority decided the warning was cheaper than shutdown.
+A useful disaster record begins with what it refuses to dramatize. The P-63 tide array does not accuse the ocean of fraud. It records a shear spike, a pressure-margin collapse and a checksum that survived because brine-buffer memory kept power longer than the corridor did.
 
-## Scanner
-
-Recovered tide sensor. Peak shear exceeded colony design, but the warning-margin breach was logged before the public cascade timestamp.
-
-## Terminal
-
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-risk threshold accepted by route authority. Operator note removed from public incident chain. Raw trace preserved in brine-buffer memory.
-
-## Audio
-
-The ocean did not lie. The report did.
-
-## Field Note
-
-Marauder note: do not look for a villain speech. Look for the line somebody deleted.
+That is why the trace matters. Deep Reach could point at the Great Tide and name a real event, then hide the line that made the event actionable. The colony still had a route decision in play when the margin fell below shutdown floor. The public report keeps the cascade and removes the commercial exception, turning a delayed stop order into weather.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/en_US. -->

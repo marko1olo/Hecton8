@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Assinaturas do Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Assinaturas do Asset Silence Board
 
-PT LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+Assinaturas do Asset Silence Board são uma forma pública de ler o apagamento da Deep Reach sem precisar de confissão. Os cartões recuperados mantêm limpa a linguagem corporativa: categorias de carga, visibilidade de pacote, custody approval, asset risk. Objetos próximos de HECTON-8 tornam essa linguagem feia: armários com etiquetas, livros com nomes e mute flags que impedem esses nomes de sair da claim route. O valor de arquivo está na diferença entre o que permaneceu faturável e o que parou de carregar nomes.
 
 ## Scanner
 
-PT LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Cartão redaction vote recuperado: campo de nome do trabalhador silenciado, categoria asset-risk visível, contagem de armários mantida. Visibilidade do pacote exige custody approval.
 
 ## Terminal
 
-PT LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: mover anexo witness-name para categoria asset-risk silence após relay review. Reter load class, locker count e claim value. Liberação exige approval do dono da custódia.
 
 ## Audio
 
-PT LOC HOLD: Erase the route and the body becomes cargo math.
+O board manteve a contagem de caixas. Cortaram os nomes.
 
 ## Field Note
 
-PT LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+O nome sumiu, a etiqueta do armário ficou. O Asset Silence Board votou sobre visibilidade do pacote, não sobre a existência do trabalhador.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/pt_BR. -->

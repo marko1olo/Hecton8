@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 e a maré de órbita média"
+title: "Papel de maré de órbita média da HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 e a maré de órbita média
+# Papel de maré de órbita média da HECTON-8
 
-HECTON-8 é a lua onde a matemática orbital de Aegir vira assunto pessoal. Fica longe o bastante da pior radiação interna para operações longas, perto o bastante para manter o oceano em movimento e vale o suficiente para a Deep Reach construir sob pressão. A mesma posição suja o resgate: fase de maré, massa carrier, ruído de tempestade e custódia legal se encontram sobre a cabeça do jogador.
+HECTON-8 é a lua onde a matemática orbital de Aegir vira pessoal. Fica longe o bastante da pior radiação interna para operações longas, perto o bastante para as marés manterem o oceano em movimento e valiosa o bastante para a Deep Reach construir sob pressão. A mesma posição suja o resgate. Fase de maré, massa da transportadora, ruído de tempestade e custódia legal se encontram acima do traje como um teto móvel.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Ela fica na parte da escada onde o trabalho parece possível até a água começ
 
 ## Field Note
 
-HECTON-8 paga porque pressão, maré e responsabilidade se sobrepõem ali.
+HECTON-8 paga porque pressão, maré e responsabilidade se sobrepõem na mesma coluna d'água.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/pt_BR. -->

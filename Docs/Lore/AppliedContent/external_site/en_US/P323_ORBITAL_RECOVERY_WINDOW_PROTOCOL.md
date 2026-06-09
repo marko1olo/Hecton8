@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Orbital Recovery Window Protocol
 
-HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+Orbital Recovery Window Protocol grounds HECTON-8's escape loop in local astronomy and systems engineering. The player is not stranded because the story says so. They are stranded because Aegir's storm shear, magnetic interference, damaged ascent chain and legal receiver state only align in narrow windows. Rescue becomes a route to build, not a button to press.
 
 ## Scanner
 
-Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel is close enough to hear you and too constrained to catch you whenever you ask. Aegir only opens narrow recovery windows.
 
 ## Terminal
 
-RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RECOVERY WINDOW / Black Keel receiver accepts rated ascent object only during low storm-top shear, reduced Aegir magnetic noise, verified guidance core, matching quarantine handshake and receiver custody state. Window drift invalidates manual launch.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The ship is close enough to matter and too far to save you quickly.
 
 ## Field Note
 
-Useful for route timers, carrier UI and false-exit explanation.
+Use for route timers, carrier UI and false-exit explanation: storm shear, magnetic noise, ascent geometry, quarantine handshake.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/en_US. -->

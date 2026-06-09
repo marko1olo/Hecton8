@@ -232,6 +232,7 @@ namespace Hecton8.World
         private Transform _playerTransform;
         private IPlayerRuntimeContext _playerContext;
         private IInputService _inputService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private PlayerToolManager _playerToolManager;
         private bool _playerDependencyRefreshRequested = true;
         private RenderTexture _maskRead;
@@ -551,6 +552,7 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
             Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
             PublishRecentCutHeatCount(0);
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -558,6 +560,7 @@ namespace Hecton8.World
             TryUnregisterService();
             TryUnregister();
             TryUnregisterHotSwapListener();
+            _oceanKinematicsService = null;
             ReleaseResources();
         }
 
@@ -739,6 +742,7 @@ namespace Hecton8.World
         {
             _playerContext = GlobalRegistry.Player;
             _inputService = GlobalRegistry.Input;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             CacheDataVaultCold();
             ResolveDependenciesCold(allowComponentLookup: true);
             ResolveVisualDependencies();
@@ -776,6 +780,12 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
             {
                 _inputService = currentService as IInputService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 
@@ -1394,6 +1404,9 @@ namespace Hecton8.World
 
         private float ResolveMaskWaterLevel(float fallbackY)
         {
+            if (TryResolveOceanWaterLevel(out float oceanWaterLevel))
+                return oceanWaterLevel;
+
             if (mapMagicVegetationBridge != null &&
                 mapMagicVegetationBridge.ActiveSurfaceInstanceCount > 0 &&
                 TryResolveWaterLevel(mapMagicVegetationBridge.ActiveSurfaceDrawBounds.center.y, out float vegetationWaterLevel))
@@ -1413,11 +1426,41 @@ namespace Hecton8.World
                 : DefaultWaterLevel;
         }
 
+        private bool TryResolveOceanWaterLevel(out float waterLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out waterLevel))
+            {
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
+        }
+
         private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
         {
             if (math.isfinite(candidateWaterLevel) &&
                 math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;

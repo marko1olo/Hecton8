@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de Carga de Energia de Subida"
+title: "Conjunto da Carga de Energia de Ascensão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de Carga de Energia de Subida
+# Conjunto da Carga de Energia de Ascensão
 
-O Conjunto de Carga de Energia de Subida liga economia de recursos a consequência narrativa: blue debt e vent-forged hardware decidem confiabilidade de fuga, custody de evidências e compromisso.
+O Conjunto da Carga de Energia de Ascensão é onde a economia de salvage de HECTON-8 deixa de ser abstrata. O mesmo material crescido sob pressão que compra atenção de carrier também pode virar a carga de impulso que levanta uma cápsula do mar.
 
-## Scanner
+Essa troca é perigosa porque blue debt não é combustível mágico. É material de processo Xenon-Omega com histórico de pressão, estado de contaminação, comportamento de contenção e valor legal. Uma vent-forged heat cell pode fornecer energia controlada. Uma amostra crua pode estilhaçar, envenenar o registro de custody ou transformar uma recuperação válida em carga disputada.
 
-Berço de energia marcado por pressure pulse. Carga barata vira caixão limpo.
-
-## Terminal
-
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator e custody stamp exigidos. Raw fuel rejeitado. Blue debt não certificado fratura sob launch impulse e anula recovery claim.
-
-## Audio
-
-Você pode vender o impulso ou subir nele. Não os dois.
-
-## Field Note
-
-Cada grama no berço é fuga, evidência ou blue-debt payout. A cápsula não perdoa ganância.
+Uma carga completa portanto contém hardware e linguagem de reivindicação no mesmo berço: heat cell, isolante, manga de impulso, registro de massa e custody stamp assinado. Mantenha intacta e a cápsula tem sustentação certificada. Quebre por pagamento e o oceano talvez ainda deixe o motor disparar, mas ninguém acima é obrigado a aceitar o que chega.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pt_BR. -->

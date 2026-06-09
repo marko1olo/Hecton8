@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "تجميعة نواة توقيت التوجيه"
+title: "مجموعة قلب توقيت التوجيه"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة نواة توقيت التوجيه
+# مجموعة قلب توقيت التوجيه
 
-تحافظ تجميعة نواة توقيت التوجيه على صلابة الطيران الفضائي في HECTON-8: extraction مشكلة مسار مكونة من ساعات وظلال وثقة متضررة.
+مجموعة قلب توقيت التوجيه تحول الهروب إلى هندسة مدارية، لا إلى دفعة بسيطة إلى أعلى. يجب على كبسولة الصعود في HECTON-8 أن تعبر الماء والطقس وهندسة القمر وقواعد الاستقبال المؤسسية قبل أن يسمى الاحتراق قابلا للاستعادة.
 
-## Scanner
+يحمل المكون الخريطة الموقوتة: تقويم Aegir، ومسار استقبال Black Keel، وذاكرة مصاريع ترحيل القمر، وانجراف عمود العاصفة، وسماحية ساعة custody. لا شيء من ذلك زينة. يمكن أن تكون الكبسولة محكمة ومشحونة وسليمة ميكانيكيا ثم تفوّت الاستعادة لأن حزمتها وصلت إلى المسار الخطأ في الوقت الخطأ.
 
-نواة timing core فارغة. تحدد هندسة Aegir ما إذا كان الصعود recovery أو capture أو صمتا.
-
-## Terminal
-
-GUIDANCE CORE: مزامنة ساعة الكبسولة مع Aegir window، وBlack Keel receiver lane، وmoon relay shutter، وانجراف storm-plume. تصبح packets المتأخرة فقدان أدلة؛ وتصبح packets المبكرة capture noise.
-
-## Audio
-
-الأعلى ليس اتجاها. إنه نافذة لها شاهد.
-
-## Field Note
-
-لا يوجد صعود بسيط من HECTON-8. هناك مستقبل، وظل، وانجراف عاصفة، وpacket queue أقدم من ذعرك.
+هذه هي المرارة في خيال الهروب من HECTON-8. الناجي لا يخرج من العمق إلى حرية مفتوحة. الكبسولة تدخل نافذة محاسبة ضيقة فوق محيط يواصل تشويه كل إشارة. إصلاح قلب التوقيت يمنح الإطلاق مكانا في تلك النافذة. لا يجعل النافذة رحيمة.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ar_SA. -->

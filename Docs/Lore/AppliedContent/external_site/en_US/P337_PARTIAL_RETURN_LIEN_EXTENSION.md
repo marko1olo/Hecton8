@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Partial Return Lien Extension
 
-HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
+HECTON-8 replay structure treats partial exits as records, not resets. A failed escape can still move the campaign forward by changing what is known, who is owed, and which window opens next.
 
 ## Scanner
 
-Return authorized under lien extension. Equipment not carried forward.
+Return approved under extended lien. Knowledge flags persist; equipment inventory is quarantined and stripped.
 
 ## Terminal
 
-PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PARTIAL RETURN ORDER: same-seed reentry permitted under extended lien, revised storm window, and retained knowledge dossier. Physical inventory reset by custody quarantine; tools remain carrier property until evidence review closes.
 
 ## Audio
 
-The route remembers what you proved. The ocean does not owe you your tools.
+The route remembers what you proved. The ocean keeps the rest.
 
 ## Field Note
 
-Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Reentry record: same-seed return carries knowledge, debt pressure, storm changes, and custody reset instead of inherited equipment.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/en_US. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Abyssal Machine Field Warning"
+title: "אזהרת שדה מכונה תהומי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Abyssal Machine Field Warning
+# אזהרת שדה מכונה תהומי
 
-HE LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+האזהרה מחברת את האקולוגיה העמוקה לגישה האחרונה אל Atlas. השחקן כבר לא חוצה חורבות שיש בהן חיים במקרה; הוא חוצה חיים שלמדו לשאת מכונות.
 
 ## Scanner
 
-HE LOC HOLD: Machine field warning: silt motion does not match current.
+סחף נע נגד הזרם. גופי סינון משנים מיקום מתחת לאורות.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: תנועת הסחף בשדה המכונה התהומי חורגת ממודל הזרם. גופי סינון וצלעות אקטואטור קבורות נרשמים כתשתית נעה. לשמור מרחק; לא לעגון ברצפה רכה.
 
 ## Audio
 
-HE LOC HOLD: The floor is not still.
+הרצפה אינה דוממת.
 
 ## Field Note
 
-HE LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+אזהרת סוף משחק: אימה שקטה ואובייקטיבית. השדה הסופי הוא תשתית שמתעוררת, לא בניית בוס.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/he_IL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Partial Return Lien Extension"
+title: "Perpanjangan Hak Gadai Kembali Parsial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Partial Return Lien Extension
+# Perpanjangan Hak Gadai Kembali Parsial
 
-ID LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+Perpanjangan ini mengunci persistensi replay sebagai pengetahuan, bukan kekuatan peralatan. Pemain kembali karena dossier dan utang berubah, bukan karena HECTON-8 menjadi lebih mudah.
 
 ## Scanner
 
-ID LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Kembali disetujui di bawah hak gadai yang diperpanjang. Flag pengetahuan bertahan; inventaris peralatan dikarantina dan dicabut.
 
 ## Terminal
 
-ID LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PERINTAH PARTIAL RETURN: reentry same-seed diizinkan di bawah hak gadai diperpanjang, jendela badai revisi, dan dossier pengetahuan tersimpan. Inventaris fisik direset oleh karantina kustodi; alat tetap milik carrier sampai tinjauan bukti ditutup.
 
 ## Audio
 
-ID LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+Rute mengingat apa yang kau buktikan. Laut menyimpan sisanya.
 
 ## Field Note
 
-ID LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Catatan masuk ulang: kembali same-seed membawa pengetahuan, tekanan utang, perubahan badai, dan reset kustodi alih-alih peralatan warisan.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/id_ID. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "توقيعات واجهة توثيق الحزم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# توقيعات واجهة توثيق الحزم
 
-AR LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+لم يجعل التأخير بين النجوم كل رسائل HECTON-8 بلا قيمة. جعل حفظ الرسائل مكلفا. يسجل شريط Packet Notary أي نافذة ترحيل حملت الحزمة، وأي hash شهدها، وأي مالك حفظها قبل الإفراج. في سجلات HECTON-8 المستعادة، يمكن لهذه الآلية أن تحمي سجل عامل أو تتركه عالقا في claim material حتى يضاف شاهد ثان. ملاحظة أرشيفية عامة: يحدد هذا السجل مسار الدليل، لا سلسلة قيادة Deep Reach كاملة.
 
 ## Scanner
 
-AR LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+تمت استعادة ختم الحزمة: شريط التجزئة سليم، نافذة الترحيل 17-A، ومالك الحفظ غير محسوم. يعامل كدليل فقط بعد تطابق witness chain.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Route: Relay Spine / witness hash strip. Action: seal packet hash, local relay delay, custody owner. Exception: missing worker-name attachment keeps packet in claim-material queue. Escalation: public ledger only after second witness hash.
 
 ## Audio
 
-AR LOC HOLD: A seal is not mercy. It is a clock with a price.
+الختم سليم. الطابع الزمني متأخر نافذتين. إذا طابق witness hash فلن يستطيعوا تسميته تشويشا.
 
 ## Field Note
 
-AR LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+لا تبعه كسجل. بعه كساعة ومعها شاهد: وقت الترحيل، packet hash، ومالك الحفظ. من دون الحقول الثلاثة ستسميه Deep Reach ضجيج ناقل مفكوك.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/ar_SA. -->

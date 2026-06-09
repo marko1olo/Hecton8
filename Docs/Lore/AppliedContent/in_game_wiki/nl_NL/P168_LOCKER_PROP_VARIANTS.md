@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "Kluisbewijsvarianten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# Kluisbewijsvarianten
 
-NL LOC HOLD: Locker variants let procedural placement carry human texture without custom cutscenes.
+Een kluis in HECTON-8 mag geen sentimentele hoop spullen zijn. Het is een klein archief van een drukruimte: wat een werker aanraakte, wat die mocht dragen, wat voor de ploegleider werd verborgen en wat een latere Marauder nodig vond om te corrigeren.
+
+Goede varianten spreken door combinaties. Druktape naast een handschoen wijst op lekkagewerk. Een versleten pakking tussen persoonlijke tools zegt dat iemand zo vaak deuren behandelde dat reserveonderdelen niet meer vertrouwd werden. Een maaltijdkredietstrip naast routekrijt zegt dat er nog een volgende shift werd verwacht. Een medlock-weigering verandert de kamer in bewijs: het lichaam was al een kostenprobleem, maar het rooster gebruikte het nog.
+
+In gameplay is de kluis een seedbaar menselijk spoor. Inhoud kan per run veranderen zonder de grotere canon te wijzigen. De regel blijft: lezen voor looten. Als de speler token, pakking en notitie als gewone scrap meeneemt, verliest de kamer de grammatica die een werker aanwezig maakte zonder cutscene.
 
 ## Scanner
 
-NL LOC HOLD: A locker should say what a worker touched before the flood.
+KLUIS // Druktape, versleten pakking, maaltijdkredietstrip, gereedschapsmagazijn-token, routekrijt en medlock-weigering liggen op een plank. Laatste praktische inventaris van een werker, geen decor.
 
 ## Terminal
 
-NL LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+KLUISVARIANTEN // Lees volgorde voor salvage: tape bij handschoenen = lekkagewerk; versleten pakking = herhaalde luiken; maaltijdstrip = shiftdschuld; krijt = noodroute; medlock-weigering = ziek doorwerken; Marauder-notitie = latere bewijsruzie.
 
 ## Audio
 
-NL LOC HOLD: The best memorial is a tool still dirty from the last shift.
+Het beste gedenkteken is geen plaatje. Het is een gereedschap dat nog weet welke hand moe was.
 
 ## Field Note
 
-NL LOC HOLD: Avoid sentimental clutter. Use work marks.
+Versier geen kluisjes. Bouw ze uit dingen die een vermoeide hand echt moest aanraken.
 
 <!-- In-Game Wiki; generated from P168_LOCKER_PROP_VARIANTS/nl_NL. -->

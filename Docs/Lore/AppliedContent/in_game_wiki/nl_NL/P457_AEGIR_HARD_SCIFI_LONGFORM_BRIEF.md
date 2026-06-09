@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir: de hemel die redding weigert"
+title: "Aegir: De Lucht Die Redding Weigert"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: de hemel die redding weigert
+# Aegir: De Lucht Die Redding Weigert
 
-Aegir is werkende hemel. De moon ladder kan pakketten vertragen of bederven zonder de oppervlakte permanent donker te maken. Redding faalt door afstand, geometrie, wet en kosten.
+Aegir is de orbitale machine boven HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window en waarom rescue trager reist dan papierwerk.
 
 ## Scanner
 
-Hemelroute-primer. Geen FTL of ansible. Aegir-vensters lopen door manen, puin, relais-custody, stormstatus en Black Keel-massaboekhouding.
+Publieke astronomie: geen FTL, geen ansible, Aegir relay geometry, moon ladder hazards, Black Keel orbital custody, route windows voor de wet.
 
 ## Terminal
 
-AEGIR-NAVIGATIEPRIMER // PUBLIEKE BAND. Gebruik hazardklassen: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
+SITE LONGFORM: maak de lucht praktisch en vijandig; elke packet, drop, pickup en claim heeft physics, timing, mass en custody.
 
 ## Audio
 
-Black Keel-planning: "Signaal waar is niet signaal bruikbaar. Venster houdt voor massa, weer, custody en receiver lock."
+De lucht boven HECTON-8 is niet leeg. Het is een schedule met tanden.
 
 ## Field Note
 
-Marauder-hemelregel: vraag niet of het signaal is verzonden. Vraag welke maan blokkeerde, welk ledger het ving en of de ontvanger mens of massaklasse hoorde.
+Kijk omhoog voor timing, niet voor troost. Op HECTON-8 kan moonlight relay opening, storm warning of claim clock zijn.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/nl_NL. -->

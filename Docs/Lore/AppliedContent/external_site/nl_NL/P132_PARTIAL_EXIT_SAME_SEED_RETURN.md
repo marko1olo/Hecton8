@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Gedeeltelijke uitgang: terugkeer naar dezelfde seed"
+title: "Gedeeltelijke exit: terugkeer naar dezelfde seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gedeeltelijke uitgang: terugkeer naar dezelfde seed
+# Gedeeltelijke exit: terugkeer naar dezelfde seed
 
-De gedeeltelijke uitgang beschermt de lange campagne tegen valse afsluiting. Black Keel kan de operator voor een beperkt venster optillen, het pak repareren, teruggevonden pakketten loggen en de pauze als welzijn verkopen. De wereld beneden rolt niet over naar een schonere versie.
+Gedeeltelijke exit is een drukventiel voor een lang overlevingsverhaal. De contractor verdient een pickupvenster, krijgt wonden gesloten en uitrusting opgelapt, en hoort het zeldzame geluid van lucht die niet door een stervend pak wordt gefilterd. Die verlichting is echt, en daarom doet de terugkeer pijn.
 
-Wanneer de speler terugkeert, is dezelfde seed er nog. De pekeltrap heeft dezelfde val, hetzelfde relais dezelfde slechte hoek, en hetzelfde bewijs blijft gevaarlijk. Dit einde geeft verlichting zonder absolutie: lucht in de longen, meer schuld in het contract en geen uitwissing van wat werd gevonden.
+Black Keel registreert de pauze als welfare en lien-onderhoud. Dezelfde world seed blijft actief, hetzelfde bewijs blijft onopgelost, en dezelfde oceaan wacht met alle ontdekte routes intact. Gedeeltelijke exit is geen genade van het systeem. Het is onderhoud van een asset dat nog steeds moet afdalen.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "حزمة التقرير العام الكاذب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# حزمة التقرير العام الكاذب
 
-AR LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+حزمة التقرير العام الكاذب هي نسخة HECTON-8 التي استطاعت Deep Reach عرضها بأمان على العوالم. لا تخترع محيطاً مزيفاً. كان المد العظيم حقيقياً، وكان تأخر الترحيل حقيقياً، وكان لا يقين الحجر حقيقياً، ولهذا ينجو التقرير من قراءة عابرة. تعيش الكذبة في المحذوفات. إنها تزيل هوامش المخاطر المقبولة، وسلطة الإخلاء المؤجلة، ووزن استمرارية Atlas، والتحويل التأميني، وضغط حيازة الاسترداد. يجب أن يقرأها اللاعب كحركة الشركة الأخيرة: إبقاء ما يكفي من الفيزياء ليبدو الكلام رصيناً، وقطع ما يكفي من القرارات لمحو الذنب.
 
 ## Scanner
 
-AR LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+نجح التقرير العام لأنه أبقى المحيط الحقيقي وأزال الخيارات البشرية داخله.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: تُنسب خسارة HECTON-8 إلى شلال مد استثنائي، وتأخر ترحيل، ولا يقين حجر. المحذوف: هوامش مخاطر مقبولة، وحجز إفراج الإخلاء، وتجاوز استمرارية Atlas، وتحويل مطالبة، وطلب استرداد يضع الحمولة أولاً.
 
 ## Audio
 
-AR LOC HOLD: They did not fake the storm. They buried the choice.
+قالوا الحقيقة عن الماء وكذبوا عن الأيدي.
 
 ## Field Note
 
-AR LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+أفضل كذبة لم تنكر المد. استخدمت المد كغطاء.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/ar_SA. -->

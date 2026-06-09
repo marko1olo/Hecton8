@@ -27,6 +27,7 @@ class RunAssetStaticValidatorsTests(unittest.TestCase):
         self.assertIn("player_route_static_evidence", names)
         self.assertIn("batch31_local_pbr_import_intent_artifacts", names)
         self.assertIn("texture_role_technical_ledger", names)
+        self.assertIn("aegir_gas_giant_source_contract", names)
         self.assertIn("batch31_promotion_prep_artifacts", names)
         self.assertIn("mapmagic_erosion_source_route", names)
         self.assertIn("visual_proof_harness_candidate_quarantine", names)
@@ -46,6 +47,7 @@ class RunAssetStaticValidatorsTests(unittest.TestCase):
         self.assertIn("ValidateAudioCriticalCueSourceCoverage.py --no-fail", args)
         self.assertIn("ValidatePlayerRouteStaticEvidence.py --require-production-static --no-fail", args)
         self.assertIn("ValidateTextureRoleTechnicalLedger.py --no-fail", args)
+        self.assertIn("ValidateAegirGasGiantSourceContract.py --no-fail", args)
         self.assertIn("ValidateVisualProofCaptureGuardrails.py --mode harness-candidate --allow-diagnostic-rejection", args)
 
     def test_dry_run_returns_success(self) -> None:

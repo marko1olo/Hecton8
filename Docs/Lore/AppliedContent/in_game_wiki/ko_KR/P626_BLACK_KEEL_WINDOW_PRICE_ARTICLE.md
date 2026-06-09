@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel 창구 가격"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel 창구 가격
 
-Black Keel can answer without granting immediate rescue.
+Black Keel은 생존을 확인할 수 있지만 즉시 구조를 허가하지는 않는다. 강한 궤도 창은 유용한 패킷 하나만 실어 나르고, 그 가치는 클레임 장부가 결정한다.
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+릴레이 마스트 // 약한 궤도 창에 정렬. 기상 잡음이 오르기 전에 패킷 하나를 선택.
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+접촉 버퍼 // 오퍼레이터 생존, 클레임 개방, 회수는 창 대기. 추출 일정 전 샘플 상태와 좌표 신뢰도 요청.
 
 ## Audio
 
-One clean burst; choose what to send.
+창은 한 번의 burst 동안 깨끗하다. 네 위치를 말하거나, 무엇을 찾았는지 말해.
 
 ## Field Note
 
-A priced packet is not mercy.
+carrier가 네 숨을 패킷 단위로 가격 매긴다면, 관심이 있는지 묻는 데 패킷을 낭비하지 마라.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/ko_KR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Variantes de claim initial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Variantes de claim initial
 
-FR LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+Un claim initial est le mensonge écrit en haut de l'ordre de travail. Salvage de dette, bounty de preuve, matériel de route manquant, garde d'échantillon dangereux, allègement de blacklist : chaque variante change la raison pour laquelle le tableau laisse le Marauder descendre. Elle doit colorer le motif et la première pression, pas remplacer le protagoniste par un masque neuf.
 
 ## Scanner
 
-FR LOC HOLD: Same protagonist. Different claim pressure.
+VARIANTE CLAIM // Même Marauder ex-Deep-Reach. Première dette, bounty, matériel de route, garde d'échantillon ou allègement de blacklist différents.
 
 ## Terminal
 
-FR LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+RÈGLE DE DÉPART : les variantes modifient pression initiale, accès aux rumeurs, poids des preuves et logique de paiement. Elles ne créent pas de héros alternatifs et n'effacent pas l'ancienne colonne Deep Reach.
 
 ## Audio
 
-FR LOC HOLD: You can change the job without changing who took it.
+Tu peux changer le travail sans changer celui qui l'a pris.
 
 ## Field Note
 
-FR LOC HOLD: Variants should color motive, not erase the canon character.
+Change le claim. Garde la cicatrice.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/fr_FR. -->

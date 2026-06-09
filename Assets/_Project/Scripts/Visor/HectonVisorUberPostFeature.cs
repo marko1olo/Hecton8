@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -34,7 +35,7 @@ namespace Hecton8.Visor
         private const float InternalWaterlineSubmergeOffsetMeters = 0.03f;
         private const float InternalWaterlineSubmergeFadeMeters = 0.12f;
         private const float InternalWaterlineSplitBypassDepthMeters = 10f;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const uint ReconstructionModeNativeHash = 0x4E415456u; // NATV
         private const uint ReconstructionModeBilateralHash = 0x42494C55u; // BILU
         private const uint ReconstructionModeTemporalHash = 0x54454D50u; // TEMP
@@ -766,6 +767,7 @@ namespace Hecton8.Visor
             internal static readonly int ReconstructionConstantsBufferId = Shader.PropertyToID("UberNoirReconstructionConstants");
             internal static readonly int ReconstructionAbSplitId = Shader.PropertyToID("_H8UberNoirABSplit");
             internal static readonly int ReconstructionVisualTimeId = Shader.PropertyToID("_H8UberNoirVisualTime");
+            internal static readonly int NoirFogStratificationId = Shader.PropertyToID("_HectonNoirFogStratification");
         }
 
 #if UNITY_EDITOR
@@ -1205,7 +1207,7 @@ namespace Hecton8.Visor
             _hasNoirConstants = false;
             _noirColorCsvLoaded = false;
             _noirColorCsvLoadAttempted = false;
-            _noirPlayerContext = null;
+            ClearNoirPlayerContext();
             _noirResolutionScaler = null;
             _nextNoirPlayerRefreshFrame = 0;
             _hasReconstructionConstants = false;
@@ -2132,7 +2134,7 @@ namespace Hecton8.Visor
 
         private float ResolveAestheticProfileDepthMeters(Camera renderCamera)
         {
-            IPlayerRuntimeContext playerContext = _noirPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveNoirPlayerContext();
             if (playerContext != null &&
                 playerContext.IsInitialized &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
@@ -2150,7 +2152,32 @@ namespace Hecton8.Visor
                 return 0f;
 
             Vector3 position = renderCamera.transform.position;
-            return math.isfinite(position.y) ? math.max(0f, DefaultSeaLevelY - position.y) : 0f;
+            float seaLevelY = ResolveProductionSeaLevelY();
+            return math.isfinite(position.y) ? math.max(0f, seaLevelY - position.y) : 0f;
+        }
+
+        private static float ResolveProductionSeaLevelY()
+        {
+            Vector4 fogStratification = Shader.GetGlobalVector(ShaderConstants.NoirFogStratificationId);
+            float waterLevelY = fogStratification.x;
+            if (IsPublishedNoirFogStratification(in fogStratification) &&
+                math.isfinite(waterLevelY) &&
+                math.abs(waterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                return waterLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool IsPublishedNoirFogStratification(in Vector4 fogStratification)
+        {
+            return math.isfinite(fogStratification.y) &&
+                   math.isfinite(fogStratification.z) &&
+                   math.isfinite(fogStratification.w) &&
+                   (math.abs(fogStratification.y) > 0.000001f ||
+                    math.abs(fogStratification.z) > 0.000001f ||
+                    math.abs(fogStratification.w) > 0.000001f);
         }
 
         private static string ResolveAestheticCsvPath()
@@ -2624,7 +2651,7 @@ namespace Hecton8.Visor
             out uint statusMask)
         {
             return TryUsePlayerContextSnapshot(
-                _noirPlayerContext,
+                ResolveNoirPlayerContext(),
                 out playerCamera,
                 out wetLens01,
                 out hullStress01,

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "물질 보상 장부"
+title: "물질 정산 장부"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 물질 보상 장부
+# 물질 정산 장부
 
-물질 보상 경로는 채취, 인증, 침묵으로 만든 실제 성공 상태다. 진실 엔딩이 아니다.
+물질 정산 장부는 인증된 blue debt의 회계 경로다. 샘플 증명, 보관 이력, 침묵 조항에 지급하며 Atlas 증언과 Deep Reach 책임은 청구서 밖에 둔다.
 
 ## Scanner
 
-blue debt 샘플 인증. 지급 가능. 진실은 선택. Deep Reach는 그 순서를 선호한다.
+blue debt 샘플 인증 완료: 질량, 순도, 압력 로그, 보관 사슬. 증거보다 계정이 먼저 정리될 수 있다.
 
 ## Terminal
 
-지급 일정: 질량, 순도, 압력 이력, 보관 사슬 승인. 증거 기록 미해결.
+봉인 케이스가 샘플 장부와 맞고, 하강 압력 이력에 빈칸이 없고, Deep Reach 제안 코드가 보관 사슬을 승인하면 정산이 열린다. 물질 폐쇄는 크레딧을 escrow로 옮기고 Atlas 기록을 청구 불가 잔류물로 태그한다.
 
 ## Audio
 
-계정은 정리된다. 물은 아니다.
+계정은 정리된다. 물은 영수증을 간직한다.
 
 ## Field Note
 
-성공한 계약도 실패한 삶일 수 있다.
+깨끗한 이체도 매장이 될 수 있다.
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/ko_KR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de carga de energía de ascenso"
+title: "Conjunto de Carga Energética de Ascenso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de carga de energía de ascenso
+# Conjunto de Carga Energética de Ascenso
 
-El Conjunto de carga de energía de ascenso vincula economía de recursos con consecuencia narrativa: blue debt y vent-forged hardware deciden fiabilidad de escape, custody de evidencia y compromiso.
+El Conjunto de Carga Energética de Ascenso es donde la economía de salvage de HECTON-8 deja de ser abstracta. El mismo material crecido bajo presión que compra atención de un carrier también puede convertirse en la carga de impulso que levanta una cápsula desde el mar.
 
-## Scanner
+Ese intercambio es peligroso porque el blue debt no es combustible mágico. Es material de proceso Xenon-Omega con historial de presión, estado de contaminación, comportamiento de contención y valor legal. Una heat cell vent-forged puede dar energía controlada. Una muestra cruda puede romperse, ensuciar el registro de custody o convertir una recuperación válida en carga disputada.
 
-Cuna de energía marcada por pressure pulse. Una carga barata hace un ataúd limpio.
-
-## Terminal
-
-ASCENT CHARGE: se requiere vent-forged heat cell, pressure-history insulator y custody stamp. Raw fuel rechazado. Blue debt no certificado se fractura bajo launch impulse y anula recovery claim.
-
-## Audio
-
-Puedes vender la elevación o montarte en ella. No ambas.
-
-## Field Note
-
-Cada gramo en la cuna es escape, evidencia o blue-debt payout. La cápsula no perdona la codicia.
+Una carga completa contiene por eso hardware y lenguaje de reclamación en la misma cuna: heat cell, aislante, manga de impulso, registro de masa y custody stamp firmado. Mantenla intacta y la cápsula tiene elevación certificada. Rómpela por pago y el océano aún puede dejar que el motor dispare, pero nadie arriba está obligado a aceptar lo que llega.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/es_ES. -->

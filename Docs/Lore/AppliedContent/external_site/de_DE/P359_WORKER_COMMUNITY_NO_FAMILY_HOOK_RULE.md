@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Worker Community Notice"
+title: "Arbeitskontakt-Aushang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Worker Community Notice
+# Arbeitskontakt-Aushang
 
-DE LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Der Arbeitskontakt-Aushang ist ein kleines soziales Dokument mit harter Kante. Er listet Kojenreihen, Routenleiter, Medlock-Zeugen, Werkzeugkontakte und Relaisfenster. Er wirkt wie Verwaltung, bis die Drucklogik sichtbar wird: Ein Offworld-Kontakt kann trauern, streiten und erinnern, erreicht die Luke aber nicht vor dem Wasser.
 
-## Scanner
+Auf HECTON-8 heißt Notkontakt daher: auf Station, geschult, per Ton erreichbar und für die Route des Arbeiters freigegeben. Die Definition ist streng, nicht lieblos. Wenn eine verpasste Rückkehr zum Flutweg werden kann, nimmt Fürsorge diese Form an.
 
-DE LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-DE LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-DE LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-DE LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Das Brett verknüpft außerdem Alltagsbeweise zu einem Gemeinschaftsnetz. Ein Pumpenschlüssel in einem Artefakt, eine Wasserkorrektur in einem anderen, eine Werkzeugsignatur in einem dritten: jede Marke bindet einen müden Arbeiter an einen anderen. Das ist kein Melodram, sondern eine glaubhafte Drucksiedlung, in der Verantwortung zur Form von Nähe wird.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/de_DE. -->

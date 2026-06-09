@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Partial Return Lien Extension"
+title: "Prolongation de privilège pour retour partiel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Partial Return Lien Extension
+# Prolongation de privilège pour retour partiel
 
-FR LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+La prolongation verrouille la persistance de replay comme connaissance, pas comme puissance d'équipement. Le joueur revient parce que le dossier et la dette ont changé, pas parce que HECTON-8 est devenue plus facile.
 
 ## Scanner
 
-FR LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Retour approuvé sous privilège prolongé. Les marqueurs de connaissance persistent ; l'inventaire est mis en quarantaine et retiré.
 
 ## Terminal
 
-FR LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ORDRE PARTIAL RETURN : réentrée même seed autorisée sous privilège prolongé, fenêtre de tempête révisée et dossier de connaissance conservé. Inventaire physique remis à zéro par quarantaine de garde ; les outils restent propriété du transporteur jusqu'à clôture de l'examen des preuves.
 
 ## Audio
 
-FR LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+La route se souvient de ce que tu as prouvé. L'océan garde le reste.
 
 ## Field Note
 
-FR LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Dossier de réentrée : retour même seed avec connaissance, dette, variations de tempête et remise à zéro de garde plutôt qu'équipement hérité.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/fr_FR. -->

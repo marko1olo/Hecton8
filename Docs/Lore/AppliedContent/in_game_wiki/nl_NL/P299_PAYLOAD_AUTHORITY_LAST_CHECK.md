@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Authority Last Check"
+title: "Laatste controle van payloadautoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Authority Last Check
+# Laatste controle van payloadautoriteit
 
-NL LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+De laatste controle geeft de finale UI haar harde vraag. De speler kiest geen beloningskist; hij kiest wie massa, bewijs, namen, coördinaten en toestemming tot handelen krijgt.
 
 ## Scanner
 
-NL LOC HOLD: Payload check: receiver changes meaning, not only reward.
+Payloadcontrole: ontvangerkeuze verandert eigendom, niet alleen beloning.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: selecteer ontvanger, massa, bewijsbewaring, ecologisch gevolg en aansprakelijkheid na terugkeer. Ontvangerkeuze bepaalt wie na vertrek op het bewijs mag handelen.
 
 ## Audio
 
-NL LOC HOLD: What leaves will own what remains.
+Wat vertrekt, zal bezitten wat blijft.
 
 ## Field Note
 
-NL LOC HOLD: Use immediately before irreversible ending route selection.
+Gebruik direct voor de onomkeerbare keuze van de eindroute.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/nl_NL. -->

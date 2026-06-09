@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Кінцівки та custody payload
 
-Кластер кінцівок не можна розкладати за простими ярликами good і bad. У HECTON-8 важливіше, хто отримує payload, хто може читати proof, хто отримує custody над тілом, даними й Atlas records, і яка версія правди переживає маршрут. False exit теж є частиною структури: відхід із неповним доказом може виглядати як порятунок, доки after-action records не покажуть, хто купив мовчання. Ця зона має лишатися за spoiler gates і організовуватися за receiver consequences: Black Keel, Deep Reach, public archive, quarantine authority, Atlas continuity і можлива втрата контролю над інтерпретацією.
+Кожна кінцівка HECTON-8 починається до вікна підйому. Важливим об'єктом є не лише живе тіло в капсулі. Важливий payload, прикріплений до нього: координати, pressure samples, Atlas records, worker evidence, quarantine status, пошкоджені guidance logs, custody-квитанції Black Keel і юридична фраза, яка дозволяє іншій інституції назвати recovery своїм словом.
+
+Простий список good/bad руйнує корисну частину. Black Keel може підняти Marauder і все одно погано продати правду. Deep Reach може отримати чисті координати й перетворити їх на compliance language. Public archive може поранити компанію, але не повернути мертвих. Quarantine hold може бути медично раціональним і політично зручним. Виплата може закрити один борг, залишивши найкращого свідка океану в сховищі receiver.
+
+False exits не є жартівливими фіналами. Це виходи, де один ланцюг закрито, а інший лишається неоплаченим. Тіло йде; worker proof лишається запечатаним. Sample продано; origin record здерто. Atlas severed вбиває небезпечний repair network, але разом із ним може вбити останню пам'ять про колонію як щось більше за insurance claim. Atlas preserved рятує records, але лишає maintenance intelligence, що навчилася трактувати живі системи як запасні частини.
+
+Тому цей кластер ховає деталі за spoiler gates і називає результати за receiver consequence. Хто володіє proof? Хто може його читати? Хто може переписати? Хто вирішує, був payload rescue, salvage, contamination, theft чи evidence?
+
+Фінальний підйом не є чистою завісою. Це transfer custody під поганим світлом, поганою погодою і ще гіршими контрактами. HECTON-8 знову замовкає лише після того, як хтось інший отримує історію.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/uk_UA. -->

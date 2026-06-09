@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Справочник pressure history синего долга"
+title: "Полевой справочник истории давления синего долга"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Справочник pressure history синего долга
+# Полевой справочник истории давления синего долга
 
-Blue debt - контрактный язык, обернутый вокруг опасного substrate. Pressure history, custody marks и signal drift решают, станет ли он чистой выплатой, рычагом Atlas или мотивом Deep Reach вернуться.
+Синий долг - контрактный язык, намотанный на опасный субстрат. История давления, метки опеки и дрейф сигнала решают, станет ли образец чистой выплатой, рычагом Atlas или причиной, по которой Deep Reach снова полезет за утонувшей претензией.
 
 ## Scanner
 
-Образец blue debt помечен. Перед export проверь pressure history, containment stage и signal drift.
+Образец синего долга помечен. Перед вывозом проверь историю давления, стадию контейнирования, цепочку опеки и дрейф сигнала.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt - salvage-сленг для Xenon-Omega-bearing pressure-stable substrate. Он ценен потому, что extreme computation и energy isolation любят его, а не потому, что он светится.
+МАРОДЕРСКАЯ ЗАМЕТКА: синий долг - salvage-сленг для давления-стабильного субстрата с Xenon-Omega. Он ценен потому, что подходит экстремальным вычислениям и энергетической изоляции, а не потому, что светится.
 
 ## Audio
 
-Синий долг - так это называют после прихода счета.
+Синим долгом это начинают называть после счета.
 
 ## Field Note
 
-Цвет - не grade. Тихий контейнер с чистой custody платит; поющий покупает тебе drone wake.
+Цвет - не сорт. Тихий контейнер с чистой опекой платит; поющий покупает тебе след дронов.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ru_RU. -->

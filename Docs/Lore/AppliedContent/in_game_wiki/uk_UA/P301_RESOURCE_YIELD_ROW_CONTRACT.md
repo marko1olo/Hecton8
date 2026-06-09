@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Resource Yield Data Boundary"
+title: "Межа даних ресурсної віддачі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Resource Yield Data Boundary
+# Межа даних ресурсної віддачі
 
-UA LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
+Межа даних не дає цінам ресурсів стати вільною lore-балаканиною. На HECTON-8 мінерал не має однакової вартості на кожній глибині: історія тиску, маршрутне зберігання і виснаження вирішують, чи є зразок валютою, доказом або зараженим баластом.
 
 ## Scanner
 
-UA LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Рядок віддачі відкидає голу ціну: клас, тиск, зберігання, виснаження і hash мають збігтися.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: жодне число не приймається без packet hash, класу ресурсу, діапазону тиску, рангу зберігання, кривої рідкісності й поведінки виснаження. Зразок без історії тиску є доказом, а не цінністю.
 
 ## Audio
 
-UK LOC HOLD: A sample without pressure history is not a value.
+Зразок без історії тиску не має ціни.
 
 ## Field Note
 
-UA LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Числа yield лишаються попередніми, доки pressure band, custody grade, depletion behavior і packet hash не узгоджені.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/uk_UA. -->

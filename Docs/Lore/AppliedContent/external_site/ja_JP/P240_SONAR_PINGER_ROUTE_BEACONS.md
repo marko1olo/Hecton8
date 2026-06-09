@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Sonar Pinger Route Beacons"
+title: "ソナー pinger ルートビーコン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Sonar Pinger Route Beacons
+# ソナー pinger ルートビーコン
 
-JP LOC HOLD: Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean.
+ソナー pinger ルートビーコンは HECTON-8 らしい物体だ。安価で物理的で音響的、そして道徳的に重い。プレイヤーを帰らせる一方で、海にもプレイヤーを知らせる。
 
 ## Scanner
 
-JP LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+pinger フロートは帰還形状を示し、偽反響を暴き、救助と不要な生命の両方を引き寄せる。
 
 ## Terminal
 
-JP LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-JP LOC HOLD: One ping is a promise. Two pings are a bill.
+一つの ping は約束。二つの ping は請求書。
 
 ## Field Note
 
-JP LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger は最初に正直な道具だ。距離、負債、失われた道、捕食リスクを音で語る。
 
 <!-- External Site; generated from P240_SONAR_PINGER_ROUTE_BEACONS/ja_JP. -->

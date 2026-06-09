@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "וריאנטים של חפצי פנקס מיון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# וריאנטים של חפצי פנקס מיון
 
-HE LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+וריאנטים של חפצי פנקס מיון שומרים על נזק קריא בלי להפוך חדרים לתצוגות סבל. פנקס מיון צריך להראות איך פציעה עברה דרך הביורוקרטיה: קיצור crush-status, חוב חמצן, route hold מחוק, מצב ציוד, הערת ייצוב Atlas ופער witness hash. המטרה אינה לקשט את המושבה בכאב. המטרה היא להוכיח שלעיכוב היה נתיב, ולנתיב היו בעלים. חפץ מיון טוב גורם לשחקן לשאול למה עובד אחד נספר, אחר הוחזק ושלישי נעלם לתוך שפת הסמכה.
 
 ## Scanner
 
-HE LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+ראיה רפואית צריכה לחשוף עיכוב וניתוב, לא לקשט את החדר בסבל.
 
 ## Terminal
 
-HE LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: כל רשומת פנקס חייבת לקשור פציעה ללחץ, סירוב נתיב, מצב ציוד, עיכוב הסמכה או שרשרת עד חסרה. כאב לבדו אינו מספיק. החפץ חייב להראות מי יכול היה לזוז, מי הוחזק ואיזו מערכת גרמה לעיכוב להיראות פרוצדורלי.
 
 ## Audio
 
-HE LOC HOLD: Pain is not proof until the route bears the mark.
+כאב אינו ראיה עד שהנתיב נושא את הסימן.
 
 ## Field Note
 
-HE LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+וריאנטים: קיצור crush-status, סימן חוב חמצן, route hold מחוק, הערת ייצוב Atlas, פער witness hash.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/he_IL. -->

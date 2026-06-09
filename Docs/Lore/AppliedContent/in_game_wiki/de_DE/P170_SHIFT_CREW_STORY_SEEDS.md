@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Schichtcrew-Story-Seeds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Schichtcrew-Story-Seeds
 
-DE LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+Schichtcrew-Seeds geben HECTON-8 Replay-Textur, ohne den Schauplatz in eine Widerspruchsmaschine zu verwandeln. Dieselbe Kolonie kann andere Paare, andere Objektfolgen und andere Randnotizen zeigen, aber Deep Reach wird nicht unschuldig und Great Tide bekommt keinen neuen Grund.
+
+Nützliche Variation ist lokal. Ein Routenschreiber kann in einem Run mit einem Brine-Taucher verbunden sein und in einem anderen mit einem Dichtungsrigger. Das ändert die Beweisführung, nicht den Beweis.
 
 ## Scanner
 
-DE LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // Die Liste darf wechseln. Die Schuld nicht.
 
 ## Terminal
 
-DE LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SCHICHTCREW-SEEDS // Ein Run darf Rosterfolge, Arbeiterpaare, Lockerinhalte, Ablehnungen, Routenkreide, Badgefragmente und spätere Marauder-Korrekturen variieren. Der Seed verändert, wie Beweise begegnen, nicht was sie beweisen.
 
 ## Audio
 
-DE LOC HOLD: A different locker can hurt the same truth again.
+Ein anderer Spind kann dieselbe Wahrheit von einer anderen Seite schneiden.
 
 ## Field Note
 
-DE LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Seed-Varianz ändert Objektordnung, Jobpaare und Marauder-Notizen. Sie ändert nie Great Tide oder Deep-Reach-Verantwortung.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/de_DE. -->

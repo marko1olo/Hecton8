@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Нур Халдейн: евакуаційний сертифікат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Нур Халдейн: евакуаційний сертифікат
 
-UA LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+Нур Халдейн — юридичний і сертифікаційний голос Deep Reach за евакуаційними утриманнями. Її підпис написаний не як паніка. Він написаний як контроль. Маршрут має лишатися сертифікованим. Перевізник має прийняти опіку. Біологічний стан має бути придатним до перегляду. Юридичний ланцюг має пережити катастрофу, навіть якщо люди всередині маршруту її не переживуть.
+
+Тому файл Халдейн болить. Мова вміє захищати себе. Порушення карантину може поширити забруднення. Несертифіковане виведення може залишити перевізників у пастці. Відмова порту може перетворити порятунок на іншу катастрофу. У чистій переговорній кожен пункт звучить як відповідальне стримування. У коридорі під тиском, де вода піднімається, ті самі пункти стають замком.
+
+Для гравця ця стаття пов'язує утримання маршрутів колонії, медичні затримки та відповідальність Deep Reach. Халдейн не потрібно нікого ненавидіти. Досить змусити евакуацію чекати умов, які доведуть, що евакуація безпечна. Тиск не чекає. Кисень не чекає. Сертифікат чекав.
 
 ## Scanner
 
-UA LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+СЕРТИФІКАЦІЙНЕ УТРИМАННЯ // Н. Халдейн зберегла юридичну чистоту маршруту, поки сам маршрут фізично відмовляв.
 
 ## Terminal
 
-UA LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+ХАЛДЕЙН, Н. // Юрисконсульт евакуаційної сертифікації // Випуск заборонено до закриття вимог щодо тисково-біологічного карантину, опіки перевізника та зовнішнього перегляду маршруту. Несанкціоноване виведення може порушити ланцюг претензій, відповідальність середовища та приймання наступного порту.
 
 ## Audio
 
-UA LOC HOLD: The door was not locked by fear. It was locked by compliance.
+Двері замкнули не страхом. Їх замкнули дотриманням процедури.
 
 ## Field Note
 
-UA LOC HOLD: This is the paper signature players should hate.
+Це паперовий підпис, який гравець має ненавидіти: не паніка, не злоба, а двері, що чекають зовнішнього перегляду, поки кисень далі рахує вниз.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/uk_UA. -->

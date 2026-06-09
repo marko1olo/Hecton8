@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "שרשרת Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# שרשרת Recovery Compliance
 
-HE LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance הוא ביטוי שמקרר את הסוף. הוא נשמע מסודר מפני שהוא מסודר. קבלנים צריכים אישור, ראיות צריכות משמורת, salvage צריך כותרת, מבטחי נתיב צריכים רישומים ומשרדים ציבוריים צריכים מילים שלא מודות.
 
-## Scanner
-
-HE LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-HE LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-HE LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-HE LOC HOLD: Delay does not make an order harmless.
+האימה היא שהשרשרת יכולה לכלול חיים ולא להפוך לחילוץ. ניצול יכול להיות חומר עדות. חליפת לחץ יכולה להיות מסת חזרה. הודאה יכולה להיות מטען נתונים. השרשרת יכולה להוציא מישהו ועדיין לשרת את המשרד שהשאיר אותו למטה.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/he_IL. -->

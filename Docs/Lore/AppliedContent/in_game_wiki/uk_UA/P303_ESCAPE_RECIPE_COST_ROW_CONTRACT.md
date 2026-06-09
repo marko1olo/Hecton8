@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Escape Recipe Cost Boundary"
+title: "Межа вартості рецепта виходу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Escape Recipe Cost Boundary
+# Межа вартості рецепта виходу
 
-UA LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+Межа вартості робить ланцюг виходу механічним, а не довільним. Кожна деталь підйому має історію тиску, власника і вимоги доказу, тому втеча відчувається як ремонт під законом, а не жетони квесту в меню.
 
 ## Scanner
 
-UA LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Рядок рецепта виходу зв'язує клас компонента, рівень тиску, доказ маршруту і стан повноважень.
 
 ## Terminal
 
-UA LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: кваліфіковані витрати мають назвати реле, герметик, наведення, енергію підйому, юридичне рукостискання, повноваження payload і ризик приймача. Шлях угору має деталі; деталі мають власників.
 
 ## Audio
 
-UK LOC HOLD: The way up has parts. The parts have owners.
+Шлях угору має деталі. Деталі мають власників.
 
 ## Field Note
 
-UA LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure bands походять із правил утримання; точні costs належать recipe tables.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/uk_UA. -->

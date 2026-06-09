@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Piagam Claim-Pool Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Claim-Pool Charter
+# Piagam Claim-Pool Black Keel
 
-ID LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+Piagam Claim-Pool Black Keel adalah dokumen pertama yang seharusnya membuat pemain tidak percaya pada kata kapal. Black Keel berguna, dekat, dan nyata, tetapi ia bukan kapal setia yang menunggu di atas. Ia aset recovery sewaan di dalam Aegir Reclamation Pool, dibuat untuk memindahkan klaim, tubuh, kargo, telemetri, dan utang melalui kanal legal tanpa memberi kontraktor kepemilikan hull. Perbedaan ini penting karena menjelaskan jebakan utama HECTON-8 tanpa sihir. Carrier bisa mendengar ping, menjual telemetri, menjadwalkan window, dan menjatuhkan suplai rendah risiko, tetapi tetap menolak penyelamatan bersih karena pemain bukan pemilik rute. Transport diizinkan. Prioritas penyelamatan bersyarat. Lien tetap aktif. Piagam mengubah orbit menjadi tekanan, bukan kebebasan: ada sesuatu di atasmu, tetapi ia menjawab klaim sebelum menjawab orangnya.
 
 ## Scanner
 
-ID LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel bukan kapalmu. Ia aset recovery claim-pool dengan namamu tertulis di buku utangnya.
 
 ## Terminal
 
-ID LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+KUTIPAN PIAGAM / BLACK KEEL: carrier salvage otonom / kustodi: Aegir Reclamation Pool / transport kontraktor: diizinkan / kepemilikan hull: ditolak / prioritas penyelamatan: tunduk pada insured receiver state, handshake karantina, dan claim value.
 
 ## Audio
 
-ID LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Carrier itu tidak datang untukmu. Ia datang untuk klaim yang ditempeli namamu.
 
 ## Field Note
 
-ID LOC HOLD: Use this on the first contract or carrier-status screen.
+Gunakan di layar status carrier pertama: akses diberikan, kepemilikan ditolak, prioritas penyelamatan bersyarat, lien aktif.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/id_ID. -->

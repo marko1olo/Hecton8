@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "تنويعات claim البداية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# تنويعات claim البداية
 
-AR LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+claim البداية هو الكذبة المكتوبة أعلى أمر العمل. salvage دين، bounty دليل، عتاد مسار مفقود، عهدة عينة خطرة، تخفيف blacklist: كل تنويع يغير سبب سماح اللوحة للـ Marauder بالنزول إلى الماء. يجب أن يلوّن الدافع والضغط الأول، لا أن يستبدل البطل بقناع جديد.
 
 ## Scanner
 
-AR LOC HOLD: Same protagonist. Different claim pressure.
+تنويع CLAIM // نفس Marauder السابق من Deep Reach. دين أول مختلف، bounty، عتاد مسار، عهدة عينة أو تخفيف blacklist.
 
 ## Terminal
 
-AR LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+قاعدة البداية: التنويعات تغيّر الضغط الأول، وصول الشائعات، وزن الأدلة ومنطق الدفع. لا تخلق أبطالا بدلاء ولا تمحو عمود Deep Reach السابق.
 
 ## Audio
 
-AR LOC HOLD: You can change the job without changing who took it.
+يمكنك تغيير العمل من دون تغيير من قبله.
 
 ## Field Note
 
-AR LOC HOLD: Variants should color motive, not erase the canon character.
+غيّر claim. أبق الندبة.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/ar_SA. -->

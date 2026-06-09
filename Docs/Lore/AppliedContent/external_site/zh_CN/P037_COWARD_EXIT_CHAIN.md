@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "怯懦撤离链"
+title: "紧急撤离链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 怯懦撤离链
+# 紧急撤离链
 
-这组结局尊重玩家选择，但不会干净地奖励无知。它是真路线，不是假 game-over。
+紧急撤离链把早期逃离变成程序。足够工程修复后，飞行器可以离开 HECTON-8，但站点记录仍未解决：真相包、责任证据和材料认证都留在下面。
 
 ## Scanner
 
-这个出口是真的，也很薄：修好的舱、狭窄天气、没有真相、没有干净报酬。
+早期发射链是真的，但每盏灯都是临时绿灯：壳体密封、B2储备、返航 ping、风暴缺口、索赔信标。
 
 ## Terminal
 
-封壳、电池储备、中继ping和风暴间隙预测后可上升。合同账本标为不完整打捞。
+只有 cradle 夹紧、压载阀排干、Black Keel 重复 P036 返航窗口、表层风暴留出清洁走廊时，紧急上升才开放。合同账本把离站盖为未完成：无 Atlas 证词、无 Deep Reach 责任包、无认证付款。
 
 ## Audio
 
-你可以跑。身后的海不会解释自己。
+可以发射。结案不在舱内。
 
 ## Field Note
 
-早走应像问题解决，不该令人满足。
+舱体先接收乘员，站点记录还没有接受结果。
 
 <!-- External Site; generated from P037_COWARD_EXIT_CHAIN/zh_CN. -->

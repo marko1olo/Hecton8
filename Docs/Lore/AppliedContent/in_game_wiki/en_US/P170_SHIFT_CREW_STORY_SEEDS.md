@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Shift Crew Story Seeds
 
-Shift crew seeds make replayed colonies feel authored without changing core history.
+Shift crew story seeds give HECTON-8 replay texture without turning the setting into a contradiction machine. The same colony can present different worker pairings, different locker object order and different marginal notes, but it cannot decide that Deep Reach became innocent or that the Great Tide happened for a new reason.
+
+The useful range is local. A route clerk may be linked to a brine diver in one run and to a seal rigger in another. A denial slip may sit inside a locker, under a job board magnet or beside a wet medlock tray. A Marauder correction note may argue with the first reading. These variations change how the player assembles proof, not the proof itself.
+
+The design purpose is emotional without being fake. A replayed room should not feel copy-pasted, but it should still feel authored. The player should think: I have not seen this worker before, but I know the kind of system that killed them.
 
 ## Scanner
 
-Microstories should change route evidence, not canon truth.
+SHIFT SEED // The roster can change. The guilt cannot.
 
 ## Terminal
 
-SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SHIFT CREW SEEDS // A run may vary roster order, worker pairings, locker contents, denial slips, route chalk, badge fragments and later Marauder correction notes. The seed is allowed to change how the player meets the evidence, not what the evidence proves. Canon events stay fixed; local worker traces make the route feel newly inhabited.
 
 ## Audio
 
-A different locker can hurt the same truth again.
+A different locker can cut into the same truth from another side.
 
 ## Field Note
 
-Seed variety is for order, names and objects, not contradiction.
+Seed variety changes object order, job pairings and Marauder annotations. It must never change the Great Tide or Deep Reach liability.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/en_US. -->

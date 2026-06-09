@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Conjunto de Carimbos de Permissão de Rota"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Conjunto de Carimbos de Permissão de Rota
 
-PT LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+O Conjunto de Carimbos de Permissão de Rota dá uma linguagem visual ao movimento. Carimbos PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY e WITNESS não são insígnias de patente. São permissões de pressão: quem podia cruzar uma escotilha, reivindicar uma suit, liberar um crawler ou entrar numa trava de manutenção quando a colônia falhava. O carimbo deve sempre parear com um estado físico: aberto, selado, negado, sobrescrito, inundado ou corrigido depois por uma mão Marauder. Isso deixa o jogador reconstruir o movimento da colônia sem precisar de um personagem explicando.
 
 ## Scanner
 
-PT LOC HOLD: A route stamp is stronger than a diary line.
+Um carimbo de rota é mais forte que uma linha de diário porque prova quem podia cruzar o limite de pressão.
 
 ## Terminal
 
-PT LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: permissão de rota deve conectar um trabalhador, uma porta ou veículo, uma família de equipe e uma contradição posterior. Carimbo sem limite físico é decoração. Um carimbo em escotilha, rack de suit, trilho de crawler ou tag de elevador vira evidência de movimento.
 
 ## Audio
 
-PT LOC HOLD: Access is biography under pressure.
+Acesso é biografia sob pressão.
 
 ## Field Note
 
-PT LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Carimbos: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pareie com estado de escotilha e objeto de trabalho.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/pt_BR. -->

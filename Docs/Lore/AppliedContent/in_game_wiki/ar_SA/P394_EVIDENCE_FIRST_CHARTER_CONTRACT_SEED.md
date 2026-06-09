@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Evidence First Charter Contract Seed"
+title: "بذرة عقد ميثاق الأدلة أولا"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Evidence First Charter Contract Seed
+# بذرة عقد ميثاق الأدلة أولا
 
-AR LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+ميثاق الأدلة أولا عائلة عقود تدفع أقل مقابل salvage السائب وتحجز سعة مسار أكبر للدليل. ملفات الحوادث، وشرائط حالة الفتحات، وسجلات pinger وكاسيتات الكاتب تتحرك قبل القطع الثقيلة عندما يبدأ المسار بالفشل.
 
 ## Scanner
 
-AR LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+بذرة عقد: ميثاق الأدلة أولا. دفعة مادية أقل، وسعة كاتب عدل أكبر، وصراعات حفظ دليل أقسى.
 
 ## Terminal
 
-AR LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: دفعة المواد مخفضة، سعة كاسيت الكاتب مرفوعة، أولوية خزانة الدليل نشطة، عقوبة نزع salvage نشطة، دفع مستقبل Deep Reach مرجح.
 
 ## Audio
 
-AR LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+أنظف سجل يدفع متأخرا ويغضب الناس مبكرا.
 
 ## Field Note
 
-AR LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+ملاحظة مارودر: خزانة الدليل لا تسامح الدين. إنها فقط تمنع الدين من اختيار أي دليل يموت أولا.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ar_SA. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "פיצול אזרחי-תאגידי של התחומים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# פיצול אזרחי-תאגידי של התחומים
 
-HE LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+המרחב האנושי בשנת 2190 דליל, ישן ומחולק למחיצות. Sol Core עדיין קובע אילו מסמכים נחשבים בעלות. Centauri נותן ל-Deep Reach את שפת הלגיטימיות המוקדמת. Barnard Yards מסביר מדוע עבודת marauder יכולה להיראות כמקצוע ולא כשוד. Tau Ceti יכול לפרסם ראיות, אבל רק אחרי עיכוב ממסר ובדיקה פוליטית. Luyten מעביר חבילות וקובע איזו custody chain תשרוד את הדרך. Aegir נמצא במקום שבו כל סמכות שיפוטית נעשית שימושית ואף אחד לא מגיע מהר מספיק כדי לסיים את הוויכוח.
 
 ## Scanner
 
-HE LOC HOLD: Legal map. Same species, different owners of truth.
+מפת חוק: מין אחד, כמה בעלים של הרשומה.
 
 ## Terminal
 
-HE LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core מחזיק מימון ואישורים של החוק הישן; Centauri נושא את כתבי הזיכיון הקולוניאליים הראשונים; Barnard Yards הפך עבודת salvage לנורמה; Tau Ceti יכול להפוך ראיות לחוק ציבורי; Luyten שולט ב-custody של חבילות; Aegir נשאר claim תאגידי עד שמישהו יוכיח אחרת.
 
 ## Audio
 
-HE LOC HOLD: The farther you go, the more the law becomes a receipt.
+ככל שהאות נוסע רחוק יותר, החוק נשמע יותר כמו הנהלת חשבונות.
 
 ## Field Note
 
-HE LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+לא רק המרחק חוסם חילוץ. גם השאלה מי רשאי לקרוא ללכודים אזרחים.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/he_IL. -->

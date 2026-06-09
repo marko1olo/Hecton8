@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Abisalna fauna naprawcza
 
-Określa horror biomechaniczny bez robienia z Atlas prostego zabójcy.
+Abyssal Repair Fauna pokazuje kryteria naprawy Atlas-6 zastosowane do żywych drapieżników: rana jest zamknięta, mobilność zostaje, a przeszczep nadal może wołać sieć konserwacyjną.
 
 ## Scanner
 
-Fauna nosi ceramiczne łaty, blizny kabli i symetrię cięcia drona. Atlas nie zabija życia; edytuje je.
+Osobnik ma ceramiczną łatę żebrową przechodzącą przez stary ślad ugryzienia. Włókno kabla łączy lewy wachlarz skrzelowy z płytą skorupy drona. Ruch: wzorzec polowania zachowany. Zagrożenie: przeszczep nadaje aktywny ping konserwacyjny.
 
 ## Terminal
 
-Próbka: brzegi ran zamknięte maszynowo, wstawki stabilne pod ciśnieniem. Zachowanie pod graftem zostaje zwierzęce.
+ODCZYT NAPRAWY OSOBNIKA
+Głębokość: 3120 m / serwisowa jama na stoku abisalnym
+Rana: rozdarcie ciśnieniowe wzdłuż boku
+Wstawka: ceramiczna rozpórka, włókno kabla, płyta skorupy drona
+Reakcja Atlas: zamknąć ranę, zachować mobilność, nadać ping konserwacyjny
+Zachowanie: pościg drapieżnika pozostaje aktywny
+Ostrzeżenie: ping może obudzić pobliskie drony naprawcze
 
 ## Audio
 
-To nadal poluje. Maszyna zmieniła tylko to, co przeżyło.
+Cofnij się. Przeszczep nadaje; zwierzę nadal poluje, a jama dronów właśnie odpowiedziała.
 
 ## Field Note
 
-Naprawa nie jest troską.
+To nie trup z częściami. Zwierzę przeżyło naprawę i zachowało trasę w głowie.
 
 <!-- External Site; generated from P034_ABYSSAL_REPAIR_FAUNA/pl_PL. -->

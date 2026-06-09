@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Jendela Rute Aegir
 
-Jendela Aegir adalah momen saat jam bermusuhan setuju: radiasi raksasa gas, bayang bulan, derau badai, pasang, kualitas tautan, massa naik, dan geometri Black Keel.
-
-Karena itu langit masuk loop bertahan hidup. Data bisa naik saat tubuh tidak aman. Naik bisa terbuka saat derau merusak bukti.
+Jendela rute Aegir bukan ramalan cuaca yang dipercantik. Ia saat pendek ketika jam-jam bermusuhan cukup sepakat: radiasi, bayangan bulan, plume badai, geser pasang, link akustik, geometri Black Keel, dan kustodi tonne-window. Jendela bisa terbuka untuk data dan tertutup untuk tubuh. Inti bukti bisa lolos karantina sementara sampel blue-debt tertunda. Penyelamatan adalah jam survival, hukum, dan massa yang saling bersilang.
 
 ## Scanner
 
-Tabel efemeris lokal. Komunikasi, pasang, radiasi, bayang bulan, dan geometri carrier berbagi satu jendela naik sempit.
+Tabel ephemeris lokal. Radiasi Aegir, bayangan bulan, plume badai, geser pasang, kualitas link akustik, geometri Black Keel, dan kustodi tonne-window selaras sebentar.
 
 ## Terminal
 
-PEMBARUAN JENDELA AEGIR // Bayang Kestrel membuka. Derau uplink turun. Hitung radiasi naik. Geser pasang di ngarai servis meningkat. Geometri pemulihan Black Keel menunggu massa naik.
+AEGIR WINDOW SOLVER // Uplink data parsial. Pemulihan tubuh tertutup. Kenaikan payload bersyarat. Surge radiasi di band drift. Moon relay shutter aktif siklus lokal berikutnya. Geometri transfer Black Keel butuh handshake legal dan karantina sebelum komit massa.
 
 ## Audio
 
-Langit cerah bukan langit aman. Periksa raksasanya.
+Langit di sini bukan pemandangan. Ia kunci lain di pintu.
 
 ## Field Note
 
-Di HECTON-8, cuaca lokal dan orbital sekaligus.
+Terbuka untuk sinyal bukan terbuka untuk tubuh.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/id_ID. -->

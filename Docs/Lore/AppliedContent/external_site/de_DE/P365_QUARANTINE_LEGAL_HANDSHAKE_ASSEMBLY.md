@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantäne-Rechtshandshake-Baugruppe"
+title: "Baugruppe des Quarantäne-Rechtshandshakes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantäne-Rechtshandshake-Baugruppe
+# Baugruppe des Quarantäne-Rechtshandshakes
 
-Die Quarantäne-Rechtshandshake-Baugruppe macht extraction absichtlich schmutzig: Ein funktionierender Motor kann den Überlebenden trotzdem in corporate custody, verzögerte öffentliche Wahrheit oder ungelöste Quarantäne liefern.
+Die Baugruppe des Quarantäne-Rechtshandshakes ist die letzte Komponente, weil HECTON-8s Fluchtroute in Autorität endet, nicht im Vakuum. Die Kapsel mag mechanisch bereit sein, doch recovery braucht noch einen Empfänger, der die Ankunft benennen will.
 
-## Scanner
+Der Sockel lädt die Fakten, die diesen Namen bestimmen: Empfängerschlüssel, Quarantänestatus, payload custody, Schuld-lien und Public-Ledger-Verzug. Jede Route akzeptiert eine andere Version derselben Kapsel. Keelmark will Masse und lien. Recovery Compliance will Koordinaten und Kontaminationszustand. Das public ledger will Beweis, der Zeit und Streit übersteht.
 
-Handshake-Buchse. Die Kapsel kann mechanisch bereit sein und trotzdem dem falschen receiver gehören.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key erforderlich. Keelmark akzeptiert mass und lien. Recovery Compliance akzeptiert coordinates und quarantine status. Public ledger akzeptiert proof nach Verzögerung. Unkeyed launch wird standardmäßig custody dispute.
-
-## Audio
-
-Wer antwortet, entscheidet, was Rettung bedeutet.
-
-## Field Note
-
-Die letzte Komponente ist kein Metall. Es ist der Name des Systems, das dich recovered nennen darf.
+Das macht Extraktion absichtlich unbequem. Der sauberste Start kann den Überlebenden noch in ein Anspruchsbüro, einen verschlossenen medizinischen Halt oder einen langsamen öffentlichen Fall liefern. Den Handshake zu reparieren befreit die Kapsel nicht von Politik. Es lässt den Marauder wählen, welche Politik zuerst die Hand auf die Luke legt.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/de_DE. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Abyssal Machine Field Warning"
+title: "Peringatan Medan Mesin Abyssal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Abyssal Machine Field Warning
+# Peringatan Medan Mesin Abyssal
 
-ID LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+Sebelum cekungan terakhir, HECTON-8 berhenti tampak ditinggalkan dan mulai tampak seperti mesin yang terlalu besar untuk menampilkan seluruh tubuhnya. Peringatan tetap tenang karena terornya bukan pengejaran. Terornya adalah skala.
 
 ## Scanner
 
-ID LOC HOLD: Machine field warning: silt motion does not match current.
+Lumpur bergerak melawan arus. Tubuh penyaring bergeser di bawah lampu.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: gerak lumpur medan mesin abyssal melebihi model arus. Tubuh penyaring dan rusuk aktuator terkubur terbaca sebagai infrastruktur bergerak. Jaga jarak; jangan menambat ke lantai lunak.
 
 ## Audio
 
-ID LOC HOLD: The floor is not still.
+Lantai tidak diam.
 
 ## Field Note
 
-ID LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Peringatan late-game: rasa takut objektif yang tenang. Medan terakhir adalah infrastruktur yang bangun, bukan pemanasan boss.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/id_ID. -->

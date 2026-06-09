@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Zatrzymanie kwarantannowe: stęchłe powietrze
 
-Zatrzymanie kwarantannowe ratuje ciało i zawiesza agency. Gracz uciekł przed ciśnieniem, ale nie przed custody. Każdy oddech jest odmierzany, gdy dowód czeka za językiem przeglądu.
+Zatrzymanie kwarantannowe ratuje ciało i zawiesza sprawczość. W pokoju nie musi stać złoczyńca. Formularz mówi odzyskany żywy, licznik powietrza mówi racja aktywna, a następne drzwi otworzą się dopiero po przeglądzie skażenia, sporze roszczeniowym i audycie strat. Dowód czeka za językiem zaprojektowanym, by brzmieć rozsądnie. Każde oświadczenie jest opóźniane dłużej, niż pozwolono żyć robotnikom. Ocean zniknął, ale ciśnienie nauczyło się nosić dokumenty.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Ciało odzyskane. Świadek zapieczętowany. Racja powietrza aktywna.
 
 ## Terminal
 
-ZATRZYMANIE KWARANTANNOWE: kontraktor odzyskany żywy; racja powietrza aktywna; sample custody nierozwiązane; zeznanie zewnętrzne opóźnione do przeglądu skażenia, sprzeciwu claimant i przeglądu straty Keelmark.
+ZATRZYMANIE KWARANTANNOWE: kontraktor odzyskany żywy; racja powietrza aktywna; custody próbki nierozwiązana; zewnętrzne zeznanie opóźnione do przeglądu skażenia, wyzwania roszczeniowego i audytu straty Keelmark.
 
 ## Audio
 

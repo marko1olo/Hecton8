@@ -1,0 +1,30 @@
+---
+packet_id: P1325_PRESSURE_BASE_EXTERIOR_HULL_TRIM_FIELD_ARTICLE
+release_set_id: RS272_PRESSURE_BASE_EXTERIOR_HULL_TRIM_FIELD_ARTICLE
+article_id: applied_lore.pressure_base_exterior_hull_trim_field_article
+unlock_id: unlock.pressure_base_exterior_hull_trim_field_article
+poi_tags: poi.pressure_base_exterior_hull_trim;poi.graphite_pressure_rib
+biome_tags: biome.pressure_base;biome.wreck_exterior
+locale: ja_JP
+surface: external_site
+source_voice: Public Site Hull Language Article
+spoiler_tier: 0
+title: "圧力基地外装ハルトリム"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# 圧力基地外装ハルトリム
+
+圧力基地の外装は、遠くからは静かに見えるよう設計されている。それは嘘の一部であり、工学の一部でもある。滑らかな淡色パネルは、濁った水中でモジュールを読ませる。暗いリブは外皮が力を待つ場所を示す。ガスケット溝は、一つの部屋が次の部屋を沈めないと約束した場所を示す。小さな沈み込みリップは、手袋をした疲れた作業員がマニュアルに腹を立てながらも工具を届かせられた場所を示す。
+
+有用な情報は特徴の順番にある。パネル継ぎ目を無視するリブは構造材だ。ハッチで止まるトリム帯は整備の言語だ。ガスケット溝の下の塩は遅い呼吸を示す。塗装板の下の塩は、より広い水の移動経路を示す。ネジ列の錆は、締結部が水を運んだことを語る。沈んだリップ内のきれいな塗装は、周囲の外皮がすでに老いた後で遅く開かれたことを語る。
+
+プレイヤーにとって外装トリムは航法器具だ。安全な切断線、見せかけだけ安全なパネル、隠れた乾いたポケット、遅い修理、そしてDeep Reachが空である証明なしに封鎖済みとした部屋を示せる。意図も読める。きれいなボルト間隔の補修トリムは、保守班が戻るつもりだったことを示す。整備リップを横切る溶接帯は、アクセスが許されなくなったことを示す。疲れ切ったモジュールの完璧な交換帯は、公式記録がその壁に手を入れたことを示す。
+
+トリムを視覚ノイズとして扱うのは間違いだ。HECTON-8では、中央より縁のほうが正直なことが多い。平らできれいなパネルは会社が見せたかったことしか語らないかもしれない。周囲の帯は、基地が生き残るため本当に必要だったものを語る。
+
+<!-- External Site; generated from P1325_PRESSURE_BASE_EXTERIOR_HULL_TRIM_FIELD_ARTICLE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Schichtcrews, keine Helden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Schichtcrews, keine Helden
 
-DE LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 sollte die Kolonie durch Arbeit menschlich machen, bevor Tragödie spricht. Ein Drucktechniker tauscht eine Ventildichtung, eine Köchin zählt Wassermarken, ein Routenangestellter stempelt die falsche Rückkehr, ein Taucher trägt einen Cutter aus und gibt ihn nie zurück. Solche Details machen Menschen lesbar, ohne einen Familienrache-Hook zu erzwingen. Die ertrunkene Kolonie ist am stärksten, wenn sie wie ein Ort wirkt, der mitten in Routine unterbrochen wurde, nicht wie ein Museum nach dem Tod.
 
 ## Scanner
 
-DE LOC HOLD: The colony becomes human through schedules, not speeches.
+MENSCHLICHE SCHICHT // Die Kolonie wird durch Pläne, abgenutzte Werkzeuge, fehlende Rückkehr und Namen auf Diensttafeln real. Nicht durch Reden.
 
 ## Terminal
 
-DE LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+SCHREIBREGEL: Arbeiter als Pumpentechniker, Medics, Routenangestellte, Taucher, Köche, Fabrikatorbediener und müde Vorgesetzte erfassen. Ein Dienstplan mit einer fehlenden Rückkehr schmerzt mehr als ein Denkmal.
 
 ## Audio
 
-DE LOC HOLD: They were not symbols. They were late for shift.
+Sie waren keine Symbole. Sie kamen zu spät zur Schicht.
 
 ## Field Note
 
-DE LOC HOLD: People are more believable as workers than as memorial statues.
+Menschen sind als Arbeiter glaubwürdiger als als Gedenkstatuen.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/de_DE. -->

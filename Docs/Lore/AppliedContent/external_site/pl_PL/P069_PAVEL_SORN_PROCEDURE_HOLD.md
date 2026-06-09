@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Proceduralne wstrzymanie Pavla Sorna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Proceduralne wstrzymanie Pavla Sorna
 
-PL LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem.
+Proceduralne wstrzymanie Pavla Sorna to artykuł o biurokratycznym horrorze HECTON-8. Pokazuje, jak realna katastrofa oceaniczna stała się gorsza, gdy procedura Deep Reach potraktowała ewakuację jako problem zgody. Sorn nie jest napisany jako mózg spisku; dzięki temu jest bardziej użyteczny i straszniejszy. To człowiek, który potrafi przeczytać raport o zalaniu, rozpoznać dołączone nazwiska i mimo to odłożyć uwolnienie do czasu certyfikacji zewnętrznej, bo język kontraktu nauczył go bać się złej konsekwencji. Dla gracza ten wpis ujmuje upadek kolonii jako łańcuch małych legalnych odmów: bez natychmiastowego ratunku, bez karykaturalnego złoczyńcy w radiu, tylko ludzie i systemy zmieniające zwłokę w śmierć.
 
 ## Scanner
 
-PL LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn nie wydał rozkazu masakry. Zrobił coś, co łatwiej przeżyć na papierze: zostawił zgodę na ewakuację w koszyku spraw oczekujących.
 
 ## Terminal
 
-PL LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Biuro kontraktów / pokład administracyjny. Zgoda na ewakuację pozostaje WSTRZYMANA PROCEDURALNIE: brak certyfikacji zewnętrznej, pieczęć ciągłości Atlas nierozwiązana, kanał odpowiedzialności przeciążony. Zagrożenie pracowników potwierdzone. Nie autoryzować wynurzenia do czasu wyjaśnienia depozytu roszczeń i języka kwarantanny.
 
 ## Audio
 
-PL LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Wciąż pisał „oczekuje”, gdy morze zabierało niższe pokłady.
 
 ## Field Note
 
-PL LOC HOLD: Useful evil often signs in normal handwriting.
+Kolonia nie umarła dlatego, że ktoś śmiał się przy zamkniętych drzwiach. Umarła, bo drzwi miały formularz.
 
 <!-- External Site; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/pl_PL. -->

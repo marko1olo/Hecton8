@@ -341,7 +341,7 @@ namespace Hecton8.Environment
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â WATER LEVEL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
-        private const float DefaultWaterLevelFallback = 14.02f;
+        private const float DefaultWaterLevelFallback = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         [SerializeField] private float waterLevelFallback = DefaultWaterLevelFallback;
 
         [Header("Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â DEEP CELESTIAL CULL Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â")]
@@ -6666,7 +6666,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(1.18f, 0.75f, 0f, 0f));
             Shader.SetGlobalColor(_HectonNoirAbyssFloorId, new Color(0.028f, 0.042f, 0.060f, 1f));
             Shader.SetGlobalVector(_HectonNoirFogStratificationId, new Vector4(waterLevel, 1f / 180f, 0.42f, 0.0001f));
-            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionRuntime(new Vector4(0f, 1f, 1f, 0f));
+            HectonShaderGlobalDataVaultBridge.PublishWaterExtinctionRuntime(new Vector4(waterLevel, 1f, 1f, 0f));
             Shader.SetGlobalVector(_HectonNoirDitherParamsId, new Vector4(0f, 0f, 64f, 0f));
             Shader.SetGlobalVector(_HectonNoirCausticsLayerAId, Vector4.zero);
             Shader.SetGlobalVector(_HectonNoirCausticsLayerBId, Vector4.zero);
@@ -7409,14 +7409,14 @@ namespace Hecton8.Environment
         private float ResolveWaterLevel()
         {
             if (_playerMovement != null &&
-                TryResolveVisualWaterLevel(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY))
+                TryResolveRuntimeVisualWaterLevel(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY))
             {
                 return playerWaterSurfaceY;
             }
 
             IHectonOceanKinematics oceanKinematics = ReadCachedOceanKinematicsProvider();
             if (oceanKinematics != null &&
-                TryResolveVisualWaterLevel(oceanKinematics.SeaLevel, out float oceanSeaLevel))
+                TryResolveRuntimeVisualWaterLevel(oceanKinematics.SeaLevel, out float oceanSeaLevel))
             {
                 return oceanSeaLevel;
             }
@@ -7424,7 +7424,7 @@ namespace Hecton8.Environment
             if (atmosphereManager != null)
             {
                 float atmosphereSeaLevel = atmosphereManager.SeaLevelY;
-                if (TryResolveVisualWaterLevel(atmosphereSeaLevel, out float resolvedAtmosphereSeaLevel))
+                if (TryResolveRuntimeVisualWaterLevel(atmosphereSeaLevel, out float resolvedAtmosphereSeaLevel))
                     return resolvedAtmosphereSeaLevel;
             }
 
@@ -7444,7 +7444,7 @@ namespace Hecton8.Environment
             if (_physicsEngine != null)
             {
                 float fluidWaterLevel = _physicsEngine.WaterLevel;
-                if (TryResolveVisualWaterLevel(fluidWaterLevel, out float resolvedFluidWaterLevel) &&
+                if (TryResolveRuntimeVisualWaterLevel(fluidWaterLevel, out float resolvedFluidWaterLevel) &&
                     (!hasTerrainWaterLevel || math.abs(resolvedFluidWaterLevel - terrainWaterLevel) <= 128f))
                 {
                     return SanitizeVisualWaterLevel(resolvedFluidWaterLevel, terrainWaterLevel);
@@ -7455,6 +7455,19 @@ namespace Hecton8.Environment
                 return SanitizeVisualWaterLevel(terrainWaterLevel, terrainWaterLevel);
 
             return SanitizeVisualWaterLevel(waterLevelFallback, waterLevelFallback);
+        }
+
+        private static bool TryResolveRuntimeVisualWaterLevel(float waterLevel, out float resolvedWaterLevel)
+        {
+            if (math.isfinite(waterLevel) &&
+                math.abs(waterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                resolvedWaterLevel = waterLevel;
+                return true;
+            }
+
+            resolvedWaterLevel = DefaultWaterLevelFallback;
+            return false;
         }
 
         private float SanitizeVisualWaterLevel(float waterLevel, float fallbackWaterLevel)
@@ -7482,7 +7495,7 @@ namespace Hecton8.Environment
         {
             if (math.isfinite(candidateWaterLevel) &&
                 math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;

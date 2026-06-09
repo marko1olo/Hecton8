@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Pengetahuan Dossier, Bukan Kekuatan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Pengetahuan Dossier, Bukan Kekuatan
 
-ID LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Pengetahuan Dossier, Bukan Kekuatan adalah aturan replayability yang menjaga HECTON-8 panjang, berbahaya, dan jujur secara naratif.
 
 ## Scanner
 
-ID LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Tidak ada oksigen, rating lambung, senjata, inventori, otoritas rute, atau shortcut ajaib yang diwarisi. Dossier menyimpan peringatan, bukan otot.
 
 ## Terminal
 
-ID LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+BATAS KERAS: data dossier persisten boleh membuka peringatan, keluarga rumor, varian claim, dan konteks ending. Tidak boleh mempertahankan kekuatan alat, inventori sumber daya, kepemilikan kebenaran dunia, atau izin rute.
 
 ## Audio
 
-ID LOC HOLD: Memory does not reinforce a cracked hull.
+Memori tidak memperkuat lambung retak.
 
 ## Field Note
 
-ID LOC HOLD: The player can become wiser. The ocean should not become smaller.
+Pemain bisa menjadi lebih bijak. Samudra tidak boleh mengecil.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/id_ID. -->

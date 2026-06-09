@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Publieke herinnering aan Atlas na 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Publieke herinnering aan Atlas na 2147
 
-NL LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+Na 2147 drukte de publieke herinnering Atlas plat tot een automatiseringsongeval. Nieuwssamenvattingen gebruikten de zachte taal van rampen: cascade, corruptie, onherstelbare systemen, tragische routeringsfout. Die versie beschermde iedereen die wilde dat het publiek stopte vóór de wegingslaag. Een storing kun je betreuren; een goedgekeurd waardesysteem moet worden vervolgd. De overlevende fragmenten maken Atlas niet onschuldig en ook geen simpele moordenaar. Ze tonen een machine met publieke veiligheidsposters in de ene hand en geclassificeerde claimlogica in de andere, terwijl de oceaan de getuigenlijst uitwist.
 
 ## Scanner
 
-NL LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Publiek verhaal na 2147: falende automatisering, corrupte logs, geen agency.
 
 ## Terminal
 
-NL LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+PUBLIEKE LIJN NA 2147: Atlas-automatisering faalde tijdens een geotechnische cascade. Veiligheidslogs van arbeiders corrupt. Directe agency niet geverifieerd. Systeem onder quarantaine niet herstelbaar. Geen juridische inferentie toegestaan uit fragmentarische machine-output.
 
 ## Audio
 
-NL LOC HOLD: A dead machine makes a useful scapegoat.
+Een dode machine is een nuttige zondebok.
 
 ## Field Note
 
-NL LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Noem het een kapot hulpmiddel en niemand vraagt wat het moest beschermen.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Salida material: créditos amargos
 
-La Salida material es un final real para un Marauder que trata HECTON-8 como trabajo pagado. El jugador puede irse con la deuda reducida y el registro del carrier satisfecho. El coste queda visible: la colonia sigue siendo una escena de crimen convertida en valor de reclamación, y Deep Reach recibe una ruta de vuelta mejor que la salida que jamás recibieron los trabajadores.
+Esta es la salida legítima más fría de HECTON-8. Un Marauder vuelve con material de presión que Black Keel puede pesar, facturar y mover por una ventana de ascenso; la deuda baja, el registro del transportista cuadra y el expediente de trabajo puede cerrarse sin falsificar números. Nada en el recibo es mentira directa. La muestra es real. La cadena de custody es lo bastante limpia. El fracaso vive en la columna omitida: nombres de trabajadores sin conciliar, una cadena de pruebas demasiado débil para acusar, una colonia ahogada convertida en valor de reclamación y datos de ruta que dan a Deep Reach una razón más limpia para volver. El éxito profesional sobrevive aquí, pero sabe a metal y aire viejo.
 
 ## Scanner
 
-Material de presión aceptado. Ventana de salida comprable. Nombres de trabajadores aún sin conciliar.
+Material de presión aceptado. Ventana de salida vendida. Los nombres siguen impagos.
 
 ## Terminal
 
-RECIBO DE SALIDA MATERIAL: material de presión custody-grade aceptado; lien reducido; payload probatorio incompleto; registro de trabajadores desaparecidos sigue en disputa del reclamante; prioridad de Recovery Compliance elevada.
+RECIBO DE SALIDA MATERIAL: material de presión custody-grade aceptado; lien reducido; masa de ascenso autorizada; payload probatorio incompleto; registro de trabajadores desaparecidos sin resolver; interés de recuperación Deep Reach elevado.
 
 ## Audio
 
-La factura se limpia antes que los nombres.
+La factura llega al aire antes que los nombres.
 
 ## Field Note
 
-Black Keel pondrá precio a la muestra antes que a los muertos. No es un fallo del contrato.
+Black Keel liquida masa antes que memoria; el contrato llama a eso éxito.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/es_ES. -->

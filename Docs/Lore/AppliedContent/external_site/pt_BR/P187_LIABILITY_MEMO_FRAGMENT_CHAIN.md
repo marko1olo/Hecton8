@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Cadeia de Fragmentos do Memorando de Responsabilidade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Cadeia de Fragmentos do Memorando de Responsabilidade
 
-PT LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Cadeia de Fragmentos do Memorando de Responsabilidade define evidência de HECTON-8 como reconstrução, não exposição. O artigo dá aos jogadores motivo para se importar com retalhos, marcações de tempo e salas administrativas danificadas: a Deep Reach não deixou uma confissão, deixou autoproteções incompatíveis. Cada fragmento é pequeno o bastante para ser plausível e feio o bastante para importar. Juntos, mostram como a companhia pode culpar publicamente a física das marés enquanto move responsabilidade por risco, evacuação, continuidade Atlas, conversão de seguro e custódia de carga.
 
 ## Scanner
 
-PT LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+O memorando de responsabilidade sobreviveu como fragmentos porque cada escritório guardou o parágrafo que o protegia.
 
 ## Terminal
 
-PT LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: tabela de margem de risco / nota de liberação de evacuação / override de continuidade Atlas / conversão de perda Keelmark / pedido de custódia de recuperação. Cruzar horário de rota, dano de sala e nomes de trabalhadores antes de aceitar o resumo público.
 
 ## Audio
 
-PT LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Eles não esconderam a verdade num cofre. Arquivaram em pedaços.
 
 ## Field Note
 
-PT LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Um memorando rasgado é honesto nos lugares onde não pretendia ser.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/pt_BR. -->

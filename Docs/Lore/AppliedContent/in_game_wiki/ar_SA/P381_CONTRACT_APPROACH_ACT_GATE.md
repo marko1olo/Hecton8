@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Contract Approach Act Gate"
+title: "بوابة الاقتراب التعاقدي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Contract Approach Act Gate
+# بوابة الاقتراب التعاقدي
 
-AR LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+البوابة الأولى أوراق وخلفها ضغط. Black Keel لا ترسل سائحا إلى مياه Aegir. يقبل المشغل نقل مطالبة، تعرض دين، فتحة bathydrop وفاتورة أدوات قبل أول مسح عميق. ملف Deep Reach القديم مهم لأن تعرف الإجراء يبدأ قبل أن يبدو المسار شخصيا.
 
 ## Scanner
 
-AR LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+بوابة مسار: تم قبول العقد. تعرض الرهن، توقيت bathydrop، وإجراء Deep Reach القديم نشطة قبل الهبوط.
 
 ## Terminal
 
-AR LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+مسار حملة // اقتراب تعاقدي. المالك: لوحة مطالبات Black Keel. قبول نقل المطالبة، تعرض الرهن، فتحة bathydrop، ودين الأدوات. بقايا اعتماد Deep Reach مكتشفة في ملف المشغل. الاسترجاع مشروط.
 
 ## Audio
 
-AR LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+جئت للعمل. العقد يعرف بالفعل أين عملت من قبل.
 
 ## Field Note
 
-AR LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+ملاحظة نهب: اقرأ لوحة العقد مرتين. في المرة الثانية تظهر الأذونات القديمة التي ما زالت تناسب يديك.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/ar_SA. -->

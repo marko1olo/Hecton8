@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Jeu de tampons d'autorisation de route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Jeu de tampons d'autorisation de route
 
-FR LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Le Jeu de tampons d'autorisation de route définit les props d'accès de HECTON-8. Les tampons relient l'identité ouvrière aux frontières physiques : portes, véhicules, combinaisons, ascenseurs et panneaux de route. Comme chaque tampon peut ensuite contredire un registre ou un fragment audio, l'accès devient biographie sous pression et moyen central de lire les derniers mouvements de la colonie.
 
 ## Scanner
 
-FR LOC HOLD: A route stamp is stronger than a diary line.
+Un tampon de route est plus fort qu'une ligne de journal, car il prouve qui avait le droit de franchir la frontière de pression.
 
 ## Terminal
 
-FR LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE : une autorisation de route doit relier un ouvrier, une porte ou un véhicule, une famille d'équipe et une contradiction ultérieure. Un tampon sans frontière physique est décoratif. Un tampon sur un sas, un rack de combinaison, un rail de crawler ou une étiquette d'ascenseur devient preuve de mouvement.
 
 ## Audio
 
-FR LOC HOLD: Access is biography under pressure.
+L'accès est une biographie sous pression.
 
 ## Field Note
 
-FR LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Tampons : PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Associer à l'état de sas et à l'objet de travail.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/fr_FR. -->

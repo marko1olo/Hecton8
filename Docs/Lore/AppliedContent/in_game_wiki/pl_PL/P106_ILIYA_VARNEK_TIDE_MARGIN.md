@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: margines pływowy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: margines pływowy
 
-PL LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+Iliya Varnek to podpis ryzyka Deep Reach z 2147 roku powiązany z marginesem Wielkiego Pływu. Nie jest kreskówkowym dyrektorem z dźwignią. Nota jest gorsza, bo jest zwyczajna: harmonogram produkcji, uśredniony model, linia ufności, uwaga o ekspozycji robotników i zalecenie kontynuacji.
+
+Kluczowe słowa to uśredniona ufność modelu. Średnio trasa wyglądała na możliwą do przeżycia. W ogonie rozkładu, gdzie spotykały się spiętrzenie pływów Aegir, odbicie szelfu lodowego, ruch tras ciśnieniowych i błędy kompensacji Atlas, margines zwężał się do tolerancji księgowej. Ludzie w tych salach nie żyli w średniej. Żyli w najgorszej godzinie.
+
+Podpis Varneka daje graczowi jedną warstwę odpowiedzialności. Nie dowodzi, że znał dokładną katastrofę, która nastąpi. Dowodzi, że Deep Reach miał czytelną ścieżkę ryzyka i wybrał tańszą interpretację. Zbrodnią nie jest wszechwiedza. Zbrodnią jest przyjęcie niepewności, bo ciała, które miały ją nieść, nie siedziały w pokoju, gdzie wyceniano margines.
 
 ## Scanner
 
-PL LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+NOTA RYZYKA // I. Varnek obniżył margines Wielkiego Pływu po tym, jak model przeszedł średnio. Ryzyko ogona zostało w ciśnieniowych salach robotników.
 
 ## Terminal
 
-PL LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // Ryzyko operacji Aegir // Zalecenie: utrzymać harmonogram produkcji. Ekstremalny stos pływów pozostaje niskoczęstotliwościową wariancją operacyjną do czasu przeglądu kompensacji Atlas. Ekspozycja tras roboczych akceptowalna przy uśrednionej ufności modelu.
 
 ## Audio
 
-PL LOC HOLD: He did not order a flood. He priced it low enough to happen.
+Nie kazał zrobić powodzi. Wycenił ją na tyle nisko, żeby mogła się zdarzyć.
 
 ## Field Note
 
-PL LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Nie czytaj tego jak rozkazu zabicia. Czytaj jak pozycję budżetu, w której niepewność stała się dość tania, by ją wydać.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/pl_PL. -->

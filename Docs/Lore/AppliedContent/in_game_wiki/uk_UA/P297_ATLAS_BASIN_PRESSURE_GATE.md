@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Basin Pressure Gate"
+title: "Напірні ворота басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Basin Pressure Gate
+# Напірні ворота басейну Atlas
 
-UK LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+Напірні ворота прив'язують фінальний поріг до класу костюма, доказу тиску й конфлікту повноважень. Двері не містичні; це промислова система, що вирішує, чи гравець є доступом, доказом або зараженням.
 
 ## Scanner
 
-UK LOC HOLD: Basin gate requires pressure proof and authority response.
+Ворота басейну вимагають доказ тиску, маршрутну владу й тіло, яке можна класифікувати.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: доказ тиску неповний. Клас костюма прийнято нижче порога спуску. Authority clamp розпізнає відкликаний патерн Deep Reach, а не поточного заявника. Ручний обхід потребує локального навантаження, вибору приймача і свідкового payload.
 
 ## Audio
 
-UK LOC HOLD: It knows the old key. It does not know you.
+Воно знає старий ключ. Воно не знає тебе.
 
 ## Field Note
 
-UK LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Фінальний поріг має читатися як сервісні ворота живої фабрики, а не фантазійний портал.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/uk_UA. -->

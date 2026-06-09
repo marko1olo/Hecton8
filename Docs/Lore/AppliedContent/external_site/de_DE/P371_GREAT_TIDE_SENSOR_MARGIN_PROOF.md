@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Randspur der Großen Tide"
+title: "Spur der Tide-Marge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Randspur der Großen Tide
+# Spur der Tide-Marge
 
-Der erste brauchbare Deep-Reach-Beweis ist kein Geständnis. Es ist eine Sensormarge, die weiter aufzeichnete, nachdem der Korridor ertrank. Die Zahlen machen die Katastrophe nicht künstlich: hydrostatische Last, Gezeitenscherung und versagende Infrastruktur überwältigten HECTON-8 wirklich. Genau deshalb ist der Beweis wichtig. Die Lüge beginnt im Abstand zwischen Rohspur und öffentlichem Bericht. Die Rohspur markiert den Warnmargenbruch vor Schließung des genehmigten Routenfensters. Der Bericht behält die geotechnische Cascade und streicht die accepted-tail-risk-Notiz. Wer die Spur findet, erkennt die genaue Schuldform: Physik traf die Kolonie, dann entschieden Verantwortliche, dass Warnung billiger war als Shutdown.
+Ein brauchbarer Katastrophendatensatz beginnt damit, dass er nichts ausschmückt. Das Tide-Array P-63 beschuldigt den Ozean nicht. Es speichert Scherungssprung, Druckmargensturz und eine Prüfsumme, die überlebte, weil der Brine-Buffer länger Strom hatte als der Korridor.
 
-## Scanner
-
-Geborgener Gezeitensensor. Die Spitzenscherung überschritt das Koloniedesign, doch der Warnmargenbruch wurde vor dem öffentlichen Cascade-Zeitstempel geloggt.
-
-## Terminal
-
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-Risk-Schwelle durch Routenautorität akzeptiert. Operatornotiz aus öffentlicher Unfallkette entfernt. Rohspur in Brine-Buffer-Speicher erhalten.
-
-## Audio
-
-Der Ozean hat nicht gelogen. Der Bericht schon.
-
-## Field Note
-
-Marauder-Notiz: Suche keine Bösewichtrede. Suche die Zeile, die jemand gelöscht hat.
+Darum zählt die Spur. Deep Reach konnte auf die Große Tide zeigen und ein reales Ereignis benennen, dann aber die Zeile verstecken, die daraus einen Handlungsgrund machte. Für die Kolonie war noch eine Routenentscheidung offen, als die Marge unter den Abschaltboden fiel. Der öffentliche Bericht behält die Kaskade und entfernt die kommerzielle Ausnahme; aus einem verzögerten Stoppbefehl wird Wetter.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/de_DE. -->

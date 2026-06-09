@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "تعليق بافل سورن الإجرائي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# تعليق بافل سورن الإجرائي
 
-AR LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem.
+تعليق بافل سورن الإجرائي هو مقال الرعب البيروقراطي في HECTON-8. يوضح كيف ازدادت كارثة محيطية حقيقية سوءاً عندما تعامل إجراء Deep Reach مع الإخلاء كمسألة إذن. لا يكتب سورن كعقل مدبر؛ وهذا يجعله أنفع وأرعب. إنه الشخص القادر على قراءة تقرير غمر، والتعرف إلى الأسماء المرفقة، ثم إبقاء الإطلاق بانتظار شهادة خارجية لأن لغة العقد علمته أن يخاف النتيجة الخاطئة. بالنسبة إلى اللاعب، يؤطر هذا المدخل انهيار المستعمرة كسلسلة من الرفضات القانونية الصغيرة: لا إنقاذ فوري، ولا شرير كاريكاتوري على الراديو، بل أشخاص وأنظمة تحول التأخير إلى موت.
 
 ## Scanner
 
-AR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+لم يأمر بافل سورن بمذبحة. فعل شيئاً أسهل للبقاء على الورق: أبقى تصريح الإخلاء في خانة الانتظار.
 
 ## Terminal
 
-AR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. مكتب العقود / السطح الإداري. يبقى تصريح الإخلاء في تعليق إجرائي: الشهادة الخارجية مفقودة، ختم استمرارية Atlas غير محسوم، قناة المسؤولية مشبعة. تم الاعتراف بضائقة العمال. لا يؤذن بالصعود حتى تتضح حيازة المطالبة وصياغة الحجر.
 
 ## Audio
 
-AR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+ظل يكتب «قيد الانتظار» بينما كان البحر يأخذ الطوابق السفلى.
 
 ## Field Note
 
-AR LOC HOLD: Useful evil often signs in normal handwriting.
+لم تمت المستعمرة لأن رجلاً ضحك أمام باب مقفل. ماتت لأن الباب كان له نموذج.
 
 <!-- External Site; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/ar_SA. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # الموارد والبيئة
 
-محور الموارد والبيئة: drowned crust وbrine ladders وvent chemistry وliving systems وrepair logic المتضررة لدى Atlas.
+مركز الموارد والبيئة: Drowned Crust، السلالم الملحية، كيمياء الفتحات، blue debt، دلائل المفترسات، حيوانات موسومة، وإصلاحات Atlas التي تعامل الأنظمة الحية كأنها عتاد.
 
 ## Scanner
 
-محور نشر: geology وblue debt وقواعد الفاونا وmisuse شبكة إصلاح Atlas.
+مركز نشر: Drowned Crust، سلالم ملحية، تاريخ ضغط blue debt، دلائل حيوانية، وإساءة استخدام إصلاح Atlas.
 
 ## Terminal
 
-SITE NAV: native geology وprocess feedstock وAtlas-altered resources وshallow ecology وencounter grammar كخريطة process واحدة.
+SITE NAV: اقرأ العينات حسب الأصل، وتاريخ الضغط، والاتصال الحي، وضرر الاستخراج، وقيمة custody.
 
 ## Audio
 
-لا يوجد هنا شيء هو loot فقط.
+لا شيء هنا مجرد loot.
 
 ## Field Note
 
-الموارد والبيئة تنتميان معا حين تشترك المواد والبيوتا وevidence pressure في المسار نفسه.
+العينة النظيفة نادرا ما تكون الأغنى. اسأل ما الذي شكلها، وما الذي لمسها، وما الذي تضرر عندما أخذت.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ar_SA. -->

@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "最佳结局：没有干净的手"
+title: "最佳路线：让残余可见"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最佳结局：没有干净的手
+# 最佳路线：让残余可见
 
-HECTON-8的最佳结局不应是所有东西都被修好的结局。那会让海洋、死去工人和合同机器变得小于玩家清单。最强版本让玩家救下具体事物：公共记录、活盆地、被拒绝的企业payload、获得自由的操作者、无法再被删除的名字。
+HECTON-8 最强的结局不应该把场景修成奖励界面。它应该让操作者完成具体工作：离开 Black Keel 保管，发布记录，拒绝 Deep Reach 的返回路，在隔离下保存一个活体盆地，带出工人姓名，或把 Atlas proof hash 封存在无法按货物定价的位置。
 
-它也必须留下残余。Atlas也许在隔离下存活。切断也许救人并杀死一种生命形态。真相也许公开却无法控制。玩家也许无债离开，并带着会继续伤人的证据。没有干净的手不是犬儒，而是对尺度的尊重。玩家可以有意义地行动，但不能变回无辜。
+记录也必须保留开启字段。付费离开可能省略工人姓名。公开发布可能制造把文件武器化的接收方。切断可以停止受损权威，也可以伤害修复生命。保留可以保护压力生态，也会让旧分类器继续活动。一份好的最终记录会显示被救下的东西、接收方、债务效果、Atlas 状态，以及仍在系统里移动的损害。
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/zh_CN. -->

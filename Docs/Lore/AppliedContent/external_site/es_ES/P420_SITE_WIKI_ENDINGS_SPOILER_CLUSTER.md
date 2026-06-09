@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Finales y custody del payload
 
-El cluster de finales no debe ordenarse por etiquetas simples good y bad. En HECTON-8 importa quién recibe el payload, quién puede leer la proof, quién obtiene custody del cuerpo, los datos y los Atlas records, y qué versión de la verdad sobrevive al trayecto. El false exit también forma parte de la estructura: irse con prueba incompleta puede parecer rescate hasta que los after-action records muestran quién compró el silencio. Esta zona debe quedar tras spoiler gates y organizarse por receiver consequences: Black Keel, Deep Reach, public archive, quarantine authority, Atlas continuity y posible pérdida de control sobre la interpretación.
+Todo final de HECTON-8 empieza antes de la ventana de ascenso. El objeto importante no es solo el cuerpo vivo dentro de la cápsula. Es el payload unido a ese cuerpo: coordenadas, muestras de presión, Atlas records, worker evidence, quarantine status, guidance logs dañados, recibos de custody de Black Keel y la frase legal que permite a otra institución nombrar la recovery.
+
+Una lista simple de good/bad destruye lo útil. Black Keel puede izar al Marauder y aun así vender mal la verdad. Deep Reach puede recibir coordenadas limpias y convertirlas en compliance language. Un public archive puede herir a la compañía sin devolver a los muertos. Un quarantine hold puede ser médicamente racional y políticamente útil. Un pago puede limpiar una deuda mientras deja al mejor testigo del océano encerrado en la bóveda de un receiver.
+
+Los false exits no son finales de broma. Son salidas donde una cadena se cierra y otra queda sin pagar. El cuerpo sale; la worker proof sigue sellada. Un sample se vende; el origin record queda arrancado. Atlas severed mata una repair network peligrosa, pero puede matar con ella el último recuerdo de la colonia como algo más que una insurance claim. Atlas preserved conserva records, pero también una maintenance intelligence que aprendió a tratar sistemas vivos como repuestos.
+
+Por eso este cluster oculta detalles tras spoiler gates y nombra los resultados por receiver consequence. ¿Quién posee la proof? ¿Quién puede leerla? ¿Quién puede reescribirla? ¿Quién decide si el payload fue rescue, salvage, contamination, theft o evidence?
+
+El ascenso final no es un telón limpio. Es una transferencia de custody con mala luz, mal clima y peores contratos. HECTON-8 vuelve a callarse solo después de que alguien más recibe la historia.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/es_ES. -->

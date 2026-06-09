@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Photic Shelf Survival Act"
+title: "Gerbang Paparan Fotik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Photic Shelf Survival Act
+# Gerbang Paparan Fotik
 
-ID LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+Paparan memberi rute kosakata kerja: pompa, segel, potong, ping, tambal, isi ulang. Setiap tindakan kecil dan fisik. Pintu terbuka karena klem bertahan, bukan karena koloni ingin dijelajahi.
 
-## Scanner
-
-ID LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-ID LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-ID LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-ID LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Residu Atlas masuk di sini sebagai petunjuk perawatan, bukan jawaban akhir. Panel yang diperbaiki, film konduktif, atau tambalan layanan salah rute dapat membantu operator bertahan sekaligus membuktikan sistem sudah menyentuh rute. Kecerahan membuat pekerjaan terbaca; utang membuatnya mendesak.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/id_ID. -->

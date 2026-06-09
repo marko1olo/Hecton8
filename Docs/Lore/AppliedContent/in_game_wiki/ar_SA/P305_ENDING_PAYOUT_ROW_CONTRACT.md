@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Ending Payout Data Boundary"
+title: "حد بيانات دفعة النهاية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Ending Payout Data Boundary
+# حد بيانات دفعة النهاية
 
-AR LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+يبقي هذا الحد النهايات كسجلات مقايضة لا درجات فوز. الدفع مهم، وكذلك الحيازة والدليل العام والحجر والدين وحق المستقبل في الفعل بعد رحيل اللاعب.
 
 ## Scanner
 
-AR LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+يربط صف النهاية المستقبل والحيازة وحالة الأدلة والدفع والعاقبة غير المحلولة.
 
 ## Terminal
 
-AR LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: تتطلب الصفوف مسار payload والمستقبل وحالة الأدلة والدفع المادي والعاقبة القانونية وتأخير الحجر والكلفة غير المحلولة. الاعتمادات لا تغلق مسرح جريمة.
 
 ## Audio
 
-AR LOC HOLD: Credits do not close a crime scene.
+الاعتمادات لا تغلق مسرح جريمة.
 
 ## Field Note
 
-AR LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+تسجل قيمة الاعتمادات وتأخير الحجر وأعلام الملف فقط بعد وضوح المستقبل وحالة الأدلة.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ar_SA. -->

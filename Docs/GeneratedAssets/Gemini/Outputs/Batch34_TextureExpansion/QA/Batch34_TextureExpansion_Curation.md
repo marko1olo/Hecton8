@@ -8,15 +8,12 @@ Unity import queue CSV: `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpa
 
 ## Counts
 
-- CURATED_READY_ALPHA_SOURCE: 4
-- CURATED_READY_STATIC: 34
-- LOCAL_ONLY_OR_CENTER_CROP: 1
+- CURATED_READY_ALPHA_SOURCE: 5
+- CURATED_READY_STATIC: 36
 - LOCAL_ONLY_OR_REGEN_SEAMLESS: 1
 - LOCAL_ONLY_STATIC: 2
 - MANUAL_SPLIT_BEFORE_IMPORT: 1
 - PAD_OR_SPLIT_BEFORE_IMPORT: 5
-- REGEN_OR_MANUAL_MATTE: 1
-- REGEN_RECOMMENDED: 1
 
 ## Import Policy
 
@@ -37,7 +34,7 @@ Unity import queue CSV: `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpa
 | B34-3406 | CURATED_READY_STATIC | SEAMLESS_TILE | Directional serpentinite/fault wall material. | Use on walls/slabs or triplanar rock, not as a perfectly isotropic floor tile. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3406_serpentinite_fault_rock_BaseColorCandidate.jpg` |
 | B34-3407 | LOCAL_ONLY_OR_REGEN_SEAMLESS | SEAMLESS_TILE | Iron seep local patch or reference for a regenerated seamless material. | 2x2 exposes a repeated circular/rust landmark; do not use as broad terrain tile. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3407_iron_oxide_seep_crust_BaseColorCandidate.jpg` |
 | B34-3408 | CURATED_READY_STATIC | SEAMLESS_TILE | silt-heavy traversal slopes and disturbed sediment | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3408_clay_silt_turbidity_slope_BaseColorCandidate.jpg` |
-| B34-3409 | REGEN_RECOMMENDED | SEAMLESS_TILE | Reference only for limestone drip direction. | Visible block repeat and vertical landmarking; request regenerated seamless cave mineral tile if needed. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3409_limestone_cave_ceiling_mineral_drip_BaseColorCandidate.jpg` |
+| B34-3409 | CURATED_READY_STATIC | SEAMLESS_TILE | Reference only for limestone drip direction. | Selected targeted regen candidate: SELECTED_REGEN_SEAMLESS_SOURCE. Best limestone regen result: lower landmarking than the named PNG and acceptable static 2x2 repeat for cave-ceiling material handoff. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg` |
 | B34-3410 | CURATED_READY_STATIC | SEAMLESS_TILE | Drowned concrete rubble local terrain blend. | Useful for ruin transitions; combine with meshes/decals before hero-route use. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3410_drowned_concrete_rubble_BaseColorCandidate.jpg` |
 | B34-3411 | CURATED_READY_STATIC | TRIM_SHEET | base exteriors, module edges, hatch frames, pressure ribs | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3411_pressure_base_exterior_hull_trim_sheet_BaseColorCandidate.jpg` |
 | B34-3412 | CURATED_READY_STATIC | TRIM_SHEET | corridors, safe rooms, wreck interiors, wall panels | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3412_pressure_base_interior_wall_trim_sheet_BaseColorCandidate.jpg` |
@@ -45,8 +42,8 @@ Unity import queue CSV: `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpa
 | B34-3414 | CURATED_READY_STATIC | TRIM_SHEET | hatches, viewport rims, pressure doors, pipe sockets | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3414_rubber_gasket_ring_trim_sheet_BaseColorCandidate.jpg` |
 | B34-3415 | LOCAL_ONLY_STATIC | SEAMLESS_TILE | Cable repair-wrap local variant source. | Good prop texture, but broad bands make it unsuitable as generic repeating cable material. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3415_cable_jacket_repair_wrap_tile_BaseColorCandidate.jpg` |
 | B34-3416 | CURATED_READY_STATIC | SEAMLESS_TILE | oxygen hoses, coolant lines, base pipes, tool cords | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3416_ribbed_flexible_hose_material_BaseColorCandidate.jpg` |
-| B34-3417 | LOCAL_ONLY_OR_CENTER_CROP | SEAMLESS_TILE | Amber lens source after center crop or fixed lamp panel use. | Hard border tiles in 2x2; crop central ribbed lens before using as repeat material. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3417_amber_emergency_lens_material_BaseColorCandidate.jpg` |
-| B34-3418 | REGEN_OR_MANUAL_MATTE | DECAL_ATLAS | Viewport glass wear decal reference only until background is matted. | Baked checkerboard/removable background risk; do not import as alpha decal directly. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_BaseColorCandidate.jpg` |
+| B34-3417 | CURATED_READY_STATIC | SEAMLESS_TILE | Amber lens source after center crop or fixed lamp panel use. | Selected targeted regen candidate: SELECTED_CENTER_CROP_SOURCE. Best amber lens source after cropping away hard frame. Use as lamp/lens material source, not broad seamless terrain. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3417-R1_amber_lens_png_named_center_crop.png` |
+| B34-3418 | CURATED_READY_ALPHA_SOURCE | DECAL_ATLAS | Viewport glass wear decal reference only until background is matted. | Selected targeted regen candidate: SELECTED_REGEN_ALPHA_SOURCE. Best targeted regen result: isolated decal islands, clean neutral matte, no edge contact. Use for alpha extraction/matte cleanup route. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg` |
 | B34-3419 | CURATED_READY_STATIC | TRIM_SHEET | wreckage, base hulls, repaired panels, industrial seams | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3419_welded_seam_and_rivet_row_trim_sheet_BaseColorCandidate.jpg` |
 | B34-3420 | CURATED_READY_STATIC | TRIM_SHEET | cut panels, opened wrecks, salvage resource surfaces | Static source accepted; still requires Unity import/material preview before production claim. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3420_salvage_cut_cross_section_trim_atlas_BaseColorCandidate.jpg` |
 | B34-3421 | CURATED_READY_STATIC | SEAMLESS_TILE | Damped insulation blanket for interiors/equipment backing. | Quilt repeat is expected; still needs Unity roughness/normal review. | `Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/TX_B34_3421_damped_insulation_blanket_material_BaseColorCandidate.jpg` |

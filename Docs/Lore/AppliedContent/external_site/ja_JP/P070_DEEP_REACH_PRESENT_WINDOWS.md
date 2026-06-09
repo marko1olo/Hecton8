@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Deep Reach の現在通信窓"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Deep Reach の現在通信窓
 
-JP LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Deep Reach の現在通信窓は、HECTON-8 のハードSF的距離を保ちながら、企業圧力を生かしている。Deep Reach は海底を遠隔操作できず、作業者を即座に救助できず、惑星をリアルタイムで書き換えることもできない。物語にとってもっと悪いことならできる。手続き、プロキシ、請求システムを残したままにし、プレイヤーが交渉材料を持ったまれな窓でだけ話すのだ。この項目は終盤の圧力を定義する。企業の力は魔法の通信ではない。災害を生き延びた所有権の言語であり、人間の命を証拠、隔離、サルベージと並べて値付けする方法をまだ覚えている。
 
 ## Scanner
 
-JP LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach は無線で HECTON-8 を操縦できない。それでも遅延した通信窓、代理通知、Black Keel 条項が、救助の代価を決め続ける。
 
 ## Terminal
 
-JP LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH PROXY: 作業者回収は、証拠審査、ペイロード保管、隔離遵守、Atlas 権限キー移管後に交渉可能。拒否した場合、請求者資格は維持されるが即時抽出優先度は無効となる。
 
 ## Audio
 
-JP LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+彼らの声が届くころには、それはもう契約になっている。
 
 ## Field Note
 
-JP LOC HOLD: Their voice is delayed. Their leverage is already here.
+彼らの返答は遅れて届く。条件だけは何年も前からここにあった。
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/ja_JP. -->

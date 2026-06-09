@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "ذاكرة الشائعات في الملف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# ذاكرة الشائعات في الملف
 
-AR LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+ملف Marauder ليس صندوق تخزين. إنه الجزء من العمل الذي ينجو بعد claim فاشل: أسماء سُمعت نصف سماع عبر المرحل، بنود عقد كانت رائحتها خاطئة، عائلات نهايات كُشفت من قبل، وتحذيرات دُفعت ثمنها من الدقائق الأخيرة لشخص آخر. يجب أن يبدأ التشغيل الجديد بشك أفضل، لا بغواصة أفضل.
 
 ## Scanner
 
-AR LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+ذاكرة الملف // الشائعات والتحذيرات وسياق العقود وسجلات النهايات تبقى. الهيكل والأكسجين والأدوات والحمولة والخريطة لا تبقى.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+قاعدة الاستمرار: يمكن للملف أن يحتفظ بعائلات الشائعات وفئات الأدلة وعلامات النهايات وتحذيرات المسار بين الحملات. لا يحمل معدات أو موارد أو جغرافيا seed أو ملكية الحقيقة.
 
 ## Audio
 
-AR LOC HOLD: Your file remembers what your hands cannot carry.
+الملف يتذكر ما لا تستطيع يداك حمله.
 
 ## Field Note
 
-AR LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+ليستمر العلم. وليبق الضغط.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/ar_SA. -->

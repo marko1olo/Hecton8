@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "工人 job cards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# 工人 job cards
 
-CN LOC HOLD: Worker Job Cards turn names into evidence objects.
+工人 job cards 把姓名变成证据物件：可玩的线索，让殖民地具有人性，同时不打断生存循环。
 
 ## Scanner
 
-CN LOC HOLD: A job card is a face the budget could read.
+JOB CARD // 姓名、角色、最后任务、路线许可、工具认证。预算能读懂的一张脸。
 
 ## Terminal
 
-CN LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+证据规则：每个找回的姓名都应连接到某件做过的事：泵路线、厨房 ledger、医疗呼叫、切割器保管、压力检查、制造批次。任务把姓名变成证明。
 
 ## Audio
 
-CN LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+没有任务的名字会变成神龛。任务让它成为证据。
 
 ## Field Note
 
-CN LOC HOLD: Make names useful before making them tragic.
+先让名字有用，再让它们悲伤。
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/zh_CN. -->

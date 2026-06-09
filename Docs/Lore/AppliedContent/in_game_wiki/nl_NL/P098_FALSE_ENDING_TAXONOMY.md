@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomie van valse eindes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomie van valse eindes
 
-NL LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 behandelt valse en gedeeltelijke eindes als echte uitkomsten, niet als nepwendingen. Een materiële uitbetaling kan de credits starten. Een gedeeltelijke uitgang kan de speler met bewaarde dossierkennis terugsturen naar dezelfde seed. Bedrijfsovername en quarantainehold kunnen een slechte lading of gevaarlijke bewijsroute bestraffen. Diepere eindes vragen om publiek bewijs, oplossing van de Atlas-status en een keuze over welk soort redding de speler bereid is te kopen.
 
 ## Scanner
 
-NL LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Eindbord. Sommige uitgangen zijn echt genoeg om te tellen en verkeerd genoeg om pijn te doen.
 
 ## Terminal
 
-NL LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+EINDFAMILIES: materiële uitbetaling; gedeeltelijke uitgang en terugkeer naar dezelfde seed; bedrijfsovername; quarantainehold; vrijgave van het publieke grootboek; oplossing van het Atlas-bekken. Uitkomstrapporten moeten lading, bewijs en schuldstatus gescheiden houden.
 
 ## Audio
 
-NL LOC HOLD: Leaving is not the same as finishing.
+Uit het water komen is niet hetzelfde als het werk afmaken.
 
 ## Field Note
 
-NL LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Een vals einde is geen truc. Het is een geldige deal waar de waarheid uit ontbreekt.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/nl_NL. -->

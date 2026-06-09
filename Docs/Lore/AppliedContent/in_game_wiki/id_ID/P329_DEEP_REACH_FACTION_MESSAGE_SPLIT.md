@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Faction Message Split"
+title: "Pecahnya Pesan Faksi Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Faction Message Split
+# Pecahnya Pesan Faksi Deep Reach
 
-ID LOC HOLD: Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+Pecahan ini membuat Deep Reach tetap terasa institusional, bukan penjahat kartun yang seragam. Sebuah korporasi bisa mengeluarkan perintah penyelamatan, perintah penutupan, dan peringatan teknis jujur sekaligus karena tiap kantor mempertahankan buku kerugian yang berbeda.
 
 ## Scanner
 
-ID LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Tiga sumber Deep Reach saling bertentangan: pemulihan menginginkan koordinat, legal menginginkan diam, rekayasa lama memperingatkan cekungan akan menjawab.
 
 ## Terminal
 
-ID LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance meminta koordinat yang dapat dinavigasi. Asset Silence memerintahkan penahanan bukti dan tanpa pengakuan publik. Legacy Engineering Node 4 mengulang peringatan pra-runtuh: jangan ganggu relai cekungan bawah selama bayangan Aegir. Mereka bukan pemberontak. Mereka departemen yang melindungi kerugian berbeda.
 
 ## Audio
 
-ID LOC HOLD: A company can be one logo and three knives.
+Satu logo. Tiga suara. Tidak ada yang bersih.
 
 ## Field Note
 
-ID LOC HOLD: This is not redemption. It is pressure-source readability.
+Gunakan setelah pemain mendengar setidaknya dua nada Deep Reach. Ketukannya adalah ambiguitas yang menggigit: instruksi bertentangan, kepemilikan bersama, tanpa sekutu bersih.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/id_ID. -->

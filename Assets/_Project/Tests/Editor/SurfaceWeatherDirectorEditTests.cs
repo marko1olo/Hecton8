@@ -83,10 +83,15 @@ public sealed class SurfaceWeatherDirectorEditTests
     {
         string path = Path.Combine(Application.dataPath, "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs");
         string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        string destroyBody = ExtractMethodBody(source, "private void OnDestroy()");
 
         StringAssert.Contains("private bool DisposeWeatherMathBuffers(bool forceCompletePendingJob)", source);
         StringAssert.Contains("DisposeWeatherMathBuffers(forceCompletePendingJob: true);\n            ClearWeatherBindings();", source);
-        StringAssert.Contains("DisposeWeatherMathBuffers(forceCompletePendingJob: true);\n\n        }", source);
+        StringAssert.Contains("DisposeWeatherMathBuffers(forceCompletePendingJob: true);", destroyBody);
+        StringAssert.Contains("ClearWeatherBindings();", destroyBody);
+        StringAssert.Contains("FlushWeatherShaderGlobals();", destroyBody);
+        AssertTextBefore(destroyBody, "ClearWeatherBindings();", "TryUnregisterService();");
+        AssertTextBefore(destroyBody, "FlushWeatherShaderGlobals();", "TryUnregisterService();");
         StringAssert.Contains("DisposeWeatherMathBuffers(forceCompletePendingJob: true);\n            _runtimeStateInitialized = false;", source);
         StringAssert.DoesNotContain("DisposeWeatherMathBuffers();", source);
         StringAssert.DoesNotContain("_weatherJobPrimed = false;\n            _weatherJobScheduled = false;\n            _weatherShaderDirty = false;", source);
@@ -102,11 +107,12 @@ public sealed class SurfaceWeatherDirectorEditTests
         StringAssert.Contains("private const float DefaultSurfaceWaterLevelY = 14.02f;", source);
         StringAssert.Contains("float referenceSurfaceY = DefaultSurfaceWaterLevelY;", surfaceBody);
         StringAssert.Contains("playerMovement != null && TryResolveSurfaceY(playerMovement.CurrentWaterSurfaceY, out float playerSurfaceY)", surfaceBody);
-        StringAssert.Contains("oceanKinematics != null && TryResolveSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY)", surfaceBody);
+        StringAssert.Contains("oceanKinematics != null && TryResolveOceanSurfaceY(oceanKinematics.SeaLevel, out float oceanSurfaceY)", surfaceBody);
         StringAssert.Contains("fluidSurface != null && TryResolveSurfaceY(fluidSurface.CurrentWaterLevelY, out float fluidSurfaceY)", surfaceBody);
+        StringAssert.Contains("private static bool TryResolveOceanSurfaceY(float candidateSurfaceY, out float surfaceY)", source);
         StringAssert.Contains("private static bool TryResolveSurfaceY(float candidateSurfaceY, out float surfaceY)", source);
         StringAssert.Contains("math.abs(candidateSurfaceY) > 0.0001f", source);
-        StringAssert.Contains("math.abs(candidateSurfaceY) <= 1000f", source);
+        StringAssert.Contains("math.abs(candidateSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", source);
         StringAssert.Contains("surfaceY = DefaultSurfaceWaterLevelY;", source);
         StringAssert.Contains("math.abs(fluidSurfaceY - referenceSurfaceY) <= 128f", surfaceBody);
         StringAssert.Contains("return fluidSurfaceY;", surfaceBody);
@@ -141,6 +147,47 @@ public sealed class SurfaceWeatherDirectorEditTests
         AssertTextBefore(depthBody, "playerContext.TryGetMovementRuntimeState", "playerMovement != null && math.isfinite(playerMovement.CurrentDepth)");
         AssertTextBefore(depthBody, "if (playerContext != null)", "playerMovement != null && math.isfinite(playerMovement.CurrentDepth)");
         StringAssert.DoesNotContain("return math.max(0f, playerMovement.CurrentDepth);", depthBody);
+    }
+
+    [Test]
+    public void SurfaceWeatherDirectorClearsPreviousCelestialWeatherOverrideOnServiceReplacement()
+    {
+        string path = Path.Combine(Application.dataPath, "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        string replacementBody = ExtractMethodBody(
+            source,
+            "public void OnGlobalRegistryServiceReplaced(");
+
+        StringAssert.Contains("serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime", replacementBody);
+        StringAssert.Contains("HectonCelestialEngine previousCelestialEngine = previousService as HectonCelestialEngine;", replacementBody);
+        StringAssert.Contains("HectonCelestialEngine currentCelestialEngine = currentService as HectonCelestialEngine;", replacementBody);
+        StringAssert.Contains("ClearCelestialSurfaceWeatherOverride(previousCelestialEngine);", replacementBody);
+        StringAssert.Contains("CacheCelestialEngine(currentCelestialEngine);", replacementBody);
+        StringAssert.Contains("private static void ClearCelestialSurfaceWeatherOverride(HectonCelestialEngine engine)", source);
+        StringAssert.Contains("engine.ClearSurfaceWeatherOverride();", source);
+        AssertTextBefore(replacementBody, "ClearCelestialSurfaceWeatherOverride(previousCelestialEngine);", "CacheCelestialEngine(currentCelestialEngine);");
+    }
+
+    [Test]
+    public void SurfaceWeatherFallbackProfilesKeepAegirStormEmissionProgression()
+    {
+        string path = Path.Combine(Application.dataPath, "_Project", "Scripts", "Atmosphere", "HectonSurfaceWeatherDirector.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("private const float FallbackClearCalmStormEmissionMultiplier = 0.95f;", source);
+        StringAssert.Contains("private const float FallbackClearBreezeStormEmissionMultiplier = 1.0f;", source);
+        StringAssert.Contains("private const float FallbackOvercastStormEmissionMultiplier = 1.2f;", source);
+        StringAssert.Contains("private const float FallbackHeavyRainStormEmissionMultiplier = 1.55f;", source);
+        StringAssert.Contains("private const float FallbackElectricalStormStormEmissionMultiplier = 1.85f;", source);
+        StringAssert.Contains("FallbackClearCalmStormEmissionMultiplier,", source);
+        StringAssert.Contains("FallbackClearBreezeStormEmissionMultiplier,", source);
+        StringAssert.Contains("FallbackOvercastStormEmissionMultiplier,", source);
+        StringAssert.Contains("FallbackHeavyRainStormEmissionMultiplier,", source);
+        StringAssert.Contains("FallbackElectricalStormStormEmissionMultiplier,", source);
+        AssertTextBefore(source, "FallbackClearCalmStormEmissionMultiplier = 0.95f", "FallbackClearBreezeStormEmissionMultiplier = 1.0f");
+        AssertTextBefore(source, "FallbackClearBreezeStormEmissionMultiplier = 1.0f", "FallbackOvercastStormEmissionMultiplier = 1.2f");
+        AssertTextBefore(source, "FallbackOvercastStormEmissionMultiplier = 1.2f", "FallbackHeavyRainStormEmissionMultiplier = 1.55f");
+        AssertTextBefore(source, "FallbackHeavyRainStormEmissionMultiplier = 1.55f", "FallbackElectricalStormStormEmissionMultiplier = 1.85f");
     }
 
     private static T ReadPrivate<T>(object target, string fieldName)

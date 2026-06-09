@@ -8,6 +8,27 @@ This tool does not launch Unity, enter Play Mode, profile, judge visual quality,
 
 `mayClaimPlayerCaptureVerified` is always `false` in this static gate. Any manifest that tries to claim player-capture verification is rejected with `PLAYER_CAPTURE_CLAIM_UNSUPPORTED` until a separate runtime/player-capture proof schema exists. Player-capture claim fields may be absent, `null`, or JSON boolean `false`; string/number/object values are rejected, including loosely truthy values such as `"true"` and `1`.
 
+## Unity/Process Watchdog
+
+`unity_process_proof_watchdog.py` is the static preflight/status sampler for the Unity slot and proof packet area. It does not launch Unity, enter Play Mode, build, profile, kill processes, or accept visual quality.
+
+Use it before taking a proof lane when current state is unclear:
+
+```powershell
+python Tools\ProofGate\unity_process_proof_watchdog.py `
+  --repo-root . `
+  --json-out Docs\Reports\UnityProcessProofWatchdog_latest.json `
+  --md-out Docs\Reports\UnityProcessProofWatchdog_latest.md `
+  --strict
+```
+
+Interpretation:
+
+- `BUSY_DO_NOT_TAKE_SLOT` means another Unity/compiler/import/build/shader process is active; do not start a heavy proof action.
+- `DIRTY_LOG_TOKENS_FOUND` means recent logs contain import/compile/dirty proof tokens; treat readiness as blocked until inspected.
+- raw screenshot groups without a manifest are diagnostic only.
+- ProofGate `PASS_STATIC_GATE` is still static packet acceptance only. It is not Unity import, Play Mode, profiler, player-capture, visual, or release acceptance.
+
 ## Required Packet Root
 
 ```text

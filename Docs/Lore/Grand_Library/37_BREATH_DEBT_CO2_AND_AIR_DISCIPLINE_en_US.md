@@ -1,58 +1,63 @@
 <!-- localization_status: source_authority_en_US -->
-# BREATH DEBT, CO2 AND AIR DISCIPLINE
+# BREATH DEBT, CO2, AND AIR DISCIPLINE
 
-> **Source:** Deep Reach suit-operations physiology brief, Black Keel intake counseling sheet, Marauder field corrections.  
-> **Speaker:** Medical technician voice, later annotated by salvage crews.  
-> **Reviewer Note:** HECTON-8 does not make breathing heroic. It makes breathing expensive, measurable and easy to misjudge.
+> **Source:** Deep Reach suit-operations physiology brief DR-SOP-14, Black Keel intake counseling sheet, route-tag corrections copied from Marauder salvage marks.  
+> **Voice:** Medical technician record, later sharpened by people who had to breathe the consequences.
 
 ---
 
-## 1. Breath Is Not Free
+## 1. Metered Breath
 
-People raised under open sky think breath is an act of the body. On HECTON-8, breath is an agreement with machines.
+Open air teaches a bad superstition: that breathing belongs to the body.
 
-Every inhale has already passed through ownership. The gas was cracked, mixed, compressed, stored, metered, scrubbed, warmed, dried, cooled, argued over and logged. A suit does not "carry air" in the old romantic sense. It carries a temporary permission to keep using a body in a place where the world has no interest in supporting one.
+On HECTON-8, breath belongs first to machinery, then to custody, then to whoever can still pay for the next cartridge. The gas in a cylinder has already been cracked, mixed, dried, warmed, cooled, compressed, tested, disputed, signed out, written off, stolen back, and blessed by a pressure gauge that may be lying by two percent. A suit does not carry air in the old surface sense. It carries permission. Temporary permission to keep a warm animal alive in a place that has no use for warm animals.
 
-Deep Reach taught workers to call this supply. Black Keel calls it burn rate. Marauders call it breath debt, because debt is the only word that captures the feeling correctly. You spend it even when you are standing still. Panic spends it faster. Bad planning spends it after the person who planned has stopped talking.
+Deep Reach called this supply. The word made it sound clean. Black Keel calls it burn rate, because burn rate can be entered into a ledger. Marauders call it breath debt. Debt is the only name that keeps the insult intact. It grows while hands shake over a latch, while a cutter chews through the wrong plate, while a person stands still because the next corridor looks too quiet.
 
-That is why a good worker does not ask how much air they have. They ask how many bad decisions their air can survive.
+The useful question is never "How much air is left?" That is a tourist's question. The useful question is how many mistakes the remaining air can absorb before the suit stops being a tool and becomes an invoice attached to a body.
 
-## 2. The Quiet Enemy
+## 2. The Gas That Makes People Wrong
 
-Oxygen gets the drama. CO2 gets the bodies.
+Oxygen gets the dramatic warnings. Carbon dioxide gets the quiet deaths.
 
-The old training films were blunt about this because subtle phrasing killed people. A worker can have oxygen left and still be losing the room inside their skull. CO2 does not always arrive as a clean alarm. It arrives as warmth, pressure behind the eyes, a little anger, a repeated mistake in a checklist, a hand that keeps reaching for the wrong latch. By the time a frightened person notices they are frightened, they may already be solving the wrong problem.
+Deep Reach training was blunt because polite language made widows. A worker can have enough oxygen and still be losing the room inside the skull. Rising CO2 does not always announce itself as panic. It arrives as warmth behind the faceplate, pressure at the eyes, a sudden certainty that the checklist is wasting time, a repeated number that will not stay remembered, a hand reaching for the same wrong latch with fresh confidence.
 
-HECTON-8 is full of places where "air present" is not the same as "air usable." A sealed locker can hold oxygen and poison. A habitat pocket can test breathable near the ceiling and hostile near the floor. A suit can be technically supplied while its scrubber is losing the fight. A room can smell clean because the filters are dead, not because the air is safe.
+That is the danger. Bad air does not only weaken the body. It edits judgment. It makes the wrong task feel urgent and the urgent task feel insulting. It turns a route note into background noise. It makes a person angry at the very procedure that would bring them back.
 
-The ocean does not need to rush this kind of killing. It waits while the worker explains away the symptoms.
+HECTON-8 is full of air that looks present and is not usable. A sealed locker can hold oxygen and solvent poison. A dry service alcove can be breathable at shoulder height and sour at the knees. A suit can show pressure while the scrubber bed is spent. A room can smell clean because the filters are dead and nothing is moving enough to carry the rot to the nose.
 
-## 3. Air Discipline
+The ocean does not need to rush this work. It lets the worker explain each symptom until explanation becomes the last thing the worker does well.
 
-Air discipline is not calmness. It is procedure for when calmness fails.
+## 3. Rooms That Lie About Air
 
-Marauders learn to stop narrating their fear. They keep messages short because every sentence is heat, moisture and CO2. They learn to pause before cutting, not because caution is noble, but because a panicked cut creates three more tasks and all three cost breath. They learn which alarms matter now, which alarms can be carried for five meters and which alarm means the route is already over.
+The most treacherous rooms are not the flooded ones. Flooded rooms tell the truth in a language anyone can read.
 
-Good crews watch each other's language. A worker who repeats a word, forgets a number, answers too fast or becomes suddenly certain may be running bad gas through a good suit. The correction is not shame. It is intervention. You slow them, clip them, turn them, make them read the label aloud, make them breathe with the fan cycle until the person comes back.
+Dry rooms lie better. A powered ceiling strip, a chair still strapped to the deck, labels still square on cabinet doors, dust resting where water has not touched it: all of that can feel like permission. It is not permission. It is only evidence that a volume stayed sealed long enough to preserve its own failure.
 
-Solo Marauders have to become their own second crew. This is one reason they talk to doors, tools and dead receivers. A voice in the suit can be a habit. A habit can be a diagnostic.
+Old fire suppressant settles low and waits for knees. Battery off-gas pools under benches. Rusting machinery eats oxygen without making a sound. Microbial film turns safe volume sour by degrees. A pressure door can protect an atmosphere for years after the rotation schedule, sensor calibration, and crew who understood the purge cycle are gone.
 
-## 4. Bad Air In Good Rooms
+Deep Reach safe-room protocol assumed maintenance. It assumed filter changes, active sensors, signed crew logs, scheduled purge cycles, and somebody awake enough to mistrust yesterday's numbers. After abandonment, those assumptions remained in the room like good manners at a corpse. The panel can still display SAFE. The air has no obligation to agree.
 
-The most treacherous rooms are not the obviously flooded ones.
+Black Keel intake instructors mark this lesson hard: comfort is a clue, not a verdict. Warm light only means power. Dry flooring only means water has not won there yet. A sealed door only means something was worth separating. Every quiet room must be asked what it has been doing with its own breath.
 
-A dry room with a powered light can still be bad. Old fire suppressant can sit in low pockets. Microbial films can sour a safe volume slowly. Rusting machinery can eat oxygen where the last survey said there was enough. Battery off-gas can collect under a workbench. A pressure door can preserve an atmosphere long after every reason for preserving it has died.
+## 4. Air Discipline
 
-Deep Reach safe-room protocol treated air as a maintained system. It assumed filter rotations, active sensors, crew logs and scheduled purge cycles. After abandonment, those assumptions became ghosts in the checklist. The room may still know how to call itself safe. The air may disagree.
+Air discipline is not bravery. It is the shape procedure takes after bravery becomes expensive.
 
-Black Keel teaches Marauders to distrust comfort. Warm light, dry floor, intact chair, sealed cabinet: useful signs, never verdicts. The player learns to ask what the room has been doing with its own breath while nobody was there to audit it.
+Marauders learn to cut speech down to what earns its heat. Every sentence adds moisture and CO2 to a small loop that already dislikes them. They learn to pause before forcing a hatch because a bad cut creates three more tasks, and all three require lungs. They learn which alarm ends the route, which alarm buys five meters, and which alarm is only a machine admitting it has stopped helping.
 
-## 5. What The Player Learns
+Crewed work watches language as a sensor. A person who repeats a word, forgets a number, answers too quickly, or becomes suddenly certain may be running bad gas through a good suit. The correction is not politeness and not blame. Slow them. Clip them. Turn them toward the tag. Make them read the pressure mark aloud. Make them breathe with the fan cycle until the person returns to the suit.
 
-The player learns that air is not a timer. It is judgment under pressure.
+Solo work has no second set of lungs to catch the drift. That is why salvage hands talk to doors, cutters, dead receivers, and stubborn bolts. Speech is not always loneliness. Sometimes it is a calibration check. A voice that begins to shorten wrong, repeat wrong, joke wrong, or stop altogether is a gauge with blood behind it.
 
-A spare cylinder can be profit, mercy, bait or insurance. A scrubber cartridge can be worth more than a visible tool if the route back is longer than the route in. A restored fan can change a room from loot to shelter. A bad-air warning left for another Marauder may save a stranger who will never know the player's name.
+## 5. Cylinder Law
 
-Air choices make moral choices practical. Share a cylinder and lose time. Steal one and gain time with a record attached. Leave a cache and reduce future risk. Spend air forcing a door and maybe lose the attention needed to read what is behind it.
+A spare cylinder is never only air.
 
-On HECTON-8, survival is not holding breath. It is learning which parts of the world are charging you for every breath, which parts are lying about the price and which parts are quiet because nobody who understood the bill came back to explain it.
+It can be profit, mercy, bait, insurance, evidence, or a charge waiting for a name. A scrubber cartridge can outrank a visible tool if the way back is longer than the way in. A repaired fan can turn a loot room into a shelter. A chalked warning beside a hatch can save a stranger who will never learn whose breath paid for the warning.
+
+That is why air decisions become moral decisions without ceremony. Share a bottle and shorten the route. Steal one and lengthen it with a record attached. Cache one and reduce future risk for a hand that may not be friendly. Spend fifteen minutes venting a compartment and lose the margin needed to leave. Bypass a dead sensor and gain speed at the cost of trusting a room that has been alone too long.
+
+Black Keel does not romanticize these choices. It prices them. Deep Reach did the same thing with cleaner fonts and better guilt management. The colony's remains do not care which language is used. The cylinder empties at the rate the work demands.
+
+On HECTON-8, survival is not holding breath. It is learning which parts of the world charge for every breath, which parts lie about the bill, and which parts are silent because nobody who understood the price came back.

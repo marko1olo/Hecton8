@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Blue Debt Sample Quality"
+title: "Blue-Debt-Probenqualität"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Blue Debt Sample Quality
+# Blue-Debt-Probenqualität
 
-DE LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+Blue-Debt-Probenqualität definiert die Ressourcenmoral von HECTON-8. Die besten Proben sind nicht einfach mehr Währung wert. Sie tragen Verwahrungsketten, Druckgeschichte und Beweiswert. So können Bergung, Crafting, Handel und Enden dieselbe Sprache sprechen: Was du aus dem Ozean holst, kann dich bezahlen, jemanden anklagen oder deine Freigabe erschweren.
 
 ## Scanner
 
-DE LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Blue-Debt-Qualität ist Wert, Risiko und Beweis in einer Zahl. Je reicher die Probe, desto weniger verhält sie sich wie Beute.
 
 ## Terminal
 
-DE LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+QUALITÄTSKLASSEN / shard: geringe Verwahrung, sicherer Handel / casketed bloom: druckklassifizierter Wert / harmonic glass: akustischer Nachweis und hohes Deep-Reach-Interesse / live-contaminated sample: Beweispriorität, instabile Handhabung / dead contaminated glass: niedrige Auszahlung, starker Rechtsgeruch.
 
 ## Audio
 
-DE LOC HOLD: The more it is worth, the less it is only loot.
+Je mehr es wert ist, desto weniger ist es nur Beute.
 
 ## Field Note
 
-DE LOC HOLD: Quality should affect payout, containment and ending pressure.
+Qualität verändert Auszahlung, Eindämmungskosten, Routendruck und Endhebel. Ein sauberer Splitter zahlt; eine lebend kontaminierte Probe zwingt jemanden zur Antwort.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/de_DE. -->

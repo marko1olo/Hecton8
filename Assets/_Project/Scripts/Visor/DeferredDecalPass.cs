@@ -121,6 +121,17 @@ namespace Hecton8.Visor
                 PromoteStagedUpload();
             }
 
+            public void ClearFrameState()
+            {
+                _readBufferIndex = 0;
+                _readCount = 0;
+                _hasReadableBuffer = false;
+                _stagedBufferIndex = 0;
+                _stagedCount = 0;
+                _hasStagedBuffer = false;
+                _hasLastFrameStats = false;
+            }
+
             public bool HasReadableFrame
             {
                 get
@@ -430,7 +441,10 @@ namespace Hecton8.Visor
             _pass ??= new DeferredDecalCompositePass();
             TryRegisterHotSwapListener();
             if (Application.isPlaying)
+            {
                 DynamicDecalVaultRuntime.TryInitializeColdStorage();
+                DynamicDecalVaultRuntime.RefreshColdPlayerContext();
+            }
             _pass.PrepareDecalAtlasHandleCold(settings);
             TryRegisterLateFrame();
         }
@@ -471,9 +485,11 @@ namespace Hecton8.Visor
 
         protected override void Dispose(bool disposing)
         {
+            ClearPendingVisualSyncContext();
             TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             _pass?.Dispose();
+            _pass = null;
         }
 
         private void StageVisualSyncContext(Camera camera)
@@ -484,6 +500,14 @@ namespace Hecton8.Visor
             _pendingVisualSyncCamera = camera;
             _pendingVisualSyncDeltaTime = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             _hasPendingVisualSyncCamera = true;
+        }
+
+        private void ClearPendingVisualSyncContext()
+        {
+            _pendingVisualSyncCamera = null;
+            _pendingVisualSyncDeltaTime = 0f;
+            _hasPendingVisualSyncCamera = false;
+            _pass?.ClearFrameState();
         }
 
         private void TryRegisterLateFrame()
@@ -527,19 +551,23 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                ClearPendingVisualSyncContext();
                 DynamicDecalVaultRuntime.ResetColdStorageForRebind();
                 DynamicDecalVaultRuntime.TryInitializeColdStorage();
+                DynamicDecalVaultRuntime.RefreshColdPlayerContext();
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                DynamicDecalVaultRuntime.RefreshColdPlayerContext();
+                ClearPendingVisualSyncContext();
+                DynamicDecalVaultRuntime.RefreshColdPlayerContext(currentService as IPlayerRuntimeContext);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                ClearPendingVisualSyncContext();
                 TryUnregisterLateFrame();
                 if (currentService != null && isActive)
                     TryRegisterLateFrame();

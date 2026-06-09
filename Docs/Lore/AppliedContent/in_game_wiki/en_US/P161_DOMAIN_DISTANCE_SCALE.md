@@ -37,6 +37,6 @@ Ten light-years is not the hard part. The hard part is finding out who paid for 
 
 ## Field Note
 
-If the table starts sounding grand, cut it down. The player needs the cost of distance, not a poster of stars.
+If the table starts sounding grand, cut it down. This chart exists to show what distance costs a body, not to hang stars on a wall.
 
 <!-- In-Game Wiki; generated from P161_DOMAIN_DISTANCE_SCALE/en_US. -->

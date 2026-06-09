@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Kantinewater-log
 
-De Kantinewater-log is een van HECTON-8's eenvoudigste menselijke artefacten: een eetruimtebord dat drinkwater, tokenretouren, pomptoegang en medische uitzonderingen vastlegt. Het verklaart de ramp niet. Het toont de kolonie vlak voordat de ramp een verhaal werd.
+Het Kantinewaterregister is een opgezwollen eetzaalslate van een kolonie die drinkwater met dezelfde ernst mat als gereedschapsbewaring. Zes ontbrekende tokens, twee medische overrides en een pompzaalcorrectie zijn genoeg om de ruimte levend te maken: niet heroïsch, niet netjes, nog steeds ruziënd over bekers terwijl het druksysteem al begon te falen.
 
-De waarde ligt in textuur en bewijs. Zes ontbrekende tokens klinken klein totdat de speler begrijpt wat water in een drukkolonie betekende. Drinkwater liep door filters, shiftboekhouding, medische uitzonderingen en registratie van de pompkamer. Een ontbrekende beker kon een vermoeide arbeider zijn. Hij kon ook een zieke ploeg zijn, een besmette lijn, een omzeilde rantsoenorder of een supervisor die een lokale fout verborgen hield voor Deep Reach-rapportage.
+Water op HECTON-8 was nooit alleen water. Het liep door filters, shiftleiders, medische uitzonderingen, pompsleutels en kantinevertrouwen. Een ontbrekend token kon vergeetachtigheid, diefstal, ziekte, besmetting of een opzichter zijn die een lokale fout nog één shift uit Deep Reach-papierwerk hield.
 
-Het punt is geen melodrama. De log maakt de kolonie leesbaar als werk: mensen kwamen van shift, maakten ruzie, corrigeerden records, leenden gereedschap, beschermden elkaar en probeerden de ruimte normaal te houden terwijl de oceaan al het systeem binnenkwam. In HECTON-8 kan zo'n gewone spoor bewijs worden.
+Maak de vetpotloodmarge niet schoon. Daar wordt de ruimte menselijk. Zij toont werkers die vrienden beschermen, symptomen verbergen, rantsoenvolgorde betwisten en proberen te voorkomen dat één zuur filter voor de volgende afdaaltoon koloniale paniek wordt.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/nl_NL. -->

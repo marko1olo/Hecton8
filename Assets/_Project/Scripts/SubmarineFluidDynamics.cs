@@ -5624,6 +5624,7 @@ namespace Hecton8.Physics
             _powerGridService = null;
             _thermodynamicsService = null;
             _atmosphereRuntime = null;
+            _oceanKinematics = null;
             _resourceDistributionRuntime = null;
         }
 
@@ -5708,6 +5709,13 @@ namespace Hecton8.Physics
         {
             if (sampleDepthFromAtmosphere)
             {
+                if (_cachedTransform != null && TryResolveOceanSeaLevelY(out float oceanSeaLevelY))
+                {
+                    float depthMeters = oceanSeaLevelY - _cachedTransform.position.y;
+                    _externalDepthMeters = math.isfinite(depthMeters) ? math.max(0f, depthMeters) : 0f;
+                    return _externalDepthMeters;
+                }
+
                 IAtmosphereReadModel atmosphereManager = _atmosphereRuntime;
                 if (IsUnityObjectInvalid(atmosphereManager))
                 {
@@ -5725,6 +5733,33 @@ namespace Hecton8.Physics
 
             _externalDepthMeters = math.isfinite(manualExternalDepthMeters) ? math.max(0f, manualExternalDepthMeters) : 0f;
             return _externalDepthMeters;
+        }
+
+        private bool TryResolveOceanSeaLevelY(out float seaLevelY)
+        {
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematicsProvider();
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveExternalSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY))
+            {
+                return true;
+            }
+
+            seaLevelY = 0f;
+            return false;
+        }
+
+        private static bool TryResolveExternalSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = 0f;
+            return false;
         }
 
         private void RefreshDerivedConstants(float fixedDeltaTime)

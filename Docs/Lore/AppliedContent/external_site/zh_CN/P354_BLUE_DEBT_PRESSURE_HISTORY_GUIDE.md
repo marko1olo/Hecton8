@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "蓝债压力史指南"
+title: "蓝债压力历史指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 蓝债压力史指南
+# 蓝债压力历史指南
 
-Xenon-Omega 被打捞者称为 blue debt，它把 HECTON-8 的地质与 computation、debt law，以及 Deep Reach 仍想夺回淹没索赔的原因绑在一起。
+蓝债不是宝石，也不是魔法矿石。它是含Xenon-Omega压力稳定基质的现场名称：一种只有在海洋按正确顺序压缩、加热、冷却并留下电伤之后才有价值的矿物结构。明亮样本可能一文不值。暗淡的密封块如果压力历史干净、信号漂移安静，可能支付一个月的氧气。
 
-## Scanner
-
-blue debt 样本已标记。export 前核验 pressure history、containment stage 和 signal drift。
-
-## Terminal
-
-MARAUDER NOTE: blue debt 是打捞者对 Xenon-Omega-bearing pressure-stable substrate 的黑话。它有价值，是因为 extreme computation 和 energy isolation 喜欢它，不是因为它发光。
-
-## Audio
-
-blue debt 是人们在账单到来后给它起的名字。
-
-## Field Note
-
-颜色不是 grade。clean custody 的安静容器会付款；会唱的容器会给你买来 drone wake。
+因此，每一次蓝债发现都会立刻变成法律材料。Atlas要漂移。Deep Reach要索赔历史。Salvage队伍要一个不会大声唱到唤醒无人机的容器。这个资源危险，是因为它位于地质、计算、托管和债务的交叉口。它证明HECTON-8从来不只是一个沉没殖民地。它是一册被埋起来的账本，压力在上面写数字。
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/zh_CN. -->

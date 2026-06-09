@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Варіанти стартового claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Варіанти стартового claim
 
-UA LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+Стартовий claim - це брехня, написана вгорі робочого ордера. Борговий salvage, bounty за доказ, зникле маршрутне залізо, небезпечне зберігання зразка, полегшення blacklist: кожен варіант змінює причину, з якої дошка пускає Marauder у воду. Він має фарбувати мотив і перший тиск, а не замінювати протагоніста новою маскою.
 
 ## Scanner
 
-UA LOC HOLD: Same protagonist. Different claim pressure.
+ВАРІАНТ CLAIM // Той самий колишній Deep Reach Marauder. Інший перший борг, bounty, маршрутне залізо, зберігання зразка або полегшення blacklist.
 
 ## Terminal
 
-UA LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+СТАРТОВЕ ПРАВИЛО: варіанти змінюють початковий тиск, доступ до чуток, вагу доказів і логіку виплат. Вони не створюють альтернативних героїв і не стирають колишній Deep Reach spine.
 
 ## Audio
 
-UA LOC HOLD: You can change the job without changing who took it.
+Можна змінити роботу, не змінюючи того, хто її взяв.
 
 ## Field Note
 
-UA LOC HOLD: Variants should color motive, not erase the canon character.
+Зміни claim. Залиш шрам.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/uk_UA. -->

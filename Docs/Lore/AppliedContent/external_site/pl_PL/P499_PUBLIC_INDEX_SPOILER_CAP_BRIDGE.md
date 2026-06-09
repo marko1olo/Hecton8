@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limit spoilerow publicznego indeksu"
+title: "Reguła redakcji indeksu publicznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,23 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Limit spoilerow publicznego indeksu
+# Reguła redakcji indeksu publicznego
 
 ## Co dowodzi zapis
 
-Publiczny indeks istnieje po to, by archiwum bylo uzyteczne bez spalenia trasy. Tytul moze nazwac rodzine dowodu: trase opieki, klase dowodu, stan redakcji, jezyk roszczenia, brame skanera. To wystarcza, by gracz wiedzial, jakiej prawdy szuka i czemu sasiedni pakiet ma znaczenie.
+Wiersz indeksu publicznego jest zapisem kontroli dostępu, nie streszczeniem. Może pokazać rodzinę sprawy, tor opieki, typ dowodu, znacznik redakcji, bramkę skanera i następny przedmiot potrzebny do otwarcia pakietu. To wystarcza, by prowadzić szukanie bez ujawniania odbiorcy.
 
-Indeks nie moze ujawniac, kto odbiera ladunek, gdzie konczy sie trasa, jaki jest stan ladunku, co zrobi z nim Atlas, ktora galaz zakonczenia naciska ani jaki wynik prawny nastapi. Te znaczenia naleza do zasluzonej sciezki dowodu. Jesli tytul zdradza linie odbiorcy, indeks przestaje byc archiwum i staje sie maszyna spoilerow. Poprawna obietnica publiczna jest prosta: ta polka istnieje, ostatnia strona jest zaslonieta.
+Zamaskowane pola są ważniejsze niż tytuł. Łańcuch odbiorców, końcowe współrzędne, stan ładunku, reakcja Atlas, nacisk na zakończenie i wynik prawny zostają za pieczęcią redakcji, dopóki trasa ich nie wypracuje. Jeśli indeks wydrukuje adres odbiorcy za wcześnie, nie informuje sprawy; wycieka trasę każdemu, kto patrzy w lustro.
 
 ## Jak to czytać
 
-STEMPEL LIMITU PUBLICZNEGO INDEKSU
-Pokaz: tytul kategorii, trase opieki, klase dowodu, stan redakcji, brame skanera, nastepny cel dowodu.
-Ukryj: lancuch odbiorcow, wspolrzedne koncowe, stan ladunku, skutek Atlas, galaz zakonczenia, wynik prawny.
-Zasada: pokaz polke, zaslon ostatnia strone. Indeks mowi, jaki dowod istnieje, nie co zrobi na koncu trasy.
+STEMPEL REDAKCJI INDEKSU PUBLICZNEGO
+Pokaż: tytuł, rodzinę sprawy, tor opieki, typ dowodu, znacznik redakcji, bramkę skanera, następny przedmiot dowodowy.
+Ukryj: łańcuch odbiorców, końcowe współrzędne, stan ładunku, reakcję Atlas, nacisk zakończenia, wynik prawny.
+Błąd: adres odbiorcy widoczny przed progiem opieki.
+Działanie: trzymaj pola trasy zapieczętowane, aż hash pakietu i dowód przedmiotu będą zgodne.
 
 ## Notatka terenowa
 
-Tytuly kategorii wedruja dalej niz ciala. Czytaj polke, ale nie udawaj, ze to ostatnia strona. Jesli ostatnia strona jest za darmo, ktos juz sprzedal trase.
+Użyj indeksu do wyboru następnego przedmiotu dowodowego. Widoczna kategoria nie jest opieką, wyrokiem ani celem.
 
 <!-- External Site; generated from P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE/pl_PL. -->

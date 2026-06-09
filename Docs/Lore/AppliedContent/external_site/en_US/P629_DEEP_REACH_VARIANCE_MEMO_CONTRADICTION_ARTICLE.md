@@ -21,20 +21,6 @@ localization_flags: 0
 
 The first Deep Reach memo does not need to confess. It only needs to be clean in the wrong place. Variance is the office word where the room shows a pump run past limit, a clamp placed after the alarm, a work order left open and a margin stamp accepted before the water arrived.
 
-## Scanner
-
-CONTRADICTION TAG // Memo says variance. Pump mark shows late manual intervention.
-
-## Terminal
-
-INCIDENT VARIANCE // Water ingress remains within managed tolerance pending return-action review. Local repair queue may defer noncritical escalation language.
-
-## Audio
-
-Nobody writes variance on a wall that is still dripping.
-
-## Field Note
-
-When an office word is cleaner than the room, trust the room first.
+That is the contradiction the player can use early. It does not solve the disaster. It teaches proof order. A clean memo is a source voice, not truth. A stuck valve, a timestamp and a worker mark can carry more weight than a sentence written to survive liability review.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/en_US. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Sonar Pinger Route Beacons"
+title: "声呐 Pinger 航线信标"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Sonar Pinger Route Beacons
+# 声呐 Pinger 航线信标
 
-CN LOC HOLD: Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean.
+声呐 Pinger 航线信标是 HECTON-8 的标志性物件：便宜、物理、声学，而且带着道德重量。它帮玩家回家，也把玩家的位置告诉海。
 
 ## Scanner
 
-CN LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+pinger 浮标标记返航几何，揭穿假回波，也会吸引救援注意和不该来的生命。
 
 ## Terminal
 
-CN LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-CN LOC HOLD: One ping is a promise. Two pings are a bill.
+一次 ping 是承诺，两次 ping 是账单。
 
 ## Field Note
 
-CN LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger 是第一件诚实工具：它用声音说出距离、债务、路线丢失和生物风险。
 
 <!-- External Site; generated from P240_SONAR_PINGER_ROUTE_BEACONS/zh_CN. -->

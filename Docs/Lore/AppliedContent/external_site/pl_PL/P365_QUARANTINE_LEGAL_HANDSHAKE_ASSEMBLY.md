@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Zespół prawnego handshake kwarantanny"
+title: "Zespół Prawnego Uścisku Kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zespół prawnego handshake kwarantanny
+# Zespół Prawnego Uścisku Kwarantanny
 
-Zespół prawnego handshake kwarantanny celowo brudzi extraction: działający silnik wciąż może dostarczyć ocalałego do corporate custody, opóźnionej prawdy publicznej albo nierozstrzygniętej kwarantanny.
+Zespół Prawnego Uścisku Kwarantanny jest końcowym komponentem, bo trasa ucieczki z HECTON-8 kończy się władzą, nie próżnią. Kapsuła może być mechanicznie gotowa, ale recovery nadal potrzebuje odbiorcy gotowego nazwać przybycie.
 
-## Scanner
+Gniazdo ładuje fakty decydujące o tej nazwie: klucz odbiorcy, stan kwarantanny, custody ładunku, lien długu i opóźnienie publicznej księgi. Każda trasa akceptuje inną wersję tej samej kapsuły. Keelmark chce masy i lien. Recovery Compliance chce współrzędnych i stanu skażenia. Publiczna księga chce dowodu, który przetrwa czas i spór.
 
-Gniazdo handshake. Kapsuła może być mechanicznie gotowa i nadal należeć do złego receiver.
-
-## Terminal
-
-RECOVERY HANDSHAKE: wymagany receiver key. Keelmark przyjmuje mass i lien. Recovery Compliance przyjmuje coordinates i quarantine status. Public ledger przyjmuje proof po opóźnieniu. Unkeyed launch domyślnie staje się custody dispute.
-
-## Audio
-
-Ten, kto odpowiada, decyduje, co znaczy ratunek.
-
-## Field Note
-
-Ostatni komponent nie jest metalem. To nazwa systemu, któremu wolno nazwać cię recovered.
+To sprawia, że ekstrakcja jest celowo niewygodna. Najczystszy start nadal może dostarczyć ocalałego do biura roszczeń, zamkniętego zatrzymania medycznego albo powolnej sprawy publicznej. Naprawa handshake nie uwalnia kapsuły od polityki. Pozwala Marauderowi wybrać, która polityka pierwsza położy rękę na włazie.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/pl_PL. -->

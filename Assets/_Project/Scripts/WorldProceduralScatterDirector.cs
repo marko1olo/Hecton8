@@ -1389,7 +1389,7 @@ namespace Hecton8.World
             if (_scatterRefreshSampleState.UsedFallbackOnly != 0 &&
                 fieldSampler != null &&
                 fieldSampler.TryResolveSeafloorSource(observerRuntimePosition, out WorldProceduralFieldSampler.SeafloorSource upgradedSource) &&
-                upgradedSource == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
+                IsAuthoritativeTerrainSource(upgradedSource))
             {
                 _debugLastScatterRefreshReason = "terrain-source-upgraded";
                 return false;
@@ -2441,13 +2441,25 @@ namespace Hecton8.World
             WorldZoneAnchor.ZoneKind zoneKindHint,
             float depthMeters,
             float slopeDegrees,
-            ulong biomeFamilyFlags)
+            ulong biomeFamilyFlags,
+            WorldTerrainDetailEligibilityFlags terrainEligibilityFlags,
+            WorldTerrainSurfaceMaterialClass terrainMaterialClass,
+            byte hasTerrainDetailSample)
         {
             if (depthMeters < runtimeRule.MinDepthMeters || depthMeters > runtimeRule.MaxDepthMeters)
                 return false;
 
             if (slopeDegrees < runtimeRule.MinSlopeDegrees || slopeDegrees > runtimeRule.MaxSlopeDegrees)
                 return false;
+
+            if (!PassesTerrainDetailEligibility(
+                    in runtimeRule,
+                    terrainEligibilityFlags,
+                    terrainMaterialClass,
+                    hasTerrainDetailSample))
+            {
+                return false;
+            }
 
             if (!runtimeRule.StrictEnvelopeMapping &&
                 runtimeRule.PreferredBiomeFamilies != null &&
@@ -2503,6 +2515,155 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private static bool PassesTerrainDetailEligibility(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            WorldTerrainDetailEligibilityFlags terrainEligibilityFlags,
+            WorldTerrainSurfaceMaterialClass terrainMaterialClass,
+            byte hasTerrainDetailSample)
+        {
+            if (hasTerrainDetailSample == 0)
+                return true;
+
+            WorldTerrainDetailEligibilityFlags required = ResolveTerrainDetailEligibilityRequirement(in runtimeRule);
+            if (required == WorldTerrainDetailEligibilityFlags.None)
+                return true;
+
+            if ((terrainEligibilityFlags & required) != 0)
+                return true;
+
+            return AllowsDominantMaterialFallback(required, terrainMaterialClass);
+        }
+
+        private static WorldTerrainDetailEligibilityFlags ResolveTerrainDetailEligibilityRequirement(
+            in ScatterRuntimeRuleEntry runtimeRule)
+        {
+            WorldTerrainDetailEligibilityFlags required = WorldTerrainDetailEligibilityFlags.None;
+            switch (runtimeRule.ProceduralDomain)
+            {
+                case WorldPrefabFamilyProfile.ProceduralDomain.Rock:
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockCluster:
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockShelf:
+                    required |= WorldTerrainDetailEligibilityFlags.RockScatter |
+                                WorldTerrainDetailEligibilityFlags.TalusBoulder |
+                                WorldTerrainDetailEligibilityFlags.RubblePebble;
+                    break;
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockArch:
+                case WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance:
+                    required |= WorldTerrainDetailEligibilityFlags.VoxelAnchor |
+                                WorldTerrainDetailEligibilityFlags.CaveMouthCandidate |
+                                WorldTerrainDetailEligibilityFlags.RockScatter;
+                    break;
+                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
+                    required |= WorldTerrainDetailEligibilityFlags.ReefScatter |
+                                WorldTerrainDetailEligibilityFlags.RubblePebble;
+                    break;
+                case WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket:
+                    required |= WorldTerrainDetailEligibilityFlags.NoduleScatter |
+                                WorldTerrainDetailEligibilityFlags.SeepDeposit |
+                                WorldTerrainDetailEligibilityFlags.RockScatter;
+                    break;
+                case WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket:
+                    required |= WorldTerrainDetailEligibilityFlags.BrineDeposit |
+                                WorldTerrainDetailEligibilityFlags.SeepDeposit;
+                    break;
+            }
+
+            required |= ResolveTerrainDetailKeywordRequirement(runtimeRule.HeatmapChannel);
+            WorldPrefabFamilyProfile family = runtimeRule.Family;
+            if (family != null)
+            {
+                required |= ResolveTerrainDetailKeywordRequirement(family.familyId);
+                required |= ResolveTerrainDetailKeywordRequirement(family.familyLabel);
+                required |= ResolveTerrainDetailKeywordRequirement(family.gameplayRole);
+            }
+
+            WorldProceduralPlacementRule rule = runtimeRule.Rule;
+            if (rule != null)
+                required |= ResolveTerrainDetailKeywordRequirement(rule.gameplayIntent);
+
+            return required;
+        }
+
+        private static WorldTerrainDetailEligibilityFlags ResolveTerrainDetailKeywordRequirement(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return WorldTerrainDetailEligibilityFlags.None;
+
+            WorldTerrainDetailEligibilityFlags flags = WorldTerrainDetailEligibilityFlags.None;
+            if (ContainsToken(value, "nodule") || ContainsToken(value, "manganese"))
+                flags |= WorldTerrainDetailEligibilityFlags.NoduleScatter;
+            if (ContainsToken(value, "reef") || ContainsToken(value, "coral"))
+                flags |= WorldTerrainDetailEligibilityFlags.ReefScatter;
+            if (ContainsToken(value, "brine") || ContainsToken(value, "salt"))
+                flags |= WorldTerrainDetailEligibilityFlags.BrineDeposit;
+            if (ContainsToken(value, "seep") || ContainsToken(value, "methane"))
+                flags |= WorldTerrainDetailEligibilityFlags.SeepDeposit;
+            if (ContainsToken(value, "talus") || ContainsToken(value, "boulder"))
+                flags |= WorldTerrainDetailEligibilityFlags.TalusBoulder;
+            if (ContainsToken(value, "rubble") || ContainsToken(value, "pebble"))
+                flags |= WorldTerrainDetailEligibilityFlags.RubblePebble;
+            if (ContainsToken(value, "rock") || ContainsToken(value, "stone") || ContainsToken(value, "limestone"))
+                flags |= WorldTerrainDetailEligibilityFlags.RockScatter;
+            if (ContainsToken(value, "sand") || ContainsToken(value, "silt") || ContainsToken(value, "sediment"))
+                flags |= WorldTerrainDetailEligibilityFlags.SandScatter;
+            if (ContainsToken(value, "cave") || ContainsToken(value, "arch") || ContainsToken(value, "pillar"))
+                flags |= WorldTerrainDetailEligibilityFlags.VoxelAnchor |
+                         WorldTerrainDetailEligibilityFlags.CaveMouthCandidate;
+
+            return flags;
+        }
+
+        private static bool ContainsToken(string value, string token)
+        {
+            return value.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool AllowsDominantMaterialFallback(
+            WorldTerrainDetailEligibilityFlags required,
+            WorldTerrainSurfaceMaterialClass material)
+        {
+            if ((required & WorldTerrainDetailEligibilityFlags.RockScatter) != 0 &&
+                (material == WorldTerrainSurfaceMaterialClass.HardRock ||
+                 material == WorldTerrainSurfaceMaterialClass.LimestoneShelf ||
+                 material == WorldTerrainSurfaceMaterialClass.ReefRubble))
+            {
+                return true;
+            }
+
+            if ((required & WorldTerrainDetailEligibilityFlags.SandScatter) != 0 &&
+                (material == WorldTerrainSurfaceMaterialClass.ShellSand ||
+                 material == WorldTerrainSurfaceMaterialClass.ClaySilt))
+            {
+                return true;
+            }
+
+            if ((required & WorldTerrainDetailEligibilityFlags.ReefScatter) != 0 &&
+                material == WorldTerrainSurfaceMaterialClass.ReefRubble)
+            {
+                return true;
+            }
+
+            if ((required & WorldTerrainDetailEligibilityFlags.BrineDeposit) != 0 &&
+                material == WorldTerrainSurfaceMaterialClass.BrineSaltCrust)
+            {
+                return true;
+            }
+
+            if ((required & WorldTerrainDetailEligibilityFlags.SeepDeposit) != 0 &&
+                material == WorldTerrainSurfaceMaterialClass.SeepCrust)
+            {
+                return true;
+            }
+
+            if ((required & WorldTerrainDetailEligibilityFlags.NoduleScatter) != 0 &&
+                material == WorldTerrainSurfaceMaterialClass.ManganeseNodulePlain)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         private static bool AllowsTectonicSpineRockBoulderOverride(
@@ -4903,6 +5064,9 @@ namespace Hecton8.World
                 case WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight:
                     mapMagicCount++;
                     break;
+                case WorldProceduralFieldSampler.SeafloorSource.TerrainProviderHeight:
+                    mapMagicCount++;
+                    break;
                 case WorldProceduralFieldSampler.SeafloorSource.SceneProbeLegacy:
                     sceneProbeLegacyCount++;
                     break;
@@ -4913,6 +5077,12 @@ namespace Hecton8.World
                     fallbackCount++;
                     break;
             }
+        }
+
+        private static bool IsAuthoritativeTerrainSource(WorldProceduralFieldSampler.SeafloorSource source)
+        {
+            return source == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight ||
+                   source == WorldProceduralFieldSampler.SeafloorSource.TerrainProviderHeight;
         }
 
         private static string ResolveLayerTopFamily(

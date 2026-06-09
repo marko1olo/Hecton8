@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Anchor Worker Name Set B
 
-Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+Anchor Worker Name Set B is the deeper recurring worker layer for HECTON-8. These names should not soften the horror; they should make the system more legible. By the time the player sees Set B, pressure failures, route holds, and triage delays already have a pattern. The repeated names connect that pattern to people, then to Deep Reach responsibility.
 
 ## Scanner
 
-Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Deeper names should arrive after the player already knows the damage pattern. They cost more because the water has started proving the crime.
 
 ## Terminal
 
-ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: brine canyon and abyssal machine-field recurrence. Bind these names to witness hashes, route holds, triage exceptions, Atlas repair contradictions, and salvage debt trails. Set B is where worker evidence stops being local tragedy and becomes corporate cause.
 
 ## Audio
 

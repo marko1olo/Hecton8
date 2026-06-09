@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Public Ledger Record"
+title: "公共账本记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Public Ledger Record
+# 公共账本记录
 
-CN LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.
+公共账本记录是托管断开，不是裁决。载荷在Deep Reach关闭档案前，通过Tau/Luyten路线送出见证哈希、遮盖坐标、证据等级和接收时间戳。这样更难被擦除，但后来的办事员、债权人、宪章法院、幸存者网络和机会主义者也会拿到一个活文件。
 
 ## Scanner
 
-CN LOC HOLD: Witness hash escaped claimant custody.
+公共账本记录 // 见证哈希经Tau/Luyten数据包路线离开私人托管。公共证据等级已设定；Deep Reach响应延迟已附加。
 
 ## Terminal
 
-CN LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+结局记录 / 公共账本
+路线：Tau/Luyten延迟数据包。
+载荷：见证哈希、托管条、坐标遮盖的证据等级、接收时间戳。
+中继后的控制：放弃。
+Deep Reach响应：被公共收据延迟的反向数据包。
+已知损失：发送方不能选择第一读者或后续提交链。
 
 ## Audio
 
-CN LOC HOLD: Truth can leave your hands and still matter.
+账本盖章了。第一个读者不再由你选择。
 
 ## Field Note
 
-CN LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+如果收据是公开的，文件靠离开你手中而存活。庆祝盖章前，先检查坐标遮盖。
 
 <!-- In-Game Wiki; generated from P273_PUBLIC_LEDGER_RECORD/zh_CN. -->

@@ -19,22 +19,27 @@ localization_flags: 1
 
 # Symbioza rafy kablowej
 
-Zmienia opuszczoną infrastrukturę w czytelny hybrydowy ekosystem przemysłowy.
+Symbioza rafy kablowej to ostrzeżenie średnich głębokości HECTON-8: życie może utrzymywać opuszczone linie serwisowe w działaniu, ukrywając usterki izolacji, które później przyciągną logikę naprawczą Atlas.
 
 ## Scanner
 
-Flora rośnie na pniach mocy i liniach sygnału. Rafa używa okablowania kolonii jak szkieletu.
+Mata kabel-korzeń trzyma pień zasilania P63 na trzech pierścieniach zaciskowych. Sygnał nadal przechodzi pod zielonym rękawem. Usterka izolacji widoczna przy dolnej krawędzi. Zagrożenie: ruch dronów i żerujących organizmów podąża za żywym prądem.
 
 ## Terminal
 
-Utrzymanie: maty korzeń-kabel zmniejszają ścieranie i trzymają sygnał, lecz wabią drony i faunę.
+NOTATKA ROWU SERWISOWEGO
+Linia: pień zasilania P63 / para przekaźnikowa C
+Stan: biologiczny rękaw ogranicza ścieranie
+Usterka: pomarańczowa izolacja odsłonięta pod dolną matą
+Ruch: żerujące organizmy i drony konserwacyjne przy żywym prądzie
+Działanie: zeskanować ciągłość przed cięciem wzrostu
 
 ## Audio
 
-Żywa rafa nauczyła się kształtu korytarza serwisowego.
+Rafa nie jest ozdobą. Utrzymuje ten przekaźnik suchy, a drony wiedzą, że prąd jest aktywny.
 
 ## Field Note
 
-Pierwsze zrośnięcie jest użyteczne, zanim stanie się straszne.
+Nie zdzieraj zielonego wzrostu tylko dlatego, że wygląda obco. Jeśli utrzymuje osłonę suchą, oznacz usterkę i poprowadź trasę obok.
 
 <!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/pl_PL. -->

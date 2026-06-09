@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Temps de trajet des paquets-sondes
 
-Le temps de trajet des sondes explique comment Deep Reach pouvait valoriser HECTON-8 avant de pouvoir protéger des gens sur place. Les premiers relevés étaient étroits, vieux à l'arrivée et déjà financiers. Un paquet peut rendre une réclamation mature alors que le plan humain reste une hypothèse.
+Les paquets-sondes ont fait paraître Aegir gouvernable avant qu'un travailleur se tienne sous son eau. Cartes seed, indices minéraux, bandes de danger et permissions de route arrivaient par couches, chacune marquée d'une vérité de lancement déjà vieillie. HECTON-8 a hérité de ces fantômes. Une carte qui semble actuelle peut être un débat vieux de dix ans avec une meilleure mise en page.
 
 ## Scanner
 
-Les premiers témoins d'Aegir étaient des paquets, pas des colons.
+En-tête récupéré : date d'arrivée plus ancienne que la carte coloniale mise à jour.
 
 ## Terminal
 
-CHAÎNE DE RELEVÉ : sondes assistées par faisceau et appareils-paquets traversent d'abord, renvoient une vérité périmée, fixent le calcul de freinage et laissent les corporations vendre une route avant qu'elle soit humaine.
+NOTE PAQUET-SONDE : les lots d'étude Ran-Aegir voyagent par poussées étagées, sommeils, prises relais et patience bon marché. Un paquet peut être exact au lancement, obsolète à l'ouverture et assez coûteux pour devenir une politique.
 
 ## Audio
 
-La sonde a vu l'océan avant que quelqu'un ait une tombe là-bas.
+La carte était vraie quand elle est partie. C'était le problème.
 
 ## Field Note
 
-Une sonde peut passer une carrière humaine à traverser une route avant qu'un corps soit risqué.
+Une sonde n'apporte pas le présent. Elle apporte un fossile avec télémétrie.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/fr_FR. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Pressure Crew Archetype Table
 
-Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.
+The Pressure Crew Archetype Table makes colony evidence functional before it becomes sentimental. A Pump worker should lead the player toward water, valves, pressure spikes, and maintenance lies. A Seal worker belongs to doors, hull patches, lock rituals, and rooms that stayed dry too long. Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness do the same for signals, routes, fabrication, medical delay, food survival, and the thing Deep Reach did not want named. The table keeps grief attached to systems the player can touch.
 
 ## Scanner
 
-Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Crews are verbs before they are backstory: pump, seal, relay, map, forge, triage, cultivate, witness.
 
 ## Terminal
 
-CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness. Every worker identity binds to a crew family before personal detail. This keeps evidence tied to machines, routes, pressure failures, food culture, salvage law, and the final payload chain.
 
 ## Audio
 
-Job first. Memory second. That is how the colony survives.
+Job first. Memory second. That is how the colony survives on paper.
 
 ## Field Note
 
-Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+A dead worker reads cleaner when the room still needs the job they knew.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/en_US. -->

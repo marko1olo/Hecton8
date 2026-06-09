@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Locker Name Protocol"
+title: "Locker-Namenprotokoll"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Locker Name Protocol
+# Locker-Namenprotokoll
 
-DE LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Ein Locker ist persönlich, weil er benutzt wurde, nicht weil er ein ganzes Leben erklärt. Der beste Beweis ist praktisch: ein Badge mit blanker Kante, Band über einer gerissenen Dichtung, Routensticker, Korrektur in Arbeitershorthand, eine Namensplatte, die payroll später löschte. Diese Objekte lassen den Marauder Menschen durch Gebrauchsspuren und unfertige Aufgaben wiederherstellen. Die Kolonie braucht kein Melodrama, um menschlich zu wirken. Sie braucht kleine Spuren, die Konzernreinigung nicht abkratzen konnte.
 
 ## Scanner
 
-DE LOC HOLD: A locker is personal without needing a family plot.
+LOCKERSPUR // Namensplatte, Werkzeugverschleiß, pressure tape, Korrekturzettel, Routensticker. Persönlicher Beweis ohne Familienplot.
 
 ## Terminal
 
-DE LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+LOCKERREGEL: Namen bewahren, die Deep Reach aus payroll entfernte. Ein Locker soll Badge, Rolle, Routenerlaubnis, Reparaturgewohnheit und das Unfertige darin verbinden.
 
 ## Audio
 
-DE LOC HOLD: The company deleted the employee. The rust kept the label.
+Die Firma löschte den Angestellten. Der Rost behielt das Etikett.
 
 ## Field Note
 
-DE LOC HOLD: The smallest human trace should survive corporate cleanup.
+Die kleinste menschliche Spur soll Konzernreinigung überleben.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/de_DE. -->

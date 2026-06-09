@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правила Marauder correction marks"
+title: "Правила мародерских корректирующих меток"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правила Marauder correction marks
+# Правила мародерских корректирующих меток
 
-RU LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Правила мародерских корректирующих меток объясняют, как HECTON-8 позволяет поздним спасателям трогать старые улики, не ломая канон. Метки добавляют живой слой поверх корпоративной бумаги: сохранить имя, оспорить категорию, предупредить маршрут, оценить образец, спрятать свидетеля или отметить долг. Так replay-улики ощущаются прошедшими через руки других заявителей, но каждая рукописная правка остается функциональной.
 
 ## Scanner
 
-Correction mark может спасти имя или загрязнить claim.
+Корректирующая метка может спасти имя, отравить заявку или предупредить следующего ныряльщика, что официальная категория лжет.
 
 ## Terminal
 
-CORRECTION RULE: Marauder marks меняют evidence interpretation, route risk или payout pressure. Без пустого graffiti.
+CORRECTION RULE: мародерские метки должны менять толкование улики, риск маршрута или давление выплаты. Допустимые метки сохраняют имя рабочего, оспаривают страховую категорию, предупреждают о маршруте, назначают цену образцу, прячут свидетеля или отмечают долг. Пустые граффити ломают цепь улик.
 
 ## Audio
 
-Кто-то был до тебя и тоже не смог уйти чисто.
+Кто-то пришел до тебя и все равно не смог уйти чисто.
 
 ## Field Note
 
-Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Handwriting должен быть functional.
+Метки: сохранить имя, оспорить категорию, предупредить маршрут, оценить образец, спрятать свидетеля, отметить долг. Почерк должен менять чтение, а не украшать предмет.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/ru_RU. -->

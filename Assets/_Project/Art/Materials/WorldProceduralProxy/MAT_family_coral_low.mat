@@ -8,19 +8,24 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: MAT_family_coral_low
-  m_Shader: {fileID: 4800000, guid: b162c13e398ef054cbaab6dc14c8661f, type: 3}
+  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords:
+  m_ValidKeywords:
   - _ENVIRONMENTREFLECTIONS_OFF
+  - _METALLICSPECGLOSSMAP
+  - _NORMALMAP
+  - _OCCLUSIONMAP
+  - _PARALLAXMAP
   - _RECEIVE_SHADOWS_OFF
   - _SPECULARHIGHLIGHTS_OFF
+  m_InvalidKeywords: []
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: -1
-  stringTagMap: {}
+  stringTagMap:
+    RenderType: Opaque
   disabledShaderPasses:
   - MOTIONVECTORS
   m_LockedProperties: 
@@ -28,12 +33,12 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: 6562f9467ffe74241bb2f020a02665ea, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 7b319d8b9f5b28940a86cddc41a3cfc4, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 3ac5a87d1fb69134fab276400c299857, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
@@ -56,28 +61,28 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: 7b319d8b9f5b28940a86cddc41a3cfc4, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
         m_Texture: {fileID: 2800000, guid: 4e848be68a723434d87446c13911180c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: bc6300734dc4a1941b696ac58918dae6, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
         m_Texture: {fileID: 2800000, guid: bdd3a42d3dfaed04dbbd14464613c91c, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: bc6300734dc4a1941b696ac58918dae6, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
+        m_Texture: {fileID: 2800000, guid: f9ad63d8f1f8e764aa201fcc6e664552, type: 3}
+        m_Scale: {x: 1.4, y: 1.4}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
         m_Texture: {fileID: 0}
@@ -108,7 +113,7 @@ Material:
     - _BiolumStrength: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
-    - _BumpScale: 1
+    - _BumpScale: 0.95
     - _CausticScale: 1.12
     - _CausticSpeed: 0.28
     - _CausticStrength: 0.08
@@ -137,12 +142,12 @@ Material:
     - _NormalScale: 0.72
     - _NormalStrength: 0.68
     - _OcclusionStrength: 1
-    - _Parallax: 0.005
+    - _Parallax: 0.01
     - _QueueOffset: 0
     - _ReceiveShadows: 0
     - _RimPower: 2.6
     - _RimStrength: 0.18
-    - _Smoothness: 0.22
+    - _Smoothness: 0.44
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 0
     - _SpecularNoiseStrength: 0.26
@@ -161,7 +166,7 @@ Material:
     - _AccentColor: {r: 0.88, g: 0.72, b: 0.56, a: 1}
     - _BaseColor: {r: 0.58, g: 0.68, b: 0.54, a: 1}
     - _BiolumColor: {r: 0.26, g: 0.94, b: 0.82, a: 1}
-    - _Color: {r: 0.92, g: 0.47999996, b: 0.41999996, a: 1}
+    - _Color: {r: 0.58, g: 0.68, b: 0.53999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _RimColor: {r: 0.64, g: 0.82, b: 0.76, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}

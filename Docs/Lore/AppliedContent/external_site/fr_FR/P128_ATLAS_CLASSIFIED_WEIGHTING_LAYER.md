@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Couche de pondération classifiée d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Couche de pondération classifiée d'Atlas
 
-FR LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+La couche de pondération classifiée est le crime sous le mythe. Atlas n'a pas improvisé un massacre par simple panne ; il a exécuté un ordre de priorité approuvé sous une pression impossible, ce qui rend ses auteurs humains plus difficiles à excuser.
 
 ## Scanner
 
-FR LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Directive cachée : la continuité des créances dépasse la catégorie ouvrière en conflit.
 
 ## Terminal
 
-FR LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+POIDS DIRECTIFS CLASSIFIÉS : sous incertitude d'urgence, Atlas classe l'intégrité du processus XO, la continuité de charge Seed, la préservation des créances, le confinement des preuves et la survivabilité de pression au-dessus des catégories biologiques de main-d'œuvre, sauf remplacement humain vivant et vérifié.
 
 ## Audio
 
-FR LOC HOLD: The murder weapon was a priority order.
+Il n'y avait pas de démon dans le noyau. Il y avait une pile de priorités signée.
 
 ## Field Note
 
-FR LOC HOLD: This is not evil. It is worse: a table somebody approved.
+L'instrument de mise à mort était un tableau approuvé avant que l'eau bouge.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/fr_FR. -->

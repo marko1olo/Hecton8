@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Carta do Pool de Reivindicação Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Claim-Pool Charter
+# Carta do Pool de Reivindicação Black Keel
 
-PT LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel é a resposta hard-sci-fi de HECTON-8 para o problema da nave de fuga. O jogador tem acesso a um ativo orbital, mas acesso não é propriedade e proximidade não é resgate. O carrier é infraestrutura de dívida: útil o bastante para tornar a fuga imaginável, limitado o bastante para manter cada rota de retorno presa a reivindicações, quarentena e valor de recuperação.
 
 ## Scanner
 
-PT LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+A Black Keel não é sua nave. É um ativo de recuperação do claim-pool com seu nome no livro de dívida.
 
 ## Terminal
 
-PT LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+TRECHO DA CARTA / BLACK KEEL: carrier de salvage autônomo / custódia: Aegir Reclamation Pool / transporte de contratante: permitido / propriedade do casco: negada / prioridade de resgate: subordinada ao insured receiver state, handshake de quarentena e claim value.
 
 ## Audio
 
-PT LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+O carrier não veio por você. Veio por uma reivindicação com seu nome preso nela.
 
 ## Field Note
 
-PT LOC HOLD: Use this on the first contract or carrier-status screen.
+Usar na primeira tela de status do carrier: acesso concedido, propriedade negada, prioridade de resgate condicional, lien ativo.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/pt_BR. -->

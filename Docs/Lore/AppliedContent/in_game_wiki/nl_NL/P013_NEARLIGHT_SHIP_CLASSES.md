@@ -19,24 +19,26 @@ localization_flags: 1
 
 # Nearlight-scheepsklassen
 
-Nearlight-schepen bouwden de mensensfeer zonder natuurkunde te breken. Goedkope probes kwamen eerst, daarna zaadschepen en Atlas-carriers met fabrieken, slapers, contracten en afscherming.
+Nearlight-schepen bouwden de menselijke sfeer door te accepteren dat natuurkunde niet betoverd wordt. Needleprobes gingen eerst omdat ze smal, afgeschermd en goedkoop genoeg waren om te verliezen. Seed ships volgden met machines, genomen, route-instructies en constructiegewoonten die jaren koude staging konden overleven. Atlas-vrachtcarriers bewogen de dure massa: fabriekskernen, sleeperbaaien, schildijs, radiatoren, boorsystemen en contracten die ouder waren dan sommige bemanningen bij ontwaken.
 
-De tabel scheidt eigendom van redding. Aegir kan juridisch geclaimd zijn en toch moeilijk bereikbaar blijven met lichamen.
+De klasse telt omdat elke klasse anders faalt. Een probe kan nuttig sterven. Een seed ship kan zonder getuigen arriveren. Een sleepertransport bewaart lichamen terwijl arbeid custody wordt. Een system tender kan in Aegir werken en toch niet op commando uit kernruimte komen. Black Keel is geen vrijheid met motoren; het is een recoverymachine die massa, quarantaine, verzekering en bewijs in één ledger telt.
+
+Geen klasse breekt licht. Beam sails, pellet lanes, fusion-electric throats, schildijs, magsails en receiver windows maken reizen mogelijk, niet casual. Aankomst is de wrede helft. Zonder eigenaar van remmen komt niets als bruikbare massa aan.
 
 ## Scanner
 
-Transitmanifest noemt naaldprobe, zaadschip, Atlas-vrachtcarrier, slaaptransport, systeemtender en claim-pool-carrier.
+Transitmanifest noemt needleprobe, seed ship, Atlas-vrachtcarrier, sleepertransport, system tender en claim-pool carrier. Geen FTL-klasse aanwezig.
 
 ## Terminal
 
-TRANSITKLASSTABEL // Geen FTL-baan geregistreerd. Alle klassen vereisen lanceerinfrastructuur, schildmassa, remplan, routebewaring en schuldautoriteit. Interstellair eigendom impliceert geen lokale redding.
+SCHEEPSKLASSENTABEL // Needleprobe verliesbaar. Seed ship geautomatiseerd. Atlas-vracht massagerated. Sleepertransport biologische bewaring. System tender binnen domein. Claim-pool carrier lien-gebonden. Alle klassen vereisen rem-eigenaarschap.
 
 ## Audio
 
-Een schip kan sterren oversteken en toch nutteloos zijn voor een ondergelopen kamer.
+De schepen maakten afstand niet klein. Ze maakten afstand factureerbaar.
 
 ## Field Note
 
-Schepen zijn geen vrijheid. Schepen zijn schema's met motoren.
+Een schip is een route met een romp om het dure deel.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/nl_NL. -->

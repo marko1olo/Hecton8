@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Marauder Correction Note Sample"
+title: "Voorbeeld van een rovercorrectie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Marauder Correction Note Sample
+# Voorbeeld van een rovercorrectie
 
-NL LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Het Voorbeeld van een rovercorrectie is geen bekentenis, en juist daarom is het nuttiger. Het is een vuile aantekening bovenop een officieel ongevalsformulier, geschreven door iemand die had geleerd schone oorzaken te wantrouwen. De notitie zegt niet wie wie heeft gedood. Ze zegt wat gecontroleerd moet worden voordat het woord ongeluk in het dossier mag blijven staan: pompcertificaat, ploegentelling, lichaamscategorie, afwijking van de deurklok en de autorisatiewachtrij die de redding lang genoeg ophield om de kamer bewijs te laten worden. In HECTON-8 verbindt het object omgevingsbewijs met factiestem. Het kolonieregister probeert het verhaal met weer af te sluiten. De roverhand stuurt de speler terug de kamer in.
 
 ## Scanner
 
-NL LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Vetpotloodcorrectie op een ongevalsformulier: niet het weer, niet paniek, maar autorisatievertraging met een lichamentelling eraan vast.
 
 ## Terminal
 
-NL LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+ROVERSNOTITIE / OFFICIËLE OORZAAK: VERWORPEN / VOOR CLAIM CONTROLEREN: pompcertificaat, ploegentelling, lichaamscategorie, deurklok-afwijking, reddingsautorisatiewachtrij.
 
 ## Audio
 
-NL LOC HOLD: Someone else smelled the paperwork rot.
+Iemand rook de rot in het papierwerk voordat de kamer droog was.
 
 ## Field Note
 
-NL LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NIET HET WEER. AUTORISATIE VERTRAAGD. Controleer pompcertificaat, ploegentelling, lichaamscategorie. De deurklok loopt zes minuten voor op de claimstempel.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/nl_NL. -->

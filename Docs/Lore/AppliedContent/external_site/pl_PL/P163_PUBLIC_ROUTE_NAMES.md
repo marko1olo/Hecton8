@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Publiczne Nazwy Tras
 
-## Names That Bill
+## Nazwy, które wystawiają rachunek
 
-Publiczne nazwy tras nie są poezją w ciemności. To robocze etykiety, które przeżywają kontrakty, tablice kadłubowe, kolejki przekaźników i dowody sądowe. Sol-Centauri Charter Spine niesie legitymację, Barnard Breaker Run pachnie złomowiskami i długiem. Luyten Packet Ladder jest łańcuchem custody, który czyni dowód dopuszczalnym albo bezużytecznym, Tau Public Ledger Lane to powolna presja publiczna, a Ran Long Claim mówi, że praca jest droga, zanim ocean zacznie pobierać opłatę.
+Publiczne trasy HECTON-8 nie mają być piękne. Mają przetrwać faktury, plomby, tabele ubezpieczeń i spory salvage. Nazwa trasy to część mapy, która nadal ma znaczenie, gdy obraz znika i zostaje tylko kontrakt.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spine to linia szacowna. Niesie starą legitymację, język kompatybilności i formuły, które Deep Reach lubi cytować, gdy chce, by projekt graniczny wyglądał cywilizowanie. Barnard Breaker Run jest brzydsza i uczciwsza: rozbiórka statków, sprzęt ciśnieniowy, załogi zadłużone, obdarte kadłuby i praktyczna kultura, która umożliwia Marauderów.
+
+Luyten Packet Ladder nie jest romantyczną wspólnotą. To infrastruktura opieki nad pakietami. Wyjaśnia, dlaczego wiadomość może stać się dowodem, dlaczego dowód może się spóźnić i dlaczego uczciwy pakiet nie jest pomocą. Tau Public Ledger Lane to miejsce, gdzie dowód po powolnej pracy światła staje się presją publiczną.
+
+Ran Long Claim to nazwa najbliższa HECTON-8. Nie jest autostradą, lecz ścieżką roszczenia przez dystans, prawo, prawa hamowania i koszt frachtu. Płyta trasy powinna czytać się jak ślad presji: czyje prawo tu podróżuje, czyj ładunek się porusza, czyj dowód przetrwał i czyje ciało wypadło z manifestu powrotu.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/pl_PL. -->

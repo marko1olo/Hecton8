@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload de elección final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload de elección final
 
-ES LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+El Payload de elección final define la filosofía de finales de HECTON-8: el jugador elige qué sale de la luna, quién lo recibe y qué hace posible para Deep Reach, la ley pública, Atlas y la ecología océano-máquina.
 
 ## Scanner
 
-ES LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD FINAL // Coordenadas, muestras, nombres, acceso Atlas, órdenes de cuarentena, prueba pública. Lo que sale de HECTON-8 decide quién puede actuar después.
 
 ## Terminal
 
-ES LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+MATRIZ PAYLOAD: vender coordenadas y prueba XO; cortar continuidad Atlas; preservar o poner en cuarentena la ecología océano-máquina; publicar evidencia al ledger público; retener el payload y dejar ciego a Deep Reach.
 
 ## Audio
 
-ES LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+No hay propiedad limpia para una escena del crimen que aprendió a respirar.
 
 ## Field Note
 
-ES LOC HOLD: The best ending should be defensible, not clean.
+El mejor final debe poder defenderse, no estar limpio.
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/es_ES. -->

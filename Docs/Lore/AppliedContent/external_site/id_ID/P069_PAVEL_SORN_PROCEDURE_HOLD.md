@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Penahanan Prosedural Pavel Sorn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Penahanan Prosedural Pavel Sorn
 
-ID LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem.
+Penahanan Prosedural Pavel Sorn adalah artikel horor birokrasi HECTON-8. Artikel ini menunjukkan bagaimana bencana samudra yang nyata menjadi lebih buruk ketika prosedur Deep Reach memperlakukan evakuasi sebagai masalah izin. Sorn tidak ditulis sebagai dalang besar; justru di situlah ia lebih berguna dan lebih menakutkan. Ia adalah orang yang bisa membaca laporan banjir, mengenali nama-nama terlampir, lalu tetap mengarsipkan pelepasan sebagai menunggu sertifikasi eksternal karena bahasa kontrak telah mengajarinya takut pada konsekuensi yang salah. Bagi pemain, entri ini membingkai runtuhnya koloni sebagai rantai penolakan legal yang kecil: tidak ada penyelamatan instan, tidak ada penjahat kartun di radio, hanya manusia dan sistem yang mengubah penundaan menjadi kematian.
 
 ## Scanner
 
-ID LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn tidak memerintahkan pembantaian. Ia melakukan hal yang lebih mudah dipertahankan di atas kertas: membiarkan izin evakuasi tetap di baki tertunda.
 
 ## Terminal
 
-ID LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Kantor Kontrak / Dek Administrasi. Izin evakuasi tetap dalam PENAHANAN PROSEDURAL: sertifikasi eksternal belum ada, segel kontinuitas Atlas belum selesai, kanal liabilitas jenuh. Kesulitan pekerja diakui. Jangan otorisasi naik sampai kustodi klaim dan bahasa karantina jelas.
 
 ## Audio
 
-ID LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Ia terus menulis "tertunda" saat laut mengambil dek-dek bawah.
 
 ## Field Note
 
-ID LOC HOLD: Useful evil often signs in normal handwriting.
+Koloni tidak mati karena satu orang tertawa di depan pintu terkunci. Koloni mati karena pintu itu punya formulir.
 
 <!-- External Site; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/id_ID. -->

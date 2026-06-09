@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Asset Silence Board の署名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Asset Silence Board の署名
 
-JP LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+Asset Silence Board の署名は、告白に頼らず Deep Reach の消去を読むための公開可能な層である。回収カードは corporate language を清潔に保つ。load categories、packet visibility、custody approval、asset risk。近くの HECTON-8 の物体が、その言葉を汚くする。札付きロッカー、名前のある台帳、名前を claim route から出さない mute flags。アーカイブ価値は、請求可能なまま残ったものと、名前を運ばなくなったものの食い違いにある。
 
 ## Scanner
 
-JP LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+redaction vote card を回収。作業員名欄はミュート、asset-risk category は表示、locker count は保持。パケット可視化には custody approval が必要。
 
 ## Terminal
 
-JP LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board。Board item ASB-17: relay review 後、witness-name 添付を asset-risk silence category へ移動。load class、locker count、claim value は保持。release には custody owner approval が必要。
 
 ## Audio
 
-JP LOC HOLD: Erase the route and the body becomes cargo math.
+ボードは箱数を残した。名前を切った。
 
 ## Field Note
 
-JP LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+名前は消えた。ロッカー札は残っている。Asset Silence Board が投票したのはパケットの可視性で、作業員の存在ではない。
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ja_JP. -->

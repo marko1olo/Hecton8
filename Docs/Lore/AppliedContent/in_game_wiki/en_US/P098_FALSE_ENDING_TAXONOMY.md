@@ -19,7 +19,7 @@ localization_flags: 0
 
 # False Ending Taxonomy
 
-HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 treats false and partial endings as real outcomes rather than fake-outs. A material payout can roll credits. A partial exit can send the player back into the same seed with retained dossier knowledge. Corporate capture and quarantine hold can punish bad payloads or dangerous evidence routing. The deeper endings require public proof, Atlas-state resolution, and a decision about what kind of rescue the player is willing to buy.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Ending board. Some exits are real enough to count and wrong enough to hurt.
 
 ## Terminal
 
-ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+ENDING FAMILIES: material payout; partial exit and same-seed return; corporate capture; quarantine hold; public ledger release; Atlas basin resolution. Outcome records must keep payload, proof, and debt state separate.
 
 ## Audio
 
-Leaving is not the same as finishing.
+Leaving the water is not the same as finishing the work.
 
 ## Field Note
 
-False ending must not be a trick. It must be a valid bad bargain.
+A false ending is not a trick. It is a valid bargain with a missing truth.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/en_US. -->

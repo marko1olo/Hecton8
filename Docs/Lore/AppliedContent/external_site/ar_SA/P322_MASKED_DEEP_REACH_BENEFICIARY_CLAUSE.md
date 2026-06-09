@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "بند المستفيد المقنع Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Masked Deep Reach Beneficiary Clause
+# بند المستفيد المقنع Deep Reach
 
-AR LOC HOLD: Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+يحدد بند المستفيد المقنع Deep Reach الشكل الحديث لمؤامرة HECTON-8. Deep Reach ليس محرك دمى كلي القدرة. إنه مستفيد مخفي في أولوية الاسترداد ومسار التأمين وshell custody. النتيجة أكثر إخافة لأنها عادية: أوراق ذات أسنان حول كارثة لم تتوقف عن الدفع.
 
 ## Scanner
 
-AR LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+لا يُطبع اسم Deep Reach في ورقة التوظيف. يظهر حيث تلتقي الأموال وأولوية المستقبل والوصول إلى الإحداثيات.
 
 ## Terminal
 
-AR LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+أثر المستفيد / المستأجر الظاهر: proxy loss desk / المستفيد المقنع: shell مرتبطة بـ Deep Reach / المسؤولية: معزولة / coordinate access: محفوظ / priority recovery channel: يفتح قبل contractor distress lane.
 
 ## Audio
 
-AR LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+إذا غاب الاسم لكن القناة فتحت أولا، فالمالك لا يزال في الغرفة.
 
 ## Field Note
 
-AR LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+اجعله إجرائيا: حجب، proxy loss desk، أثر مستفيد، قناة استرداد. دع اللاعب يستنتج الضغط.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/ar_SA. -->

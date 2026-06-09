@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Tumpukan Carrier-Tug Sistem
 
-Black Keel harus terasa cukup dekat untuk disalahkan dan cukup jauh untuk tetap tak terjangkau. Ini bukan kapal dari fantasi penyelamatan heroik. Ini tumpukan industri sewaan dari lambung carrier, berth tug, rak kargo, perangkat lunak kustodi, rel kapsul, dan ledger yang tidak tidur. Itu membuatnya berguna: bisa menerima sampel, menjawab paket, menahan orbit, dan melempar hardware ke jendela. Itu juga membuatnya kejam: semua fungsi berguna terikat kepemilikan, timing, dan utang. Pemain terdampar di bawah mesin yang nyata, hadir, dan secara struktur tidak mau menjadi pelindung.
+Black Keel harus terasa cukup dekat untuk disalahkan dan cukup jauh untuk tetap tak tersentuh. Ia bukan kapal dari fantasi penyelamatan heroik. Ia adalah tumpukan industri sewaan yang dibangun dari lambung carrier, tambatan tug, rak kargo, perangkat lunak kustodi, rel peluncur kapsul, dan buku besar yang tidak pernah tidur.
+
+Itu membuatnya berguna: ia bisa menerima sampel, menjawab paket, menahan orbit, mengirim kapsul, dan mendorong perangkat keras ke jendela sempit. Itu juga membuatnya kejam: setiap fungsi berguna terikat pada kepemilikan, timing, bahasa karantina, margin panas, dan utang. Tubuh bisa terdampar di bawah mesin yang nyata, hadir, mendengar, dan secara struktural tidak bersedia menjadi tempat berlindung.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/id_ID. -->

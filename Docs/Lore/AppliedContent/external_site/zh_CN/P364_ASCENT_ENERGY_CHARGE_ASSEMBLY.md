@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "升空能量装药组件"
+title: "上升能量装药组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 升空能量装药组件
+# 上升能量装药组件
 
-升空能量装药组件把资源经济与叙事后果绑定：blue debt 和 vent-forged hardware 决定逃离可靠性、证据 custody 与妥协。
+上升能量装药组件是HECTON-8打捞经济停止抽象的地方。同一种压力生长材料既能买到carrier注意，也能成为把胶囊推出海面的脉冲装药。
 
-## Scanner
+这笔交换危险，因为blue debt不是魔法燃料。它是带有压力历史、污染状态、封存行为和法律价值的Xenon-Omega工艺材料。vent-forged heat cell能够提供受控能量。原始样本可能碎裂，污染custody记录，或把有效回收变成有争议的货物。
 
-Energy cradle 被 pressure pulse 刮伤。廉价装药会做出一具干净棺材。
-
-## Terminal
-
-ASCENT CHARGE: 需要 vent-forged heat cell、pressure-history insulator 和 custody stamp。Raw fuel 被拒收。未认证 blue debt 会在 launch impulse 下断裂，并使 recovery claim 失效。
-
-## Audio
-
-你可以卖掉升力，也可以乘着它走。不能两者都要。
-
-## Field Note
-
-cradle 里的每一克都是逃离、证据或 blue-debt payout。胶囊不会原谅贪婪。
+完整装药因此把硬件和申索语言放在同一只托架中：heat cell、绝缘体、脉冲套筒、质量记录和签署过的custody stamp。保持完整，胶囊拥有认证升力。为付款拆开它，海也许仍会让发动机点火，但上方没有人必须接受抵达的东西。
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/zh_CN. -->

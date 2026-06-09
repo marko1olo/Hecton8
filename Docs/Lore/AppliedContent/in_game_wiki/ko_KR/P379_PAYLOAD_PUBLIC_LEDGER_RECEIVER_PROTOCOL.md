@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "payload 공개 원장 수신 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Payload Public Ledger Receiver Protocol
+# payload 공개 원장 수신 프로토콜
 
-KO LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+공개 원장 프로토콜은 Deep Reach가 조용히 소유할 수 없는 곳으로 증거를 보낸다. 좌표를 편집하고, attestation hashes를 봉인하며, 경로 보관과 Atlas 가중치 digest를 붙인 뒤 지연 릴레이에 들어간다. 발신자는 수락 순간 통제를 잃는다. 패킷은 사기 어려워지고, 묻기 어려워지고, 사용은 느려진다.
 
 ## Scanner
 
-KO LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+공개 원장 경로 무장. 좌표는 지연 릴레이 전에 편집되고, attestation hash 스택과 책임 체인은 수락 시 봉인된다.
 
 ## Terminal
 
-KO LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PAYLOAD 수신자 // 공개 원장 레인. 수신자: 분산 공개 원장, 지연 Tau 레인. 좌표 편집 사고 패킷, attestation hashes, 경로 보관, Atlas 가중치 digest, 수신자 타임스탬프 수락. 사적 지급 및 직접 회수 청구 거부. 릴레이 수락 시 회수 종료.
 
 ## Audio
 
-KO LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+원장이 패킷을 받았다. 좌표는 가려졌다. 회수 창은 닫혔다.
 
 ## Field Note
 
-KO LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+약탈자 메모: 릴레이가 수락하기 전에 경로를 편집하라. 수락 뒤 패킷은 더 이상 네 것이 아니다.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ko_KR. -->

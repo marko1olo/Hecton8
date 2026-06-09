@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "현장 시스템 전문 기록"
+title: "현장 시스템 전문가 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 현장 시스템 전문 기록
+# 현장 시스템 전문가 기록
 
-HECTON-8의 플레이어 캐릭터는 실용적인 상처를 안고 바다에 들어간다. Deep Reach 현장 시스템 근무 이력, 대피 인프라 접근권, 취소된 허가, 잠긴 기계를 증거로 읽을 만큼의 절차 기억이다. 지금은 Marauder이지 회사 장교도 승객 영웅도 아니다. 망가진 펌프, 경로 도장, 책임 문구가 중요한 이유는, 그 시스템들이 문서가 되기 전 노동자를 보호해야 했던 방식을 오퍼레이터가 알기 때문이다.
+현장 시스템 전문가 기록은 HECTON-8의 중심 오퍼레이터에게 쓸모 있는 과거를 주되, 그 과거를 너무 깨끗하게 만들지 않는다. 그들은 지휘부가 아니었고 재난의 비밀 설계자도 아니었다. 대피 경로, 펌프, 밀봉, 릴레이실을 정직하게 유지해야 했던 시스템 가까이에서 일했다.
 
-## Scanner
+이것이 중요한 이유는 버려진 식민지가 잔해만이 아니라 절차로 가득하기 때문이다. route-safe 도장, clamp 등급, maintenance 문구는 극적인 녹음보다 더 강하게 고발할 수 있다. 오퍼레이터는 사람들이 보호받을 때 그 기록이 어떻게 보여야 하는지, 회사가 보호를 서류로 바꾸려 할 때 어떻게 보이는지 안다.
 
-오래된 현장 시스템 자격. 지휘 인력은 아니다. 어느 경로가 묻혔는지 알아볼 만큼의 접근권을 가진 기반시설 노동 기록.
-
-## Terminal
-
-인원 흔적: 현장 시스템, 대피 인프라, route-safe 인증. Aegir 침묵 검토 후 권한 취소. 절차 캐시는 아직 오퍼레이터의 순서와 일치한다.
-
-## Audio
-
-너는 거짓에 서명하지 않았다. 그 거짓이 검사를 통과하는 문법을 알고 있었을 뿐이다.
-
-## Field Note
-
-배지는 문을 열지 못하게 됐다. 실패의 순서까지 지우지는 못했다.
+취소된 접근권은 역사를 더 날카롭게 만든다. 오래된 배지는 더 이상 통제권을 주지 않지만 실패의 방언을 알아보는 능력은 남긴다. HECTON-8은 그 직업 기억을 동기로 바꾼다. 재앙을 일으킨 죄가 아니라, 막을 수 있던 방들이 어떻게 파일 처리되었는지 읽은 뒤의 책임이다.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/ko_KR. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Capsule Blackbox Audio 01"
+title: "אודיו קופסה שחורה של הקפסולה 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Capsule Blackbox Audio 01
+# אודיו קופסה שחורה של הקפסולה 01
 
-HE LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+אודיו קופסה שחורה של הקפסולה 01 הופך את ההישרדות בפתיחה לחוב. הקפסולה לא פשוט התרסקה על HECTON-8 והמתינה לתיקון. היא בחרה את השריפה היחידה שהשאירה את הנוסע חי ושילמה עליה ב-ascent sleeve, אותה חומרה שהייתה מאפשרת חזרה נקייה. הקופסה השחורה שימושית כי היא קושרת עובדה סיפורית לחסימה פיזית: crush-frame סדוק, sleeve שרוף, recovery ring ללא נעילה, pressure frames חסרים ומצוף שממשיך לבקש עלייה מעומק שכבר אי אפשר לברוח ממנו. השחקן חי כי המכונה בזבזה את הדרך הביתה.
 
 ## Scanner
 
-HE LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+הקופסה השחורה הראשונה לא אומרת שהתרסקת. היא אומרת שהקפסולה שרדה בכך שבזבזה את החומרה שהייתה אמורה להעלות אותה חזרה.
 
 ## Terminal
 
-HE LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; פגיעת ירידה נספגה; ascent sleeve נוצל; recovery ring נכשל בנעילה; מצוף לא אמין; frames 12-19 נפלו בזמן pressure shear. עלייה ידנית אינה מומלצת ללא החלפת sleeve חיצונית.
 
 ## Audio
 
-HE LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+אירוע קופסה שחורה. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-HE LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: crush-frame תחתון סדוק; ascent sleeve נשרף; recovery ring no-lock; המצוף עדיין חוזר על בקשת עלייה מתה.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/he_IL. -->

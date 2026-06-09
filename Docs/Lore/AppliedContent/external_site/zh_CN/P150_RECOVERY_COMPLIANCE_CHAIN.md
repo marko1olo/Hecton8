@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Compliance链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Compliance链
 
-CN LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance这个词让终局更冷。它听起来有秩序，因为它确实有秩序。承包商需要许可，证据需要监管，打捞需要权属，航线保险需要记录，公共办公室需要不会认罪的措辞。
 
-## Scanner
-
-CN LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-CN LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-CN LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-CN LOC HOLD: Delay does not make an order harmless.
+恐怖在于，这条链可以包含活人，却仍不变成救援。幸存者可以被当作证人材料。压力服可以是返还质量。供词可以是数据载荷。链条可以把某人带出去，同时仍服务于把他们留在下面的办公室。
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/zh_CN. -->

@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Relaisnachrichtenverzug
 
-Relaisverzug erlaubt Deep Reach, den Spieler ohne lebende Stimme im Raum zu bedrohen. Vertragsmaschinen, Notare, Anspruchsfenster und Trägerklauseln können vor Mitgefühl eintreffen, weil sie früher geschrieben, früher eingereiht und für Distanz bepreist wurden.
+Relaisverzug lässt HECTON-8 Autorität empfangen, ohne Fürsorge zu empfangen. Ein Paket kann Warnung, Schuld, Eigentum, Gewahrsam oder Geständnis über Distanz tragen, aber keine Hände in einen gefluteten Raum bringen. Diese Trennung macht Kommunikation furchteinflößend: Ferne Systeme bleiben mächtig, weil sie früh geschrieben, früh eingereiht, für Distanz bepreist und Maschinen anvertraut wurden, die nicht wissen, dass der Absender tot ist.
 
 ## Scanner
 
-Eine Nachricht kann rechtlich bindend sein und trotzdem zu spät kommen, um Luft zu retten.
+Nachrichtenbindung gültig. Menschliche Antwort fehlt. Restluft lokal bestimmt.
 
 ## Terminal
 
-RELAISVERZUG: lokale Aegir-Nachrichten können Stunden oder Tage brauchen. Interdomain-Rechtspakete können Jahre brauchen. Deep-Reach-Druck ist alt, automatisiert, vertraglich und trotzdem gefährlich.
+RELAISVERZUG: Lokale Aegir-Pakete brauchen Stunden oder Tage. Rechts-Pakete zwischen Domänen können Jahre brauchen. Deep-Reach-Druck bleibt bestehen, weil alte Anweisungen, Pfandmitteilungen, Routenansprüche und automatische Ablehnungen ausführbar bleiben, nachdem die Person, die sie schrieb, verschwunden ist.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Die Antwort ist spät. Das Pfandrecht ist aktuell.
 
 ## Field Note
 
-Kein Ansible bedeutet: Wahrheit bewegt sich als Fracht.
+Ohne Ansible reist Wahrheit wie Fracht, aber Recht reist wie ein bewaffneter Zeitplan.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/de_DE. -->

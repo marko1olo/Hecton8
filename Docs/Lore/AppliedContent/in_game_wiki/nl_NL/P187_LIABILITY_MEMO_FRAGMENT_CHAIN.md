@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Fragmentketen van het Aansprakelijkheidsmemo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Fragmentketen van het Aansprakelijkheidsmemo
 
-NL LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+Fragmentketen van het Aansprakelijkheidsmemo leert de speler Deep Reach-bewijs lezen. Geen enkel memo bevat de hele misdaad; elk kantoor bewaarde de zin die zijn eigen handeling procedureel liet lijken. Een risicotabel erkent dat de getijdemarge faalde. Een evacuatienotitie verandert vertraging in kanaaldiscipline. Een Atlas-override laat continuïteit veiliger klinken dan ontsnapping. Een Keelmark-fragment zet vermiste arbeiders om in terugwinbaar verlies. De speler moet papier vergelijken met overstroomde kamers, kapotte routeklokken en arbeidersnamen. De keten wordt pas leesbaar wanneer de fragmenten hun kantoren niet meer verdedigen en elkaar beginnen tegen te spreken.
 
 ## Scanner
 
-NL LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Het aansprakelijkheidsmemo overleefde als fragmenten omdat elk kantoor de alinea bewaarde die het zelf beschermde.
 
 ## Terminal
 
-NL LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: risicomargetabel / evacuatievrijgavenotitie / Atlas-continuïteitsoverride / Keelmark-verliesconversie / recovery-bewaringsverzoek. Controleer routetijd, kamerschade en arbeidersnamen voordat de publieke samenvatting wordt aanvaard.
 
 ## Audio
 
-NL LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Ze verborgen de waarheid niet in een kluis. Ze archiveerden haar in stukken.
 
 ## Field Note
 
-NL LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Een gescheurd memo is eerlijk op de plaatsen waar het dat niet wilde zijn.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/nl_NL. -->

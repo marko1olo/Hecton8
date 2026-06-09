@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Tor des abyssalen Maschinenfelds"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Abyssal Machine Field Repair Act
+# Tor des abyssalen Maschinenfelds
 
-DE LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Das abyssale Feld zwingt den Operator, das System zu nutzen, das den Anspruch beschädigte. Atlas-Wachstum kann Strom überbrücken, Routenhardware flicken und Signal durch lebendes Material tragen. Jede erfolgreiche Reparatur ändert auch Klassifizierung: Werkzeug, Organismus, Anlage, Kontamination und Beweis kreuzen ständig Felder.
 
 ## Scanner
 
-DE LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Routentor: abyssales Maschinenfeld. Atlas-Reparaturökologie wird nutzbare Routenhardware mit Verwahrungsrisiko.
 
 ## Terminal
 
-DE LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+KAMPAGNENROUTE // ABYSSALES MASCHINENFELD. Erforderlich: leitender Film, akustisches Organ, Servicebecken, drucksichere Umleitung. Reparaturausgabe kann Hardware wiederherstellen und Eigentumsklasse im selben Durchlauf beschädigen.
 
 ## Audio
 
-DE LOC HOLD: It fixed the wall before it decided what the wall was.
+Es reparierte die Wand, bevor es die Wand benannte.
 
 ## Field Note
 
-DE LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Plünderernotiz: Wenn es über die Platte wächst, scanne vor dem Schnitt. Vielleicht funktioniert die Platte nur deshalb noch.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/de_DE. -->

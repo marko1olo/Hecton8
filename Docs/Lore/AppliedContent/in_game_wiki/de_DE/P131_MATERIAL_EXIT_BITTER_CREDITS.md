@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Materieller Ausstieg: bittere Gutschriften
 
-Der materielle Ausstieg ist ein echtes Ende für einen Marauder, der HECTON-8 als bezahlte Arbeit behandelt. Der Spieler kann mit reduzierter Schuld und zufriedengestelltem carrier-Ledger gehen. Der Preis bleibt sichtbar: Die Kolonie bleibt ein Tatort, der in Anspruchswert umgewandelt wurde, und Deep Reach erhält einen besseren Rückweg als die Arbeiter je herausbekamen.
+Dies ist der kälteste legitime Ausstieg aus HECTON-8. Ein Marauder bringt Druckmaterial zurück, das Black Keel wiegen, berechnen und durch ein Aufstiegsfenster bewegen kann; die Schuld sinkt, das Carrier-Ledger stimmt, und die Arbeitsakte kann ohne gefälschte Zahlen schließen. Nichts auf dem Beleg ist direkt falsch. Die Probe ist echt. Die custody-Kette ist sauber genug. Das Scheitern lebt in der ausgelassenen Spalte: unabgeglichene Arbeiternamen, eine zu dünne Beweiskette, eine ertrunkene Kolonie als Anspruchswert und Routendaten, die Deep Reach einen saubereren Grund zur Rückkehr geben. Beruflicher Erfolg überlebt hier, aber er schmeckt nach Metall und alter Luft.
 
 ## Scanner
 
-Druckmaterial angenommen. Ausstiegsfenster kaufbar. Arbeiternamen weiter unabgeglichen.
+Druckmaterial angenommen. Ausstiegsfenster verkauft. Namen bleiben unbezahlt.
 
 ## Terminal
 
-BELEG MATERIELLER AUSSTIEG: custody-grade-Druckmaterial angenommen; lien reduziert; Beweis-payload unvollständig; Vermisstenarbeiter-Ledger bleibt unter Anspruchsstreit; Recovery-Compliance-Priorität erhöht.
+BELEG MATERIELLER AUSSTIEG: custody-grade-Druckmaterial angenommen; lien reduziert; Aufstiegsmasse autorisiert; Beweis-payload unvollständig; Vermisstenarbeiter-Ledger ungelöst; Deep-Reach-Rückgewinnungsinteresse erhöht.
 
 ## Audio
 
-Die Rechnung klärt sich vor den Namen.
+Die Rechnung erreicht die Luft vor den Namen.
 
 ## Field Note
 
-Black Keel bewertet die Probe vor den Toten. Das ist kein Fehler im Vertrag.
+Black Keel klärt Masse vor Erinnerung; der Vertrag nennt das Erfolg.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/de_DE. -->

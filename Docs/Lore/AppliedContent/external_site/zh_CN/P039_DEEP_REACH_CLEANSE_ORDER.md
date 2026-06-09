@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach清理指令"
+title: "Deep Reach 实时清理指令"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach清理指令
+# Deep Reach 实时清理指令
 
-清理指令把公司掩盖故事连接到当前玩法压力：资源 custody、Atlas访问、删除证据。
+Deep Reach 实时清理指令把公司压力变成程序：活动代理可以购买样本、打开 Atlas 路径并擦除责任证据，而公开记录仍把 HECTON-8 描述成失联站点。
 
 ## Scanner
 
-恢复命令栈：资源、Atlas访问、证据删除。幸存者回收低于资产控制。
+发现实时指令：扣押认证样本，开启 Atlas 通道，隔离幸存者，删除责任证据。
 
 ## Terminal
 
-代理指令：承包人可否认。保全样本。本地风险可接受则开启Atlas通道。清除责任语料。
+代理工单 DR-CLEANSE-19 仍在执行。可否认承包方先取得样本保管权，其次取得 Atlas 访问，最后才处理证人回收。若 Black Keel 或站点账本暴露责任，清除队列会把证据档案转入 cold delete，并把现场死亡重标为天气损失。
 
 ## Audio
 
-Deep Reach不是在追你。它把你当成更便宜的探针。
+那个声音不是救援通信。那是清理报价。
 
 ## Field Note
 
-他们回来不是为了道歉。
+道歉字段为空。
 
 <!-- External Site; generated from P039_DEEP_REACH_CLEANSE_ORDER/zh_CN. -->

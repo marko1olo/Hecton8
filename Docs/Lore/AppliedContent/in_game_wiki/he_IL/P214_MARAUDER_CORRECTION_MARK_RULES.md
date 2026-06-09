@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "כללי סימוני תיקון Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# כללי סימוני תיקון Marauder
 
-HE LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+כללי סימוני תיקון Marauder מגדירים את היד האנושית השנייה על ראיות המושבה. Deep Reach כתבה קטגוריות כדי לקבור עובדים; צוותי תביעה מאוחרים כתבו מעל הקטגוריות האלה כדי לשרוד, להתמקח או להזהיר זה את זה. סימון תיקון שימושי רק כשהוא משנה את מה שהשחקן יכול להסיק. שם בעיגול יכול להציל אדם מקטגוריית הפסד. חותמת נתיב מחוקה יכולה להפוך דלת בטוחה לחשודה. סימון מחיר יכול להפוך דגימה ביולוגית לחפץ חוב. סימון עד נסתר יכול להגן על שבר קול עד שלשחקן יש הקשר נכון. הסימונים צריכים להרגיש מהירים, מעשיים ועייפים, לא תיאטרליים. הם אינם גרפיטי לאווירה. הם עבודה של אנשים שידעו שהרשומה מלוכלכת ועדיין היו צריכים לאכול.
 
 ## Scanner
 
-HE LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+סימון תיקון יכול להציל שם, לזהם תביעה או להזהיר את הצולל הבא שהקטגוריה הרשמית משקרת.
 
 ## Terminal
 
-HE LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: סימוני Marauder חייבים לשנות פירוש ראיה, סיכון נתיב או לחץ תשלום. סימונים תקפים משמרים שם עובד, מערערים קטגוריית ביטוח, מזהירים נתיב, מתמחרים דגימה, מסתירים עד או מסמנים חוב. גרפיטי ריק שובר את שרשרת הראיות.
 
 ## Audio
 
-HE LOC HOLD: Somebody came before you and still failed to leave clean.
+מישהו בא לפניך ועדיין לא הצליח לצאת נקי.
 
 ## Field Note
 
-HE LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+סימונים: לשמר שם, לערער קטגוריה, להזהיר נתיב, לתמחר דגימה, להסתיר עד, לסמן חוב. כתב היד חייב לשנות את הקריאה, לא לקשט את החפץ.
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/he_IL. -->

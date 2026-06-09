@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Rantai Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Rantai Recovery Compliance
 
-ID LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+Rantai Recovery Compliance mengubah lokasi bencana menjadi ladang aset terkendali. Ia bisa mengizinkan masuk, pemotongan, pengambilan sampel, pengumpulan saksi, penyegelan data, dan massa pulang. Ia juga bisa terus bertanya apakah orang hidup adalah bukti, liabilitas, kargo, atau hambatan.
 
 ## Scanner
 
-ID LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Perintah recovery diterima. Bahasa penyelamatan tidak hadir dalam rantai.
 
 ## Terminal
 
-ID LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+RANTAI RECOVERY: tindakan pascainsiden melewati izin kontraktor, kustodi bukti, hak salvage, penanganan saksi, asuransi rute, dan bahasa publik tanpa pengakuan. Menyelamatkan bukan kata kerja pengendali.
 
 ## Audio
 
-ID LOC HOLD: You are not rescued. You are classified.
+Mereka datang untuk mematuhi recovery. Itu tidak sama dengan kembali untuk kami.
 
 ## Field Note
 
-ID LOC HOLD: Delay does not make an order harmless.
+Compliance datang dengan sarung tangan, segel, dan tanpa janji bahwa siapa pun masih dianggap orang.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/id_ID. -->

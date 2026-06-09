@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Capsule Blackbox Audio 01"
+title: "カプセル・ブラックボックス音声 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Capsule Blackbox Audio 01
+# カプセル・ブラックボックス音声 01
 
-JA LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+カプセル・ブラックボックス音声 01 は、冒頭の生存を負債へ変える。カプセルは HECTON-8 にただ墜ちて修理を待ったのではない。搭乗者を生かす唯一の燃焼を選び、きれいな帰還を可能にするはずだった ascent sleeve で支払った。ブラックボックスが有用なのは、物語上の事実を物理的な障害へ結びつけるからだ。割れた crush-frame、焼けた sleeve、ロックしない recovery ring、失われた pressure frames、そして脱出できない深度から上昇要求を繰り返すブイ。プレイヤーが生きているのは、機械が帰り道を使い切ったからだ。
 
 ## Scanner
 
-JA LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+最初のブラックボックスは墜落を告げない。カプセルが帰還用ハードを消費して生き残ったと告げる。
 
 ## Terminal
 
-JA LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; 降下衝撃吸収; ascent sleeve 消費; recovery ring lock 失敗; ブイ不安定; pressure shear 中に frames 12-19 消失。外部 sleeve 交換なしの手動上昇は非推奨。
 
 ## Audio
 
-JA LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+ブラックボックス事象。Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-JA LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: 下部 crush-frame 亀裂。ascent sleeve 焼損。recovery ring no-lock。ブイはまだ死んだ上昇要求を繰り返している。
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ja_JP. -->

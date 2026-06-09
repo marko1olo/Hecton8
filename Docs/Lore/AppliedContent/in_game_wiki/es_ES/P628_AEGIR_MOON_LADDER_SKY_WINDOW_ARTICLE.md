@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Ventana celeste de la escalera lunar de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Ventana celeste de la escalera lunar de Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+La escalera lunar de Aegir es información de ruta. Las etiquetas lunares enseñan calidad de señal, presión de marea, sombra de relé y riesgo de ventana transfer sin exigir simulación orbital en vivo.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+ETIQUETA LUNAR // Ruido de relé bajando. Ventana usable si aguanta la banda de tormenta.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+NOTA DE EFEMÉRIDES // Banda de ventana HECTON-8 favorable. Sombra de relé Kestrel en ascenso. Ventana fuerte de paquete corta.
 
 ## Audio
 
-Read the sky, then send.
+No mires el cielo. Léelo, luego envía.
 
 ## Field Note
 
-Pretty moons are weights.
+Las lunas bonitas siguen siendo pesos en la línea.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/es_ES. -->

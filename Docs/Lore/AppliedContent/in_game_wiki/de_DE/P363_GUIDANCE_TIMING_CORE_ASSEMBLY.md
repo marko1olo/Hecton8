@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Führungstimingkern-Baugruppe"
+title: "Baugruppe des Führungszeitkerns"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Führungstimingkern-Baugruppe
+# Baugruppe des Führungszeitkerns
 
-Ein funktionierender Aufstieg braucht einen Führungstimingkern, der Aegirs Mondgeometrie, blackout-Intervalle, Relaisschatten und carrier recovery lanes versteht. Schlechtes Timing kann die Kapsel verlieren, ohne ein einziges Teil zu brechen.
+Der Führungszeitkern verhindert, dass Aufstieg zu einem sauberen Brennen ins Nichts wird. Über HECTON-8 liegt kein offener Himmel. Aegir verschiebt die Bergungsgeometrie, Relaisschutter öffnen und schließen, Sturmplumes verbiegen akustische und Funkübergabe, und Black Keel beobachtet nur bestimmte Spuren zu bestimmten Zeiten.
+
+Der Kern macht die Kapsel nicht klüger als den Ozean. Er gibt ihr Uhr, Ephemeridenschnitt, Empfängerspurtabelle und genug Driftkorrektur, damit der Austritt aus dem Wasser als klassifizierbares Ereignis ankommt. Frühe Pakete landen im carrier stack als Capture-Rauschen. Späte Pakete treffen ein, nachdem die Spur weitergerollt ist. Ein guter Motor mit schlechtem Kern kann exakt nach Plan starten und trotzdem keinen nutzbaren Bergungsanspruch hinterlassen.
+
+Ein reparierbarer Kern braucht vier Dinge: eine gegen Tiefenverzug stabile Uhr, ein aktuelles Aegir-Fenster, die richtige Black-Keel-Spur und einen Schutter-Cache, der zur Relaiskette über dem Sturm passt. Deshalb wirkt die Baugruppe klein und gnadenlos. Sie fügt keinen Schub hinzu. Sie entscheidet, ob Schub zu Ankunft wird.
 
 ## Scanner
 
-Leerer Timingkern. Aegir-Geometrie entscheidet, ob Aufstieg recovery, capture oder Stille wird.
+LEERER ZEITKERN // Keine Aegir-Ephemeride, keine Keel-Spurtabelle, Relaisschutter-Cache leer. Die Kapsel kann sauber zünden und trotzdem jeden Empfänger verfehlen.
 
 ## Terminal
 
-GUIDANCE CORE: Kapseluhr auf Aegir window, Black Keel receiver lane, moon relay shutter und storm-plume-Drift ausrichten. Späte packets werden Beweisverlust; frühe packets werden capture noise.
+GUIDANCE CORE: Aegir-Ephemeridenschnitt, Black-Keel-Empfängerspurtabelle, Mondrelais-Schutter-Cache und plume-drift-Korrektur installieren. Lokale Uhr ablehnen, wenn Drift die Toleranz des custody stamp überschreitet.
 
 ## Audio
 
-Oben ist keine Richtung. Es ist ein Fenster mit Zeugen.
+Richte die Kapsel auf das Fenster, nicht auf den Himmel.
 
 ## Field Note
 
-Von HECTON-8 gibt es kein einfaches Oben. Es gibt einen Empfänger, einen Schatten, Sturmdrift und eine packet queue, die schon älter ist als deine Panik.
+Von HECTON-8 gibt es kein einfaches Oben. Es gibt Mondschatten, Sturm plume, Empfängerspur und eine Uhr, der geglaubt werden muss.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/de_DE. -->

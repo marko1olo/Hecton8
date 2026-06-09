@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Hemelvenster van de Aegir-maanladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Hemelvenster van de Aegir-maanladder
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+De Aegir-maanladder is route-informatie. Maantags leren signaalkwaliteit, getijdruk, relaisschaduw en transfer-vensterrisico zonder live orbitale simulatie te eisen.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+MAANTAG // Relaisruis daalt. Venster bruikbaar als stormband houdt.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+EPHEMERIS-NOTITIE // HECTON-8 vensterband gunstig. Kestrel-relaisschaduw stijgt. Sterk pakketvenster kort.
 
 ## Audio
 
-Read the sky, then send.
+Staar niet naar de lucht. Lees hem, stuur dan.
 
 ## Field Note
 
-Pretty moons are weights.
+Mooie manen zijn nog steeds gewichten aan de lijn.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/nl_NL. -->

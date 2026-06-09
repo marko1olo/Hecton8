@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Fenêtre de route Aegir
 
-Sur HECTON-8, le ciel fait partie du donjon. La géante règle la radiation, les lunes donnent l'ombre, les marées traversent canyons et puits.
-
-Le joueur apprend quand un message monte, quand un corps peut monter et quand le ciel ouvert devient piège.
+HECTON-8 est une lune océanique, mais le ciel fait partie du donjon. Radiation d'Aegir, ombres lunaires, shutters de relais, panaches de tempête, marées et géométrie carrier décident si signal, corps, échantillon ou preuve peut partir. La règle est la séparation : fenêtre de données n'est pas secours, secours n'est pas cargo contaminé. Black Keel calcule, mais demande qui possède la masse, qui accepte la quarantaine et quelle clause protège Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/fr_FR. -->

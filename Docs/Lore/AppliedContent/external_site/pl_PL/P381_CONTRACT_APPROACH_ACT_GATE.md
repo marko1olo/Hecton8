@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Contract Approach Act Gate"
+title: "Brama podejścia kontraktowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Contract Approach Act Gate
+# Brama podejścia kontraktowego
 
-PL LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+Podejście kontraktowe ustawia presję kampanii, nie udając, że ocean już wszystko wyjaśnił. Tablica Black Keel przypisuje transfer roszczenia, czas bathydrop, ekspozycję zastawu i dług narzędzi, zanim operator dotrze do otwartej wody. Trasa zaczyna się jako płatna praca na złych warunkach.
 
-## Scanner
-
-PL LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-PL LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-PL LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-PL LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Ważny szczegół to pozostałość Deep Reach w profilu operatora. To nie rodzinny haczyk i nie bohaterski tytuł. To zgodność proceduralna: język dostępu, skróty utrzymania i nawyki infrastruktury ewakuacyjnej, które nadal pasują do opuszczonych systemów kolonii. Pierwsza brama mówi, że zejście jest pracą; druga linia mówi, że praca ma już akta.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Brygady zmianowe, nie bohaterowie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Brygady zmianowe, nie bohaterowie
 
-PL LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 powinno uczłowieczać kolonię pracą przed tragedią. Technik ciśnienia wymienia uszczelkę zaworu, kucharka liczy żetony wody, urzędnik trasy przybija zły stempel powrotu, nurek wypisuje przecinak i nigdy nie wpisuje go z powrotem: takie szczegóły czynią ludzi czytelnymi bez wymuszonego wątku rodzinnej zemsty. Zatopiona kolonia działa najmocniej, gdy wygląda jak miejsce przerwane w rutynie, nie muzeum zbudowane po śmierci.
 
 ## Scanner
 
-PL LOC HOLD: The colony becomes human through schedules, not speeches.
+WARSTWA LUDZKA // Kolonia staje się prawdziwa przez grafiki, zużyte narzędzia, brakujące powroty i nazwiska na tablicach zmian. Nie przez przemowy.
 
 ## Terminal
 
-PL LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+REGUŁA PISANIA: zapisywać pracowników jako techników pomp, medyków, urzędników tras, nurków, kucharzy, operatorów fabricatora i zmęczonych nadzorców. Grafik z jednym brakującym powrotem boli bardziej niż pomnik.
 
 ## Audio
 
-PL LOC HOLD: They were not symbols. They were late for shift.
+Nie byli symbolami. Spóźniali się na zmianę.
 
 ## Field Note
 
-PL LOC HOLD: People are more believable as workers than as memorial statues.
+Ludzie są bardziej wiarygodni jako pracownicy niż jako pomnikowe figury.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/pl_PL. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Worker Locker Nameplate Sample"
+title: "작업자 사물함 이름표 샘플"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Worker Locker Nameplate Sample
+# 작업자 사물함 이름표 샘플
 
-KO LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+작업자 사물함 이름표 샘플은 HECTON-8이 아직 일이 붙어 있는 물건을 통해 사람을 기억하는 방식을 보여준다. Ren Okoye는 전기로 소개되지 않는다. 사물함 이름표는 항로, 도구 인증, 식사 토큰, 장갑 크기 표시, 그리고 어떤 세부가 중요한지 몰랐던 누군가가 갈아낸 급여 줄을 제공한다. 그래서 이 아티팩트가 작동한다. 기업의 삭제가 서툴 수 있음을 증명한다. payline은 사라졌지만 clamp route는 남는다. 상태는 덮어써졌지만 장갑 크기 표시는 여전히 실제 손에 맞는다. 플레이어는 먼저 노동을 통해 이름을 읽고, 그다음 사라진 계정 줄의 폭력을 느껴야 한다.
 
 ## Scanner
 
-KO LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye의 이름표는 이름을 남겼다. 급여 줄을 지우는 것이 일을 지우는 것보다 쉬웠기 때문이다.
 
 ## Terminal
 
-KO LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-KO LOC HOLD: Name retained. Payline erased.
+이름은 남았다. 급여 줄은 지워졌다. 일은 아직 붙어 있다.
 
 ## Field Note
 
-KO LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / 식사 토큰이 테이프 아래 끼워짐. Payroll stripe는 사포질로 사라짐; 장갑 크기 표시는 아직 보임.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ko_KR. -->

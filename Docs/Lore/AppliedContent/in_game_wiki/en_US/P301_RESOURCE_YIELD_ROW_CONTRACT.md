@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Resource Yield Data Boundary
 
-Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
+Resource Yield Data Boundary keeps resource prices from becoming loose lore. On HECTON-8, a mineral is not worth the same thing at every depth: pressure history, route custody, and depletion behavior decide whether a sample is currency, evidence, or contaminated ballast.
 
 ## Scanner
 
-Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Yield row rejects loose value: class, pressure band, custody, depletion, and hash must agree.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: no number accepted without packet hash, resource class, pressure band, custody grade, rarity curve, and depletion behavior. A sample without pressure history is evidence, not value.
 
 ## Audio
 

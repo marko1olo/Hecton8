@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Pita Kerusakan Transkrip Audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Pita Kerusakan Transkrip Audio
 
-ID LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Voice log HECTON-8 belum lengkap hanya karena memiliki suara. Transkripnya harus menunjukkan luka.
 
-## Scanner
+Pita kerusakan membuat luka itu jujur. Ia bisa menandai derau, paket hilang, redaksi hukum, distorsi tekanan, pemisahan suara yang buruk, terjemahan mesin gagal, atau suntingan belakangan. Tanpa lapisan itu, setiap rekaman rusak menjadi kejelasan palsu atau misteri palsu. Dengan lapisan itu, pemain melihat perbedaan antara apa yang hilang dari dunia dan apa yang sengaja dihapus seseorang.
 
-ID LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+Aturannya ketat karena permainan bergantung pada bukti. Kerusakan boleh menyembunyikan nama, nomor seri, dan muatan spoiler. Ia boleh menciptakan curiga. Ia boleh membuat rute terasa berbahaya sebelum pemain melihat pintu. Tetapi sisa transkrip masih harus membawa aksi: jangan buka airlock, kembali lewat tangga servis, hitung oksigen manual, abaikan lampu status hijau, biarkan baris resmi terlihat.
 
-## Terminal
-
-ID LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-ID LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-ID LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Untuk lokalisasi dan aksesibilitas, pita adalah bagian dari konten. Transkrip terjemahan harus menjaga peran pembicara, tekanan waktu, dan peringatan yang terbaca. Redaksi hanya menjadi atmosfer ketika pemain masih bisa bertindak. Jika tidak, itu hanya antarmuka rusak yang berpura-pura menjadi lore.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/id_ID. -->

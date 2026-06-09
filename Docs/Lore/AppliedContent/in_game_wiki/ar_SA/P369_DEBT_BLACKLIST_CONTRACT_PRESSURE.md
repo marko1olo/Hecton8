@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ضغط عقد الدين والقائمة السوداء"
+title: "ضغط عقد قائمة الدين السوداء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ضغط عقد الدين والقائمة السوداء
+# ضغط عقد قائمة الدين السوداء
 
-يضبط ضغط الدين افتتاح القصة بصدق. لا ينجرف البطل إلى HECTON-8 بسبب ميلودراما، لكنه ليس حرا بأي معنى مفيد. تستطيع Black Keel عرض عقد لأن مجمعات المطالبات، ونوافذ الدين، وأرصدة الأكسجين، ووصول المراقد، وإثبات الحيازة كلها تنتمي إلى اقتصاد حدودي واحد. رفض المطالبة سيكون قانونيا. وسيترك اللاعب أيضا في القائمة السوداء، مثبتا في مكانه، وخارج سعر المسار. قبول العقد لا يجعل Black Keel شريرا ذا وجه. إنه يجعل الناقل آلة لتحويل الخطر إلى أوراق. يغوص اللاعب لأن العقد قبيح، قابل للنجاة، ومنطقيا هو الطريق الوحيد للعودة إلى الحركة.
+ضغط الدين يبقي العقد قبيحا من دون أن يجعله مسرحيا. لا يُسحب المشغل إلى HECTON-8 بالسلاسل، لكن مسار الرفض مصمم ليغلق حوله. تستطيع Black Keel عرض claim لأن نوافذ الدين وoxygen credit ووصول berth وتوقيت المسار وcustody proof كلها في سجل frontier نفسه.
+
+يبقى الرفض قانونيا. كما يترك Marauder على blacklist، بلا حركة، وخارج ثمن نافذة Aegir التالية. القبول يعطي حركة، لا رحمة: يجب تسليم recoverable mass، ويجب أن تصمد custody، وتحدد receiver compliance قيمة claim. لا يحتاج carrier إلى وجه شرير. العقد يعرف مسبقا كيف يحول الخطر إلى أوراق.
 
 ## Scanner
 
-إشعار رهن مرتبط بحيازة Black Keel. الرفض يبقى قانونيا، لكنه يبقيك على الأرض: لا مرقد، لا رصيد أكسجين نظيف، ولا نافذة مسار للخروج من Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. الرفض يبقى قانونيا؛ وصول berth وoxygen credit ونافذة مسار Aegir تبقى مغلقة.
 
 ## Terminal
 
-قبول مطالبة / نافذة تخفيف القائمة السوداء
-حالة المتعاقد: Marauder مقيد بالدين
-الناقل: حيازة مجمع مطالبات Black Keel
-شروط التخفيف: كتلة قابلة للاسترداد، إثبات حيازة، امتثال المستلم
-حالة الفشل: تبقى القائمة السوداء نشطة؛ يرفض وصول المرقد؛ تتحول رعاية الأكسجين إلى دعم قابل للفوترة.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-لم يكن هذا اختطافا. كان ذلك النوع من الاختيار الذي تبيعه الحدود كحرية: وقّع، اغص، أو ابق نظيفا على الورق ومحاصرا في الواقع.
+وقّع، اغطس، أو أبق يديك نظيفتين بينما تغلق قائمة berth.
 
 ## Field Note
 
-لم يوجه الرهن مسدسا. أشار إلى فاتورة الهواء، وقائمة المراقد، ونافذة المسار التالية.
+لم يوجه lien سلاحا. أشار إلى فاتورة الهواء، وقائمة berth، ونافذة المسار التالية.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ar_SA. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantäne-Rechtshandshake-Baugruppe"
+title: "Baugruppe des Quarantäne-Rechtshandshakes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantäne-Rechtshandshake-Baugruppe
+# Baugruppe des Quarantäne-Rechtshandshakes
 
-Die letzte Fluchtkomponente ist rechtlich, medizinisch und beweisbezogen zugleich. Quarantine status, receiver identity, payload custody und evidence state entscheiden, ob ascent Rettung, claim capture oder public proof wird.
+Der Quarantäne-Rechtshandshake ist die letzte Fluchtkomponente, weil HECTON-8 Ankunft nicht als rein mechanisches Ereignis behandelt. Eine Kapsel kann Dichtungsring, geladene Kradle, funktionierendes Relais und korrektes Timing haben und trotzdem unter der falschen Autorität ankommen.
+
+Der Handshake trägt Empfängeridentität, Quarantänestatus, payload-custody-Klasse, lien-Offenlegung und Public-Ledger-Verzug. Keelmark kann Masse und Schuld akzeptieren, bevor es eine Person akzeptiert. Recovery Compliance kann Koordinaten akzeptieren und die Luke unter medizinischem Schloss halten. Ein public ledger kann Beweis erst akzeptieren, nachdem das Paket Verzögerung und Prüfung überstanden hat.
+
+Diese Baugruppe macht die letzte Wahl konkret. Ein schneller Schlüssel kann die Luke in einen Konzernanspruch öffnen. Ein Compliance-Schlüssel kann Überleben in Quarantänehaft verwandeln. Eine öffentliche Route kann Beweise schützen und den Körper warten lassen. Der Motor hebt die Kapsel; der Handshake entscheidet, was recovered beim Andocken bedeutet.
 
 ## Scanner
 
-Handshake-Buchse. Die Kapsel kann mechanisch bereit sein und trotzdem dem falschen receiver gehören.
+HANDSHAKE-SOCKEL // Empfängerschlüssel fehlt. Mechanik kann den Startpfad zertifizieren; der custody stack wählt trotzdem, wer die Ankunft recovered nennen darf.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key erforderlich. Keelmark akzeptiert mass und lien. Recovery Compliance akzeptiert coordinates und quarantine status. Public ledger akzeptiert proof nach Verzögerung. Unkeyed launch wird standardmäßig custody dispute.
+RECOVERY HANDSHAKE: Empfängerschlüsselsatz, Quarantänestatus, payload-custody-Klasse, Public-Ledger-Verzug und lien-Offenlegung laden. Unverschlüsselter Start geht nach sauberem Aufstieg in Streitwarteschlange.
 
 ## Audio
 
-Wer antwortet, entscheidet, was Rettung bedeutet.
+Der Motor kann dich heben. Der Sockel entscheidet, wer die Luke öffnet.
 
 ## Field Note
 
-Die letzte Komponente ist kein Metall. Es ist der Name des Systems, das dich recovered nennen darf.
+Das letzte Schloss ist ein Name, ein Quarantänestatus und eine Ledger-Signatur. Stahl entscheidet nicht, wer antwortet.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/de_DE. -->

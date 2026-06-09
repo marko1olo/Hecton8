@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Resource Yield Data Boundary"
+title: "資源産出データ境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Resource Yield Data Boundary
+# 資源産出データ境界
 
-JP LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+HECTON-8 の資源価値はラベルではなく連鎖だ。数値はテーブルが所有するが、その数値が存在する理由は fiction が持つ。誰が、どの圧力で、どの保管印で採り、ルートがその鉱脈をあとどれだけ安全に削れるのか。
 
 ## Scanner
 
-JP LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+産出行は裸の価値を拒否する: 分類、圧力帯、保管、枯渇、hash が一致しなければならない。
 
 ## Terminal
 
-JP LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: packet hash、資源分類、圧力帯、保管等級、希少度曲線、枯渇挙動なしに数値は受理されない。圧力履歴のないサンプルは価値ではなく証拠。
 
 ## Audio
 
-JA LOC HOLD: A sample without pressure history is not a value.
+圧力履歴のないサンプルに価値はない。
 
 ## Field Note
 
-JP LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+産出数値は、圧力帯、保管等級、枯渇挙動、packet hash が一致するまで暫定。
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ja_JP. -->

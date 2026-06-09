@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Vent Forge Process Steps"
+title: "분출공 단조 공정"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Vent Forge Process Steps
+# 분출공 단조 공정
 
-KO LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+분출공 단조 공정은 HECTON-8 제작 뒤의 하드SF적 환상을 설명한다. 행성은 열과 압력을 제공하고, 식민지는 망가진 clamp와 공정 기억을 제공하며, 플레이어는 판단을 제공한다. 이 읽을 수 있는 사슬은 미래 제작 박자, 환경 서사, 오디오 피드백을 함께 지탱할 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: Vent forging should feel like using the planet against itself.
+분출공 단조는 마법 금속공예가 아니다. 행성의 열, 압력, 타이밍을 빌리되 행성이 부품을 가져가지 못하게 하는 일이다.
 
 ## Terminal
 
-KO LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+분출공 단조 단계 / 01 blank에서 brine 제거 / 02 pulse 전 clamp / 03 vent 상승 시 preheat / 04 압력 완화 중 seal / 05 차가운 귀환류에서 quench / 06 acoustic ring으로 인증 / 실패: 뒤틀린 scrap, 소금 bloom, 압력 균열 부품.
 
 ## Audio
 
-KO LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+달이 용광로다. 너는 그것을 빌릴 허가만 받았다.
 
 ## Field Note
 
-KO LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+공정은 purge, clamp, preheat, seal, quench, ring-test로 읽혀야 한다. 위험은 불꽃이 아니라 압력 완화 구간을 놓치는 것이다.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/ko_KR. -->

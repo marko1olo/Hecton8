@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Corporate Coordinate Capture Record"
+title: "企業座標取得記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Corporate Coordinate Capture Record
+# 企業座標取得記録
 
-JA LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+問題はプレイヤーが HECTON-8 を出るかだけではない。去ったあと誰が地図を受け取るのか、そして生存が旧所有者に戻り道を渡すことで買われたのかだ。
 
 ## Scanner
 
-JA LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+座標ペイロード受理。Deep Reach 受信優先度復旧。公開報告は不変。
 
 ## Terminal
 
-JA LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: Atlas 盆地ベクトルを Deep Reach 受信機へ転送。協力記録に基づき回収を許可。公開事故記録は不変。将来作戦は企業ルート権限を回復。
 
 ## Audio
 
-JA LOC HOLD: You opened the door from the inside.
+君は内側から扉を開けた。
 
 ## Field Note
 
-JA LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+企業側の部分エンディング記録: 座標は回収を買い、犯罪現場を Deep Reach 支配へ開き直す。
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ja_JP. -->

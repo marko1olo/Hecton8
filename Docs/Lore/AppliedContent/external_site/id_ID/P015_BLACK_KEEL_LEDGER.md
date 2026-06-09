@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Ledger Black Keel
 
-Black Keel bukan kapal ramah. Ia tender claim-pool yang membaca tubuh, muatan, karantina, massa naik, dan risiko asuransi sebagai satu ledger.
-
-Ia tidak perlu membenci pemain. Ia bisa menjawab sopan, menerima hash darurat, dan menolak penjemputan sampai angka berubah.
+Black Keel bukan kapal ramah di atas HECTON-8. Ia tender claim-pool: pekerja, ledger, gerbang karantina, dan mesin asuransi. Ia dapat mendengar pemain, merutekan paket, menghitung jendela, dan mengangkat massa. Ia juga bisa menilai inti bukti, sampel, atau potongan hull berasuransi lebih tinggi dari orang yang meminta bantuan. Bukan penjahat; ia andal dalam kontraknya dan berbahaya jika kontrak dianggap belas kasih.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/id_ID. -->

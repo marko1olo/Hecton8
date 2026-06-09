@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Tranzyt rotacji załóg ludzkich"
+title: "Tranzyt rotacji załóg"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tranzyt rotacji załóg ludzkich
+# Tranzyt rotacji załóg
 
-Tranzyt ludzi to miejsce, gdzie trasa przestaje być abstrakcją. Robotników nie teleportuje się do Aegir; są planowani, chłodzeni, ubezpieczani, indeksowani i przekazywani między władzami przez lata. Kontrakt może starzeć się w jedną stronę, podczas gdy osoba w nim starzeje się w inną. Gdy załoga się budzi, pracodawca, właściciel odpowiedzialności i awaria, do której trenowała, mogą być już inne.
+Tranzyt rotacji załóg to miejsce, gdzie trasa przestaje być astronomią i staje się kontrolą pracy. Osoba na HECTON-8 nie jest tylko pasażerem. Jest objętością koi, obciążeniem tlenowym, ekspozycją na promieniowanie, ryzykiem psychiatrycznym, zastawem płacowym, kartą medyczną, kategorią opieki i możliwym świadkiem. Każde okno powrotu sortuje te wartości przed strachem.
+
+Tragedia polega na tym, że system rotacji nie był całkiem fałszywy. Ludzie opuszczali Aegir. Ludzie wracali z bliznami ciśnienia, oszczędnościami i historiami zredagowanymi do publikacji. Ta pamięć czyniła późniejsze obietnice wiarygodnymi. Gdy kolonia zaczęła się łamać, Deep Reach nie musiała zakazywać powrotu. Wystarczyło opóźnić, przeklasyfikować, wycenić i poprosić o jeszcze jeden cykl.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/pl_PL. -->

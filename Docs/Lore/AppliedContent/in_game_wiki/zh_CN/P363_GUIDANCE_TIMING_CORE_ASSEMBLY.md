@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "制导时序核心组件"
+title: "制导定时核心组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 制导时序核心组件
+# 制导定时核心组件
 
-可用的升空需要一个理解 Aegir 月群几何、blackout 间隔、中继阴影和 carrier recovery lanes 的制导时序核心。糟糕时机能在不损坏任何零件的情况下丢掉胶囊。
+制导定时核心防止上升变成一次干净却无处抵达的燃烧。HECTON-8上方不是开放天空。Aegir改变回收几何，中继快门开合，风暴羽流弯折声学和无线交接，Black Keel只在特定时间查看特定航道。
+
+核心不会让胶囊比海更聪明。它给胶囊一只时钟、一段星历、接收航道表，以及足够的漂移修正，使出水事件能被分类。过早的数据包会在carrier栈里变成捕获噪声。过晚的数据包会在航道滚走后抵达。好发动机配坏核心，可能完全按设计发射，却不留下可用的回收申索。
+
+可修复的核心需要四样东西：能抵抗深水延迟的时钟、当前Aegir窗口、正确的Black Keel航道，以及与风暴上方中继链吻合的快门缓存。所以这个组件小而严苛。它不增加推力。它决定推力是否能变成抵达。
 
 ## Scanner
 
-空白 timing core。Aegir 几何决定升空会变成 recovery、capture，还是沉默。
+空白定时核心 // 无Aegir星历，无Keel航道表， relay shutter缓存为空。胶囊可以干净点火，却仍错过所有接收器。
 
 ## Terminal
 
-GUIDANCE CORE: 将胶囊时钟对齐 Aegir window、Black Keel receiver lane、月面 relay shutter 和 storm-plume drift。迟到 packets 变成证据丢失；过早 packets 变成 capture noise。
+GUIDANCE CORE: 安装Aegir星历切片、Black Keel接收航道表、月面中继快门缓存和羽流漂移修正。若本地时钟漂移超过custody stamp容差则拒绝。
 
 ## Audio
 
-向上不是方向，而是有见证人的窗口。
+把胶囊指向窗口，不是天空。
 
 ## Field Note
 
-从 HECTON-8 出发没有简单的“向上”。只有接收器、阴影、风暴漂移，以及早已比你的恐慌更老的 packet queue。
+从HECTON-8没有简单的向上。只有月影、风暴羽流、接收航道，以及一只必须被相信的时钟。
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/zh_CN. -->

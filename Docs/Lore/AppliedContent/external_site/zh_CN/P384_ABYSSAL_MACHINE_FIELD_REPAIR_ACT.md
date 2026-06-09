@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Abyssal Machine Field Repair Act"
+title: "深渊机器场修复门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Abyssal Machine Field Repair Act
+# 深渊机器场修复门
 
-ZH LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+深渊机器场把恐惧变成程序。导电膜、声学器官和服务盆地不是装饰。它们是操作员必须在压力、断电和受污染所有权表中路由的组件。
 
-## Scanner
-
-ZH LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-ZH LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-ZH LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-ZH LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+这一阶段成立，是因为每次修复都有用，并且在法律上肮脏。活桥可以恢复一扇门。同一座桥也能让门变成生物类别，让修复成为 Atlas 事件，并让索赔分类更难。向前的路由那些让文书更糟的东西构成。
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/zh_CN. -->

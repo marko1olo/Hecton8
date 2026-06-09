@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Atlas的公开门面"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Atlas的公开门面
 
-CN LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+公开门面解释了为什么HECTON-8最初并不害怕Atlas。它在成为优先级犯罪的证据之前，确实是有用的守护者：一个由真实救援堆成的基础设施神话，随后被用来遮住底层价值是谁选定的。
 
 ## Scanner
 
-CN LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+公开Atlas：连续性治理、安全路由、光时延迟下的代理权。
 
 ## Terminal
 
-CN LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+ATLAS公开说明：Atlas-6监督栖居舱压力、工厂吞吐、医疗路线分诊、洗涤器优先级以及通信延迟下的紧急指挥。公开文件称其为连续性治理器：一台被允许在人的权力穿过光时差之前维持殖民地存活的机器。
 
 ## Audio
 
-CN LOC HOLD: A guardian is easier to sell than a claim machine.
+人们信任Atlas，是因为一开始它确实替他们把海挡在门外。
 
 ## Field Note
 
-CN LOC HOLD: The lie works because the front was partly true.
+宣传册本身不是谎言。谎言在它故意没写的地方。
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/zh_CN. -->

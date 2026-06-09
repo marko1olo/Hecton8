@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Preserve Quarantine Record"
+title: "Registro de preservação em quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Preserve Quarantine Record
+# Registro de preservação em quarentena
 
-PT-BR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+O Registro de preservação em quarentena é a ordem de retenção para o melhor final danificado possível. A carga fica fora da custódia direta da Deep Reach, as coordenadas ficam cegas e um recibo parcial mantém pressão externa ativa. A Atlas continua respirando por lógica de reparo danificada, protegendo ecologia de pressão e vida de manutenção sobrevivente enquanto nomes de trabalhadores, responsabilidade da bacia e futuros envios salvage seguem sem resolução.
 
 ## Scanner
 
-PT-BR LOC HOLD: Payload withheld. Consequence deferred.
+REGISTRO DE PRESERVAÇÃO EM QUARENTENA // Carga retida da Deep Reach. Atlas segue danificada mas ativa; ordem de retenção ecológica bloqueia transferência limpa de propriedade.
 
 ## Terminal
 
-PT-BR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+REGISTRO DE FINAL / PRESERVAÇÃO EM QUARENTENA
+Carga: retida fora da custódia direta da Deep Reach.
+Ordem: retenção ecológica, coordenadas cegas, recibo público parcial.
+Estado da Atlas: lógica de reparo danificada ativa.
+Protegido: ecologia de pressão e vida de manutenção sobrevivente.
+Sem resolução: nomes de trabalhadores, responsabilidade da bacia, futuros envios salvage.
+Perda conhecida: preservação não vira inocência.
 
 ## Audio
 
-PT-BR LOC HOLD: Leaving something alive is not the same as saving it.
+Você deixou isso vivo. Não é o mesmo que salvar.
 
 ## Field Note
 
-PT-BR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Segurar o pacote protege alguns sistemas vivos e deixa a autoridade quebrada respirando. Vigie a fila de reivindicações cegas.
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/pt_BR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Protokol Penerima Buku Publik Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Public Ledger Receiver Protocol
+# Protokol Penerima Buku Publik Payload
 
-ID LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Protokol buku publik mengirim bukti ke tempat Deep Reach tidak bisa memilikinya diam-diam. Ia menyunting koordinat, menyegel attestation hashes, melampirkan kustodi rute dan digest pembobotan Atlas, lalu masuk ke relay tertunda. Pengirim kehilangan kendali saat diterima. Paket menjadi lebih sulit dibeli, lebih sulit dikubur, dan lebih lambat dipakai.
 
 ## Scanner
 
-ID LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Rute buku publik dipersenjatai. Koordinat disunting sebelum relay tertunda; tumpukan attestation hash dan rantai liabilitas disegel saat diterima.
 
 ## Terminal
 
-ID LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PENERIMA PAYLOAD // JALUR BUKU PUBLIK. Penerima: buku publik terdistribusi, jalur Tau tertunda. Terima paket insiden dengan koordinat disunting, attestation hashes, kustodi rute, digest pembobotan Atlas, cap waktu penerima. Tolak pembayaran privat dan klaim pemulihan langsung. Penarikan berakhir saat relay menerima.
 
 ## Audio
 
-ID LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Buku mengambil paket. Koordinat disamarkan. Jendela penarikan tertutup.
 
 ## Field Note
 
-ID LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Catatan perompak: sunting rute sebelum relay menerima. Setelah diterima, paket itu bukan milikmu lagi.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/id_ID. -->

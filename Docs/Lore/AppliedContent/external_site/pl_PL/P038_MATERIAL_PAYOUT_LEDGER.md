@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rejestr wypłaty materiałowej"
+title: "Rejestr rozliczenia materiału"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rejestr wypłaty materiałowej
+# Rejestr rozliczenia materiału
 
-Opisuje fałszywy sukces w stylu Stalkera: zysk możliwy, moralne domknięcie nie.
+Rejestr rozliczenia materiału definiuje opłacone wyjście. HECTON-8 można opuścić z zamkniętym kontem po oddaniu certyfikowanego materiału, ale zapis zdarzeń zostaje w kwarantannie, jeśli archiwum dowodów nie wyjdzie na powierzchnię.
 
 ## Scanner
 
-Próbka blue debt certyfikowana. Wypłata możliwa. Prawda opcjonalna. Deep Reach lubi tę kolejność.
+Próbka blue debt certyfikowana: masa, czystość, dziennik ciśnienia, łańcuch custody. Kredyt może zamknąć się przed dowodami.
 
 ## Terminal
 
-Harmonogram: masa, czystość, historia ciśnienia i custody przyjęte. Archiwum dowodów otwarte.
+Rozliczenie otwiera się, gdy zaplombowana walizka zgadza się z rejestrem próbki, historia ciśnienia zejścia nie ma luki, a kod oferty Deep Reach akceptuje łańcuch custody. Zamknięcie materiałowe przenosi kredyt do escrow i oznacza archiwum Atlas jako niefakturowany osad.
 
 ## Audio
 
-Konto się czyści. Woda nie.
+Konto się zamyka. Woda trzyma pokwitowanie.
 
 ## Field Note
 
-Udany kontrakt nadal może być przegranym życiem.
+Czysty przelew też może być pochówkiem.
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/pl_PL. -->

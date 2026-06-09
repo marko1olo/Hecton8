@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Public Combine"
+title: "Combinado público Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Public Combine
+# Combinado público Deep Reach
 
-PT LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+A face pública da Deep Reach é ampla o bastante para parecer útil e seca o bastante para parecer inocente. Ela constrói placas de rota, serviços de habitat, logística de pressão e programas de continuidade com cheiro cívico. Nessa camada, a colônia raramente vê um vilão único. Vê papel timbrado, lacres de manutenção, slogans auditados e um nome capaz de reivindicar infraestrutura quando o trabalho dá lucro e distância quando o trabalho vira prova.
 
 ## Scanner
 
-PT LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Placa de carta pública: operador de infraestrutura, não réu de extração.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+REGISTRO DO COMBINADO PÚBLICO: Deep Reach se apresenta como infraestrutura de rota, indústria oceânica, logística de habitat pressurizado e serviços de continuidade. O trabalho que carrega responsabilidade é distribuído por mesas subsidiárias, linguagem seguradora, contratantes de custódia e escritórios de recovery.
 
 ## Audio
 
-PT LOC HOLD: A clean title is the cheapest pressure suit.
+A placa na porta diz utilidade. As fechaduras atrás dizem propriedade.
 
 ## Field Note
 
-PT LOC HOLD: The seal is clean. The rooms under it are not.
+O nome limpo não é mentira. É a sala onde a sujeira é arquivada em outro lugar.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/pt_BR. -->

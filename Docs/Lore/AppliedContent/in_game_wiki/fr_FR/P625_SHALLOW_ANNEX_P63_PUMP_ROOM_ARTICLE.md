@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Salle des pompes de l’annexe peu profonde P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Salle des pompes de l’annexe peu profonde P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 ne devient utile qu’après réparation de la salle des pompes. Le pompage manuel baisse l’eau, révèle d’anciens casiers à outils et maintient le fabricateur dans une fenêtre d’autorité de réparation sûre.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+PRISE DE POMPE // Bloquée mais réparable. Route de cale manuelle disponible. Drainer d’abord, couper ensuite.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+MAINTENANCE P-63 // Intrusion d’eau mineure consignée. Cale manuelle acceptée. Fabricateur de terrain limité aux joints, colliers et coupe-contact jusqu’au dégagement de la prise.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Tourne la pompe jusqu’à ce que le sol réponde. Si tu coupes d’abord, tu noies le casier à outils.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Un coin sec n’est pas une maison. C’est dix minutes pour réfléchir. Prends-les.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/fr_FR. -->

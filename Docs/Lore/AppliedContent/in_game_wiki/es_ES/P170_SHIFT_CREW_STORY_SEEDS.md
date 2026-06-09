@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Seeds narrativas de cuadrillas de turno"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Seeds narrativas de cuadrillas de turno
 
-ES LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+Los seeds de cuadrilla dan textura de replay a HECTON-8 sin volverlo una máquina de contradicciones. La misma colonia puede mostrar otras parejas, otro orden de objetos y otras notas, pero no puede volver inocente a Deep Reach ni cambiar la razón del Great Tide.
+
+La variación útil es local. Un escribiente de ruta puede ligarse a un buzo brine en una run y a un aparejador de sellos en otra. La ubicación de un rechazo puede cambiar. Eso modifica cómo el jugador arma la prueba, no la prueba.
 
 ## Scanner
 
-ES LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // La lista puede cambiar. La culpa no.
 
 ## Terminal
 
-ES LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEEDS DE CUADRILLA // Una run puede variar orden de roster, parejas, contenido de casilleros, rechazos, tiza de ruta, fragmentos de placa y correcciones Marauder. El seed cambia cómo aparece la evidencia, no lo que prueba.
 
 ## Audio
 
-ES LOC HOLD: A different locker can hurt the same truth again.
+Otro casillero puede cortar la misma verdad desde otro lado.
 
 ## Field Note
 
-ES LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+La variedad seed cambia orden de objetos, parejas de trabajo y notas Marauder. Nunca cambia el Great Tide ni la responsabilidad de Deep Reach.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/es_ES. -->

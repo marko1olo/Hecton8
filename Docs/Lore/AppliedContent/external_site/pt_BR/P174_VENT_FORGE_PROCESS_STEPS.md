@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Forge Process Steps"
+title: "Etapas do Processo de Forja em Respiro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Forge Process Steps
+# Etapas do Processo de Forja em Respiro
 
-PT LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+Etapas do Processo de Forja em Respiro descrevem a fantasia hard-sci-fi por trás da fabricação de HECTON-8. O planeta fornece calor e pressão, a colônia fornece clamps quebrados e memória de processo, e o jogador fornece julgamento. Essa cadeia legível pode sustentar futuros beats de crafting, narrativa ambiental e feedback de áudio.
 
 ## Scanner
 
-PT LOC HOLD: Vent forging should feel like using the planet against itself.
+Forja em respiro não é metalurgia mágica. É pegar emprestados calor, pressão e timing do planeta sem deixar o planeta ficar com a peça.
 
 ## Terminal
 
-PT LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ETAPAS DA FORJA / 01 purgar salmoura do blank / 02 prender antes do pulso / 03 preaquecer na subida do respiro / 04 selar durante calmaria de pressão / 05 temperar na corrente fria / 06 certificar por anel acústico / falha: sucata empenada, bloom de sal ou peça rachada por pressão.
 
 ## Audio
 
-PT LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+A lua é a fornalha. Você só tem permissão para tomá-la emprestada.
 
 ## Field Note
 
-PT LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+O processo deve ser lido como purge, clamp, preheat, seal, quench e ring-test. O risco não é a chama; é perder a calmaria de pressão.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/pt_BR. -->

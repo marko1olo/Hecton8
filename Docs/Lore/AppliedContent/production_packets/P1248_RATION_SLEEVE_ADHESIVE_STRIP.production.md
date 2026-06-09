@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_galley_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS196_FIRST_GALLEY_PREP_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, ration sleeve note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter galley |
@@ -33,7 +33,7 @@ Forbidden facts: no food availability, no ration count, no inventory state, no h
 
 ### Scanner
 
-RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof.
+RATION SLEEVE // Adhesive strip marks a peeled meal label. Label history, not supply proof.
 
 ### Codex
 
@@ -71,18 +71,18 @@ LABEL HISTORY
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| ru_RU | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| ja_JP | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| zh_CN | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| fr_FR | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| es_ES | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| de_DE | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| pl_PL | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| uk_UA | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| ar_SA | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| id_ID | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| ko_KR | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| he_IL | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| pt_BR | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
-| nl_NL | draft_machine_or_llm | RATION SLEEVE // Adhesive strip marks removed meal label. Label history, not supply proof. |
+| en_US | source_authority | RATION SLEEVE // Adhesive strip marks a peeled meal label. Label history, not supply proof. |
+| ru_RU | draft_machine_or_llm | ОБЕРТКА ПАЙКА // Полоса клея отмечает сорванную пищевую этикетку. История маркировки, не доказательство запасов. |
+| ja_JP | draft_machine_or_llm | 配給スリーブ // 接着跡が剥がされた食事ラベルを示す。ラベル履歴であり備蓄証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 口粮套袋 // 胶痕标出被撕下的餐食标签。是标签历史，不是补给证明。 |
+| fr_FR | draft_machine_or_llm | ETUI DE RATION // Bande adhesive d'une etiquette de repas arrachee. Historique d'etiquette, pas preuve de stock. |
+| es_ES | draft_machine_or_llm | FUNDA DE RACION // Tira adhesiva marca una etiqueta de comida arrancada. Historial de etiqueta, no prueba de suministro. |
+| de_DE | draft_machine_or_llm | RATIONSHUELLE // Klebestreifen markiert ein abgezogenes Essensetikett. Etikettenverlauf, kein Vorratsbeweis. |
+| pl_PL | draft_machine_or_llm | OSŁONA RACJI // Pasek kleju oznacza oderwaną etykietę posiłku. Historia etykiety, nie dowód zapasu. |
+| uk_UA | draft_machine_or_llm | ОБГОРТКА ПАЙКА // Смуга клею позначає зірвану харчову етикетку. Історія маркування, не доказ запасів. |
+| ar_SA | draft_machine_or_llm | غلاف حصة // شريط لاصق يحدد ملصق وجبة منزوعا. سجل ملصق، لا دليل إمداد. |
+| id_ID | draft_machine_or_llm | SELUBUNG RANSUM // Pita perekat menandai label makanan yang dikupas. Riwayat label, bukan bukti suplai. |
+| ko_KR | draft_machine_or_llm | 배급 포장 // 접착 띠가 벗겨진 식사 라벨을 표시한다. 라벨 이력이지 보급 증거가 아니다. |
+| he_IL | draft_machine_or_llm | שרוול מנה // פס דבק מסמן תווית אוכל שקולפה. היסטוריית תווית, לא הוכחת אספקה. |
+| pt_BR | draft_machine_or_llm | ENVOLTÓRIO DE RAÇÃO // Faixa adesiva marca um rótulo de refeição arrancado. Histórico de rótulo, não prova de suprimento. |
+| nl_NL | draft_machine_or_llm | RANTSOENHOES // Kleefstrook markeert een afgepeld maaltijdlabel. Labelgeschiedenis, geen voorraadbewijs. |

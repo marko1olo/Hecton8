@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "הסוף הטוב ביותר: אין ידיים נקיות"
+title: "הנתיב הטוב ביותר: שארית גלויה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# הסוף הטוב ביותר: אין ידיים נקיות
+# הנתיב הטוב ביותר: שארית גלויה
 
-הסוף הטוב ביותר בHECTON-8 לא צריך להיות הסוף שבו הכול מתוקן. זה יקטין את האוקיינוס, העובדים המתים ומכונת החוזה לרשימת המשימות של השחקן. הגרסה החזקה ביותר מאפשרת להציל דבר ממשי: רשומה ציבורית, אגן חי, payload תאגידי שנדחה, מפעיל משוחרר, שם שאי אפשר עוד למחוק.
+הסיום החזק ביותר של HECTON-8 לא צריך לתקן את המקום למסך פרס. הוא צריך לאפשר למפעיל לבצע עבודה מוחשית: לצאת ממשמורת Black Keel, לפרסם רשומה, למנוע מ-Deep Reach דרך חזרה, לשמור אגן חי בהסגר, להוציא שמות עובדים או לאטום Atlas proof hash במקום שבו אי אפשר לתמחר אותו כמטען.
 
-חייבת להישאר שארית. אולי Atlas שורד בהסגר. אולי הניתוק מציל אנשים והורג צורת חיים. אולי האמת פומבית אך בלתי נשלטת. אולי השחקן עוזב ללא חוב עם ראיה שתמשיך לפצוע אנשים. אין ידיים נקיות אינו ציניות. זה כבוד לקנה מידה. השחקן יכול לפעול באופן משמעותי בלי להפוך לחף מפשע.
+הרשומה חייבת גם להשאיר שדות פתוחים. יציאה בתשלום יכולה להשמיט שמות עובדים. פרסום ציבורי יכול ליצור מקבלים חמושים בקובץ. ניתוק יכול לעצור סמכות פגומה ולפגוע בחיי תיקון. שימור יכול להגן על אקולוגיית לחץ ולהשאיר את הממיין הישן פעיל. רשומת סיום טובה מראה את הדבר שנשמר, את המקבל, את השפעת החוב, את מצב Atlas ואת הנזק שעדיין נע במערכת.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/he_IL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Basin Pressure Gate"
+title: "Atlas 盆地圧力ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Basin Pressure Gate
+# Atlas 盆地圧力ゲート
 
-JA LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+Atlas 盆地圧力ゲートは、最終しきい値をスーツ等級、圧力証明、権限衝突へ固定する。扉は神秘ではない。プレイヤーをアクセス、証拠、汚染のどれとして数えるかを決める産業システムだ。
 
 ## Scanner
 
-JA LOC HOLD: Basin gate requires pressure proof and authority response.
+盆地ゲートは圧力証明、ルート権限、分類可能な身体を要求している。
 
 ## Terminal
 
-JA LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: 圧力証明不完全。スーツ等級は下降しきい値未満で受理。Authority clamp は失効した Deep Reach パターンを認識し、現在の請求者を認識しない。手動上書きにはローカル負荷、受信先選択、証人 payload が必要。
 
 ## Audio
 
-JA LOC HOLD: It knows the old key. It does not know you.
+それは古い鍵を知っている。君を知らない。
 
 ## Field Note
 
-JA LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+最終しきい値は幻想のポータルではなく、生きた工場へのサービスゲートとして読ませる。
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/ja_JP. -->

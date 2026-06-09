@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Blue Debt Sample Quality"
+title: "Якість зразка Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Blue Debt Sample Quality
+# Якість зразка Blue Debt
 
-UK LOC HOLD: Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.
+Якість зразка Blue Debt не дає ресурсам HECTON-8 стати звичайним скарбом. Колонія цінувала Blue Debt, бо його можна було продати, досліджувати, ховати і використовувати як доказ того, хто де був. Тому якість має чотири значення одночасно: виплата, ризик ізоляції, сила доказу і тиск фракцій. Shard легко нести і легко списати. Casketed bloom цінніший, бо контейнер доводить, що хтось очікував тиску. Harmonic glass не просто дорогий; він відповідає через акустичні системи і може прив'язати маршрут до місця. Live-contaminated sample може змусити Deep Reach, карантин або стіл заявника реагувати, бо він надто небезпечний і надто корисний, щоб його ігнорувати. Dead contaminated glass - гіркий клас: виплата нижча, але юридичний запах сильніший, бо хтось уже не зміг зберегти його живим або чистим. Гравець має відчувати якість як вибір, а не як сходи цін. Багатші зразки купують варіанти, привертають увагу і роблять кінцівки важчими.
 
 ## Scanner
 
-UK LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Якість Blue Debt - це цінність, ризик і доказ в одному числі. Чим багатший зразок, тим менше він поводиться як звичайна здобич.
 
 ## Terminal
 
-UK LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+КЛАСИ ЯКОСТІ / shard: низька опіка, безпечна торгівля / casketed bloom: цінність із рейтингом тиску / harmonic glass: акустичний доказ і високий інтерес Deep Reach / live-contaminated sample: пріоритет доказу, нестабільна обробка / dead contaminated glass: низька виплата, сильний юридичний запах.
 
 ## Audio
 
-UK LOC HOLD: The more it is worth, the less it is only loot.
+Чим воно дорожче, тим менше це просто здобич.
 
 ## Field Note
 
-UK LOC HOLD: Quality should affect payout, containment and ending pressure.
+Якість змінює виплату, ціну ізоляції, тиск маршруту і вагу кінцівки. Чистий уламок платить; live-contaminated sample змушує когось відповідати.
 
 <!-- In-Game Wiki; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/uk_UA. -->

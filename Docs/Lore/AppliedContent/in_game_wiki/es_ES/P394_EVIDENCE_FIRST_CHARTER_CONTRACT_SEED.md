@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Evidence First Charter Contract Seed"
+title: "Semilla de contrato de carta de pruebas primero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Evidence First Charter Contract Seed
+# Semilla de contrato de carta de pruebas primero
 
-ES LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Carta de Pruebas Primero es una familia de contratos que paga menos por salvage suelto y reserva más capacidad de ruta para prueba. Paquetes de accidente, tiras de estado de escotilla, registros pinger y casetes notariales pasan por delante de piezas pesadas cuando la ruta empieza a fallar.
 
 ## Scanner
 
-ES LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Semilla de contrato: carta de pruebas primero. Menor pago material, mayor capacidad notarial y conflictos de preservación de prueba más duros.
 
 ## Terminal
 
-ES LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: pago material reducido, capacidad de casete notarial elevada, prioridad de taquilla de prueba activa, penalización de despiece salvage activa, presión de receptor Deep Reach probable.
 
 ## Audio
 
-ES LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+El registro más limpio paga tarde y enfada pronto.
 
 ## Field Note
 
-ES LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Nota de merodeador: una taquilla de prueba no perdona deuda. Solo impide que la deuda elija qué prueba muere primero.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/es_ES. -->

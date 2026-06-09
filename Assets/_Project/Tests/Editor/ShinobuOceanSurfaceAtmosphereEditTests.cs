@@ -132,12 +132,16 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(14.02f, OceanSurfaceAtmosphereConstants.DefaultSeaLevel, 0.0001f);
             StringAssert.Contains("public const float DefaultSeaLevel = 14.02f;", contracts);
             StringAssert.Contains("[SerializeField] private float seaLevel = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", runtime);
+            StringAssert.Contains("TryResolveWaterCalibrationSeaLevelY(out float calibratedSeaLevel)", runtime);
+            StringAssert.Contains("_cachedSeaLevel = calibratedSeaLevel;", runtime);
+            StringAssert.Contains("WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO snapshot)", runtime);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", runtime);
             StringAssert.Contains("_cachedSeaLevel = ResolveSeaLevelY(seaLevel);", runtime);
             StringAssert.Contains("TryResolveSeaLevelY(weather.SurfaceScalars.x, out float weatherSeaLevel)", runtime);
             StringAssert.Contains(": ResolveSeaLevelY(seaLevel);", runtime);
             StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", runtime);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", runtime);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", runtime);
+            StringAssert.Contains("math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", runtime);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", runtime);
             StringAssert.Contains("seaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", runtime);
             StringAssert.DoesNotContain("_cachedSeaLevel = math.isfinite(weather.SurfaceScalars.x) ? weather.SurfaceScalars.x : seaLevel;", runtime);
             StringAssert.DoesNotContain("math.isfinite(seaLevel) ? seaLevel : OceanSurfaceAtmosphereConstants.DefaultSeaLevel", runtime);

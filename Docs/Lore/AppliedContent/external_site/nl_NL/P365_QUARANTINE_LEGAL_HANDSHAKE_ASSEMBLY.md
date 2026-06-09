@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantaine-juridische handshakeassemblage"
+title: "Assemblage van de Quarantainejuridische Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantaine-juridische handshakeassemblage
+# Assemblage van de Quarantainejuridische Handshake
 
-De Quarantaine-juridische handshakeassemblage maakt extraction bewust vuil: een werkende motor kan de overlevende nog steeds afleveren in corporate custody, vertraagde publieke waarheid of onopgeloste quarantaine.
+De Assemblage van de Quarantainejuridische Handshake is het laatste onderdeel omdat HECTON-8s ontsnappingsroute eindigt in autoriteit, niet in vacuüm. De capsule kan mechanisch klaar zijn, maar recovery heeft nog een ontvanger nodig die de aankomst wil benoemen.
 
-## Scanner
+De socket laadt de feiten die die naam bepalen: ontvangerssleutel, quarantainestaat, payload custody, schuld-lien en publieke-ledgervertraging. Elke route accepteert een andere versie van dezelfde capsule. Keelmark wil massa en lien. Recovery Compliance wil coördinaten en besmettingsstaat. Het publieke ledger wil bewijs dat tijd en geschil overleeft.
 
-Handshake-socket. De capsule kan mechanisch klaar zijn en toch bij de verkeerde receiver horen.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key vereist. Keelmark accepteert mass en lien. Recovery Compliance accepteert coordinates en quarantine status. Public ledger accepteert proof na vertraging. Unkeyed launch wordt standaard custody dispute.
-
-## Audio
-
-Wie antwoordt, beslist wat redding betekent.
-
-## Field Note
-
-Het laatste onderdeel is geen metaal. Het is de naam van het systeem dat jou recovered mag noemen.
+Dat maakt extractie bewust ongemakkelijk. De schoonste lancering kan de overlevende nog afleveren bij een claimkantoor, een gesloten medische hold of een trage publieke zaak. De handshake repareren bevrijdt de capsule niet van politiek. Het laat de Marauder kiezen welke politiek als eerste de hand op het luik legt.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/nl_NL. -->

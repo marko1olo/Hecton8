@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Partial Return Record"
+title: "部分帰還記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Partial Return Record
+# 部分帰還記録
 
-JP LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+この記録はキャンペーンの息継ぎであり、リセットではない。抽出ハードウェアと生きた輸送体窓はあるが、回収を自由に変えるだけの保管閉鎖がない時に使われる。
 
 ## Scanner
 
-JP LOC HOLD: Extraction granted. Claim unresolved.
+部分帰還記録 // Black Keelの一時回収を受理。同一seedへの帰還は延長先取特権下で承認。スキャン記憶と未解決証拠パケットは残存。
 
 ## Terminal
 
-JP LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+エンディング記録 / 部分帰還
+回収: Black Keelによる一時抽出。
+目的: スーツ修理、空気補充、除染、台帳同期。
+保管状態: 先取特権延長、隔離期間添付。
+帰還権限: 同じseed、同じ海、経路警告を保持。
+残存データ: スキャン記憶、未解決証拠パケット、未処理ペイロード。
+既知の損失: 安堵は自由になる前に請求される。
 
 ## Audio
 
-JP LOC HOLD: Out is not away.
+圧力は離れた。契約は席を取っておいた。
 
 ## Field Note
 
-JP LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+清潔なスーツと睡眠一回では契約は閉じない。下の経路は古い警告を保持している。
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/ja_JP. -->

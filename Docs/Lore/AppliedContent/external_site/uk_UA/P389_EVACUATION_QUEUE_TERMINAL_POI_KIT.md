@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Набір доказів термінала евакуаційної черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Evacuation Queue Terminal POI Kit
+# Набір доказів термінала евакуаційної черги
 
-UK LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+Термінал черги має відчуватися як кімната, побудована для адміністративно охайного страждання. Термінал перелічує утримання маршруту, затримку зняття карантину, ваги Atlas і числа робітників, але стіни несуть брудніший запис: смугу стану люка, залишок бейджа, відсутні позначки пропускної здатності й salvage-мітку на панелі, яку хтось досі хоче продати.
 
-## Scanner
-
-UK LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-UK LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-UK LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-UK LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Вага POI виникає через конфлікт. Витягти деталь - можливо, відкрити маршрут або закрити борг, але можна знищити поверхню, що доводить затримку. Правильне читання - не зізнання. Це набір неузгоджених предметів, які змушують оператора вибрати, що переживе занурення.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/uk_UA. -->

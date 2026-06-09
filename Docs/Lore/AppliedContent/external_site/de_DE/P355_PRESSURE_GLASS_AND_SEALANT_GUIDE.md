@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Führer zu Druckglas und Dichtmittel"
+title: "Führer zu Druckglas und Dichtstoff"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Führer zu Druckglas und Dichtmittel
+# Führer zu Druckglas und Dichtstoff
 
-Der Führer zu Druckglas und Dichtmittel erdet HECTON-8s biomechanischen Horror in Reparaturlogik: Atlas folgt Rissen, Kabeln, biofilms und pressure scars, weil gebrochene Systeme bereits Wege liefern.
+Druckglas begann als praktisches Koloniematerial: klar genug für Sichtfenster, stark genug für Drucktüren und billig genug, um es in Servicenähte zu gießen. Jahre unter Wasser änderten seine Rolle. Gezeiten schrieben Spannung in die Scheiben. Minerale trübten die Kanten. Biofilm lernte die Risse. Als Atlas-Chemie kam, musste sie keinen Weg durch die Kolonie erfinden. Das gebrochene Glas hatte ihn bereits gezeichnet.
 
-## Scanner
-
-Pressure-glass-Bruch von Atlas-Chemie versiegelt. Sicherer Linsenbestand nur, wenn die seal map intakt bleibt.
-
-## Terminal
-
-FIELD GUIDE: pressure glass speichert alten tide stress. Atlas sealant folgt diesen Rissen, weil die Risse bereits die Ausfalllinien des Systems beschreiben.
-
-## Audio
-
-Das Reparaturnetz liest Brüche, wie du eine Karte liest.
-
-## Field Note
-
-Schleife nicht die schöne Kante. Folge der fracture map und schneide von der toten Seite der seal.
+Darum kann ein Linsenlager zugleich wertvoll und gefährlich sein. Schneide von der toten Seite einer Dichtung und das Glas wird Salvage. Schleife die lebende Kante und das Reparaturnetz erhält einen saubereren Pfad. Dichtstoff ist in HECTON-8 nicht nur Kleber. Er ist eine Entscheidung darüber, welche Ausfälle sich schließen dürfen, welche kartiert bleiben und welche zur Tür für etwas werden, das noch immer versucht, den falschen Körper zu reparieren.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/de_DE. -->

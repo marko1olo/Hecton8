@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "قواعد علامات تصحيح المارودر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# قواعد علامات تصحيح المارودر
 
-AR LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+تشرح قواعد علامات تصحيح المارودر كيف تسمح HECTON-8 لعمال salvage اللاحقين بلمس أدلة قديمة من دون كسر القانون السردي. تضيف علامات التصحيح طبقة حية فوق أوراق الشركة: حفظ اسم، تحدي فئة، تحذير مسار، تسعير عينة، إخفاء شاهد، أو وسم دين. تجعل أدلة replay تبدو وكأن عمال مطالبة آخرين تداولوها، مع بقاء كل تغيير بخط اليد وظيفيا.
 
 ## Scanner
 
-AR LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+يمكن لعلامة التصحيح أن تنقذ اسما، أو تسمم مطالبة، أو تحذر الغواص التالي من أن الفئة الرسمية كاذبة.
 
 ## Terminal
 
-AR LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: يجب أن تغير علامات المارودر تفسير الدليل، أو خطر المسار، أو ضغط الدفع. العلامات الصالحة تحفظ اسم عامل، أو تتحدى فئة تأمين، أو تحذر من مسار، أو تسعر عينة، أو تخفي شاهدا، أو تضع وسم دين. التخريب الفارغ يكسر سلسلة الدليل.
 
 ## Audio
 
-AR LOC HOLD: Somebody came before you and still failed to leave clean.
+جاء أحدهم قبلك ولم يستطع مع ذلك أن يغادر نظيفا.
 
 ## Field Note
 
-AR LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+العلامات: حفظ اسم، تحدي فئة، تحذير مسار، تسعير عينة، إخفاء شاهد، وسم دين. يجب أن يغير الخط القراءة، لا أن يزين الجسم.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/ar_SA. -->

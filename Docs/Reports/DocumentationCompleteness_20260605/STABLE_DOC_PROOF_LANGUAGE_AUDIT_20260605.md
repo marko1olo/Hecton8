@@ -28,7 +28,7 @@ Exclusions used for the focused active-doc pass:
 - `Docs/AgentLogs/**`
 - `Docs/Tasks/**`
 - `Docs/Archive/**`
-- `Docs/BibleMandateAudits/**`
+- `Docs/DEPRECATED/BibleMandateAudits_1700_Stale_20260609/1700/**`
 - `taskslocal/**`
 - `Assets/**`
 

@@ -14,7 +14,7 @@ class ValidateAssetProofArtifactIndexTests(unittest.TestCase):
     def test_current_project_index_matches_static_contract(self) -> None:
         rows = validator.validate_asset_proof_artifact_index()
 
-        self.assertEqual(35, len(rows))
+        self.assertEqual(37, len(rows))
         self.assertEqual(
             4,
             sum(1 for row in rows if row.disposition == "DIAGNOSTIC_REJECTED"),

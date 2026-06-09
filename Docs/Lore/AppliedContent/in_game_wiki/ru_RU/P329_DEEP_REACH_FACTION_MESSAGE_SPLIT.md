@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Раскол сообщений Deep Reach
 
-Раскол сообщений Deep Reach не дает сделать плоского злодея. Корпорация виновна как система, но текущие сообщения конфликтуют: recovery, silence, engineering caution и liability containment.
+Раскол не дает Deep Reach стать плоским единым злодеем. Корпорация может одновременно выпускать приказы о спасении, приказы о сокрытии и честные технические предупреждения, потому что каждый офис защищает свою книгу потерь.
 
 ## Scanner
 
-Message sources conflict: asset recovery, legal silence, old engineering warning.
+Три источника Deep Reach спорят: Recovery хочет координаты, Legal хочет тишину, старый инженерный узел предупреждает, что бассейн ответит.
 
 ## Terminal
 
-SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+РАЗДЕЛЕНИЕ ИСТОЧНИКОВ // DR-LIVE: Recovery Compliance запрашивает судоходные координаты. Asset Silence приказывает удерживать доказательства и не признавать инцидент публично. Legacy Engineering Node 4 повторяет предупреждение до коллапса: не тревожить нижние релейные линии бассейна во время тени Aegir. Это не мятежники. Это отделы, защищающие разные потери.
 
 ## Audio
 
-Компания может быть одним логотипом и тремя ножами.
+Один логотип. Три голоса. Ни один не чистый.
 
 ## Field Note
 
-Это не redemption. Это readability источника давления.
+Использовать после того, как игрок услышал хотя бы два тона Deep Reach. Ритм: неоднозначность с зубами, конфликтующие инструкции, общая собственность, ни одного чистого союзника.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/ru_RU. -->

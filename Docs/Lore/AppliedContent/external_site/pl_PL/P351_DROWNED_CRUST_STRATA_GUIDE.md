@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Przewodnik po zatopionych warstwach skorupy
 
-Przewodnik po zatopionych warstwach skorupy sprawia, że dno HECTON-8 czuje się zbudowane i złamane: terrain, salvage routes i próbki minerałów pochodzą z tej samej warstwowej historii ciśnienia.
+Skorupa HECTON-8 nie zachowuje się jak nietknięte dno morskie. Kolonia cięła ją, grzała, uszczelniała, obciążała szkłem ciśnieniowym, a potem zostawiła oceanowi, który pracował dalej po zatrzymaniu wypłat. Jedna ściana może mieć ślady narzędzi z odwiertu serwisowego, bladą półkę po zawaleniu lodu, zielono-czarne pasmo minerałów od wysięku i włosowaty szew, gdzie Atlas później znalazł drogę.
 
-## Scanner
-
-Zalane warstwy odsłaniają stare ślady cięcia, szwy pressure-glass i pasma minerałów, które nie pękają dwa razy w tym samym kierunku.
-
-## Terminal
-
-FIELD GUIDE: zatopiona skorupa HECTON-8 to złożona skała osadnicza, pamięć zawalonego lodu, pressure glass i extraction scars pod ruchomą brine. Linie pęknięć są ważniejsze niż czyste powierzchnie.
-
-## Audio
-
-Mapa nie jest terenem. To stos utonięć.
-
-## Field Note
-
-Jeśli pasmo brzmi pusto, nie ufaj płaskiej ścianie. Oznacz pęknięcie, pobierz próbkę, zostaw ścianę trzymającą.
+Dla ekipy salvage warstwy są nawigacją. Płaska ściana może dzwonić pustką. Ładna krawędź minerału może być jedynym, co trzyma kanion serwisowy. Dobre czytanie trasy oznacza zabranie próbki bez uczenia ściany, jak ma spaść. Dlatego zatopiona skorupa ma znaczenie w terenie: dno nie jest tłem. Jest archiwum, drogą i czasem pułapką.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/pl_PL. -->

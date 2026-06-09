@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Material Exit Receipt Audit"
+title: "Аудит квитанции материального выхода"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Material Exit Receipt Audit
+# Аудит квитанции материального выхода
 
-RU LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+Аудит квитанции делает денежную концовку настоящей и горькой. Игрок вынес ценность и пережил контракт, но институт все еще владеет записью, именами и официальной формой катастрофы.
 
 ## Scanner
 
-RU LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Квитанция выхода подтверждает извлеченную массу. Цепочка доказательств сломана; имена рабочих не приняты.
 
 ## Terminal
 
-RU LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+КВИТАНЦИЯ AFTER-ACTION: сальважная выплата выдана за извлекаемую массу и контрактный риск. Правда координат не разрешена. Статус ответственности Deep Reach не изменен. Реестр имен рабочих отклонен как доказательство вне цепочки хранения. Выход разрешен; дело остается собственностью носителя.
 
 ## Audio
 
-RU LOC HOLD: You got paid. That is not the same as getting out clean.
+Тебе заплатили. Это не значит, что ты вышел чистым.
 
 ## Field Note
 
-RU LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+After-action запись для оплаченного, но морально незавершенного выхода: награда закрыта, evidence chain провалена, имена остаются вне официального хранения.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/ru_RU. -->

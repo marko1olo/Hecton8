@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "חתימות Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# חתימות Return Action Queue
 
-HE LOC HOLD: Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.
+חתימות Return Action Queue מחברות את תיק HECTON-8 הישן ללחץ נוכחי בשנת 2190. התור אינו ארכיון היסטורי. הוא מטפל בחבילות מעוכבות בזמן חלונות Aegir חיים ומדרג מה Black Keel או בעל ממסר צריכים לעשות קודם. ברצועה ששוחזרה, payload custody, coordinate receipt ו-quarantine handshake קודמים ל-contractor recovery. כך Deep Reach נשארת מסוכנת בלי מפקד בחדר: משרד תחתון עדיין יכול לכוון חלון חילוץ כשהוא מחליט איזו פעולה נקייה מספיק לביצוע.
 
 ## Scanner
 
-HE LOC HOLD: The old crime has a live queue.
+live return strip התקבל: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 פתוח לשתים עשרה דקות.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Action: prioritize payload custody, coordinate receipt and quarantine handshake before contractor recovery. Carrier clause: Black Keel may delay pickup until custody state is clean.
 
 ## Audio
 
-HE LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+התור של Keene חי. חילוץ יושב מאחורי payload custody אלא אם נשנה את ה-handshake.
 
 ## Field Note
 
-HE LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+זה לא נייר ישן. חותמת התור טרייה: חבילה מעוכבת, carrier clause, פקודת payload-first. בדוק את שפת recovery של Black Keel לפני שאתה סומך על האיסוף.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/he_IL. -->

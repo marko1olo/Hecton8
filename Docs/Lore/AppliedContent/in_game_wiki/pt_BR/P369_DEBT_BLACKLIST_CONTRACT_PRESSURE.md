@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressão de Contrato por Dívida e Lista Negra"
+title: "Pressão de Contrato Blacklist por Dívida"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressão de Contrato por Dívida e Lista Negra
+# Pressão de Contrato Blacklist por Dívida
 
-A pressão da dívida mantém a abertura honesta. O protagonista não é arrastado para HECTON-8 por melodrama, e também não é livre em nenhum sentido útil. A Black Keel pode oferecer um contrato porque pools de reivindicação, janelas de dívida, créditos de oxigênio, acesso a beliche e prova de custódia pertencem à mesma economia de fronteira. Recusar a reivindicação seria legal. Também deixaria o jogador na lista negra, em terra, e fora do preço da rota. Aceitar não transforma a Black Keel em vilã com rosto. Transforma a transportadora numa máquina de converter risco em papelada. O jogador mergulha porque o contrato é feio, sobrevivível e plausivelmente a única rota de volta ao movimento.
+A pressão da dívida mantém o contrato feio sem torná-lo teatral. O operador não é arrastado até HECTON-8 em correntes, mas o caminho de recusa foi feito para fechar ao redor dele. A Black Keel pode oferecer um claim porque janelas de dívida, oxygen credit, acesso berth, timing de rota e custody proof ficam no mesmo ledger de fronteira.
+
+Recusar continua legal. Também deixa o Marauder em blacklist, preso e caro demais para a próxima janela Aegir. Aceitar dá movimento, não misericórdia: recoverable mass precisa ser entregue, custody precisa se manter, e receiver compliance decide quanto vale o claim. O carrier não precisa de rosto de vilão. O contrato já sabe transformar risco em papelada.
 
 ## Scanner
 
-Aviso de penhor ligado à custódia da Black Keel. Recusar continua legal, mas deixa em terra: sem beliche, sem crédito limpo de oxigênio, sem janela de rota para fora de Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. Recusa segue legal; acesso berth, oxygen credit e janela de rota Aegir ficam fechados.
 
 ## Terminal
 
-ACEITAÇÃO DE REIVINDICAÇÃO / JANELA DE ALÍVIO DE LISTA NEGRA
-status do contratado: Marauder preso por dívida
-transportadora: custódia de claim-pool Black Keel
-termos de alívio: massa recuperável, prova de custódia, conformidade do recebedor
-estado de falha: lista negra permanece ativa; acesso a beliche negado; suporte de bem-estar de oxigênio convertido em serviço faturável.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-Isso não foi sequestro. Foi o tipo de escolha que a fronteira vende como liberdade: assine, mergulhe, ou fique limpo no papel e preso na prática.
+Assine, mergulhe, ou mantenha as mãos limpas enquanto a lista berth fecha.
 
 ## Field Note
 
-O penhor não apontou uma arma. Apontou para a conta do ar, a lista de beliches e a próxima janela de rota.
+O lien não apontou uma arma. Apontou para a conta de ar, a lista berth e a próxima janela de rota.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pt_BR. -->

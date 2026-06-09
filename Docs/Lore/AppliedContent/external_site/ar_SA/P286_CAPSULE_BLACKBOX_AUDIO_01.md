@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Capsule Blackbox Audio 01"
+title: "صوت الصندوق الأسود للكبسولة 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Capsule Blackbox Audio 01
+# صوت الصندوق الأسود للكبسولة 01
 
-AR LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+صوت الصندوق الأسود للكبسولة 01 هو أول أثر تقني صادق في HECTON-8. يعيد صياغة النجاة كدين: تم شراء الهبوط باستهلاك عتاد العودة. يمنح السجل اللاعبين سببا ماديا لفخ المحيط قبل ظهور أي لغز مؤسسي.
 
 ## Scanner
 
-AR LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+الصندوق الأسود الأول لا يقول إنك تحطمت. يقول إن الكبسولة نجت بإنفاق العتاد الذي كان يفترض أن يعيدها إلى الأعلى.
 
 ## Terminal
 
-AR LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; امتصاص صدمة الهبوط؛ ascent sleeve مستهلك؛ recovery ring فشل في الإغلاق؛ العوامة غير موثوقة؛ frames 12-19 سقطت أثناء pressure shear. لا ينصح بالصعود اليدوي من دون استبدال خارجي لل sleeve.
 
 ## Audio
 
-AR LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+حدث الصندوق الأسود. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-AR LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: crush-frame السفلي متشقق؛ ascent sleeve محترق؛ recovery ring no-lock؛ العوامة لا تزال تكرر طلب صعود ميتا.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/ar_SA. -->

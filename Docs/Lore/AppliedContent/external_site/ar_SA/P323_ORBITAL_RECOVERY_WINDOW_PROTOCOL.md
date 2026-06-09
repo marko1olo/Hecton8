@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Orbital Recovery Window Protocol"
+title: "بروتوكول نافذة الاسترداد المدارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Orbital Recovery Window Protocol
+# بروتوكول نافذة الاسترداد المدارية
 
-AR LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+يرسخ بروتوكول نافذة الاسترداد المدارية حلقة الهروب في HECTON-8 داخل الفلك المحلي وهندسة الأنظمة. اللاعب ليس عالقا لأن القصة قالت ذلك. إنه عالق لأن قص عواصف Aegir والتداخل المغناطيسي وسلسلة الصعود المتضررة وحالة المستقبل القانونية لا تصطف إلا في نوافذ ضيقة. يصبح الإنقاذ طريقا يُبنى، لا زرا يُضغط.
 
 ## Scanner
 
-AR LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel قريب بما يكفي ليسمعك، ومقيّد بما يكفي ألا يلتقطك متى طلبت. لا يفتح Aegir إلا نوافذ استرداد ضيقة.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+نافذة الاسترداد / يستقبل Black Keel rated ascent object فقط عند انخفاض storm-top shear، وتراجع ضجيج Aegir المغناطيسي، وتحقق guidance core، وتطابق quarantine handshake وreceiver custody state. انجراف النافذة يبطل launch اليدوي.
 
 ## Audio
 
-AR LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+السفينة قريبة بما يكفي لتهم، وبعيدة بما يكفي ألا تنقذك بسرعة.
 
 ## Field Note
 
-AR LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+لمؤقتات الطريق وواجهة carrier وشرح المخرج الزائف: قص العاصفة، الضجيج المغناطيسي، هندسة الصعود، handshake الحجر.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/ar_SA. -->

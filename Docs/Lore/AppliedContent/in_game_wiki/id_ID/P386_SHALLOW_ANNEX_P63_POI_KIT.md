@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Kit Bukti Annex Dangkal P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Shallow Annex P-63 POI Kit
+# Kit Bukti Annex Dangkal P-63
 
-ID LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Annex Dangkal P-63 adalah tempat pertama prosedur bertahan hidup dan bukti tanggung jawab berbagi meja yang sama. Operator memulihkan pompa, menyegel kantong perlindungan, membaca paket kecelakaan, dan menemukan pemberitahuan rute yang tidak cocok dengan kerusakan di luar.
 
 ## Scanner
 
-ID LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Kit bukti POI: P-63 menyimpan kantong perlindungan aktif, perbaikan pompa, dan kontradiksi resmi pertama.
 
 ## Terminal
 
-ID LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+KIT P-63: pompa bilge, baki gasket, kontak pemotong, jalur pinger, paket kecelakaan, pemberitahuan rute tersegel, loker kering, klem override manual.
 
 ## Audio
 
-ID LOC HOLD: First room with air. First room with a lie.
+Ruang pertama dengan udara. Ruang pertama dengan kebohongan.
 
 ## Field Note
 
-ID LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Catatan marauder: jaga pompa tetap hidup sebelum membaca paket. Perlindungan mati menghasilkan bukti buruk.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/id_ID. -->

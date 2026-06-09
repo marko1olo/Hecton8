@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Stack Limit Data Boundary"
+title: "حد بيانات تكديس العناصر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Stack Limit Data Boundary
+# حد بيانات تكديس العناصر
 
-AR LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+ضغط المخزون في HECTON-8 يأتي من الاحتواء والشهادة والكتلة الملوثة. يمكن للعبة أن تعرض تكديسا بسيطا، لكن lore يشرح لماذا يكون التكديس آمنا، ولماذا ينكسر، ولماذا لا يهتم المحيط بالأيقونات.
 
 ## Scanner
 
-AR LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+يرفض صف التكديس أكوام الأيقونات: نوع الوعاء وتصنيف الضغط والتلوث والكتلة تحدد العدد.
 
 ## Terminal
 
-AR LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: يتطلب عدد التكديس نوع الوعاء وتصنيف الضغط ومرحلة التلوث وفئة الكتلة ودرجة التحذير وهوية حفظ ثابتة. الصندوق ليس وعاء ضغط.
 
 ## Audio
 
-AR LOC HOLD: A crate is not a pressure vessel.
+الصندوق ليس وعاء ضغط.
 
 ## Field Note
 
-AR LOC HOLD: Stack limits stay table-owned and stable for save identity.
+تبقى حدود التكديس مملوكة للجدول وثابتة لهوية الحفظ.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/ar_SA. -->

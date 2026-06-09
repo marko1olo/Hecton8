@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Contractdruk door Schuld en Blacklist"
+title: "Druk van Schuld-Blacklistcontract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Contractdruk door Schuld en Blacklist
+# Druk van Schuld-Blacklistcontract
 
-Schulddruk houdt de opening eerlijk. De protagonist wordt niet door melodrama naar HECTON-8 gesleept, maar is ook niet vrij in een bruikbare zin. Black Keel kan een contract aanbieden omdat claim pools, schuldvensters, zuurstofkredieten, kooi-toegang en bewijs van bewaring tot dezelfde grenseconomie behoren. De claim weigeren zou legaal zijn. Het zou de speler ook op de blacklist laten, aan de grond houden en buiten de routeprijs duwen. Acceptatie maakt Black Keel geen schurk met een gezicht. Het maakt de drager een machine die risico in papierwerk omzet. De speler duikt omdat het contract lelijk, overleefbaar en waarschijnlijk de enige route terug naar beweging is.
+Schulddruk houdt het contract lelijk zonder het theatraal te maken. De operator wordt niet in ketens naar HECTON-8 gesleept, maar het weigeringstraject is gebouwd om zich rond hem te sluiten. Black Keel kan een claim aanbieden omdat schuldvensters, oxygen credit, berth-toegang, routetiming en custody proof in hetzelfde frontier-ledger zitten.
+
+Weigering blijft legaal. Het laat de Marauder ook blacklisted, vastgezet en uit het volgende Aegir-routevenster geprijsd. Aanvaarding geeft beweging, geen genade: recoverable mass moet worden geleverd, custody moet standhouden, en receiver compliance bepaalt wat de claim waard is. De carrier heeft geen schurkengezicht nodig. Het contract weet al hoe risico papierwerk wordt.
 
 ## Scanner
 
-Retentierechtmelding gekoppeld aan Black Keel-bewaring. Weigeren blijft legaal, maar houdt je aan de grond: geen kooi, geen schone zuurstofkrediet, geen routevenster uit Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. Weigering blijft legaal; berth-toegang, oxygen credit en Aegir-routevenster blijven dicht.
 
 ## Terminal
 
-CLAIMAANVAARDING / BLACKLIST-VERLICHTINGSVENSTER
-contractorstatus: schuldgebonden Marauder
-drager: Black Keel claim-pool-bewaring
-verlichtingsvoorwaarden: terugwinbare massa, bewijs van bewaring, ontvanger-compliance
-foutstatus: blacklist blijft actief; toegang tot kooi geweigerd; zuurstofwelzijn wordt factureerbare steun.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-Dit was geen ontvoering. Het was het soort keuze dat de grens als vrijheid verkoopt: teken, duik, of blijf schoon op papier en vast in de praktijk.
+Teken, duik, of houd schone handen terwijl de berth-lijst sluit.
 
 ## Field Note
 
-Het retentierecht wees geen wapen aan. Het wees naar de luchtrekening, de kooienlijst en het volgende routevenster.
+De lien richtte geen wapen. Hij wees naar de luchtrekening, de berth-lijst en het volgende routevenster.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/nl_NL. -->

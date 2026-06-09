@@ -148,6 +148,12 @@ namespace Hecton8.Core
             return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);
         }
 
+        public static bool TryGetLatestDeathForSource(uint sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)
+        {
+            SignalCorridorRuntime.EnsureInitialized();
+            return SignalBridgeState.TryGetLatestSurvivalDeathForSource(sourceId, out signal, out sequence);
+        }
+
         [Obsolete("Use TryQueueVitals(in SurvivalVitalsChangedSignal) so overflow/drop semantics stay visible at the producer.", true)]
         public static void QueueVitals(in SurvivalVitalsChangedSignal signal)
         {

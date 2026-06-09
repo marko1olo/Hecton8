@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Podpisy Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Podpisy Asset Silence Board
 
-PL LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Zapisy Asset Silence Board leżą między rejestrem pracowników a raportem publicznym. Nie tworzą straty; decydują, które części straty mogą podróżować. Redaction vote może zostawić widoczne load class, locker count i claim value, wyciszając nazwiska świadków i załączniki trasy. Dlatego te podpisy należą obok szafek, redaction cards i packet mute flags. Podpis Brigit Senn nie czyni z niej ukrytego dowódcy. Identyfikuje niższe biuro, które po relay review przekształciło odzyskiwalne fakty ludzkie w kategorie asset-risk.
 
 ## Scanner
 
-PL LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Odzyskano kartę redaction vote: pole nazwiska pracownika wyciszone, kategoria asset-risk widoczna, liczba szafek zachowana. Widoczność pakietu wymaga approval właściciela depozytu.
 
 ## Terminal
 
-PL LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: przenieść załącznik witness-name do kategorii asset-risk silence po relay review. Zachować load class, locker count i claim value. Zwolnienie wymaga approval właściciela depozytu.
 
 ## Audio
 
-PL LOC HOLD: Erase the route and the body becomes cargo math.
+Board zostawił liczbę skrzyń. Nazwiska wycięli.
 
 ## Field Note
 
-PL LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Nazwisko zniknęło, znacznik szafki nadal jest. Asset Silence Board głosował nad widocznością pakietu, nie nad istnieniem pracownika.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/pl_PL. -->

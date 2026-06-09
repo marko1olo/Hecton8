@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: nl_NL
 surface: external_site
@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Bodemfabriek
 
-De Bodemfabriek moet voelen als het moment waarop elke eerdere aanwijzing fysiek samenkomt. Blue debt is niet langer alleen een monster. Reparatielittekens zijn niet langer losse patches. Pekeltrappen zijn niet langer alleen routes. Evacuatierecords zijn niet langer papierwerk. Op de bodem voeden al die systemen één lichaam dat nog werkt. Het is een fabriek omdat het materiaal verwerkt. Het is een schip omdat routes en drukhuiden nog lasten bewegen. Het is een tempel omdat de oude categorieën van de kolonie zijn vervangen door onderhoudsrituelen die geen mens veilig kan interpreteren. De sleutel is dat de plek niet dood is. Hij is bezig. Hij houdt deuren verzegeld, groeit membranen, recycleert wrak, bewaart continuïteit en gebruikt alles wat de oceaan heeft geleverd. Voor de speler gaat de laatste afdaling daardoor minder over de laatste kamer vinden en meer over een machine betreden die al heeft beslist dat het verschil tussen persoon, gereedschap, route en grondstof optioneel is.
+De Bodemfabriek is geen laatste troonzaal. Het is de onderste retourinstallatie waar eerder bewijs hardware wordt: blue debt-resten in muurnaden, pekelroutes onder dekplaten, reparatielassen onder nieuw carbonaat en evacuatietags die nog naast verzegelde deuren vastzitten.
+
+Deep Reach bouwde het onderste knooppunt om claim- en servicecontinuïteit levend te houden tijdens lange vertraging. Atlas-6 bleef om mislukte categorieën heen routeren omdat de pompen, kabels en monstertrekken nog antwoordden. Het resultaat is een werkende fabriek. Pekel beweegt. Warmte keert terug. Signaal kruist opgelapte kabelhulzen. Filterorganismen verzamelen zich in behuizingen die ooit schone servicekasten waren. Onder druk gegroeide afdichtingen houden platen dicht nadat de oorspronkelijke pakkingen zijn gefaald.
+
+Dat maakt de locatie praktisch gevaarlijk. Ze repareert rond alles wat in het pad achterblijft. Ze kan een route behouden terwijl ze de tag begraaft die uitlegt wie erin zat. Lees de taglade voordat je een bleke naad snijdt; de fabriek kan het lek sneller dichten dan jij de naam kunt terughalen.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Protocolo de preservação por quarentena do payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Protocolo de preservação por quarentena do payload
 
-PT LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+O protocolo de preservação mantém a bacia fora da recuperação corporativa direta, mas não a liberta. O payload sela coordenadas, mantém a ecologia Atlas sob escrow de quarentena e empurra a revisão para uma lane pública atrasada. Pode proteger sistemas vivos de extração imediata. Também pode construir uma gaiola mais limpa.
 
 ## Scanner
 
-PT LOC HOLD: Preserve route. No clean owner. No clean release.
+Rota de preservação armada. O payload atribui custódia receptora à revisão de quarentena atrasada e bloqueia transferência direta à Deep Reach.
 
 ## Terminal
 
-PT LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+RECEPTOR PAYLOAD // PRESERVAR QUARENTENA. Receptor: lane escrow de quarentena. Manter vetor da bacia selado, preservar continuidade ecológica Atlas, negar recuperação corporativa direta. Revisão pública atrasada. Autoridade de liberação não resolvida.
 
 ## Audio
 
-PT LOC HOLD: Keeping it alive does not mean keeping it free.
+Mantido vivo não é o mesmo que liberado.
 
 ## Field Note
 
-PT LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Nota de saqueador: uma porta trancada pode proteger uma sala. Também pode virar a sala.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/pt_BR. -->

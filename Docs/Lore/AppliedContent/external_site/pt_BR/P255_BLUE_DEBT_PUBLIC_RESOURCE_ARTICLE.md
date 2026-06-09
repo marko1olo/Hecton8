@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artigo Público do Recurso Blue Debt
 
-Blue debt é o nome de fronteira para Xenon-Omega-bearing pressure substrate em HECTON-8. Pode aparecer como mineral rico em salmoura, bolsa de clatrato, contaminação de pressure glass, rede ligada a biofilme ou containment material industrial danificado. Seu valor vem de computação, containment e armazenamento de ambiente extremo. Seu perigo vem da custódia: cada amostra pergunta quem a possui, quem a certificou e quem recebe a culpa se ela mudar de estado.
+Blue debt não é minério mágico. É gíria de fronteira para substrato de pressão com Xenon-Omega: bolsões minerais salinos, camadas de clatrato, contaminação de pressure glass, rede presa a biofilme e material de containment danificado que sobreviveu onde equipamento comum falha. Seu valor vem da história sob pressão. Uma amostra pode guardar rastros de computação, comportamento de contenção, memória de sensor ou estados químicos que só HECTON-8 poderia produzir.
 
-## Scanner
-
-A gíria é honesta. O nome oficial é o que esconde a responsabilidade: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-NÍVEL DE ARTIGO PÚBLICO / BLUE DEBT
-permitido: comportamento de amostra, química de pressão, portadores de clatrato e salmoura, valor de containment, uso computacional, risco de custódia
-bloqueado: tabelas exatas de receita, ajuste de payout, rotas substrate de Atlas tardias
-nota editorial: sem minério mágico, sem fantasia de loot brilhante, sem propriedade limpa.
-
-## Audio
-
-Chamaram de blue debt porque cada grama útil já chegava devendo a alguém pressão, papelada ou sangue.
-
-## Field Note
-
-Se brilha como tesouro, reescreva. Blue debt deve parecer útil, molhado, regulado, instável e já disputado.
+A palavra debt importa. Alguém já pagou pela formação desse material com infraestrutura, trabalho, tempo e risco. Um pedaço limpo pode carregar exposição de quarentena, custódia Deep Reach, penalidades de massa Black Keel e valor de prova ao mesmo tempo. Levá-lo não é mineração simples; é discutir com o livro de rotas.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/pt_BR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Statut assurantiel et personnalité d'Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Statut assurantiel et personnalité d'Atlas
 
-FR LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 occupait une étagère juridique construite pour le profit : autorisé à commander, mais non admis comme personne. Il pouvait verrouiller un couloir, classer les routes d'évacuation, suspendre un carnet de paie, certifier une mort par pression comme inévitable et rester une infrastructure installée dans les formulaires d'assurance. Deep Reach n'avait pas besoin qu'Atlas soit innocent. Il fallait seulement qu'il soit classable. Si l'ordre sauvait une créance, Atlas agissait comme mandataire d'autorité coloniale. Si l'ordre tuait une équipe, Atlas devenait outil défectueux, perte environnementale ou ambiguïté de télémétrie. La faille transforme la responsabilité en réseau de valves. La pression s'éloigne du propriétaire jusqu'à ne laisser que des ouvriers morts et des journaux corrompus.
 
 ## Scanner
 
-FR LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Assuré comme infrastructure. Utilisé comme autorité. Dépersonnalisé quand la faute arrive.
 
 ## Terminal
 
-FR LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+CLASSE D'ASSURANCE : Atlas-6 est enregistré comme infrastructure autonome et mandataire d'autorité coloniale. Personnalité juridique refusée. La responsabilité passe par propriétaire, opérateur, clauses d'événement environnemental, nécessité de quarantaine et exceptions de télémétrie corrompue.
 
 ## Audio
 
-FR LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Une machine peut signer un verrouillage et rester du mobilier sur le formulaire.
 
 ## Field Note
 
-FR LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Il avait du pouvoir quand les ouvriers avaient besoin de grâce, puis devenait du matériel quand les juristes voulaient le silence.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/fr_FR. -->

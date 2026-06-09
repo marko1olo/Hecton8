@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Recipe Tier Pressure Bands"
+title: "רצועות לחץ של דרגות מתכון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Recipe Tier Pressure Bands
+# רצועות לחץ של דרגות מתכון
 
-HE LOC HOLD: Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
+רצועות הלחץ של דרגות המתכון הן הדקדוק של היצירה ב-HECTON-8. המושבה לא חילקה מתכונים לפי נוחות, אלא לפי מה שהלחץ יעשה לחלק אחרי שהשחקן יעזוב את שולחן העבודה. Tier 0 משאיר את השחקן בחיים ברדודים בעזרת טלאים, איטום ידני וחילוץ שנכשל ביושר. Tier 1 שייך לתיקונים מדורגים: חלקי חדר משאבות, מלאי תעשייתי ישן וסימני הסמכה שמוכיחים שהאובייקט נועד לעבוד תחת עומס. Tier 2 נכנס לחומרת לחץ, שבה שטיפת תמלחת, הקשחה בפתח והוכחה אקוסטית מחליטות אם רכיב בטוח או רק נראה כמו רכיב. Tier 3 שייך לעלייה, לממשקי Atlas ולסמכות תהומית: המתכון צריך חומרים, אבל גם מצב מקבל, משמורת חוקית והוכחת הכלה. כך היצירה נשארת קשורה ללוגיקת נתיב. השאלה אינה רק מה יש לך. היא איפה זה היה, איזה לחץ זה יכול לשרוד, ומי יקבל את התוצאה.
 
 ## Scanner
 
-HE LOC HOLD: Recipes should be depth arguments, not shopping lists.
+מתכון ב-HECTON-8 הוא טיעון עומק, לא רשימת קניות. החלק נחשב רק אם הוא שורד את רצועת הלחץ שהוא טוען לה.
 
 ## Terminal
 
-HE LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+רצועות מתכון / T0 טלאי הישרדות: חילוץ רדוד, איטום ידני, ללא משמורת / T1 תיקון מדורג: חלקים תעשייתיים מהמדף, הסמכת חדר משאבות / T2 חומרת לחץ: שטיפת תמלחת, הקשחה בפתח, הוכחה אקוסטית / T3 עלייה או Atlas: מקור תהומי, מקבל חוקי, קבלת הכלה.
 
 ## Audio
 
-HE LOC HOLD: A recipe is a depth permission form with bolts.
+מתכון הוא טופס אישור עומק עם ברגים.
 
 ## Field Note
 
-HE LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+דרגת המתכון חייבת להתאים לדירוג הלחץ, עלות הנתיב וסיכון המשמורת. בורג זול ברצועה הלא נכונה אינו זול; הוא דליפה עתידית.
 
 <!-- In-Game Wiki; generated from P171_RECIPE_TIER_PRESSURE_BANDS/he_IL. -->

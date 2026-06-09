@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keluar Parsial: Kembali ke Seed yang Sama"
+title: "Keluar Parsial: Kembali ke Seed Sama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keluar Parsial: Kembali ke Seed yang Sama
+# Keluar Parsial: Kembali ke Seed Sama
 
-Keluar parsial melindungi kampanye panjang dari penutupan palsu. Black Keel bisa mengangkat operator untuk jendela terbatas, menambal suit, mencatat paket yang ditemukan, dan menjual jeda sebagai kesejahteraan. Dunia di bawah tidak berganti menjadi versi yang lebih bersih.
+Keluar parsial adalah katup tekanan untuk cerita survival panjang. Kontraktor mendapat jendela pickup, luka ditutup, peralatan ditambal, dan mendengar bunyi langka udara yang tidak disaring suit sekarat. Kelegaan itu nyata, maka kepulangan terasa sakit.
 
-Saat pemain kembali, seed yang sama masih ada. Tangga brine memiliki perangkap yang sama, relay yang sama punya sudut buruk yang sama, dan bukti yang sama tetap berbahaya. Ending ini memberi lega tanpa pengampunan: udara di paru-paru, lebih banyak utang di kontrak, dan tidak ada penghapusan atas apa yang ditemukan.
+Black Keel mencatat jeda sebagai welfare dan perawatan lien. World seed yang sama tetap aktif, bukti yang sama belum selesai, dan laut yang sama menunggu dengan semua rute yang sudah ditemukan. Keluar parsial bukan belas kasihan sistem. Itu perawatan aset yang masih diharapkan turun.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Ran-Aegir Distance Model
 
-The Ran-Aegir model gives HECTON-8 a scale the player can feel. Aegir is close enough for probes, freight, seed hardware, and debt-backed settlement by 2190. It is still far enough that a flooded chamber cannot wait for inner-world mercy. Distance appears as delay, custody, fuel, braking, and ownership.
+The Ran-Aegir model gives HECTON-8 a scale that can be felt in the suit. Aegir is close enough for probes, freight, route law, debt-backed settlement, and corporate hunger by 2190. It is still far enough that a flooded compartment cannot wait for anyone in the inner worlds to become kind. Distance becomes pressure through relay delay, launch windows, braking propellant, carrier custody, insurance exclusions, and the simple fact that mass arrives slower than orders.
 
 ## Scanner
 
-Route plate: Aegir is reachable on infrastructure and unreachable by sympathy.
+Route plate confirms Aegir within infrastructure reach, not within emergency reach.
 
 ## Terminal
 
-ROUTE MODEL: Ran/Aegir is held as a ten-light-year-class target from Sol. Play text uses Aegir; dry catalogs use RAN-B:H8. Exact ephemeris remains route-table work.
+ROUTE MODEL: Ran/Aegir is treated as a ten-light-year-class destination from Sol. Public surfaces say Aegir. Dry navigation catalogs keep RAN-B:H8. Exact ephemeris is table-locked; operational truth is delay, braking mass, relay custody, and ownership risk.
 
 ## Audio
 
-Ten light-years is small on a star chart. It is large enough to bankrupt a rescue.
+A signal can cross the dark. A ship has to pay for every meter of it.
 
 ## Field Note
 
-Approximate distance is pressure, not decoration. Ten light-years can still kill a room.
+Ten light-years is a small catalog number and a brutal rescue distance.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/en_US. -->

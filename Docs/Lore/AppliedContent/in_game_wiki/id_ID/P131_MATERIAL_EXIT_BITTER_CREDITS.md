@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Keluar Material: Kredit Pahit
 
-Keluar Material adalah ending nyata bagi Marauder yang memperlakukan HECTON-8 sebagai pekerjaan berbayar. Pemain bisa pergi dengan utang berkurang dan ledger carrier puas. Biayanya terlihat: koloni tetap menjadi TKP yang diubah menjadi nilai klaim, dan Deep Reach menerima jalan kembali yang lebih baik daripada jalan keluar para pekerja.
+Ini jalan keluar legal paling dingin dari HECTON-8. Seorang Marauder kembali dengan material tekanan yang bisa ditimbang Black Keel, ditagihkan, dan dipindahkan lewat jendela naik; utang turun, ledger pengangkut rapi, dan berkas kerja bisa ditutup tanpa memalsukan angka. Tidak ada kebohongan langsung di tanda terima. Sampelnya nyata. Rantai custody cukup bersih. Kegagalan hidup di kolom yang dihilangkan: nama pekerja belum direkonsiliasi, rantai bukti terlalu tipis untuk menuntut, koloni tenggelam diubah menjadi nilai klaim, dan data rute yang memberi Deep Reach alasan lebih bersih untuk kembali. Keberhasilan profesional selamat di sini, tetapi rasanya seperti logam dan udara tua.
 
 ## Scanner
 
-Material tekanan diterima. Jendela keluar bisa dibeli. Nama pekerja masih belum direkonsiliasi.
+Material tekanan diterima. Jendela keluar dijual. Nama tetap belum dibayar.
 
 ## Terminal
 
-TANDA TERIMA KELUAR MATERIAL: material tekanan custody-grade diterima; lien dikurangi; payload bukti tidak lengkap; buku pekerja hilang tetap dalam sengketa claimant; prioritas Recovery Compliance naik.
+TANDA TERIMA KELUAR MATERIAL: material tekanan custody-grade diterima; lien dikurangi; massa naik diotorisasi; payload bukti tidak lengkap; ledger pekerja hilang belum selesai; minat pemulihan Deep Reach naik.
 
 ## Audio
 
-Tagihan bersih lebih dulu daripada nama.
+Faktur mencapai udara sebelum nama-nama.
 
 ## Field Note
 
-Black Keel akan memberi harga pada sampel sebelum memberi harga pada yang mati. Itu bukan cacat kontrak.
+Black Keel menyelesaikan massa sebelum ingatan; kontrak menyebutnya sukses.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/id_ID. -->

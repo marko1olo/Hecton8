@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Public Combine
 
-Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Deep Reach's public combine face is broad enough to look useful and dry enough to look innocent. It builds route plates, habitat services, pressure logistics, and civic-sounding continuity programs. The colony rarely sees a single villain in this layer. It sees stationery, maintenance seals, audited slogans, and a name that can claim infrastructure when the work is profitable and distance when the work becomes evidence.
 
 ## Scanner
 
-The public name sounds like development because exploitation would not pass procurement.
+Public charter plate: infrastructure operator, not extraction defendant.
 
 ## Terminal
 
-PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+PUBLIC COMBINE RECORD: Deep Reach presents as route infrastructure, ocean industry, pressure habitat logistics, and continuity services. Liability-bearing work is distributed through subsidiary desks, insurer language, custody contractors, and recovery offices.
 
 ## Audio
 
-A clean title is the cheapest pressure suit.
+The sign on the door says utility. The locks behind it say ownership.
 
 ## Field Note
 
-The seal is clean. The rooms under it are not.
+The clean name is not a lie. It is the room where the dirt is filed elsewhere.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/en_US. -->

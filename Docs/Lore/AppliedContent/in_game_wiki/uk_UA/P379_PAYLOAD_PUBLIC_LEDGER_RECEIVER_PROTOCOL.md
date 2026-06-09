@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Протокол публічного реєстру payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Public Ledger Receiver Protocol
+# Протокол публічного реєстру payload
 
-UK LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Протокол публічного реєстру надсилає докази туди, де Deep Reach не зможе тихо ними володіти. Він редагує координати, запечатує attestation hashes, прикріплює route custody і digest ваг Atlas, потім входить у відкладений relay. Відправник втрачає контроль при прийманні. Пакет стає важче купити, важче поховати й повільніше використати.
 
 ## Scanner
 
-UK LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Маршрут публічного реєстру зведено. Координати редагуються до відкладеного relay; стек attestation hash і ланцюг відповідальності запечатуються при прийманні.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+ОТРИМУВАЧ PAYLOAD // PUBLIC LEDGER LANE. Отримувач: розподілений публічний реєстр, відкладена Tau lane. Прийняти пакет інциденту з редагованими координатами, attestation hashes, route custody, digest ваг Atlas, позначку отримувача. Відхилити private payout і direct recovery claim. Відкликання закінчується при прийманні relay.
 
 ## Audio
 
-UK LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Реєстр прийняв пакет. Координати приховані. Вікно відкликання закрите.
 
 ## Field Note
 
-UK LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Нотатка мародера: редагуй маршрут до приймання relay. Після приймання пакет більше не твій.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/uk_UA. -->

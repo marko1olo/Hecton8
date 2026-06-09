@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Keelmark损失柜台"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Keelmark损失柜台
 
-CN LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+Keelmark损失柜台不是淹没走廊的那只手。它是决定被淹走廊如何进入账本的那只手。这就是它重要的原因。只要类别准备得足够早，保险人就能让谋杀看起来像天气。
 
-## Scanner
-
-CN LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-CN LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-CN LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-CN LOC HOLD: A loss category is a grave with better stationery.
+Keelmark的表格教Deep Reach哪种语言能经受调查。设备可以折旧。栖居舱可以减值。劳工可以暂停。证人可以暴露、受损或不可回收。姓名更重，所以柜台会避免它们，直到被迫。
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/zh_CN. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Trace de marge de la Grande Marée"
+title: "Trace de marge de marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Trace de marge de la Grande Marée
+# Trace de marge de marée
 
-La trace prouve deux choses en même temps : la Grande Marée était réelle, et la marge mortelle était visible avant que le rapport l'admette. Deep Reach n'a pas ordonné à l'eau de monter. L'entreprise a accepté une fenêtre de route alors que l'enveloppe de pression coloniale n'avait déjà plus de réserve, puis publié la cascade sans le sign-off.
+Ce capteur ne rend pas la Grande Marée fausse. Il fixe le moment. La réserve de conception de la colonie était perdue avant que Deep Reach n'admette le risque dans le rapport public. L'autorité de route a gardé la fenêtre ouverte par exception commerciale, puis a publié une chaîne de cascade sans cette exception.
 
 ## Scanner
 
-Capteur de marée récupéré. Le cisaillement maximal dépassait le design de la colonie, mais la rupture de marge d'alerte fut loguée avant l'horodatage public de la cascade.
+Capteur de marée récupéré. Le pic de cisaillement est réel; la rupture de marge apparaît seize minutes avant l'horloge publique de cascade de Deep Reach.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Seuil de risque de queue accepté par l'autorité de route. Note opérateur retirée de la chaîne publique d'incident. Trace brute préservée en mémoire brine-buffer.
+RÉSEAU DE MARÉE // ARÊTE NORD P-63. Marge résiduelle sous le seuil d'arrêt. Fenêtre de route maintenue par exception commerciale. La chaîne publique d'incident omet la note d'exception. Somme brine-buffer intacte.
 
 ## Audio
 
-L'océan n'a pas menti. Le rapport, si.
+La marée a brisé le couloir. Le mensonge commence avec l'horloge.
 
 ## Field Note
 
-Note de maraudeur : ne cherche pas un discours de méchant. Cherche la ligne supprimée.
+Note de pillard: garde la trace brute. Une ligne de marge supprimée bat n'importe quel discours.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/fr_FR. -->

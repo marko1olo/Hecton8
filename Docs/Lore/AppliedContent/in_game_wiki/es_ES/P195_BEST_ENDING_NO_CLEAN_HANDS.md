@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Mejor final: no hay manos limpias"
+title: "Mejor ruta: residuo visible"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mejor final: no hay manos limpias
+# Mejor ruta: residuo visible
 
-No hay manos limpias es la regla de tono final. HECTON-8 recompensa comprensión, preparación y trabajo de testigo, no pureza. El mejor final debe hacer que el jugador se sienta competente e implicado a la vez.
+Residuo visible es el estándar de la ruta más fuerte. El final debe salvar algo concreto sin convertir HECTON-8 en una pantalla de recompensa: un registro público, rutas de Deep Reach denegadas, una cuenca preservada, un operador libre, nombres laborales o un proof-hash de Atlas. El registro también debe conservar campos abiertos para custodia del receptor, responsabilidad, nombres ausentes, daño de cuenca, estado de Atlas y residuo de deuda.
 
 ## Scanner
 
-El mejor final debe salvar algo real sin fingir que la inocencia sobrevivió al descenso.
+REGLA DE MEJOR RUTA // Salva un resultado concreto: custodia del operador, registro público, carga denegada, cuenca viva, paquete de nombres laborales o proof-hash de Atlas. Deja abiertos los campos de daño.
 
 ## Terminal
 
-REGLA NO HAY MANOS LIMPIAS: el mejor final conocido exige agencia, evidencia, consecuencia y residuo. Si todos los dañados quedan satisfechos, el final olvidó HECTON-8.
+ESTÁNDAR DE REGISTRO DE FINAL
+Objeto o estado salvado requerido: salida del operador, registro público, carga de Deep Reach denegada, ecología de cuenca preservada, paquete de nombres laborales o proof-hash de Atlas.
+Campos abiertos requeridos: custodia del receptor, cadena de responsabilidad, nombres ausentes, daño de cuenca, estado de Atlas, residuo de deuda.
+Registro inválido: todos los costes escondidos tras pago, rescate o cierre corporativo.
+Uso del registro: mostrar qué cambió y qué aún tiene parte de archivo.
 
 ## Audio
 
-Si se siente limpio, olvidó dónde estás.
+Si todas las filas cierran, el registro miente.
 
 ## Field Note
 
-Una ruta fuerte puede exponer verdad, negar a Deep Reach, preservar parte de la ecología y liberar al jugador, pero el coste debe seguir visible.
+Si todas las filas cierran, el final escondió la sala.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/es_ES. -->

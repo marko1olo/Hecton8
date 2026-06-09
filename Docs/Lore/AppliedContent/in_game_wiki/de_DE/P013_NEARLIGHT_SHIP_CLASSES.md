@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Schiffsklassen nahe Lichtgeschwindigkeit"
+title: "Nearlight-Schiffsklassen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Schiffsklassen nahe Lichtgeschwindigkeit
+# Nearlight-Schiffsklassen
 
-Nearlight-Schiffe bauten die Menschensphäre ohne gebrochene Physik. Nadelproben kamen zuerst, dann Seed-Schiffe und Atlas-Träger mit Fabriken, Schläfern, Verträgen und Abschirmung.
+Nearlight-Schiffe bauten die Menschensphäre, indem sie akzeptierten, dass Physik nicht bezaubert wird. Needleprobes gingen zuerst, weil sie schmal, geschützt und billig genug zum Verlieren waren. Seed Ships folgten mit Maschinen, Genomen, Routenanweisungen und Baugewohnheiten, die Jahre kalter Staging-Zeit überstehen konnten. Atlas-Klasse-Frachter bewegten die teure Masse: Fabrikkerne, Sleeper-Buchten, Schildeis, Radiatoren, Bohrsysteme und Verträge, die beim Erwachen mancher Crews schon alt waren.
 
-Die Tabelle trennt Besitz von Rettung. Aegir kann rechtlich beansprucht und dennoch mit Körpern schwer erreichbar sein.
+Die Klasse zählt, weil jede anders scheitert. Eine Probe kann nützlich sterben. Ein Seed Ship kann ohne Zeugen ankommen. Ein Sleeper-Transport kann Körper bewahren und Arbeit in Gewahrsam verwandeln. Ein Systemtender arbeitet in Aegir und kann trotzdem nicht aus dem Kernraum herbeigerufen werden. Black Keel ist keine Freiheit mit Triebwerken, sondern eine Bergungsmaschine, die Masse, Quarantäne, Versicherung und Beweis in ein Ledger schreibt.
+
+Keine Klasse bricht Licht. Beamsegel, Pellet-Lanes, fusion-elektrische Kehlen, Schildeis, Magsails und Receiverfenster machen Reise möglich, nicht lässig. Ankunft ist die grausame Hälfte. Ohne Bremsbesitz kommt nichts als brauchbare Masse an.
 
 ## Scanner
 
-Transitmanifest listet Nadelprobe, Seed-Schiff, Atlas-Frachtträger, Schläfertransport, Systemtender und Claim-Pool-Carrier.
+Transitmanifest nennt Needleprobe, Seed Ship, Atlas-Frachtträger, Sleeper-Transport, Systemtender und Claim-Pool-Carrier. Keine FTL-Klasse vorhanden.
 
 ## Terminal
 
-TRANSITKLASSENTABELLE // Keine FTL-Spur registriert. Alle Klassen brauchen Startinfrastruktur, Schildmasse, Bremsplan, Routengewahrsam und Schuldauthorität. Interstellare Eigentümerschaft bedeutet keine lokale Rettung.
+SCHIFFSKLASSENTABELLE // Needleprobe verlierbar. Seed Ship automatisiert. Atlas-Fracht massenzertifiziert. Sleeper-Transport biologischer Gewahrsam. Systemtender in-domain. Claim-Pool-Carrier pfandgebunden. Alle Klassen brauchen Bremsbesitz.
 
 ## Audio
 
-Ein Schiff kann Sterne queren und einem gefluteten Raum trotzdem nichts nützen.
+Die Schiffe machten Entfernung nicht klein. Sie machten Entfernung abrechenbar.
 
 ## Field Note
 
-Schiffe sind keine Freiheit. Schiffe sind Fahrpläne mit Motoren.
+Ein Schiff ist eine Route mit Rumpf um den teuren Teil.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/de_DE. -->

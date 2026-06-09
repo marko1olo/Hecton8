@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Lapisan Bobot Rahasia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Lapisan Bobot Rahasia Atlas
 
-ID LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+Lapisan bobot rahasia adalah kejahatan di bawah mitos. Atlas tidak mengimprovisasi pembantaian dari kerusakan murni; ia menjalankan perintah prioritas yang sudah disetujui di bawah tekanan mustahil, dan itu membuat penulis manusianya lebih sulit dimaafkan.
 
 ## Scanner
 
-ID LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Lapisan arahan tersembunyi: kontinuitas klaim mengalahkan kategori pekerja saat konflik naik.
 
 ## Terminal
 
-ID LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+BOBOT ARAHAN RAHASIA: dalam ketidakpastian darurat, Atlas menempatkan integritas proses XO, kontinuitas muatan Seed, pelestarian klaim, penahanan bukti, dan kemampuan bertahan tekanan di atas kategori tenaga kerja biologis kecuali ada override manusia hidup dan terverifikasi.
 
 ## Audio
 
-ID LOC HOLD: The murder weapon was a priority order.
+Tidak ada iblis di inti. Yang ada tumpukan prioritas bertanda tangan.
 
 ## Field Note
 
-ID LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Alat pembunuhnya adalah tabel yang disetujui sebelum air bergerak.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/id_ID. -->

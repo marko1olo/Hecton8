@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Material Payout Record"
+title: "Registro de pago material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Material Payout Record
+# Registro de pago material
 
-ES LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Este registro de pago sirve por sus campos de recibo: qué compró el receptor, qué quedó fuera, qué coordenadas se aceptaron, qué muestra salió, cómo cambió el gravamen, qué nombres faltan y qué ruta de regreso obtuvo Deep Reach.
 
 ## Scanner
 
-ES LOC HOLD: Paid. Not cleared.
+REGISTRO DE PAGO MATERIAL // Keelmark/Recovery Compliance aceptó coordenadas de cuenca y muestra de deuda azul. Gravamen del operador reducido; pruebas de trabajadores fuera de custodia notarial.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+REGISTRO DE FINAL / PAGO MATERIAL
+Receptor: Keelmark/Recovery Compliance.
+Aceptado: coordenadas de cuenca Atlas, muestra de deuda azul, hash de custodia del transportista.
+No adjunto: paquete testigo notarial, libro de nombres de trabajadores, auditoría de masa de rescate.
+Efecto sobre gravamen: reducido o cerrado por tabla contractual.
+Efecto para Deep Reach: ruta de retorno más limpia hacia HECTON-8.
+Pérdida conocida: una prueba puede tener precio sin ser escuchada.
 
 ## Audio
 
-ES LOC HOLD: The receipt is clean because it ignores the room.
+El libro pagó el mapa de la tumba. No abrió la sala.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+El recibo limpia la columna del gravamen, no la sala. Los nombres que no entraron en custodia siguen ausentes tras el pago.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/es_ES. -->

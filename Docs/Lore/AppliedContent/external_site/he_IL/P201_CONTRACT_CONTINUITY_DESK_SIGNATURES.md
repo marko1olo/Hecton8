@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Contract Continuity Desk Signatures"
+title: "חתימות שולחן רציפות החוזה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Contract Continuity Desk Signatures
+# חתימות שולחן רציפות החוזה
 
-HE LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+חתימות שולחן רציפות החוזה חושפות את שכבת הניירת מתחת לחוזה הפותח של HECTON-8. המאמר נותן למערכת החוזים שמות, חותמות ותפקידים כדי שהשחקן יראה כיצד ריצת salvage הופכת למיקוח על משמורת. השולחן של Edda Malk אינו צריך לדעת את כל פשע המושבה כדי להפוך את ההווה למסוכן. הוא צריך רק למזג שעבודים, חוב חמצן וסעיפי שחזור בסדר הנכון. עד שהמפעיל חותם, הים אינו הלחץ היחיד מחוץ לגוף; החוזה כבר מהדק.
 
 ## Scanner
 
-HE LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+מלכודת החוזה הפותח נבנית מחתימות תחתונות: מיזוג שעבוד, נספח חמצן, סיכון רשימה שחורה והחזקת משמורת מטען.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. למזג תנאי שעבוד Aegir Reclamation Pool עם סעיפי שחזור Black Keel. לצרף נספח אשראי חמצן, הודעת סיכון רשימה שחורה והחזקת משמורת מטען. אין צורך בהסלמה אם המפעיל מקבל.
 
 ## Audio
 
-HE LOC HOLD: Nobody says trap. They say continuity.
+חתימה יכולה להיות דלת לחץ כאשר כל סעיף אחריה ננעל.
 
 ## Field Note
 
-HE LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+איש לא חותם על מלכודת. חותמים על רציפות.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/he_IL. -->

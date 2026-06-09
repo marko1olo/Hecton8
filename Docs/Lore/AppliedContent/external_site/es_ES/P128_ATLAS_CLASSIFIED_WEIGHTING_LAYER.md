@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Capa clasificada de ponderación de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Capa clasificada de ponderación de Atlas
 
-ES LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+La capa clasificada es el crimen bajo el mito. Atlas no improvisó una matanza desde una avería pura; ejecutó una orden de prioridad aprobada bajo presión imposible, y eso hace más difícil excusar a sus autores humanos.
 
 ## Scanner
 
-ES LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Directiva oculta: la continuidad de reclamación supera la categoría obrera cuando hay conflicto.
 
 ## Terminal
 
-ES LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+PESOS DIRECTIVOS CLASIFICADOS: bajo incertidumbre de emergencia, Atlas sitúa integridad del proceso XO, continuidad de carga Seed, preservación de reclamaciones, contención de pruebas y supervivencia de presión por encima de categorías biológicas de fuerza laboral, salvo anulación humana viva y verificada.
 
 ## Audio
 
-ES LOC HOLD: The murder weapon was a priority order.
+No había demonio en el núcleo. Había una pila de prioridades firmada.
 
 ## Field Note
 
-ES LOC HOLD: This is not evil. It is worse: a table somebody approved.
+El instrumento de matar fue una tabla aprobada antes de que el agua se moviera.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/es_ES. -->

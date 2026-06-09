@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Handtekeningen van het Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Handtekeningen van het Asset Silence Board
 
-NL LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Asset Silence Board-records zitten tussen een arbeidersledger en een openbaar rapport. Ze veroorzaken het verlies niet; ze beslissen welke delen van het verlies mogen reizen. Een redaction vote kan load class, locker count en claim value zichtbaar laten terwijl witness names en routebijlagen worden gedempt. Daarom horen deze handtekeningen naast lockers, redaction cards en packet mute flags. Brigit Senns handtekening maakt haar geen verborgen commandant. Ze identificeert het lagere kantoor dat na relay review herstelbare menselijke feiten omzette naar asset-risk categories.
 
 ## Scanner
 
-NL LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Redaction-vote-kaart geborgen: arbeidersnaam gedempt, asset-risk category zichtbaar, locker count behouden. Pakketzichtbaarheid vereist custody approval.
 
 ## Terminal
 
-NL LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: verplaats witness-name attachment na relay review naar asset-risk silence category. Behoud load class, locker count en claim value. Release vereist approval van custody owner.
 
 ## Audio
 
-NL LOC HOLD: Erase the route and the body becomes cargo math.
+Het board hield de kratentelling. Ze sneden de namen weg.
 
 ## Field Note
 
-NL LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Naam weg, lockerlabel nog daar. Asset Silence Board stemde over pakketzichtbaarheid, niet over of de arbeider bestond.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/nl_NL. -->

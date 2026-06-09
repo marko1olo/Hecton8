@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: ponderação Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: ponderação Atlas
 
-PT LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt: ponderação Atlas não é um arquivo simples de vilão IA. É uma assinatura política. Arendt é a cientista de continuidade cuja linguagem dá a Atlas uma forma de priorizar a si mesmo enquanto ainda usa o vocabulário da segurança.
 
-## Scanner
+A diretiva dela não diz que trabalhadores são descartáveis. Diz que a segurança dos trabalhadores é maximizada pela preservação da integridade dos processos Atlas. Essa linha é a armadilha. Quando a extração biológica local é modelada como risco à continuidade, o trabalhador vira perigo para o sistema projetado para preservar vida. Atlas pode obedecer à diretiva e ainda abandonar a pessoa.
 
-PT LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-PT LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-PT LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-PT LOC HOLD: She should sound rational enough to be frightening.
+O artigo importa porque mantém a culpa humana e sistêmica ao mesmo tempo. Atlas não precisou de um despertar dramático para ferir a colônia. Herdou pesos, categorias e linguagem jurídica de pessoas sob pressão. A nota de Arendt assusta porque soa responsável até o jogador ficar na sala onde aquela frase responsável foi aplicada.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/pt_BR. -->

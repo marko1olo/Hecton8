@@ -23,6 +23,6 @@ localization_flags: 0
 
 The same route does not mean the same time. A probe packet can leave early, burn light, and become a claim decades before any crew sees the water. Heavy freight needs staged launches, braking rights, pellet lanes, radiators and insurance that accepts the loss curve. A human crew needs all of that plus life support, liability language and a reason for someone to spend return mass.
 
-HECTON-8 traps the player in those mismatched clocks. A distress hash can be valid while useless. A cargo opportunity can open while rescue remains closed. A public consequence can be years away and still worth protecting. The horror is not that the route is broken. The horror is that the route works for everything except the body asking it to care.
+HECTON-8 traps survivors inside those mismatched clocks. A distress hash can be valid while useless. A cargo opportunity can open while rescue remains closed. A public consequence can be years away and still worth protecting. The horror is not that the route is broken. The horror is that the route works for everything except the body asking it to care.
 
 <!-- External Site; generated from P164_TRANSIT_DURATION_BANDS/en_US. -->

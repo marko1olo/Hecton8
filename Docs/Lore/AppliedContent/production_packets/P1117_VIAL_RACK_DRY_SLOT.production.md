@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sample_discipline |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS166_FIRST_SAMPLE_DISCIPLINE_ARTICLES.md |
 | Speaker | Field scanner, control-vial storage note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first sample handling |
@@ -72,17 +72,17 @@ CONTROL ONLY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| ar_SA | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| de_DE | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| es_ES | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| fr_FR | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| he_IL | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| id_ID | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| ja_JP | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| ko_KR | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| nl_NL | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| pl_PL | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| pt_BR | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| ru_RU | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| uk_UA | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
-| zh_CN | draft_machine_or_llm | VIAL RACK // One dry slot intact. Keep control vial here; wet samples stay apart. |
+| ar_SA | draft_machine_or_llm | حامل قوارير // فتحة جافة واحدة سليمة. ضع قارورة الضبط هنا؛ العينات المبللة تبقى منفصلة. |
+| de_DE | draft_machine_or_llm | PROBENSTÄNDER // Ein trockener Platz intakt. Kontrollfläschchen hier lagern; nasse Proben getrennt halten. |
+| es_ES | draft_machine_or_llm | GRADILLA DE VIALES // Una ranura seca intacta. Guarda aquí el vial de control; las muestras mojadas aparte. |
+| fr_FR | draft_machine_or_llm | PORTOIR DE FIOLES // Un emplacement sec intact. Garder la fiole témoin ici; échantillons humides à part. |
+| he_IL | draft_machine_or_llm | מעמד מבחנות // חריץ יבש אחד שלם. שמור כאן בקבוקון ביקורת; דגימות רטובות בנפרד. |
+| id_ID | draft_machine_or_llm | RAK VIAL // Satu slot kering utuh. Simpan vial kontrol di sini; sampel basah tetap terpisah. |
+| ja_JP | draft_machine_or_llm | バイアルラック // 無事な乾燥スロットが一つ。対照バイアルはここに置き、湿った試料は分ける。 |
+| ko_KR | draft_machine_or_llm | 바이알 랙 // 마른 슬롯 하나가 온전하다. 대조 바이알은 여기에 두고 젖은 시료는 분리하라. |
+| nl_NL | draft_machine_or_llm | FLESJESREK // Eén droge sleuf intact. Bewaar het controleflesje hier; natte monsters apart. |
+| pl_PL | draft_machine_or_llm | STATYW NA FIOLKI // Jedno suche gniazdo całe. Trzymaj tu fiolkę kontrolną; mokre próbki osobno. |
+| pt_BR | draft_machine_or_llm | SUPORTE DE FRASCOS // Um encaixe seco intacto. Guarde o frasco de controle aqui; amostras molhadas ficam separadas. |
+| ru_RU | draft_machine_or_llm | ШТАТИВ ДЛЯ ФЛАКОНОВ // Один сухой слот цел. Контрольный флакон держи здесь; мокрые образцы отдельно. |
+| uk_UA | draft_machine_or_llm | ШТАТИВ ДЛЯ ФЛАКОНІВ // Один сухий слот цілий. Контрольний флакон тримай тут; мокрі зразки окремо. |
+| zh_CN | draft_machine_or_llm | 样瓶架 // 一个干槽完好。对照瓶放这里；湿样本分开。 |

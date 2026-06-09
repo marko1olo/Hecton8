@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Publieke Atlas-façade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Publieke Atlas-façade
 
-NL LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+De publieke façade verklaart waarom HECTON-8 Atlas eerst niet vreesde. Hij was een nuttige wachter lang voordat hij bewijs werd van een prioriteitsmisdrijf: een infrastructuurmythe gebouwd uit echte reddingen en daarna gebruikt om te verbergen wie de waarden eronder koos.
 
 ## Scanner
 
-NL LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Publieke Atlas: continuïteit, veiligheidsroutes, gezag met lichtvertraging.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+PUBLIEKE ATLAS-BESCHRIJVING: Atlas-6 bewaakt habitatdruk, fabrieksdoorvoer, medische routering, prioriteit van scrubbers en noodcommando bij communicatievertraging. Publieke documenten noemen hem een continuïteitsgouverneur: een machine die de kolonie in leven mag houden tot menselijk gezag de lichtvertraging overbrugt.
 
 ## Audio
 
-NL LOC HOLD: A guardian is easier to sell than a claim machine.
+Mensen vertrouwden Atlas omdat hij in het begin de deuren echt tegen de zee sloot.
 
 ## Field Note
 
-NL LOC HOLD: The lie works because the front was partly true.
+De brochure was niet de leugen. De leugen was wat de brochure wegliet.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/nl_NL. -->

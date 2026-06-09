@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Межі автономії salvage carrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Salvage Carrier Autonomy Limits
+# Межі автономії salvage carrier
 
-UK LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+Межі автономії salvage carrier утримують HECTON-8 на землі. Black Keel небезпечний тому, що одночасно корисний і обмежений. Він виконує облік і recovery work, які роблять втечу можливою, але його правила забороняють неможливий порятунок, якого гравці чекають від особистого корабля. У результаті це інфраструктура з пульсом, а не компаньйон.
 
 ## Scanner
 
-UK LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel може рухати борг, телеметрію і низькоризикові скиди без твоєї згоди. Він не може дозволити глибокий порятунок.
 
 ## Terminal
 
-UK LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+МЕЖІ АВТОНОМІЇ / дозволено: claim processing, продаж телеметрії, планування recovery-window, низькоризиковий ballast або supply drop, відмова contaminated mass / заборонено: crewed descent, deep-rated rescue, скасування lien, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-UK LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Автономний не означає вільний. Це означає, що борг може рухатися без твого дозволу.
 
 ## Field Note
 
-UK LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Тримати в carrier status і contract UI, не в combat barks. Автономія покриває облік, recovery scheduling і логіку відмови.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/uk_UA. -->

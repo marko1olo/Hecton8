@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Таблиця архетипів тискових бригад"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Таблиця архетипів тискових бригад
 
-UA LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Архетипи тискових бригад перетворюють робочий склад HECTON-8 на читабельну історію праці. Колонію пояснюють не біографії насамперед, а робота. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany і Payload Witness дають кожному імені функцію, місце в океанській економіці й причину з'являтися як доказ. Так лор проступає через предмети й маршрути, а не через відірвану експозицію.
 
 ## Scanner
 
-UA LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Бригади спершу дієслова, а вже потім передісторія: качати, герметизувати, ретранслювати, картувати, кувати, сортувати, вирощувати, свідчити.
 
 ## Terminal
 
-UA LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany і Payload Witness. Кожна особа працівника прив'язується до родини бригади раніше за особисті деталі. Так докази лишаються пов'язаними з машинами, маршрутами, відмовами тиску, харчовою культурою, законом порятунку та фінальним ланцюгом payload.
 
 ## Audio
 
-UA LOC HOLD: Job first. Memory second. That is how the colony survives.
+Спочатку робота. Потім пам'ять. Так колонія виживає на папері.
 
 ## Field Note
 
-UA LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Мертвий працівник читається ясніше, коли кімнаті все ще потрібна робота, яку він знав.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/uk_UA. -->

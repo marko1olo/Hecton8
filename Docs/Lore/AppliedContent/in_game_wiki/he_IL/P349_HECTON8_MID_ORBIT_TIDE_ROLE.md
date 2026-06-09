@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "תפקיד הגאות של HECTON-8 במסלול אמצעי"
+title: "תפקיד הגאות במסלול הביניים של HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# תפקיד הגאות של HECTON-8 במסלול אמצעי
+# תפקיד הגאות במסלול הביניים של HECTON-8
 
-HECTON-8 הוא הירח שבו המתמטיקה המסלולית של Aegir נעשית אישית. הוא רחוק מספיק מהקרינה הפנימית הגרועה להפעלות ארוכות, קרוב מספיק כדי שהגאות תמשיך להניע את האוקיינוס, ובעל ערך מספיק כדי ש-Deep Reach תבנה תחת לחץ. אותה עמדה מלכלכת את החילוץ: מופע גאות, מסת carrier, רעש סערה ומשמורת משפטית נפגשים מעל ראש השחקן.
+HECTON-8 הוא הירח שבו המתמטיקה המסלולית של Aegir נעשית אישית. הוא רחוק מספיק מן הקרינה הפנימית הגרועה לפעולות ארוכות, קרוב מספיק כדי שהגאות תשאיר את האוקיינוס בתנועה, ובעל ערך מספיק כדי ש-Deep Reach תבנה תחת לחץ. אותה עמדה מלכלכת את החילוץ. שלב הגאות, מסת הנושא, רעש הסערה והמשמורת המשפטית נפגשים מעל החליפה כתקרה נעה.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ HECTON-8 הוא הירח שבו המתמטיקה המסלולית של Aegir נ�
 
 ## Field Note
 
-HECTON-8 משלם כי לחץ, גאות ואחריות חופפים שם.
+HECTON-8 משלם כי לחץ, גאות ואחריות חופפים באותו עמוד מים.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/he_IL. -->

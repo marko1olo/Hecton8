@@ -1,11 +1,11 @@
 ﻿# Architecture Index
 
-Date: 2026-06-02
+Date: 2026-06-09
 Status: STATIC INDEX
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE
 
-This folder stores active architecture contracts. Dated reports are evidence only.
+This folder stores active architecture contracts. Dated reports and `Docs/AgentLogs` outputs are evidence only.
 
 ## Read Order
 
@@ -45,6 +45,8 @@ This folder stores active architecture contracts. Dated reports are evidence onl
 `PROJECT_RUNTIME_TOPOLOGY.md` owns source-backed runtime topology. `SOURCE_SYSTEMS_REALITY_MAP.md` owns the concise real-script systems map. `HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md` owns concise current proof snapshots and source constants for architecture docs.
 
 Do not duplicate current build status, scanner counters, report chains, or task-loop history in this index.
+
+When a durable fact is found in `Docs/Reports` or `Docs/AgentLogs`, promote only the current technical fact into the owning architecture contract after source/proof review. Do not cite one-off logs, local telemetry, or cache files as current architecture.
 
 ## Active Contract Groups
 

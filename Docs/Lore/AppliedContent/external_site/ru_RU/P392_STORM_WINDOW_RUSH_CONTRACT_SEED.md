@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Storm Window Rush Contract Seed"
+title: "Семя контракта штормового рывка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Storm Window Rush Contract Seed
+# Семя контракта штормового рывка
 
-RU LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Штормовой рывок начинается с карты закрывающегося покрытия. Штормовые полосы, время шторки ретранслятора и отзыв bathydrop стоят на одной доске с потолком выплаты. Большое число не является щедростью; это цена входа в воду, когда безопасное окно возврата уже сжимается.
 
-## Scanner
-
-RU LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-RU LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-RU LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-RU LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Заход меняет давление на уровне инструмента. Заклинившая помпа стоит больше, чем время, потому что часы отзыва идут, пока ремонт открыт. Плохая сварка съедает допуск маршрута. Пропущенная метка ретранслятора может вытолкнуть эвакуацию в blackout. Это семейство контрактов делает ту же колонию жестче, меняя момент, когда вода перестает ждать.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ru_RU. -->

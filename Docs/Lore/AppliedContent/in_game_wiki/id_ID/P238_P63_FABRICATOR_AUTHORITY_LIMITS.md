@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: P-63 Fabricator Authority Limits"
+title: "Batas Otoritas Fabricator P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: P-63 Fabricator Authority Limits
+# Batas Otoritas Fabricator P-63
 
-ID LOC HOLD: P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.
+P-63 adalah meja kerja pertama, bukan jalan keluar planet. Ia bisa menambal bocor, memasang clamp, menyelamatkan alat, dan membuat pinger murah. Selongsong naik, seal bersertifikat kedalaman, dan kontak dorong tetap terkunci sampai pemain membawa material lebih dalam, stempel otoritas, dan riwayat tekanan. Crafting menjadi bukti dan rekayasa, bukan sekadar menu kemajuan.
 
 ## Scanner
 
-ID LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 menerima gasket, clamp, pinger, dan kontak cutter, tetapi menolak komponen ascent-rated tanpa bukti lebih dalam.
 
 ## Terminal
 
-ID LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair butuh pressure certificate, material olahan vent, atau route authority stamp.
 
 ## Audio
 
-ID LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+Mesin ini bisa menyelamatkan pagimu. Ia tidak bisa memaafkan orbitmu.
 
 ## Field Note
 
-ID LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+Ini bukan dinding crafting acak. Mesin menolak membuat bagian pelarian tanpa bukti tekanan.
 
 <!-- In-Game Wiki; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/id_ID. -->

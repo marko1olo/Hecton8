@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Basin Pressure Gate"
+title: "Drukpoort van het Atlas-bekken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Basin Pressure Gate
+# Drukpoort van het Atlas-bekken
 
-NL LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+De laatste afdaling houdt harde sciencefiction onder de angst. De bodem opent via drukratings, beschadigde autoriteit, belastingbewijzen en een machine die Deep Reach-vormige sleutels nog meer vertrouwt dan een levende claimant.
 
 ## Scanner
 
-NL LOC HOLD: Basin gate requires pressure proof and authority response.
+De bekkenpoort vraagt drukbewijs, routeautoriteit en een lichaam dat ze kan classificeren.
 
 ## Terminal
 
-NL LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: drukbewijs onvolledig. Pakklasse geaccepteerd onder afdaaldrempel. Authority clamp herkent ingetrokken Deep Reach-patroon, niet de huidige claimant. Handmatige override vereist lokale belasting, ontvangerkeuze en getuige-payload.
 
 ## Audio
 
-NL LOC HOLD: It knows the old key. It does not know you.
+Ze kent de oude sleutel. Ze kent jou niet.
 
 ## Field Note
 
-NL LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+De finale drempel moet lezen als een servicepoort naar een levende fabriek, niet als een fantasyportaal.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/nl_NL. -->

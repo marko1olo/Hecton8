@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Worker Community Notice"
+title: "Доска рабочих контактов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Worker Community Notice
+# Доска рабочих контактов
 
-RU LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Доска рабочих контактов - маленький социальный документ с жестким краем. На ней ряды коек, ведущие маршрутов, свидетели медблока, контакты инструментальной и окна связи. Сначала это выглядит как учет, пока не становится ясна логика давления: внешний контакт может скорбеть, спорить и помнить, но не успеет к люку раньше воды.
 
-## Scanner
+Поэтому экстренный контакт на HECTON-8 означает: на станции, обучен, доступен по тону и допущен к маршруту работника. Определение суровое, но не бездушное. Так забота выглядит там, где пропущенное возвращение может стать путем затопления.
 
-RU LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-RU LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-RU LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-RU LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Доска связывает бытовые улики в сеть общины. Ключ насоса в одном артефакте, правка водного журнала в другом, подпись на инструменте в третьем: каждая отметка привязывает одного усталого работника к другому. Получается не мелодрама, а правдоподобное поселение под давлением, где ответственность стала формой близости.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/ru_RU. -->

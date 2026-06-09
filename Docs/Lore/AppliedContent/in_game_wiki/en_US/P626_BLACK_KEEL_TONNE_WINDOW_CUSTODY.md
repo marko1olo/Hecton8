@@ -21,20 +21,22 @@ localization_flags: 0
 
 A Keelmark receipt explains why Black Keel speaks in mass before it speaks in rescue. The carrier runs on tonne-window custody: a legal slot matched to a physical payload, an insurance exposure and a phase of the route clock. A living body, a sealed evidence core, a cut of Xenon-Omega process material and a crate of recoverable hull all compete for the same window if the contract places them on the same line. The system is cold, but it is not random. It tells the player what the frontier values and which choices will travel home first.
 
+The ugly part is that Black Keel can be honest while still being cruel. If the player increases proof value, a packet may climb the queue before the body. If the player carries contaminated material, quarantine can eat the window. If the player proves Deep Reach liability, hidden priority hooks may try to seize custody before public evidence escapes. A tonne-window is not a wallet number. It is a physical promise with legal teeth.
+
 ## Scanner
 
-CUSTODY LINE // Accepted tonne-window mass may be salvage, evidence, body or debt object. A heard packet does not assign lift priority; it assigns liability.
+Keelmark receipt. One tonne-window maps payload mass, route phase, insurance exposure, quarantine class and recovery priority into a single carrier slot.
 
 ## Terminal
 
-KEELMARK MASS RECEIPT // Window grants custody to a slot, not mercy to a person. Overmass payloads roll to next pass unless claim value, quarantine class and carrier geometry clear together.
+TONNE-WINDOW CUSTODY // 4.8 tonne-window lien active. Living contractor, sealed evidence core, Xenon-Omega process cut and recoverable hull crate share recovery class unless reprioritized by custody proof. Human status alone insufficient for full-window override.
 
 ## Audio
 
-Black Keel debt audio: I can carry proof, metal or you. The ledger will ask which one keeps the ship solvent.
+Black Keel speaks in tonnes because tonnes are what the window can carry.
 
 ## Field Note
 
-When the carrier says accepted mass, it is not saying accepted person. Tie your proof to your suit before the ledger asks you to choose.
+A tonne-window is not money. It is permission for mass to leave.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/en_US. -->

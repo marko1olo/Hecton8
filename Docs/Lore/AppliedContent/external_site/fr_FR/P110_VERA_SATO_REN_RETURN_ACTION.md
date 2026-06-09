@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren : action de retour"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren : action de retour
 
-FR LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren : action de retour est le pont entre l'ancien désastre Deep Reach et la campagne présente du joueur. Elle représente le Bureau de conformité récupération en 2190, là où Deep Reach n'a plus besoin d'être dans la pièce pour exercer une force. Il envoie des paquets d'action de retour.
 
-## Scanner
+Le paquet demande coordonnées, preuve XO, état d'accès Atlas et silence contractant dans une fenêtre de garde. Cette forme compte. La menace n'est pas un discours. La menace est le calendrier. Si la charge est récupérable, Deep Reach peut offrir sauvetage, couverture juridique ou accès transporteur. Si le risque de preuve grandit, le même système peut transformer le joueur en responsabilité.
 
-FR LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-FR LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-FR LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-FR LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Cet article garde la faction ancrée. Deep Reach est dangereux parce qu'il reste procédural, solvable et patient. Il veut récupération avant sauvetage et garde avant vérité. Sato-Ren est le bord humain de cette machinerie.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/fr_FR. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Authority Last Check"
+title: "בדיקת סמכות payload אחרונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Authority Last Check
+# בדיקת סמכות payload אחרונה
 
-HE LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+הסוף של HECTON-8 אינו רק אם השחקן שורד. הוא מי מקבל את הראיה ומה מותר למקלט הזה לעשות עם האוקיינוס אחרי שהעד עוזב.
 
 ## Scanner
 
-HE LOC HOLD: Payload check: receiver changes meaning, not only reward.
+בדיקת payload: בחירת מקלט משנה בעלות, לא רק תגמול.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: בחר מקלט, מסה, משמורת ראיות, תוצאה אקולוגית ואחריות לאחר חזרה. בחירת המקלט מגדירה מי רשאי לפעול על סמך הראיה לאחר העזיבה.
 
 ## Audio
 
-HE LOC HOLD: What leaves will own what remains.
+מה שייצא יחזיק במה שיישאר.
 
 ## Field Note
 
-HE LOC HOLD: Use immediately before irreversible ending route selection.
+להשתמש מיד לפני בחירת מסלול סוף בלתי הפיכה.
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/he_IL. -->

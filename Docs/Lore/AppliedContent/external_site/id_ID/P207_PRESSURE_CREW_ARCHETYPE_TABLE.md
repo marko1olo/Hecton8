@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Tabel Arketipe Kru Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Tabel Arketipe Kru Tekanan
 
-ID LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Arketipe kru tekanan mengubah pemeran pekerja HECTON-8 menjadi sejarah kerja yang bisa dibaca. Koloni tidak dijelaskan pertama-tama oleh biografi; ia dijelaskan oleh kerja. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, dan Payload Witness memberi setiap nama fungsi, tempat dalam ekonomi laut, dan alasan untuk muncul sebagai bukti. Dengan begitu lore muncul lewat benda dan rute, bukan eksposisi yang terlepas.
 
 ## Scanner
 
-ID LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Kru adalah kata kerja sebelum menjadi latar: memompa, menyegel, merelay, memetakan, menempa, men-triase, membudidayakan, menyaksikan.
 
 ## Terminal
 
-ID LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, dan Payload Witness. Setiap identitas pekerja terikat ke keluarga kru sebelum detail pribadi. Ini menjaga bukti tetap terkait dengan mesin, rute, kegagalan tekanan, budaya pangan, hukum salvage, dan rantai payload terakhir.
 
 ## Audio
 
-ID LOC HOLD: Job first. Memory second. That is how the colony survives.
+Pekerjaan dulu. Ingatan kemudian. Begitulah koloni bertahan di atas kertas.
 
 ## Field Note
 
-ID LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Pekerja mati terbaca lebih jernih ketika ruangan masih membutuhkan pekerjaan yang ia kuasai.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/id_ID. -->

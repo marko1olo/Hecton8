@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Worker Locker Nameplate Sample"
+title: "作業員ロッカー銘板サンプル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Worker Locker Nameplate Sample
+# 作業員ロッカー銘板サンプル
 
-JA LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+作業員ロッカー銘板サンプルは、HECTON-8 がまだ仕事を持つ物体を通じて人を記憶する方法を示す。Ren Okoye は伝記で紹介されない。ロッカー銘板はルート、工具認証、食券、手袋サイズ印、そして何が重要か知らない誰かに削られた給与ストライプを与える。だからこのアーティファクトは機能する。企業の抹消が不器用であり得ると証明する。payline は消えるが clamp route は残る。status は上書きされるが、手袋サイズ印はまだ実在の手に合う。プレイヤーはまず労働を通じて名前を読み、その後、失われた会計行の暴力を感じるべきだ。
 
 ## Scanner
 
-JA LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye の銘板は名前を残した。給与行を消す方が、仕事を消すより簡単だったからだ。
 
 ## Terminal
 
-JA LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-JA LOC HOLD: Name retained. Payline erased.
+名前は残った。給与行は消えた。仕事はまだ結びついている。
 
 ## Field Note
 
-JA LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / テープ下に食券。給与ストライプは削られ、手袋サイズ印はまだ見える。
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ja_JP. -->

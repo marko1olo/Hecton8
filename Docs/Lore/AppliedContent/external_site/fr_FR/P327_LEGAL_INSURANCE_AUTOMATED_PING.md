@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Legal Insurance Automated Ping"
+title: "Ping automatique juridique d'assurance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Legal Insurance Automated Ping
+# Ping automatique juridique d'assurance
 
-FR LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+Le Ping automatique juridique d'assurance est une expression compacte de l'horreur bureaucratique de HECTON-8. Le Deep Reach actuel peut parler par les systèmes automatisés de garde d'assurance aussi efficacement que par une personne. Le système demande ce que transporte le survivant avant de demander s'il faut le sauver.
 
 ## Scanner
 
-FR LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Ping automatique reçu. Le langage de sauvetage a été remplacé par preuve de receveur, classe de masse et statut de garde.
 
 ## Terminal
 
-FR LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status : insufficient / requis avant recovery-window assignment : mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-FR LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+La première chose qu'ils demandent n'est pas si vous êtes vivant. C'est ce que vous portez.
 
 ## Field Note
 
-FR LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Candidat bark court aux seuils de route. À utiliser rarement ; la cruauté est dans ce que le système demande d'abord.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/fr_FR. -->

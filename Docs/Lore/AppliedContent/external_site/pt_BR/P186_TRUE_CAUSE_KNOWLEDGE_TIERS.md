@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Camadas de Conhecimento da Causa Real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Camadas de Conhecimento da Causa Real
 
-PT LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+Camadas de Conhecimento da Causa Real é o mapa do saber corporativo por trás de HECTON-8. O artigo separa provas por escritório não para desculpar a Deep Reach, mas para tornar o crime mais crível: dados oceânicos, ponderação de IA, lei de evacuação, conversão de seguro e conformidade de recuperação seguravam partes diferentes da mesma cadeia fatal. O horror não é uma ordem oculta dizendo “matem a colônia”. O horror é uma empresa construída para que cada mesa veja uma verdade parcial, proteja sua métrica e passe o resto moral adiante até que resgate vire evento de responsabilidade.
 
 ## Scanner
 
-PT LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+A Deep Reach conhecia a verdade em fatias: margens de maré num escritório, ponderação Atlas em outro, atraso de evacuação e conversão de reivindicação em outro lugar.
 
 ## Terminal
 
-PT LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: equipes de maré registram perda de margem; Risk aceita exposição de cauda; Atlas Safety pondera continuidade acima da evacuação; jurídico segura liberações; Keelmark converte mortes em perda recuperável; Recovery Compliance pede carga antes da divulgação.
 
 ## Audio
 
-PT LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Ninguém precisou escrever “deixem morrer”. A tabela já sabia como.
 
 ## Field Note
 
-PT LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Ignorância distribuída não era inocência. Era arquitetura.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/pt_BR. -->

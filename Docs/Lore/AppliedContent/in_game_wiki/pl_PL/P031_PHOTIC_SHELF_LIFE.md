@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Życie półki świetlnej"
+title: "Życie półki fotycznej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Życie półki świetlnej
+# Życie półki fotycznej
 
-Półka świetlna jest pierwszą żywą linią bazową po uszkodzonym zrzucie. Światło Ran-Aegir dociera do górnej wody, a półka odpowiada matami karmionymi minerałami, przezroczystymi pasaczami, pressureweed i glonami szlakowymi. Maty rozjaśniają skałę i utrzymują małe kieszenie tlenu; szklane pasacze wycinają w glonach czytelne pasy; pressureweed ugina się, zanim fala albo ruch drapieżnika dotrze do gracza; glony szlakowe znaczą prąd, który może zanieść pływaka do liny albo od niej. Ta strefa musi być piękna, bo HECTON-8 był wart pożądania. Musi też pozostać groźna: burze, zła widoczność, płytkie drapieżniki i zerwana lina powrotna mogą zmienić jasną wodę w pułapkę, zanim pojawią się głębsze rafy kablowe lub tkanka naprawcza Atlas.
+Półka fotyczna jest pierwszą żywą bazą po uszkodzonym zrzucie. Światło Ran-Aegir dociera do górnych 0-250 m, a półka odpowiada obiektami, które nurek może czytać: matami tlenowymi na bazalcie, pasami glass-grazer w algach, pressureweed zgiętym przed falą i algami trasy znaczącymi prąd z powrotem do linii schronu.
+
+Żaden z tych znaków nie jest zgodą. Jasna mata tlenowa może ukrywać skażony szew. Świeży pas grazers może oznaczać bezpieczne przejście albo stado rozproszone przez płytkiego drapieżnika. Pressureweed ostrzega przed pogodą, przesunięciem drapieżnika lub impulsem ciśnienia z infrastruktury serwisowej niżej. Algi trasy pokazują drogę do domu, dopóki muł sztormowy albo luźna lina nie przesuną prądu. To rodzimy punkt porównania przed rafami kablowymi i tkanką naprawczą Atlas: księżyc był żywy, czytelny i niebezpieczny, zanim maszyny zaczęły używać życia jako materiału serwisowego.
 
 ## Scanner
 
-BIOTA PÓŁKI ŚWIETLNEJ // Potwierdzono żywe maty, szklane pasacze, pressureweed i glony szlakowe. Jasna woda daje tlen i znaki trasy; nie wybacza złej pogody, drapieżników ani zgubionej liny powrotnej.
+SKAN PÓŁKI FOTYCZNEJ // Mata tlenowa na krawędzi bazaltu. Świeży pas glass-grazer przecina zielony porost. Pressureweed zgięty na zachód przed falą. Algi trasy znaczą prąd do linii schronu. Ryzyka: przejście płytkiego drapieżnika, muł sztormowy, luźna lina powrotna.
 
 ## Terminal
 
-BADANIE PÓŁKI: rodzima ekologia fotyczna poza dominacją napraw Atlas. Próbki bazowe: mata tlenowa, ślad przezroczystego pasacza, linia ugięcia pressureweed, kilwater glonów szlakowych. Przed zbiorem porównać ze wzrostem raf kablowych i tkanką blizn napraw.
+POMIAR BAZOWY PÓŁKI
+Głębokość: 0-250 m
+Próbka A: mata tlenowa / zasilanie mineralne / mała kieszeń oddechowa
+Próbka B: pas glass-grazer / świeże cięcie / rozproszenie przez drapieżnika nieznane
+Próbka C: ugięcie pressureweed / zachodni skłon przed falą
+Próbka D: algi trasy / prąd wraca do linii schronu
+Porównać z: matą korzeni kablowych, tkanką blizny naprawczej, biofilmem bramy ciśnienia
 
 ## Audio
 
-Pierwsza żywa woda nie jest łaską. To linia bazowa, przez którą można przepłynąć.
+Widzę prąd powrotny. Przypnij się, zanim pójdziesz za kolorem.
 
 ## Field Note
 
-Pierwszy kolor nie jest łaską. To księżyc pokazuje, jak wyglądała normalność, zanim nauczyły się jej maszyny.
+Jasna woda jest użyteczna, zanim stanie się bezpieczna. Policz kolor maty, pasy grazers, zgięcie weed i napięcie liny, zanim jej zaufasz.
 
 <!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/pl_PL. -->

@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Article public sur la ressource Blue Debt
 
-Blue debt est le nom de frontière du Xenon-Omega-bearing pressure substrate sur HECTON-8. Il peut apparaître comme minéral riche en saumure, poche de clathrate, contamination de pressure glass, réseau lié à un biofilm ou matériau industriel de containment endommagé. Sa valeur vient du calcul, du containment et du stockage en milieu extrême. Son danger vient de la garde: chaque échantillon demande qui le possède, qui l’a certifié et qui sera blâmé s’il change d’état.
+Blue debt n'est pas un minerai magique. C'est l'argot de frontière pour un substrat de pression porteur de Xenon-Omega: poches minérales saumâtres, couches de clathrate, contamination de pressure glass, réseau lié au biofilm et matériau de confinement abîmé qui a survécu là où l'équipement ordinaire échoue. Sa valeur vient d'une histoire sous pression. Un échantillon peut garder des traces de calcul, un comportement de confinement, une mémoire capteur ou des états chimiques que seule HECTON-8 pouvait produire.
 
-## Scanner
-
-L’argot est honnête. Le nom officiel cache la responsabilité: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-NIVEAU ARTICLE PUBLIC / BLUE DEBT
-autorisé: comportement d’échantillon, chimie de pression, porteurs clathrate et saumure, valeur de containment, usage computationnel, risque de garde
-verrouillé: tables exactes de recettes, réglage payout, routes substrate Atlas de fin de jeu
-note éditoriale: pas de minerai magique, pas de fantasme de loot brillant, pas de propriété propre.
-
-## Audio
-
-Ils l’ont appelé blue debt parce que chaque gramme utile devait déjà à quelqu’un de la pression, des papiers ou du sang.
-
-## Field Note
-
-S’il brille comme un trésor, réécris. Blue debt doit sembler utile, humide, réglementé, instable et déjà contesté.
+Le mot debt compte. Quelqu'un a déjà payé la formation de cette matière par l'infrastructure, le travail, le temps et le risque. Un morceau propre peut porter exposition de quarantaine, garde Deep Reach, pénalité de masse Black Keel et valeur de preuve en même temps. Le prendre n'est pas miner; c'est contester un registre de route.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/fr_FR. -->

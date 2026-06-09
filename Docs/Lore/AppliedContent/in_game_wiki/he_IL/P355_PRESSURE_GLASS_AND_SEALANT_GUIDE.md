@@ -19,15 +19,15 @@ localization_flags: 1
 
 # מדריך זכוכית לחץ וחומר איטום
 
-Pressure glass הוא המקום שבו גיאולוגיה פוגשת את Atlas. Repair network משתמש בסדקים קיימים, קצוות מינרליים ו-pressure memories כנתיבים, ולכן עדשה שימושית יכולה להיות גם גבול חי.
+זכוכית לחץ היא המקום שבו גאולוגיה פוגשת את Atlas. סדקים ישנים, קצוות מינרלים, תפרי ביופילם וזיכרון מאמץ נעשים נתיבים לכימיית תיקון, ולכן עדשה שימושית יכולה להיות גם גבול חי.
 
 ## Scanner
 
-שבר pressure-glass נאטם בכימיית Atlas. lens stock בטוח רק אם seal map נשארת שלמה.
+שבר בזכוכית לחץ נאטם בכימיית Atlas. מלאי עדשות בטוח רק כל עוד מפת האיטום שלמה.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass מתעד tide stress ישן. Atlas sealant עוקב אחרי הסדקים האלה כי הסדקים כבר מתארים את קווי הכשל של המערכת.
+מדריך שדה: זכוכית לחץ מתעדת מאמץ גאות ישן. חומר האיטום של Atlas עוקב אחר הסדקים כי הסדקים כבר מתארים את קווי הכשל של המערכת.
 
 ## Audio
 
@@ -35,6 +35,6 @@ FIELD GUIDE: pressure glass מתעד tide stress ישן. Atlas sealant עוקב 
 
 ## Field Note
 
-אל תשייף את הקצה היפה. עקוב אחרי fracture map וחתוך מהצד המת של ה-seal.
+אל תשייף את הקצה היפה. עקוב אחרי מפת השברים וחתוך מן הצד המת של האיטום.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/he_IL. -->

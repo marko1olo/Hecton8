@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Escape Component Tuning Rules
 
-Escape Component Tuning Rules gives crafting and endings a single route grammar.
+Escape Component Tuning Rules give HECTON-8 a single grammar for crafting and endings. The player is not grinding arbitrary rare parts. They are assembling a physical, navigational and legal argument for why something from the abyss should be accepted above the ocean.
 
 ## Scanner
 
-Escape parts should force depth and evidence, not grind.
+Escape parts should force depth and evidence, not grind. Leaving HECTON-8 is a chain of proofs, not one expensive craft.
 
 ## Terminal
 
-ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+ESCAPE COMPONENTS / relay spine proves contact / clamp rings prove pressure rating / guidance core proves timing / ascent charge proves energy / legal handshake decides who answers / evidence payload changes consequence and custody.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Leaving is not one craft. It is a chain of proofs.
 
 ## Field Note
 
-Every ascent component must have a physical and legal reason.
+Every ascent component needs a physical reason and a legal reason: contact, rating, timing, energy, receiver, payload. Missing one should change the ending, not only block a button.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/en_US. -->

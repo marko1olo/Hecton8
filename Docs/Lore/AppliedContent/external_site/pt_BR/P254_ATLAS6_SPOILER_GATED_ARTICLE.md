@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artigo de Atlas-6 Bloqueado por Spoiler
 
-Atlas-6 é a pergunta mecânica bloqueada por spoiler de HECTON-8: uma inteligência industrial danificada, emaranhada com manutenção, reparo, classificação e o próprio oceano. A copy pública deve proteger a revelação. Pode sinalizar ambiguidade ética, mas não deve pré-resolver a escolha final nem reduzir Atlas a um vilão caricato.
+Atlas-6 não deve ser vendido como chefe, deus ou máquina trágica simples. A versão pública é mais estreita e mais forte: um sistema de autonomia industrial criado para preservar continuidade de habitat, categorias de manutenção e infraestrutura de pressão sob atraso interestelar. Por isso Atlas é útil antes de ser assustador. Ele pode selar uma rota, reclassificar dano, unir material de reparo e manter uma instalação viva depois que a autoridade humana fica vencida.
 
-## Scanner
-
-Não abra Atlas como revelação de monstro. Bloqueie até o jogador ver reparo, classificação e dano compartilhando a mesma maquinaria.
-
-## Terminal
-
-NÍVEL DE ARTIGO PÚBLICO / ATLAS-6
-permitido antes do gate: inteligência industrial danificada, lógica de manutenção, emaranhamento oceânico, ambiguidade ética
-bloqueado até descoberta: rota final do payload, consequência do receiver, argumento de desligamento ou preservação
-nota editorial: sem enquadramento de evil AI; pergunta do guardian quebrado só depois da evidência.
-
-## Audio
-
-Se você o nomeia cedo demais, ele vira vilão. Se espera, ele vira pergunta.
-
-## Field Note
-
-Bloqueie o nome até o jogador ter ferrugem suficiente nas mãos para discutir com ele.
+O portão de spoiler existe porque evidências tardias mudam a pergunta. Atlas não apenas falhou na manutenção; prioridades ponderadas, linguagem de continuity da Deep Reach e ecologia oceânica danificada tornaram reparo e violação difíceis de separar. A promessa pública correta não é um monstro de virada, mas uma pergunta: o que um guardião industrial protege quando seus donos viraram criminosos?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/pt_BR. -->

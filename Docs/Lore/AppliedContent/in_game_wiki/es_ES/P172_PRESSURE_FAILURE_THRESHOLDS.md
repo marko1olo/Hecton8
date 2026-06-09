@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Umbrales de fallo por presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Umbrales de fallo por presión
 
-ES LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+Los Umbrales de fallo por presión hacen que el salvamento de HECTON-8 sea físico y no abstracto. Un contenedor no es seguro porque su nombre aparezca verde en el inventario. Es seguro porque carcasa, junta, abrazadera, marca de prueba e historial de ruta siguen de acuerdo con la profundidad que lo rodea. Los umbrales también son una regla de justicia para el jugador. Antes de que un fallo se convierta en pérdida, el mundo debe hablar: un sello hace tic, una junta deriva, una abrazadera vibra, una fisura fina brilla, una floración salina crece, un retorno acústico se vuelve fantasma o una niebla de muestra muerta empaña el vidrio. Cada señal significa lo mismo en distintos niveles: el material ha pasado de objeto útil a peligro local. Eso permite que craft, UI y audio ambiental compartan el mismo lenguaje de advertencia. El jugador es castigado por ignorar la presión, no por no leer matemáticas ocultas.
 
 ## Scanner
 
-ES LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Una buena muestra se vuelve peligrosa al cruzar la línea de presión equivocada. Al océano no le importa que la etiqueta casi fuera correcta.
 
 ## Terminal
 
-ES LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+FALLO DE PRESIÓN / shallow-rated: tic de sello y avance de agua / industrial-rated: deriva de junta y vibración de abrazadera / brine-rated: fisura fina y floración salina / abyssal-rated: eco fantasma, niebla de muestra muerta / Atlas-rated: bloqueo de custodia antes de pérdida estructural.
 
 ## Audio
 
-ES LOC HOLD: Pressure does not care that the label was almost right.
+A la presión no le importa que la etiqueta estuviera casi bien.
 
 ## Field Note
 
-ES LOC HOLD: Failure thresholds should be readable before they punish.
+Los umbrales deben leerse antes del castigo: tic, deriva, fisura fina, floración salina, niebla de muestra muerta. Si el jugador aprende solo tras perder, el mundo hace trampa.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/es_ES. -->

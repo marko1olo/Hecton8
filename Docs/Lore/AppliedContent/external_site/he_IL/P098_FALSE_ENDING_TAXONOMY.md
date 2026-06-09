@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "טקסונומיית סופים כוזבים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# טקסונומיית סופים כוזבים
 
-HE LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+טקסונומיית הסופים הכוזבים מסבירה את מבנה המשחק החוזר: יציאה יכולה להיות ממשית, רווחית, ועדיין לא שלמה מוסרית. ה-dossier שומר ידע בין ניסיונות, בעוד לחץ, חוב ואמת ציבורית קובעים אם הסוף הוא רק בריחה או חשבון אמיתי.
 
 ## Scanner
 
-HE LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+לוח סופים. יש יציאות אמיתיות מספיק כדי להיספר, ושגויות מספיק כדי להכאיב.
 
 ## Terminal
 
-HE LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+משפחות סיום: תשלום חומרי; יציאה חלקית וחזרה לאותו seed; תפיסה תאגידית; החזקת הסגר; פרסום פנקס ציבורי; פתרון אגן Atlas. רשומות תוצאה חייבות להפריד בין מטען, הוכחה ומצב חוב.
 
 ## Audio
 
-HE LOC HOLD: Leaving is not the same as finishing.
+לצאת מן המים אינו אותו דבר כמו לסיים את העבודה.
 
 ## Field Note
 
-HE LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+סוף כוזב אינו תרגיל. זו עסקה תקפה שחסרה בה אמת.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/he_IL. -->

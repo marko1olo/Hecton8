@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Regeln für Marauder-Korrekturmarken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Regeln für Marauder-Korrekturmarken
 
-DE LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Regeln für Marauder-Korrekturmarken erklären, wie HECTON-8 späteren Bergungsleuten erlaubt, alte Beweise zu berühren, ohne den Kanon zu brechen. Korrekturmarken legen eine lebendige Schicht über Konzernpapier: Namen bewahren, Kategorie anfechten, Route warnen, Probe bepreisen, Zeuge verstecken oder Schuld markieren. Sie lassen Replay-Beweise von anderen Anspruchsarbeitern behandelt wirken, während jede handschriftliche Änderung funktional bleibt.
 
 ## Scanner
 
-DE LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Eine Korrekturmarke kann einen Namen retten, einen Anspruch vergiften oder den nächsten Taucher warnen, dass die offizielle Kategorie lügt.
 
 ## Terminal
 
-DE LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: Marauder-Marken müssen Beweisinterpretation, Routenrisiko oder Auszahlungsdruck verändern. Gültige Marken bewahren einen Arbeiternamen, fechten eine Versicherungskategorie an, warnen vor einer Route, bepreisen eine Probe, verstecken einen Zeugen oder markieren Schuld. Leeres Graffiti bricht die Beweiskette.
 
 ## Audio
 
-DE LOC HOLD: Somebody came before you and still failed to leave clean.
+Jemand war vor dir hier und konnte trotzdem nicht sauber gehen.
 
 ## Field Note
 
-DE LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Marken: Namen bewahren, Kategorie anfechten, Route warnen, Probe bepreisen, Zeuge verstecken, Schuld markieren. Handschrift muss die Lesart ändern, nicht die Requisite dekorieren.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/de_DE. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conversão de perda da continuidade claim"
+title: "Conversão de perda por continuidade de reivindicação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conversão de perda da continuidade claim
+# Conversão de perda por continuidade de reivindicação
 
-O elo final da mentira Deep Reach não é um arquivo dramático de encobrimento. É uma conversão contábil que sabe sobreviver. O ledger aceita que pessoas sumiram, módulos foram danificados e rotas foram comprometidas, então move cada fato para uma categoria que o sistema de claim consegue processar. Ausência de trabalhadores vira unrecoverable loss. Evidência vira material sob custody. Carga sobrevivente vira recoverable value. O claim em si permanece continuous, o que permite à propriedade sobreviver à colônia. Aqui HECTON-8 deixa de ser registro de acidente e vira maquinaria moral. Um jogador que leva o ledger para cima pode expor os mortos, vender a prova, enterrá-la ou redirecioná-la. O documento vale porque a corporação já treinou o mercado para valorizá-lo.
+A conversão de perda é o documento mais quieto da cadeia e o mais difícil de perdoar. Ele não discute a Grande Maré, a fila de evacuação, a ponderação Atlas ou a quarentena. Ele aceita o dano resultante e o organiza em colunas que podem passar por receptores, seguradoras e conselhos de custódia.
 
-## Scanner
-
-Carimbo da mesa de perdas recuperado. O ledger sobreviveu melhor que os trabalhadores que renomeou.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-É aqui que pessoas viraram uma coluna limpa.
-
-## Field Note
-
-Nota de saqueador: um ledger pode lembrar dos mortos e ainda gastá-los.
+Essa organização é a saída de emergência da Deep Reach. A força de trabalho biológica vira perda irrecuperável. O material permanece recuperável. A custódia de provas segue ativa porque a reivindicação ainda tem valor. A pessoa que carrega o pacote é perigosa porque o pacote liga cada decisão anterior à mesma linha do livro-razão. A empresa não apenas sobreviveu ao desastre; construiu um caminho limpo de propriedade através dos mortos.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pt_BR. -->

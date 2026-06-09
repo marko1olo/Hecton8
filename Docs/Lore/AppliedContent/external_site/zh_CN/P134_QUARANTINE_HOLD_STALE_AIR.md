@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "隔离扣留：陈旧空气"
+title: "隔离滞留：陈旧空气"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 隔离扣留：陈旧空气
+# 隔离滞留：陈旧空气
 
-隔离扣留是最安静的假出口。房间里不需要反派。表格写着活体回收，空气计数器写着配给启用，下一扇门只会在污染审查、claimant挑战和保险损失审查之后开启。
+隔离滞留是最安静的虚假出口。它不需要威胁、可见守卫或戏剧性背叛。系统只需把承包者活着回收，封存证人，计量空气，并让下一步取决于没人能快速完成的审查。
 
-这个结果残酷，因为它可以被辩护。没有人杀死证人。没有人销毁样本。系统只是让每一份陈述等待得比尸体曾经能等待的时间更久。玩家活过海洋，进入一条由程序建成的密封走廊。
+它的残酷可以逐行辩护。没人销毁样本，没人处决证人，没人说真相为假。程序只是让每一次呼吸都变成有条件，让每一句话都等到死者再也无法被帮助。
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/zh_CN. -->

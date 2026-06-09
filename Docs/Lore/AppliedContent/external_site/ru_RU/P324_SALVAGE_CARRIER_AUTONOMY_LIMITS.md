@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Пределы автономии salvage carrier
 
-Пределы carrier держат HECTON-8 приземленным: autonomy покрывает accounting и recovery, не невозможное спасение под океанским давлением.
+Пределы автономии salvage carrier удерживают HECTON-8 на земле. Black Keel опасен потому, что одновременно полезен и ограничен. Он выполняет учет и recovery work, делающие побег возможным, но его правила запрещают невозможное спасение, которого игроки ждут от личного корабля. В итоге это инфраструктура с пульсом, а не компаньон.
 
 ## Scanner
 
-Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel может двигать долг, телеметрию и низкорисковые сбросы без твоего согласия. Он не может разрешить глубокое спасение.
 
 ## Terminal
 
-AUTONOMY LIMIT: Black Keel может schedule recovery, reject contaminated mass, sell claim telemetry и drop low-risk supplies. Он не может authorize crewed descent или deep-rated rescue без insured receiver approval.
+ПРЕДЕЛЫ АВТОНОМИИ / разрешено: claim processing, продажа телеметрии, планирование recovery-window, низкорисковый ballast или supply drop, отказ contaminated mass / запрещено: crewed descent, deep-rated rescue, отмена lien, quarantine override, передача receiver ownership.
 
 ## Audio
 
-Автономный не значит свободный. Это значит, что долг может двигаться без твоего согласия.
+Автономный не значит свободный. Это значит, что долг может двигаться без твоего разрешения.
 
 ## Field Note
 
-Не использовать как combat bark; это carrier status и contract UI.
+Держать в carrier status и contract UI, не в combat barks. Автономия покрывает учет, recovery scheduling и логику отказа.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/ru_RU. -->

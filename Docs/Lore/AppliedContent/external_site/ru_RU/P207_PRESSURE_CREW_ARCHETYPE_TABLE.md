@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Таблица pressure crew archetypes"
+title: "Таблица архетипов напорных бригад"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Таблица pressure crew archetypes
+# Таблица архетипов напорных бригад
 
-RU LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Архетипы напорных бригад превращают рабочий состав HECTON-8 в читаемую историю труда. Колония объясняется не биографиями в первую очередь, а работой. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness дают каждому имени функцию, место в океанской экономике и причину появляться как улика. Так лор выходит через предметы и маршруты, а не через оторванную экспозицию.
 
 ## Scanner
 
-Бригады это verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Бригады сначала глаголы, а уже потом биографии: качать, герметизировать, ретранслировать, картировать, ковать, сортировать, выращивать, свидетельствовать.
 
 ## Terminal
 
-CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Имена сначала крепятся к route function.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness. Каждая личность рабочего привязывается к бригадной семье до личных деталей. Так улика остается связанной с машинами, маршрутами, отказами давления, пищевой культурой, законом мародерства и финальной цепью payload.
 
 ## Audio
 
-Сначала работа. Потом память. Так колония выживает.
+Сначала работа. Потом память. Так колония выживает на бумаге.
 
 ## Field Note
 
-RU LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Мертвый рабочий читается честнее, когда помещению все еще нужна работа, которую он знал.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ru_RU. -->

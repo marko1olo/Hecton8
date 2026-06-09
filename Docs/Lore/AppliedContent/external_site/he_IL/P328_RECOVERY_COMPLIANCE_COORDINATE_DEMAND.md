@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "דרישת קואורדינטות של ציות חילוץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Recovery Compliance Coordinate Demand
+# דרישת קואורדינטות של ציות חילוץ
 
-HE LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+אחרי שהמושבה נעלמה, Deep Reach לא חזרה ביד מושטת. הערוץ הנקי הראשון שלה שואל היכן הנכס, מי יכול להוכיח בעלות, והאם העד החי יסכים להסגר ולבדיקת שעבודים. ב-HECTON-8 לא מסרבים לחילוץ; מעכבים אותו עד שהוא הופך למנוף.
 
 ## Scanner
 
-HE LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+חבילה אומתה כ-Deep Reach Recovery Compliance: שפת חילוץ עטופה בדרישות קואורדינטות, משמורת וזיהום.
 
 ## Terminal
 
-HE LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+הודעת RECOVERY COMPLIANCE DR-RC-8: שדר וקטור גישה Atlas, הוכחת משמורת Xenon-Omega, מצב זיהום ביולוגי וקואורדינטות אגן נוכחיות. חילוץ רפואי מושהה עד התאמת שרשרת הנכס, שעבוד החילוץ וזכויות השליטה באתר. שידור לא מורשה עלול להוריד את עדיפות הניצול להחזקה ראייתית.
 
 ## Audio
 
-HE LOC HOLD: They can say rescue without meaning rescue.
+הם מצאו דרך לגרום לחילוץ להישמע כמו צו.
 
 ## Field Note
 
-HE LOC HOLD: Use near payload authority decisions and receiver selection.
+למקם במקום שבו השחקן יכול לבחור מה לשדר. האיום צריך להרגיש מנהלי, לא תיאטרלי: לא נאום נבל, אלא תור שיכול לקבור גוף.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/he_IL. -->

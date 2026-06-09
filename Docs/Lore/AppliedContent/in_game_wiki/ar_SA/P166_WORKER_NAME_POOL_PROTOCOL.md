@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Worker Name Pool Record"
+title: "سجل أسماء العمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Worker Name Pool Record
+# سجل أسماء العمال
 
-AR LOC HOLD: The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.
+اسم العامل في HECTON-8 سلسلة قصيرة من الأدلة. يخبر اللاعب أي نطاق أرسل الجسد إلى المحيط، وأي عمل أبقاه مفيدا، وأي مسار كان مسموحا له بدخوله، وأي جزء من الشارة بقي لاحقا في خزان أو مشبك بيان أو لوحة وردية.
+
+توجد مجموعة الأسماء كي تبدو الجولات المتكررة مأهولة من دون إعادة كتابة القانون السردي. قد يظهر فني المضخات قرب سجل الحشيات في seed، وقرب رفض medlock في آخر، لكن Great Tide ومسؤولية Deep Reach وجغرافيا المحطة لا تتغير. الذي يتغير هو ترتيب الاكتشاف، لا الجريمة.
+
+الأسماء الجيدة تبقى ملموسة. ليست نكاتا ولا مقتنيات ولا خطافات ميلودراما رخيصة. يجب أن تبدو كأناس انتظروا أجرا، علاوة ضغط، رصيد وجبة ووردية تالية. عندما يقرأ Marauder الاسم قبل أخذ الأدوات تحته، تتوقف الغرفة لحظة عن كونها حاوية وتصبح مكان عمل.
 
 ## Scanner
 
-AR LOC HOLD: Names are evidence, not collectible flavor.
+شريط الاسم // نطاق الأصل، تصريح المسار، دور الوردية وندبة الشارة تشير إلى العامل نفسه. اقرأ الاسم قبل أن يتحول الخزان إلى خردة.
 
 ## Terminal
 
-AR LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+بروتوكول الأسماء // تتكون هوية العامل من اسم ثابت، نطاق أصل، وظيفة ضغط، حرف وردية، جزء شارة وتصريح مسار. يمكن للنظام تغيير الترتيب والاقتران حسب seed، لكنه لا يحول الناس إلى ملصقات غنيمة عشوائية. الأسماء الشخصية تكتب لكل لغة؛ أما الدور والمسار والدخول فتحمل المعنى الميكانيكي.
 
 ## Audio
 
-AR LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+كان الاسم أول شيء حاولت المستعمرة تفكيكه إلى قطع.
 
 ## Field Note
 
-AR LOC HOLD: Seed names must preserve identity without making family melodrama.
+الأسماء ليست زينة. الاسم يوضح من كان مسموحا له بدخول غرفة رطبة عندما بدأت المحطة تكذب.
 
 <!-- In-Game Wiki; generated from P166_WORKER_NAME_POOL_PROTOCOL/ar_SA. -->

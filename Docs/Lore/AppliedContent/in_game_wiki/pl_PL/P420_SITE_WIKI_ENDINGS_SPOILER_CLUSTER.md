@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Zakończenia i custody payload
 
-Hub dossier zakończeń: custody, evidence, przyszłość Atlas i cena odejścia.
+Hub dossier zakończeń: każde wyjście to transfer custody, nie moralna etykieta.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, publiczna prawda, Atlas continuity i after-action records.
+Spoiler hub: custody payload, konsekwencje receiver, false exits, public proof, nacisk kwarantanny i Atlas continuity.
 
 ## Terminal
 
-SITE NAV: final payload pages trzymać za spoiler gates. Porządkować według receiver i proof ownership.
+SITE NAV: trzymać finałowe strony za spoiler gates; porządkować według kontroli nad ciałem, koordynatami, samples, Atlas records i worker proof.
 
 ## Audio
 
-Zakończenie to pytanie, kto posiada dowód po wynurzeniu.
+Wyjście nie jest końcem. To przekazanie custody.
 
 ## Field Note
 
-Zakończenia pozostają spoiler-gated i ułożone według receiver oraz custody consequence, nie według moralnych etykiet.
+Jeśli ciało ucieka, ale proof ma właściciela, ocean nie zakończył sprawy.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/pl_PL. -->

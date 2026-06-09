@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: Margin Pasang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: Margin Pasang
 
-ID LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+Artikel Iliya Varnek: Margin Pasang adalah salah satu pandangan pertama HECTON-8 tentang cara kerja tanggung jawab Deep Reach. Ia menghindari versi mudah dari kejahatan korporat. Varnek tidak perlu menekan tombol banjir. Ia menandatangani tafsir risiko.
 
-## Scanner
+Pada 2147, model Great Tide masih lulus secara rata-rata. Itulah kata yang berbahaya. Perilaku rata-rata menjaga jadwal produksi tetap hidup, sementara tumpukan ekstrem tetap berada dalam paparan pekerja: jendela pasang Aegir, pantulan rak es, lalu lintas rute bertekanan, dan ketidakpastian kompensasi Atlas. Sebuah rute bisa diterima secara statistik dan tetap mematikan bagi orang yang bertemu ekor kurva.
 
-ID LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-ID LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-ID LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-ID LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Bagi pemain, bukti ini mengubah bencana dari kecelakaan menjadi rantai keputusan. Memo Varnek bukan pengakuan. Itu dokumen yang membuat kesalahan dapat dibaca: ketidakpastian diketahui, didiskon, lalu didorong ke bawah. Horornya birokratis tanpa menjadi kering. Marginnya dibuat cukup kecil sampai pekerja bisa mati di dalamnya.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/id_ID. -->

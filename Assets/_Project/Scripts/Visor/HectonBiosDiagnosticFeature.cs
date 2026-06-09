@@ -256,8 +256,8 @@ namespace Hecton8.Visor
         private bool TryResolvePlayerObserverAup(out AbsoluteUniversePosition observerAup)
         {
             observerAup = default;
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext == null ||
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (!IsPlayerContextUsable(playerContext) ||
                 !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
                 !movementState.PredictedAup.IsFinite())
@@ -273,7 +273,7 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             _material = null;
-            CachePlayerContext(null);
+            ClearPlayerContext();
             TryUnregisterHotSwapListener();
         }
 
@@ -283,20 +283,66 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                CachePlayerContext(currentService as IPlayerRuntimeContext);
+                CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false);
         }
 
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            ClearPlayerContext();
         }
 
-        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        private IPlayerRuntimeContext ResolvePlayerContext()
         {
-            if (ReferenceEquals(_cachedPlayerContext, playerContext))
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext, bool allowRegistryFallback = true)
+        {
+            IPlayerRuntimeContext resolvedContext = IsPlayerContextUsable(playerContext) ? playerContext : null;
+            if (resolvedContext == null && allowRegistryFallback)
+            {
+                IPlayerRuntimeContext fallback = Hecton8.Core.GlobalRegistry.Player;
+                resolvedContext = IsPlayerContextUsable(fallback) ? fallback : null;
+            }
+
+            if (ReferenceEquals(_cachedPlayerContext, resolvedContext))
                 return;
 
-            _cachedPlayerContext = playerContext;
+            _cachedPlayerContext = resolvedContext;
+            InvalidateLootCache();
+        }
+
+        private void ClearPlayerContext()
+        {
+            if (_cachedPlayerContext == null)
+                return;
+
+            _cachedPlayerContext = null;
+            InvalidateLootCache();
+        }
+
+        private void InvalidateLootCache()
+        {
+            _lootCacheInitialized = false;
+            _cachedHasLoot = false;
+            _cachedLootSphereAup = default;
+            _lastLootRefreshFrame = -1;
+            _lootRefreshCounter = 0;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

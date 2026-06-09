@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Photic Shelf Survival Act"
+title: "Photic Shelf Survival Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Photic Shelf Survival Act
+# Photic Shelf Survival Gate
 
-The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+The photic shelf teaches by objects, not by comfort. The operator learns which pump housings still hold air, which seal patches buy minutes, and which bright organisms foul a tool. Atlas appears first as repair residue: useful, wrong in places, and close enough to touch.
 
 ## Scanner
 
-Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Route gate: photic shelf. Oxygen pockets, pump rooms, first cuts and shallow Atlas repair residue are readable in daylight water.
 
 ## Terminal
 
-SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+CAMPAIGN ROUTE // PHOTIC SHELF. Required: pump restart, seal patch, cable cut, scanner ping. Ascent hardware unavailable; spent cells routed to survival systems. Atlas residue classified useful with contamination caution.
 
 ## Audio
 
-The shallow water is not safe. It is only readable.
+The shallow water is not safe. It is readable.
 
 ## Field Note
 
-Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Marauder note: daylight helps. It does not make a cracked oxygen line generous.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/en_US. -->

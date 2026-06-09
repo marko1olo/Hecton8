@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Recipe Tier Pressure Bands"
+title: "Диапазоны давления для уровней рецептов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Recipe Tier Pressure Bands
+# Диапазоны давления для уровней рецептов
 
-RU LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+Диапазоны давления для уровней рецептов показывают, как HECTON-8 избегает обычного выживательного крафта. Материалы здесь не абстрактная цена, а доказательства с рейтингом давления, историей маршрута, сертификацией и юридическими последствиями. Одна структура может питать рецепты, предупреждения сканера, UI-метки уровней и лорные статьи без разрыва между геймплеем и миром.
 
 ## Scanner
 
-RU LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Рецепт HECTON-8 - это аргумент о глубине, а не список покупок. Деталь считается деталью только если переживает заявленный диапазон давления.
 
 ## Terminal
 
-RU LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+ДИАПАЗОНЫ РЕЦЕПТОВ / T0 аварийная заплата: мелководный лом, ручная герметизация, без цепочки хранения / T1 rated repair: складские промдетали, сертификат насосной / T2 pressure hardware: промывка рассолом, выдержка на венте, акустическое доказательство / T3 ascent или Atlas: бездонный источник, легальный приемник, квитанция удержания.
 
 ## Audio
 
-RU LOC HOLD: A recipe is a depth permission form with bolts.
+Рецепт - это разрешение на глубину, к которому прикручены болты.
 
 ## Field Note
 
-RU LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+Уровень рецепта должен совпадать с рейтингом давления, ценой маршрута и риском хранения. Дешевый болт в неправильном диапазоне не дешевый; это будущая течь.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/ru_RU. -->

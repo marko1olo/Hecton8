@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Tempo de preparação de frete pesado"
+title: "Tempo de preparação de carga pesada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tempo de preparação de frete pesado
+# Tempo de preparação de carga pesada
 
-Frete pesado esconde tempo dentro da infraestrutura. Hardware Atlas, carga de semeadura, estoques de blindagem e peças de frenagem podem chegar cedo porque são lançados anos antes de o discurso público de assentamento alcançá-los. Isso não torna o resgate de emergência fácil. Uma rota preparada move massa porque depósitos, janelas de feixe, fluxos de pellets e estágios de captura já estavam esperando. Uma rota de desastre não tem mais essa paciência.
+A preparação de carga pesada é onde a logística interestelar vira violência sem precisar de arma. Um anel de habitat, casco de reator, crawler de corte, costela de pressão ou estoque de comida custa demais para ser promessa casual. Acumula seguradoras, gravames, transportadoras, inspetores e cláusulas de fallback antes de chegar a Aegir.
+
+Quando as condições mudaram, a Deep Reach não precisou inventar crueldade do zero. Bastou continuar honrando a cadeia de carga. Cada tonelada já preparada exigia receptor, cada receptor exigia local de trabalho, e cada local de trabalho exigia corpos. A colônia virou a resposta humana a uma carga já paga.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/pt_BR. -->

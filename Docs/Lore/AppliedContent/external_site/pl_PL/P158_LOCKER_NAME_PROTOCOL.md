@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Locker Name Protocol"
+title: "Protokół nazw na szafkach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Locker Name Protocol
+# Protokół nazw na szafkach
 
-PL LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+Protokół nazw na szafkach czyni osobisty dowód grywalnym: imiona trwają przez przedmioty, zużycie, pozwolenie trasy i adnotację Maraudera.
 
 ## Scanner
 
-PL LOC HOLD: A locker is personal without needing a family plot.
+ŚLAD SZAFKI // Tabliczka imienna, zużycie narzędzia, pressure tape, notatka korekty, naklejka trasy. Osobisty dowód bez rodzinnej fabuły.
 
 ## Terminal
 
-PL LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+REGUŁA SZAFKI: zachować imiona, które Deep Reach usunęło z payroll. Szafka ma łączyć plakietkę, rolę, pozwolenie trasy, nawyk naprawy i niedokończoną rzecz w środku.
 
 ## Audio
 
-PL LOC HOLD: The company deleted the employee. The rust kept the label.
+Firma usunęła pracownika. Rdza zachowała etykietę.
 
 ## Field Note
 
-PL LOC HOLD: The smallest human trace should survive corporate cleanup.
+Najmniejszy ludzki ślad powinien przetrwać korporacyjne czyszczenie.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/pl_PL. -->

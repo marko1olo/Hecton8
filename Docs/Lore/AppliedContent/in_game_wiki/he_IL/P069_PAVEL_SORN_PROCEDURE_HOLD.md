@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "העיכוב הפרוצדורלי של פאבל סורן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# העיכוב הפרוצדורלי של פאבל סורן
 
-HE LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+פאבל סורן נותן לאסון HECTON-8 את הציר האנושי הרגיל ביותר שלו: פקיד חוזים מקומי שיש לו מספיק סמכות לעכב פינוי, ולא מספיק אומץ לשבור את שרשרת הסעיפים. העיכוב הפרוצדורלי שלו אינו נאום של נבל ואינו פקודת הרג סודית. זו מזכרת עבודה שנכתבה בתוך הדין של Deep Reach, שבו כל פעולה להצלת חיים חייבת לעבור הסמכה, ניתוב אחריות, חותמות רציפות של Atlas ולשון משמורת תביעות לפני שמותר לקרוא לה חילוץ. הרשומה חשובה מפני שהיא משאירה את האשמה אנושית בלי להפוך אותה לפשוטה. סורן ראה את מצוקת העובדים, הבין שתור העלייה הופך לגזר דין מוות, ובכל זאת בחר במשפט שהגן קודם על המשרד: להחזיק את האישור עד שהערוץ יתנקה.
 
 ## Scanner
 
-HE LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+פאבל סורן לא הורה על טבח. הוא עשה דבר שקל יותר לשרוד על הנייר: השאיר את אישור הפינוי במגש ההמתנה.
 
 ## Terminal
 
-HE LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. משרד חוזים / סיפון מנהלה. אישור הפינוי נשאר בעיכוב פרוצדורלי: חסרה הסמכה חיצונית, חותם הרציפות של Atlas לא נפתר, ערוץ האחריות רווי. מצוקת עובדים אושרה. אין לאשר עלייה עד להבהרת משמורת התביעה ולשון ההסגר.
 
 ## Audio
 
-HE LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+הוא המשיך לכתוב „בהמתנה” בזמן שהים לקח את הסיפונים התחתונים.
 
 ## Field Note
 
-HE LOC HOLD: Useful evil often signs in normal handwriting.
+המושבה לא מתה מפני שאדם צחק מול דלת נעולה. היא מתה מפני שלדלת היה טופס.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/he_IL. -->

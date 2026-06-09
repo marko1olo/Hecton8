@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Konversi Kerugian untuk Kontinuitas Claim"
+title: "Konversi Kerugian Kontinuitas Klaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Konversi Kerugian untuk Kontinuitas Claim
+# Konversi Kerugian Kontinuitas Klaim
 
-Rantai bukti berakhir pada konversi. Deep Reach bisa mengakui kerusakan dan tetap memegang kepemilikan jika pekerja menjadi loss, bukti menjadi material custody, dan claim tetap hidup. Itulah sebabnya pemain tidak hanya membawa kebenaran. Mereka membawa sesuatu yang sistem tahu cara beli.
+Rantai berakhir di buku besar karena buku besar dapat bertahan dari semua hal lain. Pekerja menjadi kerugian tidak dapat dipulihkan, modul rusak menjadi kustodi material, dan bukti tetap melekat pada klaim. Pembawa dokumen ini tidak membawa sentimen. Ia membawa masalah bagi setiap penerima yang menginginkan klaim tanpa tubuh.
 
 ## Scanner
 
-Stempel meja kerugian dipulihkan. Ledger bertahan lebih baik daripada pekerja yang ia beri nama baru.
+Stempel meja kerugian ditemukan. Status pekerja berubah menjadi tidak dapat dipulihkan sebelum kustodi bukti keluar dari klaim aktif.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+KERUGIAN KEELMARK // KONTINUITAS DIPERTAHANKAN. Tenaga kerja biologis dikonversi menjadi kerugian tidak dapat dipulihkan. Kustodi material dan kustodi bukti aktif menunggu penugasan penerima.
 
 ## Audio
 
-Di sinilah manusia menjadi kolom bersih.
+Di sini nama menjadi kolom bersih.
 
 ## Field Note
 
-Catatan Marauder: ledger bisa mengingat orang mati dan tetap membelanjakan mereka.
+Catatan perompak: buku besar dapat mengingat yang mati dan tetap membelanjakan mereka.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/id_ID. -->

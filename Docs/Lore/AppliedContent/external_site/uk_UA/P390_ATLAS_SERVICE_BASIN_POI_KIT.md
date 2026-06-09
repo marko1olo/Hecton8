@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Service Basin POI Kit"
+title: "Набір доказів сервісного басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Service Basin POI Kit
+# Набір доказів сервісного басейну Atlas
 
-UK LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+Сервісний басейн заслуговує свій розмір роботою. Рейки несуть ремонтний інструмент. Тканинно-залізний герметик закриває розрізи тиску. Затискачі наросту тримають панелі, які мали бути мертвим залізом. Приймальне гніздо чекає всередині простору, що досі схожий на ремонтний відсік, якщо оператор іде за болтами, а не силуетом.
 
-## Scanner
-
-UK LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-UK LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-UK LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-UK LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Фінальний конфлікт - класифікація, не містика. Старі категорії колонії, ремонтна логіка Atlas, правила приймача корисного навантаження і ризик відсікання торкаються одного заліза. Успішний ремонт може відкрити шлях і забруднити запис одним рухом. POI має показати цю ціну в металі, тканині, мітках і гніздах.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/uk_UA. -->

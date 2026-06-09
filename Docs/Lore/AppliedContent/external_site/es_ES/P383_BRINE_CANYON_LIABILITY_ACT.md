@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Brine Canyon Liability Act"
+title: "Puerta de responsabilidad del cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Brine Canyon Liability Act
+# Puerta de responsabilidad del cañón de salmuera
 
-ES LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+En el cañón, la ruta deja de parecer papeleo salvage y empieza a comportarse como expediente. Las capas de densidad conservan malos relojes. La salmuera guarda rastros que el agua ordinaria borraría. Una placa de evacuación rota puede quedar junto a un log de margen y hacer que ambos documentos pesen más.
 
-## Scanner
-
-ES LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-ES LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-ES LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-ES LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+La cadena importa porque no niega la física. La Gran Marea golpeó. La pared falló. La mentira de la compañía está en el orden de decisiones alrededor de esos hechos: margen aceptado, cola demorada, ruta dañada, reclamación protegida. El trabajo visible sigue siendo físico: escanear rastro, cruzar reloj, sacar prueba.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/es_ES. -->

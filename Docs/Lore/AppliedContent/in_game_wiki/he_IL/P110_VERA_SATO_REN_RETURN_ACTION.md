@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "ורה סאטו-רן: פעולת החזרה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# ורה סאטו-רן: פעולת החזרה
 
-HE LOC HOLD: Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+ורה סאטו-רן היא חתימת משרד ציות ההשבה משנת 2190 שנותנת ל-Deep Reach של ההווה פנים בלי להפוך אותו לנוכח פיזית בכל מקום. היא פועלת דרך חבילות, חלונות משמורת, סעיפי מובילים והוראות מושהות. הלחץ פרוצדורלי: להשיב קואורדינטות, להוכיח שרשרת XO, לדווח על מצב גישה ל-Atlas, לשמור על שקט הקבלן אם המטען עדיין ניתן לשליטה.
+
+שפת פעולת ההחזרה מסוכנת מפני שהיא יכולה להישמע כמו עזרה. חילוץ עדיין אפשרי, אך רק אחרי משמורת המטען. ניתן להציע סיוע, אך רק כל עוד סיכון חשיפת הראיות ניתן לניהול. Marauder שקורא את החבילה אינו שומע נבל צועק. הוא נמדד מול חלון שנסגר בין אם יענה ובין אם לא.
+
+בשביל השחקן, סאטו-רן הופכת את Deep Reach מאשמה היסטורית למנוף בהווה. המושבה הישנה אינה רק קבר. היא אתר תביעות פעיל. כל רישום שהושב יכול להפוך לראיה, כופר, סעיף שתיקה או משקל מיקוח לפי מי שמקבל אותו ראשון. זה האיום המודרני של Deep Reach: לא צי אויב נקי, אלא תא לחץ משפטי שמנסה להחזיק בהחזרה לפני שהאמת יוצאת מהמים.
 
 ## Scanner
 
-HE LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
+חבילת פעולת החזרה // V. סאטו-רן מתעדפת מטען בר-השבה, מצב גישה ל-Atlas ושקט של קבלן בתוך חלון משמורת צר.
 
 ## Terminal
 
-HE LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. // משרד ציות השבה // עדיפות: קואורדינטות, הוכחת XO, מצב גישה ל-Atlas, שקט קבלן אם ניתן להשבה בתוך החלון. סיוע חילוץ נותר מותנה במשמורת מטען ובסיכון חשיפת ראיות.
 
 ## Audio
 
-HE LOC HOLD: She does not need to threaten you. The window already does.
+היא לא צריכה לאיים עליך. החלון כבר עושה זאת.
 
 ## Field Note
 
-HE LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Deep Reach של ההווה צריך להגיע כמנוף לחץ, לא כמונולוג נבל. החלון הוא האיום.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/he_IL. -->

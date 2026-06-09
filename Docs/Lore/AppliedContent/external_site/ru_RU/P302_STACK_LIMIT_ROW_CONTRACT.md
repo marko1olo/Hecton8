@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Stack Limit Data Boundary"
+title: "Граница данных лимита стака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Stack Limit Data Boundary
+# Граница данных лимита стака
 
-Inventory pressure в HECTON-8 идет от массы, certification и containment.
+Давление инвентаря в HECTON-8 рождается из удержания, сертификации и зараженной массы. Игра может показывать простые стаки, но lore объясняет, почему стак безопасен, почему он ломается и почему океану плевать на иконки.
 
 ## Scanner
 
-RU LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Строка стака отвергает кучи иконок: сосуд, давление, заражение и масса решают количество.
 
 ## Terminal
 
-RU LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+КОНТРАКТ СТАКА: количество требует тип сосуда, рейтинг давления, стадию заражения, класс массы, уровень предупреждения и save-stable identity. Ящик не является напорным сосудом.
 
 ## Audio
 
-Ящик не является сосудом давления.
+Ящик не является напорным сосудом.
 
 ## Field Note
 
-RU LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Лимиты стака остаются table-owned и стабильными для save identity.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/ru_RU. -->

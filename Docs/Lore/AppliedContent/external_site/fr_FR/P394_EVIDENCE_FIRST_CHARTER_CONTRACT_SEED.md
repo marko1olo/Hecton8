@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Evidence First Charter Contract Seed"
+title: "Graine de contrat charte preuves d'abord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Evidence First Charter Contract Seed
+# Graine de contrat charte preuves d'abord
 
-FR LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Charte Preuves d'Abord change le tableau de contrat avant la descente. Le paiement matière baisse, la capacité notaire monte, les casiers de preuve passent en priorité et le démontage salvage porte une pénalité. L'opérateur entre avec une route qui protège mieux les registres que les pièces.
 
-## Scanner
-
-FR LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-FR LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-FR LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-FR LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+La pression apparaît dans de petites décisions. Une bande d'état d'écoutille peut bloquer la vente d'un panneau. Un dossier d'accident mouillé peut prendre le dernier emplacement sec. Un journal pinger peut demander un relais vivant qui aurait alimenté une réparation. La charte paie tard parce qu'elle demande de garder intacts des objets gênants assez longtemps pour qu'un récepteur hors Black Keel les lise.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/fr_FR. -->

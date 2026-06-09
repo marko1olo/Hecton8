@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Quarantine Hold Signatures"
+title: "Firmas de la puerta de revisión de cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Quarantine Hold Signatures
+# Firmas de la puerta de revisión de cuarentena
 
-ES LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+La capa de firmas de cuarentena vuelve procedimental la culpa de Deep Reach. La Great Tide creó un riesgo real de contaminación y presión; la mentira fue usar ese riesgo para mantener a personas y registros bajo custodia local mientras la revisión externa iba con retraso. Los informes públicos llamaron a ese resultado cuarentena biológica/de presión y fallo de autorización. Las tarjetas gate recuperadas añaden un dato más duro: la extracción quedó retenida por lenguaje de certificación incluso donde el hardware de ruta aún no había fallado.
 
 ## Scanner
 
-ES LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Tarjeta de revisión recuperada: extraction state HELD, campo BIO/PRESSURE-UNCERTAIN, certificado externo ausente. Liberación de ruta bloqueada por gate code.
 
 ## Terminal
 
-ES LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Cola: Evacuation release. Acción: retener extracción hasta certificado pressure-biology y revisión externa. Excepción: no hay capacidad de lanzadera independiente asignada. Human tags quedan en custodia local hasta limpiar el gate.
 
 ## Audio
 
-ES LOC HOLD: Pending review is still a locked door.
+La puerta aún tenía energía. El gate dice review pending, y la escotilla siguió en rojo.
 
 ## Field Note
 
-ES LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Pon esto junto a rutas de supervivientes bloqueadas y hardware de evacuación con batería. El campo de retención convirtió una puerta funcional en una puerta cerrada legalmente.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/es_ES. -->

@@ -1,40 +1,118 @@
 <!-- localization_status: source_authority_en_US -->
-# CORPORATE COMPLIANCE AND MARAUDER SUBCULTURE
+# MARAUDERS AND CORPORATE CULTURE
 
-> **Source:** Recovery Compliance Office, Sub-Contractor Onboarding Guide (Form 88-C).  
-> **Speaker:** Automated Intake System / Supervisor K. Ren.  
-> **Reviewer note:** Unauthorized graffiti (denoted as *[Margin Note: ... ]*) has been recovered from the interior of Styx pod 'Lazarus'. These notes outline the illicit "Marauder" subculture.
+> **Source:** Recovery Compliance Office, Subcontractor Intake Form 88-C, annotated copy recovered from descent pod *Lazarus*.  
+> **Scope:** Who Deep Reach says the player is, who Marauders say they are, and how debt, salvage law, air, and the dead shape work on HECTON-8.  
+> **Reader note:** The margin notes are not official. They are also the part most crews memorize.
 
 ---
 
-## 1. Deep Reach Corporate Structure
+## 1. The Voice That Welcomes You
 
-Welcome to the Aegir System. You are now a licensed independent contractor operating under the jurisdiction of the Deep Reach Extraterrestrial Development Combine. To ensure standardized integration, memorize the following departmental authorities:
+The first human voice a new contractor hears in the Aegir system is usually not human.
 
-*   **Aegir Continuity Holdings:** The frontier division that holds all planetary leases for HECTON-8. They are your ultimate employer.
-*   **Atlas Continuity Office:** The legal and software division managing the Atlas-6 AI core. Do not attempt to interface with Atlas-6 without authorization.
-*   **Keelmark Loss Desk:** The underwriting division. In the event of catastrophic equipment failure, Keelmark assesses the financial risk of your loss. 
-*   **Recovery Compliance Office:** We are your direct handlers on the orbital tender *Black Keel*. We issue your dive coordinates, demand proof of Xenon-Omega presence, and enforce the Contractor Silence Protocol.
+It comes through the pod wall in a flat onboarding cadence while the cabin is still sweating frost: welcome, identity confirmed, lien registered, contractor silence protocol acknowledged, no rescue entitlement implied. The message is designed to sound calm. Calm is cheaper than honesty, and it records better in later proceedings.
 
-*[Margin Note: They aren't evil masterminds. They are spreadsheets. Nobody takes the blame when you die, because the paperwork is technically flawless.]*
+Deep Reach calls the listener an independent salvage contractor. Keelmark calls them a recoverable risk unit. The Black Keel logs them as a claim-linked work body until their debt clears, their suit fails, or their file becomes inconvenient to maintain.
 
-## 2. The "Marauder" Distinction
+Marauders use a shorter word.
 
-You are officially classified as "Independent Salvage Contractors." Any reference to yourselves as "Marauders" is a violation of the corporate code of conduct. The term originates as a derogatory legal classification for crews who breach abandoned modules before Keelmark inspectors arrive. 
+They say: you are down here because somebody above you found a way to turn your need into a route.
 
-*[Margin Note: We kept the name because it scares the suits. A rescue clause in a corporate contract is just another way for them to own your corpse. We are bankrupt pilots, rogue welders, and contract-breakers.]*
+*[Margin Note: If the voice says "welcome," check your seals. If it says "opportunity," check your debt. If it says "voluntary," ask who paid for the fuel.]* 
 
-## 3. The Three Ledgers
+## 2. The Offices Above The Water
 
-As independent contractors, your pay is strictly calculated based on recovered Xenon-Omega substrate mass. Your starting lien is 4.8 tonnes (orbital lift mass) equivalent. You will work off this debt before you are allowed permanent quarters on the *Black Keel*.
+Deep Reach is not a single person making cruel choices in a clean room. That would be easier to hate and easier to kill. It is a stack of offices built so that every lethal choice can arrive as a normal administrative step.
 
-*[Margin Note: The corpo ledger is fake. The real Marauder economy runs on Air, Debt, and The Dead.*
-*Air: Counted in minutes, partial pressure, CO2 scrubber heat, and the ugly silence after a valve breaks.*
-*Debt: Counted in tool wear, battery cycles, favors, and names crossed off Keelmark's lists.*
-*The Dead: A missing worker isn't a tragedy to them; it's an "unresolved system load." We inventory the dead so the corporation can't pretend they never existed.]*
+**Aegir Continuity Holdings** holds the lease language and the long claims on HECTON-8. It does not dive. It decides what counts as productive loss.
 
-## 4. Operational Terminology
+**Atlas Continuity Office** owns the damaged classification, repair, and continuity logic that still shapes access inside the drowned colony. It does not need to be malicious. A rule that preserves "critical process continuity" can kill a person perfectly well without hating them.
 
-Please adhere to standard corporate terminology when logging incidents. "Temporary atmospheric variance" should be used for pressure fluctuations. "Asset containment priority" refers to the necessary sealing of xenon vaults during emergencies.
+**Keelmark Loss Desk** prices the world after it breaks. It assigns values to missing suits, flooded compartments, sealed evidence, and bodies that have not yet become legally dead.
 
-*[Margin Note: Inside a flooded complex, the only rank is competence. A cutter slices a door only after the scout marks the return route. A tech overrules a pilot when the gauges lie. A green marauder earns trust by reporting minor failures: frost blooming around a hatch, a voice echoing on a dead channel, a school of fish compressing against the current. The corpos say "asset containment." We say "they saved the xenon tank and vented the living quarters." We steal from the corporation to collect debts from the dead. It's the only thing keeping us from becoming them.]*
+**Recovery Compliance Office** is the voice closest to the contractor. It issues coordinates from the Black Keel, demands proof of recoverable material, rejects informal distress language, and reminds crews that unauthorized disclosure can void compensation.
+
+None of these offices needs to lie all the time. Most of the damage comes from telling the truth in a language built to remove blood from the sentence.
+
+*[Margin Note: They are not monsters. Monsters at least look at you. These people look at columns.]* 
+
+## 3. Why The Name Stuck
+
+"Marauder" began as an insult.
+
+Keelmark used it for crews who opened abandoned modules before inspectors arrived, stripped tools from sealed rooms, moved bodies without custody tags, or took pressure-rated parts from one claim site to survive another. The word was supposed to mark them as thieves, unreliable witnesses, and bad data.
+
+The crews kept it because it was partly true.
+
+Marauders steal. They cut corporate locks. They lie to dispatch when dispatch is using them as a disposable probe. They trade filters, heat bricks, battery cells, pressure glass scraps, old passwords, suit patches, and names. They enter places the contract calls closed because the contract never has to breathe in them.
+
+But a Marauder is not just a thief. A thief leaves with property. A Marauder leaves with property, evidence, route knowledge, and sometimes a dead stranger's name written on the inside of a glove before the sea can take it.
+
+The subculture formed out of bankrupt pilots from the frontier belts, repair welders blacklisted after Deep Reach accidents, former company divers who survived one procedure too many, and shipyard debtors from Barnard Yards who reached Aegir with more skill than legal protection. They did not arrive as a tribe. The ocean made them one, slowly, by killing people who trusted the official vocabulary.
+
+*[Margin Note: A suit calls you a Marauder when you take a pump without authorization. Another Marauder calls you one when you bring back the hand that was still holding the pump.]* 
+
+## 4. The Three Ledgers
+
+Corporate pay is simple on paper: recover material, prove chain of custody, reduce lien mass, maintain eligibility for quarters and oxygen allocation on the Black Keel. Every line is measurable. Every dispute can be delayed.
+
+Marauders keep three other ledgers because the corporate one does not describe reality.
+
+**Air** is counted in minutes, partial pressure, scrubber heat, valve noise, condensation pattern, and whether the quiet after a repair sounds like relief or warning. A rich crew with poor air discipline is already dead. A poor crew with good air discipline may still have time to become dangerous.
+
+**Debt** is counted in tool wear, battery cycles, patched suit fabric, favors owed, routes shared, lies covered, and the cost of saying no. Not all debt belongs to the company. A person who carries you through a pressure door owns part of your next breath. A mechanic who signs off on a cracked seal may own the last one.
+
+**The Dead** are counted because Deep Reach prefers disappearance to memory. A missing worker can become an unresolved load, a sealed casualty, an unverified claimant, a corrupted biometric, a file awaiting reconciliation. Marauders inventory the dead so that a name remains heavier than the paperwork trying to dissolve it.
+
+This is why salvage on HECTON-8 never feels clean. A crate of process glass can pay down a lien. A recovered badge can reopen a loss claim. A body can make a room unsafe, valuable, sacred, or legally poisonous depending on who reads the report first.
+
+*[Margin Note: Air keeps you alive. Debt keeps you moving. The dead keep you from becoming company property with a pulse.]* 
+
+## 5. Crew Law Under Pressure
+
+Corporate hierarchy works until a room floods.
+
+Inside a live route, Marauder crews follow a harder chain of authority. The scout owns the return path. The cutter owns the door only after the scout marks the way back. The suit tech can overrule the pilot if the gauges are lying. The medic can stop a profitable extraction if a pulse is still negotiating with pressure. The newest diver is allowed to call out small wrongness: frost around a hatch, a fish school pressed against current, a repeating voice on a dead channel, a clamp scar where no clamp should be.
+
+That rule exists because HECTON-8 kills through details. A proud crew dies faster than an honest one. A quiet rookie can save a veteran by naming the thing everyone else wanted to ignore.
+
+Competence is not politeness. Crews argue, curse, threaten, and refuse each other. The difference is that a good argument ends with a route, a tied-off line, a marked hazard, or a cancelled dive. A bad argument ends as a recovery contract for somebody else.
+
+*[Margin Note: Rank is for dry rooms. Down here, the person who notices first gets the floor.]* 
+
+## 6. Corporate Words For Ugly Things
+
+Deep Reach survives through language.
+
+"Temporary atmospheric variance" means pressure moved where people were breathing. "Asset containment priority" means a vault mattered more than a compartment. "Unresolved personnel state" means nobody wants to declare a worker dead while liability is still negotiable. "Local acoustic uncertainty" means the map heard something and the office would rather call it noise. "Contractor-initiated route deviation" can mean cowardice, brilliance, panic, survival, or all four in the same minute.
+
+Marauders translate those phrases because translation keeps people alive. They mark documents, rewrite warnings on hull plates, scratch plain words into hatch interiors, and name lies until the lie cannot pass as procedure.
+
+The habit looks crude to compliance officers. To a crew, it is a second instrument panel.
+
+*[Margin Note: If a label needs six words to avoid saying "flood," write FLOOD over it. Use paint if you have paint. Use blood if you are out of paint.]* 
+
+## 7. The Black Keel Is Not Home
+
+The Black Keel can look like safety from below. It has heat, food, dry rails, storage cages, arbitration rooms, med lockers, and enough distance from the water to make new arrivals sentimental.
+
+Marauders learn quickly. The Black Keel is a claim tender and custody platform. It keeps people alive because living contractors can still move value. It gives bunks the way a bank gives time: conditionally, with interest, and with the right to change terms.
+
+Still, crews make corners of it human. They trade meal heat. They mark missing names under pipe insulation. They keep unofficial repair benches in spaces too awkward for compliance inventory. They know which bulkhead carries prayers in twelve languages and which ventilation duct will carry a whisper past a supervisor's office. They know that no place owned by a claim office is home, but a borrowed table can become a crew for one night if everyone puts tools on it.
+
+That contradiction is the Black Keel's real culture. It is not a refuge. It is where people who are not supposed to belong keep proving they exist.
+
+*[Margin Note: Do not love the Keel. Learn its noises. There is a difference.]* 
+
+## 8. What The Player Inherits
+
+The player does not enter HECTON-8 as a blank explorer.
+
+They inherit a working-class route into space, a debt structure that calls itself opportunity, a damaged colony whose rooms still speak corporate language, and a Marauder culture built from practical blasphemy: cut the lock, mark the dead, share the route, mistrust the euphemism, bring back more truth than the contract requested.
+
+That makes the player dangerous in a specific way. Not because they are free. They are not. Not because they are pure. Nobody who survives long in the basin stays pure. They are dangerous because they can move between systems: corporate forms, salvage practice, pressure physics, crew loyalty, evidence, hunger, fear.
+
+Every descent asks the same question in a different shape. Are you recovering assets, or are you recovering the story Deep Reach paid to sink?
+
+Most Marauders answer badly at least once. The ocean keeps receipts.

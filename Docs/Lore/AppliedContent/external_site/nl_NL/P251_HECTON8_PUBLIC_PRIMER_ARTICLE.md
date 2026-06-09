@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Publieke Introductie van HECTON-8
 
-HECTON-8 is een verdronken industriële oceaanmaan in het Aegir-systeem. Ze is mooi voordat ze belastend wordt: heldere planken, levende ondiepten, hard blauw licht, drukbestendige koloniebotten en diepere ruïnes waar Deep Reach-papierwerk nog met machines ruziemaakt. Je arriveert als Marauder onder contractdruk, niet als toerist en niet als gekozen redder. De publieke premisse is simpel: overleef de oceaan, lees het wrak, haal terug wat nog kan spreken en leer waarom redding je lang kan horen voordat ze je kan bereiken.
+HECTON-8 begint niet als dode ruïne. Het begint als een plek die interstellaire afstand waard was: heldere photic shelves, hard blauw water, pressure-rated koloniebeenderen en ondiepten waar oude machines zichtbaar blijven in levende oceaan. De eerste belofte is schoonheid. De eerste dreiging is dat die schoonheid al geprijsd is.
 
-## Scanner
+De speelbare premisse begint met een Marauder onder contractdruk, niet met een toerist, gekozen erfgenaam of familiewreker. Je daalt af omdat schuld, blacklistrisico en Aegir salvage law de klus tegelijk mogelijk en gevaarlijk maken. De drop gaat fout. De oceaan geeft niets om een eerlijk contract. De eerste uren zijn praktisch: shelter, pompen, seals, zuurstof, tools, signaal. Het verhaal komt binnen via objecten die nog eigenaren hebben.
 
-Vrijgave publieke primer: toon de maan eerst als mooi. Verkoop de oceaan niet door het misdrijf te verbergen.
-
-## Terminal
-
-PUBLIEKE PRIMER / SPOILER-VEILIG
-toegestaan: Aegir-oceaanmaan, heldere planken, verdronken industriële kolonie, Marauder-salvage-terugkeer, Deep Reach-ruïnes
-geblokkeerd: finale payload-route, Atlas-resolutie, gevolgen van ending-receiver
-redactienotitie: schoonheid eerst, bewijs tweede, geen valse reddingsbelofte.
-
-## Audio
-
-Het ondiepe water is geen masker. Het is wat ze bijna wisten te bouwen voordat de diepte de bonnetjes bewaarde.
-
-## Field Note
-
-Verkoop eerst de oceaan. Laat daarna roest, tags en routestempels bewijzen dat de oceaan niet onschuldig is.
+Dat is HECTON-8s publieke gezicht: oceaansurvival met industrieel geheugen. Deep Reach bouwde hier drukroutes en worker habitats. Black Keel kan uit orbit antwoorden, maar afstand, weer en custody law niet wissen. De maan is mooi genoeg om verlies te laten tellen en gedocumenteerd genoeg om elke markering bewijs te maken.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/nl_NL. -->

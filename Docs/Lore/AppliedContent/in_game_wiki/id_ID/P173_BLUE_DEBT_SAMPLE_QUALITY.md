@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Blue Debt Sample Quality"
+title: "Kualitas Sampel Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Sample Quality
+# Kualitas Sampel Blue Debt
 
-ID LOC HOLD: Blue debt sample quality lets endings, scanner warnings, and material records treat resources as moral pressure rather than generic loot.
+Kualitas Sampel Blue Debt menjaga sumber daya HECTON-8 agar tidak berubah menjadi harta generik. Koloni menghargai Blue Debt karena dapat dijual, diteliti, disembunyikan, dan dipakai sebagai bukti siapa pernah berada di mana. Karena itu kualitas punya empat arti sekaligus: bayaran, risiko kontainmen, kekuatan bukti, dan tekanan faksi. Shard mudah dibawa dan mudah disangkal. Casketed bloom lebih bernilai karena kontainernya membuktikan seseorang mengantisipasi tekanan. Harmonic glass bukan hanya mahal; ia menjawab melalui sistem akustik dan bisa mengikat rute ke tempat. Live-contaminated sample dapat memaksa Deep Reach, karantina, atau meja pengklaim bereaksi karena terlalu berbahaya dan terlalu berguna untuk diabaikan. Dead contaminated glass adalah kelas pahit: nilainya lebih rendah, tetapi bau legalnya lebih kuat karena seseorang sudah gagal menjaganya tetap hidup atau bersih. Pemain harus merasakan kualitas sebagai pilihan, bukan tangga harga. Sampel yang lebih kaya membeli opsi, menarik perhatian, dan membuat akhir lebih berat.
 
 ## Scanner
 
-ID LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Kualitas Blue Debt adalah nilai, risiko, dan bukti dalam satu angka. Makin kaya sampelnya, makin sedikit ia berperilaku seperti loot.
 
 ## Terminal
 
-ID LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+KELAS KUALITAS / shard: kustodi rendah, dagang aman / casketed bloom: nilai berating tekanan / harmonic glass: bukti akustik dan minat tinggi Deep Reach / live-contaminated sample: prioritas bukti, penanganan tidak stabil / dead contaminated glass: bayaran rendah, bau legal kuat.
 
 ## Audio
 
-ID LOC HOLD: The more it is worth, the less it is only loot.
+Makin bernilai, makin bukan sekadar loot.
 
 ## Field Note
 
-ID LOC HOLD: Quality should affect payout, containment and ending pressure.
+Kualitas mengubah bayaran, biaya kontainmen, tekanan rute, dan daya tawar akhir. Shard bersih membayar; sampel hidup terkontaminasi membuat seseorang harus menjawab.
 
 <!-- In-Game Wiki; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/id_ID. -->

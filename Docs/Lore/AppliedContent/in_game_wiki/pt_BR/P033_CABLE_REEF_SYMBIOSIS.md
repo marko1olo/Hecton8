@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Simbiose do recife-cabo"
+title: "Simbiose de recife de cabos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Simbiose do recife-cabo
+# Simbiose de recife de cabos
 
-Recifes-cabo avisam na meia profundidade: a vida usa indústria como osso, sombra, quebra-corrente e linha nutritiva.
+Recifes de cabos se formam onde valas de serviço de média profundidade dão forma estável ao crescimento vivo: troncos de energia, pares de relé, anéis de fixação e bandejas antigas de cabo. Algumas mantas reduzem abrasão e acalmam a corrente ao redor de uma linha. Parte da fauna pastadora limpa lodo de condutores expostos. A mesma manga também pode esconder isolamento rachado, prender calor ou levar tráfego de drones a uma rota que o mergulhador tinha marcado como silenciosa.
+
+Trate recife de cabos como infraestrutura ativa até o escaneamento provar o contrário. Uma manga verde pode ser a única coisa mantendo um relé seco; também pode cobrir a falha que vai cair sob carga. Confira continuidade de sinal, cor do isolamento, ordem das fixações e movimento dos drones antes de cortar. Esta é a ponte entre a primeira cicatriz de reparo e a fauna reparada posterior: o crescimento vivo segue a corrente antes de o Atlas começar a rotear reparo por corpos vivos.
 
 ## Scanner
 
-A flora cresce em troncos de energia e linhas de sinal. O recife usa a fiação da colônia como esqueleto.
+A manta cabo-raiz prende o tronco de energia P63 em três anéis de fixação. O sinal ainda passa sob a manga verde. Falha de isolamento visível na borda inferior. Perigo: tráfego de drones e pastadores segue a corrente viva.
 
 ## Terminal
 
-Manutenção: tapetes raiz-cabo reduzem abrasão e preservam sinal, mas atraem drones e fauna pastadora.
+NOTA DE VALA DE SERVIÇO
+Linha: tronco de energia P63 / par de relé C
+Condição: manga biológica reduz abrasão
+Falha: isolamento laranja exposto sob a manta inferior
+Tráfego: pastadores e drones de manutenção perto de corrente viva
+Ação: escanear continuidade antes de cortar crescimento
 
 ## Audio
 
-Um recife vivo aprendeu a forma de um corredor de serviço.
+O recife não é decoração. Ele mantém aquele relé seco, e os drones sabem que a corrente está viva.
 
 ## Field Note
 
-A primeira fusão é útil antes de ser horrível.
+Não arranque o crescimento verde só porque parece errado. Se ele mantém a capa seca, marque a falha e contorne a rota.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/pt_BR. -->

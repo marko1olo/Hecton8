@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Material Exit Receipt Audit
 
-HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
+HECTON-8 false exits are not fake fail screens. They are real outcomes that expose what the player chose to value: mass, proof, names, freedom, or the right to decide who owns the story after escape.
 
 ## Scanner
 
-Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Exit receipt validates recovered mass. Evidence custody is broken; worker names remain unaccepted.
 
 ## Terminal
 
-AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+AFTER-ACTION RECEIPT: salvage payout released for recoverable mass and contracted hazard. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger rejected as non-custodial evidence. Exit granted; case remains owned by the carrier.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You got paid. That is not the same as getting out clean.
 
 ## Field Note
 
-After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+After-action record for a paid but morally incomplete exit: reward clears, evidence chain fails, names stay outside official custody.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/en_US. -->

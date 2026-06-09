@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Claim Continuity Loss Conversion
 
-The proof chain ends in conversion. Deep Reach can admit damage and keep ownership if workers become losses, evidence becomes material custody, and the claim remains alive. This is why the player carrying proof is not only carrying truth. They are carrying something the system knows how to buy.
+The chain ends at the ledger because the ledger can survive everything else. Workers become unrecoverable loss, damaged modules become material custody, and evidence remains attached to the claim. A carrier moving these documents is not carrying sentiment. They are carrying a problem for every receiver that wants the claim without the bodies.
 
 ## Scanner
 
-Loss desk stamp recovered. The ledger survived better than the workers it renamed.
+Loss desk stamp recovered. Worker status converts to unrecoverable before evidence custody leaves the active claim.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material custody and proof custody active pending receiver assignment.
 
 ## Audio
 
-This is where people became a clean column.
+This is where names became a clean column.
 
 ## Field Note
 

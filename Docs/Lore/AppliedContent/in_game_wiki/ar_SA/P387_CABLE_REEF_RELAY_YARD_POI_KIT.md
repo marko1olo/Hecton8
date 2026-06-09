@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "عدة أدلة ساحة ترحيل الشعاب الكبلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Cable Reef Relay Yard POI Kit
+# عدة أدلة ساحة ترحيل الشعاب الكبلية
 
-AR LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+ساحة ترحيل الشعاب الكبلية ورشة إصلاح نمت حتى صنعت نمط فشلها الخاص. الغشاء الموصل وأغلفة الكبلات والمقابس الصوتية يمكن أن تعيد الإشارة، لكن الجسر نفسه قد يرسل المسار إلى ساق خدمة قديمة إذا قطع المشغل بلا مسح.
 
 ## Scanner
 
-AR LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+عدة أدلة نقطة اهتمام: تنقل ساحة الترحيل عبر غشاء جسر حي وتسيء التوجيه عبر ذاكرة كبل تالفة.
 
 ## Terminal
 
-AR LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+عدة ساحة الترحيل: مقبس عمود صوتي، جسر غشاء حيوي، تحذير قطع، استجابة بينغر، علامة خدمة Atlas، تقشر عزل، تفرع ترحيل، خريطة ساق ميتة.
 
 ## Audio
 
-AR LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+لا تنزع كل النمو. بعضه يحمل إشارتك.
 
 ## Field Note
 
-AR LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+ملاحظة مارودر: إذا همهم الغشاء تحت المسبار فضع علامة قبل القطع. الكبل الجميل غالبا كبل ميت.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ar_SA. -->

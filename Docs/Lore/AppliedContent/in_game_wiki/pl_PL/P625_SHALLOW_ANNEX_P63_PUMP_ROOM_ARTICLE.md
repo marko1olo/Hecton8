@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pompownia płytkiego aneksu P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pompownia płytkiego aneksu P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 staje się użyteczny dopiero po naprawie pompowni. Ręczne pompowanie obniża wodę, odsłania stare szafki z narzędziami i utrzymuje fabrykator w bezpiecznym oknie uprawnień naprawczych.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+WLOT POMPOWNI // Zablokowany, ale sprawny po serwisie. Dostępna ręczna trasa zęzowa. Najpierw osusz, potem tnij.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+KONSERWACJA P-63 // Zarejestrowano niewielki napływ wody. Ręczna zęza przyjęta. Fabrykator polowy trzyma kolejkę uszczelek, obejm i noża kontaktowego, dopóki wlot się nie oczyści.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Kręć pompą, aż podłoga odpowie. Jeśli najpierw zaczniesz ciąć, zalejesz szafkę z narzędziami.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Suchy kąt nie jest domem. To dziesięć minut na myślenie. Bierz je.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/pl_PL. -->

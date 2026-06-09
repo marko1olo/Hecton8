@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: High Custody Sample Contract Seed"
+title: "بذرة عقد عينة عالية الحضانة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: High Custody Sample Contract Seed
+# بذرة عقد عينة عالية الحضانة
 
-AR LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+العينة عالية الحضانة عائلة عقود يتصادم فيها ثمن المورد مع التعامل مع الدليل مبكرا. Blue debt، وبقايا نسيج-حديد، وماء مختوم، وحزم مرشح ملوثة تدفع أكثر فقط ما دام الوعاء والوسم والكتلة وحضانة المسار سليمة.
 
 ## Scanner
 
-AR LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+بذرة عقد: عينة عالية الحضانة. دفعة أكبر مرتبطة بحساب الكتلة، وسحب الحجر، وحاويات مصدقة من المستقبل.
 
 ## Terminal
 
-AR LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: عينات درجة حضانة نشطة، دفتر كتلة عينة صارم، تأخير الحجر مرفوع، ختم مستقبل مطلوب، عقوبة رمي مسار نشطة.
 
 ## Audio
 
-AR LOC HOLD: A sample can weigh more after it enters the ledger.
+تصير العينة أثقل بعد أن يقبلها الدفتر.
 
 ## Field Note
 
-AR LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+ملاحظة مارودر: زن الكيس قبل أن تسميه ربحا. المستقبل يستطيع أن يحاسب الغرامات الناقصة أقسى مما يضربك المحيط.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ar_SA. -->

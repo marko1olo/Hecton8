@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Storm Window Rush Contract Seed"
+title: "Semente de contrato de corrida por janela de tempestade"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Storm Window Rush Contract Seed
+# Semente de contrato de corrida por janela de tempestade
 
-PT LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Corrida por Janela de Tempestade começa com um mapa de cobertura fechando. Faixas de tempestade, horário de shutter de relé e recall bathydrop ficam no mesmo quadro que o teto de pagamento. O número alto não é generosidade; é o preço de entrar na água quando a janela de retorno seguro já está encolhendo.
 
-## Scanner
-
-PT LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-PT LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-PT LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-PT LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+A corrida muda pressão no nível da ferramenta. Uma bomba travada custa mais que tempo, porque o relógio de recall anda enquanto o reparo está aberto. Uma solda ruim consome tolerância de rota. Uma marca de relé perdida pode empurrar a extração para blackout. Esta família de contratos endurece a mesma colônia mudando quando a água para de esperar.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/pt_BR. -->

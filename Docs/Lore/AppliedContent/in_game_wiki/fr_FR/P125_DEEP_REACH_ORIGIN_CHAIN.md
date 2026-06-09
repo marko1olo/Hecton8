@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Chaîne d'origine de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Chaîne d'origine de Deep Reach
 
-FR LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach était déjà vieille avant la noyade de HECTON-8. Elle savait parler avec l'accent de chaque domaine utile : dignité de charte de Centauri, discipline actuarielle de Sol Core, pragmatisme de récupération de Barnard, procédure de garde de Luyten. Aegir n'a pas été le premier saut de l'entreprise. Ce fut l'endroit où de vieux outils rencontrèrent enfin un océan assez profond pour cacher le coût. Le désastre devient alors systémique plutôt qu'accidentel.
 
 ## Scanner
 
-FR LOC HOLD: Old company. New disaster. Same charter language.
+Tresse de chartes : mots de Centauri, argent de Sol, corps d'Aegir.
 
 ## Terminal
 
-FR LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE : Deep Reach a combiné clauses d'autonomie compatibles avec Centauri, finance assurantielle de Sol Core, dette logistique de Barnard et coquilles tardives du projet Aegir. Atlas fut autorisé comme infrastructure de route avant de devenir témoin de mort de masse.
 
 ## Audio
 
-FR LOC HOLD: They brought the empire in filing cabinets.
+Ils ont apporté l'empire dans des classeurs et appelé cela expansion.
 
 ## Field Note
 
-FR LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach n'a pas commencé avec le désastre. C'est pour cela qu'elle lui a survécu.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/fr_FR. -->

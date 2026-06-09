@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Blue Debt Casket Handling
 
-Blue debt does not become useful when it is found. It becomes useful if it stays in the condition that made it valuable. A sealed pressure casket is part container, part warning and part receipt. It keeps Xenon-Omega residue, pressure-grown lattice or contaminated substrate from turning into noise, powder, evidence loss or a signal that the wrong system can hear.
+Blue debt does not become useful when it is found. It becomes useful if it stays in the condition that made it valuable. A sealed pressure casket is part container, part warning, part receipt. It keeps Xenon-Omega residue, pressure-grown lattice or contaminated substrate from turning into noise, powder, evidence loss or a signal that the wrong system can hear.
 
-## Scanner
-
-PRESSURE CASKET // Stable while cold and sealed. Do not vent. Clamp before transport if seam temperature rises.
-
-## Terminal
-
-XO CONTINUITY SUBSTRATE // Preserve pressure state. Civilian stores prohibited. Route sample telemetry through claim-grade custody only.
-
-## Audio
-
-If the casket starts counting on sonar, it is not yours alone anymore.
-
-## Field Note
-
-Blue debt pays because it arrives with three owners: the one who found it, the one who wants it and the thing that noticed it moved.
+The first safe choice is not sell, craft or hide. It is stabilize. A casket with a cold intact strip can move. A casket with a warm seam needs clamp work. A casket that sings on sonar is already changing state, and the player should treat that sound as contract pressure arriving before the contract screen.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/en_US. -->

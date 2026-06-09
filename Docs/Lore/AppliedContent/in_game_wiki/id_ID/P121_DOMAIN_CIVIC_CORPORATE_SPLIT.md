@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "Pecahan Sipil-Korporat Domain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# Pecahan Sipil-Korporat Domain
 
-ID LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+Ruang manusia pada 2190 jarang, tua, dan terkotak-kotak. Sol Core masih menentukan dokumen mana yang dihitung sebagai kepemilikan. Centauri memberi Deep Reach bahasa legitimasi awal. Barnard Yards menjelaskan mengapa kerja marauder bisa tampak seperti profesi, bukan pembajakan. Tau Ceti dapat membuat bukti menjadi publik, tetapi hanya setelah penundaan relay dan tinjauan politik. Luyten memindahkan paket dan menentukan custody chain mana yang selamat sampai tujuan. Aegir berada di tempat setiap yurisdiksi berguna dan tidak ada yang datang cukup cepat untuk menutup sengketa.
 
 ## Scanner
 
-ID LOC HOLD: Legal map. Same species, different owners of truth.
+Peta hukum: satu spesies, beberapa pemilik catatan.
 
 ## Terminal
 
-ID LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core memegang keuangan hukum lama dan sertifikasi; Centauri membawa piagam koloni awal; Barnard Yards menormalkan kerja salvage; Tau Ceti dapat mengubah bukti menjadi hukum publik; Luyten mengendalikan custody paket; Aegir tetap corporate claim sampai ada yang membuktikan sebaliknya.
 
 ## Audio
 
-ID LOC HOLD: The farther you go, the more the law becomes a receipt.
+Makin jauh sinyal berjalan, makin mirip hukum dengan pembukuan.
 
 ## Field Note
 
-ID LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+Penyelamatan tidak hanya ditahan jarak. Ia ditahan oleh siapa yang boleh menyebut orang terjebak itu warga.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/id_ID. -->

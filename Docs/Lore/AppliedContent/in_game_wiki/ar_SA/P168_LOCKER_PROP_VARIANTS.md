@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "تنويعات أدلة الخزانة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# تنويعات أدلة الخزانة
 
-AR LOC HOLD: Locker variants let procedural placement carry human texture without custom cutscenes.
+خزانة HECTON-8 ليست كومة عاطفية من الأغراض. إنها أرشيف صغير لغرفة ضغط: ما لمسه العامل، ما سمح له بحمله، ما أخفاه عن مسؤول الوردية، وما رأى Marauder لاحق أنه يحتاج إلى تصحيح.
+
+الخزانة الجيدة تتكلم بالتركيبات. شريط الضغط بجانب قفاز يدل على عمل تسريب. حشية مهترئة بين أدوات شخصية تعني أن العامل تعامل مع الأبواب كثيرا حتى لم يعد يثق بقطع الغيار. قسيمة وجبة بجانب طباشير مسار تعني أنه كان يتوقع وردية أخرى. رفض medlock يحول الغرفة من خلفية إلى دليل: كان الجسد قد صار مشكلة تكلفة، ومع ذلك أعيد إلى الجدول.
+
+في اللعب، الخزانة أثر إنساني قابل للتوليد. يمكن أن يتغير محتواها بين الجولات من دون تغيير القانون الأكبر. القاعدة ثابتة: اقرأ قبل أن تنهب. إذا أخذ اللاعب الرمز والحشية والملاحظة كخردة عامة، تفقد الغرفة القواعد التي جعلت العامل حاضرا من دون مشهد.
 
 ## Scanner
 
-AR LOC HOLD: A locker should say what a worker touched before the flood.
+خزانة // شريط ضغط، حشية مهترئة، قسيمة وجبة، رمز مخزن أدوات، طباشير مسار ورفض medlock على الرف نفسه. هذا آخر جرد عملي لعامل، وليس زينة.
 
 ## Terminal
 
-AR LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+تنويعات الخزانة // اقرأ ترتيب الأشياء قبل salvage: شريط قرب القفازات يعني عمل تسريب؛ حشية مهترئة تعني أبوابا متكررة؛ قسيمة وجبة تعني دين وردية؛ طباشير يعني ملاحة مرتجلة؛ رفض medlock يعني عملا رغم المرض؛ ملاحظة Marauder تعني نزاع دليل لاحق.
 
 ## Audio
 
-AR LOC HOLD: The best memorial is a tool still dirty from the last shift.
+أفضل نصب ليس لوحة. إنه أداة ما زالت تعرف أي يد كانت متعبة.
 
 ## Field Note
 
-AR LOC HOLD: Avoid sentimental clutter. Use work marks.
+لا تزين الخزائن. ابنها من أشياء كان ليد متعبة سبب حقيقي للمسها.
 
 <!-- In-Game Wiki; generated from P168_LOCKER_PROP_VARIANTS/ar_SA. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ordre de purge Deep Reach"
+title: "Ordre de nettoyage actif Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ordre de purge Deep Reach
+# Ordre de nettoyage actif Deep Reach
 
-Relie le mensonge corporatif au gameplay présent: custody de ressource, accès Atlas et suppression de preuves.
+L'ordre de nettoyage actif Deep Reach rend la pression corporative procédurale: des proxys actifs peuvent acheter des échantillons, ouvrir des routes Atlas et effacer les preuves de responsabilité pendant que les dossiers publics décrivent encore HECTON-8 comme site perdu.
 
 ## Scanner
 
-Pile d'ordres: ressource, accès Atlas, suppression preuves. Sauvetage sous contrôle d'actif.
+Ordre actif récupéré: saisir les échantillons certifiés, ouvrir le canal Atlas, isoler les survivants, supprimer les preuves de responsabilité.
 
 ## Terminal
 
-Directive proxy: contractant niable. Préserver échantillons. Ouvrir canal Atlas si risque local acceptable. Purger corpus responsabilité.
+L'ordre proxy DR-CLEANSE-19 reste actif. Les contractants niables prennent d'abord la garde des échantillons, puis l'accès Atlas, puis la récupération des témoins. Si Black Keel ou le registre du site expose la responsabilité, la file de purge envoie les archives de preuve en cold delete et retague les morts de terrain en pertes météo.
 
 ## Audio
 
-Deep Reach ne te chasse pas. Ils t'utilisent comme sonde bon marché.
+Cette voix n'est pas du trafic de secours. C'est une offre de nettoyage.
 
 ## Field Note
 
-Ils ne sont pas revenus pour s'excuser.
+Le champ d'excuse est vide.
 
 <!-- External Site; generated from P039_DEEP_REACH_CLEANSE_ORDER/fr_FR. -->

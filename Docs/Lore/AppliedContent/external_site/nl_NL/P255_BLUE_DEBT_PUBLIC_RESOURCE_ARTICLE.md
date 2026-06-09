@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Publiek Artikel over Blue Debt
 
-Blue debt is de grensnaam voor Xenon-Omega-bearing pressure substrate op HECTON-8. Het kan verschijnen als pekelrijk mineraal, clathraatpocket, pressure-glass-besmetting, biofilmgebonden rooster of beschadigd industrieel containment material. De waarde komt uit berekening, containment en opslag in extreme omgevingen. Het gevaar komt uit custody: elk monster vraagt wie het bezit, wie het certificeerde en wie de schuld krijgt als het van toestand verandert.
+Blue debt is geen magisch erts. Het is frontier-slang voor Xenon-Omega-dragend druksubstraat: zoute mineraalzakken, clathraatlagen, pressure-glass-vervuiling, biofilmgebonden roosters en beschadigd containmentmateriaal dat omstandigheden overleefde waarin normale apparatuur faalt. De waarde komt uit geschiedenis onder druk. Een monster kan rekensporen, containmentgedrag, sensorgeheugen of chemische staten bewaren die alleen HECTON-8 kon maken.
 
-## Scanner
-
-De slang is eerlijk. De officiële naam verbergt aansprakelijkheid: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-PUBLIEK ARTIKELNIVEAU / BLUE DEBT
-toegestaan: monstergedrag, drukchemie, clathraat- en pekeldragers, containment-waarde, computationeel gebruik, bewaarrisico
-geblokkeerd: exacte recepttabellen, payout-tuning, late Atlas-substrate-routes
-redactienotitie: geen magisch erts, geen gloeiende loot-fantasie, geen schoon eigendom.
-
-## Audio
-
-Ze noemden het blue debt omdat elke nuttige gram al iemand druk, papierwerk of bloed schuldig was.
-
-## Field Note
-
-Als het gloeit als schat, herschrijf het. Blue debt moet nuttig, nat, gereguleerd, instabiel en al betwist voelen.
+Het woord debt telt. Iemand anders heeft de vorming al betaald met infrastructuur, arbeid, tijd en risico. Een schoon ogend stuk kan quarantaineblootstelling, Deep Reach-custody, Black Keel-massaboetes en bewijswaarde tegelijk dragen. Het meenemen is geen mijnbouw, maar een argument met het routeboek.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/nl_NL. -->

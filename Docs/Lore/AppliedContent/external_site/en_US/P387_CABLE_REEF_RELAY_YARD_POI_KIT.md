@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cable Reef Relay Yard POI Kit"
+title: "Cable Reef Relay Yard Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Cable Reef Relay Yard POI Kit
+# Cable Reef Relay Yard Evidence Kit
 
-Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+The relay yard turns disgust into tool discipline. Cable jackets have split, insulation has peeled, and Atlas service film has crossed sockets that were never designed to share a surface. A clean cutter pass can ruin the only path still carrying signal.
 
-## Scanner
-
-POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+The evidence kit is physical: pinger response, dead-leg map, cut warning, relay fork and the service mark where living material took over a broken route. The place feels useful before it feels strange because its repairs answer pressure before they raise questions. Its danger is a repair that can save the operator while corrupting the claim record.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/en_US. -->

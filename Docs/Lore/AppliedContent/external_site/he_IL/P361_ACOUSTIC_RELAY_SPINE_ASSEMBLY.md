@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מכלול שדרת ממסר אקוסטית"
+title: "הרכבת עמוד ממסר אקוסטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מכלול שדרת ממסר אקוסטית
+# הרכבת עמוד ממסר אקוסטי
 
-מכלול שדרת הממסר האקוסטית מקרקע את לולאת הבריחה של HECTON-8 בהנדסת salvage: הקול חייב לשרוד לחץ, גיאומטריית נתיב ו-custody לפני שהמסלול יאמין לו.
+הרכבת עמוד הממסר האקוסטי היא החלק הראשון בשרשרת הבריחה של HECTON-8 שממיר הישרדות לאות מדיד. זה לא תורן רדיו ולא תפילת מצוקה. זה pressure-code spine עשוי צלעות קרמיות, cable jacket, ballast floats ו-pinger timing.
 
-## Scanner
+הבעיה היא אמון. המים של HECTON-8 נושאים רעש פגיעה, נקישות משאבה, brine scatter והדי נתיבים. Black Keel מקבל יותר צלילים ממה שאפשר לקבל בבטחה. קפסולה שרוצה recovery חייבת להוכיח שה-tap שלה שייך לנתיב, לשעון ול-custody chain, ולא ללוח רופף שמכה במסגרת מוצפת.
 
-שדרה אקוסטית שבורה. היא יכולה לנקוש pressure-code דרך המים; המסלול עדיין שומע זאת כ-custody noise פגום.
-
-## Terminal
-
-ASCENT RELAY: לשחזר שדרה אקוסטית נמוכת-פס לפני recovery window. High-gain mast אבד. Emergency buoy לא אמין. מקלט Black Keel מקבל pressure-code רק אחרי route proof.
-
-## Audio
-
-אם ה-Keel שומע אותנו, הוא שומע פצע מקיש על צינור.
-
-## Field Note
-
-הקריאה הראשונה של הקפסולה אינה קול. היא צלעות קרמיות, עור כבל, pinger floats ומשמעת תזמון שמספיקה כדי שהאוקיינוס יחזור עליך נכון.
+תיקון העמוד נותן לקפסולת העלייה קול צר: קואורדינטות, survival state, clock match, checksum. זה מספיק כדי להתחיל שיחת recovery, לא כדי להבטיח הצלה. האוקיינוס עדיין יכול לכופף את האות. ה-carrier עדיין יכול לראות ב-packet damaged claim noise. הרכיב משיג את ההקשבה הראשונה; הוא לא מנצח בתיק.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/he_IL. -->

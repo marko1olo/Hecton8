@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Zatrzymanie kwarantannowe: stęchłe powietrze
 
-Zatrzymanie kwarantannowe jest najcichszym fałszywym wyjściem. Nie potrzebuje złoczyńcy w pokoju. Formularz mówi odzyskany żywy, licznik powietrza mówi racja aktywna, a następne drzwi otworzą się dopiero po przeglądzie skażenia, sprzeciwie claimant i przeglądzie ubezpieczenia.
+Zatrzymanie kwarantannowe to najcichsze fałszywe wyjście. Nie potrzebuje gróźb, widocznych strażników ani dramatycznej zdrady. System musi tylko odzyskać kontraktora żywego, zapieczętować świadka, odmierzać powietrze i uzależnić następny krok od przeglądów, których nikt szybko nie zakończy.
 
-Wynik jest okrutny, bo da się go obronić. Nikt nie zabił świadka. Nikt nie zniszczył próbki. System tylko każe każdemu oświadczeniu czekać dłużej, niż ciała mogły kiedykolwiek czekać. Gracz przeżywa ocean i wchodzi do uszczelnionego korytarza zbudowanego z procedury.
+Jego okrucieństwo jest do obrony linia po linii. Nikt nie zniszczył próbki. Nikt nie stracił świadka. Nikt nie powiedział, że prawda jest fałszywa. Procedura po prostu uczyniła każdy oddech warunkowym, a każde zdanie kazała czekać, aż martwym nie da się już pomóc.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/pl_PL. -->

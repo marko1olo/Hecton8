@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Assemblage d'anneau de serrage d'étanchéité pression"
+title: "Assemblage d'anneau de serrage de joint de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Assemblage d'anneau de serrage d'étanchéité pression
+# Assemblage d'anneau de serrage de joint de pression
 
-Les joints de pression expliquent pourquoi la réparation doit descendre plus profond. Les matériaux qui gardent l'eau hors d'une salle peuvent aussi coller la capsule à l'épave lorsqu'une mauvaise chaîne d'étanchéité est acceptée.
+L'anneau de serrage du joint de pression est l'endroit où la réparation cesse d'être une simple survie. Le matériau qui garde l'eau hors d'une safe room peut piéger l'ascent capsule s'il traverse la separation seam. Un shallow patch n'a qu'à tenir un compartiment. Un launch-rated seal doit tenir la pression, absorber le crush, puis se relâcher proprement sous impulse.
+
+HECTON-8 rend cela difficile parce que l'Atlas-grown sealant est utile. Il suit les fuites, comble les fissures et conserve un habitat volume qui se noierait autrement. Cela n'en fait pas un flight seal. Si la sealant map gagne le clamp ring seat ou le bord de pressure-glass, la capsule peut réussir un static pressure test et échouer à se séparer quand la charge part.
+
+L'assemblage exige métal deep-rated, crush history connue, glass seat propre et sealant map arrêtée avant la launch boundary. La réparation utile doit être reculée de l'escape utile. Un Marauder qui laisse le mauvais patch peut construire une capsule sèche jusqu'au moment où elle doit bouger.
 
 ## Scanner
 
-Cicatrice d'anneau de serrage. Le manchon d'ascension a survécu à l'impact en dépensant le joint qui devait le ramener chez lui.
+SIÈGE D'ANNEAU // Marquage d'impact, résidu de shallow patch, scellant traversant separation seam. La pression du compartiment peut tenir; launch impulse déchirera la mauvaise couche.
 
 ## Terminal
 
-SEAL CERT : shallow patch maintient seulement la pression de compartiment. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map et profil Deep Reach vérifié. Atlas-grown sealant peut préserver l'habitat tout en bloquant une séparation propre.
+SEAL CERT: shallow patch limité à compartment pressure. Ascent seal exige deep-rated clamp ring, pressure-glass seat, shell-sealant map et Deep Reach crush profile vérifié. Rejeter sealant growth au-delà de separation seam.
 
 ## Audio
 
-Le joint utile est vivant dans la mauvaise direction.
+Le patch tient la pièce. Il ne laissera pas partir la capsule.
 
 ## Field Note
 
-Une rustine de safe-room peut acheter une heure d'air. Elle ne tient pas une impulsion de lancement.
+Un patch de pièce peut acheter de l'air. Un joint d'ascension doit s'écraser, relâcher et laisser la peau de capsule assez propre pour le prochain burn.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/fr_FR. -->

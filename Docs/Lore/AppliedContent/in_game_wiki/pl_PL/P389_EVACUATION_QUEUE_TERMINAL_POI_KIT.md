@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Zestaw dowodowy terminala kolejki ewakuacyjnej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Evacuation Queue Terminal POI Kit
+# Zestaw dowodowy terminala kolejki ewakuacyjnej
 
-PL LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Terminal kolejki ewakuacyjnej nie jest cenny dlatego, że mówi, iż ludzie czekali. Jest cenny, bo stan drzwi, dryf zegara, liczba robotników i przepustowość trasy nie zgadzają się w sposób możliwy do sprawdzenia na miejscu.
 
 ## Scanner
 
-PL LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Zestaw dowodowy POI: terminal kolejki dowodzi opóźnienia przez stan drzwi, dryf zegara, niezgodność robotników i przepustowość trasy.
 
 ## Terminal
 
-PL LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+ZESTAW TERMINALA KOLEJKI: lista wstrzymania trasy, opóźnienie zwolnienia kwarantanny, notatka wag Atlas, niezgodność liczby robotników, tag konfliktu salvage, pasek stanu włazu, osad identyfikatora.
 
 ## Audio
 
-PL LOC HOLD: A queue is a body count with cleaner formatting.
+Kolejka to liczba ciał w czystszym formacie.
 
 ## Field Note
 
-PL LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Notatka marodera: nie podważaj paska włazu przed skanem osadu identyfikatora. Metal zapłaci mniej niż znacznik czasu.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/pl_PL. -->

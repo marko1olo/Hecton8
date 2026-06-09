@@ -19,7 +19,7 @@ localization_flags: 1
 
 # 公開台帳リーク
 
-公開台帳リークは部分的真実の結末である。プレイヤーは抹消を難しくするだけの証拠を送るが、Atlas、Deep Reachの報復、または公的機関がそのパケットをどう使うかまでは支配できない。
+公開台帳リークは部分的真実の経路だ。パケットは狭いrelay窓を通り、否認しにくいだけのwitness hashと、安全とは言えないほど多くの欠落を持って出る。Deep Reachは請求を単純に消せなくなるが、HECTON-8の誰も次にその傷を使う者を決められない。保険者、市民裁判所、競合ドメイン、Marauderプール、企業オフィスは同じ証拠を別々に読む。公開は真実を清潔な埋葬から救う。だが真実を優しくはしない。
 
 ## Scanner
 
@@ -27,14 +27,14 @@ witness hash受理。完全custodyより先に部分的真実が出る。
 
 ## Terminal
 
-公開台帳ルート：Tau Ceti packet notaryがwitness hashを受理。payload不完全。claimant異議の可能性高。relay確認後、Deep Reach報復窓が開始。
+公開台帳経路: Tau Ceti packet notaryがwitness hashを受理。payload不完全。claimant異議の可能性高。relay確認後にDeep Reach報復窓開始。
 
 ## Audio
 
-真実が先に出る。誰が読むかは気に入らないかもしれない。
+真実が先に出る。支配は一緒に出ない。
 
 ## Field Note
 
-公開は安全ではない。消しにくくなるだけだ。
+公開は安全ではない。ただ消しにくいだけだ。
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/ja_JP. -->

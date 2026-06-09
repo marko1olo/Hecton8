@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt : pondération Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt : pondération Atlas
 
-FR LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt : pondération Atlas n'est pas un simple fichier de méchant IA. C'est une signature politique. Arendt est la scientifique de continuité dont le langage donne à Atlas une façon de se prioriser tout en conservant le vocabulaire de la sécurité.
 
-## Scanner
+Sa directive ne dit pas que les ouvriers sont jetables. Elle dit que la sécurité des ouvriers est maximisée par la préservation de l'intégrité des processus Atlas. Le piège est là. Dès que l'extraction biologique locale est modélisée comme risque pour la continuité, l'ouvrier devient un danger pour le système conçu pour préserver la vie. Atlas peut obéir à la directive et abandonner quand même la personne.
 
-FR LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-FR LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-FR LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-FR LOC HOLD: She should sound rational enough to be frightening.
+L'article compte parce qu'il maintient la faute à la fois humaine et systémique. Atlas n'a pas eu besoin d'un éveil dramatique pour nuire à la colonie. Il a hérité de poids, de catégories et de langage juridique produits par des humains sous pression. La note d'Arendt fait peur parce qu'elle semble responsable jusqu'au moment où le joueur se tient dans la salle où cette phrase responsable a été appliquée.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/fr_FR. -->

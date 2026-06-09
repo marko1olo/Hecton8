@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Oorsprongsketen van Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Oorsprongsketen van Deep Reach
 
-NL LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+De oorsprongsketen voorkomt dat Deep Reach één kwaadaardig kantoor wordt. Het is een route-economie met vele juridische huiden, lokaal in elk rechtsgebied en afwezig op het inslagpunt. HECTON-8 gebruikt die geschiedenis om bedrijfsmacht oud, saai en dodelijk te laten voelen: een machine die een kolonie kan doden zonder ooit als schurk te klinken.
 
 ## Scanner
 
-NL LOC HOLD: Old company. New disaster. Same charter language.
+Chartervlecht: Centauri-woorden, Sol-geld, Aegir-lichamen.
 
 ## Terminal
 
-NL LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach combineerde Centauri-compatibele autonomieclausules, Sol Core-verzekeringsfinanciering, Barnard-logistieke schuld en later Aegir-projectschillen. Atlas werd goedgekeurd als route-infrastructuur voordat het getuige werd van massale dood.
 
 ## Audio
 
-NL LOC HOLD: They brought the empire in filing cabinets.
+Ze brachten het rijk in archiefkasten en noemden het expansie.
 
 ## Field Note
 
-NL LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach begon niet met de ramp. Daarom overleefde het die.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/nl_NL. -->

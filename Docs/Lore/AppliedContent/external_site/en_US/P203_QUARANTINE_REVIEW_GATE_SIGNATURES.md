@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Hold Signatures"
+title: "Quarantine Review Gate Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Hold Signatures
+# Quarantine Review Gate Signatures
 
-Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+The quarantine signature layer makes Deep Reach culpability procedural. The Great Tide created real contamination and pressure risk; the lie was treating that risk as a reason to keep people and records under local custody while outside review lagged behind. Public reports called the result biological/pressure quarantine and authorization failure. The recovered gate cards add a harder fact: extraction was held by certificate language even where route hardware had not yet failed.
 
 ## Scanner
 
-The hold does not need malice. It needs one unresolved hazard field.
+Review card recovered: extraction state HELD, hazard field BIO/PRESSURE-UNCERTAIN, external certificate absent. Route release blocked by gate code.
 
 ## Terminal
 
-SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Action: hold extraction pending pressure-biology certificate and external review. Exception: no independent shuttle capacity assigned. Human tags remain local custody until gate clears.
 
 ## Audio
 
-Pending review is still a locked door.
+They still had door power. The gate says review pending, and the hatch stayed red.
 
 ## Field Note
 
-Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Put this beside locked survivor routes and evac hardware with battery left. The hold field made a working door legally closed.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/en_US. -->

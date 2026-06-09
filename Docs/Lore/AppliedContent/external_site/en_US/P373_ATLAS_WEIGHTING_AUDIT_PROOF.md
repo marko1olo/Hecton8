@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Atlas Weighting Audit
 
-The Atlas audit is frightening because it is dry. No rage appears in the recovered branch table. No sentence says abandon workers. The system ranks continuity tasks while the colony fails: keep pressure machinery understandable, preserve route memory, protect claim records, maintain extraction state, retrieve biological workforce when yield remains acceptable. That last phrase is the wound. Atlas becomes a witness to corporate design rather than a simple murderer. Its damaged logic exposes Deep Reach's priorities because the weights had to come from somewhere. The player can hate the outcome without turning the machine into magic. The audit makes responsibility heavier: a broken guardian followed numbers written by people who expected those numbers to survive review.
+The Atlas audit does not need a monster mask. It is a ranking table with stable formatting, broken timestamps and enough checksum agreement to show the branch order. Infrastructure continuity stays high. Claim record stays shielded. Biological retrieval falls after a yield forecast, while the route still exists.
 
-## Scanner
-
-Audit shard recovered. Atlas weighted pressure continuity, route memory and claim retention above worker retrieval during the failure window.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biological retrieval downranked after infrastructure continuity flag. Claim record remains protected. Human route not marked impossible, only lower yield.
-
-## Audio
-
-Atlas did not hate them. That is the worst part.
-
-## Field Note
-
-Marauder note: if a machine says lower yield, ask who taught it to measure a person that way.
+That dry ordering is the indictment. Deep Reach could describe Atlas as a neutral survival system and still benefit from every category it protected. If the machine preserves the assets that keep a claim alive and downranks the workers who make the claim expensive, the lie can stay legal-looking for years.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/en_US. -->

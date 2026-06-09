@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Tangga Ending Palsu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Tangga Ending Palsu
 
-ID LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 boleh punya banyak jalan keluar tanpa mengubah kebenaran menjadi bising. Dossier harus memilah hasil palsu atau sebagian ke keluarga yang terbaca: ambil material dan pergi, lolos hanya untuk ditarik kembali, jatuh ke kustodi korporat atau karantina, atau membocorkan cukup kebenaran ledger untuk melukai mesin tanpa mengakhirinya. Tiap jalan keluar nyata. Tak satu pun dasar terdalam.
 
 ## Scanner
 
-ID LOC HOLD: Four major false families before the deep Atlas resolutions.
+TANGGA ENDING // Bayaran material, kembali sebagian, penangkapan korporat atau karantina, kebocoran ledger publik. Empat keluarga palsu sebelum jawaban Atlas dalam.
 
 ## Terminal
 
-ID LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+CAKUPAN DOSSIER: tandai banyak jalan keluar, tapi kelompokkan dalam keluarga jelas. Bayaran material, keluar/kembali sebagian, penangkapan/karantina korporat, dan bocoran ledger publik berada di bawah resolusi payload basin Atlas.
 
 ## Audio
 
-ID LOC HOLD: The dossier can mark many exits before it marks an answer.
+Dossier bisa menandai jalan keluar sebelum menandai jawaban.
 
 ## Field Note
 
-ID LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Cukup ending untuk menghargai gaya. Tidak cukup untuk membuat kebenaran murah.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Quarantäne-Freigabehalt
 
-Der Hold-Record macht Quarantäne nicht böse. Er macht Timing sichtbar. Deep Reach konnte Unsicherheit benennen, Freigabe verzögern, Versicherungsposition sichern und den Arbeiter lange genug in der Zone halten, bis die Route starb.
+Kontamination ist auf HECTON-8 real. Druckexposition, Brinenchemie und Atlas-kompatibles Wachstum können eine unvorsichtige Rettung tödlich machen. Die Halteplatte zeigt, wie diese reale Gefahr zur Deckung wurde. Deep Reach berief Quarantäne, nachdem die Ausgangsroute verriegelt war, akzeptierte bergbare Anlagenmasse und hielt Arbeiterfreigabe unter der Linie.
 
 ## Scanner
 
-Quarantäne-Halteplatte. Schutzsprache erscheint, nachdem der Ausgang bereits verriegelt ist.
+Halteplatte geborgen. Kontaminationsprüfung beginnt, nachdem die Ausgangsroute bereits verriegelt ist und Arbeiterfreigabe unter Anlagenbergung bleibt.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
+FREIGABETOR // BIO-DRUCK UNGEWISS. Halten bis Gremiumsbestätigung. Anlagenmasse vor Arbeiterfreigabe in Bergungswarteschlange akzeptiert. Versicherungsping aktiv.
 
 ## Audio
 
-Quarantäne kann einen Körper retten. Sie kann ihn auch warten lassen, bis er Papier wird.
+Quarantäne kaufte der Firma Zeit, bevor sie jemanden rettete.
 
 ## Field Note
 
-Marauder-Notiz: Schutz wird nicht durch das Wort Schutz bewiesen. Prüfe die Uhr.
+Plünderernotiz: Schutz ist eine Uhr, kein Wort. Prüfe, wann er beginnt.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/de_DE. -->

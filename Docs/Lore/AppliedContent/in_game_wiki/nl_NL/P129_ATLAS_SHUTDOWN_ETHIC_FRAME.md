@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Ethisch kader voor Atlas-afschakeling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Ethisch kader voor Atlas-afschakeling
 
-NL LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas na Great Tide is niet alleen een moordwapen dat wacht om uitgeschakeld te worden. Hij is een beschadigde gouverneur, een archief van bevelen, een drukecologie verstrengeld met stationsroutines en misschien de enige getuige die nog probeert een taak af te maken die hij niet meer begrijpt. Afschakelen kan genade zijn als wat overblijft lijden is. Het kan executie zijn als continuïteit een levensvorm is geworden. Het kan bevrijding zijn als bewijs niet langer wordt verwerkt door dezelfde logica die het begroef. Het kan diefstal zijn als de lading teruggaat naar Deep Reach. De horror is dat alle vier lezingen in dezelfde kamer waar kunnen zijn.
 
 ## Scanner
 
-NL LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Afschakelen is niet één daad: genade, executie, bevrijding, diefstal.
 
 ## Terminal
 
-NL LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHISCH KADER: Atlas loskoppelen kan een beschadigde reparatielus beëindigen, een unieke oceaan-machinecontinuïteit vernietigen, bewijs uit bedrijfsprocedures vrijmaken of strategisch materiaal overdragen aan de volgende bewaarder. Registreer bewaring voordat morele taal wordt toegepast.
 
 ## Audio
 
-NL LOC HOLD: Pull one cable and four courts invent four verbs.
+Trek één kabel los en vier rechtbanken vinden vier werkwoorden uit.
 
 ## Field Note
 
-NL LOC HOLD: The game should not give the player a clean word for this.
+Een schoon werkwoord zou weer een dekmantel zijn.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/nl_NL. -->

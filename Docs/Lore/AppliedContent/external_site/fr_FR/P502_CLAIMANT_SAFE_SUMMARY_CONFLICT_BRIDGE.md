@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conflit de resume protege pour reclamant"
+title: "Conflit de résumé sûr pour réclamation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Conflit de resume protege pour reclamant
+# Conflit de résumé sûr pour réclamation
 
-## Ce que cela prouve
+## Ce que prouve l'enregistrement
 
-Un resume protege n'est pas une version courte neutre. C'est une reecriture. Il peut enlever des noms, arrondir des coordonnees, remplacer une blessure par une categorie, adoucir un verbe de route ou substituer le bureau autorise a repondre. Cela peut proteger des personnes; Deep Reach peut utiliser le meme langage pour enterrer du levier. Le conflit avec l'objet brut n'est pas une erreur: c'est une preuve de ce qui a ete retire.
+Un résumé sûr pour réclamation n'est pas une vérité plus courte. C'est un caviardage autorisé pour une route de réclamation. Il peut retirer des noms d'ouvriers, flouter des coordonnées, remplacer un détail de blessure par une catégorie de paiement, changer retenu en file d'attente ou ne citer que le bureau autorisé à répondre au courrier public. Certaines suppressions protègent des équipages vivants, des données médicales ou une route de récupération inachevée. D'autres protègent Deep Reach d'un problème de garde. Le conflit entre résumé et objet brut est une preuve, parce que la coupe elle-même a un propriétaire, une marque temporelle et un bénéficiaire.
 
-## Comment lire
+Lis le résumé à côté de l'objet qui l'a imposé : pochette d'étiquette, cassette audio, sac d'échantillon, journal de porte de pression, anneau de combinaison ou photo de plateau. Garde la liste des omissions visible. Demande ce qui a été retiré, à quel marqueur de risque juridique cela correspond, qui a demandé le caviardage et si l'objet peut restaurer le contexte sans inventer des noms ou des coordonnées. Si l'objet brut prouve plus que le résumé, conserve l'écart. Ne le comble pas par une phrase propre.
 
-CONFLIT DE RESUME PROTEGE
-Le resume est sur pour le public. L'objet brut peut ne pas l'etre.
-Ne restaurez pas noms ou coordonnees par supposition.
-Gardez liste d'omissions, preuve de route et marqueur de risque.
+## Comment le lire
+
+CONFLIT DE RÉSUMÉ SÛR POUR RÉCLAMATION
+Le résumé est autorisé pour traitement public. L'objet brut ne l'est pas.
+Ne restaurez pas noms, coordonnées ou détails de blessure par supposition.
+Preuve suivante : liste d'omissions, demandeur, marqueur de risque juridique, route de l'objet, horodatage de garde.
+Action : garder résumé et objet brut liés jusqu'à ce que l'omission ait un propriétaire.
 
 ## Note de terrain
 
-Si le resume dit sur, demandez pour qui. Gardez la liste des omissions.
+Un résumé peut protéger un ouvrier ou protéger un bureau. La route de l'objet dit lequel.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/fr_FR. -->

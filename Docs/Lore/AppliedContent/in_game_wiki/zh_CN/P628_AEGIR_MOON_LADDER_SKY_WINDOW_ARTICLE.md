@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Aegir 卫星阶梯天空窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Aegir 卫星阶梯天空窗口
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Aegir 的卫星阶梯是路线信息。卫星标签显示信号质量、潮汐压力、中继阴影和 transfer 窗口风险，而不要求实时轨道模拟。
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+卫星标签 // 中继噪声下降。若风暴带保持，窗口可用。
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+星历备注 // HECTON-8 窗口带有利。Kestrel 中继阴影上升。强数据包窗口很短。
 
 ## Audio
 
-Read the sky, then send.
+别盯着天空看。读懂它，然后发送。
 
 ## Field Note
 
-Pretty moons are weights.
+漂亮的卫星仍然是线上的重量。
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/zh_CN. -->

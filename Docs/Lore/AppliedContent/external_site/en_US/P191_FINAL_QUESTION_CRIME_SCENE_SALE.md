@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Question: Crime Scene Sale"
+title: "Final Question: Crime-Scene Sale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Final Question: Crime Scene Sale
+# Final Question: Crime-Scene Sale
 
-The sale ending is strongest when it refuses to punish the player mechanically. A desperate Marauder can do everything the contract asked: reach the basin, recover coordinates, prove sample value, keep the XO record intact and deliver a payload the Black Keel can price. The result should feel coldly legitimate. The debt clears because the system recognizes value, not because it recognizes justice.
+The sale ending should feel legitimate enough to sting. A debt-bound Marauder can follow the contract, reach the basin, recover coordinates, prove sample value, preserve the XO record, and deliver a payload the carrier can price. The ledger answers because the objects are valuable, not because the dead have been heard.
 
-That is the horror. HECTON-8 is not lost because nobody can read the evidence. It is lost because the evidence can be converted into ownership. If the player sells the crime scene without a public witness chain, Deep Reach gains cleaner paperwork, better approach geometry and a reason to return with lawyers before rescue crews. The ending pays the player and teaches what kind of civilization can afford interstellar salvage.
+The receipt decides what travels next. If witness material is not separately notarized, Deep Reach receives approach geometry, sample valuation, and a custody path without the worker name ledger attached. Keelmark can pay. The operator can leave. The room below becomes an asset record before it becomes testimony, and that is why the payout route belongs in the final axis rather than in a failure bin.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/en_US. -->

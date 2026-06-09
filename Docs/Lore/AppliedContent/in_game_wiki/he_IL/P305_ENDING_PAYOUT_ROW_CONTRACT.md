@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ending Payout Data Boundary"
+title: "גבול נתוני תשלום סוף"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Ending Payout Data Boundary
+# גבול נתוני תשלום סוף
 
-HE LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+הגבול שומר על סיומים כרשומות פשרה, לא ציוני ניצחון. התשלום חשוב, אבל גם משמורת, ראיה ציבורית, הסגר, חוב וזכות המקלט לפעול אחרי שהשחקן עוזב.
 
 ## Scanner
 
-HE LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+שורת סוף קושרת מקלט, משמורת, מצב ראיות, תשלום ותוצאה לא פתורה.
 
 ## Terminal
 
-HE LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: שורות דורשות מסלול payload, מקלט, מצב ראיות, תשלום חומרי, תוצאה משפטית, עיכוב הסגר ועלות לא פתורה. קרדיטים אינם סוגרים זירת פשע.
 
 ## Audio
 
-HE LOC HOLD: Credits do not close a crime scene.
+קרדיטים אינם סוגרים זירת פשע.
 
 ## Field Note
 
-HE LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+ערך קרדיטים, עיכוב הסגר ודגלי תיק נרשמים רק אחרי שמקלט ומצב ראיות ברורים.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/he_IL. -->

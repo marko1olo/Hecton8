@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_seal_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS180_FIRST_SEAL_TRACE_ARTICLES.md |
 | Speaker | Maintenance scanner, gasket inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter seal inspection |
@@ -72,17 +72,17 @@ SEATED IS NOT PROVED
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| ru_RU | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| ja_JP | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| zh_CN | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| fr_FR | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| es_ES | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| de_DE | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| pl_PL | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| uk_UA | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| ar_SA | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| id_ID | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| ko_KR | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| he_IL | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| pt_BR | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
-| nl_NL | draft_machine_or_llm | GASKET LIP // Flattened on low side. Treat seal as compressed, not approved. |
+| ar_SA | draft_machine_or_llm | شفة حشية // مسطحة في الجانب المنخفض. عامل الختم كمضغوط، لا كمقبول. |
+| de_DE | draft_machine_or_llm | DICHTUNGSLIPPE // Auf niedriger Seite flachgedrueckt. Dichtung als komprimiert behandeln, nicht als freigegeben. |
+| es_ES | draft_machine_or_llm | LABIO DE JUNTA // Aplanado en el lado bajo. Trata el sello como comprimido, no aprobado. |
+| fr_FR | draft_machine_or_llm | LEVRE DE JOINT // Aplatie cote bas. Traiter le joint comme comprime, pas valide. |
+| he_IL | draft_machine_or_llm | שפת אטם // שטוחה בצד הנמוך. התייחס לאיטום כדחוס, לא כמאושר. |
+| id_ID | draft_machine_or_llm | BIBIR GASKET // Rata di sisi rendah. Anggap segel tertekan, bukan disetujui. |
+| ja_JP | draft_machine_or_llm | ガスケット縁 // 低い側が平坦化。シールは圧縮済み扱い、承認済みではない。 |
+| ko_KR | draft_machine_or_llm | 개스킷 립 // 낮은 쪽이 눌려 평평하다. 씰은 승인된 것이 아니라 압축된 것으로 본다. |
+| nl_NL | draft_machine_or_llm | PAKKINGLIP // Lage zijde platgedrukt. Behandel afdichting als samengedrukt, niet goedgekeurd. |
+| pl_PL | draft_machine_or_llm | WARGA USZCZELKI // Splaszczona po niskiej stronie. Traktuj uszczelnienie jako scisniete, nie zatwierdzone. |
+| pt_BR | draft_machine_or_llm | LABIO DA JUNTA // Achatado no lado baixo. Trate a vedacao como comprimida, nao aprovada. |
+| ru_RU | draft_machine_or_llm | КРОМКА ПРОКЛАДКИ // Сплющена на нижней стороне. Считай уплотнение сжатым, не одобренным. |
+| uk_UA | draft_machine_or_llm | КРАЙКА ПРОКЛАДКИ // Сплющена на нижньому боці. Вважай ущільнення стиснутим, не схваленим. |
+| zh_CN | draft_machine_or_llm | 密封垫唇 // 低侧被压平。按受压密封处理，不按合格处理。 |

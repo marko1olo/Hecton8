@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ordem de Limpeza Deep Reach"
+title: "Ordem de Limpeza Ativa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ordem de Limpeza Deep Reach
+# Ordem de Limpeza Ativa Deep Reach
 
-A ordem torna a Deep Reach antagonista atual: limpeza e extração ativas, não só passado.
+Ordem de Limpeza Ativa Deep Reach é uma ordem de trabalho atual, não nota de arquivo. Ela mostra custódia de recursos, acesso Atlas e apagamento de provas agendados por contratados proxy após a retenção da evacuação.
 
 ## Scanner
 
-Pilha de ordens: recurso, acesso Atlas, apagar provas. Resgate abaixo de controle de ativo.
+Ordem ativa recuperada: apreender amostras certificadas, abrir canal Atlas, isolar sobreviventes, apagar prova de responsabilidade.
 
 ## Terminal
 
-Diretiva proxy: contratante negável. Preservar amostras. Abrir canal Atlas se risco local aceitável. Apagar corpus de responsabilidade.
+A ordem proxy DR-CLEANSE-19 segue ativa. Contratados negáveis recebem primeiro custódia de amostras, depois acesso Atlas, e recuperação de testemunhas por último. Se Black Keel ou o ledger do local expõe responsabilidade, a fila purge move arquivos de prova para cold delete e retaggeia mortes de campo como perda climática.
 
 ## Audio
 
-A Deep Reach não está te caçando. Está te usando como sonda barata.
+Essa voz não é tráfego de resgate. É uma oferta de limpeza.
 
 ## Field Note
 
-Eles não voltaram para pedir desculpa.
+O campo de desculpas está vazio.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/pt_BR. -->

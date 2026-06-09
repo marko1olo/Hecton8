@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Quarantine Hold Signatures"
+title: "Підписи Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Quarantine Hold Signatures
+# Підписи Quarantine Review Gate
 
-UA LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+Шар карантинних підписів робить провину Deep Reach процедурною. Great Tide створив реальний ризик забруднення і тиску; брехня була в тому, що цей ризик використали для утримання людей і записів під локальним зберіганням, поки зовнішня перевірка відставала. Публічні звіти називали результат біологічним/тисковим карантином і відмовою авторизації. Відновлені gate-картки додають твердіший факт: вилучення утримували мовою сертифікатів навіть там, де маршрутне обладнання ще не відмовило.
 
 ## Scanner
 
-UK LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Картку перевірки відновлено: extraction state HELD, поле ризику BIO/PRESSURE-UNCERTAIN, зовнішній сертифікат відсутній. Випуск маршруту заблоковано gate code.
 
 ## Terminal
 
-UK LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Черга: Evacuation release. Дія: утримати вилучення до сертифіката pressure-biology та зовнішньої перевірки. Виняток: незалежну місткість шатла не призначено. Human tags лишаються в локальному зберіганні, доки gate не очищено.
 
 ## Audio
 
-UK LOC HOLD: Pending review is still a locked door.
+Живлення дверей ще було. Gate пише review pending, і люк лишився червоним.
 
 ## Field Note
 
-UA LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Клади це поруч із замкненими маршрутами вцілілих і евакуаційним обладнанням, де ще є батарея. Поле hold зробило робочі двері юридично закритими.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/uk_UA. -->

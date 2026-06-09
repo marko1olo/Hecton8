@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Worker Locker Nameplate Sample"
+title: "Amostra de Placa de Armário de Trabalhador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Worker Locker Nameplate Sample
+# Amostra de Placa de Armário de Trabalhador
 
-PT-BR LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+A Amostra de Placa de Armário de Trabalhador transforma um único armário em registro humano compacto. Ren Okoye sobrevive por acesso de rota, certificação de ferramenta, vale-refeição e cicatriz de apagamento. O objeto mostra o estilo central de evidência de HECTON-8: identidade preservada pelo trabalho depois que a memória de folha falha.
 
 ## Scanner
 
-PT-BR LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+A placa de Ren Okoye mantém o nome porque a linha de pagamento era mais fácil de apagar que o trabalho.
 
 ## Terminal
 
-PT-BR LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-PT-BR LOC HOLD: Name retained. Payline erased.
+Nome retido. Linha de pagamento apagada. Trabalho ainda anexado.
 
 ## Field Note
 
-PT-BR LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / vale-refeição preso sob fita. Faixa de folha lixada; marca de tamanho de luva ainda visível.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/pt_BR. -->

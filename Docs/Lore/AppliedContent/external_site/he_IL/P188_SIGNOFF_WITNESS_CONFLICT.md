@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "התנגשות חתימה ועדות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# התנגשות חתימה ועדות
 
-HE LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+התנגשות חתימה ועדות מגדירה את הסתירה שמאחורי הדו״ח הציבורי של Deep Reach. החברה יכולה לטעון שהאוקיינוס הפך חילוץ לבלתי אפשרי; היא אינה יכולה לטעון בבטחה שאיש לא ראה את הסתירה לפני החזקת סמכות השחרור. המאמר הופך ראיות חדר ללחץ סיפורי: יומן דלת, hash עדות ושעון מסלול פגום גורמים לחתימה הרשמית להיקרא פחות כאי-ודאות ויותר כהשמטה נשלטת. הוא שומר את האסון פיזי, אך מוכיח שסיפור הכיסוי היה אנושי.
 
 ## Scanner
 
-HE LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+החתימה אומרת שבסקירת הפינוי לא הייתה סתירה חיה. האשים של העדים אומרים שהסתירה הייתה בחדר.
 
 ## Terminal
 
-HE LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: חתימה ציבורית מסמנת כשל גאות כסיבה יחידה. hash עדות מקומי מציב ייעוץ פינוי, Atlas Safety ותפעול מסלול בחדר הסקירה לפני החזקת השחרור. להשוות יומן דלת, חותמת שם ושעון מסלול שבור.
 
 ## Audio
 
-HE LOC HOLD: The signatures line up. The bodies do not.
+הדו״ח אומר שאיש לא יכול היה לדעת. יומן הדלת חולק עליו.
 
 ## Field Note
 
-HE LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+חתימה נקייה רק עד שהחדר זוכר מי עמד לידה.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/he_IL. -->

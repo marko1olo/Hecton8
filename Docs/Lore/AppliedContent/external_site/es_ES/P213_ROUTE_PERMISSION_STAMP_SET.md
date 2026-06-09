@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Conjunto de sellos de permiso de ruta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Conjunto de sellos de permiso de ruta
 
-ES LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+El Conjunto de sellos de permiso de ruta define props de acceso para HECTON-8. Los sellos conectan identidad laboral con límites físicos: puertas, vehículos, trajes, elevadores y tableros de ruta. Como cada sello puede contradecir luego un registro o fragmento de audio, el acceso se vuelve biografía bajo presión y una vía central para leer el último movimiento de la colonia.
 
 ## Scanner
 
-ES LOC HOLD: A route stamp is stronger than a diary line.
+Un sello de ruta pesa más que una línea de diario porque prueba quién podía cruzar el límite de presión.
 
 ## Terminal
 
-ES LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: el permiso de ruta debe conectar un trabajador, una puerta o vehículo, una familia de cuadrilla y una contradicción posterior. Un sello sin frontera física es decoración. Un sello en escotilla, rack de traje, raíl crawler o tag de elevador se vuelve evidencia de movimiento.
 
 ## Audio
 
-ES LOC HOLD: Access is biography under pressure.
+El acceso es biografía bajo presión.
 
 ## Field Note
 
-ES LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Sellos: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Emparejar con estado de escotilla y objeto de trabajo.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/es_ES. -->

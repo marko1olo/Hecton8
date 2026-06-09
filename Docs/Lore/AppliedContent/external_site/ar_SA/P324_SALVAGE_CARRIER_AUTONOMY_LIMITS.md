@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "حدود استقلال carrier salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Salvage Carrier Autonomy Limits
+# حدود استقلال carrier salvage
 
-AR LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+تبقي حدود استقلال carrier salvage عالم HECTON-8 راسخا. Black Keel خطر لأنه مفيد ومحدود في الوقت نفسه. يستطيع أداء المحاسبة وعمل الاسترداد الذي يجعل الهروب ممكنا، لكن قواعده تمنع الإنقاذ المستحيل الذي يتوقعه اللاعبون من سفينة شخصية. النتيجة بنية تحتية لها نبض، لا رفيق.
 
 ## Scanner
 
-AR LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+يستطيع Black Keel تحريك الدين والقياس وإسقاطات الإمداد منخفضة الخطر من دون سؤالك. لا يستطيع تفويض إنقاذ عميق.
 
 ## Terminal
 
-AR LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+حدود الاستقلال / مسموح: claim processing، بيع القياس، recovery-window scheduling، ballast أو supply drop منخفض الخطر، contaminated-mass rejection / محظور: crewed descent، deep-rated rescue، lien cancellation، quarantine override، receiver ownership transfer.
 
 ## Audio
 
-AR LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+مستقل لا يعني حرا. يعني أن الدين يستطيع التحرك من دون أن يسألك.
 
 ## Field Note
 
-AR LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+أبق هذا في حالة carrier وواجهة العقد، لا في نداءات القتال. يغطي الاستقلال المحاسبة وجدولة الاسترداد ومنطق الرفض.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/ar_SA. -->

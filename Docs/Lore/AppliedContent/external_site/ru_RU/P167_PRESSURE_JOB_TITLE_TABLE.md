@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Pressure Job Title Table"
+title: "Таблица профессий под давлением"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Pressure Job Title Table
+# Таблица профессий под давлением
 
-RU LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+Таблица профессий под давлением дает HECTON-8 трудовой язык. Эти должности читаются через комнаты и предметы, а не только через экспозицию. Насосные техники, такелажники уплотнений, маршрутные клерки, brine-ныряльщики, операторы фабрикаторов, помощники medlock, хранители реле, рабочие vent-kiln, читатели безопасности Atlas и мастера смены подразумевают рабочее место, набор инструментов, границу допуска и тип отказа.
+
+Для лора таблица делает колонию читаемой. Для геймплея она превращает имя в маршрут: если рабочий обслуживал уплотнения, ищи у люков; если отвечал за реле, ищи листы тайминга; если работал в medlock, жди отказные формы и триажную ложь. Хорошая должность позволяет игроку понять комнату до того, как терминал ее объяснит.
 
 ## Scanner
 
-RU LOC HOLD: Job titles should explain what kept the colony alive.
+ДОСКА РАБОТ // Должность не кадровая приправа. Она говорит, какая система отказала, когда рабочий перестал отвечать.
 
 ## Terminal
 
-RU LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+ПРОФЕССИИ ДАВЛЕНИЯ // Насосный техник, такелажник уплотнений, маршрутный клерк, brine-ныряльщик, оператор фабрикатора, помощник medlock, хранитель реле, рабочий vent-kiln, читатель безопасности Atlas и мастер смены - это не социальный фон. Это логика доступа. Должность задает, что человек знал, какая панель примет его жетон, где лежат его инструменты и какой отказ после Great Tide спишут на него.
 
 ## Audio
 
-RU LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Никто не умер как Сотрудник 438. Они умерли на работе, которая все еще была нужна океану.
 
 ## Field Note
 
-RU LOC HOLD: Every title should imply a tool, route or failure.
+Каждая должность должна указывать на инструмент, комнату, маршрутный допуск или причину, по которой тело не отпустили.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/ru_RU. -->

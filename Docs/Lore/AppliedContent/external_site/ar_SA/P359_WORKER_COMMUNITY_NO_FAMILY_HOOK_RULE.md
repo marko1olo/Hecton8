@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Worker Community Notice"
+title: "إشعار جهات اتصال العمل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Worker Community Notice
+# إشعار جهات اتصال العمل
 
-AR LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+إشعار جهات اتصال العمل وثيقة اجتماعية صغيرة بحافة قاسية. يسرد صفوف الأسرّة، قادة المسارات، شهود القفل الطبي، جهات الأدوات، ونوافذ المرحّل. يبدو إداريا حتى تظهر منطقية الضغط: جهة خارج العالم تستطيع الحزن والاعتراض والتذكر، لكنها لا تصل إلى الفتحة قبل الماء.
 
-## Scanner
+لذلك تعني جهة الطوارئ على HECTON-8: داخل المحطة، مدرّبة، قابلة للاستدعاء بالنغمة، ومصرحا لها بمسار العامل. التعريف صارم، لكنه ليس بلا رحمة. عندما يمكن لعودة فائتة أن تصبح طريق فيضان، تأخذ الرعاية هذا الشكل.
 
-AR LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-AR LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-AR LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-AR LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+تربط اللوحة أيضا الأدلة اليومية في شبكة جماعة. مفتاح مضخة في أثر، تصحيح ماء في آخر، توقيع أداة في ثالث: كل علامة تربط عاملا متعبا بآخر. النتيجة ليست ميلودراما، بل مستوطنة ضغط مقنعة تصبح فيها المسؤولية شكلا من القرب.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/ar_SA. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Tanda Domain 2190
 
-Pada 2190, satu benda rusak bisa membawa beberapa pemilik: standar Sol, perbaikan Barnard, kustodi Luyten, klaim Aegir. Kesepian HECTON-8 bukan kurang sejarah, melainkan sejarah yang datang sebagai cap saat ruangan terendam.
+Pada 2190, satu benda rusak bisa punya beberapa orang tua hukum. Di HECTON-8, kunci tekanan bisa disertifikasi Sol, diperbaiki budaya Barnard, dijaga Luyten, dilegitimasi Centauri, lalu disita cangkang Aegir. Tanda itu tidak membuat koloni aman. Tanda itu membuatnya terdokumentasi.
+
+Perbedaan ini membentuk nada game. HECTON-8 bukan di luar peradaban. Ia berada di bawah sisi dinginnya: sisi yang bisa menamai braket, memberi harga pada tubuh, menyimpan paket, dan tetap gagal menggerakkan massa penyelamatan tepat waktu.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/id_ID. -->

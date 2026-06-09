@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "פרוטוקול מקבל ספר ציבורי payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Public Ledger Receiver Protocol
+# פרוטוקול מקבל ספר ציבורי payload
 
-HE LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+נתיב הספר הציבורי הוא המקבל הכי פחות פרטי והכי פחות צייתן. הוא מסרב למכירת קואורדינטות, לתביעת שחזור ישירה ולקבלת תשלום נקייה. הוא מקבל חבילת אירוע בלי מפת מסלול: attestation hashes, שרשרת אחריות, digest שקלול Atlas וחותמת זמן מקבל.
 
-## Scanner
-
-HE LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-HE LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-HE LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+העיכוב חשוב. החבילה לא תזמן חילוץ מיידי או צדק מיידי. היא תנוע בנתיב איטי שנבנה לשרוד צווי מניעה, מחלוקות מקבלים ולחץ משמורת. מרגע הקבלה, הנושא לא יכול למשוך אותה חזרה. אובדן השליטה הזה הוא המחיר של הפיכת הראיות לקשות יותר לקנייה.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/he_IL. -->

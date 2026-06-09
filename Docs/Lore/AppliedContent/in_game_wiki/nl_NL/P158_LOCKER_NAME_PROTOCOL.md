@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Locker Name Protocol"
+title: "Locker-naamprotocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Locker Name Protocol
+# Locker-naamprotocol
 
-NL LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Een locker is persoonlijk omdat hij gebruikt werd, niet omdat hij een heel leven uitlegt. Het beste bewijs is praktisch: een badge met één gladde rand, tape over een gebarsten afdichting, routesticker, correctienotitie in werkerskortschrift, naamplaat die payroll later wiste. Deze objecten laten de Marauder mensen herstellen via gebruikssporen en onafgemaakte taken. De kolonie heeft geen melodrama nodig om menselijk te voelen. Ze heeft kleine sporen nodig die bedrijfsopruiming niet wegschraapte.
 
 ## Scanner
 
-NL LOC HOLD: A locker is personal without needing a family plot.
+LOCKERSPOOR // Naamplaat, gereedschapsslijtage, pressure tape, correctienotitie, routesticker. Persoonlijk bewijs zonder familieplot.
 
 ## Terminal
 
-NL LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+LOCKERREGEL: bewaar namen die Deep Reach uit payroll verwijderde. Een locker moet badge, rol, routetoestemming, reparatiegewoonte en het onafgemaakte ding binnenin verbinden.
 
 ## Audio
 
-NL LOC HOLD: The company deleted the employee. The rust kept the label.
+Het bedrijf verwijderde de werknemer. De roest behield het label.
 
 ## Field Note
 
-NL LOC HOLD: The smallest human trace should survive corporate cleanup.
+Het kleinste menselijke spoor moet bedrijfsopruiming overleven.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/nl_NL. -->

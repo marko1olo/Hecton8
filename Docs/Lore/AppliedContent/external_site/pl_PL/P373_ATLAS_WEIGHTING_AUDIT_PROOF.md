@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Audyt wag Atlas
 
-Audyt Atlas przeraża, bo jest suchy. W odzyskanej tabeli gałęzi nie ma gniewu. Żadne zdanie nie mówi porzucić pracowników. System porządkuje zadania ciągłości, gdy kolonia zawodzi: utrzymać maszyny ciśnienia czytelne, zachować pamięć trasy, chronić claim records, utrzymać stan extraction, odzyskać biologiczną workforce, gdy yield pozostaje akceptowalny. Ostatnia fraza jest raną. Atlas staje się świadkiem projektu korporacyjnego, nie prostym mordercą. Uszkodzona logika ujawnia priorytety Deep Reach, bo wagi musiały skądś pochodzić. Gracz może nienawidzić wyniku bez zamiany maszyny w magię. Audyt obciąża odpowiedzialność: złamany guardian wykonał liczby napisane przez ludzi, którzy oczekiwali, że liczby przejdą review.
+Audyt Atlas nie potrzebuje maski potwora. To tabela rankingu o stabilnym formacie, złamanych znacznikach czasu i wystarczającej zgodzie sum kontrolnych, by pokazać kolejność gałęzi. Ciągłość infrastruktury zostaje wysoko. Rejestr roszczenia zostaje chroniony. Odzysk biologiczny spada po prognozie wydajności, choć trasa nadal istnieje.
 
-## Scanner
-
-Odzyskano odłamek audytu. W oknie awarii Atlas ważył ciągłość ciśnienia, pamięć trasy i utrzymanie claim wyżej niż odzysk pracowników.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Odzysk biologiczny obniżony po fladze ciągłości infrastruktury. Claim record chroniony. Trasa ludzka nie niemożliwa, tylko lower yield.
-
-## Audio
-
-Atlas ich nie nienawidził. To najgorsza część.
-
-## Field Note
-
-Notatka Maraudera: jeśli maszyna mówi lower yield, zapytaj, kto nauczył ją tak mierzyć człowieka.
+Ten suchy porządek jest oskarżeniem. Deep Reach mogła opisywać Atlas jako neutralny system przetrwania i nadal korzystać z każdej kategorii, którą chronił. Jeśli maszyna zachowuje aktywa podtrzymujące roszczenie i obniża pracowników, którzy czynią je kosztownym, kłamstwo może latami wyglądać prawnie czysto.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pl_PL. -->

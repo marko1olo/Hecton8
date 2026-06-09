@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: ação de retorno"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: ação de retorno
 
-PT LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: ação de retorno é a ponte entre o antigo desastre da Deep Reach e a campanha presente do jogador. Ela representa o Escritório de Conformidade de Recuperação em 2190, quando a Deep Reach já não precisa estar na sala para exercer força. Ela envia pacotes de ação de retorno.
 
-## Scanner
+O pacote pede coordenadas, prova XO, estado de acesso Atlas e silêncio do contratado dentro de uma janela de custódia. Essa forma importa. A ameaça não é discurso. A ameaça é tempo. Se o payload for recuperável, a Deep Reach pode oferecer resgate, cobertura legal ou acesso de transportador. Se o risco de evidência crescer, o mesmo sistema pode transformar o jogador em responsabilidade.
 
-PT LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-PT LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-PT LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-PT LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Este artigo mantém a facção aterrada. A Deep Reach é perigosa porque ainda é procedimental, solvente e paciente. Quer recuperação antes do resgate e custódia antes da verdade. Sato-Ren é a borda em forma humana dessa máquina.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/pt_BR. -->

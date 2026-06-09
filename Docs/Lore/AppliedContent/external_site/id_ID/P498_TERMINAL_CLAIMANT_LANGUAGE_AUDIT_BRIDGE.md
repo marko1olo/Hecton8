@@ -9,37 +9,37 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audit Bahasa Penggugat"
+title: "Audit Bahasa Klaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Audit Bahasa Penggugat
+# Audit Bahasa Klaim
 
-## Apa yang dibuktikan catatan
+## Yang dibawa catatan
 
-Bahasa klaim adalah salah satu senjata paling sunyi di koloni. Ia tidak perlu menyangkal ruang pompa, pintu triase yang terkunci, atau massa pekerja di balik kisi servis. Ia hanya perlu mengganti nama sebelum berkas dibaca orang berkuasa. Antrean menjadi selisih waktu rilis. Pintu terkunci menjadi gerbang tinjauan karantina. Tubuh yang tidak kembali menjadi paparan pembayaran. Pengembalian salvage yang rusak menjadi kelayakan sebagian.
+Berkas Deep Reach dapat mengubur catatan tanpa menghapusnya. Berkas itu mempertahankan ruang, tag, waktu, dan hitungan jasad, lalu mengganti kata benda di sampingnya. Dalam cache cermin Tau, Ruang Pompa B yang ditandai terisi setelah waktu banjir 03:18 diarsipkan sebagai variasi jendela pelepasan. Pintu Triase 2 yang terkunci dari sisi kendali diarsipkan sebagai tinjauan karantina. Tag pekerja R-17 yang hilang sementara cincin setelan berada dalam massa salvage diarsipkan sebagai paparan Keelmark. Baki pengembalian dengan empat kait kit kosong diarsipkan sebagai kelayakan kargo sebagian.
 
-Audit ada agar pemain membaca bahasa prosedur sebagai tindakan. Setiap frasa yang diubah harus ditelusuri kembali ke orang, ruangan, alat, jam rute, atau peristiwa tekanan. Deep Reach bisa menyimpan saksi dan tetap mengubur kesaksian dengan mengganti label rak. Jika kategori bertahan tetapi tubuh hilang, bukti sudah dicuci sekali.
+Baca catatan dari lantai ke atas: ruang, palang, tag, jam, hitungan benda yang kembali. Bahasa prosedur klaim baru menjadi bukti ketika bisa dipasangkan ke jejak fisik. Jika sebuah berkas mempertahankan kategori dan menghilangkan pekerja, kantor sudah membersihkan rutenya satu kali.
 
 ## Cara membacanya
 
-ANTARMUKA NOTARIS PAKET: AUDIT BAHASA
-Baris asli: antrean ruang pompa masih terisi.
-Konversi: selisih waktu rilis.
-Baris asli: pintu triase ditahan tertutup.
-Konversi: gerbang tinjauan karantina.
-Baris asli: massa pekerja belum dipulihkan.
-Konversi: paparan pembayaran Keelmark.
-Baris asli: kembali tanpa muatan penuh.
-Konversi: kelayakan pengembalian sebagian.
-Kategori tidak netral saat menggantikan seseorang.
+AUDIT BAHASA KLAIM / MASUKAN CERMIN TAU
+Jejak mentah: antrean Ruang Pompa B terisi setelah tanda banjir 03:18.
+Diarsipkan sebagai: variasi jendela pelepasan.
+Jejak mentah: Pintu Triase 2 terkunci dari sisi kendali.
+Diarsipkan sebagai: tinjauan karantina.
+Jejak mentah: tag pekerja R-17 hilang; cincin setelan tercatat dalam massa salvage.
+Diarsipkan sebagai: paparan Keelmark.
+Jejak mentah: baki pengembalian kehilangan empat kit pribadi.
+Diarsipkan sebagai: kelayakan kargo sebagian.
+Tolak kategori apa pun yang tidak dapat menunjuk ruang, tag, palang, atau jam.
 
 ## Catatan lapangan
 
-Kategori membuat pekerja mati diam tanpa kehilangan faktur. Baca labelnya, lalu cari apa yang harus dipotong agar label itu pas.
+Jika berkas terdengar terlalu bersih, hitung kait, tag, palang, dan jam. Kata benda yang hilang biasanya pekerja.
 
 <!-- External Site; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/id_ID. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "ערכת שמות עובדי עוגן B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# ערכת שמות עובדי עוגן B
 
-HE LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+ערכת שמות עובדי עוגן B היא שכבת העובדים החוזרת העמוקה יותר של HECTON-8. השמות האלה לא צריכים לרכך את האימה; הם צריכים להפוך את המערכת לקריאה יותר. עד שהשחקן רואה את Set B, לכשלי לחץ, החזקות נתיב ועיכובי מיון כבר יש דפוס. השמות החוזרים מחברים את הדפוס לאנשים, ואז לאחריות של Deep Reach.
 
 ## Scanner
 
-HE LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+שמות עמוקים יותר צריכים להגיע אחרי שהשחקן כבר מכיר את דפוס הנזק. הם עולים יותר כי המים התחילו להוכיח את הפשע.
 
 ## Terminal
 
-HE LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: חזרה בקניון התמלחת ובשדות המכונה האביסליים. קשר את השמות האלה ל witness hashes, החזקות נתיב, חריגות מיון, סתירות תיקון Atlas ושבילי חוב salvage. Set B הוא המקום שבו ראיית העובד מפסיקה להיות טרגדיה מקומית והופכת לסיבה תאגידית.
 
 ## Audio
 
-HE LOC HOLD: A deep name costs more because the water has already proved what happened.
+שם עמוק עולה יותר כי המים כבר הוכיחו מה קרה.
 
 ## Field Note
 
-HE LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+עוגני Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- External Site; generated from P209_ANCHOR_WORKER_NAME_SET_B/he_IL. -->

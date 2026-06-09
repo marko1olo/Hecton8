@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Żądanie współrzędnych przez Zgodność Odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Recovery Compliance Coordinate Demand
+# Żądanie współrzędnych przez Zgodność Odzysku
 
-PL LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Po zniknięciu kolonii Deep Reach nie wróciło z wyciągniętą ręką. Pierwszy czysty kanał pyta, gdzie jest aktywo, kto potrafi dowieść własności i czy żywy świadek podda się kwarantannie oraz kontroli zastawu. W HECTON-8 ratunku się nie odmawia; odkłada się go, aż stanie się dźwignią.
 
 ## Scanner
 
-PL LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Pakiet uwierzytelniony jako Deep Reach Recovery Compliance: język ratunku owinięty wokół żądań współrzędnych, dozoru i skażenia.
 
 ## Terminal
 
-PL LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+POWIADOMIENIE RECOVERY COMPLIANCE DR-RC-8: prześlij wektor dostępu Atlas, dowód dozoru Xenon-Omega, status skażenia biologicznego i aktualne współrzędne basenu. Ewakuacja medyczna pozostaje wstrzymana do uzgodnienia łańcucha aktywa, zastawu ratowniczego i praw kontroli miejsca. Nieautoryzowana transmisja może obniżyć priorytet ocalałego do zatrzymania dowodowego.
 
 ## Audio
 
-PL LOC HOLD: They can say rescue without meaning rescue.
+Znaleźli sposób, żeby ratunek brzmiał jak nakaz.
 
 ## Field Note
 
-PL LOC HOLD: Use near payload authority decisions and receiver selection.
+Umieścić tam, gdzie gracz wybiera, co nadać. Groźba ma brzmieć proceduralnie, nie teatralnie: bez monologu złoczyńcy, tylko kolejka zdolna pogrzebać człowieka.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/pl_PL. -->

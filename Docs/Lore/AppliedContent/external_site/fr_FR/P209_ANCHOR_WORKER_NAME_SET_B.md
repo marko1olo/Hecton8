@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Jeu de noms ouvriers d'ancrage B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Jeu de noms ouvriers d'ancrage B
 
-FR LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+Le Jeu de noms ouvriers d'ancrage B est la couche ouvrière récurrente plus profonde de HECTON-8. Ces noms ne doivent pas adoucir l'horreur ; ils doivent rendre le système plus lisible. Quand le joueur voit Set B, les ruptures de pression, blocages de route et délais de triage ont déjà un motif. Les noms répétés relient ce motif aux personnes, puis à la responsabilité de Deep Reach.
 
 ## Scanner
 
-FR LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Les noms plus profonds doivent arriver quand le joueur connaît déjà le motif des dégâts. Ils coûtent plus cher parce que l'eau a commencé à prouver le crime.
 
 ## Terminal
 
-FR LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B : récurrence dans le canyon de saumure et les champs machines abyssaux. Lie ces noms aux witness hashes, blocages de route, exceptions de triage, contradictions de réparation Atlas et traces de dette de salvage. Set B est l'endroit où la preuve ouvrière cesse d'être une tragédie locale et devient une cause corporative.
 
 ## Audio
 
-FR LOC HOLD: A deep name costs more because the water has already proved what happened.
+Un nom profond coûte plus cher parce que l'eau a déjà prouvé ce qui s'est passé.
 
 ## Field Note
 
-FR LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Ancrages Set B : Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- External Site; generated from P209_ANCHOR_WORKER_NAME_SET_B/fr_FR. -->

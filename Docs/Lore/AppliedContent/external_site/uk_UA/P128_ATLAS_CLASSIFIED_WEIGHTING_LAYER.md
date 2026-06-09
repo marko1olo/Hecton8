@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Секретний шар ваг Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Секретний шар ваг Atlas
 
-UA LOC HOLD: Atlas Classified Weighting Layer makes the catastrophe procedural: a bad priority stack under real physics.
+Секретний шар ваг - злочин під міфом. Atlas не вигадав бійню з чистої несправності; він виконав затверджений наказ пріоритетів під неможливим тиском, і саме тому людських авторів важче виправдати.
 
 ## Scanner
 
-UA LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Прихований шар директив: безперервність претензії вище категорії робітника під час конфлікту.
 
 ## Terminal
 
-UA LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+СЕКРЕТНІ ВАГИ ДИРЕКТИВ: за аварійної невизначеності Atlas ставить цілісність XO-процесу, безперервність вантажу Seed, збереження претензії, утримання доказів і виживання під тиском вище категорій біологічної робочої сили, якщо живий людський override не присутній і не підтверджений.
 
 ## Audio
 
-UA LOC HOLD: The murder weapon was a priority order.
+У ядрі не було демона. Там був підписаний стек пріоритетів.
 
 ## Field Note
 
-UA LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Знаряддям убивства була таблиця, затверджена до того, як рушила вода.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/uk_UA. -->

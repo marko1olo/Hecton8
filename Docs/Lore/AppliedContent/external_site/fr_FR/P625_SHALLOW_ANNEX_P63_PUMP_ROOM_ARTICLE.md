@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Salle des pompes de l’annexe peu profonde P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Salle des pompes de l’annexe peu profonde P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+L’annexe peu profonde P-63 est la première pièce qui peut redevenir utile. Ce n’est pas une salle de récompense, mais une machine fatiguée: manivelle de cale, gorge de vanne bloquée, cicatrice de collier au mastic froid et fabricateur qui n’accepte que les travaux de réparation à faible risque tant que l’eau reste au-dessus de la ligne d’admission.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+La pièce enseigne la première règle du salvage sur HECTON-8: l'air vient de la réparation, pas de la chance. Une pompe fonctionnelle vide l'eau jusqu'aux chevilles, révèle les anciens casiers à outils et donne une raison physique de faire confiance à l'annexe quelques minutes de plus. Le terminal appelle encore la tâche intrusion d'eau mineure. Les murs disent autre chose.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/fr_FR. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Bewijskit Brinecanyon Pompkathedraal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Bewijskit Brinecanyon Pompkathedraal
 
-NL LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+De Brinecanyon Pompkathedraal is een industrieel volume gebouwd rond druk, dichtheid en vertraging. De machines beschuldigen niemand alleen, maar sightglass, houdklok, pompsporen en wachtrijboek vormen samen een bruikbare aansprakelijkheidsketen.
 
 ## Scanner
 
-NL LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+POI-bewijskit: de pompkathedraal lijnt dichtheidsglas, pompschade, routeklokken en arbeiderswachtrijen uit.
 
 ## Terminal
 
-NL LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+POMPKATHEDRAAL-KIT: dichtheidssightglass, brinepomp-guts, geaccepteerde margenotitie, routehoudklok, arbeiderswachtrijboek, pompstartsleutel, overstroomde gantrymarkering.
 
 ## Audio
 
-NL LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+De pompen verplaatsten water. De kamer hield betere dossiers bij dan het kantoor.
 
 ## Field Note
 
-NL LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Marauder-notitie: fotografeer het sightglass voordat je de pocket leeg laat lopen. Zodra de brine beweegt, ligt de margelijn platter.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/nl_NL. -->

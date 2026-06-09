@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Brine Canyon Liability Act"
+title: "Brine Canyon Liability Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Brine Canyon Liability Act
+# Brine Canyon Liability Gate
 
-Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+The canyon stage is where the route stops feeling like salvage paperwork and starts behaving like a case file. Density layers preserve bad clocks. Brine keeps traces that ordinary water would erase. A broken evacuation plate can sit beside a margin log and make both documents mean more.
 
-## Scanner
-
-Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-The ocean did not lie. The timetable did.
-
-## Field Note
-
-Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+The chain matters because it does not deny physics. The Great Tide struck. The wall failed. The company lie sits in the order of decisions around those facts: accepted margin, delayed queue, damaged route, protected claim. The visible work stays physical: scan the trace, match the clock, carry the proof out.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/en_US. -->

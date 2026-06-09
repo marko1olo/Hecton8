@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Panduan Kaca Tekanan dan Sealant
 
-Pressure glass adalah tempat geologi bertemu Atlas. Repair network menggunakan retakan yang ada, tepi mineral, dan pressure memories sebagai rute, jadi lensa berguna juga bisa menjadi batas hidup.
+Kaca tekanan adalah tempat geologi bertemu Atlas. Retakan lama, tepi mineral, sambungan biofilm, dan memori stres menjadi rute untuk kimia perbaikan, jadi lensa berguna juga bisa menjadi batas hidup.
 
 ## Scanner
 
-Retakan pressure-glass disegel oleh kimia Atlas. Lens stock aman hanya jika seal map tetap utuh.
+Retakan kaca tekanan disegel kimia Atlas. Stok lensa aman hanya selama peta seal tetap utuh.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass merekam tide stress lama. Atlas sealant mengikuti retakan itu karena retakan sudah menggambarkan garis kegagalan sistem.
+PANDUAN LAPANGAN: kaca tekanan merekam stres pasang lama. Sealant Atlas mengikuti retakan itu karena retakan sudah menggambarkan garis kegagalan sistem.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Jaringan perbaikan membaca retakan seperti kau membaca peta.
 
 ## Field Note
 
-Jangan gerinda tepi yang cantik. Ikuti fracture map dan potong dari sisi mati seal.
+Jangan gerinda tepi yang indah. Ikuti peta retakan dan potong dari sisi mati seal.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/id_ID. -->

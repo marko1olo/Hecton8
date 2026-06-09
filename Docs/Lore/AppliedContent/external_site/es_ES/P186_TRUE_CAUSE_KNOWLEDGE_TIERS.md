@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Niveles de conocimiento de la causa real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Niveles de conocimiento de la causa real
 
-ES LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+Niveles de conocimiento de la causa real es el mapa del saber corporativo detrás de HECTON-8. El artículo separa pruebas por oficina no para excusar a Deep Reach, sino para hacer el crimen más creíble: datos oceánicos, ponderación de IA, ley de evacuación, conversión de seguros y cumplimiento de recuperación tenían piezas distintas de la misma cadena fatal. El horror no es una orden oculta que diga «matad la colonia». El horror es una compañía construida para que cada mesa vea una verdad parcial, proteja su métrica y pase el resto moral corriente abajo hasta que el rescate se convierta en un evento de responsabilidad.
 
 ## Scanner
 
-ES LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach conocía la verdad por partes: márgenes de marea en una oficina, ponderación Atlas en otra, demora de evacuación y conversión de reclamaciones en otro lugar.
 
 ## Terminal
 
-ES LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: equipos de marea registran pérdida de margen; Risk acepta exposición de cola; Atlas Safety pondera continuidad por encima de evacuación; asesoría retiene liberaciones; Keelmark convierte muertes en pérdida recuperable; Recovery Compliance pide carga antes de divulgar.
 
 ## Audio
 
-ES LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Nadie tuvo que escribir «dejad que mueran». La tabla ya sabía cómo.
 
 ## Field Note
 
-ES LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+La ignorancia distribuida no era inocencia. Era una arquitectura.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/es_ES. -->

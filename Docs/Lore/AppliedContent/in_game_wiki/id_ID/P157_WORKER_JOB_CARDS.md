@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Kartu Kerja Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Kartu Kerja Pekerja
 
-ID LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Kartu kerja adalah biografi terkecil koloni. Ia tidak butuh masa kecil, romansa, atau pidato untuk berarti. Ia butuh peran, cap izin, tugas terakhir, dan hal yang pekerja kira akan selesai setelah nada berikutnya. Saat pemain menemukan kartu ini, orang berhenti menjadi korban latar dan menjadi bukti rute: seseorang memegang kunci pompa, menunda hatch, memasak untuk kru, menandatangani cutter, mensertifikasi segel, atau gagal kembali karena sistem membuat bantuan menunggu.
 
 ## Scanner
 
-ID LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Nama, peran, tugas terakhir, izin rute, sertifikasi alat. Wajah yang bisa dibaca anggaran.
 
 ## Terminal
 
-ID LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+ATURAN BUKTI: tiap nama yang ditemukan harus melekat pada sesuatu yang dikerjakan: rute pompa, ledger dapur, panggilan med bay, kustodi cutter, cek tekanan, batch fabrikasi. Tugas mengubah nama menjadi bukti.
 
 ## Audio
 
-ID LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Nama tanpa tugas menjadi tempat suci. Tugas membuatnya bukti.
 
 ## Field Note
 
-ID LOC HOLD: Make names useful before making them tragic.
+Buat nama berguna sebelum membuatnya tragis.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/id_ID. -->

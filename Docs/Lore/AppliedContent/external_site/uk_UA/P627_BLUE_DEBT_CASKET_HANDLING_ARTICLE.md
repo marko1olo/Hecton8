@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Поводження з касетою синього боргу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Поводження з касетою синього боргу
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Синій борг стає корисним не в момент знахідки, а якщо зберігає стан, що зробив його цінним. Герметична касета тиску є контейнером, попередженням і розпискою водночас; вона не дає Xenon-Omega, решітці тиску чи забрудненому субстрату стати шумом, порошком, утратою доказу або сигналом для чужої системи.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+Перший безпечний вибір - не продати, не виготовити й не сховати. Спершу стабілізувати. Касета з холодною цілою смугою може рухатися. Касета з теплим швом робить доказ підозрілим. Погане поводження перетворює виплату на зараження, шум і ризик маршруту.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/uk_UA. -->

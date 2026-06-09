@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Contract Approach Act Gate"
+title: "Gerbang Pendekatan Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Contract Approach Act Gate
+# Gerbang Pendekatan Kontrak
 
-ID LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+Tahap pendekatan kontrak memasang tekanan kampanye tanpa berpura-pura samudra sudah menjelaskan dirinya. Papan Black Keel menetapkan transfer klaim, jadwal bathydrop, paparan lien, dan utang alat sebelum operator mencapai air terbuka. Rute dimulai sebagai pekerjaan berbayar dengan syarat buruk.
 
-## Scanner
-
-ID LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-ID LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-ID LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-ID LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Detail pentingnya adalah sisa Deep Reach di profil operator. Itu bukan kait keluarga atau gelar pahlawan. Itu kecocokan prosedural: bahasa akses, singkatan perawatan, dan kebiasaan infrastruktur evakuasi yang masih cocok dengan sistem koloni terbengkalai. Gerbang pertama berkata bahwa turun adalah kerja; baris kedua berkata kerja itu sudah punya berkas.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/id_ID. -->

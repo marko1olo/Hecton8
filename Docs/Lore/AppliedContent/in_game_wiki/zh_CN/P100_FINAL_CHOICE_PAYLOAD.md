@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "最终选择 payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# 最终选择 payload
 
-CN LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+最后决定不是干净的胜利画面，而是带有道德重量的运输问题。Marauder 决定从这颗月球升上去的是什么：坐标、样本、工人姓名、Atlas 访问权、隔离指令、公共证明，或者根本没有任何有用信息。每一种 payload 都会为后果创造不同的所有者。Deep Reach 可以重新获得控制。公共法律可以得到一处终于看得见的伤口。Atlas 连续性可以被切断或关住。海洋机器生态可以被保护、出售，或被留在人类语言之外。结局不是谁带着干净双手逃走，而是谁最先得到足够真相来行动。
 
 ## Scanner
 
-CN LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+最终 PAYLOAD // 坐标、样本、姓名、Atlas 访问权、隔离命令、公共证明。离开 HECTON-8 的东西决定之后谁能行动。
 
 ## Terminal
 
-CN LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOAD 矩阵：出售坐标和 XO 证明；切断 Atlas 连续性；保存或隔离海洋机器生态；把证据发布到公共 ledger；扣留 payload，让 Deep Reach 继续失明。
 
 ## Audio
 
-CN LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+一个学会呼吸的犯罪现场，没有干净的所有权。
 
 ## Field Note
 
-CN LOC HOLD: The best ending should be defensible, not clean.
+最好的结局应该可辩护，而不是干净。
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/zh_CN. -->

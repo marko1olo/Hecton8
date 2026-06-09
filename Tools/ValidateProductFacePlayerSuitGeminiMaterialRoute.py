@@ -13,11 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 APPLIER = ROOT / "Assets/_Project/Scripts/Editor/ProductFacePlayerSuitGeminiMaterialApplier.cs"
 AUTHORING = ROOT / "Assets/_Project/Scripts/Editor/ProductFacePlayerSuitMeshSourceAuthoring.cs"
 APPLY_ALL = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
+UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 MATERIAL_ROOT = ROOT / "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607"
 OUTPUT_ROOT = ROOT / "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials"
 GEMINI_SINGLE_MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json"
 GEMINI_BIOME_MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json"
 GEMINI_ATLAS_ROOT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases"
+REQUIRED_MAPS = ("BaseColor", "NormalGL", "MaskMap_UnityURP")
 
 
 EXPECTED_SPECS = [
@@ -82,6 +85,23 @@ def display(path: Path) -> str:
 
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
+def project_path(raw: str) -> Path:
+    path = Path(raw)
+    return path if path.is_absolute() else ROOT / path
+
+
+def read_guid(asset_path: Path) -> str:
+    meta_path = asset_path.with_suffix(asset_path.suffix + ".meta")
+    if not meta_path.exists():
+        return ""
+    match = re.search(
+        r"^guid:\s*([0-9a-fA-F]+)\s*$",
+        meta_path.read_text(encoding="utf-8-sig"),
+        re.MULTILINE,
+    )
+    return match.group(1) if match else ""
 
 
 def sanitize_provider_name(value: str) -> str:
@@ -183,6 +203,19 @@ def validate_static(errors: list[str]) -> None:
     elif not (importer_index < suit_index < held_index):
         errors.append("player-suit material applier must run after ExternalPBR import and before downstream consumer appliers")
 
+    if not UNITY_APPLY_RUNNER.exists():
+        errors.append(f"missing Unity apply runner: {display(UNITY_APPLY_RUNNER)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $productFacePlayerSuitValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate ProductFace player suit material route")
+
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display(STATIC_PREFLIGHT)}")
+    elif "ValidateProductFacePlayerSuitGeminiMaterialRoute.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateProductFacePlayerSuitGeminiMaterialRoute.py")
+
     material_assets = iter_material_assets()
     for spec in EXPECTED_SPECS:
         key = (spec["provider"], spec["id"])
@@ -191,17 +224,17 @@ def validate_static(errors: list[str]) -> None:
             continue
         asset = material_assets[key]
         maps = asset.get("maps", {}) or {}
-        for map_key in ("BaseColor", "NormalGL", "MaskMap_UnityURP"):
+        for map_key in REQUIRED_MAPS:
             raw_path = str(maps.get(map_key, "")).strip()
             if not raw_path:
                 errors.append(f"{spec['id']}: missing source map key {map_key}")
                 continue
-            resolved = ROOT / raw_path if not Path(raw_path).is_absolute() else Path(raw_path)
-            if not resolved.exists():
+            if not project_path(raw_path).exists():
                 errors.append(f"{spec['id']}: source map file missing for {map_key}: {raw_path}")
 
 
 def validate_post_apply(errors: list[str]) -> None:
+    material_assets = iter_material_assets()
     for spec in EXPECTED_SPECS:
         source_material = MATERIAL_ROOT / spec["provider"] / f"MAT_EXT_{spec['provider']}_{spec['id']}.mat"
         output_material = OUTPUT_ROOT / f"{spec['output']}.mat"
@@ -209,6 +242,28 @@ def validate_post_apply(errors: list[str]) -> None:
             errors.append(f"post-apply missing generated source material: {display(source_material)}")
         if not output_material.exists():
             errors.append(f"post-apply missing player suit output material: {display(output_material)}")
+            continue
+
+        output_text = output_material.read_text(encoding="utf-8-sig")
+        asset = material_assets.get((spec["provider"], spec["id"]))
+        if asset is None:
+            errors.append(f"post-apply missing generated material manifest source: {spec['provider']}/{spec['id']}")
+            continue
+
+        maps = asset.get("maps", {}) or {}
+        for map_key in REQUIRED_MAPS:
+            raw_path = str(maps.get(map_key, "")).strip()
+            if not raw_path:
+                errors.append(f"post-apply {spec['id']}: missing source map key {map_key}")
+                continue
+
+            guid = read_guid(project_path(raw_path))
+            if not guid:
+                errors.append(f"post-apply {spec['id']}:{map_key}: missing texture .meta guid")
+            elif guid not in output_text:
+                errors.append(
+                    f"post-apply player suit output {display(output_material)} missing {map_key} texture guid from {spec['id']}"
+                )
 
     primary_slots = [spec for spec in EXPECTED_SPECS if spec["slot"] >= 0]
     if len(primary_slots) != 4 or sorted(spec["slot"] for spec in primary_slots) != [0, 1, 2, 3]:

@@ -598,7 +598,7 @@ namespace Hecton8.World
         private const int MemoryGuardBytes = 500 * 1024 * 1024;
         private const float DefaultLoadRadiusMeters = 500f;
         private const float DefaultUnloadRadiusMeters = 600f;
-        private const double DefaultSeaLevelY = 14.02d;
+        private const double DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const float ChunkFadeSeconds = 2f;
         private const float ChunkFadeSecondsRcp = 0.5f;
         private const float PredictiveLookaheadSeconds = 5f;
@@ -866,6 +866,7 @@ namespace Hecton8.World
         private IDataVault _dataVault;
         private IJobAdmissionService _jobAdmissionService;
         private IMacroDatabaseService _macroDatabaseService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private Hecton8.Optimization.AssetLifecycleGovernor _assetLifecycleGovernor;
         private IVramBudgetReadModel _vramMonitor;
         private IVramPressureReadModel _vramPressure;
@@ -2518,6 +2519,7 @@ namespace Hecton8.World
             _dataVault = GlobalRegistry.DataVault;
             _jobAdmissionService = GlobalRegistry.JobAdmission;
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _assetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
             _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
             _vramPressure = GlobalRegistry.VRAMPressureReadModel;
@@ -2640,6 +2642,7 @@ namespace Hecton8.World
             _dataVault = null;
             _jobAdmissionService = null;
             _macroDatabaseService = null;
+            _oceanKinematicsService = null;
             _assetLifecycleGovernor = null;
             _vramMonitor = null;
             _vramPressure = null;
@@ -2672,6 +2675,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.MacroDatabase:
                     _macroDatabaseService = currentService as IMacroDatabaseService;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime:
                     _assetLifecycleGovernor = currentService as AssetLifecycleGovernor;
@@ -4310,10 +4316,39 @@ namespace Hecton8.World
             return false;
         }
 
-        private static double ResolveChunkDepthMeters(in AbsoluteUniversePositionBlit centerAup)
+        private double ResolveChunkDepthMeters(in AbsoluteUniversePositionBlit centerAup)
         {
             double centerY = ToAbsoluteY(in centerAup);
-            return math.isfinite(centerY) ? math.max(0d, DefaultSeaLevelY - centerY) : 0d;
+            return math.isfinite(centerY) ? math.max(0d, ResolveChunkSeaLevelY() - centerY) : 0d;
+        }
+
+        private double ResolveChunkSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveChunkSeaLevelY(oceanKinematics.SeaLevel, out double seaLevelY))
+            {
+                return seaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveChunkSeaLevelY(float candidateSeaLevelY, out double seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private static unsafe bool TryResolveBiomeRecord(uint biomeHash, out H8BiomeRecord record)

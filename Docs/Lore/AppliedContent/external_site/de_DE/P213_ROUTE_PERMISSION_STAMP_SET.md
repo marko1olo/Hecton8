@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Satz der Routengenehmigungsstempel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Satz der Routengenehmigungsstempel
 
-DE LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Der Satz der Routengenehmigungsstempel definiert Zugangsrequisiten für HECTON-8. Stempel verbinden Arbeiteridentität mit physischen Grenzen: Türen, Fahrzeuge, Anzüge, Lifte und Routentafeln. Weil jeder Stempel später einem Buch oder Audiofragment widersprechen kann, wird Zugang zur Biografie unter Druck und zu einem Kernweg, die letzte Bewegung der Kolonie zu lesen.
 
 ## Scanner
 
-DE LOC HOLD: A route stamp is stronger than a diary line.
+Ein Routenstempel ist stärker als eine Tagebuchzeile, weil er beweist, wer die Druckgrenze passieren durfte.
 
 ## Terminal
 
-DE LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: Routengenehmigung muss einen Arbeiter, eine Tür oder ein Fahrzeug, eine Crew-Familie und einen späteren Widerspruch verbinden. Ein Stempel ohne physische Grenze ist Dekor. Ein Stempel auf Luke, Anzugregal, Crawler-Schiene oder Lift-Tag wird Bewegungsbeweis.
 
 ## Audio
 
-DE LOC HOLD: Access is biography under pressure.
+Zugang ist Biografie unter Druck.
 
 ## Field Note
 
-DE LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Stempel: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Mit Lukenzustand und Arbeitsobjekt koppeln.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/de_DE. -->

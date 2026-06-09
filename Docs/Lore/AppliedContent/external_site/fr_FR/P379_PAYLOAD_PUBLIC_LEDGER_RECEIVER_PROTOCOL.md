@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Protocole récepteur registre public payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Public Ledger Receiver Protocol
+# Protocole récepteur registre public payload
 
-FR LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+La voie registre public est le récepteur le moins privé et le moins obéissant. Elle refuse vente de coordonnées, réclamation de récupération directe et reçu de paiement propre. Elle accepte un paquet d'incident sans carte de route: hashes d'attestation, chaîne de responsabilité, digest de pondération Atlas et horodatage récepteur.
 
-## Scanner
-
-FR LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-FR LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-FR LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-FR LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Le retard compte. Le paquet n'appellera pas un secours immédiat ni une justice instantanée. Il voyagera par une voie lente conçue pour survivre aux injonctions, disputes de récepteurs et pressions de garde. Une fois accepté, le porteur ne peut plus le retirer. Cette perte de contrôle est le prix pour rendre les preuves plus difficiles à acheter.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/fr_FR. -->

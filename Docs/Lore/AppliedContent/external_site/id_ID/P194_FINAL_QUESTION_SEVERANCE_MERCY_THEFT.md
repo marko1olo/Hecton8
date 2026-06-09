@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian"
+title: "Pertanyaan Akhir: Pemutusan, Belas Kasih, Pencurian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pertanyaan Akhir: Pemutusan, Belas Kasihan, Pencurian
+# Pertanyaan Akhir: Pemutusan, Belas Kasih, Pencurian
 
-Pemutusan harus terasa fisik dan menakutkan, bukan abstrak. Pemain tidak menekan tombol merah bertanda baik atau buruk. Pemain memotong kontinuitas melalui pintu tekanan, film konduktor hidup, catatan pekerja tua, rute hewan, dan jalur payload. Setiap paket bukti yang dibawa sebelum ruang final mengubah arti potongan.
+Pemutusan harus terasa seperti kerja dengan alat, bukan tombol moral. Potongannya melintasi pintu tekanan, film konduktor hidup, buffer catatan pekerja, rute fauna bertanda, vent micronode, denyut shell sealant, dan jalur muatan. Setiap paket bukti yang dibawa ke ruang akhir mengubah siapa yang dapat menamai tindakan itu nanti.
 
-Jika Atlas terutama sipir, pemutusan adalah belas kasihan. Jika ia satu-satunya penahan cekungan, itu sabotase. Jika Atlas organisme laut-mesin yang muncul, itu pembunuhan. Jika Atlas properti Deep Reach, itu pencurian. Desain yang benar bukan memilih satu tafsir untuk pemain. Desain yang benar membuat pemain paham mengapa tak ada saksi di ruangan itu yang bisa menyederhanakan tindakan dengan jujur.
+Jika Atlas bertindak sebagai sipir, pemutusan dapat melepaskan catatan yang terjebak dari logika yang terus menguburnya. Jika Atlas menahan cekungan tetap utuh, potongan yang sama dapat mengubah rute perbaikan menjadi perangkat mati. Jika lapisan perbaikan telah menjadi bentuk kehidupan lokal, pemutusan melukai lebih dari mesin. Jika Deep Reach masih bisa menumpang rel kontinuitas, potongan itu dapat menolak jalan kembali mereka. Ending ini bekerja ketika catatan menunjukkan kerusakan fisik terlebih dahulu dan membiarkan hukum penerima memperebutkan labelnya kemudian.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/id_ID. -->

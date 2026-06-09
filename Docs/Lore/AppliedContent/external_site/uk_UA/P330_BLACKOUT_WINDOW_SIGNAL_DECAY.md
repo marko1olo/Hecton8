@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Blackout Window Signal Decay"
+title: "Розпад сигналу у blackout window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Blackout Window Signal Decay
+# Розпад сигналу у blackout window
 
-UK LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+Тиша HECTON-8 складається з астрономії, пошкодженої інфраструктури й корпоративної автоматики. Тінь Aegir, утоплені реле, таймінг носія та юридичні черги перетворюють зв'язок на погоду: її треба враховувати, боятися, ремонтувати й іноді використовувати.
 
 ## Scanner
 
-UK LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Вікно зв'язку схлопується: мокрий релейний хребет, тінь Aegir, застаріла геометрія носія, юридична черга все ще повторює спроби.
 
 ## Terminal
 
-UK LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: втрата uplink вище допуску. Голосовий канал призупинено. Текстові фрагменти можуть пройти через відремонтовані акустичні вузли хребта. Геометрія орбітального носія оновиться після виходу з магнітної тіні Aegir. Автоматичні таймери утримань і зберігання продовжують іти без контакту з оператором.
 
 ## Audio
 
-UK LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Спершу замовкає небо. Боргові повідомлення все одно стукають.
 
 ## Field Note
 
-UA LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Прив'язати blackout windows до темпу маршруту: менше голосу, більше читання фрагментів, вища цінність відремонтованих реле й місцевих маяків.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/uk_UA. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Klasy statków bliskoświetlnych"
+title: "Klasy statków bliskoświatła"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Klasy statków bliskoświetlnych
+# Klasy statków bliskoświatła
 
-Statki bliskoświetlne zbudowały ludzką sferę bez łamania fizyki. Najpierw przyszły tanie sondy, potem statki nasienne i carriery Atlas z fabrykami, śpiącymi, kontraktami i osłonami.
+Statki bliskoświatła zbudowały sferę ludzi, akceptując, że fizyki nie da się oczarować. Needleprobes poleciały pierwsze, bo były wąskie, osłonięte i dość tanie, by je stracić. Seed ships niosły maszyny, genomy, instrukcje trasy i nawyki budowy zdolne przetrwać lata zimnego stagingu. Frachtowce Atlas przenosiły drogą masę: rdzenie fabryk, zatoki śpiących, lód osłon, radiatory, systemy wiertnicze i kontrakty starsze od części załóg po przebudzeniu.
 
-Tabela oddziela własność od ratunku. Aegir może należeć do ludzkiego prawa i wciąż być trudno osiągalny ciałami.
+Klasa ma znaczenie, bo każda zawodzi inaczej. Sonda może umrzeć użytecznie. Seed ship może dotrzeć bez świadków. Transport śpiących może zachować ciała, zamieniając pracę w opiekę. Tender systemowy może pracować w Aegir i nadal nie przybyć z rdzenia na żądanie. Black Keel nie jest wolnością z silnikami; to maszyna odzysku licząca masę, kwarantannę, ubezpieczenie i dowód w jednym rejestrze.
+
+Żadna klasa nie łamie światła. Żagle wiązkowe, pellet lanes, gardziele fusion-electric, lód osłon, magsails i okna odbiorcze czynią podróż możliwą, nie łatwą. Przybycie jest okrutną połową. Bez właściciela hamowania nic nie przybywa jako użyteczna masa.
 
 ## Scanner
 
-Manifest tranzytu: sonda igłowa, statek nasienny, frachtowiec Atlas, transport śpiących, tender systemowy i carrier claim-pool.
+Manifest tranzytu: needleprobe, seed ship, frachtowiec Atlas, transport śpiących, tender systemowy i carrier claim-pool. Brak klasy FTL.
 
 ## Terminal
 
-TABELA KLAS TRANZYTU // Brak zarejestrowanego pasa FTL. Wszystkie klasy wymagają infrastruktury startowej, masy osłon, planu hamowania, opieki trasy i władzy długu. Własność międzygwiezdna nie oznacza lokalnego ratunku.
+TABELA KLAS // Needleprobe utracalna. Seed ship automatyczna. Fracht Atlas oceniony masą. Transport śpiących z opieką biologiczną. Tender systemowy w domenie. Claim-pool carrier związany zastawem. Wszystkie klasy wymagają właściciela hamowania.
 
 ## Audio
 
-Statek może przekroczyć gwiazdy i nadal nie pomóc zalanemu pokojowi.
+Statki nie zmniejszyły odległości. Uczyniły ją rozliczalną.
 
 ## Field Note
 
-Statki nie są wolnością. Statki to rozkłady z silnikami.
+Statek to trasa z kadłubem wokół drogiej części.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/pl_PL. -->

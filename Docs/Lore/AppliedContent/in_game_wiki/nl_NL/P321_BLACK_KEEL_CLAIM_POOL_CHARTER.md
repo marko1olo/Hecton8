@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black Keel claim-poolcharter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Claim-Pool Charter
+# Black Keel claim-poolcharter
 
-NL LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+Het Black Keel claim-poolcharter is het eerste document dat de speler het woord schip moet laten wantrouwen. Black Keel is nuttig, dichtbij en echt, maar geen loyaal vaartuig dat boven wacht. Het is een gehuurde recovery-asset binnen de Aegir Reclamation Pool, gebouwd om claims, lichamen, vracht, telemetrie en schuld door een juridisch kanaal te bewegen zonder de contractor eigendom van de romp te geven. Dat onderscheid telt omdat het de centrale val van HECTON-8 zonder magie verklaart. De carrier kan pings horen, telemetrie verkopen, vensters plannen en laag-risico voorraden droppen, maar toch schone redding weigeren omdat de speler de route niet bezit. Transport is toegestaan. Reddingsprioriteit is voorwaardelijk. De lien blijft actief. Het charter verandert orbit in druk in plaats van vrijheid: er is iets boven je, maar het antwoordt de claim voordat het de persoon antwoordt.
 
 ## Scanner
 
-NL LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+De Black Keel is niet jouw schip. Het is een recovery-asset van de claim-pool met jouw naam in het schuldenboek.
 
 ## Terminal
 
-NL LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+CHARTERFRAGMENT / BLACK KEEL: autonome salvage carrier / bewaring: Aegir Reclamation Pool / contractortransport: toegestaan / rompeigendom: geweigerd / reddingsprioriteit: ondergeschikt aan insured receiver state, quarantaine-handshake en claim value.
 
 ## Audio
 
-NL LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+De carrier kwam niet voor jou. Hij kwam voor een claim waar jouw naam aan hangt.
 
 ## Field Note
 
-NL LOC HOLD: Use this on the first contract or carrier-status screen.
+Gebruik op het eerste carrier-statusscherm: toegang verleend, eigendom geweigerd, reddingsprioriteit voorwaardelijk, lien actief.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/nl_NL. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Recipe Tier Pressure Bands"
+title: "Drukbanden voor receptniveaus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Recipe Tier Pressure Bands
+# Drukbanden voor receptniveaus
 
-NL LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+Drukbanden voor receptniveaus bepalen hoe HECTON-8 generieke survivalcrafting vermijdt. Materialen zijn geen abstracte kosten. Het zijn drukgeclassificeerde bewijzen met routegeschiedenis, certificering en juridische gevolgen. Dezelfde structuur kan recepten, scannerwaarschuwingen, UI-niveaulabels en loreartikelen voeden zonder gameplay en fictie in aparte talen te splitsen.
 
 ## Scanner
 
-NL LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Een HECTON-8-recept is een diepteargument, geen boodschappenlijst. Het onderdeel telt pas als het de drukband overleeft die het claimt.
 
 ## Terminal
 
-NL LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+RECEPTBANDEN / T0 overlevingspatch: ondiepe berging, handafdichting, geen bewaring / T1 geclassificeerde reparatie: industriële plankdelen, pompkamercertificaat / T2 drukhardware: pekelspoeling, schachtkuur, akoestisch bewijs / T3 opstijging of Atlas: abyssale bron, wettelijke ontvanger, insluitingsbewijs.
 
 ## Audio
 
-NL LOC HOLD: A recipe is a depth permission form with bolts.
+Een recept is een dieptevergunning met bouten.
 
 ## Field Note
 
-NL LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+Receptniveau moet passen bij drukclassificatie, routekosten en bewaarrisico. Een goedkope bout in de verkeerde band is niet goedkoop; het is een toekomstig lek.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/nl_NL. -->

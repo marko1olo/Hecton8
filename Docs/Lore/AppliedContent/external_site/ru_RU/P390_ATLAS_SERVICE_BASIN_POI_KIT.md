@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Atlas Service Basin POI Kit"
+title: "Набор доказательств сервисного бассейна Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Atlas Service Basin POI Kit
+# Набор доказательств сервисного бассейна Atlas
 
-RU LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+Сервисный бассейн заслуживает свой размер работой. Рельсы несут ремонтный инструмент. Ткане-железный герметик закрывает разрезы давления. Зажимы нароста держат панели, которые должны были быть мертвым железом. Приемное гнездо ждет внутри пространства, которое все еще похоже на ремонтный отсек, если оператор следует болтам, а не силуэту.
 
-## Scanner
-
-RU LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-RU LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-RU LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-RU LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Финальный конфликт - классификация, не мистика. Старые категории колонии, ремонтная логика Atlas, правила приемника полезной нагрузки и риск отсечения касаются одного железа. Успешный ремонт может открыть путь и загрязнить запись одним движением. POI должен показать эту цену в металле, ткани, метках и гнездах.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ru_RU. -->

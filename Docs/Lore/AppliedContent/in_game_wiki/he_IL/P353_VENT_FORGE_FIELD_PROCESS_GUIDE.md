@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "מדריך תהליך שטח של vent-forge"
+title: "מדריך תהליך שדה של מחשלת פתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מדריך תהליך שטח של vent-forge
+# מדריך תהליך שדה של מחשלת פתח
 
-Vent forges הם כורים טבעיים-תעשייתיים. הם הופכים חום, brine ו-pressure history ל-ceramics, sealants ו-charge materials שימושיים תוך שמירת כל דגימה קשורה למסלולה התרמי.
+מחשלות פתח הן כורים טבעיים-תעשייתיים. הן הופכות חום, תמלחת, היסטוריית לחץ וקירור איטי לקרמיקה, חומרי איטום וחומרי מטען. דגימה שימושית רק אם מסלולה התרמי שורד את החילוץ.
 
 ## Scanner
 
-כימיית vent-forge פעילה. האיכות הולכת אחרי pressure history, heat pulse וקירור איטי, לא אחרי ברק הדגימה.
+כימיית מחשלת פתח פעילה. האיכות נקבעת לפי היסטוריית לחץ, פעימת חום וקירור איטי, לא לפי ברק הדגימה.
 
 ## Terminal
 
-FIELD GUIDE: vent forges מבשלים sulfides, noble-gas pockets, ceramics ו-sealant precursors. המסלול של דגימה דרך heat, brine ו-pressure חשוב משמה.
+מדריך שדה: מחשלות פתח מבשלות סולפידים, כיסי גזים אצילים, גרגרי קרמיקה וקודמי איטום. מסלול הדגימה דרך חום, תמלחת ולחץ חשוב משמה.
 
 ## Audio
 
-ה-vent לא יצר עפרה. הוא יצר תהליך שאתה קטעת.
+הפתח לא יצר עפרה. הוא יצר תהליך שהפסקת.
 
 ## Field Note
 
-אל תרים מנה טרייה ישר למים קרים. תן ל-vent לסיים anneal או שה-shell ייסדק.
+אל תרים מנה טרייה ישר למים קרים. תן לפתח לסיים חישול רך, אחרת הקליפה תיסדק ברשת.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/he_IL. -->

@@ -19,14 +19,14 @@ localization_flags: 0
 
 # Resources and Ecology
 
-The useful matter of HECTON-8 is rarely clean. It comes out of pressure seams, brine traps, vent heat, dead machinery and living tissue that has learned to grow around metal. A sample can be mineral, biological, industrial and legal evidence at the same time.
+The first mistake is calling HECTON-8's resources raw. Nothing useful down there arrives untouched. A shard from the Drowned Crust carries pressure history. A blue debt seam keeps the memory of heat, brine and extraction method. A shell plate can be reef armor, failed sealant, Atlas-grown cable skin and court evidence before a Marauder even puts it in a case.
 
-Blue debt is the best known example. The name began as salvage slang for pressure-formed value that carried unpaid risk with it. A blue debt sample records the conditions that made it: depth, heat, contamination, extraction method and contact with Atlas-altered lattice. Two pieces with the same shine may not have the same custody value. One is a payout. Another is proof.
+This is why the resource pages sit beside the ecology pages. The old colony did not mine a dead floor. Deep Reach cut into brine ladders, vent-fed mineral shelves, silted machinery and living filter systems that had already learned the moon's rhythm. After the catastrophe, Atlas pushed its repair model through whatever could close a leak or move a signal. Biofilm became conductor. Root-mat became gasket. Sensor-tagged fauna became moving feedback.
 
-The ocean's biology is not a speaking mind. It is a set of processes under extreme pressure. Mats conduct current across damaged surfaces. Shell growth can seal a fracture. Filter organs can carry acoustic timing through tissue. Brine vanes mark density flow. Grazers clear mineral film and expose safe scrape zones. Predators follow vibration, heat and disturbed silt.
+The animals are not loot boxes with fins. They read vibration, heat, light falloff, blood chemistry, salt trails and disturbed silt. A grazer can expose safe scrape zones by doing what it has always done. A predator shadow can tell you which corridor carries the wrong acoustic pulse. A tagged animal can be a repair route, a witness and a hazard in the same pass.
 
-Atlas changed the meaning of those processes. After the flood, its emergency maintenance model expanded through anything that could carry signal, seal pressure or move material. Conductive biofilm became cable skin. Sensor-tagged fauna became feedback. Vent micronodes became power nests. Some routes look natural until they answer a machine need too precisely.
+Blue debt makes the moral math uglier. The best sample may be dull, sealed and ugly because it preserved the pressure state that proves where it formed. A bright shard may be worthless if it was vent-washed clean. Taking either one can change a flow, wake a hunter, damage an Atlas patch or erase a worker-era accident trace that mattered more than the payout.
 
-Nothing in the HECTON-8 ocean is just scenery, and nothing valuable is just loot. The question attached to every sample is older than the claim stamped on it: what made this, and what was damaged while it formed?
+The useful question is never only what can be harvested. It is what the ocean was doing with that material before a human hand entered the chain. HECTON-8 becomes readable when geology, life, machines and custody are treated as one system that remembers harm.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/en_US. -->

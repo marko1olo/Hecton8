@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Wyjście materiałowe: gorzkie kredyty"
+title: "Wyjście materialne: gorzkie kredyty"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Wyjście materiałowe: gorzkie kredyty
+# Wyjście materialne: gorzkie kredyty
 
-Wyjście materiałowe to prawdziwe zakończenie dla Maraudera, który traktuje HECTON-8 jak płatną robotę. Gracz może odejść ze zmniejszonym długiem i zadowolonym rejestrem carrier. Koszt jest widoczny: kolonia pozostaje miejscem zbrodni przerobionym na wartość roszczenia, a Deep Reach dostaje lepszą drogę powrotu niż robotnicy kiedykolwiek dostali drogę ucieczki.
+To najzimniejsze legalne wyjście z HECTON-8. Marauder wraca z materiałem ciśnieniowym, który Black Keel może zważyć, zafakturować i przepchnąć przez okno wyniesienia; dług spada, rejestr przewoźnika się zgadza, a akta pracy można zamknąć bez fałszowania liczb. Na potwierdzeniu nie ma bezpośredniego kłamstwa. Próbka jest prawdziwa. Łańcuch custody jest dość czysty. Porażka żyje w pominiętej kolumnie: niesprawdzone nazwiska robotników, za cienki łańcuch dowodowy, utopiona kolonia zamieniona w wartość roszczenia i dane trasy dające Deep Reach czystszy powód do powrotu. Profesjonalny sukces przetrwał, ale smakuje metalem i starym powietrzem.
 
 ## Scanner
 
-Materiał ciśnieniowy przyjęty. Okno wyjścia można wykupić. Nazwiska pracowników nadal nieuzgodnione.
+Materiał ciśnieniowy przyjęty. Okno wyjścia sprzedane. Nazwy pozostają nieopłacone.
 
 ## Terminal
 
-POTWIERDZENIE WYJŚCIA MATERIAŁOWEGO: materiał ciśnieniowy custody-grade przyjęty; lien zmniejszony; payload dowodowy niepełny; rejestr zaginionych pracowników pozostaje w sporze roszczeniowym; priorytet Recovery Compliance podniesiony.
+POTWIERDZENIE WYJŚCIA MATERIALNEGO: materiał ciśnieniowy custody-grade przyjęty; lien zmniejszony; masa wyniesienia zatwierdzona; payload dowodowy niepełny; rejestr zaginionych robotników nierozwiązany; zainteresowanie odzyskiem Deep Reach podniesione.
 
 ## Audio
 
-Faktura czyści się przed nazwiskami.
+Faktura dociera do powietrza przed nazwiskami.
 
 ## Field Note
 
-Black Keel wyceni próbkę wcześniej niż zmarłych. To nie jest błąd w kontrakcie.
+Black Keel rozlicza masę przed pamięcią; kontrakt nazywa to sukcesem.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/pl_PL. -->

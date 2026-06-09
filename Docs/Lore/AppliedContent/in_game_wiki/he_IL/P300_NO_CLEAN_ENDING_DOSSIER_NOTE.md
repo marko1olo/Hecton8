@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: No Clean Ending Dossier Note"
+title: "הערת תיק ללא סוף נקי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: No Clean Ending Dossier Note
+# הערת תיק ללא סוף נקי
 
-HE LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+ההערה מגדירה את טון הזיכרון אחרי הסוף. אפילו הסוף החזק ביותר משאיר קובץ חי: דבר שניצל, דבר שניזוק ועלות שמסרבת להיות מסודרת.
 
 ## Scanner
 
-HE LOC HOLD: Dossier note: closure denied; consequence retained.
+הערת תיק: סגירה נדחתה; תוצאה נשמרה.
 
 ## Terminal
 
-HE LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: תוצאה נשמרה. סגירה נקייה אינה זמינה במצב הראיות הנוכחי. חוב, אקולוגיה, אחריות ומשמורת עד נשארים רשומות פעילות.
 
 ## Audio
 
-HE LOC HOLD: You saved something. That is not the same as clearing it.
+הצלת משהו. זה לא אותו דבר כמו לנקות אותו.
 
 ## Field Note
 
-HE LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+תיק לאחר סוף משאיר את הגשר פתוח: תוצאה נרשמה, חוב וראיות לא נפתרו, לא ניתן ניצחון מושלם.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/he_IL. -->

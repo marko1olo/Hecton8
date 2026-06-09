@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Стіл збитків Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Стіл збитків Keelmark
 
-UA LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+Стіл збитків Keelmark не та рука, що топить коридор. Це рука, яка вирішує, як затоплений коридор увійде до книг. Саме тому він важливий. Страховик може зробити вбивство схожим на погоду, якщо категорії готові досить рано.
 
-## Scanner
-
-UA LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-UA LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-UA LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-UA LOC HOLD: A loss category is a grave with better stationery.
+Таблиці Keelmark вчать Deep Reach мови, що переживе розслідування. Обладнання амортизується. Житло отримує impairment. Праця призупиняється. Свідки стають exposed, compromised або unrecoverable. Імена важчі, тому стіл уникає їх до примусу.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/uk_UA. -->

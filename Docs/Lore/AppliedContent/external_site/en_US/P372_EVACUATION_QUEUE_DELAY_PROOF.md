@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Evacuation Queue Delay Record
 
-A flooded room can still preserve timing. The recovered queue clock shows a cruel order of operations: alarm, review, delay, seal-class exceedance, water. Deep Reach public language collapses this into incomplete evacuation during sudden structural failure. The room disagrees. Its queue record keeps an empty witness slot and a pending quarantine review active past the point where a rescue path was physically useful. This is not a claim that everyone could have been saved. It is worse and more precise: authorization waited until the number of savable people shrank. When the player finds this record, rescue stops sounding like a promise and starts sounding like a permission system.
+Evacuation logs are easy to soften after the bodies are gone. In public language, Deep Reach can say a route was incomplete, interrupted or degraded. The recovered queue clock is less flexible. It records a gate responding to administrative state after the pressure alarm had already moved into occupied sections.
 
-## Scanner
-
-Queue clock recovered. The release gate stayed locked after pressure alarms moved from forecast to corridor.
-
-## Terminal
-
-EVAC QUEUE // WITNESS SLOT EMPTY. Manual confirmation absent. Quarantine review pending. Route pressure exceeded seal class before authorization resolved.
-
-## Audio
-
-They did not fail to save everyone. They waited until saving anyone became harder.
-
-## Field Note
-
-Marauder note: a closed gate with a pending field is not an accident. It is a decision waiting for a signature.
+The important detail is not that everyone could have been saved. The record does not promise that. It shows the company still had a control path and used it to wait. Manual confirmation stayed empty. Quarantine board remained pending. The seal class crossed its limit before release authorization arrived. Delay became infrastructure.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/en_US. -->

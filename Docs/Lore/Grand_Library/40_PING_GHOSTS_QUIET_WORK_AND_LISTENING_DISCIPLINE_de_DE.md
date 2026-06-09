@@ -1,58 +1,80 @@
 <!-- localization_status: draft_machine_or_llm -->
-# PING-GEISTER, LEISE ARBEIT UND HÖRDISZIPLIN
+# PING-GEISTER, LEISE ARBEIT UND HOERDISZIPLIN
 
-> **Quelle:** Deep Reach-Grundlagen akustischer Navigation, Black Keel-Politik zur Empfängerbergung, Marauder-Feldnotizen zu Anzugaudio.  
-> **Stimme:** Ausbilder für Navigationsakustik, teilweise von Bergungspraxis überschrieben.  
-> **Prüfernotiz:** HECTON-8 ist nicht still. Es ist voller Dinge, die gelernt haben, den Spieler entscheiden zu lassen, ob Klang Beweis, Köder oder Erinnerung ist.
+> **Quelle:** Deep-Reach-Grundkurs fuer akustische Navigation, Wartungslogs von Empfaengern, Black-Keel-Richtlinie zur Empfaengerbergung und Marauder-Feldnotizen aus Suit-Audio.  
+> **Umfang:** Akustische Ruecklaeufe, veraltete Empfaenger-IDs, leise Arbeitsgewohnheiten und Tonaufnahmen fuer Routen, Ansprueche und Risikoentscheidungen.  
+> **Feldeinsatz:** Lesen, bevor ein aktiver Ping gesendet, einem alten Responder vertraut, Suit-Audio stummgeschaltet, ein Empfaenger geborgen oder in einem Raum mit unbekannten Hoerern geschnitten wird.
 
 ---
 
-## 1. Klang Reist Anders Unter Schuld
+## 1. Schall ist nie privat
 
-In Luft gehört ein Ruf der Person, die ihn macht. Unter HECTON-8s Wasser wird ein Klang öffentlich, bevor er nützlich wird.
+Unter HECTON-8s Wasser gehoert ein Geraeusch zuerst der Route und erst danach der Person, die es gemacht hat.
 
-Druck trägt Geräusch durch Struktur, Schlick, Kabel, Knochen und Anzugrahmen. Ein fallengelassenes Werkzeug kann durch drei Räume sprechen. Ein Pumpenstart kann sich einem Wesen ankündigen, das keine Vorstellung von Pumpen hat, aber Rhythmus versteht. Ein Empfängerping kann von einer Wand, einer Wrackplatte, einer lebenden Schale oder einer Route zurückkehren, die nach dem Druck der alten Karte einstürzte. Klang ist hier keine gerade Linie. Er ist eine Verhandlung mit Dichte.
+Ein fallender Schraubenschluessel kann durch Deckplatte, gefluteten Kabeltray, Suit-Rahmen und den Schlamm unter dem naechsten Raum laufen. Ein Pumpenstart kann durch Struktur weiter tragen als durch offenes Wasser. Ein Cutter, der in einem Abteil sauber klingt, kann durch ein verbogenes Schott falsch klingen. Sprache ist schlimmer: Ein privater Witz auf Suit-Comms kann als Vibration in einer Empfaengerhalterung enden, und die Halterung weiss nicht, dass er privat gemeint war.
 
-Deep Reach baute akustische Systeme, weil Licht schnell versagt und Funk zu lokalem Gerücht wird. Ping-Signale, Zirplaute, Suchläufe, kodierte Klopfzeichen, Tetherbrummen und Empfängerbestätigungen bildeten eine zweite Karte über der Kolonie. Diese Karte war nie sauber. Sie war nützlich, was eine andere Tugend ist.
+Deep Reach baute akustische Navigation, weil Licht schnell verliert und Funk unter Wasser zur lokalen Gewohnheit mit kurzer Reichweite wird. Pings, Chirps, codierte Klopfzeichen, Tether-Summen, Beacon-Handshakes und Empfaenger-Timing legten eine zweite Karte ueber die Kolonie. Diese Karte war nie sauber. Sie war brauchbar, und das ist etwas anderes.
 
-Marauders erben das Chaos. Sie fragen nicht nur: "Hat es geantwortet?" Sie fragen, wer die Frage sonst gehört hat.
+Alte Crews stellten vor jedem Laerm zwei Fragen: Welche Antwort brauchen wir, und wer bekommt die Frage noch?
 
 ## 2. Ping-Geister
 
-Ein Ping-Geist ist eine Antwort von einem Ding, das nicht mehr ist, wofür das System es hält.
+Ein Ping-Geist ist eine Rueckmeldung von etwas, das nicht mehr dort ist, wo das System es verortet, oder nicht mehr das ist, was das System behauptet.
 
-Alte Empfänger behalten Identifikatoren, nachdem ihre Halterungen verdreht, geflutet oder abgeschert wurden. Ein Navigationsknoten kann unter Schlick antworten, wo keine Route bleibt. Eine tote Drohne kann eine Kontaktbestätigung wiederholen, weil ihre Ladeschale noch an sie glaubt. Ein eingestürzter Korridor kann die Form eines Durchgangs zurückwerfen, wenn genug Metall in die richtige Lüge gefaltet ist. Manche Geister sind harmlos. Manche sind teuer. Einige sind durch Nachbarschaft hungrig.
+Die haeufige Form ist ein veralteter Empfaenger. Ein Knoten antwortet weiter, nachdem sich seine Halterung verdreht, sein Korridor geflutet oder die Wand um ihn abgeschert ist. Die Kennung ist echt. Die Position nicht. Die Suit-Navigation sieht die ID und will glauben, dass die alte Route noch existiert.
 
-Deep Reach nannte das akustische Artefakte. Black Keel nennt es Verifikationsrisiken. Marauders nennen es Geister, weil das Wort Menschen vorsichtig macht, ohne so zu tun, als sei das Phänomen mystisch. Ein Geist ist kein übernatürliches Wesen. Er ist abgestandene Gewissheit mit Rücklaufzeit.
+Die teure Form ist ein geformter Ruecklauf. Gefaltetes Huellemetall kann das Timing eines Durchgangs zurueckwerfen. Schlamm kann einen Beacon begraben und genug Antenne freilassen, damit er spaet antwortet. Eine tote Drohne kann einen Lade-Handshake wiederholen, weil die Ladeschale noch Strom hat. Ein eingestuerzter Serviceschlund kann offen klingen, wenn gebrochene Schienen die richtige Tasche bilden.
 
-Der Spieler lernt, dass eine Antwort kein Beweis für Anwesenheit ist. Sie beweist nur, dass etwas geantwortet hat.
+Deep Reach nannte das akustische Artefakte. Black Keel nennt es Verifikationsrisiken. Marauders nennen sie Ping-Geister, weil das Wort vorsichtig macht, ohne das Phaenomen uebernatuerlich zu machen. Ein Geist ist veraltete Gewissheit mit messbarer Verzoegerung.
 
-## 3. Leise Arbeit
+Eine Antwort beweist keine Route. Sie beweist, dass etwas geantwortet hat.
 
-Leise Arbeit ist keine romantische Heimlichkeit. Sie ist Respekt vor unbekannten Zuhörern.
+## 3. Alter von Empfaengern
 
-Arbeiter lernen, welche Klänge zu Werkzeugen gehören und welche zu Fehlern. Ein sorgfältiger Cutter hat eine Tonhöhe. Ein gehetzter Cutter hat Zähne. Ein normal zyklender Anzuglüfter wird Teil des Körpers, aber ein Lüfter, der gegen Salz kämpft, hat eine nasse Ungeduld. Metall unter Spannung singt vor dem Versagen. Lebende Fauna hört oft auf, den Klang zu machen, an den der Spieler sich gewöhnt hatte.
+Empfaenger altern auf Weisen, die Papier verdeckt.
 
-Marauders bearbeiten ihre Arbeit darum herum. Sie polstern Klemmen. Sie kleben lose Haken ab. Sie vermeiden unnötige Sprache in engen Wracks. Sie töten Bestätigungsklicks, wenn die Route voraus zu viele hörende Oberflächen hat. Manche Klicks lassen sie leben, weil Stille einen nervösen Menschen schlimmere Signale erfinden lässt.
+Das Serienschild kann lesbar bleiben, nachdem die Halterung um neunzig Grad rotiert ist. Firmware kann weiter die letzte gute Tiefe senden, weil die Druckzelle hoeflich gestorben ist. Ein Wartungslog kann `Dichtung ersetzt` zeigen, obwohl der Techniker nur Salz vom Stecker wischte und das Teil abrechnete. Ein Beacon kann den Handshake bestehen, waehrend seine Vorderseite in eine eingestuerzte Wand zeigt.
 
-Leise Arbeit bedeutet nicht kein Klang. Sie bedeutet, jeder Klang sollte einen Grund haben.
+Black-Keel-Politik behandelt intakte Empfaenger als Bergungsgut, Navigationswert und moegliches Anspruchsbeweismittel. Deshalb lohnt es sich, ueber jeden Empfaenger zu luegen. Eine Crew kann einen Knoten in eine bessere Route ziehen und seine alte ID behalten. Ein Kaeufer kann ein sauberes Timing-Log einem ehrlichen vorziehen. Ein mueder Arbeiter kann einen Fehler zuruecksetzen, weil der naechste Pumpenzyklus schon spaet ist.
 
-## 4. Hören Als Beweis
+Die erste Regel lautet: Identitaet von Ort trennen. Die zweite: Ort von Zugang trennen. Die dritte: notieren, welche Regel man brechen musste.
 
-Gutes Hören hat juristischen Wert.
+## 4. Leise Arbeit
 
-Eine Aufnahme kann beweisen, dass eine Pumpe vor dem Eintritt lief, dass eine Tür nach einem Druckabfall verriegelte, dass Fauna eine Route besetzte, bevor eine Crew sie störte, dass ein Notsignal lebte, als Black Keel behauptete, es sei tot. Tonaufzeichnungen ersetzen Augen nicht, aber Augen verpassen Reihenfolge. Klang ist oft der einzige Zeuge der Sequenz.
+Leise Arbeit ist keine Romantik. Sie ist nicht dasselbe wie Tarnung. Sie ist die Gewohnheit, nur die Geraeusche zu machen, die der Job bezahlen kann.
 
-Das macht Hören gefährlich. Eine Crew, die zu viel aufzeichnet, kann ihren eigenen Übertritt aufzeichnen. Ein Spieler, der ein Empfängerlog bewahrt, kann Beweis gegen sich selbst bewahren. Ein stummgeschalteter Alarm kann Fokus retten und einen Anspruch zerstören. Eine private Anzugaudioänderung kann wie Manipulation aussehen, wenn der falsche Inspektor sie so lesen will.
+Eine sorgfaeltige Klemme landet einmal. Eine schlampige Klemme redet, bis jemand sie abklebt. Ein Cutter hat bei geduldigem Bediener eine gleichmaessige Tonhoehe; wenn der Bediener hetzt, melden die Zaehne es durch den Rahmen. Ein Suit-Luefter unter sauberer Last wird Hintergrund. Ein Luefter, der Salz kaut, klingt nass, ungleichmaessig und teuer. Metall unter Last warnt, bevor es nachgibt, aber nur Menschen, die Platz zum Hoeren gelassen haben.
 
-Dem Ozean ist Beweiskette egal. Käufern nicht. Gerichten nicht. Black Keel nicht, wenn es bequem ist, was oft genug ist, um zu zählen.
+Marauders polstern lose Haken, schalten unnoetige Bestaetigungs-Chirps ab, halten Sprachchecks in Wrackkehlen kurz und lassen einige Klicks am Leben, damit ein nervoeser Suit keine schlimmeren Signale erfindet. Sie machen eine Stelle nicht lautlos. Lautlosigkeit ist kein Plan. Sie machen jedes Geraeusch verantwortbar.
 
-## 5. Was Der Spieler Lernt
+Wenn Laerm keinen Besitzer, keinen Bedarf und kein Zeitlimit hat, wird er entfernt.
 
-Der Spieler lernt, dass Klang ein Werkzeug mit angehängten Zeugen ist.
+## 5. Hoeren als Anspruchsarbeit
 
-Ein Ping kann eine Leere kartieren, eine Route wecken, Fauna erschrecken, ein Signal beweisen, den Spieler entlarven oder Atem verschwenden. Eine stille Annäherung kann einen Anspruch bewahren oder die eine Warnung verpassen, die der Raum noch geben konnte. Ein geborgener Empfänger kann Navigation, Beweis, Köder, Erpressung oder Trost werden.
+Tonaufnahmen koennen Geld, Haftung und Schuld tragen.
 
-Der beste Marauder ist nicht der leiseste. Der beste Marauder weiß, welche Geräusche zum Überleben gehören und welche nur zum Ego. Er weiß, wann er eine Frage ins Dunkel schickt und wann das Dunkel bereits genug geantwortet hat.
+Eine Pumpensignatur kann zeigen, dass ein Raum vor dem Eintritt bereits aktiv war. Ein Tuermotor kann beweisen, dass das Schloss nach einem Druckabfall zyklierte. Faunabewegung auf passiven Hydrofonen kann zeigen, dass eine Route besetzt war, bevor eine Crew sie stoerte. Ein Beacon-Log kann zeigen, dass ein Notsignal lebte, als Black Keel das Asset als tot markierte.
 
-Auf HECTON-8 ist Hören nicht passiv. Es ist eine der Arten, wie der Spieler die Welt verändert, ohne sie zu berühren.
+Dieselbe Aufnahme kann die Crew verbrennen, die sie behielt. Ein Empfaengerlog kann einen Suit in einer gesperrten Route platzieren. Ein stummgeschalteter Alarm kann einen Anspruch sauberer und einen Todesfall schwerer verteidigbar machen. Ein privater Audio-Schnitt kann wie Manipulation aussehen, wenn der Inspektor Druckmittel sucht. Eine saubere Aufnahme ist wertvoll, weil sie noch nicht gesagt hat, wen sie verletzt.
+
+Nimm nicht alles aus Gewohnheit auf. Loesche nicht aus Angst. Behalte genug Ton, um Reihenfolge zu belegen, und markiere jede Stummschaltung, die diese Reihenfolge veraendert hat.
+
+## 6. Laerm als Koeder
+
+Laerm kann ein Werkzeug sein, aber er ist nie gratis.
+
+Aktive Pings koennen alte Responder wecken, einen Hohlraum kartieren, Fauna erschrecken, die Aufmerksamkeit einer anderen Crew ziehen oder einem versteckten Empfaenger sagen, dass jemand sucht. Ein getaktetes Klopfen kann eine Wand pruefen, ohne sie zu schneiden. Ein falscher Beacon kann einen Anspruchsspringer von einer Route wegziehen. Ein Suit-Lautsprecher kann ein Wesen wegdruecken oder ihm beibringen, woher Suits kommen.
+
+Deep-Reach-Handbuecher trennten Navigation, Abschreckung und Kommunikation. Die Kolonie hoerte frueh auf, diese Trennung zu respektieren. Derselbe Chirp kann eine Tuer finden, ein Log beweisen, einen Raeuber reizen, eine Drohne rufen und einen Arbeiter verraten. Der Kontext entscheidet, welche Rechnung zuerst kommt.
+
+Nutze Laerm, wenn Stille mehr kostet. Nutze Stille, wenn die Antwort gefaehrlicher waere als die Frage.
+
+## 7. Feldregel
+
+Vor dem Ping muss klar sein, welcher Ruecklauf den Plan aendert.
+
+Bevor du einem Geist vertraust, pruefe Identitaet, Ort und Zugang als getrennte Fakten.
+
+Bevor du Ton stummschaltest, markiere, was die Aufnahme danach nicht mehr beweisen kann.
+
+HECTON-8 ist nicht still. Es ist voll von Pumpen, Empfaengern, gerissenem Metall, Suit-Rahmen, Tieren und alten Systemen, die noch immer zu spaet antworten. Hoeren ist Arbeit. Schall senden ist Arbeit. Eine nachlaessige Crew macht beides reflexhaft und zahlt spaeter fuer den Unterschied.

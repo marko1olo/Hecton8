@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Stack Limit Data Boundary"
+title: "Datengrenze des Stapellimits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Stack Limit Data Boundary
+# Datengrenze des Stapellimits
 
-DE LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+Inventardruck in HECTON-8 entsteht aus Einschluss, Zertifizierung und kontaminierter Masse. Das Spiel kann einfache Stapel zeigen, doch die Lore erklärt, warum ein Stapel sicher ist, warum er bricht und warum dem Ozean Item-Icons egal sind.
 
 ## Scanner
 
-DE LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Stapelzeile weist Iconhaufen zurück: Gefäßklasse, Druckrating, Kontamination und Masse bestimmen Anzahl.
 
 ## Terminal
 
-DE LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: Stapelzahl erfordert Gefäßtyp, Druckrating, Kontaminationsstufe, Masseklasse, Warnstufe und save-stabile Identität. Eine Kiste ist kein Druckbehälter.
 
 ## Audio
 
-DE LOC HOLD: A crate is not a pressure vessel.
+Eine Kiste ist kein Druckbehälter.
 
 ## Field Note
 
-DE LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Stapellimits bleiben table-owned und für Save-Identität stabil.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/de_DE. -->

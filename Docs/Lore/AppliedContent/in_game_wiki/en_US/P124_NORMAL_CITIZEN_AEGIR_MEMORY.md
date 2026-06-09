@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Normal Citizen Aegir Memory
 
-For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+To ordinary citizens, Aegir is not a forbidden secret. It is worse: a stale item in school readers, insurer warnings and route-fee tables. People remember the ocean planet, the lost colony and the word quarantine, but not the shift crews, the children, the cooks, the pressure techs or the first names on the dead manifests. That distance lets Deep Reach survive in public life. A known disaster can become background if no one has to look at the bodies.
 
 ## Scanner
 
-Public memory: old disaster, distant resource, no faces.
+Public archive stub: everyone has heard of Aegir, almost nobody remembers a name.
 
 ## Terminal
 
-PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Official causes: storm cascade, evacuation failure, automation corruption, biological quarantine, unreliable telemetry. Current status: claim dormant, insurance still indexed, civilian travel discouraged.
 
 ## Audio
 
-Most people know the place as a line under insurance rates.
+Most people know Aegir as a line under their insurance rate.
 
 ## Field Note
 
-Aegir is famous enough to price, forgotten enough to bury.
+A disaster can become ordinary when it is priced into the bill.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/en_US. -->

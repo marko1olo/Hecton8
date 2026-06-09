@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Contract Approach Act Gate"
+title: "Gerbang Pendekatan Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Contract Approach Act Gate
+# Gerbang Pendekatan Kontrak
 
-ID LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+Gerbang pertama adalah dokumen dengan tekanan di belakangnya. Black Keel tidak mengirim turis ke perairan Aegir. Operator menerima transfer klaim, paparan utang, slot bathydrop, dan tagihan alat sebelum pemindaian dalam pertama. Profil lama Deep Reach penting karena pengenalan prosedur dimulai sebelum rute terasa pribadi.
 
 ## Scanner
 
-ID LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Gerbang rute: kontrak diterima. Paparan lien, jadwal bathydrop, dan prosedur lama Deep Reach aktif sebelum turun.
 
 ## Terminal
 
-ID LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+RUTE KAMPANYE // PENDEKATAN KONTRAK. Pemilik: papan klaim Black Keel. Terima transfer klaim, paparan lien, slot bathydrop, dan utang alat. Sisa kredensial Deep Reach terdeteksi di profil operator. Pemulihan bersyarat.
 
 ## Audio
 
-ID LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Kau datang untuk kerja. Kontrak sudah tahu dulu kau bekerja di mana.
 
 ## Field Note
 
-ID LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Catatan perompak: baca papan kontrak dua kali. Bacaan kedua menunjukkan izin lama mana yang masih pas di tanganmu.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/id_ID. -->

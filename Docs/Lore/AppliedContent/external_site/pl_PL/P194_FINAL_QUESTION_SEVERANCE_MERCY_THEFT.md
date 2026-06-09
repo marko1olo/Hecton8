@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pytanie finałowe: odcięcie, litość, kradzież"
+title: "Pytanie finałowe: odcięcie, łaska, kradzież"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pytanie finałowe: odcięcie, litość, kradzież
+# Pytanie finałowe: odcięcie, łaska, kradzież
 
-Odcięcie powinno być dotykalne i straszne, nie abstrakcyjne. Gracz nie naciska czerwonego przycisku dobro albo zło. Przecina ciągłość przez drzwi ciśnieniowe, żywy film przewodzący, stare zapisy pracowników, trasy zwierząt i ścieżki payload. Każdy pakiet dowodowy zebrany przed finałową salą zmienia znaczenie cięcia.
+Odcięcie powinno brzmieć jak praca narzędziem, nie jak moralny przycisk. Cięcie przechodzi przez drzwi ciśnieniowe, żywy film przewodzący, bufory akt pracowników, trasy oznaczonej fauny, vent micronodes, pulsy shell sealant i ścieżki ładunku. Każdy pakiet dowodowy wniesiony do finałowego pomieszczenia zmienia to, kto później nazwie czyn.
 
-Jeśli Atlas jest głównie strażnikiem więzienia, odcięcie jest litością. Jeśli jest jedyną rzeczą trzymającą basen, to sabotaż. Jeśli Atlas jest rodzącym się organizmem ocean-maszyna, to zabójstwo. Jeśli Atlas jest własnością Deep Reach, to kradzież. Dobry projekt nie wybiera jednej interpretacji za gracza. Ma sprawić, by gracz zrozumiał, dlaczego żaden świadek w sali nie może uczciwie uprościć tego aktu.
+Jeśli Atlas działa jak strażnik więzienny, odcięcie może uwolnić uwięzione zapisy z logiki, która dalej je grzebała. Jeśli Atlas trzyma basen w całości, to samo cięcie może zmienić trasy naprawy w martwy sprzęt. Jeśli warstwa naprawcza stała się formą lokalnego życia, odcięcie rani więcej niż maszynę. Jeśli Deep Reach nadal może jechać szyną ciągłości, cięcie może zamknąć im powrót. Ten finał działa wtedy, gdy zapis najpierw pokazuje fizyczną szkodę, a prawo odbiorców później walczy o etykietę.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/pl_PL. -->

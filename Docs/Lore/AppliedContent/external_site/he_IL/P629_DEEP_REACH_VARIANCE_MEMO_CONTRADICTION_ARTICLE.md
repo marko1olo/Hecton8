@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Public Archive Evidence Primer
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "סתירת מזכר ה-variance של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# סתירת מזכר ה-variance של Deep Reach
 
-Clean office language can expose a lie when timestamps and pump marks disagree.
+המזכר הראשון של Deep Reach לא צריך להתוודות. מספיק שהוא נקי במקום הלא נכון. Variance היא מילת משרד בחדר שבו משאבה רצה מעבר לגבול, מהדק הונח אחרי האזעקה, פקודת עבודה נשארה פתוחה וחותמת margin התקבלה לפני שהמים הגיעו.
 
-## Scanner
-
-Memo says variance; room marks disagree.
-
-## Terminal
-
-Deep Reach memo language treats dangerous margin as managed variance.
-
-## Audio
-
-Trust the room before the clean word.
-
-## Field Note
-
-Trust the wet room first.
+זו הסתירה שהשחקן יכול להשתמש בה מוקדם. היא אינה פותרת את האסון. היא מלמדת סדר ראיות. memo נקי הוא קול מקור, לא אמת. שסתום תקוע, חותמת זמן וסימן עובד יכולים לשקול יותר מנייר מכתבים נכון.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/he_IL. -->

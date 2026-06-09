@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Evidence First Charter Contract Seed"
+title: "Evidence-First-Charter-Vertragssamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Evidence First Charter Contract Seed
+# Evidence-First-Charter-Vertragssamen
 
-DE LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Evidence-First Charter ändert das Vertragsbrett vor dem Abstieg. Materialauszahlung sinkt, Notarkapazität steigt, Beweislocker bekommen Vorrang und Salvage-Stripping trägt Strafe. Der Operator geht mit einer Route ins Wasser, die Akten besser schützt als Teile.
 
-## Scanner
-
-DE LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-DE LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-DE LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-DE LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Der Druck sitzt in kleinen Entscheidungen. Ein Hatch-Zustandsstreifen kann einen Panelverkauf blockieren. Ein nasses Unfallpaket kann den letzten trockenen Slot belegen. Ein Pingerprotokoll braucht vielleicht ein lebendes Relais, das sonst eine Reparatur speisen würde. Der Charter zahlt spät, weil er verlangt, unbequeme Objekte lange genug intakt zu halten, damit ein Receiver außerhalb von Black Keel sie lesen kann.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/de_DE. -->

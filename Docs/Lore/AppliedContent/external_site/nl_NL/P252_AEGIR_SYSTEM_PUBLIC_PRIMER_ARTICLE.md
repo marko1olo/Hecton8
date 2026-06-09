@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Publieke Introductie van het Aegir-systeem
 
-Aegir is het gastheersysteem rond HECTON-8, en het telt in elke praktische zin. De maanladder vormt getijden en naderingsvensters. De relaisgeometrie laat bewijs sneller reizen dan reddingsmassa. De dragerbanen maken Black Keel aanwezig maar niet direct behulpzaam. Er is geen wonderdrive, geen ansible-redding en geen schone noodknop. De publieke versie van Aegir moet bereikbaar genoeg voelen om wreed te zijn: verbonden, gepland, geprijsd en nog steeds te traag voor de mensen beneden.
+Aegir telt omdat het de lucht praktisch maakt. Het systeem rond HECTON-8 is geen decoratieve sterrenkaart; het is een machine van manen, vensters, stralingsweer, relayschaduw, ice-scatter hazards en carrier transfer geometry. Een bericht kan vertrekken in een smal signaalvenster terwijl een lichaam onmogelijk te recoveren blijft. Een sample kan waardevol zijn en toch quarantainetiming missen. Black Keel kan in het systeem aanwezig zijn en nog steeds niet boven je hangen zoals een bange duiker wil.
 
-## Scanner
+Zo blijft HECTON-8 hard-sci-fi zonder huiswerk te worden. De speler heeft geen college orbital mechanics nodig om Aegir te voelen. Je voelt het wanneer het signaal cleart maar de lift niet, wanneer stormruis een relay corrumpeert, wanneer maanschaduw een veilige uplink tot dode slot maakt, wanneer een getijvenvenster beslist of een canyonroute overleefbaar is.
 
-Aegir is geen achtergrond. Het is een dienstregeling met zwaartekracht, straling, getijden, relaisvertraging en dure massavensters.
-
-## Terminal
-
-PUBLIEK ARTIKELNIVEAU / AEGIR-SYSTEEM
-toegestaan: gastheersysteem, maanrol van HECTON-8, getijdenvensters, relaisgeometrie, dragervertraging, routetaal zonder FTL
-geblokkeerd: finale payload-routing, verborgen receiver-prioriteit, exacte late efemeridenlocks
-redactienotitie: vertraging uitleggen zonder de setting onbereikbaar te laten voelen.
-
-## Audio
-
-Het systeem is dichtbij genoeg om te antwoorden. Dat is het wrede deel. Het is niet dichtbij genoeg om op commando een lichaam op te tillen.
-
-## Field Note
-
-Noem Aegir niet alleen ver weg. Noem wat afstand doet: lift prijzen, lichamen vertragen en bewijs redding laten inhalen.
+Aegir is ook waarom de frontier niet leeg is. Andere manen dragen relayrollen, koude claims, dode beacons, verkeerslittekens en quarantainedruk. HECTON-8 is de speelbare crisis, niet het hele systeem. De bredere ladder maakt redding duur, salvage legaal, bewijs vertraagd en elk terugkeervenster verdiend.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/nl_NL. -->

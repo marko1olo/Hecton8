@@ -9,17 +9,59 @@
   "status": "STATIC_VALIDATED_PENDING_UNITY_IMPORT",
   "first20RouteMoment": "surface/cave/first-tool/world-proxy readability material library",
   "materialManifestCount": 4,
-  "materialCount": 51,
-  "sourceAtlasCount": 22,
-  "alphaCandidateCount": 20,
+  "materialCount": 53,
+  "sourceAtlasCount": 23,
+  "alphaCandidateCount": 21,
   "paddedAtlasCount": 6,
   "splitAtlasEntryCount": 6,
   "splitIslandCount": 150,
   "alphaStatusCounts": {
-    "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW": 20
+    "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW": 21
   },
-  "consumerBindingCount": 121,
-  "sourceConsumerBindingCount": 38,
+  "batch34TextureExpansionSummary": {
+    "intakeManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_IntakeManifest.json",
+    "curationManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json",
+    "expectedJobCount": 50,
+    "downloadCandidateCount": 51,
+    "selectedDownloadSourceCount": 50,
+    "uniqueSelectedDownloadSourceCount": 50,
+    "ignoredDownloadCandidateCount": 1,
+    "entryCount": 50,
+    "curationStatusCounts": {
+      "CURATED_READY_ALPHA_SOURCE": 5,
+      "CURATED_READY_STATIC": 36,
+      "LOCAL_ONLY_OR_REGEN_SEAMLESS": 1,
+      "LOCAL_ONLY_STATIC": 2,
+      "MANUAL_SPLIT_BEFORE_IMPORT": 1,
+      "PAD_OR_SPLIT_BEFORE_IMPORT": 5
+    },
+    "verdictCounts": {
+      "INTAKE_READY_STATIC": 27,
+      "REVIEW_REQUIRED": 23
+    },
+    "sourceTypeCounts": {
+      "DECAL_ATLAS": 11,
+      "PICKUP_ATLAS": 3,
+      "SEAMLESS_TILE": 15,
+      "TRIM_SHEET": 6,
+      "UV_ATLAS": 15
+    },
+    "visualStatusCounts": {
+      "PENDING VISUAL REVIEW": 50
+    },
+    "unityImportStatusCounts": {
+      "PENDING UNITY IMPORT": 50
+    },
+    "entriesWithIssues": 0,
+    "issueCount": 0,
+    "entriesWithWarnings": 23,
+    "warningCount": 23,
+    "watermarkDetectedCount": 1,
+    "watermarkRepairedCount": 1,
+    "seamRefinedCount": 0
+  },
+  "consumerBindingCount": 124,
+  "sourceConsumerBindingCount": 43,
   "notes": [
     "Catalog is a live routing index for generated Gemini materials, material atlases, source atlases, alpha candidates, and current consumers.",
     "Unity import/material assignment remains pending until the Unity apply-all runner creates .meta/material assets and post-apply validators pass.",
@@ -34,13 +76,15 @@
     "Player suit material palette is an editor ProductFace handoff from Gemini PBR source materials into generated suit slot materials; prefab binding remains Unity-owner work.",
     "Resource pickup materials are updated through existing Mat_Resource_* assets so current pickup prefabs keep stable material GUIDs while gaining generated PBR maps.",
     "World-support final materials are updated through existing Mat_Support_* assets and self-healed by WorldProceduralSupportFinalAuthoring when generated sources are available.",
-    "World-support ruin decals are first-party generated quad decals sourced from Batch34 alpha candidates, replacing vendor ScifiFacility decal prefab dependency in that route.",
+    "World-support ruin decals are first-party generated quad decals sourced from Batch34 alpha candidates, replacing vendor ScifiFacility decal prefab dependency in that route; source consumer bindings include both generated decal materials and authored prefab children.",
     "Tool surface detail primitives bind old Gemini single/micro-panel materials as small no-collider tool accents instead of repainting whole tools.",
     "Batch34 UV/pickup atlas source handoff creates explicit Unity material assets for flora/fauna/pickup mesh owners without mutating current prefabs.",
     "Construction damp-insulation backing adds physical no-collider backing panels to damage/ruin prefabs and binds B34-3421.",
     "Gemini material Unity apply is a single gated batch through GeminiMaterialIntegrationApplier.ApplyAll; do not re-add per-stage Unity batch launches.",
     "Legacy generated-material runner names are compatibility wrappers that delegate to RunGeminiMaterialUnityApplyAll.ps1.",
-    "Batch34 direct service prompt files are checked as two exact 25-job queues with non-empty negative prompts before source intake work."
+    "Batch34 direct service prompt files are checked as two exact 25-job queues with non-empty negative prompts before source intake work.",
+    "Batch34 targeted fix and regen prompt files are checked together so newer regen prompts explicitly supersede overlapping older fix prompts.",
+    "Batch34 targeted regen outputs are processed into a manifest with explicit selected/rejected variants before any old source is replaced."
   ],
   "materialManifests": [
     {
@@ -66,7 +110,7 @@
       "schema": "hecton8.external_pbr_pack.v1",
       "sourceProvider": "GeminiBatch34TextureExpansion",
       "provider": "Gemini_Batch20260608_TextureExpansion",
-      "assetCount": 16,
+      "assetCount": 18,
       "unityImportStatus": "PENDING UNITY IMPORT",
       "reviewStatus": "PENDING UNITY MATERIAL PREVIEW"
     },
@@ -98,7 +142,9 @@
     "Assets/_Project/Art/TEXTURES/Generated/GeneratedFloraImportedNormalization_20260607.json",
     "Assets/_Project/Art/TEXTURES/Generated/GeneratedSingleTextureNormalization_20260607.json",
     "Assets/_Project/Art/TEXTURES/Generated/GeminiReplacementTextureIntegration_20260607.json",
-    "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json"
+    "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_IntakeManifest.json",
+    "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json",
+    "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json"
   ],
   "previewSheets": [
     "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/PREVIEW_Batch34_PaddedAtlasSources.png",
@@ -115,6 +161,8 @@
     "Assets/_Project/Scripts/Editor/ExternalPbrTexturePackImporter.cs",
     "Tools/ValidateExternalPbrImporterBindings.py",
     "Tools/ValidateExternalPbrMaterialAssets.py",
+    "Tools/BuildExternalPbrLitPreview.py",
+    "Tools/ValidateExternalPbrLitPreview.py",
     "Tools/ValidateGeminiGeneratedMaterialState.py",
     "Tools/RunGeminiMaterialStaticPreflight.ps1",
     "Tools/RunExternalPbrUnityImport.ps1",
@@ -142,6 +190,9 @@
     "Tools/ApplyGeminiBiomeToFloraImported.py",
     "Tools/ValidateGeminiBiomeFloraImportedAssignments.py",
     "Tools/ValidateBatch34DirectPromptQueue.py",
+    "Tools/ValidateBatch34TargetedPromptQueues.py",
+    "Tools/ProcessBatch34RegenTargets.py",
+    "Tools/ValidateBatch34RegenTargets.py",
     "Assets/_Project/Scripts/Editor/Batch34SourceAtlasImporter.cs",
     "Tools/ValidateBatch34SourceAtlasPack.py",
     "Tools/ValidateBatch34SourceAtlasImporter.py",
@@ -154,6 +205,7 @@
     "Assets/_Project/Scripts/Editor/WorldSupportGeminiMaterialApplier.cs",
     "Tools/ValidateWorldSupportGeminiMaterialRoute.py",
     "Assets/_Project/Scripts/Editor/WorldSupportGeneratedDecalMaterialBuilder.cs",
+    "Assets/_Project/Scripts/Editor/WorldProceduralSupportFinalAuthoring.cs",
     "Tools/PromoteBatch34AlphaCandidatesToUnitySources.py",
     "Tools/ValidateBatch34AlphaCandidatePack.py",
     "Tools/ExtractBatch34SourceAtlasAlphaCandidates.py",
@@ -724,6 +776,17 @@
       ]
     },
     {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3409_limestone_cave_ceiling_mineral_drip",
+      "consumers": [
+        {
+          "lane": "terrain_layer_builder",
+          "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers/L_B34_3409_LimestoneCaveCeilingMineralDrip.terrainlayer",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        }
+      ]
+    },
+    {
       "materialId": "gemini_Batch20260608_TextureExpansion_b34_3410_drowned_concrete_rubble",
       "consumers": [
         {
@@ -799,6 +862,23 @@
           "target": "Assets/_Project/Art/Generated/ProductFace/PlayerSuit/Materials/MAT_GEN_PlayerSuit_Aux_RibbedHose.mat",
           "provider": "Gemini_Batch20260608_TextureExpansion",
           "note": "slot=-1; role=RibbedHoseAux"
+        }
+      ]
+    },
+    {
+      "materialId": "gemini_Batch20260608_TextureExpansion_b34_3417_amber_emergency_lens_material",
+      "consumers": [
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab::Detail_AmberEmergencyLens",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
+        },
+        {
+          "lane": "tool_surface_detail_primitives",
+          "target": "Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab::Detail_AmberEmergencyLens",
+          "provider": "Gemini_Batch20260608_TextureExpansion",
+          "note": ""
         }
       ]
     },
@@ -1151,6 +1231,21 @@
   ],
   "sourceConsumerBindings": [
     {
+      "sourceId": "B34-3418",
+      "consumers": [
+        {
+          "lane": "world_support_generated_decal_material",
+          "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_ViewportGlassEdgeWearDecal.mat",
+          "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3418_thick_viewport_glass_edge_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "world_support_generated_decal_prefab_child",
+          "target": "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexGlassEdge_ViewportRim",
+          "note": "material=Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_ViewportGlassEdgeWearDecal.mat"
+        }
+      ]
+    },
+    {
       "sourceId": "B34-3423",
       "consumers": [
         {
@@ -1219,6 +1314,16 @@
           "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3428_warning_paint_stripe_decal_atlas_AlphaCandidate.png"
         },
         {
+          "lane": "world_support_generated_decal_prefab_child",
+          "target": "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexStripe_Frame",
+          "note": "material=Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_WarningStripeDecal.mat"
+        },
+        {
+          "lane": "world_support_generated_decal_prefab_child",
+          "target": "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexStripe_CrossSpan",
+          "note": "material=Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_WarningStripeDecal.mat"
+        },
+        {
           "lane": "visor_trauma_decal_array_slice",
           "target": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset",
           "note": "slice=5; Warning stripe abrasion"
@@ -1232,6 +1337,11 @@
           "lane": "world_support_generated_decal_material",
           "target": "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_CutterScorchDecal.mat",
           "note": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/damage_decal/TX_B34-3429_cutter_burn_scorch_decal_atlas_AlphaCandidate.png"
+        },
+        {
+          "lane": "world_support_generated_decal_prefab_child",
+          "target": "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::RuinApexScuff_Base",
+          "note": "material=Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_CutterScorchDecal.mat"
         },
         {
           "lane": "visor_trauma_decal_array_slice",
@@ -2542,6 +2652,39 @@
       "duplicateSourceInManifest": false
     },
     {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3409_limestone_cave_ceiling_mineral_drip",
+      "title": "Limestone Cave Ceiling Mineral Drip",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606082255.jpeg",
+      "sourceBatchId": "B34-3409",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Reference only for limestone drip direction.",
+      "integrationNote": "Selected targeted regen candidate: SELECTED_REGEN_SEAMLESS_SOURCE. Best limestone regen result: lower landmarking than the named PNG and acceptable static 2x2 repeat for cave-ceiling material handoff.",
+      "materialFamily": "",
+      "surfaceClass": "terrain_cave_limestone_cave_ceiling_mineral_drip",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "terrain_cave",
+      "heldToolAllowed": false,
+      "stationPropAllowed": false,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": true,
+      "playerGearAllowed": false,
+      "tilingScale": 1.2,
+      "metallic": 0.0,
+      "smoothness": 0.2627,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
       "id": "gemini_Batch20260608_TextureExpansion_b34_3410_drowned_concrete_rubble",
       "title": "Drowned Concrete Rubble",
       "provider": "Gemini_Batch20260608_TextureExpansion",
@@ -2698,6 +2841,39 @@
       "tilingScale": 3.0,
       "metallic": 0.0,
       "smoothness": 0.4235,
+      "seamScoreBefore": null,
+      "seamScoreAfter": null,
+      "seamRepaired": false,
+      "watermarkRepaired": false,
+      "watermarkRisk": false,
+      "provisionalPbrMaps": true,
+      "duplicateSourceInManifest": false
+    },
+    {
+      "id": "gemini_Batch20260608_TextureExpansion_b34_3417_amber_emergency_lens_material",
+      "title": "Amber Emergency Lens Material",
+      "provider": "Gemini_Batch20260608_TextureExpansion",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json",
+      "source": "C:\\Users\\danat\\Downloads\\B34-3417-R1_Amber_Emergency_Lens_Material.png",
+      "sourceBatchId": "B34-3417",
+      "sourceProvider": "GeminiBatch34TextureExpansion",
+      "role": "Amber lens source after center crop or fixed lamp panel use.",
+      "integrationNote": "Selected targeted regen candidate: SELECTED_CENTER_CROP_SOURCE. Best amber lens source after cropping away hard frame. Use as lamp/lens material source, not broad seamless terrain.",
+      "materialFamily": "",
+      "surfaceClass": "glass_lens_amber_emergency_lens_material",
+      "sourceType": "SEAMLESS_TILE",
+      "sourceFamily": "glass_lens",
+      "heldToolAllowed": true,
+      "stationPropAllowed": true,
+      "salvageAllowed": false,
+      "worldPanelAllowed": false,
+      "floraAllowed": false,
+      "faunaAllowed": false,
+      "geologyAllowed": false,
+      "playerGearAllowed": true,
+      "tilingScale": 2.0,
+      "metallic": 0.0,
+      "smoothness": 0.7216,
       "seamScoreBefore": null,
       "seamScoreAfter": null,
       "seamRepaired": false,
@@ -3138,6 +3314,22 @@
   ],
   "sourceAtlases": [
     {
+      "id": "B34-3418",
+      "title": "Thick Viewport Glass Edge Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
+      "source": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
+      "targetRole": "Viewport glass wear decal reference only until background is matted.",
+      "integrationNote": "Selected targeted regen candidate: SELECTED_REGEN_ALPHA_SOURCE. Best targeted regen result: isolated decal islands, clean neutral matte, no edge contact. Use for alpha extraction/matte cleanup route.",
+      "downstreamRoute": "extract alpha/matte mask before material or decal binding",
+      "productionBindingStatus": "PENDING SPLIT_OR_ALPHA_EXTRACTION",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024
+    },
+    {
       "id": "B34-3423",
       "title": "Leak Rust Biofilm Decal Atlas",
       "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json",
@@ -3491,6 +3683,21 @@
     }
   ],
   "alphaCandidates": [
+    {
+      "id": "B34-3418",
+      "title": "Thick Viewport Glass Edge Decal Atlas",
+      "manifest": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json",
+      "source": "",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3418_thick_viewport_glass_edge_decal_atlas_AlphaCandidate.png",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "alphaNonZeroPct": 13.175,
+      "alphaOpaquePct": 1.517,
+      "alphaMean": 12.321
+    },
     {
       "id": "B34-3423",
       "title": "Leak Rust Biofilm Decal Atlas",

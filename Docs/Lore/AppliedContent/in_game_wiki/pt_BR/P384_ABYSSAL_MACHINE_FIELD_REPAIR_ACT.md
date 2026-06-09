@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Portão do campo máquina abissal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Abyssal Machine Field Repair Act
+# Portão do campo máquina abissal
 
-PT LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+O campo abissal faz o operador usar o sistema que danificou a reivindicação. Crescimento Atlas pode fazer ponte de energia, remendar hardware de rota e levar sinal por material vivo. Cada reparo bem-sucedido também muda classificação: ferramenta, organismo, ativo, contaminação e prova continuam cruzando campos.
 
 ## Scanner
 
-PT LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Portão de rota: campo máquina abissal. Ecologia de reparo Atlas vira hardware de rota utilizável com risco de custódia anexado.
 
 ## Terminal
 
-PT LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+ROTA DE CAMPANHA // CAMPO MÁQUINA ABISSAL. Exige: filme condutivo, órgão acústico, bacia de serviço, reroute seguro à pressão. Saída de reparo pode restaurar hardware e corromper classe de propriedade no mesmo passo.
 
 ## Audio
 
-PT LOC HOLD: It fixed the wall before it decided what the wall was.
+Consertou a parede antes de nomear a parede.
 
 ## Field Note
 
-PT LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Nota de saqueador: se crescer pelo painel, escaneie antes de cortar. Talvez seja a única razão para o painel ainda funcionar.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/pt_BR. -->

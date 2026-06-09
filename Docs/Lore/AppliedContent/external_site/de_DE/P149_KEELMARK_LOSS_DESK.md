@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Keelmark-Verlustdesk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Keelmark-Verlustdesk
 
-DE LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+Der Keelmark-Verlustdesk ist nicht die Hand, die einen Korridor flutet. Er ist die Hand, die entscheidet, wie der geflutete Korridor in die Bücher kommt. Darum zählt er. Ein Versicherer kann Mord wie Wetter aussehen lassen, wenn Kategorien früh genug bereitstehen.
 
-## Scanner
-
-DE LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-DE LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-DE LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-DE LOC HOLD: A loss category is a grave with better stationery.
+Keelmarks Tabellen lehren Deep Reach, welche Sprache Untersuchungen überlebt. Ausrüstung wird abgeschrieben. Habitat wird gemindert. Arbeit wird ausgesetzt. Zeugen werden exponiert, kompromittiert oder nicht rückholbar. Namen sind schwerer, also vermeidet der Desk sie, bis er muss.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/de_DE. -->

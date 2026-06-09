@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Quiet Salvage Contract Seed"
+title: "Semilla de contrato de salvage tranquilo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Quiet Salvage Contract Seed
+# Semilla de contrato de salvage tranquilo
 
-ES LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+Salvage tranquilo empieza con una ranura limpia: baja actividad de tormenta, menos contactos tempranos y una ventana bathydrop que parece pagada completa. Esa forma sirve para una tirada larga porque el operador puede estabilizar herramientas y refugio antes de que la ruta empiece a cobrar piezas.
 
-## Scanner
-
-ES LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-ES LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-ES LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-ES LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+La deuda está en la custodia. Muestras, paquetes de accidente, registros pinger y avisos de ruta se atan a una auditoría receptor primero antes del pago completo. La tirada es más silenciosa porque el tablero ya decidió quién posee la prueba limpia.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/es_ES. -->

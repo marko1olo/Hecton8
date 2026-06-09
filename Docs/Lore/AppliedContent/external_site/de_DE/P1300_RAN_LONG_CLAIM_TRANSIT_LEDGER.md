@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Public Site Hard-Sci-Fi Frontier Article
 spoiler_tier: 1
-title: "Ran-Langanspruch-Transitbuch"
+title: "Ran-Langanspruch-Transitregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran-Langanspruch-Transitbuch
+# Ran-Langanspruch-Transitregister
 
-HECTON-8 folgt einer harten Regel: Kommunikation ist billig im Vergleich zu Masse. Ein Black-Keel-Relais kann antworten, weil ein Paket über Licht, Spiegel und Trägerwarteschlangen läuft. Ein Tender kann das nicht. Schiffe auf der Ran-Route gehorchen weiter Beschleunigung, Bremswärme, Pellet-Lane-Planung, Aegirs Wetter und der Ökonomie der Risikofenster.
+HECTON-8 behandelt Erstkontakt als Papierarbeit unter Druck, weil interstellare Rettung ohne Überlicht genau dazu wird. Ein Black-Keel-Relais kann einen gestrandeten Marauder im Rahmen der Trägerzeiten bestätigen. Es kann kein Schiff erscheinen lassen. Das Langanspruchregister liegt zwischen diesen Tatsachen.
 
-Das Langanspruchsbuch ist die Verwaltungsform dieser Physik. Es fragt nicht, ob ein Überlebender Angst hat. Es fragt, ob die Koordinaten glaubwürdig sind, ob das Aufstiegspaket transferfähig ist, ob ein Luyten-Zeugenhash existiert, ob Deep Reach Quarantänehoheit behaupten kann und ob die Nutzlast Körper, Beweis, Fracht oder alles zugleich ist.
+            Im Universum ist das Register keine Formalität. Es ist das erste dauerhafte Objekt, das der Überlebende außerhalb des Ozeans besitzt. Es sagt, dass ein Mensch lebt, aber auch wie verlässlich die Koordinaten sind, wie viel Masse gehoben werden muss, ob das Aufstiegspaket dicht ist, ob Deep Reach Quarantäne geltend machen kann, ob die Fracht persönliche Ausrüstung oder anspruchsändernder Beweis ist und wer haftet, wenn die Abholung verbrennt, verfehlt oder kontaminiert zurückkehrt.
 
-So wird aus Lore Gameplay-Druck: Die Welt ist nicht still, weil niemand existiert, sondern weil Zivilisation langsam, besessen und prozedural ist. Der Spieler wartet nicht einfach; er baut Paket, Nutzlast und Hebel, damit Rettung mehr wert wird als Schweigen.
+            So bleibt Zivilisation präsent, ohne zum Fluchtweg zu werden. Menschen hören dich. Büros stempeln dich. Relais konservieren dein Paket. Versicherer und Routeneigner hängen Zahlen an deinen Körper. Der Schrecken ist kein leerer Raum. Der Schrecken ist ein System, das genau weiß, wo du bist, und trotzdem fragt, was deine Bergung wert ist.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/de_DE. -->

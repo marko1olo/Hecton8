@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Corporate Coordinate Capture Record"
+title: "سجل التقاط الإحداثيات المؤسسي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Corporate Coordinate Capture Record
+# سجل التقاط الإحداثيات المؤسسي
 
-AR LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+هذا السجل هو أوضح طريق للبيع. قد يهرب اللاعب، لكن موقع الكارثة يعود إلى المؤسسة التي أفشلته، وهي تملك الآن خريطة أفضل.
 
 ## Scanner
 
-AR LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+حمولة الإحداثيات مقبولة. أولوية مستقبل Deep Reach مستعادة؛ التقرير العام بلا تغيير.
 
 ## Terminal
 
-AR LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: نقل متجه حوض Atlas إلى مستقبل Deep Reach. منحت الاستعادة بموجب ملاحظة تعاون. سجل الحادث العام بلا تغيير. تستعيد العمليات المستقبلية سلطة المسار المؤسسية.
 
 ## Audio
 
-AR LOC HOLD: You opened the door from the inside.
+لقد فتحت الباب من الداخل.
 
 ## Field Note
 
-AR LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+نهاية جزئية مؤسسية: تشتري الإحداثيات الاستعادة بإعادة فتح مسرح الجريمة لسيطرة Deep Reach.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ar_SA. -->

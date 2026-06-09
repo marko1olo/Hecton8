@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Ventana de ruta Aegir
 
-En HECTON-8 el cielo es parte de la mazmorra. El gigante marca radiación, las lunas dan sombras y las mareas trabajan los cañones.
-
-El jugador aprende cuándo sube un mensaje, cuándo puede subir un cuerpo y cuándo el cielo abierto es una trampa.
+HECTON-8 es una luna oceánica, pero el cielo forma parte del calabozo. Radiación de Aegir, sombras lunares, shutters de relé, plumas de tormenta, mareas y geometría del carrier deciden si puede salir una señal, cuerpo, muestra o prueba. La regla clave es separar: ventana de datos no es rescate, rescate no es carga contaminada. Black Keel calcula, pero pregunta quién posee la masa, quién acepta cuarentena y qué cláusula protege a Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/es_ES. -->

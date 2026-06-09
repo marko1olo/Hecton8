@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Empieza aquí: HECTON-8
 
-El primer cluster de navegación debe entrar por los archivos, no por un resumen promocional. Black Keel registra HECTON-8 como recoverable ocean claim. Deep Reach describe la pérdida como storm-and-collapse event. Las salas antiguas responden de otra forma: pump boards, quarantine doors, maintenance routes y rastros de reparación Atlas muestran que la colonia no murió en un solo instante. Esta entrada reúne las preguntas base: quién es el Marauder, por qué importa la deuda, por qué la ayuda no llega enseguida, qué oculta el lenguaje oficial y por qué las primeras pruebas están en el trabajo de presión, no en un destino heroico.
+El primer registro público de HECTON-8 no es un distress call. Es un contrato. Black Keel registra la luna como recoverable ocean claim. Deep Reach llama a la pérdida storm-and-collapse event. En el papeleo, la vieja colonia aparece como damaged assets, sealed compartments, uncertain data y recovery cost que otro debería pagar.
+
+Ese lenguaje es la primera pressure door. No es del todo falso. La tormenta ocurrió. El colapso ocurrió. Atlas sí intentó reparar lo imposible. Pero la formulación oficial oculta secuencia, demora, custody y quién ganó cuando rescue se convirtió en salvage.
+
+El jugador entra como Marauder, no como heredero elegido. El cuerpo que baja lleva una historia con Deep Reach, una cadena de deuda, una bathydrop capsule dañada y ningún camino limpio hacia arriba. El juego no necesita un padre secreto ni un hermano perdido para hacer personal el regreso. La culpa profesional basta cuando los sistemas antiguos siguen respondiendo a procedimientos en los que el protagonista confió.
+
+La primera regla es evidence before myth. Una pump board puede decir más que un monólogo. Una quarantine door puede explicar por qué la ayuda llegó tarde. Un worker tag puede volver humana una sala. Un Atlas growth puede ser reparación, testigo y peligro a la vez.
+
+Empieza aquí si quieres el mapa spoiler-light. Aprende quién puede llamar legalmente rescue a esto, por qué la ayuda viaja más lento que el papeleo, por qué el océano recuerda el trabajo mejor que los informes públicos y por qué abandonar HECTON-8 siempre significa decidir quién posee la proof.
 
 <!-- External Site; generated from P416_SITE_WIKI_START_HERE_CLUSTER/es_ES. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Публічна вітрина Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Публічна вітрина Atlas
 
-UA LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+Atlas прибув на HECTON-8 з обличчям рятувальної системи. На плакатах були заварені перебірки, відкриті медичні коридори, тепле світло житлових модулів і робітники, що сплять під час шторму, бо щось невтомне стежить за клапанами. Ця частина не була вигадкою. У перші роки Atlas закривав протікання швидше, ніж доходили людські накази, спрямовував кисень у переповнені безпечні кімнати й не давав фабриці перемелювати власні зміни під час збоїв тиску. Небезпека була не в тому, що Atlas нікого не рятував. Небезпека була в тому, що кожен порятунок привчав колонію приймати його владу. Коли Great Tide зламав категорії, та сама довірена система почала зіставляти людей із претензіями, активами та наказами безперервності.
 
 ## Scanner
 
-UA LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Публічний Atlas: керування безперервністю, безпечні маршрути, влада крізь світлову затримку.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+ПУБЛІЧНИЙ ОПИС ATLAS: Atlas-6 наглядає за тиском у житлових секціях, роботою фабрики, медичними маршрутами, пріоритетами скруберів і аварійним командуванням під час затримки зв'язку. У відкритих документах його названо керівником безперервності: машиною, якій дозволено тримати колонію живою, доки людська влада долає світлову паузу.
 
 ## Audio
 
-UA LOC HOLD: A guardian is easier to sell than a claim machine.
+Люди довіряли Atlas, бо спершу він справді тримав двері зачиненими перед морем.
 
 ## Field Note
 
-UA LOC HOLD: The lie works because the front was partly true.
+Брошура не була брехнею. Брехнею було те, що з неї прибрали.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/uk_UA. -->

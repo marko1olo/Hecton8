@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Signatures du comité de silence des actifs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Signatures du comité de silence des actifs
 
-FR LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+Les signatures Asset Silence Board permettent de lire l'effacement Deep Reach sans attendre un aveu. Les cartes récupérées gardent le langage corporate propre : catégories de charge, visibilité de paquet, approbation de garde, asset risk. Les objets HECTON-8 voisins rendent ce langage sale : casiers avec étiquettes, registres avec noms et mute flags qui empêchent ces noms de quitter la claim route. La valeur d'archive tient dans l'écart entre ce qui est resté facturable et ce qui a cessé de porter des noms.
 
 ## Scanner
 
-FR LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Carte de vote de rédaction récupérée : champ nom de travailleur muet, catégorie asset-risk visible, nombre de casiers conservé. Visibilité du paquet soumise à approbation de garde.
 
 ## Terminal
 
-FR LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17 : déplacer l'annexe witness-name vers la catégorie asset-risk silence après relay review. Conserver load class, locker count et claim value. Libération soumise à l'approbation du détenteur de garde.
 
 ## Audio
 
-FR LOC HOLD: Erase the route and the body becomes cargo math.
+Le board a gardé le compte des caisses. Ils ont coupé les noms.
 
 ## Field Note
 
-FR LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Le nom a disparu, l'étiquette du casier est encore là. Asset Silence Board a voté sur la visibilité du paquet, pas sur l'existence du travailleur.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/fr_FR. -->

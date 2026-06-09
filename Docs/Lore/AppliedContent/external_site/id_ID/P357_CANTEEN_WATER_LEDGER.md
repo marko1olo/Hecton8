@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Buku Air Kantin
 
-Buku Air Kantin adalah salah satu artefak manusia paling sederhana di HECTON-8: papan ruang makan yang mencatat air minum, pengembalian token, akses pompa, dan pengecualian medis. Itu tidak menjelaskan bencana. Itu menunjukkan koloni tepat sebelum bencana menjadi cerita.
+Buku Air Kantin adalah slate ruang makan yang membengkak dari koloni yang mengukur air minum seserius kustodi alat. Enam token hilang, dua pengecualian medis, dan satu koreksi ruang pompa cukup untuk membuat ruangan terasa hidup: tidak heroik, tidak rapi, masih berdebat tentang gelas saat sistem tekanan sudah mulai gagal.
 
-Nilainya ada pada tekstur dan bukti. Enam token hilang terdengar kecil sampai pemain memahami arti air di koloni bertekanan. Air minum melewati filter, akuntansi sif, pengecualian medis, dan catatan tanggung jawab ruang pompa. Gelas hilang bisa berarti pekerja lelah. Bisa juga berarti kru sakit, jalur terkontaminasi, perintah ransum yang dilewati, atau pengawas yang menyembunyikan kegagalan lokal dari laporan Deep Reach.
+Air di HECTON-8 tidak pernah sekadar air. Ia melewati filter, pemimpin shift, pengecualian medis, kunci pompa, dan kepercayaan kantin. Token hilang bisa berarti lupa, dicuri, sakit, kontaminasi, atau pengawas yang menahan kegagalan lokal dari berkas Deep Reach satu shift lagi.
 
-Tujuannya bukan melodrama. Buku ini membuat koloni terbaca sebagai kerja: orang pulang sif, berdebat, memperbaiki catatan, meminjam alat, melindungi teman, dan mencoba menjaga ruangan tetap normal saat laut mulai memasuki sistem. Di HECTON-8, jejak biasa seperti itu bisa menjadi bukti.
+Jangan bersihkan margin pensil gemuk. Di sanalah ruangan menjadi manusiawi. Ia menunjukkan pekerja melindungi teman, menyembunyikan gejala, memperdebatkan urutan ransum, dan mencoba mencegah satu filter asam berubah menjadi panik seluruh koloni sebelum nada turun berikutnya.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/id_ID. -->

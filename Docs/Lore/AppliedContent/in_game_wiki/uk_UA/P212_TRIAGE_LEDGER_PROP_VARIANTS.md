@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Варіанти реквізиту тріажних реєстрів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Варіанти реквізиту тріажних реєстрів
 
-UA LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+Варіанти реквізиту тріажних реєстрів роблять шкоду читабельною, не перетворюючи кімнати на виставки страждання. Тріажний реєстр має показувати, як травма рухалась через бюрократію: скорочення crush-status, кисневий борг, закреслений route hold, стан обладнання, нотатка стабілізації Atlas і розрив witness hash. Мета не в тому, щоб прикрашати колонію болем. Мета в тому, щоб довести: затримка мала шлях, а шлях мав власників. Хороший тріажний реквізит змушує гравця питати, чому одного працівника врахували, іншого утримали, а третій зник у мові сертифікації.
 
 ## Scanner
 
-UA LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Медичний доказ має викривати затримку й маршрутизацію, а не прикрашати кімнату стражданням.
 
 ## Terminal
 
-UA LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: кожен запис реєстру має пов'язувати травму з тиском, відмовою маршруту, станом обладнання, затримкою сертифікації або відсутнім ланцюгом свідка. Самого болю недостатньо. Реквізит має показувати, хто міг рухатися, кого утримали і яка система зробила затримку процедурною.
 
 ## Audio
 
-UA LOC HOLD: Pain is not proof until the route bears the mark.
+Біль не доказ, доки маршрут не несе мітку.
 
 ## Field Note
 
-UA LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Варіанти: скорочення crush-status, мітка кисневого боргу, закреслений route hold, нотатка стабілізації Atlas, розрив witness hash.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/uk_UA. -->

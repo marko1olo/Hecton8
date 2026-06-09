@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Registro de especialista en sistemas de campo"
+title: "Registro de Especialista de Sistemas de Campo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro de especialista en sistemas de campo
+# Registro de Especialista de Sistemas de Campo
 
-El personaje jugador de HECTON-8 entra en el océano con una cicatriz práctica: antiguo trabajo de sistemas de campo en Deep Reach, acceso a infraestructura de evacuación, autorización revocada y memoria procedimental suficiente para leer maquinaria ahogada como prueba. Ahora es Marauder, no oficial de la compañía ni héroe pasajero. Una bomba rota, un sello de ruta o una frase de responsabilidad importan porque el operador entiende cómo esos sistemas debían proteger a los trabajadores antes de volverse papeleo.
+El Registro de Especialista de Sistemas de Campo da al operador central de HECTON-8 un pasado útil sin volverlo demasiado limpio. No era mando ni arquitecto secreto del desastre. Trabajaba cerca de los sistemas que debían mantener honestas las rutas de evacuación, bombas, sellos y salas de relé.
 
-## Scanner
+Eso importa porque la colonia abandonada está llena de procedimientos, no sólo de restos. Un sello route-safe, una calificación de clamp o una frase de maintenance pueden incriminar más que una grabación dramática. El operador sabe cómo deben verse esos registros cuando protegen a personas, y cómo se ven cuando una empresa quiere que la protección se vuelva papeleo.
 
-Antigua credencial de sistemas de campo. No era mando. Trabajo de infraestructura con acceso suficiente para reconocer dónde se enterró una ruta.
-
-## Terminal
-
-RASTRO DE PERSONAL: sistemas de campo, infraestructura de evacuación, certificación route-safe. Autorización revocada tras la revisión del silencio de Aegir. La caché de procedimientos aún coincide con la secuencia del operador.
-
-## Audio
-
-Tú nunca firmaste la mentira. Conocías la gramática que la dejaba pasar la inspección.
-
-## Field Note
-
-La placa dejó de abrir puertas. No borró de las manos el orden del fallo.
+El acceso revocado afila la historia. La vieja placa ya no concede control, pero deja la capacidad de reconocer el dialecto del fallo. HECTON-8 convierte esa memoria profesional en motivo: no culpa por causar la catástrofe, sino responsabilidad tras leer cómo se archivaron habitaciones que podían salvarse.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/es_ES. -->

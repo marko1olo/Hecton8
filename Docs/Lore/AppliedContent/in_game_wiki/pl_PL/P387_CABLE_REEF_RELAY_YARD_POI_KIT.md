@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Zestaw dowodowy stoczni przekaźników rafy kablowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Cable Reef Relay Yard POI Kit
+# Zestaw dowodowy stoczni przekaźników rafy kablowej
 
-PL LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+Stocznia przekaźników rafy kablowej to warsztat naprawczy, który wyrósł we własny tryb awarii. Błona przewodząca, płaszcze kabli i gniazda akustyczne mogą przywrócić sygnał, ale ten sam most może wysłać trasę w starą odnogę serwisową, jeśli operator tnie bez skanu.
 
 ## Scanner
 
-PL LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+Zestaw dowodowy POI: stocznia przekaźników przewodzi przez żywą błonę-most i błędnie prowadzi przez uszkodzoną pamięć kabla.
 
 ## Terminal
 
-PL LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+ZESTAW STOCZNI PRZEKAŹNIKÓW: gniazdo kręgosłupa akustycznego, most biofilmu, ostrzeżenie cięcia, odpowiedź pingera, znak serwisowy Atlas, łuszcząca izolacja, widełki przekaźnika, mapa martwej odnogi.
 
 ## Audio
 
-PL LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Nie zdzieraj całego wzrostu. Część niesie twój sygnał.
 
 ## Field Note
 
-PL LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Notatka marodera: jeśli błona buczy pod sondą, oznacz ją przed cięciem. Ładny kabel często jest martwym kablem.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/pl_PL. -->

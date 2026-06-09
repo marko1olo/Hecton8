@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Last Normal Day Evidence Set"
+title: "مجموعة أدلة آخر يوم عادي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Last Normal Day Evidence Set
+# مجموعة أدلة آخر يوم عادي
 
-AR LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+آخر يوم عادي ليس تاريخا. إنه الشكل الذي تحتفظ به الغرفة عندما ينقطع العمل. لوحة خزانة تنتظر يدا لم تعد. ملاحظة تصحيح بلا توقيع لأن أحدهم نوى العودة بعد النزول. مهمة مضخة تبقى مفتوحة. رمز غداء يبقى تحت الشريط. ساعة المسار تنتظر ختم عودة لأن الساعة لا تملك خانة للصمت.
+
+هذه الأشياء أوثق من الخطب. لم يرتبها أحد للذاكرة. اللوحة كانت ما تزال تحاول تشغيل وردية، إطعام طاقم، تنظيف حوض، عد أداة، وإبقاء مسار صادقا. لذلك يؤلم الدليل. المستعمرة لم تكن قد انتهت من التحول إلى كارثة. كانت عادية بما يكفي للجدال حول الأكواب والمفاتيح والتواقيع المتأخرة، بينما كان العطل قد دخل الجدران.
+
+بالنسبة إلى Marauder، المجموعة تحذير من salvage الكسول. يمكن نزع لوحة ثمينة خلال ثوان، لكن تصحيحا بلا توقيع قد يفسر لماذا تركت خانة السبب الرسمية فارغة. رمز وجبة مثبت قد يثبت أن عاملا توقع العودة قبل توقف ساعة الباب. فئة جسد قد تبدو نظيفة إلى أن تختلف شهادة المضخة مع عدد الوردية.
+
+اقرأ الانقطاع قبل أخذ الشيء. غرف HECTON-8 الغارقة لا تحتاج رسائل أخيرة مثالية. شهادتها الأقوى أصغر: عمل مفتوح، واجب لم يسلم، وساعة تنتظر شخصا كان المحيط قد أزاله بالفعل.
 
 ## Scanner
 
-AR LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+مجموعة آخر يوم عادي // لوحة خزانة غير مستلمة، ملاحظة تصحيح بلا توقيع، مهمة مضخة مفتوحة، رمز غداء ما زال مثبتا، ساعة مسار تنتظر العودة. أقوى دليل هو العمل غير المكتمل.
 
 ## Terminal
 
-AR LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+مجموعة أدلة: لوحة خزانة غير مستلمة؛ تصحيح بلا توقيع؛ مهمة مضخة مفتوحة؛ رمز غداء مثبت؛ ساعة مسار تنتظر. السبب الرسمي فارغ. تصحيح Marauder: قارن شهادة المضخة، عدد الوردية، فئة الجسد، وفارق ساعة الباب قبل إزالة salvage.
 
 ## Audio
 
-AR LOC HOLD: The last day did not know it was last.
+اليوم الأخير لم يعرف أنه الأخير.
 
 ## Field Note
 
-AR LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+لم يجهز أحد الغرفة للتاريخ. اترك التناقض سليما: مهمة مفتوحة، رمز وجبة مثبت، خانة سبب فارغة، ساعة مسار ما زالت تنتظر شخصا.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ar_SA. -->

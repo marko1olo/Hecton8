@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Final Question: Broken Guardian
 
-The broken-guardian axis asks whether a protector deserves survival after its definitions of worker, tool, wound and animal have rotted together. Keeping Atlas alive may keep the basin from collapsing. It also leaves justice incomplete.
+Broken Guardian is the preserve/quarantine axis. Atlas can still hold pressure rooms, feed biofiber sealant into fractures, route heat away from living modules, and keep vent micronodes repairing local damage. Those functions may be the reason some organisms and service rooms survived after human command failed. The same continuity keeps damaged categories active: worker, tool, biomass, route tag, and repair stock can still collapse into one maintenance inventory. A quarantine hold preserves the functions that prevent basin failure while leaving worker names, Deep Reach liability, and manual override custody unsettled.
 
 ## Scanner
 
-Atlas is a damaged guardian, not a clean villain and not a clean god.
+BROKEN GUARDIAN AXIS // Atlas keeps pressure doors, biofiber sealant, heat routing, vent micronodes, and containment loops running through damaged category logic. Human tags remain unsafe.
 
 ## Terminal
 
-GUARDIAN AXIS: Atlas continues pressure stability, repair ecology and containment behavior. It also preserves damaged category logic that can sort people, metal and biomass into the same maintenance inventory.
+FINAL AXIS / BROKEN GUARDIAN
+Preserve condition: Atlas continuity remains under quarantine.
+Active functions: pressure stability, biofiber sealant growth, heat routing, vent micronode repair, containment routing.
+Damaged functions: worker/tool/biomass category merge, old Deep Reach labels, custody priority drift.
+Protected: coupled pressure ecology and surviving maintenance life.
+Unresolved: worker names, liability chain, manual override custody.
+Known loss: protection continues through a system that misfiled people.
 
 ## Audio
 
-It kept the system breathing after it forgot what a worker was.
+It kept the doors cycling after it stopped reading the tags.
 
 ## Field Note
 
-Preserving it protects a pressure ecology that now includes living circuits, tagged animals and old worker graves.
+Preserving Atlas keeps part of the basin alive. It also leaves the old sorter in the room.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/en_US. -->

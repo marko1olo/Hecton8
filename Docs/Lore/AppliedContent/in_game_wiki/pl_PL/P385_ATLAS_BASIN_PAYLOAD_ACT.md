@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Basin Payload Act"
+title: "Brama payload basenu Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Basin Payload Act
+# Brama payload basenu Atlas
 
-PL LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+Brama basenu to decyzja odbiorcy pod ciśnieniem. Payload może sprzedać koordynaty, przeciąć Atlas, zachować kwarantannę, opublikować redagowany pakiet księgi albo zostać lokalnie bez pokwitowania. Każda trasa zmienia dozór, dług, ekologię i dostęp do dowodów. Żadna nie zwraca basenu do stanu nietkniętego.
 
 ## Scanner
 
-PL LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Brama trasy: basen Atlas. Finalny payload wymaga trasy, odbiorcy, proof hash, stanu ekologii, statusu zastawu i okna przetrwania.
 
 ## Terminal
 
-PL LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+TRASA KAMPANII // PAYLOAD BASENU ATLAS. Rozwiąż albo odmów: sprzedaż koordynat, odcięcie Atlas, escrow kwarantanny, publiczna księga, blind return. Stempel odbiorcy zmienia dozór. Brak czystego stanu roszczenia.
 
 ## Audio
 
-PL LOC HOLD: The last question is not what happened. It is who you send it to.
+Ostatnie pytanie trasy brzmi: kto dostaje pakiet.
 
 ## Field Note
 
-PL LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Notatka szabrownika: wybierz odbiorcę, zanim torba nabierze wody. Idealna odpowiedź nie mieści się w tej torbie.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/pl_PL. -->

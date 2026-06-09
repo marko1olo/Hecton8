@@ -1,0 +1,30 @@
+---
+packet_id: P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+release_set_id: RS288_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+article_id: applied_lore.transcript_damage_band_offset_field_article
+unlock_id: unlock.transcript_damage_band_offset_field_article
+poi_tags: poi.transcript_damage_band;poi.hydrophone_log_strip
+biome_tags: biome.drowned_colony;biome.pressure_base
+locale: zh_CN
+surface: external_site
+source_voice: Public Lore Atlas Evidence Note
+spoiler_tier: 0
+title: "转录损伤带偏移"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# 转录损伤带偏移
+
+在HECTON-8里，语音日志先是物件，然后才是话语。转录损伤带就是维持这条规则的工具。它标出字幕或文本中原始音频丢失、被遮盖或损坏到无法引用的位置。它若与盒带、听水器带和notary标记对齐，就是警告。它若离开这些物件，就是处理痕迹。
+
+偏移重要，是因为转录比实体载体更容易修。回收台可以平滑噪声、移动字幕、藏住姓名，发布一个看起来正式的版本。录音机硬件没那么配合。划痕、送带跳格、盐痕和时钟梯刻度会保持顺序。黑带迟到时，读者能看到文档保管和机器保管分开的点。
+
+这篇内容属于录音机舱证据链。音频碎片标签说明声音文件声称属于哪里。听水器带说明房间通过金属和水听到了什么。盒带齿与墨轮说明载体如何移动。转录损伤带偏移要问的是：可读文字是否仍属于那件载体。它不是宏大秘密，而是一处有负责人可追的时间错误。
+
+对外，Deep Reach可以把它称为字幕劣化片段。在Aegir，手里拿着载体的Marauder会说得更硬：转录是在损伤之后被清理的，清理版正试图显得比实际更早。
+
+<!-- External Site; generated from P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE/zh_CN. -->

@@ -525,6 +525,8 @@ namespace Hecton8.Construction
             return profileCount > 0;
         }
 
+#endif
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint MixHash(uint hash, uint value)
         {
@@ -626,6 +628,5 @@ namespace Hecton8.Construction
             if (cursor < csv.Length && csv[cursor] == (byte)'\n')
                 cursor++;
         }
-#endif
     }
 }

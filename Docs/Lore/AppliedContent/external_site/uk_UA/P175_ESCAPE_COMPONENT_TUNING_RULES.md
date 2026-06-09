@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "Правила налаштування компонентів втечі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# Правила налаштування компонентів втечі
 
-UA LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+Правила налаштування компонентів втечі дають HECTON-8 спільну граматику для крафту і кінцівок. Гравець не гриндить довільні рідкісні деталі. Він збирає фізичний, навігаційний і юридичний аргумент, чому щось із безодні має бути прийняте над океаном.
 
 ## Scanner
 
-UA LOC HOLD: Escape parts should force depth and evidence, not grind.
+Компоненти втечі мають вимагати глибину і докази, а не гринд. Вихід із HECTON-8 - це ланцюг доказів, а не один дорогий craft.
 
 ## Terminal
 
-UA LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+КОМПОНЕНТИ ВТЕЧІ / relay spine доводить зв'язок / clamp rings доводять рейтинг тиску / guidance core доводить таймінг / ascent charge доводить енергію / legal handshake вирішує, хто відповість / evidence payload змінює наслідок і опіку.
 
 ## Audio
 
-UA LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+Вихід - не один craft. Це ланцюг доказів.
 
 ## Field Note
 
-UA LOC HOLD: Every ascent component must have a physical and legal reason.
+Кожен компонент підйому потребує фізичної і юридичної причини: зв'язок, рейтинг, таймінг, енергія, приймач, payload. Відсутність одного має змінювати кінцівку, а не лише блокувати кнопку.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/uk_UA. -->

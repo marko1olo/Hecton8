@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier: знание, а не сила"
+title: "Знание досье, не сила"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier: знание, а не сила
+# Знание досье, не сила
 
-Dossier persistence должна защищать настроение игры. Сохранение силы превратит pressure в решенную проблему. Сохранение знания позволит игрокам раньше распознавать ложь, выбирать рискованные контракты и понимать последствия, уважая каждый новый seed.
+Если досье переносит силу, HECTON-8 перестает быть игрой о давлении. Море превращается в уже решенную домашнюю работу. Правильное сохранение страннее и жестче: игрок раньше распознает ложь, понимает, какой пункт договора должен жалить, видит, почему чистая выплата не чистая, и всё равно спускается хрупким телом в новый seed. Мудрость может выжить. Безопасность - нет.
 
 ## Scanner
 
-Никакого inherited oxygen, guns, hull или magic shortcuts.
+META RULE // Нет наследуемого кислорода, рейтинга корпуса, оружия, инвентаря, маршрутной власти или магического shortcut. Досье хранит предупреждения, не мышцы.
 
 ## Terminal
 
-META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+ЖЕСТКИЙ ПРЕДЕЛ: постоянные данные досье могут открывать предупреждения, семьи слухов, варианты claim и контекст концовок. Они не сохраняют силу оборудования, инвентарь ресурсов, владение мировой правдой или маршрутное разрешение.
 
 ## Audio
 
@@ -35,6 +35,6 @@ META RULE: Dossier records may unlock warnings, rumor families, claim variants a
 
 ## Field Note
 
-Игрок может стать умнее. Океан не должен стать меньше.
+Игрок может стать мудрее. Океан не должен стать меньше.
 
 <!-- In-Game Wiki; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/ru_RU. -->

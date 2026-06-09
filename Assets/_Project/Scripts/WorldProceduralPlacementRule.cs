@@ -12,6 +12,12 @@ namespace Hecton8.World
             None = 0,
             Sand = 1 << 0,
             Rock = 1 << 1,
+            Reef = 1 << 2,
+            Brine = 1 << 3,
+            Seep = 1 << 4,
+            Nodule = 1 << 5,
+            Rubble = 1 << 6,
+            AnyGeology = Sand | Rock | Reef | Brine | Seep | Nodule | Rubble,
             Any = Sand | Rock
         }
 

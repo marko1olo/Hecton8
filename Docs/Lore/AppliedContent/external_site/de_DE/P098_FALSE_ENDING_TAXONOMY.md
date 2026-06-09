@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomie falscher Enden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomie falscher Enden
 
-DE LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+Die Taxonomie falscher Enden erklärt die Replay-Struktur: Ein Ausgang kann physisch real, profitabel und trotzdem moralisch unvollständig sein. Das Dossier bewahrt Wissen zwischen Versuchen, während Druck, Schulden und öffentliche Wahrheit entscheiden, ob ein Ende nur Flucht oder echte Abrechnung ist.
 
 ## Scanner
 
-DE LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Endtafel. Manche Ausgänge sind echt genug, um zu zählen, und falsch genug, um weh zu tun.
 
 ## Terminal
 
-DE LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+END-FAMILIEN: Materialauszahlung; Teil-Ausgang und Rückkehr in denselben Seed; Konzernübernahme; Quarantäne-Hold; Freigabe des öffentlichen Ledgers; Atlas-Beckenlösung. Ergebnisakten müssen Nutzlast, Beweis und Schuldenzustand getrennt halten.
 
 ## Audio
 
-DE LOC HOLD: Leaving is not the same as finishing.
+Aus dem Wasser zu kommen heißt nicht, die Arbeit zu beenden.
 
 ## Field Note
 
-DE LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Ein falsches Ende ist kein Trick. Es ist ein gültiger Handel, dem die Wahrheit fehlt.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/de_DE. -->

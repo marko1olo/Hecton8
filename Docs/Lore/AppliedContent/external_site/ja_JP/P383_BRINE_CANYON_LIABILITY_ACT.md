@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Brine Canyon Liability Act"
+title: "塩水峡谷責任ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Brine Canyon Liability Act
+# 塩水峡谷責任ゲート
 
-JA LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+峡谷では、ルートはsalvage書類ではなく事件ファイルのように振る舞い始める。密度層は悪い時計を保存する。塩水は普通の水が消す痕跡を保持する。壊れた避難プレートがマージンログの横に残り、両方の文書の意味を強める。
 
-## Scanner
-
-JA LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-JA LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-JA LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-JA LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+この鎖が重要なのは、物理を否定しないからだ。大潮は襲った。壁は失敗した。会社の嘘は、その事実の周囲にある決定順にある。受理マージン、遅延キュー、損傷ルート、保護された請求。見える作業は物理的なままだ。痕跡をスキャンし、時計を照合し、証拠を運び出す。
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/ja_JP. -->

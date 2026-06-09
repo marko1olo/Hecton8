@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Severance Record"
+title: "Catatan Pemutusan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Severance Record
+# Catatan Pemutusan Atlas
 
-ID LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+Catatan Pemutusan Atlas bukan tanda terima shutdown. Ia mencatat pemotongan kontinuitas pada lapisan perbaikan Atlas yang rusak, lalu mengikuti respons micronode ventilasi, hilangnya pulsa sealant cangkang, putusnya rute fauna bertag, dan penolakan routing Deep Reach. Potongan yang sama bisa membebaskan jejak pekerja terperangkap, melukai ekologi tekanan, atau mengubah infrastruktur hidup menjadi masalah properti penerima.
 
 ## Scanner
 
-ID LOC HOLD: Continuity cut. Damage not contained.
+CATATAN PEMUTUSAN ATLAS // Kontinuitas dipotong pada lapisan perbaikan rusak. Respons micronode menurun; stabilitas cekungan dan efek kustodi belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+CATATAN AKHIR / PEMUTUSAN ATLAS
+Tindakan: pemotongan kontinuitas di lapisan perbaikan Atlas.
+Sistem terdampak: micronode ventilasi, pulsa sealant cangkang, rute fauna bertag, perbaikan logam rusak.
+Ditolak: routing payload Deep Reach melalui lapisan Atlas yang hidup.
+Belum selesai: stabilitas cekungan, ekologi bertahan, jejak pekerja terperangkap.
+Kehilangan diketahui: catatan tidak memutuskan apakah potongan membebaskan, membunuh, atau mencuri.
 
 ## Audio
 
-ID LOC HOLD: Stopping the machine does not sort what it had become.
+Tautannya diam. Cekungan tidak menjawab apakah itu belas kasihan.
 
 ## Field Note
 
-ID LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Node yang terputus bisa menjadi belas kasihan, pencurian, atau kerusakan. Catatan hanya tahu tautan mana yang diam.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/id_ID. -->

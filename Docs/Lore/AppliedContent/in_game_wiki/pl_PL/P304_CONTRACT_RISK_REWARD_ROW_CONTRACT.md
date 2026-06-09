@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Contract Risk Reward Boundary"
+title: "Granica ryzyka i nagrody kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Contract Risk Reward Boundary
+# Granica ryzyka i nagrody kontraktu
 
-PL LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+Granica zmienia presję replay w kontraktowe rekordy tabel. Trasa zmienia się, bo zmieniły się dług, czas burzy, dozór i klauzule odpowiedzialności, nie dlatego, że świat zapomniał.
 
 ## Scanner
 
-PL LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Wiersz kontraktu wiąże zastaw, okno burzy, porządek dozoru, pułap wypłaty i wagę klauzuli.
 
 ## Terminal
 
-PL LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: wiersze wymagają ciężaru zastawu, pułapu wypłaty, okna burzy, dozoru próbki, porządku dowodów i wagi klauzuli Deep Reach. Kontrakt jest pierwszym drapieżnikiem.
 
 ## Audio
 
-PL LOC HOLD: The contract is the first predator.
+Kontrakt jest pierwszym drapieżnikiem.
 
 ## Field Note
 
-PL LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Zmiany nagrody należą do wiersza kontraktu, nie improwizowanego tekstu lore.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pl_PL. -->

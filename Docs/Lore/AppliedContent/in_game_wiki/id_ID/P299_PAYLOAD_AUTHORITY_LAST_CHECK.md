@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Authority Last Check"
+title: "Pemeriksaan Terakhir Otoritas Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Authority Last Check
+# Pemeriksaan Terakhir Otoritas Payload
 
-ID LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+Pemeriksaan terakhir memberi UI final pertanyaan keras. Pemain tidak memilih peti hadiah; mereka memilih siapa yang menerima massa, bukti, nama, koordinat, dan izin bertindak.
 
 ## Scanner
 
-ID LOC HOLD: Payload check: receiver changes meaning, not only reward.
+Pemeriksaan payload: pilihan penerima mengubah kepemilikan, bukan hanya hadiah.
 
 ## Terminal
 
-ID LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: pilih penerima, massa, kustodi bukti, konsekuensi ekologis, dan liabilitas pasca-kembali. Pilihan penerima menentukan siapa yang boleh bertindak atas bukti setelah keberangkatan.
 
 ## Audio
 
-ID LOC HOLD: What leaves will own what remains.
+Yang pergi akan memiliki yang tersisa.
 
 ## Field Note
 
-ID LOC HOLD: Use immediately before irreversible ending route selection.
+Gunakan tepat sebelum pilihan rute akhir yang tidak dapat dibalik.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/id_ID. -->

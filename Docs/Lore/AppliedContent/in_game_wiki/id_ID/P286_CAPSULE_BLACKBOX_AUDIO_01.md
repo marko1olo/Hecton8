@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Capsule Blackbox Audio 01"
+title: "Audio Blackbox Kapsul 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Capsule Blackbox Audio 01
+# Audio Blackbox Kapsul 01
 
-ID LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+Audio Blackbox Kapsul 01 mengubah keselamatan awal menjadi utang. Kapsul tidak sekadar jatuh ke HECTON-8 lalu menunggu perbaikan. Ia memilih satu-satunya burn yang membuat penumpangnya hidup, dan membayarnya dengan ascent sleeve, perangkat yang seharusnya membuat pulang bersih mungkin. Blackbox berguna karena mengikat fakta cerita ke penghalang fisik: crush-frame retak, sleeve terbakar, recovery ring tanpa kunci, pressure frames hilang, dan buoy yang terus meminta naik dari kedalaman yang tak bisa lagi ia tinggalkan. Pemain hidup karena mesin menghabiskan jalan pulang.
 
 ## Scanner
 
-ID LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+Blackbox pertama tidak berkata kamu jatuh. Ia berkata kapsul bertahan hidup dengan menghabiskan perangkat yang seharusnya membawanya naik kembali.
 
 ## Terminal
 
-ID LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; dampak turun terserap; ascent sleeve habis; recovery ring gagal mengunci; buoy tidak andal; frames 12-19 hilang selama pressure shear. Naik manual tidak disarankan tanpa penggantian sleeve eksternal.
 
 ## Audio
 
-ID LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Black box event. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-ID LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: crush-frame bawah retak; ascent sleeve terbakar habis; recovery ring no-lock; buoy masih mengulang permintaan naik yang sudah mati.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/id_ID. -->

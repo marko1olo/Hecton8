@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "サルベージ真実の証拠状態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# サルベージ真実の証拠状態
 
-JP LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+回収された証拠は HECTON-8 の陰謀をゆっくり燃やす。植民地が沈黙しているのは、何も起きなかったからではない。証拠になる物それぞれに市場価値、責任価値、法的価値が付くからだ。真実は都合のいい自白ではなく、保管経路と壊れた物体を通して浮かび上がる。
 
 ## Scanner
 
-JP LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+ブラックボックスのパケット: 請求部署が触れるまでは真実。
 
 ## Terminal
 
-JP LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: 生のサルベージ品は既定で請求材料となる。公的証拠には、完全なソースハッシュ、圧力時刻印、証人パケット、請求者支配外のリレー公証、船体喪失、塩水曝露、手動編集を越えて残る保管経路が必要。
 
 ## Audio
 
-JP LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+遺体は、誰かが誤ファイルに失敗して初めて証拠になる。
 
 ## Field Note
 
-JP LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+深海から来た事実は、証人を保てた時だけ危険になる。
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/ja_JP. -->

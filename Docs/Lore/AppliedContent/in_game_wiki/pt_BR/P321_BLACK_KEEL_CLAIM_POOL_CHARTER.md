@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Carta do Pool de Reivindicação Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Black Keel Claim-Pool Charter
+# Carta do Pool de Reivindicação Black Keel
 
-PT LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+A Carta do Pool de Reivindicação Black Keel é o primeiro documento que deve fazer o jogador desconfiar da palavra nave. Black Keel é útil, próxima e real, mas não é uma embarcação leal esperando acima. É um ativo de recuperação alugado dentro do Aegir Reclamation Pool, construído para mover reivindicações, corpos, carga, telemetria e dívida por um canal legal sem dar ao contratante propriedade do casco. Essa distinção importa porque explica a armadilha central de HECTON-8 sem mágica. O carrier pode ouvir pings, vender telemetria, agendar janelas e soltar suprimentos de baixo risco, mas ainda recusar um resgate limpo porque o jogador não é dono da rota. Transporte é permitido. Prioridade de resgate é condicional. O lien continua ativo. A carta transforma órbita em pressão, não em liberdade: há algo acima de você, mas ele responde à reivindicação antes de responder à pessoa.
 
 ## Scanner
 
-PT LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+A Black Keel não é sua nave. É um ativo de recuperação do claim-pool com seu nome no livro de dívida.
 
 ## Terminal
 
-PT LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+TRECHO DA CARTA / BLACK KEEL: carrier de salvage autônomo / custódia: Aegir Reclamation Pool / transporte de contratante: permitido / propriedade do casco: negada / prioridade de resgate: subordinada ao insured receiver state, handshake de quarentena e claim value.
 
 ## Audio
 
-PT LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+O carrier não veio por você. Veio por uma reivindicação com seu nome preso nela.
 
 ## Field Note
 
-PT LOC HOLD: Use this on the first contract or carrier-status screen.
+Usar na primeira tela de status do carrier: acesso concedido, propriedade negada, prioridade de resgate condicional, lien ativo.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/pt_BR. -->

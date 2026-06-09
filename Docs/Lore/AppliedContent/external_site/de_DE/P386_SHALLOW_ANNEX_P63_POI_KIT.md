@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Beweiskit Flachannex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Shallow Annex P-63 POI Kit
+# Beweiskit Flachannex P-63
 
-DE LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 funktioniert, weil es Schutz und Beleg nicht trennt. Der Raum gibt dem Operator Luft, eine Bilgepumpe, Dichtungsvorrat, eine Pinger-Leitung und einen Schneidkontakt. Diese Teile sind zuerst nützlich; der Vertrag kann warten, das Wasser nicht.
 
-## Scanner
-
-DE LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-DE LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-DE LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-DE LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Wenn der Raum stabil ist, bekommen dieselben Objekte anderes Gewicht. Die versiegelte Routennotiz nennt eine Schließung unter kontrollierten Bedingungen, während beschädigte Pumpe, geflickte Dichtungsschale und nasses Unfallpaket einen raueren Abgang zeigen. Der erste Widerspruch steckt nicht in einer Rede. Er ist an den Ort geschraubt, der den Operator am Leben hielt.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/de_DE. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: No Clean Ending Dossier Note"
+title: "ملاحظة ملف بلا نهاية نظيفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: No Clean Ending Dossier Note
+# ملاحظة ملف بلا نهاية نظيفة
 
-AR LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+تحدد الملاحظة نبرة الذاكرة بعد النهاية. حتى أقوى نهاية تترك ملفا حيا: شيئا أنقذ، وشيئا تضرر، وكلفة ترفض أن تصبح مرتبة.
 
 ## Scanner
 
-AR LOC HOLD: Dossier note: closure denied; consequence retained.
+ملاحظة ملف: الإغلاق مرفوض؛ العاقبة محفوظة.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: النتيجة مخزنة. الإغلاق النظيف غير متاح في حالة الأدلة الحالية. الدين والبيئة والمسؤولية وحيازة الشاهد تبقى سجلات نشطة.
 
 ## Audio
 
-AR LOC HOLD: You saved something. That is not the same as clearing it.
+لقد أنقذت شيئا. هذا لا يعني أنك نظفته.
 
 ## Field Note
 
-AR LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+يبقي ملف ما بعد النهاية الجسر مفتوحا: النتيجة مسجلة، الدين والأدلة غير محلولين، ولا نصر كامل ممنوح.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/ar_SA. -->

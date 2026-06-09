@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guia de Escada de Densidade do Cânion de Salmoura"
+title: "Guia da escada de densidade do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Escada de Densidade do Cânion de Salmoura
+# Guia da escada de densidade do cânion de salmoura
 
-O Guia de Escada de Densidade do Cânion de Salmoura trata as trincheiras de HECTON-8 como geografia de engenharia: o caminho para baixo é feito de densidade, não de cenário.
+Um cânion de salmoura parece água vazia até a borda de uma lâmpada entortar, um medidor hesitar ou uma ferramenta caída parar de cair onde não deveria. As camadas densas de HECTON-8 transformam profundidade em arquitetura. Água doce, carga de sal, resíduo de seep frio, silte argiloso e filme químico se empilham em pisos invisíveis que podem carregar uma nuvem de flocos minerais ou engolir inteiro o sinal de um drone.
 
-## Scanner
-
-Brine ladder detectada: densidade em camadas, falso piso, dobra de sonar. Siga as bordas; água aberta mente aqui.
-
-## Terminal
-
-FIELD GUIDE: cânions de brine escondem pressure shelves, current ledges, resource pockets e scanner false positives. Hull rating e density transition decidem qual saliência é rota e qual é queda.
-
-## Audio
-
-Um cânion é uma escada se seu casco puder pagar por cada degrau.
-
-## Field Note
-
-Use sombras de vane como degraus. Uma leitura vazia em brine não é espaço vazio; é o instrumento perdendo a discussão.
+O cânion ensina sobrevivência antes de lucro. Siga sombras de aletas. Observe a linha de lama. Dentro da salmoura, confie menos em um instrumento quieto do que fora dela. Bolsões de recurso se juntam onde a densidade atrasa a queda de matéria útil, mas os mesmos bolsões escondem gás parado, sensores mortos e mudanças de pressão afiadas o bastante para punir cascos baratos. Descer nunca é só ir mais fundo. É atravessar acordos entre fluidos.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/pt_BR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Evidence First Charter Contract Seed"
+title: "Ziarno kontraktu czarteru dowód najpierw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Evidence First Charter Contract Seed
+# Ziarno kontraktu czarteru dowód najpierw
 
-PL LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Czarter Dowód Najpierw to rodzina kontraktów, która płaci mniej za luźny salvage i rezerwuje więcej pojemności trasy na dowód. Pakiety wypadków, paski stanu włazu, logi pinger i kasety notarialne idą przed ciężkimi częściami, gdy trasa zaczyna zawodzić.
 
 ## Scanner
 
-PL LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Ziarno kontraktu: czarter dowód najpierw. Niższa wypłata za materiał, większa pojemność notarialna i ostrzejsze konflikty zachowania dowodu.
 
 ## Terminal
 
-PL LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: wypłata materiałowa zmniejszona, pojemność kaset notarialnych podniesiona, priorytet szafki dowodów aktywny, kara za strip salvage aktywna, nacisk receivera Deep Reach prawdopodobny.
 
 ## Audio
 
-PL LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Najczystszy zapis płaci późno i wcześnie złości ludzi.
 
 ## Field Note
 
-PL LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Notatka marodera: szafka dowodów nie wybacza długu. Tylko nie pozwala długowi wybrać, który dowód umrze pierwszy.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/pl_PL. -->

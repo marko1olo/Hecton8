@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "固有名ローカライズ・プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# 固有名ローカライズ・プロトコル
 
-JP LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+固有名ローカライズ・プロトコルは、15 言語で作業員の身元を守る方法を定義する。個人名、バッジ表示、短縮表示は locale ごとに作成して bake し、職名、部署、シフト役割、経路許可、スキャナー語彙は別に翻訳する。名前は証拠オブジェクトであり、runtime のライブ翻訳に依存してはならない。
 
 ## Scanner
 
-JP LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // この名札は手作業で書かれたもので、ライブ翻訳ではない。インターフェースが即興をやめた時だけ、その人は画面上で生き残る。
 
 ## Terminal
 
-JP LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+NAME LOCALIZATION // 個人名、短い名札、バッジ片は locale ごとに bake する。職名、部署、経路許可、シフトメモはその周囲で翻訳する。RTL と CJK では短縮形、改行安全な名札、スキャナー、ロッカー UI、端末、外部 wiki でのライブ再合成禁止が必要。
 
 ## Audio
 
-JP LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+UIを壊す名前は敬意ではない。作業員を二度消すことだ。
 
 ## Field Note
 
-JP LOC HOLD: No live name translation. Preserve identity through baked strings.
+死亡した作業員を runtime fallback に改名させてはならない。壊れた名前はもう一つの抹消だ。
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/ja_JP. -->

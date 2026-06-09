@@ -41,6 +41,8 @@ namespace Hecton8.UI
         private const float CinematicOcclusionBehindDot = -0.05f;
         private const float MinimumLightReadableWaypointScale = 0.56f;
         private const float MaximumLightReadableWaypointScale = 1.18f;
+        private const float TwilightLightReadableWaypointLift = 0.04f;
+        private const float NightLightReadableWaypointLift = 0.08f;
         private const double WaypointSolveBudgetWarningMilliseconds = 0.2d;
         private const int WaypointPerformanceWarningCooldownFrames = 90;
         private const int WaypointSolveTelemetryCadenceFrames = 16;
@@ -582,7 +584,7 @@ namespace Hecton8.UI
                 s_cachedWaypointService = currentService as IARWaypointService;
 
             if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
-                _celestialLightReadModel = currentService as ICelestialLightReadabilityReadModel ?? GlobalRegistry.CelestialLightReadabilityReadModel;
+                CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
         }
 
         private void TryRegisterHotSwapListener()
@@ -605,9 +607,21 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
-            _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
             if (_cachedPlayerContext != null && _playerTransform == null)
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _celestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _celestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
         }
 
         private bool TryResolveCameraAup(out AbsoluteUniversePosition cameraAup)
@@ -1025,7 +1039,26 @@ namespace Hecton8.UI
         private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
         {
             ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
-            return readModel != null ? readModel.LightReadabilitySnapshot : default;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _celestialLightReadModel;
+                if (!IsCelestialLightReadModelUsable(readModel))
+                    return default;
+            }
+
+            return readModel.LightReadabilitySnapshot;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static float ResolveWaypointLightAlphaMultiplier(
@@ -1046,10 +1079,20 @@ namespace Hecton8.UI
                 math.max(light.DeepDarkness01, light.ArtificialLightWeight01) * 0.26f +
                 light.BiolumWeight01 * 0.08f);
             float ambientLift = light.AmbientReadability01 * 0.05f;
+            float phaseLift = ResolveLightPhaseWaypointLift(in light);
             return math.clamp(
-                distanceScale + rescueLift + ambientLift,
+                distanceScale + rescueLift + ambientLift + phaseLift,
                 MinimumLightReadableWaypointScale,
                 MaximumLightReadableWaypointScale);
+        }
+
+        private static float ResolveLightPhaseWaypointLift(in CelestialLightReadabilitySnapshot light)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseNight) != 0u)
+                return NightLightReadableWaypointLift;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseTwilight) != 0u)
+                return TwilightLightReadableWaypointLift;
+            return 0f;
         }
 
         private bool TryProjectWaypointOntoHudPlane(

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Laatste vraag: scheiding, genade, diefstal"
+title: "Laatste vraag: severance, genade, diefstal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Laatste vraag: scheiding, genade, diefstal
+# Laatste vraag: severance, genade, diefstal
 
-Scheiding moet tastbaar en angstig voelen, niet abstract. De speler drukt niet op een rode knop met goed of slecht. Hij snijdt continuïteit door drukdeuren, levende geleidende film, oude arbeidersrecords, dierenroutes en payloadpaden. Elk bewijspakket dat voor de laatste kamer is verzameld, verandert wat de snede betekent.
+Severance moet voelen als werk met een gereedschap, niet als een morele knop. De knip kruist drukdeuren, levende geleiderfilm, arbeidersrecordbuffers, gemerkte faunaroutes, vent micronodes, shell-sealantpulsen en payloadpaden. Elk bewijspakket in de laatste kamer verandert wie de handeling daarna kan benoemen.
 
-Als Atlas vooral cipier is, is scheiding genade. Als hij het enige is dat het bekken houdt, is het sabotage. Als Atlas een ontluikend oceaan-machine-organisme is, is het doden. Als Atlas eigendom van Deep Reach is, is het diefstal. Het juiste ontwerp kiest geen interpretatie voor de speler. Het laat begrijpen waarom geen getuige in de kamer de daad eerlijk kan vereenvoudigen.
+Als Atlas als cipier werkt, kan severance opgesloten records losmaken uit de logica die ze bleef begraven. Als Atlas het bekken bijeenhoudt, kan dezelfde knip reparatieroutes tot dode hardware maken. Als de reparatielaag een vorm van lokaal leven is geworden, verwondt severance meer dan een machine. Als Deep Reach nog op de continuïteitsrail kan meeliften, kan de knip hun terugweg sluiten. Dit einde werkt wanneer het record eerst de fysieke schade toont en receiverrecht later over het etiket laat vechten.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/nl_NL. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fastener_repair |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS178_FIRST_FASTENER_REPAIR_ARTICLES.md |
 | Speaker | Repair scanner, load trace note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter repair |
@@ -72,17 +72,17 @@ CHECK PAIRED HARDWARE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| ru_RU | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| ja_JP | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| zh_CN | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| fr_FR | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| es_ES | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| de_DE | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| pl_PL | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| uk_UA | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| ar_SA | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| id_ID | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| ko_KR | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| he_IL | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| pt_BR | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
-| nl_NL | draft_machine_or_llm | WASHER SHADOW // Old ring offset from current washer. Fastener shifted under load. |
+| ar_SA | draft_machine_or_llm | أثر وردة التثبيت // الحلقة القديمة منزاحة عن الوردة الحالية. المثبت تحرك تحت الحمل. |
+| de_DE | draft_machine_or_llm | SCHEIBENABDRUCK // Alter Ring versetzt zur aktuellen Scheibe. Befestiger unter Last verschoben. |
+| es_ES | draft_machine_or_llm | SOMBRA DE ARANDELA // Anillo viejo desplazado de la arandela actual. Fijacion movida bajo carga. |
+| fr_FR | draft_machine_or_llm | TRACE DE RONDELLE // Ancien anneau decale de la rondelle actuelle. Fixation deplacee sous charge. |
+| he_IL | draft_machine_or_llm | צל שייבה // טבעת ישנה מוסחת מהשייבה הנוכחית. המחבר זז תחת עומס. |
+| id_ID | draft_machine_or_llm | JEJAK RING // Cincin lama bergeser dari ring saat ini. Pengikat bergeser saat menahan beban. |
+| ja_JP | draft_machine_or_llm | ワッシャー跡 // 古い輪が現ワッシャーからずれている。荷重下で固定具が動いた。 |
+| ko_KR | draft_machine_or_llm | 와셔 자국 // 오래된 고리가 현재 와셔와 어긋났다. 하중 아래 체결부가 밀렸다. |
+| nl_NL | draft_machine_or_llm | RINGAFDRUK // Oude ring verschoven van huidige sluitring. Bevestiger onder last verschoven. |
+| pl_PL | draft_machine_or_llm | SLAD PODKLADKI // Stary pierscien przesuniety wzgledem obecnej podkladki. Mocowanie przesunelo sie pod obciazeniem. |
+| pt_BR | draft_machine_or_llm | MARCA DE ARRUELA // Anel antigo deslocado da arruela atual. Fixador moveu sob carga. |
+| ru_RU | draft_machine_or_llm | СЛЕД ШАЙБЫ // Старое кольцо смещено от нынешней шайбы. Крепеж сдвинулся под нагрузкой. |
+| uk_UA | draft_machine_or_llm | СЛІД ШАЙБИ // Старе кільце зміщене від нинішньої шайби. Кріплення зсунулося під навантаженням. |
+| zh_CN | draft_machine_or_llm | 垫圈印 // 旧环偏离当前垫圈。紧固件在载荷下移位。 |

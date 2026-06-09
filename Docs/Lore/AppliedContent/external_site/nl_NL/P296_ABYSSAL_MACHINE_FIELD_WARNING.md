@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Abyssal Machine Field Warning"
+title: "Waarschuwing voor abyssaal machineveld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Abyssal Machine Field Warning
+# Waarschuwing voor abyssaal machineveld
 
-NL LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+Voor het laatste bekken stopt HECTON-8 met verlaten lijken en begint het te lijken op een machine die te groot is om haar hele lichaam te tonen. De waarschuwing blijft stil omdat de angst geen achtervolging is. Het is schaal.
 
 ## Scanner
 
-NL LOC HOLD: Machine field warning: silt motion does not match current.
+Slib beweegt tegen de stroming in. Filterlichamen verplaatsen zich onder de lichten.
 
 ## Terminal
 
-NL LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: slibbeweging in abyssaal machineveld overschrijdt stroommodel. Filterlichamen en begraven actuatorribben geregistreerd als bewegende infrastructuur. Afstand houden; niet ankeren in zachte vloer.
 
 ## Audio
 
-NL LOC HOLD: The floor is not still.
+De vloer staat niet stil.
 
 ## Field Note
 
-NL LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Late-game waarschuwing: stille objectieve dreiging. Het finale veld is ontwakende infrastructuur, geen bossopbouw.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/nl_NL. -->

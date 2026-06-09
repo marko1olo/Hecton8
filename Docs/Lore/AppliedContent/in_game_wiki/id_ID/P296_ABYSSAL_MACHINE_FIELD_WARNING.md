@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Abyssal Machine Field Warning"
+title: "Peringatan Medan Mesin Abyssal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Abyssal Machine Field Warning
+# Peringatan Medan Mesin Abyssal
 
-ID LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+Peringatan ini menjembatani ekologi dalam menuju pendekatan terakhir ke Atlas. Pemain tidak lagi menyeberangi reruntuhan yang kebetulan berisi kehidupan; mereka menyeberangi kehidupan yang belajar membawa mesin.
 
 ## Scanner
 
-ID LOC HOLD: Machine field warning: silt motion does not match current.
+Lumpur bergerak melawan arus. Tubuh penyaring bergeser di bawah lampu.
 
 ## Terminal
 
-ID LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: gerak lumpur medan mesin abyssal melebihi model arus. Tubuh penyaring dan rusuk aktuator terkubur terbaca sebagai infrastruktur bergerak. Jaga jarak; jangan menambat ke lantai lunak.
 
 ## Audio
 
-ID LOC HOLD: The floor is not still.
+Lantai tidak diam.
 
 ## Field Note
 
-ID LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Peringatan late-game: rasa takut objektif yang tenang. Medan terakhir adalah infrastruktur yang bangun, bukan pemanasan boss.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/id_ID. -->

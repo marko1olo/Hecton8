@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guide de procédé de terrain des forges-vents
 
-Le Guide de procédé de terrain des forges-vents lie la valeur de ressource à la manipulation de terrain : ce qui compte n'est pas seulement ce qu'on trouve, mais comment pressure et cooling lui permettent de survivre à la recovery.
+Une forge-vent n'est pas un coffre au trésor posé sur le fond. C'est un réacteur lent fait de suintement chaud, de densité de saumure, d'apport minéral broyé et d'une pression qui ne pardonne pas la hâte. Le matériau utile se trouve souvent entre dépôt naturel et lot industriel raté : grains céramiques poussés dans des gorges minérales, précurseurs de mastic cuits dans les fissures, films chargés qui ne restent stables que si le refroidissement suit le bon ordre.
 
-## Scanner
-
-Vent-forge chemistry active. La qualité suit pressure history, heat pulse et refroidissement lent, pas l'éclat de l'échantillon.
-
-## Terminal
-
-FIELD GUIDE : les vent forges cuisent sulfides, noble-gas pockets, ceramics et sealant precursors. Le trajet d'un échantillon à travers heat, brine et pressure compte plus que son nom.
-
-## Audio
-
-Le vent n'a pas fait du minerai. Il a fait un procédé que tu as interrompu.
-
-## Field Note
-
-Ne remonte pas un lot frais directement dans l'eau froide. Laisse le vent terminer l'anneal ou la coque se craquellera.
+La manipulation de terrain fait donc partie de la ressource. Remontez un lot frais dans l'eau froide et la coque se craquelle. Purgez trop vite la chaleur et l'échantillon propre devient poudre. Attendez trop longtemps et le vent écrit une autre chimie sur la couche voulue. Les équipes salvage apprécient les forges-vents parce qu'elles donnent à HECTON-8 le sentiment d'une planète encore au travail : l'océan ne cache pas seulement des matériaux, il en fabrique encore.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/fr_FR. -->

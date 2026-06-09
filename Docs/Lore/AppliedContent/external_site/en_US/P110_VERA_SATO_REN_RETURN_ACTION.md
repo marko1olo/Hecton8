@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Vera Sato-Ren Return Action
 
-Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren Return Action is the bridge between Deep Reach's old disaster and the player's present campaign. She represents the Recovery Compliance Office in 2190, where Deep Reach no longer needs to stand in the room to exert force. It sends return-action packets.
 
-## Scanner
+The packet asks for coordinates, XO proof, Atlas access state and contractor silence within a custody window. That shape matters. The threat is not a speech. The threat is timing. If the payload is recoverable, Deep Reach can offer rescue, legal cover or carrier access. If the evidence risk grows, the same system can turn the player into a liability.
 
-Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-She does not need to threaten you. The window already does.
-
-## Field Note
-
-Present Deep Reach should arrive as leverage, not a villain monologue.
+This article keeps the faction grounded. Deep Reach is dangerous because it is still procedural, solvent and patient. It wants recovery before rescue and custody before truth. Sato-Ren is the person-shaped edge of that machinery.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/en_US. -->

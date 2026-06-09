@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Protocolo de preservación por cuarentena del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Protocolo de preservación por cuarentena del payload
 
-ES LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Preservar cuarentena es la ruta cuidadosa, y cuidadosa no significa inofensiva. El payload bloquea transferencia directa a Deep Reach y mantiene sellado el vector de coordenadas. La ecología ligada a Atlas queda lo bastante intacta para revisión, y la cuenca no se entrega por recibo a un comprador de recuperación.
 
-## Scanner
-
-ES LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-ES LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-ES LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-ES LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+El peligro es institucional. El escrow de cuarentena puede sobrevivir a la emergencia que lo justificó. Una cuenca protegida puede volverse cuenca retenida, luego cuenca asignada, luego reclamación con mejor lenguaje. Esta ruta salva tiempo y estructura viva, pero deja marcas de custodia por todo el futuro.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/es_ES. -->

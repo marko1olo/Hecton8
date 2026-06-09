@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir：救助を拒む空"
+title: "Aegir: 救助を拒む空"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,46 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir：救助を拒む空
+# Aegir: 救助を拒む空
 
-## 空は空白ではない
+## 空は空ではない
 
-Aegirは背景ではない。海の上にある機械だ。重力、放射、中継幾何、デブリ天候、契約時間、回収法がそこで動く。
+Aegirは背景のastronomyではない。海の上にあるmachineだ。gravity、radiation、moon occlusion、relay geometry、debris weather、braking windows、custody queues、そして助けはプレイヤーが望むだけで距離を越えないという冷たい事実。HECTON-8はその機械の中で八番目に名付けられたmoonとして存在し、天候が許せばsurfaceで明るく、pressureと壊れたinfrastructureが選択肢を奪うdepthで致命的になる。
 
-ansibleもFTLもない。Ran/Aegirルートは光年級で、局所窓も軌道、嵐、月影、custody待ちに支配される。正しいパケットは遅すぎることがある。きれいなパケットは法的に死ぬことがある。
+ansibleはない。Marauderが漏れるhatchの下で待つ間、きれいなrescue orderを持ち帰るFTL courierもない。RanからAegirは公開説明ではlight-year-scale problemであり、ローカルなAegirの動きでさえorbit、storm phase、moon shadow、carrier heat、packet routing、誰が法的に応答できるかに左右される。本物のdistress packetは遅れ得る。clean packetは役に立たないことがある。useful packetでもserviceするには高すぎることがある。
 
-階段はSkarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON、Muteを呼ぶ。正確な定数は将来の表の仕事だ。現場ではshadow、surge、scatter、plume、lag、receiverが役に立つ。
+HECTON-8の最初の天文学規則はこれだ。空は希望ではない。空はtimingだ。上を見るプレイヤーは、すべてのmessage、drop、pickupにgeometryがあり、orbitの穏やかな声が自分を殺している同じscheduleを読んでいるかもしれないと感じるべきだ。
 
-Black Keelは高い軌道に残る。降下は熱、燃料、曝露、予定、責任を消費するからだ。帰還には音響中継、上昇機材、時刻、天候、隔離、payload hash、質量窓がいる。一つ欠けてもcarrierは穏やかに聞こえる。穏やかさは帳簿を持った自動化だ。
+## Moon ladderは天候である
 
-## 空は機械だ
+公開ladderはSkarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON、Muteを名付ける。正確なephemerisはcelestial tablesの領域であり、約束記事の領域ではない。しかしplayer-facingな真実は単純だ。moonsは装飾ではない。moving hazards、relay shutters、legal landmarksだ。packetが上がれる時、signalを信じられる時、claimをnotarizedできる時を変える。
 
-Aegirは絵の背景ではない。主星、月の梯子、relay shadows、pellet lanes、braking wakes、ice scatter、storm plume、guidance lagが重なった、物語最大の機械だ。プレイヤーは全体を一度に見る必要はない。ただ、すべての通信、投下、回収に幾何があると感じる必要がある。
+Skarnはcharged-particle surgeをもたらす。Velaはice scatterとlens-dirty navigationを投げる。ClawとLumenはold route logicを保つ。古いinfrastructureがまだそれを期待しているからだ。ThorneとAnvilはdead-claim paperworkと悪いdebris lanesを持つ。Kestrelはeclipse timingをpickupが変わるほど圧縮する。MuteはAegirに他のdead claimsがあることを示す。HECTON-8はまだ支払いがあるclaimにすぎない。
 
-だから救助は簡単には来ない。FTL補正も隠れたansibleも、質量を無視する英雄的carrierもない。route windowは法の許可である前に物理の許可だ。Black Keelがtenderを降ろせるのは、局所任務が狭いからで、奇跡を持つからではない。
+ゲームはそのladderを小さく読ませるべきだ。Kestrel後のrelay delayは、P-63水中のstorm delayとは違って聞こえるべきだ。ice scatterはnavigationをより不確かに聞かせるべきだ。moon shadowはterminal queueをplot convenienceではなくphysicsに見せるべきだ。
 
-## 見上げる意味
+## Black Keelが高く留まる理由
 
-HECTON-8で空を見ることは、希望ではなくtimingを見ることだ。Aegirはpacketが上がる時、receiverが答える時、claimが公証される時、そして古い指示だけが残る時を決める。
+Black Keelはclaim tenderであり、忠実なrescue shipではない。高価なorbitに留まるのは、このsystemで下降することがheroic choiceではないからだ。それはfuel、heat margin、debris clearance、次のcontract windowを燃やすcost eventである。workerが叫ぶたびに潜るcarrierは、Black Keelになるほどcontractを生き残れない。
 
-よい天文記事は、月明かりをリスクとして読ませる。Kestrelが動けばrelay shadowが変わる。ice scatterが増えれば航法は噂になる。Silent Orbitが黙っていても、古い金属は現在を決められる。
+だからBlack Keelはcartoon evilにならずに怖い。platformはriskについて正しく、同時に人間に残酷であり得る。pickup windowを守りながら、下のworkerを溺れさせることがある。calmなinstructionsを送るのは、calmがmercyではなくautomation with a ledgerだからだ。
+
+HECTON-8からのreturnには勇気以上が必要だ。acoustic relay、pressure-rated ascent hardware、guidance timing、storm permission、quarantine handshake、payload hash、tonne-window allocationが必要になる。一つのlinkが壊れれば、orbital answerは丁寧なままrouteは閉じる。
+
+## 法より先に物理が来る
+
+lawはgeometryの後に来る。courtがcustodyを争えるのはpacketが水を出た後だけだ。contractがsalvageを名付けられるのはclaimをtimed、weighed、receivedできる時だけだ。rescue orderはnobleでも、唯一のviable route windowを逃すことがある。HECTON-8のhard-scifi ruleはbureaucracyがheroismに勝つことではない。physicsがbureaucracyに歯を与えることだ。
+
+これはstory toneに重要だ。プレイヤーが一人なのは、orbitの大人全員が愚かだからではない。distance、pressure、bad weather、damaged ascent hardware、quarantine、mass economics、legal custodyが最悪の時に重なるからだ。その重なりは赤いボタンを押すvillainより怖い。
+
+それは月の美しさも守る。Aegirは水面上に巨大に掛かり、moonsはcloudとoceanへshadowsを切り、それでもsceneはhardでいられる。visible wonderの一つ一つがrisk、timing、route readabilityを変えるなら、空はcinematicでありながらmagicにならない。
+
+## 上を見る意味
+
+HECTON-8で上を見ることは実用的で苦い。clear skyはrelay openingを意味するかもしれない。bright moonはrouteを切るshadowの直前かもしれない。carrier lightはrescueではなくcustodyかもしれない。silent orbitはpacketがlate、filtered、too expensive、あるいは誰かにalready ownedされていることを意味するかもしれない。
+
+だからこのastronomy articleはpublic wikiの冒頭近くに必要だ。HECTON-8が捨てられているのは、writersがspaceshipsを忘れたからではない。shipsはrealであり、distancesはrealであり、claim lawはrealであり、そのどれもworkerにoxygenが残っているかを気にしないからだ。
+
+Aegirをhostile scheduleとして読む。moon ladderをweatherとして読む。Black Keelをledgerを持つreceiverとして読む。そうすれば下の海が理解しやすくなる。すべてのsealed door、broken ascent frame、delayed packetは、proof、mass、timingが揃うまでrescueを拒む空の一部なのだ。
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ja_JP. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Marauder Correction Note Sample
 
-Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Marauder notes are one of HECTON-8's best evidence surfaces because they argue with official systems without turning into omniscient lore. This sample keeps suspicion alive through practical marks: timestamps, certifications, a bad category and a queue delay. It does not solve the case for the player. It teaches the player how to read a lie that was filed as maintenance.
 
 ## Scanner
 
-Marauder correction note rejects accident wording and points to authorization delay.
+Grease-pencil correction on an accident form: not weather, not panic, an authorization delay with a body count attached.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch, rescue authorization queue.
 
 ## Audio
 
-Someone else smelled the paperwork rot.
+Someone smelled the rot in the paperwork before the room dried.
 
 ## Field Note
 
-NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. Door clock is six minutes ahead of the claim stamp.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/en_US. -->

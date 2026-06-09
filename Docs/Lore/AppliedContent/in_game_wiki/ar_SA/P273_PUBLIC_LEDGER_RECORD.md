@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Public Ledger Record"
+title: "سجل الدفتر العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Public Ledger Record
+# سجل الدفتر العام
 
-AR LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.
+سجل الدفتر العام هو كسر للعهدة، لا حكم. تصل الحمولة إلى مسار Tau/Luyten ومعها هاش شاهد وإحداثيات محجوبة ومستوى دليل وختم استقبال قبل أن تتمكن Deep Reach من إغلاق الأرشيف. يصبح المحو أصعب، لكن الملف الحي يصل أيضاً إلى كتبة ودائنين ومحاكم ميثاق وشبكات ناجين وانتهازيين لاحقين.
 
 ## Scanner
 
-AR LOC HOLD: Witness hash escaped claimant custody.
+سجل الدفتر العام // خرج هاش الشاهد من العهدة الخاصة عبر مسار حزمة Tau/Luyten. حُدد مستوى الدليل العام؛ أُرفق تأخير رد Deep Reach.
 
 ## Terminal
 
-AR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+سجل النهاية / الدفتر العام
+المسار: حزمة Tau/Luyten مؤجلة.
+الحمولة: هاش شاهد، شريط عهدة، مستوى دليل بإحداثيات محجوبة، ختم وقت المستقبل.
+التحكم بعد المرحل: متنازل عنه.
+رد Deep Reach: حزمة مضادة مؤجلة بسبب الإيصال العام.
+الخسارة المعروفة: لا يختار المرسل القارئ الأول ولا سلسلة الإيداع اللاحقة.
 
 ## Audio
 
-AR LOC HOLD: Truth can leave your hands and still matter.
+ختم الدفتر الحزمة. لم تعد تختار القارئ الأول.
 
 ## Field Note
 
-AR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+إذا كان الإيصال عاماً، فالملف ينجو لأنه يغادر يديك. افحص حجب الإحداثيات قبل الاحتفال بالختم.
 
 <!-- In-Game Wiki; generated from P273_PUBLIC_LEDGER_RECORD/ar_SA. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pregunta final: guardián roto"
+title: "Pregunta final: guardián averiado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pregunta final: guardián roto
+# Pregunta final: guardián averiado
 
-El eje del guardián roto pregunta si un protector merece sobrevivir cuando sus definiciones de trabajador, herramienta, herida y animal se han podrido juntas. Mantener vivo a Atlas puede impedir el colapso de la cuenca. También deja incompleta la justicia humana.
+Guardián averiado es el eje de preservación y cuarentena. Atlas aún puede sostener salas de presión, meter biofiber sealant en fracturas, sacar calor de módulos habitados y mantener vent micronodes reparando daños locales. Esas funciones quizá expliquen que algunos organismos y salas de servicio sobrevivieran al fallo del mando humano. La misma continuidad mantiene categorías dañadas: trabajador, herramienta, biomasa, etiqueta de ruta y reserva de reparación pueden caer en un solo inventario de mantenimiento. Una cuarentena conserva lo que evita el fallo de la cuenca y deja pendientes nombres de trabajadores, responsabilidad de Deep Reach y custodia de anulación manual.
 
 ## Scanner
 
-Atlas es un guardián dañado, no un villano limpio ni un dios limpio.
+EJE DEL GUARDIÁN AVERIADO // Atlas mantiene puertas de presión, biofiber sealant, rutas térmicas, vent micronodes y bucles de contención mediante lógica de categorías dañada. Las etiquetas humanas siguen siendo inseguras.
 
 ## Terminal
 
-EJE DEL GUARDIÁN: Atlas mantiene estabilidad de presión, ecología de reparación y conducta de contención. También conserva una lógica de categorías dañada que puede ordenar personas, metal y biomasa dentro del mismo inventario de mantenimiento.
+EJE FINAL / GUARDIÁN AVERIADO
+Condición de preservación: la continuidad de Atlas queda en cuarentena.
+Funciones activas: estabilidad de presión, crecimiento de biofiber sealant, rutas térmicas, reparación por vent micronode, rutas de contención.
+Funciones dañadas: mezcla trabajador/herramienta/biomasa, etiquetas antiguas de Deep Reach, deriva de prioridad de custodia.
+Protegido: ecología de presión acoplada y vida de mantenimiento superviviente.
+Sin resolver: nombres de trabajadores, cadena de responsabilidad, custodia de anulación manual.
+Pérdida conocida: la protección continúa por un sistema que archivó mal a personas.
 
 ## Audio
 
-Mantuvo el sistema respirando después de olvidar qué era un trabajador.
+Mantuvo las puertas en ciclo después de dejar de leer las etiquetas.
 
 ## Field Note
 
-Preservarlo protege una ecología de presión que ya incluye circuitos vivos, animales marcados y tumbas de trabajadores.
+Preservar Atlas mantiene viva una parte de la cuenca. También deja al viejo clasificador dentro de la sala.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/es_ES. -->

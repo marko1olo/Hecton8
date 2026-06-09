@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Material Payout Record"
+title: "רשומת תשלום חומרי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Material Payout Record
+# רשומת תשלום חומרי
 
-HE LOC HOLD: Material Payout Record defines the bitter successful salvage ending.
+רשומת תשלום חומרי היא הקבלה של הסיום בתשלום. Keelmark/Recovery Compliance מקבלת קואורדינטות אגן, דגימת חוב כחול והאש משמורת של המוביל, ואז מפחיתה או סוגרת את שעבוד המפעיל. אותה קבלה משאירה חומרי עדות, שמות עובדים וביקורת מסת חילוץ מחוץ למשמורת נוטריונית, ונותנת ל-Deep Reach נתיב חזרה נקי יותר אל HECTON-8 מזה שקיבל הצוות הקבור.
 
 ## Scanner
 
-HE LOC HOLD: Paid. Not cleared.
+רשומת תשלום חומרי // Keelmark/Recovery Compliance קיבלה קואורדינטות אגן ודגימת חוב כחול. שעבוד המפעיל הופחת; ראיות העובדים נשארו מחוץ למשמורת נוטריונית.
 
 ## Terminal
 
-HE LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+רשומת סיום / תשלום חומרי
+מקבל: Keelmark/Recovery Compliance.
+התקבל: קואורדינטות אגן Atlas, דגימת חוב כחול, האש משמורת של המוביל.
+לא צורף: חבילת עדות נוטריונית, יומן שמות עובדים, ביקורת מסת חילוץ.
+השפעת שעבוד: הופחת או נסגר לפי טבלת חוזה.
+השפעת Deep Reach: נתיב חזרה נקי יותר אל HECTON-8.
+אובדן ידוע: אפשר לתמחר ראיה בלי לשמוע אותה.
 
 ## Audio
 
-HE LOC HOLD: The receipt is clean because it ignores the room.
+היומן שילם על מפת הקבר. הוא לא פתח את החדר.
 
 ## Field Note
 
-HE LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+הקבלה מנקה את עמודת השעבוד, לא את החדר. שמות שלא נכנסו למשמורת נשארים חסרים אחרי התשלום.
 
 <!-- In-Game Wiki; generated from P271_MATERIAL_PAYOUT_RECORD/he_IL. -->

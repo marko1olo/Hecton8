@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "掠夺者修正标记规则"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# 掠夺者修正标记规则
 
-CN LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+掠夺者修正标记规则定义殖民地证据上的第二只人手。Deep Reach 写下类别来埋葬工人；后来的索赔队伍在这些类别上面书写，为了活下去、谈价，或警告彼此。修正标记只有在改变玩家推断时才有用。圈出的姓名可以把一个人从损失类别中救出来。划掉的路线章可以让一扇安全门变得可疑。价格标记可以把生物样本变成债务物件。隐藏证人标记可以在玩家拥有正确语境之前保护一段语音碎片。标记应当快速、实用、疲惫，而不是戏剧化。它们不是为了氛围的涂鸦，而是那些知道记录已经很脏、却仍然要吃饭的人留下的工作。
 
 ## Scanner
 
-CN LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+修正标记可以拯救一个名字、污染一份索赔，或警告下一个潜水者官方分类在撒谎。
 
 ## Terminal
 
-CN LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: 掠夺者标记必须改变证据解释、路线风险或支付压力。有效标记可以保留工人姓名、质疑保险类别、警告路线、给样本定价、隐藏证人或标记债务。空洞涂鸦会破坏证据链。
 
 ## Audio
 
-CN LOC HOLD: Somebody came before you and still failed to leave clean.
+有人比你先到，却仍然没能干净离开。
 
 ## Field Note
 
-CN LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+标记：保留姓名、质疑类别、警告路线、给样本估价、隐藏证人、标记债务。手写必须改变阅读，而不是装饰道具。
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/zh_CN. -->

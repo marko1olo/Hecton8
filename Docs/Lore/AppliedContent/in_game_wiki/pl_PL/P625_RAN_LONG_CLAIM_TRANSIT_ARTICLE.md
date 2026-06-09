@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Tranzyt Ran Long Claim
 
-Płyta trasy znaleziona pod starą skórą przekaźnika odpowiada na pytanie, które większość Marauderów zadaje za późno: ludzkość może dotrzeć do Aegir, ale zasięg nie jest ratunkiem. Ran Long Claim leży na powolnym łańcuchu zasianego frachtu, drabin pakietów, składów paliwa, prawa kwarantanny i nośników, które latami pokonują to, co sygnał przechodzi w sezon. Impuls dowodu życia może przejść przez Sol, Luyten i Barnard, kiedy ciało, które go wysłało, nadal tkwi pod lokalną pogodą, limitami masy i władzą długu. Black Keel może cię słyszeć. Może wpisać zastaw, otworzyć dozór i zarezerwować tonne-window. Nie może przesunąć kadłuba nośnika przez próżnię tylko dlatego, że nurek boi się w wodzie.
+Ran Long Claim to publiczna nazwa praktycznej sprzeczności. Cywilizacja ludzi może dosięgnąć Aegir, wysłać sondy, staged freight, packet custody i claim tenders. To nie znaczy, że uwięziony Marauder zostanie podniesiony, gdy poprosi.
+
+Trasa ma warstwy. Pakiety idą pierwsze, bo informacja jest lekka i użyteczna prawnie. Składy paliwa, rezerwy receiver i sloty kwarantanny są wolniejsze. Ciężka masa jest najwolniejsza, owinięta kontraktami o hamowanie, własność payload i ryzyko recovery.
 
 ## Scanner
 
-PŁYTA TRASY // Ran Long Claim, pas ruchu Aegir. Pakiety przechodzą przez okna; kadłuby przechodzą przez masę, czas holu, kwarantannę i przyjętą odpowiedzialność.
+Płyta trasy pod starą skórą przekaźnika. Łańcuch opieki Ran Long Claim: packet ladder, skład paliwa, pas kwarantanny, kolejka carrier i stary receipt proof-of-life.
 
 ## Terminal
 
-DRABINA PAKIETÓW LUYTEN // Odbiór Aegir zapisany. Dowód sygnału może wyprzedzić nośnik o jedenaście lat. Zgoda na wyniesienie nadal wymaga potwierdzenia beam-lane, pieczęci dozoru i masy tonne-window.
+RAN LONG CLAIM // Zasięg potwierdzony. Ratunek nie wynika. Klasa tranzytu sygnału poniżej klasy tranzytu ciężkiej masy. Odpowiedź carriera może wyprzedzić fizyczny odzysk o lata kontraktu. Zachowaj lokalną władzę przetrwania do zamknięcia okna opieki.
 
 ## Audio
 
-Audio trasy Black Keel: Sol może poświadczyć roszczenie. Luyten może dowieść pakietu. Barnard może sprzedać ręce. Żaden z nich nie wyciągnie cię z HECTON-8 w tym przebiegu.
+Zasięg nie jest ratunkiem. Sygnał może przejść przez mrok, gdy ciało nadal tkwi pod wodą.
 
 ## Field Note
 
-Jeśli płyta wymienia Sol, Luyten, Barnard i Aegir w jednym wierszu, czytaj kolejność. Sol ma prawo. Luyten ma pakiet. Barnard ma ręce. Aegir ma pogodę. Nikt z nich nie ma twojego następnego oddechu.
+Trasa może cię usłyszeć, zanim zdoła cię nieść.
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/pl_PL. -->

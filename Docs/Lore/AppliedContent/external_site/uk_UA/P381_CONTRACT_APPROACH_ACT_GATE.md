@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Contract Approach Act Gate"
+title: "Вхід через контракт"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Contract Approach Act Gate
+# Вхід через контракт
 
-UK LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+Контрактний підхід задає тиск кампанії, не вдаючи, що океан уже все пояснив. Дошка Black Keel призначає передачу претензії, час bathydrop, боргову експозицію й борг за інструмент до виходу оператора у відкриту воду. Маршрут починається як оплачена робота на поганих умовах.
 
-## Scanner
-
-UK LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-UK LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-UK LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-UK LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Важлива деталь - залишок Deep Reach у профілі оператора. Це не сімейний гачок і не геройський титул. Це процедурний збіг: мова доступу, скорочення обслуговування й звички евакуаційної інфраструктури, які досі підходять до покинутих систем колонії. Перший шлюз каже, що спуск - робота; другий рядок каже, що в роботи вже є справа.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/uk_UA. -->

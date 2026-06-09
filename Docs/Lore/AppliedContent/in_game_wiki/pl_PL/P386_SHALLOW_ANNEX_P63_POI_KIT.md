@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Zestaw dowodowy płytkiego aneksu P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Shallow Annex P-63 POI Kit
+# Zestaw dowodowy płytkiego aneksu P-63
 
-PL LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Płytki aneks P-63 to pierwsze miejsce, gdzie procedura przetrwania i dowód odpowiedzialności leżą na tym samym stole. Operator przywraca pompę, uszczelnia kieszeń, czyta pakiet wypadku i znajduje zawiadomienie trasy niezgodne z uszkodzeniami na zewnątrz.
 
 ## Scanner
 
-PL LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Zestaw dowodowy POI: P-63 zawiera działającą kieszeń schronienia, naprawę pompy i pierwszą oficjalną sprzeczność.
 
 ## Terminal
 
-PL LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+ZESTAW P-63: pompa zęzowa, taca uszczelek, styk przecinaka, linia pingera, pakiet wypadku, zapieczętowane zawiadomienie trasy, sucha szafka, ręczny zacisk obejścia.
 
 ## Audio
 
-PL LOC HOLD: First room with air. First room with a lie.
+Pierwszy pokój z powietrzem. Pierwszy pokój z kłamstwem.
 
 ## Field Note
 
-PL LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Notatka marodera: utrzymaj pompę przed czytaniem pakietu. Martwe schronienie daje zły dowód.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/pl_PL. -->

@@ -589,6 +589,7 @@ namespace Hecton8.PDA
         {
             _survivalSystem = null;
             _scanLogSystem = null;
+            _cachedPlayerContext = null;
             _scanLogSourceId = 0u;
             _survivalSignalSourceId = 0u;
             _lastSurvivalDeathSignalSequence = 0;
@@ -684,7 +685,8 @@ namespace Hecton8.PDA
                 return;
 
             _survivalSignalSourceId = sourceId;
-            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
                 ? sequence
                 : 0;
         }
@@ -697,15 +699,18 @@ namespace Hecton8.PDA
                 RefreshSurvivalSignalBinding();
             }
 
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+            uint sourceId = _survivalSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)
                 return;
 
             _lastSurvivalDeathSignalSequence = sequence;
-            uint sourceId = _survivalSignalSourceId;
-            if (sourceId != 0u && signal.SourceId != sourceId)
+            if (signal.SourceId != sourceId)
                 return;
 
             if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)

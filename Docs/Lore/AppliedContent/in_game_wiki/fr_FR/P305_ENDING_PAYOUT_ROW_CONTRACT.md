@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Ending Payout Data Boundary"
+title: "Frontière de données du paiement de fin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Ending Payout Data Boundary
+# Frontière de données du paiement de fin
 
-FR LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+La frontière garde les fins comme dossiers de compromis, pas comme scores de victoire. Le paiement compte, mais aussi la garde, la preuve publique, la quarantaine, la dette et le droit du récepteur d'agir après le départ du joueur.
 
 ## Scanner
 
-FR LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+La ligne de fin lie récepteur, garde, état des preuves, paiement et conséquence non résolue.
 
 ## Terminal
 
-FR LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT : les lignes exigent route de payload, récepteur, état des preuves, paiement matériel, conséquence légale, délai de quarantaine et coût non résolu. Les crédits ne ferment pas une scène de crime.
 
 ## Audio
 
-FR LOC HOLD: Credits do not close a crime scene.
+Les crédits ne ferment pas une scène de crime.
 
 ## Field Note
 
-FR LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Valeur de crédits, délai de quarantaine et flags de dossier ne sont enregistrés qu'après clarté du récepteur et de l'état des preuves.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/fr_FR. -->

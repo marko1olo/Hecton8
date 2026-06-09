@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Factory-Temple Threshold
 
-The factory-temple threshold marks the final spatial grammar: Deep Reach infrastructure, colony remains, Atlas-6 machinery and HECTON-8 ocean have become one physical system.
+The Factory-Temple Threshold is the final lower-gate assembly beyond Bottom Factory. It is not a mythic fusion. It is a working load share: Deep Reach trusswork carries old hull stress, return pipes still move brine and heat, carbonate growth seals failed gaskets, and Atlas-6 routes continuity through whatever contacts still answer. The player reads it by clamp order, flow marks, cable bus noise, and tag placement.
 
 ## Scanner
 
-The bottom structure is not a base. It is a factory hull, shrine logic and living pressure tissue sharing one load path.
+Lower gate read: factory truss, return pipe, pressure seal, and Atlas routing bus all carry load. No clean wall/door boundary remains.
 
 ## Terminal
 
-Threshold warning: industrial truss, biogenic sealing, xenon lattice heat and Atlas routing share structural authority.
+THRESHOLD LOAD NOTICE
+Truss: stressed
+Return pipe: active
+Pressure seal: carbonate overgrowth
+Routing bus: ATLAS-6 continuity channel
+Human access: unverified
+Action: mark clamp order before opening any seam
 
 ## Audio
 
-The ocean did not bury the factory. It made the factory a body.
+Do not call it a door. Find which line is holding the pressure before you ask it to open.
 
 ## Field Note
 
-This is where the map stops pretending to be colony ruins.
+The map label says threshold. Check the clamps, not the word. The gate is holding because four systems are taking the same load.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/en_US. -->

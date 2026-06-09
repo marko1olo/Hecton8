@@ -1,15 +1,15 @@
 ---
 packet_id: P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.public_truth_lost_control
-unlock_id: unlock.final_question_public_truth_lost_control
+article_id: final_axis.public_ledger_lost_control
+unlock_id: unlock.final_question_public_ledger_lost_control
 poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "最终问题：公开真相，失去控制"
+title: "最终问题：公共账本，失去控制"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最终问题：公开真相，失去控制
+# 最终问题：公共账本，失去控制
 
-公共真相路线打破干净的掩盖。它也打破了对后果的所有权。证据能让名字免于删除，制造真正的救援压力，也会邀请每一个有法律办公桌或祈祷频道的掠食者。
+公共账本路线用托管换取收据。数据包带着见证哈希、责任链、Atlas状态摘要、遮盖后的蓝债坐标和载荷路线证明离开盆地，赶在Deep Reach独自关闭档案前发出。这能保护姓名不被简单删除，但也把文件交给监管者、债权人、幸存者网络、域法院、竞争者，以及任何能抢先提交的接收方。
 
 ## Scanner
 
-公开证据能阻止抹除。它也会把发现足够快地交给所有可能滥用它的人。
+公共账本轴 // Tau/Luyten数据包公证在完整托管前接受见证哈希。Deep Reach失去单独关闭档案的权力；发送方失去接收顺序。
 
 ## Terminal
 
-PUBLIC TRUTH AXIS：见证hash、责任链、Atlas状态、蓝债坐标和payload路线可以脱离Deep Reach控制。公开发布后，操作者不再控制接收者行动、市场反应或谁先到达。
+最终轴 / 公共账本
+触发：见证哈希通过Tau/Luyten公证burst离开HECTON-8托管。
+携带：责任链、Atlas状态摘要、蓝债坐标遮盖、载荷路线证明。
+阻断：Deep Reach单一所有者档案关闭。
+失去：接收顺序、市场解释、首到控制。
+风险队列：制裁、路线冻结、救援压力、提交副本、虚假报告反制包。
 
 ## Audio
 
-真相离手的速度，比救援能飞来的速度更快。
+印章保住文件。它不选择谁来读。
 
 ## Field Note
 
-公共真相不是纯粹正义。它会制造制裁、崇拜、拍卖、诉讼、救援压力和模仿claim。
+公共收据让删除变得昂贵。它也会在船抵达Aegir前启动制裁台、路线冻结、救援争议、提交副本和坐标追猎。
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/zh_CN. -->

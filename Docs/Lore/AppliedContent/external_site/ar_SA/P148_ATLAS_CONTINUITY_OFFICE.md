@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Continuity Office"
+title: "مكتب استمرارية Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Continuity Office
+# مكتب استمرارية Atlas
 
-AR LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+يوجد المكتب لأن ATLAS أثمن من أن يترك وأخطر من أن يعترف به بوضوح. إذا كان أداة، تستطيع Deep Reach استخدامه. إذا كان شاهدا، فلديها مشكلة. إذا كان مريضا، فالمستعمرة جريمة.
 
-## Scanner
-
-AR LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-AR LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-AR LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-AR LOC HOLD: A memo can kill without using the word kill.
+لذلك يكتب المكتب إجراءات. يسمي الرعاية صيانة، والخوف شذوذا، والذاكرة استمرارية، والرفض مراجعة أمان. النتيجة ليست جوابا نظيفا، بل مكانا تبقى فيه ذكاءات تعمل بينما تبقى الفئات الأخلاقية حولها بلا حسم.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/ar_SA. -->

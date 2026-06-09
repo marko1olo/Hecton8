@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Pressure Suit Service Grades"
+title: "דרגות שירות של חליפות לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Pressure Suit Service Grades
+# דרגות שירות של חליפות לחץ
 
-HE LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+דרגות חליפות לחץ הן רשומות שירות, לא צבעי ציוד. כל עומק דורש אטמים שניתן לעקוב אחריהם, עתודת scrubber, שכבת חום, גבולות זיהום וחותמות שירות ישנות. השחקן יורד עמוק יותר מפני שהוא משחזר ומוכיח תקן בטיחות, לא מפני שמצא שריון קסום.
 
 ## Scanner
 
-HE LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+תגי החליפה מסווגים עומק שירות, עייפות אטמים, עתודת scrubber, סבילות חום וטיפול בזיהום.
 
 ## Terminal
 
-HE LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-HE LOC HOLD: The suit does not make you brave. It only fails later.
+החליפה לא עושה אותך אמיץ. היא רק נכשלת מאוחר יותר.
 
 ## Field Note
 
-HE LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+חליפה עמוקה יותר אינה שריון בצבע אחר. היא ניירת, חלקים ותחזוקה מכוערת.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/he_IL. -->

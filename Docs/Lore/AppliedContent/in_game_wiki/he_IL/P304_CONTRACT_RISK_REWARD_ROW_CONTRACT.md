@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Contract Risk Reward Boundary"
+title: "גבול סיכון ותגמול חוזה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Contract Risk Reward Boundary
+# גבול סיכון ותגמול חוזה
 
-HE LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+הגבול ממיר לחץ replay לרשומות חוזה שבבעלות הטבלה. המסלול משתנה כי החוב, תזמון הסערה, המשמורת וסעיפי האחריות השתנו, לא כי העולם שכח מה קרה.
 
 ## Scanner
 
-HE LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+שורת חוזה קושרת שעבוד, חלון סערה, סדר משמורת, תקרת תשלום ומשקל סעיף.
 
 ## Terminal
 
-HE LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: שורות דורשות חומרת שעבוד, תקרת תשלום, חלון סערה, משמורת דגימה, סדר ראיות ומשקל סעיף Deep Reach. החוזה הוא הטורף הראשון.
 
 ## Audio
 
-HE LOC HOLD: The contract is the first predator.
+החוזה הוא הטורף הראשון.
 
 ## Field Note
 
-HE LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+שינויי תגמול שייכים לשורת החוזה, לא לטקסט lore מאולתר.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/he_IL. -->

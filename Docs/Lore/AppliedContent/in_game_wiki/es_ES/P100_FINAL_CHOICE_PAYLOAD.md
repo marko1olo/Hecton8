@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload de elección final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload de elección final
 
-ES LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+La última decisión no es una pantalla de victoria limpia. Es un problema de envío con peso moral. El Marauder decide qué sube desde la luna: coordenadas, muestras, nombres de trabajadores, acceso Atlas, instrucciones de cuarentena, prueba pública o nada útil. Cada payload crea un dueño distinto para las consecuencias. Deep Reach puede recuperar control. La ley pública puede recibir una herida que por fin ve. La continuidad Atlas puede cortarse o encerrarse. La ecología océano-máquina puede protegerse, venderse o dejarse fuera del lenguaje humano. El final no trata de quién escapa con las manos limpias. Trata de quién recibe suficiente verdad para moverse primero.
 
 ## Scanner
 
-ES LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD FINAL // Coordenadas, muestras, nombres, acceso Atlas, órdenes de cuarentena, prueba pública. Lo que sale de HECTON-8 decide quién puede actuar después.
 
 ## Terminal
 
-ES LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+MATRIZ PAYLOAD: vender coordenadas y prueba XO; cortar continuidad Atlas; preservar o poner en cuarentena la ecología océano-máquina; publicar evidencia al ledger público; retener el payload y dejar ciego a Deep Reach.
 
 ## Audio
 
-ES LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+No hay propiedad limpia para una escena del crimen que aprendió a respirar.
 
 ## Field Note
 
-ES LOC HOLD: The best ending should be defensible, not clean.
+El mejor final debe poder defenderse, no estar limpio.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/es_ES. -->

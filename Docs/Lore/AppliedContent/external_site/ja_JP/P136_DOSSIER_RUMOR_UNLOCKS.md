@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "ドシエの噂記憶"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# ドシエの噂記憶
 
-JP LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+ドシエの噂記憶はリプレイ知識を世界内の記録にする。疑念と結果は残すが、次の周回に強い肉体は渡さない。
 
 ## Scanner
 
-JP LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+DOSSIER MEMORY // 噂、警告、契約文脈、エンディング記録は残る。船体、酸素、工具、貨物、地図は残らない。
 
 ## Terminal
 
-JP LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+永続化規則: ドシエはキャンペーンを越えて噂系統、証拠分類、エンディングフラグ、航路警告を保持できる。装備、資源、seed地形、真実の所有権は持ち越さない。
 
 ## Audio
 
-JP LOC HOLD: Your file remembers what your hands cannot carry.
+そのファイルは、手で運べないものを覚えている。
 
 ## Field Note
 
-JP LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+知識は残していい。圧力は残せ。
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/ja_JP. -->

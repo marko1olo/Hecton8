@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Escape Recipe Cost Boundary"
+title: "Batas Biaya Resep Kabur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Escape Recipe Cost Boundary
+# Batas Biaya Resep Kabur
 
-ID LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+Meninggalkan HECTON-8 pertama-tama adalah masalah perbaikan: sinyal, seal, panduan, energi naik, handshake legal, dan kustodi payload. Tabel resep membawa biaya tepat; lore membawa alasan setiap biaya punya gigi.
 
 ## Scanner
 
-ID LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Baris resep kabur mengikat kelas komponen, tier tekanan, bukti rute, dan keadaan otoritas.
 
 ## Terminal
 
-ID LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: biaya sah harus menyebut relai, seal, panduan, energi naik, handshake legal, otoritas payload, dan risiko penerima. Jalan naik punya bagian; bagian punya pemilik.
 
 ## Audio
 
-ID LOC HOLD: The way up has parts. The parts have owners.
+Jalan naik punya bagian. Bagian punya pemilik.
 
 ## Field Note
 
-ID LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure band datang dari aturan containment; biaya tepat milik recipe table.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/id_ID. -->

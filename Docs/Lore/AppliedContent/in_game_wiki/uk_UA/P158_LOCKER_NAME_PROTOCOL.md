@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Locker Name Protocol"
+title: "Протокол іменних шафок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Locker Name Protocol
+# Протокол іменних шафок
 
-UK LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Шафка особиста тому, що нею користувалися, а не тому, що вона пояснює ціле життя. Найкращий доказ практичний: бейдж, стертий з одного краю, стрічка на тріснутому ущільненні, маршрутна наліпка, правка робочим скорописом, табличка імені, яку payroll потім стер. Ці предмети дозволяють Marauder повертати людей через сліди використання й незакінчені задачі. Колонії не потрібна мелодрама, щоб бути людською. Їй потрібні малі сліди, які корпоративне прибирання не змогло зішкребти.
 
 ## Scanner
 
-UK LOC HOLD: A locker is personal without needing a family plot.
+СЛІД ШАФКИ // Табличка імені, знос інструмента, pressure tape, правка, маршрутна наліпка. Особистий доказ без сімейної мелодрами.
 
 ## Terminal
 
-UK LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ПРАВИЛО ШАФКИ: берегти імена, які Deep Reach прибрала з payroll. Шафка має зв'язувати бейдж, роль, маршрутний дозвіл, звичку ремонту й незавершену річ усередині.
 
 ## Audio
 
-UK LOC HOLD: The company deleted the employee. The rust kept the label.
+Компанія видалила працівника. Іржа зберегла ярлик.
 
 ## Field Note
 
-UK LOC HOLD: The smallest human trace should survive corporate cleanup.
+Найменший людський слід має пережити корпоративне прибирання.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/uk_UA. -->

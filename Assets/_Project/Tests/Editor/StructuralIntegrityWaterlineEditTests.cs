@@ -13,15 +13,28 @@ namespace Hecton8.Tests.Editor
             string writeDefaults = ExtractMethodBody(source, "private void WriteDefaultTuning(NativeArray<StructuralTuningDTO> tuning)");
             string mockStress = ExtractMethodBody(source, "private bool GenerateEmergencyMockStressData()");
             string sanitize = ExtractMethodBody(source, "private static StructuralTuningDTO SanitizeTuning(in StructuralTuningDTO source)");
+            string runtimeSeaLevel = ExtractMethodBody(source, "private double3 ResolveRuntimeSeaLevelAup()");
+            string oceanSeaLevel = ExtractMethodBody(source, "private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)");
+            string serializedSeaLevel = ExtractMethodBody(source, "private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)");
 
             StringAssert.Contains("private const float DefaultSeaLevelAupY = 14.02f;", source);
             StringAssert.Contains("[SerializeField] private Vector3 seaLevelAup = new Vector3(0f, DefaultSeaLevelAupY, 0f);", source);
+            StringAssert.Contains("double3 runtimeSeaLevelAup = ResolveRuntimeSeaLevelAup();", writeDefaults);
             StringAssert.Contains("SeaLevelAup = ResolveSeaLevelAup(seaLevelAup)", writeDefaults);
-            StringAssert.Contains("SeaLevelAup = ResolveSeaLevelAup(seaLevelAup)", mockStress);
+            StringAssert.Contains("sanitized.SeaLevelAup = runtimeSeaLevelAup;", writeDefaults);
+            StringAssert.Contains("SeaLevelAup = ResolveRuntimeSeaLevelAup()", mockStress);
+            StringAssert.Contains("current.SeaLevelAup = ResolveRuntimeSeaLevelAup();", source);
             StringAssert.Contains("tuning.SeaLevelAup = SanitizeSeaLevelAup(tuning.SeaLevelAup);", sanitize);
+            StringAssert.Contains("if (TryResolveOceanSeaLevelAupY(out double oceanSeaLevelAupY))", runtimeSeaLevel);
+            StringAssert.Contains("resolved.y = oceanSeaLevelAupY;", runtimeSeaLevel);
+            StringAssert.Contains("return resolved;", runtimeSeaLevel);
+            StringAssert.Contains("Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", oceanSeaLevel);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", oceanSeaLevel);
             StringAssert.Contains("private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)", source);
-            StringAssert.Contains("math.abs(candidateSeaLevelAupY) <= 1000d", source);
+            StringAssert.Contains("math.abs(candidateSeaLevelAupY) > 0.0001d", serializedSeaLevel);
+            StringAssert.Contains("math.abs(candidateSeaLevelAupY) <= 1000d", serializedSeaLevel);
             StringAssert.DoesNotContain("SeaLevelAup = new double3(seaLevelAup.x, seaLevelAup.y, seaLevelAup.z)", source);
+            StringAssert.DoesNotContain("return SanitizeSeaLevelAup(resolved);", runtimeSeaLevel);
             StringAssert.DoesNotContain("tuning.SeaLevelAup = double3.zero;", source);
         }
 

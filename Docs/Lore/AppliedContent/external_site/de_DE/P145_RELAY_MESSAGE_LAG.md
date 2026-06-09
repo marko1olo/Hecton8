@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Relaisnachrichtenverzug
 
-Relaisverzug lässt HECTON-8 Autorität empfangen, aber keine Fürsorge. Ein Paket kann Recht, Schuld, Eigentum oder Warnung über Stunden, Tage oder Jahre tragen, aber es bringt keine Hände in einen gefluteten Raum. Diese Trennung ist der Kern des Kommunikationsdrucks: Entfernte Systeme bleiben mächtig, weil sie früh geschrieben, früh eingereiht und für Entfernung bepreist wurden. Mitgefühl kommt als Person; Vertrag kommt als Daten.
+Relaisnachrichtenverzug erklärt, warum HECTON-8 gleichzeitig verlassen und regiert sein kann. Es gibt keinen magischen Sprachkanal, der Distanz zu Trost zusammenfaltet. Es gibt Fenster, Warteschlangen, Repeater, Gewahrsamsstempel, Kompressionsverluste, Rechtsquittungen und Pakete, die mit perfekter Autorität und nutzlosem Timing eintreffen.
+
+Deep-Reach-Druck hängt von dieser Asymmetrie ab. Eine Pfandmitteilung kann gültig bleiben, nachdem ein medizinisches Gesuch abgelaufen ist. Eine Ablehnung kann ausgeführt werden, nachdem der unterschreibende Manager heimrotiert ist. Ein Geständnis kann nach dem Tod des Zeugen ankommen. Der Ozean schweigt, aber die Route nicht. Sie liefert weiter alte Entscheidungen in Räume, die lebendige Hilfe brauchten.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/de_DE. -->

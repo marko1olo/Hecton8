@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Janela de rota Aegir
 
-Em HECTON-8, o céu faz parte da dungeon. O gigante define radiação, luas fazem sombra e marés correm por cânions e poços.
-
-O jogador aprende quando uma mensagem sobe, quando um corpo pode subir e quando céu aberto é armadilha.
+HECTON-8 é uma lua oceânica, mas o céu faz parte da dungeon. Radiação de Aegir, sombras lunares, shutters de relé, plume de tempestade, marés e geometria do carrier decidem se sinal, corpo, amostra ou núcleo de evidência podem sair. A regra é separação: janela de dados não é resgate, resgate não é cargo contaminado. Black Keel calcula, mas pergunta quem possui a massa, quem aceita quarentena e qual cláusula protege Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/pt_BR. -->

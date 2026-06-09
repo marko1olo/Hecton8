@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Partial Return Lien Extension"
+title: "הארכת שעבוד לחזרה חלקית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Partial Return Lien Extension
+# הארכת שעבוד לחזרה חלקית
 
-HE LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
+מבנה ה-replay של HECTON-8 מתייחס ליציאות חלקיות כרשומות, לא כאיפוסים. בריחה כושלת עדיין יכולה לקדם את הקמפיין דרך שינוי מה שידוע, למי חייבים ואיזה חלון נפתח אחר כך.
 
 ## Scanner
 
-HE LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+חזרה אושרה תחת שעבוד מוארך. דגלי ידע נשמרים; מלאי הציוד מוכנס להסגר ומוסר.
 
 ## Terminal
 
-HE LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+פקודת PARTIAL RETURN: כניסה מחדש לאותו seed מותרת תחת שעבוד מוארך, חלון סערה מעודכן ותיק ידע שמור. מלאי פיזי מאופס בהסגר משמורת; הכלים נשארים רכוש הנשא עד סגירת בדיקת הראיות.
 
 ## Audio
 
-HE LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+המסלול זוכר מה הוכחת. האוקיינוס שומר את השאר.
 
 ## Field Note
 
-HE LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+רשומת כניסה מחדש: חזרה באותו seed נושאת ידע, לחץ חוב, שינויי סערה ואיפוס משמורת במקום ציוד שעובר בירושה.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/he_IL. -->

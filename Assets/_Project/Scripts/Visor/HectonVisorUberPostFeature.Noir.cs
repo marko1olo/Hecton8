@@ -428,7 +428,7 @@ namespace Hecton8.Visor
                     }
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _noirPlayerContext = currentService as IPlayerRuntimeContext;
+                    CacheNoirPlayerContext(currentService as IPlayerRuntimeContext);
                     _nextNoirPlayerRefreshFrame = 0;
                     RefreshNoirPlayerContextCold();
                     break;
@@ -540,7 +540,7 @@ namespace Hecton8.Visor
         {
             BindUberDataVaultForLifecycle(GlobalRegistry.DataVault, _dataVault);
             _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
-            _noirPlayerContext = GlobalRegistry.Player;
+            CacheNoirPlayerContext(GlobalRegistry.Player);
             RefreshNoirPlayerContextCold();
         }
 
@@ -553,7 +553,7 @@ namespace Hecton8.Visor
         {
             _noirPlayerSnapshotsAvailable = false;
 
-            IPlayerRuntimeContext player = _noirPlayerContext;
+            IPlayerRuntimeContext player = ResolveNoirPlayerContext();
             if (player == null || !player.IsInitialized)
             {
                 _nextNoirPlayerRefreshFrame = frame + ResolveNoirPlayerRefreshCadenceFrames(ResolveNoirQualityWeight01());
@@ -575,7 +575,7 @@ namespace Hecton8.Visor
             if (_noirPlayerSnapshotsAvailable)
                 return;
 
-            if (_noirPlayerContext == null)
+            if (ResolveNoirPlayerContext() == null)
                 return;
 
             if (frame < _nextNoirPlayerRefreshFrame)
@@ -857,7 +857,7 @@ namespace Hecton8.Visor
             input.SourceHash = NoirSourceHash;
 
             bool hasSource = false;
-            IPlayerRuntimeContext playerContext = _noirPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveNoirPlayerContext();
             if (playerContext != null &&
                 playerContext.IsInitialized &&
                 playerContext.TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState survival))
@@ -894,6 +894,44 @@ namespace Hecton8.Visor
                    math.isfinite(input.Stress01) &&
                    math.isfinite(input.DepthMeters) &&
                    math.isfinite(input.Toxicity01);
+        }
+
+        private IPlayerRuntimeContext ResolveNoirPlayerContext()
+        {
+            if (!IsNoirPlayerContextUsable(_noirPlayerContext))
+                CacheNoirPlayerContext(GlobalRegistry.Player);
+
+            return _noirPlayerContext;
+        }
+
+        private void CacheNoirPlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsNoirPlayerContextUsable(playerContext))
+            {
+                _noirPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _noirPlayerContext = IsNoirPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearNoirPlayerContext()
+        {
+            _noirPlayerContext = null;
+            _noirPlayerSnapshotsAvailable = false;
+            _nextNoirPlayerRefreshFrame = 0;
+        }
+
+        private static bool IsNoirPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private NoirPostProcessTuningDTO BuildNoirTuning(FeatureSettings currentSettings, NoirPostProcessInputDTO input)

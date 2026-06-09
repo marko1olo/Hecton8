@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Memoria ciudadana común de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Memoria ciudadana común de Aegir
 
-ES LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Para los ciudadanos corrientes, Aegir no es un secreto prohibido. Es peor: una entrada vieja en lecturas escolares, avisos de aseguradoras y tablas de tasas de ruta. La gente recuerda el planeta océano, la colonia perdida y la palabra cuarentena, pero no a las cuadrillas de turno, los niños, los cocineros, los técnicos de presión ni los nombres de los manifiestos de muertos. Esa distancia permite que Deep Reach sobreviva en la vida pública. Un desastre conocido puede volverse fondo si nadie tiene que mirar los cuerpos.
 
 ## Scanner
 
-ES LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Resto de archivo público: todos han oído hablar de Aegir, casi nadie recuerda un nombre.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: evento de pérdida HECTON-8, 2147. Causas oficiales: cascada de tormentas, fallo de evacuación, corrupción de automatización, cuarentena biológica, telemetría no fiable. Estado actual: reclamación dormida, seguro aún indexado, tráfico civil desaconsejado.
 
 ## Audio
 
-ES LOC HOLD: Most people know the place as a line under insurance rates.
+La mayoría conoce Aegir como una línea bajo su tasa de seguro.
 
 ## Field Note
 
-ES LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Un desastre se vuelve normal cuando ya está incluido en la factura.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/es_ES. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # True Cause Knowledge Tiers
 
-Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+True Cause Knowledge Tiers defines the shape of Deep Reach guilt without flattening every person inside the company into the same monster. No single office owned the whole catastrophe. Field observers saw abnormal tide behavior and sensor margins collapsing. Risk translated that into acceptable tail exposure. Atlas Safety protected continuity scores. Evacuation counsel delayed release authority. Keelmark and recovery desks prepared claim language that could turn death, cargo and silence into managed loss. Each tier could say it did not know enough to stop the disaster alone. Together, they knew enough to let HECTON-8 drown slowly and legally.
 
 ## Scanner
 
-True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach knew the truth in slices: tide margins in one office, Atlas weighting in another, evacuation delay and claim conversion somewhere else.
 
 ## Terminal
 
-KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: tide teams logged margin loss; Risk accepted tail exposure; Atlas Safety weighted continuity above evacuation; Counsel held releases; Keelmark converted deaths into recoverable loss; Recovery Compliance requested payload before disclosure.
 
 ## Audio
 
-No one wrote murder. They wrote columns until rescue lost.
+No one had to write "let them die." The table already knew how.
 
 ## Field Note
 
-This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Distributed ignorance was not innocence. It was an architecture.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/en_US. -->

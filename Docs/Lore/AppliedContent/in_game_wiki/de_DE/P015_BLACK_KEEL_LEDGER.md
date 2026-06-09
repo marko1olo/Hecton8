@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Black-Keel-Ledger
 
-Black Keel ist die orbitale Lebenslinie, aber keine Rettungsfantasie. Es gehört zur Claim-Pool-Infrastruktur: Gewahrsamsledger, Versicherungsschuld, Bergungsfenster, Quarantäne und Carrierautorität.
-
-Es kann führen, weil Führung Wert schützt. Es kann verzögern, weil Verzögerung auch Wert schützt. Hilfe bedeutet nicht Parteinahme.
+Black Keel ist die orbitale Lebenslinie, aber nicht das Schiff des Spielers. Öffentlich gehört es dem Aegir Reclamation Pool; Keelmark Mutual wickelt es rechtlich in Versicherung, Schuld und Recovery Exposure. Alte Deep-Reach-Prioritätshaken können Nutzlastordnung, Quarantänesprache und Routenzeugnisse biegen. Das Ledger ist kalt, weil es praktisch ist: Körper, Beweiskern, Blue-Debt-Probe, Werkzeugkiste und Rumpfschnitt konkurrieren um dasselbe Tonne-Window.
 
 ## Scanner
 
-Claim-Pool-Tenderledger. Öffentliche Carriergewahrsamkeit, Versicherungsschuld, Aufstiegsmassenstrafen und versteckte Deep-Reach-Prioritätshaken.
+Claim-Pool-Tender-Ledger. Aegir Reclamation Pool-Gewahrsam, Keelmark Mutual Exposure, 4.8-Tonne-Window-Pfand und maskierte Deep-Reach-Prioritätshaken.
 
 ## Terminal
 
-BLACK-KEEL-LEDGER // Bergungsdienst bedingt. Claimfreigabe unvollständig. Tiefenprioritätsroute maskiert. Nutzlastautorität bleibt carrierseitig. Contractor-Überleben übertrifft versicherte Fracht nicht ohne aktualisierten Aufstiegswert.
+BLACK KEEL LEDGER // Contractor-Überleben als bergbare biologische Payload registriert. Beweiskern wartet auf Gewahrsamsklasse. Blue-Debt-Material braucht Containment Review. Tiefer Prioritätsbegünstigter maskiert. Tonne-Window-Schuld aktiv, bis Recoverywert versicherte Cargo-Exposure übersteigt.
 
 ## Audio
 
-Black Keel ist nicht dein Schiff. Es ist die Maschine, die weiß, was du schuldest.
+Black Keel kann dich aus dem Ozean retten und trotzdem jede Sekunde des Lifts verkaufen.
 
 ## Field Note
 
-Das Schiff kann dir helfen, ohne auf deiner Seite zu sein.
+Das Schiff kann helfen, ohne auf deiner Seite zu sein.
 
 <!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/de_DE. -->

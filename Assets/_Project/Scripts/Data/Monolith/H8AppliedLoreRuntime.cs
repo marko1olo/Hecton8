@@ -92,7 +92,7 @@ namespace Hecton8.Data
         {
             utf8Bytes = ReadOnlySpan<byte>.Empty;
             return TryFindPacket(packetHash, localeHash, out H8AppliedLorePacketRecord record) &&
-                   H8StaticDataArena.TryGetAppliedLoreUtf8(in record, surface, out utf8Bytes);
+                   H8StaticDataArena.TryGetAppliedLoreUtf8(record, surface, out utf8Bytes);
         }
 
         public static bool TryGetUtf8(
@@ -100,7 +100,7 @@ namespace Hecton8.Data
             H8AppliedLoreSurface surface,
             out ReadOnlySpan<byte> utf8Bytes)
         {
-            return H8StaticDataArena.TryGetAppliedLoreUtf8(in record, surface, out utf8Bytes);
+            return H8StaticDataArena.TryGetAppliedLoreUtf8(record, surface, out utf8Bytes);
         }
 
         public static bool TryFindPacket(

@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Rückkehrvektorfenster
 
-Rückkehrfenster machen Flucht zur Hard-SF-Kette aus Geometrie, Wetter, Signal und Hardware.
+Das Rückkehrvektorfenster ist der erste Beweis, dass Black Keel antworten kann, ohne sofort retten zu können. Der Träger läuft auf einer automatisierten Transferbahn über Aegir, aber der Weg aus HECTON-8 muss Wetter, Partikelrauschen, Relaisschäden und unfertige Aufstiegshardware passieren.
+
+Ein gültiges Rückkehrfenster braucht vier gleichzeitige Lesungen: Trägergeometrie, Oberflächensturmlücke, sauberen Relaispfad und eine Kapselkette, die den Start übersteht. Wenn eine ausfällt, wird der Ping zum Zeitstempel statt zur Abholung. Dasselbe System stützt später Teil-Extraktion, löscht aber weder Schuld, Beweiskette noch beschädigte Route. Jede Orbitantwort bleibt eine Zeitplanbeschränkung, bis Aufstiegswiege, Führungskern, Hitzeschild und Rückkehr-Handshake wiederaufgebaut sind.
 
 ## Scanner
 
-Orbitalgeometrie ist kein Rettungsknopf. Die Black Keel hört dich nur in engen Aegir-Fenstern.
+RÜCKKEHRVEKTOR-LESUNG // Black-Keel-Ping durch Aegir-Sturmlücke empfangen. Trägerreichweite: hohe Transferbahn. Relaislinie unter Wolkenladung verschmutzt. Kapselaufstieg abgelehnt, bis Führungskern, Hitzeschild und Rückkehr-Handshake grün melden.
 
 ## Terminal
 
-Kommunikationsprognose: Träger hoch über Aegir. Kapselaufstieg braucht Sturmloch, Partikelruhe und saubere Relaislinie.
+RÜCKKEHRFENSTER-PROGNOSE
+Träger: BLACK KEEL / automatisierte Transferbahn
+Fenster: 17 min 40 s nach nächster Ruhe geladener Partikel
+Wetter: Oberflächensturmlücke erforderlich
+Relais: Himmelslinie verrauscht / Schutzmast kann einmal wiederholen
+Aufstiegshardware: Führungskern fehlt, Hitzeschild nicht zertifiziert, Batteriereserve niedrig
+Aktion: Aufstiegskette wiederaufbauen, bevor Trägerping als Abholung gilt
 
 ## Audio
 
-Die Black Keel lebt genug zum Antworten. Nicht nah genug zur Rettung.
+Black Keel hat den Ping gehört. Das gibt uns ein Fenster, keine Leiter.
 
 ## Field Note
 
-Eine Antwort ist Timing, keine Gnade.
+Eine Antwort ist keine Rettung. Sie ist eine Uhr, die man verpassen kann.
 
 <!-- In-Game Wiki; generated from P036_RETURN_VECTOR_WINDOW/de_DE. -->

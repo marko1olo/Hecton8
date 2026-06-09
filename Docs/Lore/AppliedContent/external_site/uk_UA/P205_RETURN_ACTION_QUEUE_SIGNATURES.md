@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Підписи Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Підписи Return Action Queue
 
-UA LOC HOLD: Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+Записи Return Action Queue — публічний край нинішнього тиску Deep Reach. Катастрофа 2147 року лишила логи, але черга 2190 року досі жене пункти через ретрансляційні вікна: відправити координати, засвідчити payload custody, очистити карантинну мову, тоді говорити про recovery. Пакет не стверджує, що Black Keel марний або що Deep Reach здатен миттєво когось урятувати. Він показує протилежне: локальні кораблі, затримані юридичні пакети і custody checks достатньо повільні, щоб порядок пріоритету став питанням життєзабезпечення.
 
 ## Scanner
 
-UA LOC HOLD: The old crime has a live queue.
+Отримано live return strip: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 відкрите на дванадцять хвилин.
 
 ## Terminal
 
-UA LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Дія: поставити payload custody, coordinate receipt і quarantine handshake вище contractor recovery. Carrier clause: Black Keel може затримати pickup, доки custody state не стане clean.
 
 ## Audio
 
-UA LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+Черга Keene жива. Rescue стоїть за payload custody, доки ми не змінимо handshake.
 
 ## Field Note
 
-UA LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Це не старий папір. Штамп черги свіжий: затриманий пакет, carrier clause, наказ payload-first. Перевір мову recovery Black Keel, перш ніж довіряти підбору.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/uk_UA. -->

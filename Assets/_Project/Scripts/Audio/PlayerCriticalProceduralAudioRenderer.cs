@@ -91,7 +91,7 @@ namespace Hecton8.Audio
         private const float KineticImpactWaterLowPassHertz = 800f;
         private const float KineticImpactThudMinimumExcitation = 0.015f;
         private const float KineticImpactPortalEchoMasterGain = 0.46f;
-        private const float KineticImpactDefaultWaterlineY = 14.02f;
+        private const float KineticImpactDefaultWaterlineY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const float PlayerWaterSplashMinimumVerticalSpeed = 0.75f;
         private const float PlayerWaterSplashReferenceVerticalSpeed = 10f;
         private const float PlayerWaterSplashThudDurationSeconds = 0.14f;
@@ -1193,6 +1193,7 @@ namespace Hecton8.Audio
         private IPlayerTransportLifecycleOwner _activeTransportLifecycleOwner;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IEcosystemDirectorService _ecosystemDirectorService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IPhysicsStateEventService _physicsStateEvents;
         private bool _physicsImpactRegistered;
         private MapMagicBridge _mapMagicBridge;
@@ -3002,6 +3003,7 @@ namespace Hecton8.Audio
             _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
+            _oceanKinematicsService = null;
             _physicsStateEvents = null;
             _mapMagicBridge = null;
             bool producerStopped = StopAudioProducerThread();
@@ -3053,6 +3055,7 @@ namespace Hecton8.Audio
             _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
+            _oceanKinematicsService = null;
             _physicsStateEvents = null;
             _mapMagicBridge = null;
         }
@@ -5208,6 +5211,7 @@ namespace Hecton8.Audio
             _mapMagicBridge = null;
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicBridge);
             _ecosystemDirectorService = CacheReadyEcosystemDirector(GlobalRegistry.EcosystemDirector);
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _playerRuntimeContext = CacheReadyPlayerRuntime(GlobalRegistry.Player);
             if (_structuralHullReadModel == null)
                 _structuralHullReadModel = GlobalRegistry.SubmarineHullBreach;
@@ -5238,6 +5242,9 @@ namespace Hecton8.Audio
                     _ecosystemDirectorService = CacheReadyEcosystemDirector(currentService as IEcosystemDirectorService);
                     _ecosystemDirectorLookupFrame = -4096;
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
                 case GlobalRegistryServiceSlot.SubmarineHullBreach:
                     if (_activeTransportLifecycleOwner == null || _structuralHullReadModel == null)
                         _structuralHullReadModel = currentService as ISubmarineHullBreachReadModel;
@@ -5258,17 +5265,50 @@ namespace Hecton8.Audio
 
         private float ResolveKineticImpactWaterlineY()
         {
-            if (playerMovement != null && TryResolveKineticImpactWaterlineY(playerMovement.CurrentWaterSurfaceY, out float playerWaterlineY))
+            if (playerMovement != null && TryResolveRuntimeKineticImpactWaterlineY(playerMovement.CurrentWaterSurfaceY, out float playerWaterlineY))
                 return playerWaterlineY;
 
+            if (TryResolveOceanKineticImpactWaterlineY(out float oceanWaterlineY))
+                return oceanWaterlineY;
+
             return KineticImpactDefaultWaterlineY;
+        }
+
+        private bool TryResolveOceanKineticImpactWaterlineY(out float waterlineY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveRuntimeKineticImpactWaterlineY(oceanKinematics.SeaLevel, out waterlineY))
+            {
+                return true;
+            }
+
+            waterlineY = KineticImpactDefaultWaterlineY;
+            return false;
+        }
+
+        private static bool TryResolveRuntimeKineticImpactWaterlineY(float candidateWaterlineY, out float waterlineY)
+        {
+            if (math.isfinite(candidateWaterlineY) &&
+                math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterlineY = candidateWaterlineY;
+                return true;
+            }
+
+            waterlineY = KineticImpactDefaultWaterlineY;
+            return false;
         }
 
         private static bool TryResolveKineticImpactWaterlineY(float candidateWaterlineY, out float waterlineY)
         {
             if (math.isfinite(candidateWaterlineY) &&
                 math.abs(candidateWaterlineY) > 0.0001f &&
-                math.abs(candidateWaterlineY) <= 1000f)
+                math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterlineY = candidateWaterlineY;
                 return true;

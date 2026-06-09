@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "שולחן הפסדים Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# שולחן הפסדים Keelmark
 
-HE LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+שולחן הפסדים Keelmark אינו היד שמציפה מסדרון. הוא היד שמחליטה איך המסדרון המוצף נכנס לספרים. לכן הוא חשוב. מבטח יכול לגרום לרצח להיראות כמו מזג אוויר אם הקטגוריות מוכנות מוקדם מספיק.
 
-## Scanner
-
-HE LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-HE LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-HE LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-HE LOC HOLD: A loss category is a grave with better stationery.
+הטבלאות של Keelmark מלמדות את Deep Reach איזו שפה תשרוד חקירה. ציוד מופחת. מגורים נפגעים. עבודה מושעית. עדים נעשים חשופים, פגומים או בלתי ניתנים להשבה. שמות כבדים יותר, לכן השולחן נמנע מהם עד שמכריחים אותו.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/he_IL. -->

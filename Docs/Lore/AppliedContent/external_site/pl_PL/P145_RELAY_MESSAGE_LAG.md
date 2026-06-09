@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Opóźnienie wiadomości przekaźnikowych
 
-Opóźnienie przekaźnika pozwala HECTON-8 otrzymywać władzę bez opieki. Pakiet może nieść prawo, dług, własność albo ostrzeżenie przez godziny, dni lub lata, ale nie może sprowadzić rąk do zalanego pokoju. Ten podział jest główną presją komunikacji: zdalne systemy pozostają potężne, bo napisano je wcześnie, wcześnie ustawiono w kolejce i wyceniono tak, by przetrwały dystans. Współczucie przychodzi jako osoba; kontrakt przychodzi jako dane.
+Opóźnienie wiadomości przekaźnikowych wyjaśnia, jak HECTON-8 może być porzucony i zarządzany jednocześnie. Nie ma magicznego kanału głosowego, który zmienia dystans w pocieszenie. Są okna, kolejki, przekaźniki, stemple opieki, straty kompresji, pokwitowania prawne i pakiety przychodzące z doskonałą władzą oraz bezużytecznym czasem.
+
+Presja Deep Reach zależy od tej asymetrii. Zawiadomienie o zastawie może pozostać ważne po wygaśnięciu prośby medycznej. Odmowa może wykonać się po powrocie menedżera, który ją podpisał. Wyznanie może dotrzeć po śmierci świadka. Ocean milczy, lecz trasa nie. Nadal dostarcza stare decyzje do pomieszczeń, które potrzebowały żywej pomocy.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/pl_PL. -->

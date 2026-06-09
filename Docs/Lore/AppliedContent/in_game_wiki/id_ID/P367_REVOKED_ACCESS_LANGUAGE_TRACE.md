@@ -19,26 +19,30 @@ localization_flags: 1
 
 # Jejak Bahasa Akses Dicabut
 
-Bahasa akses yang dicabut menjadi salah satu kunci Deep Reach yang paling sunyi. Sebuah pintu bisa menolak mantan pekerja, menandai permintaan sebagai pemeliharaan rutin, namun tetap membocorkan istilah tepat yang menamai rute evakuasi tersembunyi. Di HECTON-8, ini penting karena pemain tidak membutuhkan pengakuan bersih untuk mengikuti jejaknya. Frasa lama sudah cukup: protokol hitungan terdegradasi, saksi pengganti, arsip rute-aman, pengarahan pelestarian klaim. Kata-kata itu dibuat untuk peninjauan tanggung jawab, bukan penyelamatan. Penolakan membuktikan dua hal sekaligus. Kredensialnya mati. Prosedur di baliknya tidak.
+Bahasa akses dicabut adalah salah satu kunci Deep Reach yang lebih sunyi. Mantan pekerja bisa ditolak di pintu sementara teks penolakan masih membocorkan prosedur di balik rute tersegel. Kunci itu tidak perlu mengaku. Ia hanya perlu memakai kata lama yang salah.
+
+Maintenance reclassification berarti rute manusia dibuat tampak seperti material servis. Degraded-count berarti hitungan pekerja diterima setelah seharusnya diperiksa lagi. Claim-preservation routing berarti perusahaan melindungi kepemilikan jalur sebelum melindungi tubuh di dalam jalur. Setiap frasa cukup kecil untuk lewat sebagai bahasa kantor dan cukup spesifik untuk menunjuk koridor terkubur.
+
+Itu membuat kredensial mati berguna secara terbatas. Ia tidak bisa membuka palka. Ia bisa memaksa arsip berbicara dalam dialek liabilitas lamanya, dan dialek itu adalah peta.
 
 ## Scanner
 
-Kuncian tidak menulis dilarang. Ia menulis reklasifikasi pemeliharaan, penahanan kontinuitas, dan materi rute. Gaya lama Deep Reach: penolakan yang tetap menunjuk ke pintu terkubur.
+JEJAK LOCKOUT // Teks penolakan menyebut maintenance reclassification, continuity hold, dan route materials. Pintu menolak lencana tetapi membocorkan rute terkubur.
 
 ## Terminal
 
-RESPONS AKSES / ARSIP RUTE-AMAN
-kredensial: dicabut
-alasan: materi kontinuitas evakuasi dibatasi untuk staf Deep Reach bersertifikat
-istilah terlihat: hitungan terdegradasi, saksi pengganti, rute pelestarian klaim, reklasifikasi pemeliharaan
-catatan: personel lapangan lama hanya boleh melihat bahasa penolakan untuk rekonsiliasi insiden.
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-Mereka tidak menghapus koridornya. Mereka membungkusnya dalam kosakata yang masih dipahami staf yang merasa bersalah.
+Mereka tidak menghapus koridor. Mereka membungkusnya dalam kosakata yang masih bisa dibaca staf bersalah.
 
 ## Field Note
 
-Lencananya mati. Kuncian itu masih memakai dialek kantor yang mengubur rute.
+Lencana mati. Lockout masih berbicara dialek kantor yang mengubur rute.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/id_ID. -->

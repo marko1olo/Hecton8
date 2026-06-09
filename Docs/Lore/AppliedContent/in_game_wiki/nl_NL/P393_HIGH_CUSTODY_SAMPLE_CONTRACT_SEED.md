@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: High Custody Sample Contract Seed"
+title: "High-Custody Sample Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: High Custody Sample Contract Seed
+# High-Custody Sample Contractseed
 
-NL LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+High-Custody Sample is een contractfamilie waarin resourcewaarde en bewijsbehandeling vroeg botsen. Blue debt, weefsel-ijzerresidu, verzegeld water en besmette filterpacks betalen alleen meer zolang container, tag, massa en routecustody intact blijven.
 
 ## Scanner
 
-NL LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Contractseed: high-custody sample. Grotere uitbetaling gekoppeld aan massa-administratie, quarantainesleep en receiver-gecertificeerde containers.
 
 ## Terminal
 
-NL LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: custody-grade samples actief, samplemassaledger streng, quarantainevertraging verhoogd, receiverzegel vereist, routedroppenalty actief.
 
 ## Audio
 
-NL LOC HOLD: A sample can weigh more after it enters the ledger.
+Een sample wordt zwaarder nadat het ledger het accepteert.
 
 ## Field Note
 
-NL LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Marauder-notitie: weeg de tas voordat je hem winst noemt. De receiver kan ontbrekende grammen harder factureren dan de oceaan kan slaan.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/nl_NL. -->

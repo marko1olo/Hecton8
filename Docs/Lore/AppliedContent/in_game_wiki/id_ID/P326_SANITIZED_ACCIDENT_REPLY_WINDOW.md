@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Sanitized Accident Reply Window"
+title: "Window Balasan Kecelakaan yang Disanitasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sanitized Accident Reply Window
+# Window Balasan Kecelakaan yang Disanitasi
 
-ID LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+Window Balasan Kecelakaan yang Disanitasi memberi Deep Reach suara masa kini tanpa menjadikan korporasi mahatahu. Jawaban live pertama mereka bukan ancaman. Ia lebih buruk dengan cara yang lebih tenang: penjelasan publik lama yang didorong melalui kanal baru di bawah tekanan. Pesan itu masih menyebut storm surge, geological collapse, dan autonomous evacuation failure karena skrip itu pernah melindungi Deep Reach, dan sistem meraihnya lagi. Pemain sebaiknya mendengarnya hanya setelah menemukan kontradiksi fisik: waktu pintu salah, sertifikat pompa buruk, nama yang selamat dari penghapusan payroll, ruangan yang kerusakannya tidak cocok dengan cuaca. Timing penting. Jika skrip datang pertama, itu eksposisi. Jika datang setelah bukti basah, itu penghinaan. Deep Reach tidak berbicara kepada ruangan yang ditempati pemain. Ia berbicara kepada laporan kering yang mereka butuhkan dari ruangan itu.
 
 ## Scanner
 
-ID LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Window balasan terbuka. Deep Reach mengulang keruntuhan badai, kegagalan geologis, dan evakuasi otonom gagal seolah ruangan masih kering.
 
 ## Terminal
 
-ID LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure / RESTRICTED ADVICE: jangan kirim Atlas continuity tak terverifikasi, body-category disputes, atau basin-coordinate claims.
 
 ## Audio
 
-ID LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Mereka menjawab ruangan yang seharusnya kau temukan, bukan ruangan tempat kau berdiri.
 
 ## Field Note
 
-ID LOC HOLD: Place after first physical contradiction, not before.
+Tempatkan setelah kontradiksi fisik pertama: pemain harus punya bukti basah sebelum mendengar skrip publik lama.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/id_ID. -->

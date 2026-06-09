@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Waktu Pementasan Kargo Berat"
+title: "Waktu Staging Kargo Berat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Waktu Pementasan Kargo Berat
+# Waktu Staging Kargo Berat
 
-Timing kargo berat melindungi kronologi tanpa FTL. Perangkat Atlas bisa tiba sebelum pemukiman massal karena korporasi meluncurkan kargo prekursor lebih awal, men-staging-nya ke depan, menerima risiko nirawak, dan mengubur jendela gagal dalam bahasa program. Penyelamatan tidak bisa meminjam trik itu setelah darurat dimulai.
+Kargo berat mengubah HECTON-8 dari target survei menjadi objek utang. Kargo besar tidak bisa mengejar kebenaran yang berubah; ia harus disiapkan, dibonding, diasuransikan, diparkir, direm, dan diterima oleh seseorang dengan otoritas. Saat rangkaian modul melintasi rute, kontrak di belakangnya memiliki momentum lebih besar daripada keberatan koloni.
 
 ## Scanner
 
-Kargo kelas Atlas adalah kesabaran prabayar yang dibungkus zirah.
+Tumpukan manifes: kargo dikomit sebelum situs penerima terbukti hidup.
 
 ## Terminal
 
-CATATAN KARGO: Atlas dan kargo seed memakai staging, bantuan fusi pelet, meluncur panjang, dan infrastruktur pengereman. Tanggal publik bisa menyembunyikan peluncuran prekursor dan keberangkatan forward-domain.
+STAGING KARGO: lambung tekanan, pelindung keramik, massa reaktor, stok seed, rangka crawler, dan cincin habitat membutuhkan jendela peluncuran berjarak tahun. Setelah dibonding, kargo menjadi argumen hukum yang bergerak.
 
 ## Audio
 
-Kapal seberat itu tidak sekadar bepergian. Ia menjadi faktur dengan jejak.
+Pengiriman sudah dibayar. Itu membuat menghentikannya lebih sulit daripada menyelamatkan orang.
 
 ## Field Note
 
-Rute berat dirakit dari depo, jendela sinar, massa pengereman, dan keberanian politik.
+Kargo tidak terburu-buru. Ia membuat ketergesaan orang lain menjadi mahal.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/id_ID. -->

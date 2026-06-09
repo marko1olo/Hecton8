@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "偽エンディング数の梯子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# 偽エンディング数の梯子
 
-JP LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+偽エンディング数の梯子はリプレイ範囲を読みやすく保つ。複数の出口、四つの大きな未完系統、そしてAtlas盆地を重心にする。
 
 ## Scanner
 
-JP LOC HOLD: Four major false families before the deep Atlas resolutions.
+ENDING LADDER // 物資支払い、部分帰還、企業捕獲または検疫、公的台帳漏洩。深いAtlas解答の前に四つの偽系統。
 
 ## Terminal
 
-JP LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+ドシエ範囲: 多くの出口を記録してよいが、明確な系統にまとめる。物資支払い、部分脱出/帰還、企業捕獲/検疫、公的台帳漏洩はAtlas盆地payload解決の下に置く。
 
 ## Audio
 
-JP LOC HOLD: The dossier can mark many exits before it marks an answer.
+ドシエは、答えより先に出口を記録できる。
 
 ## Field Note
 
-JP LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+プレイスタイルを報いるだけの結末。真実を安くしないだけの少なさ。
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/ja_JP. -->

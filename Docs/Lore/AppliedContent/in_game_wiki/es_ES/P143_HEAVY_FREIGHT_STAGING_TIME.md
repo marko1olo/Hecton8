@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tiempo de preparación de carga pesada
 
-El tiempo de carga pesada protege la cronología sin FTL. Hardware Atlas puede llegar antes del asentamiento masivo porque las corporaciones lanzan carga precursora temprano, la adelantan por etapas, aceptan riesgo no tripulado y entierran ventanas de fallo en lenguaje de programa. El rescate no puede pedir prestado ese truco después de empezar la emergencia.
+La carga pesada convirtió HECTON-8 de objetivo de sondeo en objeto de deuda. La carga grande no podía perseguir una verdad cambiante; debía prepararse, afianzarse, asegurarse, aparcarse, frenarse y ser recibida por alguien con autoridad. Cuando un tren de módulos cruzó la ruta, el contrato detrás tenía más inercia que las objeciones de la colonia.
 
 ## Scanner
 
-La carga clase Atlas es paciencia prepagada envuelta en blindaje.
+Pila de manifiestos: carga comprometida antes de probar vivo el sitio receptor.
 
 ## Terminal
 
-NOTA DE CARGA: Atlas y carga seed usan preparación por etapas, asistencia de fusión por pellets, largas derivas e infraestructura de frenado. Fechas públicas pueden ocultar lanzamientos precursores y salidas de dominio avanzado.
+PREPARACIÓN DE CARGA: cascos de presión, blindaje cerámico, masa de reactor, reservas seed, bastidores crawler y anillos de hábitat requieren ventanas de lanzamiento separadas por años. Una vez afianzada, la carga se vuelve un argumento legal en movimiento.
 
 ## Audio
 
-Una nave tan pesada no viaja sin más. Se vuelve una factura con estela.
+El envío ya estaba pagado. Eso hizo más difícil detenerlo que salvar personas.
 
 ## Field Note
 
-Una ruta pesada se arma con depósitos, ventanas de haz, masa de frenado y nervio político.
+La carga no se da prisa. Hace cara la prisa de los demás.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/es_ES. -->

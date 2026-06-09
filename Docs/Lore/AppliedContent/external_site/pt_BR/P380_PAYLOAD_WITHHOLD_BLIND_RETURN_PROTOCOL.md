@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Protocolo blind return com retenção do payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Payload Withhold Blind Return Protocol
+# Protocolo blind return com retenção do payload
 
-PT LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return é a rota da recusa. Mantém o payload fora de todos os receptores formais e deixa local o vetor da bacia. A Deep Reach não recebe mapa de acesso. O livro público não recebe pacote de incidente. A quarentena não recebe designação escrow. Atlas não recebe chave de corte.
 
-## Scanner
-
-PT LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-PT LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-PT LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-PT LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+A recusa tem dentes e custos. Pode manter predadores longe da bacia por mais um intervalo, mas deixa a prova em um contêiner frágil com uma pessoa frágil. A dívida segue aberta. A custódia segue informal. Se o pacote alagar ou o portador morrer em um corredor, a cadeia pode desaparecer sem que ninguém precise suprimi-la.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/pt_BR. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # False Ending Taxonomy
 
-False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+False Ending Taxonomy explains the game's replay structure: exits can be physically real, profitable, and still morally incomplete. The dossier persists knowledge across attempts, while pressure, debt, and public truth decide whether an ending is only an escape or an actual reckoning.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Ending board. Some exits are real enough to count and wrong enough to hurt.
 
 ## Terminal
 
-ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+ENDING FAMILIES: material payout; partial exit and same-seed return; corporate capture; quarantine hold; public ledger release; Atlas basin resolution. Outcome records must keep payload, proof, and debt state separate.
 
 ## Audio
 
-Leaving is not the same as finishing.
+Leaving the water is not the same as finishing the work.
 
 ## Field Note
 
-False ending must not be a trick. It must be a valid bad bargain.
+A false ending is not a trick. It is a valid bargain with a missing truth.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/en_US. -->

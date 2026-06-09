@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Reistijden van sondepakketten
 
-Probe-pakkettijd maakte Aegir waardevol voordat het vertrouwd werd. Een smalle machine kon oversteken, meten en rapporteren terwijl menselijke instellingen nog over budgetten en aansprakelijkheid ruzieden. Tegen de tijd dat Deep Reach vertrouwen verkocht, waren de pakketten oud en de risicomodellen gepolijst. Dat is het gevaar van machine-eerst-verkenning: de oceaan kan worden geprijsd vanuit oude waarheid voordat iemand begrijpt wat werken daar kost.
+De reistijd van sondepakketten is een van de minst dramatische en meest schadelijke krachten in deze wereld. De vroege Ran-Aegir-pakketten waren geen leugens. Ze droegen echte spectrale waarden, massaramingen, ijschemie, relaisgeometrie en ondiepwaterhoop. Ze waren alleen oud toen mensen ze als toestemming behandelden.
+
+Dat maakt het falen van de kolonie scherper. HECTON-8 werd niet op pure fantasie gesticht. Het werd gesticht op data die de route beter had overleefd dan de tijd. Toen nieuwe metingen de eerste belofte tegenspraken, droeg de oude belofte al schuld, contracten, apparatuur en menselijke plannen.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/nl_NL. -->

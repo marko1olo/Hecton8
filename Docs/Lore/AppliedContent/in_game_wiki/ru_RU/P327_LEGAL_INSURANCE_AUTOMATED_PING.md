@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Автоматический legal insurance ping"
+title: "Автоматический страховой legal ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Автоматический legal insurance ping
+# Автоматический страховой legal ping
 
-Автоматический legal insurance ping делает корпоративное давление игровым. Сообщения редкие, процедурные и работают как evidence, не как постоянная экспозиция.
+Автоматический страховой legal ping делает корпоративное давление игровым, потому что приходит как полезное и ненавистное маленькое сообщение. Система не тратит слова на вопрос, жив ли игрок. Она требует mass class, contamination state, coordinate proof, claim priority и receiver custody acceptance. Это выполняет две задачи сразу. Механически сообщает игроку, какие категории важны для возврата. Нарративно показывает, где он стоит в экономике спасения: жизнь не игнорируется, но она не первая в очереди. Ping должен появляться достаточно редко, чтобы резать. Если повторять его постоянно, он станет шумом. Если он приходит на route thresholds, после того как игрок рисковал собой ради улики или sample payload, он становится чистой корпоративной рукой, протянутой через радио, чтобы взвесить тело до спасения.
 
 ## Scanner
 
-Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Получен автоматический ping. Язык спасения заменен receiver proof, mass class и custody status.
 
 ## Terminal
 
-INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / до recovery-window assignment требуется: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-Первый вопрос не о том, жив ли ты. Первый вопрос - что ты несешь.
+Первое, что они спрашивают, не жив ли ты. Они спрашивают, что ты несешь.
 
 ## Field Note
 
-Кандидат для short bark. Не спамить; использовать на route thresholds.
+Короткий bark для route thresholds. Использовать редко; жестокость в том, что система спрашивает первой.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/ru_RU. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Пам'ять звичайних громадян про Аегір"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Пам'ять звичайних громадян про Аегір
 
-UA LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Для звичайних громадян Аегір не є забороненою таємницею. Гірше: це старий пункт у шкільних читанках, попередженнях страховиків і таблицях маршрутних зборів. Люди пам'ятають океанічну планету, втрачену колонію та слово «карантин», але не змінні бригади, дітей, кухарів, техніків тиску й імена в маніфестах загиблих. Ця дистанція дозволяє Deep Reach лишатися частиною нормального життя. Відома катастрофа стає тлом, якщо нікому не треба дивитися на тіла.
 
 ## Scanner
 
-UA LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Уламок публічного архіву: про Аегір чули всі, але майже ніхто не пам'ятає імен.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: подія втрати HECTON-8, 2147. Офіційні причини: штормовий каскад, провал евакуації, корупція автоматики, біологічний карантин, ненадійна телеметрія. Поточний статус: претензія спить, страховий індекс активний, цивільні маршрути не рекомендовані.
 
 ## Audio
 
-UA LOC HOLD: Most people know the place as a line under insurance rates.
+Більшість людей знає Аегір як рядок під своєю страховою ставкою.
 
 ## Field Note
 
-UA LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Катастрофа стає звичайною, коли її вже внесли в рахунок.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/uk_UA. -->

@@ -3,13 +3,13 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "底部工場"
+title: "海底工場"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 底部工場
+# 海底工場
 
-底部工場は、これまでの手がかりすべてが物理的に結合する瞬間として感じられるべきだ。Blue debtはもはやサンプルだけではない。修復痕はもはや孤立した継ぎ当てではない。ブライン階段はもはや経路だけではない。退避記録はもはや書類ではない。底では、それらすべてのシステムが、まだ働いている一つの身体を養っている。材料を処理するから工場だ。経路と圧力皮膚がまだ荷を動かすから船だ。植民地の古いカテゴリが、人間には安全に解釈できない保守儀式に置き換えられたから神殿だ。重要なのは、ここが死んでいないことだ。忙しく働いている。扉を封じ、膜を育て、残骸を再利用し、連続性を保ち、海が届けたものを何でも使う。プレイヤーにとって最後の下降は、最後の部屋を探すことではなく、人、工具、経路、原材料の違いは任意だとすでに決めた機械へ入ることになる。
+海底工場は最後の玉座の間ではない。過去の証拠がハードウェアになる下部リターンプラントだ。壁の継ぎ目に残ったblue debt、デッキプレート下のブライン経路、新しい炭酸塩の下にある補修溶接、密閉扉のそばにまだ挟まった避難タグがそこにある。
+
+Deep Reachは、長い遅延の間も請求権とサービスの継続性を保つために下部ノードを建設した。ポンプ、ケーブル、サンプルトレイがまだ応答していたため、Atlas-6は壊れた分類を迂回し続けた。結果は稼働中の工場だった。ブラインは動く。熱は戻る。信号は継ぎ当てされたケーブルスリーブを渡る。かつて清潔なサービスボックスだった筐体に濾過生物が集まる。圧力成長したシールは、元のガスケットが失敗した後もプレートを閉じている。
+
+この場所の危険は実務的だ。経路に残ったものを避けずに補修する。経路を保ったまま、そこに誰がいたかを示すタグを埋めることがある。淡い継ぎ目を切る前にタグの引き出しを読むこと。工場は名前を回収するより早く漏れを塞ぐ。
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/ja_JP. -->

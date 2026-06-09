@@ -11,9 +11,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 from AppliedLoreImporter import fnv1a32
 from AppliedLoreRouteCardExporter import (
     INPUT_HEADERS,
+    check_selected_route_card_export,
     check_route_card_export,
     export_route_cards,
     main,
+    selected_route_card_export_current,
     route_card_export_current,
     route_card_output_path,
 )
@@ -83,6 +85,8 @@ class TestAppliedLoreRouteCardExporter(unittest.TestCase):
             self.assertEqual(export_route_cards(root), 1)
             self.assertEqual(check_route_card_export(root), 1)
             self.assertEqual(route_card_export_current(root), (1, True))
+            self.assertEqual(check_selected_route_card_export(root, "P_TEST_ROUTE"), 1)
+            self.assertEqual(selected_route_card_export_current(root, "P_TEST_ROUTE"), (1, True))
 
     def test_check_rejects_stale_export(self):
         with temporary_directory() as tmp:
@@ -94,6 +98,29 @@ class TestAppliedLoreRouteCardExporter(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 check_route_card_export(root)
+            with self.assertRaises(ValueError):
+                check_selected_route_card_export(root, "P_TEST_ROUTE")
+
+    def test_selected_check_ignores_unrelated_broken_route_card(self):
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            make_repo(root)
+            self.assertEqual(export_route_cards(root), 1)
+            write_csv(
+                root / "Docs" / "Lore" / "AppliedContent" / "route_cards" / "RS_UNRELATED_route_cards.csv",
+                INPUT_HEADERS,
+                [
+                    route_row(
+                        route_card_id="RC_UNRELATED_BROKEN",
+                        packet_ids="P_UNRELATED",
+                        required_packet_ids=";".join(f"P_EXTRA_{index}" for index in range(5)),
+                    )
+                ],
+            )
+
+            self.assertEqual(check_selected_route_card_export(root, "P_TEST_ROUTE"), 1)
+            with self.assertRaisesRegex(ValueError, "required_packet_ids exceeds capacity"):
+                export_route_cards(root, dry_run=True)
 
     def test_rejects_non_integer_depth(self):
         with temporary_directory() as tmp:

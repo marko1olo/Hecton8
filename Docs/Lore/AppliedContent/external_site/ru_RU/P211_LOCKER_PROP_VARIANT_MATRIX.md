@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Матрица locker prop variants"
+title: "Матрица вариантов реквизита шкафчиков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Матрица locker prop variants
+# Матрица вариантов реквизита шкафчиков
 
-RU LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+Матрица вариантов реквизита шкафчиков определяет, как HECTON-8 превращает личное хранение в читаемую улику. Шкафчики не свалки биографий. Это плотные мировые объекты, которые связывают рабочего, работу, маршрутный доступ, повреждение и позднее вмешательство. Так игрок читает жизнь колонии через вещи, которые все еще принадлежат комнате.
 
 ## Scanner
 
-Локер должен показывать работу, route access и то, что было стерто.
+Шкафчик должен показывать работу, маршрутный доступ и то, что кто-то пытался стереть. Памятные вещи разрешены только после того, как работа читается.
 
 ## Terminal
 
-LOCKER MATRIX: каждый authored locker требует job clue, route clue и damage clue. Decorative keepsakes вторичны.
+LOCKER MATRIX: каждый авторский шкафчик требует три читаемые улики: работа, маршрут и повреждение. Декоративная память вторична. В шкафчике может быть семейный жетон или личная шутка, но только после того, как инструмент, след допуска или шрам стирания объяснит игроку, как этот человек касался колонии.
 
 ## Audio
 
-Локер не shrine. Это failed work order.
+Шкафчик не святыня. Это проваленный рабочий приказ.
 
 ## Field Note
 
-Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Варианты: износ инструмента, бирка маршрутного допуска, напорная лента, стикер смены, шрам стирания зарплаты, метка сохранения мародера.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/ru_RU. -->

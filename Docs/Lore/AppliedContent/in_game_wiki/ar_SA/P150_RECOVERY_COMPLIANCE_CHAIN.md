@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "سلسلة Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# سلسلة Recovery Compliance
 
-AR LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+تحول سلسلة Recovery Compliance موقع الكارثة إلى حقل أصول مضبوط. تستطيع السماح بالدخول والقطع والعينات وجمع الشهود وختم البيانات وكتلة العودة. وتستطيع أيضا أن تسأل هل الشخص الحي دليل أو مسؤولية أو حمولة أو عائق.
 
 ## Scanner
 
-AR LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+قبل أمر recovery. لا توجد لغة إنقاذ في السلسلة.
 
 ## Terminal
 
-AR LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+سلسلة RECOVERY: العمل بعد الحادث يمر عبر تصريح المقاول وحضانة الدليل وحقوق salvage ومعالجة الشهود وتأمين المسار وصياغة عامة بلا اعتراف. الإنقاذ ليس الفعل الحاكم.
 
 ## Audio
 
-AR LOC HOLD: You are not rescued. You are classified.
+جاؤوا للامتثال لـ recovery. هذا ليس مثل العودة من أجلنا.
 
 ## Field Note
 
-AR LOC HOLD: Delay does not make an order harmless.
+تأتي compliance بقفازات وأختام ومن دون وعد أن أحدا ما زال شخصا.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ar_SA. -->

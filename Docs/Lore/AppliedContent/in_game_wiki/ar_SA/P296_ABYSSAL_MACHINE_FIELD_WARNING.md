@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Abyssal Machine Field Warning"
+title: "تحذير حقل الآلات السحيق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Abyssal Machine Field Warning
+# تحذير حقل الآلات السحيق
 
-AR LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+يربط هذا التحذير البيئة العميقة بالاقتراب الأخير من Atlas. لم يعد اللاعب يعبر أطلالا تحتوي حياة؛ بل يعبر حياة تعلمت حمل الآلات.
 
 ## Scanner
 
-AR LOC HOLD: Machine field warning: silt motion does not match current.
+يتحرك الطمي عكس التيار. أجسام الترشيح تعيد تموضعها تحت الأضواء.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: حركة طمي حقل الآلات السحيق تتجاوز نموذج التيار. أجسام الترشيح وأضلاع المشغلات المدفونة تسجل كبنية تحتية متحركة. حافظ على مسافة؛ لا ترس في أرض لينة.
 
 ## Audio
 
-AR LOC HOLD: The floor is not still.
+الأرضية ليست ساكنة.
 
 ## Field Note
 
-AR LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+تحذير نهاية متأخرة: رعب هادئ وموضوعي. الحقل الأخير بنية تحتية تستيقظ، لا تمهيد لرئيس.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/ar_SA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Escape Recipe Cost Boundary"
+title: "Kostengrens van ontsnappingsrecept"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Escape Recipe Cost Boundary
+# Kostengrens van ontsnappingsrecept
 
-NL LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+HECTON-8 verlaten is eerst een reparatieprobleem: signaal, afdichting, geleiding, opstijgenergie, juridische handshake en payloadbewaring. De recepttabel draagt exacte kosten; de lore draagt waarom elke kost tanden heeft.
 
 ## Scanner
 
-NL LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Receptregel bindt componentklasse, druktier, routebewijs en autoriteitsstaat.
 
 ## Terminal
 
-NL LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: gekwalificeerde kosten moeten relais, afdichting, geleiding, opstijgenergie, juridische handshake, payloadautoriteit en ontvangerrisico noemen. De weg omhoog heeft onderdelen; onderdelen hebben eigenaars.
 
 ## Audio
 
-NL LOC HOLD: The way up has parts. The parts have owners.
+De weg omhoog heeft onderdelen. Onderdelen hebben eigenaars.
 
 ## Field Note
 
-NL LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Drukbanden komen uit insluitingsregels; exacte kosten horen in recepttabellen.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/nl_NL. -->

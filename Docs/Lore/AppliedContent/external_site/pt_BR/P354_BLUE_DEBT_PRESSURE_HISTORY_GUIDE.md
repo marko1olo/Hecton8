@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guia de Histórico de Pressão de Blue Debt"
+title: "Guia de histórico de pressão da dívida azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Histórico de Pressão de Blue Debt
+# Guia de histórico de pressão da dívida azul
 
-Xenon-Omega, chamado blue debt por salvagers, liga a geologia de HECTON-8 a computation, debt law e ao motivo pelo qual a Deep Reach ainda quer de volta uma reivindicação afogada.
+Dívida azul não é gema nem minério mágico. É o nome de campo para um substrato estável sob pressão contendo Xenon-Omega: uma estrutura mineral que só ganha valor depois que o oceano a comprime, aquece, esfria e marca eletricamente na ordem certa. Uma amostra brilhante pode não valer nada. Um bloco opaco e lacrado pode pagar um mês de oxigênio se seu histórico de pressão estiver limpo e sua deriva de sinal continuar quieta.
 
-## Scanner
-
-Amostra de blue debt marcada. Verifique pressure history, containment stage e signal drift antes de export.
-
-## Terminal
-
-MARAUDER NOTE: blue debt é gíria de salvage para Xenon-Omega-bearing pressure-stable substrate. É valioso porque extreme computation e energy isolation gostam dele, não porque brilha.
-
-## Audio
-
-Blue debt é como as pessoas chamam isso depois que a fatura chega.
-
-## Field Note
-
-Cor não é grade. Um contêiner quieto com custody limpa paga; um que canta compra um drone wake.
+Por isso toda descoberta de dívida azul vira material legal imediatamente. A Atlas quer a deriva. A Deep Reach quer o histórico da reivindicação. Equipes salvage querem um contêiner que não cante alto o bastante para acordar drones. O recurso é perigoso porque fica no cruzamento entre geologia, computação, custódia e dívida. Ele prova que HECTON-8 nunca foi só uma colônia afogada. Foi um livro-caixa enterrado, com a pressão escrevendo os números.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/pt_BR. -->

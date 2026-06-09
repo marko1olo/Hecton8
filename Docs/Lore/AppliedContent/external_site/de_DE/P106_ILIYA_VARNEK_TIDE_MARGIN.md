@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: Gezeitenmarge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: Gezeitenmarge
 
-DE LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+Iliya Varnek: Gezeitenmarge ist einer der ersten klaren Blicke von HECTON-8 darauf, wie Deep-Reach-Verantwortung funktioniert. Der Text vermeidet die einfache Version des Unternehmensbösen. Varnek muss keinen Flutknopf drücken. Er unterschreibt eine Risikoauslegung.
 
-## Scanner
+2147 bestand das Modell der Großen Tide noch im Durchschnitt. Das ist das gefährliche Wort. Durchschnittliches Verhalten hielt den Produktionsplan am Leben, während der Extremstapel in der Arbeiterexposition blieb: Aegir-Gezeitenfenster, Schelfeisrückstoß, Druckroutenverkehr und Atlas-Kompensationsunsicherheit. Eine Route kann statistisch akzeptabel und für die Menschen tödlich sein, die den Rand der Kurve treffen.
 
-DE LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-DE LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-DE LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-DE LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Für Spieler verwandelt dieser Beleg die Katastrophe von einem Unfall in eine Entscheidungskette. Varneks Memo ist kein Geständnis. Es ist ein Dokument, das Schuld lesbar macht: Unsicherheit war bekannt, abgewertet und nach unten weitergereicht. Der Schrecken ist bürokratisch, ohne trocken zu werden. Die Marge wurde klein genug gemacht, dass Arbeiter in ihr sterben konnten.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/de_DE. -->

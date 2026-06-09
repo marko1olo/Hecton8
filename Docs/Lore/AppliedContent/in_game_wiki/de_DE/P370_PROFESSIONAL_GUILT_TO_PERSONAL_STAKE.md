@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Von Berufsschuld zu persönlichem Einsatz"
+title: "Von Beruflicher Schuld zu Persönlichem Einsatz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Von Berufsschuld zu persönlichem Einsatz
+# Von Beruflicher Schuld zu Persönlichem Einsatz
 
-Berufliche Schuld wird zu persönlichem Einsatz, ohne den Protagonisten zur Ursache der Katastrophe zu machen. Der Spieler braucht kein verlorenes Geschwister, keine Blutlinie der Rache und keine geheime Erwähltenrolle. Der Druck ist kälter und erwachsener. Er erkennt das Verfahren. Er weiß, warum ein Zeugenfeld zählt, warum ein Routen-Safe-Stempel lügen kann, warum ein Träger ihn hören und trotzdem nicht herausheben kann. HECTON-8 wird persönlich, weil die alte Deep-Reach-Sprache für ihn nicht abstrakt ist. Sie ist Arbeit, der er einst vertrauen musste, Arbeit, neben der er einst tätig war, und diese Arbeit hängt jetzt an Namen aus ertrunkenen Räumen. Der Bogen ist kein Geständnis. Er ist Verweigerung: Wenn der Spieler die Maschine des Zurücklassens lesen kann, wird sie begraben zu lassen zu einer weiteren Teilnahme.
+Berufliche Schuld wird zu persönlichem Einsatz, ohne den Operator zur Ursache der Katastrophe zu machen. Der Druck ist enger und schwerer wegzuschieben. Er erkennt das Formular, die route-safe omission, das versiegelte Prüffeld und die Empfängersprache, die einen Raum in einen erledigten claim verwandelt.
+
+Keine Familienrache ist nötig. Keine geheime Kommandorolle ist nötig. Die geborgenen Tags hängen Namen an ein Verfahren, dem der Operator einst als Arbeit vertraute. Sobald dieses Muster lesbar ist, wird es selbst zur weiteren omission in derselben Maschine, es begraben zu lassen. Der Einsatz ist keine Blutlinie. Er ist Fachwissen, das auf Beweise aus ertrunkenen Räumen trifft.
 
 ## Scanner
 
-Signaturmuster passt zum alten Verfahrenscache. Die Namen änderten sich. Der Raum versagte auf dieselbe Weise. Expertise ist keine Distanz mehr.
+PROCEDURE MATCH // Alte Sequenz erscheint in neuer Ausfallakte. Namen geändert; dieselbe route-safe omission. Fachwissen ist keine Distanz mehr.
 
 ## Terminal
 
-DOSSIER-AUFLÖSUNG / BERUFLICHER EINSATZ
-auslösende Beweise: Verfahrenserkennung, geborgene Arbeiter-Tags, Konflikt mit Anspruchsempfänger
-ausgeschlossenes Motiv: Familienbeziehung, Rachelinie, Status als erwählter Zeuge
-aktives Motiv: ehemaliger Systemarbeiter erkennt vermeidbares Zurücklassen und kann die Maschine, die es ablegte, noch lesen.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Du kamst wegen eines Anspruchs. Du bliebst, weil der Papierkram deine Hände kannte.
+Du kamst für einen claim. Das Formular benutzte deine alten Hände.
 
 ## Field Note
 
-Nicht deine Signatur. Trotzdem dein Handwerk. Darum bleibt der Raum nicht still.
+Nicht deine Signatur. Trotzdem dein Handwerk. Darum bleibt der Raum nicht begraben.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/de_DE. -->

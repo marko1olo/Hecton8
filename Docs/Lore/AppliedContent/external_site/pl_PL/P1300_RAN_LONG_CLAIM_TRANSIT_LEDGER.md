@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Rejestr Tranzytu Długiego Roszczenia Ran
 
-HECTON-8 działa według twardej reguły: komunikacja jest tania w porównaniu z masą. Przekaźnik Black Keel może odpowiedzieć, bo pakiet jedzie światłem, lustrami i kolejkami nośników. Tender nie. Statki na trasie Ran nadal podlegają przyspieszeniu, ciepłu hamowania, harmonogramom pellet lane, pogodzie Aegira i ekonomii okna ryzyka.
+HECTON-8 traktuje pierwszy kontakt jak papierologię pod ciśnieniem, bo tym staje się międzygwiezdny ratunek bez FTL. Przekaźnik Black Keel może potwierdzić uwięzionego Maraudera w granicach czasu nośnika. Nie może sprawić, że pojawi się statek. Rejestr długiego roszczenia leży między tymi faktami.
 
-Rejestr długiego roszczenia jest administracyjną formą tej fizyki. Nie pyta, czy ocalały się boi. Pyta, czy współrzędne są wiarygodne, czy pakiet wznoszenia przetrwa transfer, czy istnieje hash świadka Luyten, czy Deep Reach może żądać kontroli kwarantanny i czy ładunek jest ciałem, dowodem, frachtem albo wszystkim naraz.
+            W świecie gry rejestr nie jest formalnością. To pierwszy trwały obiekt, jaki ocalały posiada poza oceanem. Mówi, że człowiek żyje, ale też jak wiarygodne są współrzędne, ile masy trzeba podnieść, czy pakiet wznoszenia jest szczelny, czy Deep Reach ma argument kwarantanny, czy ładunek jest sprzętem osobistym czy dowodem zmieniającym roszczenie, i kto bierze odpowiedzialność, jeśli odbiór spłonie, minie cel albo wróci skażony.
 
-Ocean nie jest odcięty dlatego, że cywilizacja zniknęła. Jest odcięty, bo cywilizacja jest wolna, posiadana i proceduralna. Gracz nie czeka tylko na ratunek; buduje pakiet, ładunek i nacisk, które mogą uczynić ratunek cenniejszym niż cisza.
+            Ta konstrukcja utrzymuje cywilizację obecną, ale nie robi z niej wyjścia awaryjnego. Ludzie cię słyszą. Biura cię stemplują. Przekaźniki zachowują pakiet. Ubezpieczyciele i właściciele tras przyczepiają liczby do ciała. Grozą nie jest pustka. Grozą jest system, który wie dokładnie, gdzie jesteś, i nadal pyta, ile wart jest twój odzysk.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/pl_PL. -->

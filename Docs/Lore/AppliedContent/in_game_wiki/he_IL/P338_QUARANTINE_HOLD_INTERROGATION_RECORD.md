@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Hold Interrogation Record"
+title: "רשומת חקירה בהחזקת הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Hold Interrogation Record
+# רשומת חקירה בהחזקת הסגר
 
-HE LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+הרשומה הזאת הופכת חילוץ ללא נוח. ההישרדות אמיתית, אבל השחקן יוצא כעד, סיכון זיהום, נושא מפה וראיה שנויה במחלוקת לפני שהוא חוזר להיות אדם חופשי.
 
 ## Scanner
 
-HE LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+התובע חולץ חי. דגל הסגר גובר על שפת החילוץ; payload הראיות מבודד.
 
 ## Terminal
 
-HE LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+רשומת QUARANTINE HOLD: תובע ביולוגי חולץ חי. תנועה מוגבלת עד סריקת זיהום, ראיון חשיפה ללחץ ובדיקת משמורת ראיות. חקירת המקלט מעדיפה את וקטור הגישה Atlas לפני אישור רפואי.
 
 ## Audio
 
-HE LOC HOLD: They saved the body first because the body knew the route.
+הם הצילו את הגוף קודם כי הגוף ידע את המסלול.
 
 ## Field Note
 
-HE LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+תיק לאחר יציאה: חילוץ ביולוגי הופך לפני חירות להסגר, חקירה, חילוץ מסלול ומשמורת payload.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/he_IL. -->

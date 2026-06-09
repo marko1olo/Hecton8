@@ -123,56 +123,56 @@ Text: Black Keel can confirm the player is alive without granting immediate resc
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: Draft ar_SA: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: يمكن لـ Black Keel تأكيد النجاة من دون منح إنقاذ فوري. النافذة المدارية القوية تحمل حزمة مفيدة واحدة، وسجل المطالبة يقرر قيمتها.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Draft de_DE: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel kann Überleben bestätigen, ohne sofortige Rettung zu gewähren. Ein starkes Orbitalfenster trägt ein nützliches Paket, und das Claim-Ledger entscheidet, was es wert ist.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Draft es_ES: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel puede confirmar supervivencia sin conceder rescate inmediato. Una ventana orbital fuerte lleva un paquete útil, y el libro de reclamación decide cuánto vale.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Draft fr_FR: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel peut confirmer la survie sans accorder de sauvetage immédiat. Une bonne fenêtre orbitale porte un seul paquet utile, et le registre de réclamation décide sa valeur.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: Draft he_IL: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel יכולה לאשר הישרדות בלי להעניק חילוץ מיידי. חלון מסלולי חזק נושא חבילה שימושית אחת, ופנקס התביעה מחליט כמה היא שווה.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Draft id_ID: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel bisa mengonfirmasi kamu hidup tanpa memberi penyelamatan langsung. Satu jendela orbit kuat membawa satu paket berguna, dan ledger klaim menentukan nilainya.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: Draft ja_JP: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keelは生存を確認できても、即時救助を認めるとは限らない。強い軌道ウィンドウは一つの有用なパケットだけを運び、その価値は請求台帳が決める。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: Draft ko_KR: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel은 생존을 확인할 수 있지만 즉시 구조를 허가하지는 않는다. 강한 궤도 창은 유용한 패킷 하나만 실어 나르고, 그 가치는 클레임 장부가 결정한다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Draft nl_NL: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel kan overleven bevestigen zonder directe redding te verlenen. Een sterk orbitaal venster draagt één bruikbaar pakket, en het claimledger beslist wat dat pakket waard is.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Draft pl_PL: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel może potwierdzić przeżycie bez natychmiastowego ratunku. Silne okno orbitalne niesie jeden użyteczny pakiet, a księga roszczeń decyduje, ile jest wart.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Draft pt_BR: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: A Black Keel pode confirmar sobrevivência sem conceder resgate imediato. Uma janela orbital forte carrega um pacote útil, e o livro de reivindicação decide quanto ele vale.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Draft ru_RU: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel может подтвердить выживание, не давая немедленного спасения. Сильное орбитальное окно несет один полезный пакет, а реестр претензии решает, сколько этот пакет стоит.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Draft uk_UA: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel може підтвердити виживання, не надаючи негайного порятунку. Сильне орбітальне вікно несе один корисний пакет, а реєстр претензії вирішує його вартість.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: Draft zh_CN: Black Keel can confirm survival without granting immediate rescue; one orbital window carries one useful packet.
+Text: Black Keel 可以确认你还活着，却不等于立即救援。强轨道窗口只能送出一个有用数据包，而索赔账本决定这个数据包值多少。

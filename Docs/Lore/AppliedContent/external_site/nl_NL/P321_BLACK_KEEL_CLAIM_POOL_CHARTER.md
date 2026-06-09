@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black Keel claim-poolcharter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Black Keel Claim-Pool Charter
+# Black Keel claim-poolcharter
 
-NL LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel is HECTON-8s hard-sci-fi-antwoord op het ontsnappingsschipprobleem. De speler heeft toegang tot een orbitaal asset, maar toegang is geen eigendom en nabijheid is geen redding. De carrier is schuldinfrastructuur: nuttig genoeg om ontsnapping voorstelbaar te maken, beperkt genoeg om elke terugkeerroute te verstrikken in claims, quarantaine en recoverywaarde.
 
 ## Scanner
 
-NL LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+De Black Keel is niet jouw schip. Het is een recovery-asset van de claim-pool met jouw naam in het schuldenboek.
 
 ## Terminal
 
-NL LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+CHARTERFRAGMENT / BLACK KEEL: autonome salvage carrier / bewaring: Aegir Reclamation Pool / contractortransport: toegestaan / rompeigendom: geweigerd / reddingsprioriteit: ondergeschikt aan insured receiver state, quarantaine-handshake en claim value.
 
 ## Audio
 
-NL LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+De carrier kwam niet voor jou. Hij kwam voor een claim waar jouw naam aan hangt.
 
 ## Field Note
 
-NL LOC HOLD: Use this on the first contract or carrier-status screen.
+Gebruik op het eerste carrier-statusscherm: toegang verleend, eigendom geweigerd, reddingsprioriteit voorwaardelijk, lien actief.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/nl_NL. -->

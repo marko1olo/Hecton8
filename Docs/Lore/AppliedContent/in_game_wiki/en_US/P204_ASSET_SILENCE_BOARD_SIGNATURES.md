@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Asset Silence Board Signatures
 
-Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Asset Silence Board records sit between a worker ledger and a public report. They do not create the loss; they decide which parts of the loss can travel. A redaction vote can leave load class, locker count, and claim value visible while muting witness names and route attachments. That is why these signatures belong beside lockers, redaction cards, and packet mute flags. Brigit Senn's signature does not make her a hidden commander. It identifies the lower office that converted recoverable human facts into asset-risk categories after relay review.
 
 ## Scanner
 
-A silence vote is not a gun. It can still make people disappear.
+Redaction vote card recovered: worker-name field muted, asset-risk category still visible, locker count retained. Packet visibility requires custody approval.
 
 ## Terminal
 
-SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: move witness-name attachment to asset-risk silence category after relay review. Retain load class, locker count and claim value. Release requires custody owner approval.
 
 ## Audio
 
-Erase the route and the body becomes cargo math.
+The board kept the crate count. They cut the names.
 
 ## Field Note
 
-Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Name gone, locker tag still there. Asset Silence Board voted on packet visibility, not on whether the worker existed.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/en_US. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Статус доказів salvaged-правди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Статус доказів salvaged-правди
 
-UA LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+Правда на Аегірі фізична. Це реєстратор, наполовину вплавлений у перебірку, камера шолома із сіллю в контактах, гермодвері, що відкрилися не з того боку. Ніщо з цього не стає правосуддям лише тому, що його знайшли. Deep Reach може назвати це оціночними даними. Страховики можуть назвати це забрудненням. Маршрутний офіс може оголосити це неприйнятним, якщо ланцюг зберігання рветься. Робота полягає не тільки в тому, щоб підняти доказ, а й у тому, щоб не дати перетворити його на вантаж.
 
 ## Scanner
 
-UA LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Пакет чорної скриньки: правда, доки його не торкнувся стіл претензій.
 
 ## Terminal
 
-UA LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: сирий salvage за замовчуванням стає матеріалом претензії. Публічний доказ потребує цілого хеша джерела, позначки тиску й часу, пакета свідка, ретрансляційного нотаріуса поза контролем заявника та ланцюга зберігання, що пережив втрату судна, розсіл і ручні правки.
 
 ## Audio
 
-UA LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Тіло стає доказом лише тоді, коли комусь не вдалося неправильно його підшити.
 
 ## Field Note
 
-UA LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Факт із глибини небезпечний лише тоді, коли зберігає своїх свідків.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/uk_UA. -->

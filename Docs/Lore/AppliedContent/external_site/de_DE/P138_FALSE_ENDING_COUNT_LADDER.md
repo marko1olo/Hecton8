@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Leiter der falschen Enden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Leiter der falschen Enden
 
-DE LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+Die Leiter der falschen Enden hält Replay lesbar: mehrere Ausgänge, vier große unvollständige Familien und das Atlas-Becken als Schwerpunkt.
 
 ## Scanner
 
-DE LOC HOLD: Four major false families before the deep Atlas resolutions.
+ENDLEITER // Materialauszahlung, Teilrückkehr, Konzernfang oder Quarantäne, öffentliches Ledger-Leck. Vier falsche Familien vor den tiefen Atlas-Antworten.
 
 ## Terminal
 
-DE LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIER-UMFANG: viele Ausgänge markieren, aber in klare Familien gruppieren. Materialauszahlung, Teilausstieg/Rückkehr, Konzernfang/Quarantäne und öffentliches Ledger-Leck liegen unter den Payload-Lösungen im Atlas-Becken.
 
 ## Audio
 
-DE LOC HOLD: The dossier can mark many exits before it marks an answer.
+Das Dossier kann Ausgänge markieren, bevor es eine Antwort markiert.
 
 ## Field Note
 
-DE LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Genug Enden für Spielstile. Nicht genug, um Wahrheit billig zu machen.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/de_DE. -->

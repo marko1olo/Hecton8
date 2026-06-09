@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "عدة أدلة محطة طابور الإخلاء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Evacuation Queue Terminal POI Kit
+# عدة أدلة محطة طابور الإخلاء
 
-AR LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+محطة طابور الإخلاء ليست مهمة لأنها تقول إن الناس انتظروا. أهميتها أن حالة الباب، وانحراف الساعة، وعدد العمال وسعة المسار تختلف بطرق يمكن فحصها في الموقع.
 
 ## Scanner
 
-AR LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+عدة أدلة نقطة اهتمام: تثبت محطة الطابور التأخير عبر حالة الباب، وانحراف الساعة، وتباين العمال، وسعة المسار.
 
 ## Terminal
 
-AR LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+عدة محطة الطابور: قائمة حجز مسار، تأخير إطلاق الحجر، ملاحظة وزن Atlas، عدم تطابق عدد العمال، وسم نزاع salvage، شريط حالة فتحة، بقايا شارات.
 
 ## Audio
 
-AR LOC HOLD: A queue is a body count with cleaner formatting.
+الطابور عدد جثث بتنسيق أنظف.
 
 ## Field Note
 
-AR LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+ملاحظة مارودر: لا تخلع شريط الفتحة قبل مسح بقايا الشارات. المعدن سيدفع أقل من الطابع الزمني.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ar_SA. -->

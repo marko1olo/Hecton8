@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Bewijskit Brinecanyon Pompkathedraal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Bewijskit Brinecanyon Pompkathedraal
 
-NL LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+De pompkathedraal geeft middendiepte schaal een taak. De operator moet gantries oversteken, een brinepocket stabiliseren, dichtheidsglas lezen en een routehoudklok vergelijken met een arbeiderswachtrijboek. Geen object is decoratie; elk verandert of de vertraging op weer, nalatigheid of claimbescherming lijkt.
 
-## Scanner
-
-NL LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-NL LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-NL LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-NL LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Bewijs blijft sterker wanneer het de oceaan respecteert. De Great Tide brak muren en verplaatste water. De kamer ontkent dat niet. Zij toont wat het schema rond de vloed deed: geaccepteerde marge, late pompstart, vastgehouden route, volle wachtrij. De POI wordt herkenningspunt omdat de machine de volgorde van werk nog kent.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/nl_NL. -->

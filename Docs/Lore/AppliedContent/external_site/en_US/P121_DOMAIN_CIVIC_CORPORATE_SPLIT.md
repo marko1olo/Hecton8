@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Domain Civic-Corporate Split
 
-The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue.
+The Domain Civic-Corporate Split is the law behind HECTON-8's isolation: not a crowded empire, but a few distant authorities with incompatible claims, delayed packets and enough ambiguity for Deep Reach to leave workers under the ocean.
 
 ## Scanner
 
-Legal map. Same species, different owners of truth.
+Legal map: one species, several owners of record.
 
 ## Terminal
 
-DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core holds old-law finance and certification; Centauri carries the first colony charters; Barnard Yards normalized salvage labor; Tau Ceti can turn evidence into public law; Luyten controls packet custody; Aegir remains a corporate claim until someone proves otherwise.
 
 ## Audio
 
-The farther you go, the more the law becomes a receipt.
+The farther the signal travels, the more law sounds like accounting.
 
 ## Field Note
 
-The domains do not need dozens of names. They need enough pressure to make rescue political.
+Rescue is not blocked by distance alone. It is blocked by who is allowed to call the stranded people citizens.
 
 <!-- External Site; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/en_US. -->

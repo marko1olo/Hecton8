@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Ruang Pompa Aneks Dangkal P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Ruang Pompa Aneks Dangkal P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+Aneks Dangkal P-63 adalah ruang pertama yang bisa dibuat berguna lagi. Ini bukan ruang hadiah, melainkan mesin lelah: engkol bilge manual, leher katup macet, bekas clamp sealant dingin, dan fabricator yang hanya mengakui perbaikan berisiko rendah sampai air turun di bawah garis intake.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+Ruangan ini mengajarkan aturan pertama salvage HECTON-8: udara datang dari perbaikan, bukan keberuntungan. Pompa yang bekerja mengeringkan banjir setinggi mata kaki, membuka loker alat tua, dan memberi alasan fisik untuk mempercayai aneks beberapa menit lagi. Terminal masih menyebut tugas ini intrusi air kecil. Dinding berkata lain.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/id_ID. -->

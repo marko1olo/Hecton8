@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Public Ledger Leak
 
-The Public Ledger Leak is not a perfect whistleblower fantasy. It is a packet leaving on a narrow relay window with a witness hash, enough custody to be hard to deny, and too many missing pieces to be safe. Tau Ceti can make the record public long after it can save anyone in the water.
+Public Ledger Leak is not a perfect whistleblower fantasy. It is a damaged packet leaving before full custody, carrying enough proof to make denial expensive and enough missing context to make every reader dangerous. Tau Ceti may make the record public long after it can save anyone still in the water.
 
-That delay is the point. Deep Reach cannot simply delete the claim, but the player also cannot decide who uses it next. Insurers, rivals, civic courts, Marauder pools and corporate offices will all read the same wound differently. This ending makes truth harder to bury and harder to own.
+That delay is the point. Deep Reach loses the cleanest cover-up, but the witness loses ownership too. The same record can become prosecution, leverage, insurance math, domain propaganda or a new contract. This route makes truth harder to bury and harder to possess.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/en_US. -->

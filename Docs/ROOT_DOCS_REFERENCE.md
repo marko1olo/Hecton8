@@ -1,6 +1,6 @@
 ﻿# Root Docs Reference
 
-Date: 2026-06-02
+Date: 2026-06-09
 Status: STATIC POLICY
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_FILESYSTEM
@@ -58,6 +58,9 @@ Pre-cleanup verbose root copies from `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-2
 ## Evidence Placement
 
 - `Docs/Reports` is evidence storage, not authority.
+- `Docs/AgentLogs` is an explicit-mode output surface for current tools, validators, dumps, and telemetry. It is not authority; do not promote its contents into root doctrine, and do not clean reusable tool targets without exact path/name reference proof.
+- `Docs/Tasks` stores explicit-mode task status records and historical handoff notes. It is not authority; read exact status files only when the user, a current report, or cleanup proof requires that ID, and archive stale records only after exact reference searches.
+- `taskslocal` stores standalone dispatch packets and historical batch provenance. It is not authority; read exact packet paths only when explicitly assigned, cited, or creating/judging a batch under `HECTON8_ORCHESTRATOR.md`, and archive batches only after exact reference searches.
 - Current build logs, scanner JSON, report chains, prompt extracts, status files, and local telemetry must not be promoted into root docs as prose.
 - Durable facts are promoted into `Docs/ARCHITECTURE` or another stable contract after source/proof review.
 - A scoped green report is not a global green build.

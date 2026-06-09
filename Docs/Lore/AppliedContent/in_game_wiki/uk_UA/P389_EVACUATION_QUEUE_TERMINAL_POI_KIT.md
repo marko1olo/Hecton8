@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Набір доказів термінала евакуаційної черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Evacuation Queue Terminal POI Kit
+# Набір доказів термінала евакуаційної черги
 
-UK LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Термінал евакуаційної черги цінний не тому, що повідомляє про очікування. Він цінний тому, що стан дверей, дрейф годинника, число робітників і пропускна здатність маршруту розходяться так, що це можна перевірити на місці.
 
 ## Scanner
 
-UK LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Набір доказів POI: термінал черги доводить затримку через стан дверей, дрейф годинника, нестикування робітників і пропускну здатність маршруту.
 
 ## Terminal
 
-UK LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+НАБІР ТЕРМІНАЛА ЧЕРГИ: список утримання маршруту, затримка зняття карантину, нотатка ваг Atlas, нестикування числа робітників, мітка salvage-конфлікту, смуга стану люка, залишок бейджа.
 
 ## Audio
 
-UK LOC HOLD: A queue is a body count with cleaner formatting.
+Черга - це рахунок тіл у чистішому форматі.
 
 ## Field Note
 
-UK LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Нотатка мародера: не відривай смугу люка, доки не проскановано залишок бейджа. Метал заплатить менше, ніж часова мітка.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/uk_UA. -->

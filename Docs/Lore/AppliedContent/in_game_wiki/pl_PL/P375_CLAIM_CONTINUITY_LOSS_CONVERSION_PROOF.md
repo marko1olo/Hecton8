@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Konwersja straty dla ciągłości claim"
+title: "Konwersja strat przy ciągłości roszczenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Konwersja straty dla ciągłości claim
+# Konwersja strat przy ciągłości roszczenia
 
-Łańcuch dowodu kończy się konwersją. Deep Reach może przyznać szkodę i zachować własność, jeśli pracownicy staną się stratami, dowód stanie się material custody, a claim pozostanie żywy. Gracz niesie więc nie tylko prawdę. Niesie coś, co system umie kupić.
+Łańcuch kończy się w księdze, bo księga potrafi przetrwać wszystko inne. Pracownicy stają się stratą nieodzyskiwalną, uszkodzone moduły stają się dozorem materiału, a dowody pozostają przy roszczeniu. Ten, kto niesie te dokumenty, nie niesie sentymentu. Niesie problem dla każdego odbiorcy, który chce roszczenia bez ciał.
 
 ## Scanner
 
-Odzyskano stempel biura strat. Ledger przetrwał lepiej niż pracownicy, którym zmienił nazwę.
+Odzyskano stempel biura strat. Status pracowników zmienia się na niemożliwy do odzysku, zanim dozór dowodów opuszcza aktywne roszczenie.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+STRATA KEELMARK // CIĄGŁOŚĆ ZACHOWANA. Biologiczna siła robocza przekształcona w stratę nieodzyskiwalną. Dozór materiału i dozór dowodów aktywne do przypisania odbiorcy.
 
 ## Audio
 
-Tutaj ludzie stali się czystą kolumną.
+Tutaj nazwiska stały się czystą kolumną.
 
 ## Field Note
 
-Notatka Maraudera: ledger może pamiętać zmarłych i nadal ich wydawać.
+Notatka szabrownika: księga może pamiętać zmarłych i nadal ich wydawać.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pl_PL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Public Combine"
+title: "Kombinat Publik Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Public Combine
+# Kombinat Publik Deep Reach
 
-ID LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Wajah kombinat publik Deep Reach cukup luas untuk tampak berguna dan cukup kering untuk tampak tak bersalah. Ia membangun pelat rute, layanan habitat, logistik tekanan, dan program kontinuitas bernada sipil. Di lapisan ini, koloni jarang melihat satu penjahat. Ia melihat kop surat, segel pemeliharaan, slogan teraudit, dan nama yang bisa mengklaim infrastruktur saat pekerjaan menguntungkan dan jarak saat pekerjaan menjadi bukti.
 
 ## Scanner
 
-ID LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Pelat piagam publik: operator infrastruktur, bukan tergugat ekstraksi.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+CATATAN KOMBINAT PUBLIK: Deep Reach tampil sebagai infrastruktur rute, industri samudra, logistik habitat tekanan, dan layanan kontinuitas. Pekerjaan yang membawa tanggung jawab didistribusikan ke meja anak usaha, bahasa asuransi, kontraktor kustodi, dan kantor recovery.
 
 ## Audio
 
-ID LOC HOLD: A clean title is the cheapest pressure suit.
+Papan pintu berkata utilitas. Kunci di belakangnya berkata kepemilikan.
 
 ## Field Note
 
-ID LOC HOLD: The seal is clean. The rooms under it are not.
+Nama bersih itu bukan kebohongan. Itu ruangan tempat kotoran diarsipkan di tempat lain.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/id_ID. -->

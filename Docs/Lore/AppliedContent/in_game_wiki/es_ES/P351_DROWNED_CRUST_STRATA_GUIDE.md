@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Guía de estratos de corteza ahogada
 
-La corteza ahogada es la historia legible de HECTON-8: cortes viejos de colonia, repisas de colapso de hielo, costuras de pressure-glass y bandas minerales muestran dónde una ruta aguanta, se corta o falla al tocarla.
+La corteza ahogada es la historia legible de HECTON-8. Viejos cortes coloniales, repisas de colapso de hielo, costuras de vidrio de presión y bandas minerales muestran dónde una ruta aguanta, se cizalla o falla al tocarla. Las cuadrillas salvage la leen como un libro contable dañado: qué se construyó, qué cayó y qué ha estado moliendo el océano desde entonces.
 
 ## Scanner
 

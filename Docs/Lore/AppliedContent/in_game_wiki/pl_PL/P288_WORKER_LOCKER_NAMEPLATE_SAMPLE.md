@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Worker Locker Nameplate Sample"
+title: "Próbka tabliczki szafki pracownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Worker Locker Nameplate Sample
+# Próbka tabliczki szafki pracownika
 
-PL LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Próbka tabliczki szafki pracownika pokazuje, jak HECTON-8 pamięta ludzi przez przedmioty, które nadal miały zadania. Ren Okoye nie jest wprowadzony biografią. Tabliczka szafki daje trasę, certyfikację narzędzia, żeton posiłku, znak rozmiaru rękawicy i pasek płacy zeszlifowany przez kogoś, kto nie wiedział, które szczegóły mają znaczenie. Dlatego artefakt działa. Dowodzi, że korporacyjne wymazanie bywa niezdarne: payline znika, ale clamp route zostaje; status jest nadpisany, ale znak rękawicy nadal pasuje do prawdziwej dłoni. Gracz powinien najpierw odczytać nazwisko przez pracę, a potem poczuć przemoc brakującej linii konta.
 
 ## Scanner
 
-PL LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Tabliczka Ren Okoye zachowuje nazwisko, bo linię płacy łatwiej było wymazać niż pracę.
 
 ## Terminal
 
-PL LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-PL LOC HOLD: Name retained. Payline erased.
+Nazwisko zachowane. Linia płacy wymazana. Praca nadal przypięta.
 
 ## Field Note
 
-PL LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / żeton posiłku pod taśmą. Pasek płacy zeszlifowany; znak rozmiaru rękawicy nadal widoczny.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/pl_PL. -->

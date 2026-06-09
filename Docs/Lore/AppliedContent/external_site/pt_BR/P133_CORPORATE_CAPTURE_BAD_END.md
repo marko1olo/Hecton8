@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Captura corporativa: resgate limpo
 
-A captura corporativa funciona porque começa como ajuda. O sinal é limpo, o recolhimento é profissional, e a sala tem ar. Então a ordem das operações fica clara: coordenadas primeiro, XO custody depois, acesso Atlas em terceiro, bem-estar do contratante após revisão.
+Captura corporativa assusta porque é competente. A equipe de resgate não parece saqueadora. Tem procedimento, superfícies limpas, linguagem médica e direito plausível de pedir custody. Por isso a armadilha fecha sem tiro.
 
-O oceano para de esmagar o jogador, mas Deep Reach começa a preservar a história. O testemunho é selado sob linguagem de contaminação, a custody do payload se move antes do debrief médico, e cada nome que o jogador carregou vira uma tela de responsabilidade. Isso não é morte. É sobreviver dentro da máquina que precisava de silêncio.
+A sequência diz a verdade. Coordenadas são pedidas antes do pulso. Custody XO e acesso Atlas se movem antes do testemunho. O contratado está vivo, mas a história é selada sob revisão de contaminação, e cada nome carregado vira uma tela de responsabilidade. Não é morte. É sobrevivência dentro da instituição que precisava de silêncio.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/pt_BR. -->

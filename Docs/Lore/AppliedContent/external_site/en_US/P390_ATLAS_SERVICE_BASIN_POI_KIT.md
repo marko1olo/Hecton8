@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Service Basin POI Kit"
+title: "Atlas Service Basin Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Service Basin POI Kit
+# Atlas Service Basin Evidence Kit
 
-The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+The service basin earns its size through work. Rails carry repair tools. Tissue-iron sealant closes pressure cuts. Growth clamps hold panels classified as dead hardware. The receiver socket waits inside a space that still looks like a maintenance bay if the operator follows the bolts instead of the shape.
 
-## Scanner
-
-POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+The final conflict is classification, not mysticism. Old colony categories, Atlas repair logic, payload receiver rules and severance risk all touch the same hardware. A successful repair can open the path and contaminate the record in one motion. The POI makes that cost visible in metal, tissue, labels and sockets.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/en_US. -->

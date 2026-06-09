@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Captura corporativa: rescate limpio
 
-Captura corporativa es un mal final construido desde un rescate plausible. El jugador sale vivo del océano, pero la autoridad que responde trata al testigo como material de contención y al payload como el paciente real.
+La captura corporativa empieza exactamente como debería empezar la ayuda. La señal es limpia, el vector de pickup profesional y la sala tiene aire respirable. Luego el orden de preguntas expone el rescate: coordenadas primero, custody segundo, acceso Atlas tercero, bienestar después de revisión. El contratista sale vivo del océano, pero la autoridad que responde trata al testigo como contaminación y al payload como paciente. El testimonio se sella antes de convertirse en registro público. El cuerpo sobrevive a la presión para entrar en una máquina más silenciosa de control de pruebas.
 
 ## Scanner
 
-Fuente de recuperación verificada: proxy de Deep Reach. Payload solicitado antes del control de bienestar.
+Fuente de recuperación verificada: proxy Deep Reach. Payload solicitado antes del pulso.
 
 ## Terminal
 
-RECOGIDA DEEP REACH: el equipo de recuperación acepta coordenadas, custody XO y llave de acceso Atlas antes de revisar el bienestar del contratista. Testimonio del contratista sellado bajo protocolo de contaminación.
+PICKUP DEEP REACH: equipo de recuperación solicita coordenadas, custody XO, clave de acceso Atlas y sello de payload Seed antes de revisar bienestar del contratista. Testimonio del testigo sellado bajo protocolo de contaminación.
 
 ## Audio
 
-La sala limpia no es para ti.
+La sala limpia no es para el testigo.
 
 ## Field Note
 
-Un rescate limpio que pide coordenadas primero es captura con mejor aire.
+Un rescate limpio que pide coordenadas primero es custody con aire templado.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/es_ES. -->

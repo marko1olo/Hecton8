@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: P-63 Pump Room Work Order"
+title: "פקודת עבודה חדר משאבות P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: P-63 Pump Room Work Order
+# פקודת עבודה חדר משאבות P-63
 
-HE LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+פקודת עבודה חדר משאבות P-63 היא HECTON-8 בקנה מידה קטן: מים בחדר, כלי אחד ביד, קו acoustic return ונתיב שאי אפשר לסמוך עליו עד שהסביבה עונה. היא הופכת מכניקות להרגל של מושבה.
 
 ## Scanner
 
-HE LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+התיקון הראשון נקרא כמו הרגל של מושבה: לשאוב, לאטום, להקשיב, לחתוך רק אם החדר מפסיק לשקר.
 
 ## Terminal
 
-HE LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: לנקות sump; לטלא cold seam; לאמת return pinger; לחתוך fused latch רק אחרי שהלחץ מחזיק; להדפיס gasket ממלאי מקומי; לסמן route safe אחרי שלושה חזרות acoustic return. ראשי התיבות של המפקח חסרים תחת כתם מים.
 
 ## Audio
 
-HE LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+משאבה קודם. איטום שני. אם זה שר, תפסיק לחתוך.
 
 ## Field Note
 
-HE LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+החצי התחתון של הלוח ספוג מים. שורת החיתוך עדיין קריאה כי מישהו הקיף אותה פעמיים וכתב אם זה שר, עצור.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/he_IL. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "payload 坐标出售接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# payload 坐标出售接收协议
 
-ZH LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+坐标出售协议把 HECTON-8 当作可回收财产。它把最终 payload 转换成 Deep Reach 可用的接收包：盆地向量、置信网格、证据摘要和 salvage 访问等级。发送者获得钱和债务缓解。Deep Reach 获得接近地图，以及一条更干净地回到索赔的路。
 
 ## Scanner
 
-ZH LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+坐标出售路线已武装。盆地向量、置信地图和证据摘要转向 Deep Reach Recovery Compliance。
 
 ## Terminal
 
-ZH LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+PAYLOAD 接收方 // 坐标出售。接收方：Deep Reach Recovery Compliance。传输盆地向量、置信网格、XO proof digest、salvage 访问等级。返回付款收据、留置减少、回收优先印章。收据锁定时转交访问地图。
 
 ## Audio
 
-ZH LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+付款清算。地图转交。工人总账仍然开启。
 
 ## Field Note
 
-ZH LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+拾荒者记录：如果第一行是金额，就读第二行。第二行是 access map transferred。
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/zh_CN. -->

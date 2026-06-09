@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_habitat_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS176_FIRST_HABITAT_MARK_ARTICLES.md |
 | Speaker | Habitat scanner, biological surface note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter inspection |
@@ -39,7 +39,7 @@ MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf.
 
 The edge has dried before the center did, leaving a border that records changing moisture. That can matter for storage even when nobody can name the organism.
 
-A dry edge can still mark a wet place.
+The dry border is still storage evidence, not clearance.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ NO CLEAN STOCK
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| ar_SA | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| de_DE | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| es_ES | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| fr_FR | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| he_IL | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| id_ID | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| ja_JP | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| ko_KR | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| nl_NL | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| pl_PL | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| pt_BR | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| ru_RU | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| uk_UA | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
-| zh_CN | draft_machine_or_llm | MOLD EDGE // Dry border around dark center. Keep clean stock off this shelf. |
+| ar_SA | draft_machine_or_llm | حافة عفن // حد جاف حول مركز داكن. أبعد المخزون النظيف عن هذا الرف. |
+| de_DE | draft_machine_or_llm | SCHIMMELRAND // Trockener Rand um dunkle Mitte. Saubere Vorraete nicht auf dieses Regal. |
+| es_ES | draft_machine_or_llm | BORDE DE MOHO // Borde seco alrededor del centro oscuro. Manten el stock limpio fuera de esta balda. |
+| fr_FR | draft_machine_or_llm | BORD DE MOISISSURE // Bord sec autour du centre sombre. Garder le stock propre hors de cette etagere. |
+| he_IL | draft_machine_or_llm | שפת עובש // גבול יבש סביב מרכז כהה. הרחק מלאי נקי מהמדף הזה. |
+| id_ID | draft_machine_or_llm | TEPI JAMUR // Batas kering mengitari pusat gelap. Jauhkan stok bersih dari rak ini. |
+| ja_JP | draft_machine_or_llm | カビ縁 // 暗い中心の周囲に乾いた境界。清潔な備蓄をこの棚に置かない。 |
+| ko_KR | draft_machine_or_llm | 곰팡이 가장자리 // 어두운 중심 주위에 마른 경계. 깨끗한 비축품은 이 선반에 두지 않는다. |
+| nl_NL | draft_machine_or_llm | SCHIMMELRAND // Droge rand rond donker midden. Houd schone voorraad van deze plank. |
+| pl_PL | draft_machine_or_llm | KRAWEDZ PLESNI // Sucha granica wokol ciemnego srodka. Nie kladz czystych zapasow na tej polce. |
+| pt_BR | draft_machine_or_llm | BORDA DE MOFO // Borda seca ao redor do centro escuro. Mantenha estoque limpo fora desta prateleira. |
+| ru_RU | draft_machine_or_llm | КРАЙ ПЛЕСЕНИ // Сухая граница вокруг темного центра. Чистые запасы не клади на эту полку. |
+| uk_UA | draft_machine_or_llm | КРАЙ ПЛІСНЯВИ // Суха межа навколо темного центру. Чисті запаси не клади на цю полицю. |
+| zh_CN | draft_machine_or_llm | 霉斑边缘 // 暗心周围有干边。洁净物资不要放在这层架上。 |

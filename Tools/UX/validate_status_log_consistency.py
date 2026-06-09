@@ -19,6 +19,13 @@ AGGREGATE_PATH = ROOT / "Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEE
 CHECKED_TASK_PATTERN = re.compile(r"^- \[x\] Task\s+(\d+)\s+-", re.MULTILINE)
 
 
+def _read_required_text(path: Path, failures: list[str]) -> str:
+    if not path.exists():
+        failures.append(f"missing required artifact: {path.relative_to(ROOT)}")
+        return ""
+    return path.read_text(encoding="utf-8-sig")
+
+
 def _self_validation_failed(validation: object) -> bool:
     if not isinstance(validation, dict):
         return True
@@ -86,11 +93,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    failures = validate_status_log_consistency(
-        STATUS_PATH.read_text(encoding="utf-8-sig"),
-        RATIONALE_PATH.read_text(encoding="utf-8-sig"),
-        LOG_PATH.read_text(encoding="utf-8-sig"),
-        BLOCKER_PATH.read_text(encoding="utf-8-sig"),
+    missing_failures: list[str] = []
+    failures = missing_failures + validate_status_log_consistency(
+        _read_required_text(STATUS_PATH, missing_failures),
+        _read_required_text(RATIONALE_PATH, missing_failures),
+        _read_required_text(LOG_PATH, missing_failures),
+        _read_required_text(BLOCKER_PATH, missing_failures),
         json.loads(AGGREGATE_PATH.read_text(encoding="utf-8-sig")),
     )
 

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Bandas de daño de transcripción de audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Bandas de daño de transcripción de audio
 
-ES LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Un registro de voz de HECTON-8 no está completo solo porque tenga sonido. La transcripción debe mostrar sus heridas.
 
-## Scanner
+Las bandas de daño hacen honestas esas heridas. Pueden marcar estática, pérdida de paquetes, censura legal, distorsión por presión, mala separación de voces, traducción automática fallida o edición posterior. Sin esa capa, cada grabación rota se vuelve claridad falsa o misterio falso. Con ella, el jugador ve la diferencia entre lo que el mundo perdió y lo que alguien decidió quitar.
 
-ES LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+La regla es estricta porque el juego depende de pruebas. El daño puede ocultar nombres, números y cargas con spoilers. Puede crear sospecha. Puede hacer que una ruta parezca peligrosa antes de ver la puerta. Pero la transcripción restante debe conservar la acción: no abras la esclusa, vuelve por la escalera de servicio, cuenta oxígeno a mano, ignora la luz verde de estado, deja visible la línea oficial.
 
-## Terminal
-
-ES LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-ES LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-ES LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Para localización y accesibilidad, la banda forma parte del contenido. Una transcripción traducida debe conservar rol del hablante, presión temporal y advertencias legibles. La censura solo es atmósfera cuando el jugador aún puede actuar. Si no, es una interfaz rota fingiendo ser lore.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/es_ES. -->

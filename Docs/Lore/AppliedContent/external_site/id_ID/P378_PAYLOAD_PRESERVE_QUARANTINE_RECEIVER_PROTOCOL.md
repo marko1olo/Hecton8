@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Protokol Penerima Jaga Karantina Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Protokol Penerima Jaga Karantina Payload
 
-ID LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Jaga karantina adalah rute yang hati-hati, dan hati-hati tidak berarti aman. Payload memblokir transfer langsung Deep Reach dan menjaga vektor koordinat tetap tersegel. Ekologi terkait Atlas tetap cukup utuh untuk tinjauan, dan cekungan tidak diserahkan kepada pembeli pemulihan lewat tanda terima.
 
-## Scanner
-
-ID LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-ID LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-ID LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Bahayanya bersifat institusional. Escrow karantina dapat hidup lebih lama daripada keadaan darurat yang membenarkannya. Cekungan terlindungi dapat menjadi cekungan tertahan, lalu cekungan ditugaskan, lalu klaim dengan bahasa yang lebih baik. Rute ini menyelamatkan waktu dan struktur hidup, tetapi meninggalkan tanda kustodi di seluruh masa depan.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/id_ID. -->

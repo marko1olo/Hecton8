@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Peran Pasang Orbit Tengah HECTON-8
 
-HECTON-8 duduk di tengah yang menguntungkan. Orbitnya memberi Deep Reach laut yang mendinginkan mesin, menyembunyikan aset, memberi makan industri tekanan, dan menggerakkan kimia yang cukup untuk membenarkan klaim. Orbit yang sama memberi koloni langit-langit yang tidak pernah diam. Pasang membebani ngarai servis, melenturkan kerak tenggelam, merusak jadwal bersih, dan menentukan kapan massa naik boleh pergi.
+HECTON-8 berada di tengah tangga Aegir yang menguntungkan. Orbit itu memberi Deep Reach samudra yang dapat mendinginkan mesin, menyembunyikan aset, memberi makan industri tekanan, dan menggerakkan cukup kimia untuk membenarkan klaim. Orbit itu juga memberi koloni langit-langit yang tidak pernah berhenti bergerak. Pasang membebani ngarai layanan, melenturkan kerak tenggelam, merusak jadwal bersih, dan menentukan kapan massa naik boleh pergi.
+
+Penyelam yang terdampar tidak hanya berada jauh di bawah air. Tubuh berada di bawah langit yang terus mengubah kontrak. Jendela penyelamatan yang baik tidak pernah sekadar belas kasihan plus dorong; ia adalah fase pasang, penerimaan carrier, noise badai, bahasa kustodi, margin panas bahan bakar, dan pertanyaan buruk tentang siapa yang membayar jika kapsul tiba terkontaminasi, terlambat, atau penuh bukti.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/id_ID. -->

@@ -31,6 +31,19 @@ Survival owns physiology and survival resources:
 
 Survival does not own physics forces, render glitch passes, audio playback, UI text, tool hit truth, save layout, or vehicle motion. It publishes stable survival state. Other systems present or persist it through their own routes.
 
+Current runtime source route:
+
+- `HectonSurvivalSystem` is the player survival owner for oxygen, integrity, hunger, thirst, pressure/depth exposure, death record telemetry, save/load participation, environmental resistance reads, blood-scent signal publication, and last-life black-box data.
+- `HectonSurvivalContract` owns shared survival constants and validated unit conversions for oxygen, pressure, gas, stress, hibernation, darkness, and pressure-damage formulas.
+- `SaveDataPlayerSurvivalSanitizer` owns save DTO sanitation/equality for persisted player survival telemetry. Save layout belongs to the save domain; survival only fills and restores its owned fields.
+- `SurvivalHUDController` consumes `HectonSurvivalSystem` through player context/hot-swap fallback and renders bars in late frame. It does not own survival truth.
+- `HazardZoneManager` consumes the survival read model for resistance/depth context and hazard clarity. Hazards do not directly mutate survival state outside the owner route.
+- `ShinobuPhysiologyRuntime`, `ShinobuMetabolismRuntime`, and `ShinobuSuitIntegrityRuntime` are adjacent physiology/suit/metabolism routes. They may feed or mirror survival pressure, but they must not create a second player survival source of truth without an explicit bridge contract.
+
+Lifecycle requirements: register/unregister slow tick, late-frame tick, save participant, hot-swap listener, blood-scent spatial signals, and Vault-backed database handles symmetrically across enable/disable, scene unload, domain reload, and service replacement.
+
+Failure paths that must stay visible: no player context, missing survival component, missing DataVault, missing save service, duplicate survival owner, stale player transform, bad/non-finite stat values, save DTO version gaps, repeated subscribe/unsubscribe, hazard resistance fallback, oxygen/integrity reaching zero, and black-box dump failure.
+
 ## Core Channels
 
 Survival and damage must not collapse into one health number.

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Bewijskit Evacuatiewachtrijterminal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Evacuation Queue Terminal POI Kit
+# Bewijskit Evacuatiewachtrijterminal
 
-NL LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+De wachtrijterminal moet voelen als een kamer gebouwd om lijden administratief netjes te maken. De terminal noemt routeholds, quarantainevrijgavevertraging, Atlas-weging en arbeidersaantallen, maar de muren dragen het vuilere dossier: hatchstatusstrip, badgeresidu, ontbrekende capaciteitsmarkeringen en een salvage-tag op een paneel dat iemand nog wil verkopen.
 
-## Scanner
-
-NL LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-NL LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-NL LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-NL LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+De POI krijgt gewicht door conflict. Een onderdeel trekken kan een route openen of schuld betalen, maar ook het oppervlak vernietigen dat vertraging bewijst. De juiste lezing is geen bekentenis. Het is een set mismatched objecten die de operator laat kiezen wat de duik overleeft.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/nl_NL. -->

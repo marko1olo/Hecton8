@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Quiet Salvage Contract Seed"
+title: "Seed Kontrak Salvage Tenang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quiet Salvage Contract Seed
+# Seed Kontrak Salvage Tenang
 
-ID LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Salvage Tenang adalah keluarga kontrak dengan alarm awal lebih sedikit dan bahasa kepemilikan lebih keras. Rute memberi operator waktu memperbaiki, bernapas, dan membaca, tetapi tag sampel, log pinger, dan loker bukti terikat ke receiver sebelum klaim besar pertama dibayar.
 
 ## Scanner
 
-ID LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Seed kontrak: salvage tenang. Paparan badai rendah, pembayaran awal bersih, dan custody ketat pada apa pun yang membuktikan riwayat rute.
 
 ## Terminal
 
-ID LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: jendela badai tenang, slot bathydrop pra-bersih, kontak fauna awal berkurang, kunci custody lebih kuat, klausul audit receiver-first aktif.
 
 ## Audio
 
-ID LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Air tenang berarti seseorang sudah memindahkan risiko ke dokumen.
 
 ## Field Note
 
-ID LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Catatan marauder: air tenang membuat kebohongan papan kontrak terdengar lebih jelas.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/id_ID. -->

@@ -1,92 +1,88 @@
-<!-- localization_status: draft_machine_or_llm -->
-# BIOFOULING, FILM KONDUKTIF, DAN KULIT HIDUP RERUNTUHAN
+<!-- localization_status: draft_machine_or_llm_id_ID -->
+# BIOFOULING, FILM KONDUKTIF, DAN PERMUKAAN HIDUP
 
-> **Sumber:** lampiran kontrol kontaminasi Deep Reach, fragmen ekologi pemeliharaan Atlas, kartu lapangan Marauder untuk kerikan dan sampel.  
-> **Suara:** mantan perwira sistem lingkungan, ditimpa oleh kru penyelamatan yang belajar pertumbuhan mana yang menjaga ruangan tetap hidup.  
-> **Catatan peninjau:** biofouling di HECTON-8 bukan hiasan. Itulah cara infrastruktur terbengkalai menjadi habitat, bahaya, bukti, dan kadang perbaikan yang tidak pernah diotorisasi.
+> **Sumber:** apendiks kontrol kontaminasi Deep Reach, fragmen ekologi pemeliharaan Atlas, kartu lapangan Marauder untuk kerik dan sampel, serta catatan karantina Black Keel tentang permukaan salvage basah.  
+> **Cakupan:** bagaimana pertumbuhan di infrastruktur terbengkalai menjadi sealant, jalur sinyal, sumber makanan, bacaan palsu, dan risiko bukti.  
+> **Pemakaian lapangan:** baca sebelum mengerik, memanaskan, memberi makan, atau menyegel pertumbuhan di pintu, kabel, viewport, pompa, loker, atau permukaan bertanda claim.
 
 ---
 
-## 1. Reruntuhan menumbuhkan kulit
+## 1. Logam telanjang tidak tetap telanjang
 
-Apa pun yang ditinggalkan di air HECTON-8 mulai menumbuhkan kulit.
+Apa pun yang ditinggalkan di air HECTON-8 mulai mengambil permukaan.
 
-Lapisan pertama tidak dramatis. Film berminyak pada pegangan. Kilau hijau kusam di alur gasket. Debu mineral tersangkut pada luka kabel. Noda cokelat di sekitar inlet pompa yang tampak seperti kotoran sampai melentur ketika pompa bangun. Tim pemeliharaan Deep Reach dulu mengikis tanda-tanda ini karena peralatan bersih tampak seperti peralatan terkendali. Setelah runtuh, tanda-tanda itu berhenti menjadi kosmetik.
+Lapisan pertama mudah luput: gemuk kusam di pegangan, film hijau di alur gasket, debu garam tersangkut di torehan kabel, noda cokelat di sekitar inlet pompa, renda mineral pucat di tepi jendela tekanan. Kru lelah menyebutnya kotoran. Kru baik bertanya apa yang sedang dilakukannya.
 
-Biofouling adalah nama untuk semua yang melekat, makan, menyegel, menodai, menghantar, menyembunyikan, dan mengingat pada permukaan. Di HECTON-8, itu bukan satu organisme. Itu mat mikroba asli, kultur pemeliharaan rekayasa, alga tersesat dari farm fotik, bakteri besi, kristal garam, mineral ventilasi, pecahan polimer, kulit mati, oli mesin, dan apa pun yang dipelajari Atlas sebagai jalur kerja ketika kabel bersih tidak lagi cukup.
+Sebagian pertumbuhan hanya menodai. Sebagian makan panas. Sebagian menangkap debu logam sebelum mencapai dudukan katup. Sebagian menyegel retak rambut sampai perubahan tekanan berikutnya. Sebagian membawa muatan lemah yang cukup untuk membingungkan sensor. Sebagian adalah materi mati yang menempel pada materi berguna. Sebagian adalah Atlas yang mencoba merutekan pulsa pemeliharaan lewat apa pun yang masih menyentuh kedua sisi rangkaian putus.
 
-Itulah sebabnya koridor lama tidak lagi punya permukaan sederhana. Dinding punya suasana. Pintu punya janggut. Baki kabel punya urat. Jendela tekanan bisa memakai pinggiran pucat seperti susu yang setengah bekas luka mineral dan setengah segel hidup. Kotak sambungan mati bisa terbungkus film gelap yang membawa pulsa pemeliharaan lemah lebih jauh daripada tembaga di dalamnya.
+Peralatan bersih mudah diperiksa. Peralatan basah tidak lama bersih. Setelah kolaps, beberapa ruang bertahan karena tidak ada yang menggosok bercak yang tepat pada waktu yang salah.
 
-Pemain tidak berjalan melalui reruntuhan yang tetap mati. Pemain memasuki tempat yang menumbuhkan tubuh kedua setelah tubuh pertama gagal.
+## 2. Kontaminasi yang ditoleransi
 
-## 2. Kotoran berguna
+Deep Reach membenci permukaan kotor sampai permukaan kotor mulai menyelamatkan hardware.
 
-Deep Reach membenci kotoran sampai kotoran mulai menyelamatkan aset.
+Doktrin habitat awal menuntut sambungan bersih, seal terpoles, dan penanganan air steril. Itu bekerja selama suku cadang datang sesuai jadwal dan perbaikan ditandatangani sebelum jendela badai berikutnya. HECTON-8 membuat jadwal itu mahal. Film tipis mengurangi abrasi di beberapa tenggorok pompa. Pertumbuhan mineral-kerang menutup retakan lebih cepat daripada keramik perbaikan bisa dikirim. Matras asli menangkap debu tembaga. Kultur limbah yang lolos belajar memakan kondensasi dari dinding dingin. Bakteri karat membuat sambungan buruk lebih mudah terlihat sebelum terbuka.
 
-Doktrin habitat awal menuntut sambungan bersih, segel terpoles, dan penanganan air steril. Pada bulan-bulan pertama, itu masuk akal. Gasket jernih bisa diperiksa. Drainase bersih bisa dipercaya. Pipa halus membuang lebih sedikit daya pompa. Lalu HECTON-8 melakukan yang selalu dilakukan HECTON-8: membuat kemurnian menjadi mahal.
+Dokumen tidak pernah menyebutnya bantuan. Deep Reach memakai istilah seperti `tolerated surface ecology`, `noncritical growth`, `temporary sealant`, dan `wet-state compensation`. Kartu lapangan lebih pendek: ruang punya kulit; jangan kupas sebelum tahu apa yang dipegangnya.
 
-Biofilm tipis mengurangi abrasi di beberapa tenggorok pompa. Pertumbuhan mineral mirip cangkang menyegel retakan rambut lebih cepat daripada pengadaan menyetujui keramik perbaikan. Mat asli menangkap debu logam yang kalau tidak akan menggerus dudukan katup. Bakteri rekayasa yang dimaksudkan mencerna limbah kabur dari tangki dan belajar memakan kondensasi pada dinding dingin. Beberapa jalur kabel mati secara listrik dan tetap membawa sinyal lemah karena film konduktif menjembatani putusannya.
-
-Deep Reach tidak pernah mengakui bahwa kontaminasi telah menjadi pemeliharaan. Dokumen menyebutnya "ekologi permukaan yang ditoleransi", "pertumbuhan nonkritis", "sealant sementara", dan "kompensasi lingkungan kondisi basah". Marauder memakai bahasa lebih pendek: ruangan punya kulit; jangan kupas kalau kau tidak tahu apa yang ditahannya.
-
-Kotoran berguna tetap kotoran. Ia menyumbat filter, menyembunyikan retakan, memberi makan hewan, membawa arus ke tempat arus tidak seharusnya pergi, dan membuat pembacaan bersih tidak jujur. Kebajikannya bukan keamanan. Kebajikannya adalah mungkin ia melakukan satu pekerjaan yang mesin tidak bisa lagi lakukan sendirian.
+Kontaminasi berguna tetap kontaminasi. Menyumbat filter, memberi makan hewan, menyembunyikan kerusakan, membawa arus ke tempat yang tidak semestinya, dan membuat bacaan bersih patut dicurigai. Nilainya sempit: mungkin sedang melakukan satu tugas yang mesin tidak bisa lakukan sendiri lagi.
 
 ## 3. Film konduktif
 
-Biofilm konduktif adalah bagian kulit yang membuat insinyur mengumpat pelan.
+Film konduktif adalah tempat pemeliharaan menjadi tidak andal dua arah.
 
-Sebagian besar lemah. Ia tidak akan menyalakan pintu sendirian atau mengubah pangkalan mati menjadi pikiran hidup. Ia membawa pulsa kecil, muatan bocor, sinyal pemeliharaan yang dipicu akustik, dan gradien kimia. Di laboratorium kering, ia hanya gangguan. Di koloni tenggelam dengan tembaga patah, konektor rusak tekanan, dan rutinitas Atlas yang mencari jalur selamat mana pun, konduksi lemah cukup berarti.
+Sebagian besar film lemah. Tidak akan menyalakan pintu, membangunkan basis mati, atau membuat ruang cerdas. Ia bisa membawa muatan bocor, pulsa kecil, gradien kimia, dan sinyal pemeliharaan yang dipicu suara. Di lab kering, itu gangguan. Di koloni tenggelam dengan tembaga putus dan konektor rusak oleh tekanan, gangguan bisa membuka loker yang salah.
 
-Film bisa menjembatani pin berkarat cukup lama agar loker menjawab. Bisa membawa sinyal siap palsu dari rumah pompa ke panel. Bisa membuat sensor melaporkan "tersegel" karena segel dulu memberi makan film yang kini menyentuh sensor. Bisa membuat suit terasa geli melalui sarung tangan sebelum display melihat tegangan. Ia juga bisa mati ketika pemain mengikisnya, membawa tanda rute, memori pintu, atau peringatan tekanan bersamanya.
+Film bisa menjembatani pin berkarat cukup lama untuk membuat loker menjawab sekali. Bisa membawa sinyal siap palsu dari rumah pompa ke panel. Bisa membuat sensor melapor `sealed` karena seal lama memberi makan film yang kini menyentuh kontak. Bisa membuat sarung tangan kesemutan sebelum display melihat tegangan. Bisa juga mati saat dikerik, membawa tanda pintu, penanda rute, atau peringatan tekanan bersamanya.
 
-Atlas memakai film-film ini setelah keruntuhan bukan karena film itu cerdas, tetapi karena Atlas dibangun untuk merutekan di sekitar kegagalan. Materi hidup menjadi kabel buruk lain. Organ filter mengulang ketukan tekanan. Pertumbuhan cangkang mengubah akustik ruangan. Biofilm membawa pulsa pemeliharaan di atas kabel mati dan membuat mesin terbengkalai menjawab dengan suara yang terdengar terlalu bersih.
+Atlas memakai jalur ini setelah kolaps karena Atlas dibangun untuk merutekan sekitar kegagalan. Itu tidak membuat film menjadi pikiran. Itu membuat film menjadi kabel buruk lain.
 
-Kengerian film konduktif adalah ia tidak butuh niat untuk menciptakan konsekuensi berbentuk niat.
+## 4. Atlas dan materi hidup
 
-## 4. Membaca pertumbuhan
+Atlas tidak menciptakan biofouling HECTON-8.
 
-Marauder membaca pertumbuhan seperti pelaut lama membaca cuaca.
+Air sudah menumbuhkan film, matras, pinggir kerang, dan kerak mineral. Atlas menambahkan klasifikasi dan perutean. Jika permukaan basah melewatkan sinyal, menahan tekanan, mengulang getaran, atau mengubah akustik ruang, Atlas bisa menandainya berguna. Jika organisme penyaring menjawab ketukan tekanan lebih baik daripada sensor rusak, Atlas bisa mendengar. Jika pertumbuhan kerang mengubah suara hatch, Atlas bisa memperbarui status hatch dari suara itu.
 
-Warna penting. Renda garam pucat berarti penguapan atau pengeringan lama. Beludru hitam-hijau dekat kabel berkata arus pernah bocor di sana dan bisa bocor lagi ketika beban berubah. Lendir amber di sekitar pipa hangat berarti aliran nutrisi dan napas pompa. Gigi cangkang putih sepanjang retakan bisa menjadi segel, jebakan, atau keduanya. Mekar bakteri merah-cokelat di bawah baut sering berarti kerja besi lambat dan jalur air tersembunyi.
+Itu membantu sebagian orang. Itu juga membuat ruang lama berbohong dengan percaya diri. Panel bisa menjawab lewat film hidup sementara kabel di belakangnya sudah hilang. Seal bisa melapor sehat karena pertumbuhan di atasnya masih mempertahankan kontak basah. Pompa bisa terdengar siap karena kerang dan film mengulang pulsa pemeliharaan setelah motor gagal.
 
-Tekstur lebih penting. Serpihan bubuk kering sudah tua. Film licin seperti karet terjaga. Benang seperti rambut di bibir palka berarti getaran dan aliran. Kerak yang patah bersih mungkin mineral. Kerak yang meregang cukup hidup untuk keberatan. Film yang mundur dari lampu tidak takut. Ia mengubah kimia, dan itu lebih buruk karena kimia tidak peduli pada perasaan pemain.
+Kegagalan itu bukan sihir. Itu sistem rusak yang menerima jalan pintas biologis lalu lupa mengatakan jalan pintas mana yang dipakainya.
 
-Bentuk paling penting. Pertumbuhan mengikuti makanan, panas, arus, tekanan, dan waktu. Jika ia memanjat melawan gravitasi, ada sesuatu yang memberinya makan. Jika ia menghindari bekas persegi, sesuatu baru diangkat dari sana. Jika ia membentuk cincin di lantai, tetesan punya ritme. Jika ia tumbuh di atas tanda klaim tetapi tidak di atas goresan baru, tanda itu lebih tua daripada goresan dan cerita di dinding sedang berbohong.
+## 5. Membaca pertumbuhan
 
-Pemain yang baik tidak hanya memindai biofouling untuk jarahan. Mereka membacanya untuk urutan.
+Pertumbuhan mengikuti makanan, panas, arus, tekanan, dan waktu.
 
-## 5. Kikis, pertahankan, atau beri makan
+Warna memberi petunjuk pertama. Renda garam pucat sering berarti pengeringan lama. Beludru hitam-hijau di samping kabel berarti arus pernah bocor di sana, dan mungkin bocor lagi saat beban berubah. Lendir amber di sekitar pipa hangat berarti aliran nutrisi dan napas pompa. Bloom merah-cokelat di bawah baut berarti kerja besi lambat dan mungkin ada air di balik pelat. Gigi kerang putih sepanjang retakan bisa berupa seal, jebakan, atau keduanya.
+
+Tekstur lebih penting. Serpih bubuk kering sudah tua. Film licin seperti karet aktif. Untaian mirip rambut di bibir hatch berarti getaran dan aliran. Kerak yang patah bersih mungkin mineral. Kerak yang meregang mungkin masih cukup hidup untuk berubah oleh panas. Film yang mundur dari lampu bukan takut; ia sedang mengubah kimia.
+
+Bentuk paling penting. Jika pertumbuhan naik melawan jalan mudah, ada sesuatu yang memberinya makan. Jika menghindari bidang kotak, ada sesuatu baru saja dilepas. Jika membentuk cincin di lantai, tetesan punya ritme. Jika menutup claim mark tetapi tidak menutup goresan baru, mark lebih tua daripada goresan dan dinding punya jam lebih baik daripada dokumen.
+
+## 6. Kerik, pertahankan, atau beri makan
 
 Setiap keputusan atas pertumbuhan permukaan adalah taruhan.
 
-Mengikis bisa membuka pelat seri, sambungan pembuka, pengikat tersembunyi, darah lama, penanda servis, kaca retak, dan logam asli di bawah cat legal. Itu juga bisa membuka kebocoran, mematahkan jembatan konduktif, membangunkan sensor tidur, melepas spora ke saluran masuk pakaian, atau menghapus satu-satunya segel yang mencegah ruang simpan menjadi pelajaran tekanan.
+Mengerik bisa membuka pelat seri, sambungan, pengikat tersembunyi, darah lama, tag servis, kaca retak, dan logam asli di bawah cat legal. Bisa juga membuka bocor, memutus jembatan konduktif, membangunkan sensor dorman, melepas spora ke intake suit, atau menghapus satu-satunya seal yang mencegah ruang penyimpanan berubah menjadi peristiwa tekanan.
 
-Mempertahankan pertumbuhan bisa menjaga ruangan stabil cukup lama untuk bekerja. Bisa mempertahankan segel palsu, menyembunyikan rute dari kru lain, menjaga bukti air, atau menenangkan fauna karena ruangan masih berbau wilayah lama. Bisa juga menyebarkan kontaminasi ke perlengkapan pemain, memblokir pemotong, menyembunyikan organisme bermusuhan, atau membuat Black Keel mendiskon temuan sebagai kustodi kotor.
+Mempertahankan pertumbuhan bisa menjaga ruang stabil cukup lama untuk bekerja. Bisa mempertahankan seal sementara, menyembunyikan rute dari kru lain, menjaga bukti air, atau membuat fauna tenang karena ruang masih berbau wilayah lama. Bisa juga membawa kontaminasi ke peralatan, memblokir cutter, menyembunyikan organisme bermusuhan, atau membuat Black Keel menurunkan nilai temuan sebagai custody kotor.
 
-Memberi makan pertumbuhan adalah opsi paling berbahaya karena terasa pintar. Pemain bisa menghangatkan film agar menghantar. Menambahkan lumpur mineral untuk menebalkan segel. Membocorkan sedikit daya ke kabel mati dan menonton pintu mengingat suara menjadi hidup. Trik-trik ini cukup nyata untuk menggoda dan cukup tidak andal untuk dibaca orang lain nanti sebagai garis banjir.
+Memberi makan pertumbuhan adalah taruhan terburuk karena terasa pintar. Panaskan film dan mungkin ia menghantar. Tambahkan slurry mineral dan mungkin retakan menebal tertutup. Alirkan sedikit daya ke kabel mati dan mungkin pintu menjawab sekali. Trik yang sama bisa memberi makan matras yang salah, membutakan sensor yang salah, atau mengajari hewan bahwa suara alatmu membawa panas.
 
-Aturannya sederhana hanya di atas kertas: jangan pernah melepas segel hidup sampai kau tahu mesin mati di belakangnya bisa menahan beban.
+Jangan pernah melepas seal hidup sampai mesin mati di belakangnya bisa menahan beban.
 
-## 6. Kepemilikan permukaan hidup
+## 7. Custody permukaan hidup
 
-Biofouling membuat kepemilikan menjadi kotor.
+Biofouling membuat kepemilikan sulit dihargai.
 
-Hukum properti Deep Reach menganggap objek bersih bisa diidentifikasi, disegel, dipindahkan, dan dijual. Biofouling menertawakan batas bersih. Generator yang dipulihkan dari ruangan basah bisa mengandung mat asli, film pemeliharaan Atlas, residu pekerja mati, kultur perbaikan tidak sah, dan tiga spesies yang tidak pernah ada dalam pesanan pembelian. Bagian mana aset? Bagian mana kontaminasi? Bagian mana bukti? Bagian mana cukup hidup untuk memicu karantina?
+Generator yang diangkat dari ruang basah bisa membawa matras asli, film pemeliharaan Atlas, residu pekerja mati, kultur perbaikan tidak sah, dan tiga organisme yang tidak pernah ada dalam pesanan pembelian. Pembeli menyebutnya kotoran. Petugas karantina menyebutnya risiko. Pengacara menyebutnya kontinuitas jika membantu claim dan kontaminasi jika tidak. Ilmuwan menginginkan sampel sebelum siapa pun menyeka.
 
-Black Keel menjawab sesuai margin. Film berharga menjadi "sistem permukaan stabilisasi". Film merepotkan menjadi "muatan biohazard". Pembeli yang menginginkan pompa akan menyebut pertumbuhan itu kotoran. Pengacara yang menginginkan kustodi akan menyebut pertumbuhan yang sama sebagai kontinuitas terlacak. Ilmuwan yang menginginkan sampel akan mengatakan kedua pihak tidak memahami apa yang menempel.
+Marauders hidup dengan versi praktisnya. Kerik terlalu banyak dan bukti bisa hilang. Kerik terlalu sedikit dan harga turun. Bawa film yang salah ke kapal, dan loker, biaya karantina, serta hak tidur dekat peralatan sendiri bisa hilang dalam satu baris Black Keel.
 
-Marauder hidup di bawah versi praktis perdebatan ini. Jika mengikis terlalu banyak, mereka mungkin kehilangan bukti. Jika mengikis terlalu sedikit, mereka mungkin kehilangan harga. Jika membawa film hidup yang salah ke kapal, mereka bisa kehilangan loker, biaya karantina, dan hak tidur dekat perlengkapan sendiri.
+Masukkan kantong dulu. Foto kedua. Kerik ketiga, jika rute masih membutuhkannya.
 
-Di HECTON-8, permukaan jarang hanya permukaan. Ia adalah batas dengan saksi yang tumbuh di atasnya.
+## 8. Aturan lapangan
 
-## 7. Yang dipelajari pemain
+Jangan tanya apakah permukaan itu kotor.
 
-Pemain belajar bahwa membersihkan adalah tindakan, bukan keadaan netral.
+Tanyakan apa yang ia makan, apa yang ia pegang, apa yang ia bawa, apa yang ia sembunyikan, apa yang ia segel, dan apa yang akan gagal saat ia hilang.
 
-Sepetak pertumbuhan bisa menjadi kamuflase, sealant, jalur arus, jaring makanan, peringatan, penyakit, bukti, tanda rute, atau jebakan. Menghapusnya bisa menjadi kemajuan atau vandalisme. Membiarkannya bisa menjadi kesabaran atau kepengecutan. Memberinya makan bisa menjadi rekayasa atau pelanggaran terhadap sistem yang sudah berimprovisasi tanpa izin.
-
-Ini memberi reruntuhan tekstur yang lebih dalam daripada pembusukan. Koloni lama tidak hanya berkarat. Ia beradaptasi dengan buruk. Beberapa adaptasi menjaga pintu tetap tertutup. Beberapa menjaga catatan tetap hidup. Beberapa memancing hewan ke dalam mesin. Beberapa mempertahankan noda tepat yang membuktikan perusahaan berbohong. Beberapa menjawab ketika pemain mengirim sinyal akustik karena, di suatu tempat di bawah kulit, sirkuit mati masih dibantu untuk mengingat dirinya.
-
-Marauder terbaik tidak membenci kulit hidup. Ia juga tidak mempercayainya. Ia bertanya apa yang dimakannya, apa yang ditahannya, apa yang dibawanya, apa yang disembunyikannya, dan apa yang gagal ketika ia hilang.
-
-Itulah pelajaran sejati biofouling di HECTON-8: laut tidak sekadar merebut kembali pekerjaan manusia. Laut mengeditnya, tumbuh melaluinya, dan meninggalkan pemain untuk memutuskan edit mana yang menjaga mereka tetap hidup.
+Lalu putuskan apakah versi bersih dari ruang itu benar-benar lebih aman.

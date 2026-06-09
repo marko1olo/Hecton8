@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Suit Service Grades"
+title: "Tingkat Servis Baju Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Suit Service Grades
+# Tingkat Servis Baju Tekanan
 
-ID LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Tingkat baju tekanan adalah catatan servis, bukan warna perlengkapan. Tiap kedalaman menuntut seal terlacak, cadangan scrubber, lapisan termal, batas kontaminasi, dan cap servis lama. Pemain turun lebih jauh karena memulihkan standar keselamatan, bukan karena menemukan armor ajaib.
 
 ## Scanner
 
-ID LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Tag baju mencatat kedalaman servis, lelah seal, cadangan scrubber, toleransi termal, dan penanganan kontaminasi.
 
 ## Terminal
 
-ID LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-ID LOC HOLD: The suit does not make you brave. It only fails later.
+Baju itu tidak membuatmu berani. Ia hanya gagal lebih lambat.
 
 ## Field Note
 
-ID LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Baju yang lebih dalam bukan armor berwarna. Ia adalah dokumen, suku cadang, dan perawatan buruk.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/id_ID. -->

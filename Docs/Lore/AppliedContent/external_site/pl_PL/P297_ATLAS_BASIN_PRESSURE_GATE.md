@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Basin Pressure Gate"
+title: "Brama ciśnieniowa basenu Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Basin Pressure Gate
+# Brama ciśnieniowa basenu Atlas
 
-PL LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+Finałowe zejście zachowuje hard sci-fi pod grozą. Dno otwiera się przez klasy ciśnienia, uszkodzoną władzę, dowody obciążenia i maszynę, która nadal bardziej ufa kluczom w kształcie Deep Reach niż żywemu roszczącemu.
 
 ## Scanner
 
-PL LOC HOLD: Basin gate requires pressure proof and authority response.
+Brama basenu żąda dowodu ciśnienia, władzy trasy i ciała, które może sklasyfikować.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: dowód ciśnienia niepełny. Klasa skafandra przyjęta poniżej progu zejścia. Zacisk autorytetu rozpoznaje odwołany wzorzec Deep Reach, nie bieżącego roszczącego. Ręczne obejście wymaga lokalnego obciążenia, wyboru odbiornika i payloadu świadka.
 
 ## Audio
 
-PL LOC HOLD: It knows the old key. It does not know you.
+Zna stary klucz. Nie zna ciebie.
 
 ## Field Note
 
-PL LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Finałowy próg ma czytać się jak brama serwisowa do żywej fabryki, nie fantastyczny portal.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/pl_PL. -->

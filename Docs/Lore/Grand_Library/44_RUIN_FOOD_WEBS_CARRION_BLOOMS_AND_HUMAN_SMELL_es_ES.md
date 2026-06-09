@@ -1,62 +1,80 @@
-<!-- localization_status: draft_machine_or_llm -->
-# REDES TRÓFICAS DE RUINAS, BROTES DE CARROÑA Y OLOR HUMANO
+<!-- localization_status: draft_machine_or_llm_es_ES -->
+# REDES TRÓFICAS EN RUINAS, FLORACIONES DE CARROÑA Y OLOR HUMANO
 
-> **Fuente:** fragmentos biológicos de Atlas, notas de ruta de Marauders, informes de contaminación de Black Keel sobre transferencia de trazas orgánicas.  
-> **Voz:** ecólogo de campo asignado al riesgo de recuperación, con comentarios al margen de trabajadores que aprendieron las mismas lecciones perdiendo cebo, sangre, herramientas y amigos.  
-> **Nota de revisión:** las ruinas de HECTON-8 nunca deben sentirse biológicamente vacías. Un espacio humano muerto se convierte en un evento de alimentación, un refugio, una cicatriz química y una señal de comportamiento.
+> **Fuente:** fragmentos biológicos de Atlas, notas de ruta de Marauder, márgenes de Deep Reach sobre ecología de fugas y sesiones de Black Keel sobre transferencia de trazas orgánicas.  
+> **Alcance:** cómo las salas humanas abandonadas se convierten en puntos de alimentación, cómo las floraciones de carroña avanzan por la infraestructura y por qué un traje sellado sigue cambiando el agua.  
+> **Uso de campo:** leer antes de entrar en ruinas húmedas cuando la ruta parece tranquila, recién despejada o demasiado limpia.
 
 ---
 
-## 1. Una ruina es un evento de alimentación
+## 1. Una sala empieza a alimentar
 
-Una sala humana no muere toda a la vez.
+Una sala humana no muere de golpe. Se vuelve desigual.
 
-Primero la energía falla de forma desigual. Los paneles calientes se enfrían. Los paneles fríos se calientan. Las bombas tosen, se paran, reinician y empujan agua vieja por lugares que estuvieron secos durante años. La sala cambia de presión. Suelta olor. Desprende escamas de pintura, grasa, piel, fibras de tela, microbios muertos, aislamiento cocido y polvo metálico. Algo fuera lo nota.
+La energía cae por paredes. Un panel sigue caliente. Otro se enfría. Una bomba se para, arranca de nuevo y empuja agua vieja por una garganta de servicio que llevaba años seca. Una puerta de presión se abre un palmo y le da al olor una línea recta. La pintura se desprende donde la sal ha entrado bajo la imprimación. La grasa se ablanda. Las fibras de tela se hinchan. Los microbios muertos se levantan de la rejilla de desagüe. El calor de una batería mantiene un tirante más templado que el limo alrededor.
 
-Los primeros animales no llegan porque la sala sea dramática. Llegan porque cambiaron los gradientes. Se movió calor. Se aflojó la química. Una junta falló y dio al agua una línea de orgánicos. Una impresora de comida se pudrió detrás de una puerta cerrada. Un cuerpo se retiró mal. Un banco de baterías calentó una pared más tiempo que la otra. La vida de HECTON-8 no necesita una historia para investigar. Necesita una diferencia.
+La vida de HECTON-8 sigue esas diferencias. No necesita una sala trágica, un cadáver visible ni una explicación humana. Necesita calor, materia orgánica, corriente, refugio, carga, mineral blando, sabor metálico o un camino hacia más de lo mismo.
 
-Por eso las bases abandonadas no son niveles vacíos. Son comidas aplazadas. Cada escotilla, conducto y paso de cable se vuelve una pregunta que el océano se hace: ¿hay calor, sal, proteína, corriente, refugio, metal, carga, luz, podredumbre o un camino hacia más de lo mismo?
+Los primeros en llegar son pequeños. Las mantas filtrantes se extienden sobre fugas lentas. Los pastadores pálidos raspan película mineral de las juntas de tubería. El krill se acumula donde la vibración de la bomba suelta alimento. Los limpiadores con caparazón viven en huecos de tornillo y labios de junta. Pueden hacer que una sala muerta parezca mantenida porque retiran la prueba blanda antes de tocar la dura.
 
-Para cuando llega un Marauder, la respuesta ya puede tener dientes.
+Para cuando un Marauder llega a la escotilla, la sala puede tener ya un orden de comida.
 
-## 2. Lo que alimenta la infraestructura humana
+## 2. Lo que alimenta la infraestructura
 
-La infraestructura humana alimenta algo más que depredadores.
+Las ruinas alimentan algo más que depredadores.
 
-Las esteras filtrantes viven de fugas lentas. Pastadores pálidos raspan limo mineral de las costuras de las tuberías. Kril ciego se apila en pozos de servicio donde la vibración arranca películas microbianas. El kelp de hierro se ancla a refuerzos cálidos cerca de fugas de corriente y rechina tan bajo que un buzo cansado puede confundirlo con maquinaria. Pequeños limpiadores con caparazón viven en huecos de tornillos, labios de juntas y cerámica agrietada. Desde lejos hacen que las salas muertas parezcan mantenidas, porque eliminan primero las pruebas equivocadas.
+Una pared de baterías templada alimenta pastadores. Una bandeja de algas agrietada alimenta una floración. Una bomba que cicla alimenta krill al desprender película. Un reciclador médico con fuga alimenta mantas blancas que después alimentan limpiadores con caparazón. Un paso de cable alimenta hierro-kelp donde la corriente toca calor. Una taquilla medio abierta alimenta a cualquier cosa capaz de raspar sal de la tela y piel del interior de un guante.
 
-Los grandes cazadores llegan después. No empiezan el sistema; lo cobran. Un acechador de trinchera no necesita entender una alarma de puerta. Solo necesita aprender que a las alarmas les sigue movimiento, al movimiento le sigue sangre, y a la sangre le siguen animales pequeños que olvidan la prudencia. Un leviatán no caza un pasillo porque sepa qué es un pasillo. Caza la boca de una corriente repetida que huele a carne encerrada y cobre caliente.
+Los cazadores grandes llegan más tarde. No empiezan el sistema; lo cobran. Un trench stalker no necesita entender una alarma de puerta. Solo tiene que aprender que a las alarmas les sigue movimiento, al movimiento le sigue sangre, y a la sangre le siguen animales pequeños que olvidan la cautela. Un contacto Leviathan-class no caza un pasillo porque sepa qué es un pasillo. Espera en la boca de una corriente repetida que huele a carne atrapada y cobre caliente.
 
-Deep Reach intentó escribir esto como gestión de contaminación. Atlas lo escribió como ecología de mantenimiento. Los trabajadores lo escribieron con menos palabras: si un lugar huele alimentado, no supongas que eres el primero.
+Deep Reach archivó esto como gestión de contaminación. Atlas marcó partes como ecología de mantenimiento. Las notas de Marauder lo dicen más corto: si un lugar huele alimentado, no des por hecho que eres el primero.
 
-## 3. Brotes de carroña
+## 3. Floraciones de carroña
 
-Los brotes de carroña no tratan solo de cuerpos.
+Las floraciones de carroña no están hechas solo de cuerpos.
 
-Un brote puede empezar con tripulación muerta, sí. También puede empezar con una caja de pasta nutritiva, un tanque de algas reventado, un carrete de forro de traje, un congelador que estuvo caliente tres horas, un reciclador médico que hizo un ciclo con la válvula equivocada abierta, o una bolsa de herramientas dejada en una esquina mojada el tiempo suficiente para criar una piel. Al océano no le importa qué parte era humana, corporativa, animal o fabricada. Le importa qué puede comerse y qué puede llevar el comer hacia delante.
+Una floración puede empezar con tripulación muerta, pero también con pasta nutritiva, un tanque de algas reventado, un rollo de forro de traje, pasta de congelador calentada durante tres horas, un reciclador médico que cicla con la válvula equivocada abierta, o una bolsa de herramientas que quedó mojada el tiempo suficiente para criar piel. El agua no clasifica la fuente por categorías morales. Clasifica por lo que puede comerse, moverse, filtrarse, esconderse o usarse como cobertura.
 
-El brote tiene etapas. Primero llega el enturbiamiento: agua que parece lechosa o polvorienta cerca de una costura. Luego la selección: bocas pequeñas, abanicos filtrantes, bigotes blancos, películas blandas y motas móviles que desaparecen cuando las toca la luz. Luego la confianza: bordes raspados, tornillos pulidos, rastros de caparazón, hoyos de mordida, cables limpiados hasta la camisa. Luego la propiedad: animales mayores usan el brote como ruta, escondite, lugar de apareamiento o despensa.
+La mayoría de las floraciones avanza por fases. Primero llega el enturbiamiento: agua lechosa cerca de una junta o un desagüe. Luego la clasificación: bocas pequeñas, abanicos filtrantes, bigotes blancos, película blanda y motas móviles que desaparecen al tocarles la luz. Luego el trabajo: bordes pastados, tornillos pulidos, rastros de concha, hoyos de mordida, cubiertas de cable limpias hasta la goma. Luego el uso de ruta: animales mayores que usan la floración como escondite, despensa, zona de apareamiento o marcador de corriente.
 
-La etapa peligrosa no siempre es la ruidosa. Un brote silencioso puede significar que la vida pequeña ya fue comida. Un suelo pulido puede significar que pasaron limpiadores. Un olor a monedas calientes puede significar que la sangre es vieja pero no olvidada. Una puerta sin crecimiento alguno puede ser peor que una puerta con demasiado crecimiento, porque algo la mantiene despejada.
+La fase ruidosa no siempre es la peligrosa. Una floración tranquila puede significar que la vida pequeña ya fue comida. Un suelo pulido puede significar que los limpiadores retiraron la traza de aviso. Un olor a monedas calientes puede significar sangre lo bastante vieja para haberse extendido y lo bastante fresca para importar. Una puerta sin crecimiento puede ser peor que una puerta cubierta, porque algo puede estar manteniéndola despejada.
 
-Los Marauders aprenden a leer la ausencia con tanto cuidado como la abundancia.
+La ausencia es una marca biológica. Trátala como tal.
 
 ## 4. Olor humano
 
 El olor humano no es un solo olor.
 
-Para HECTON-8 es residuo de jabón, tela sintética, calor de batería, sal de piel, sudor de estrés, adhesivo, lubricante de herramienta, plastificante, esterilizante, hierro de sangre, aislamiento cocido, aliento rancio y la química afilada del miedo filtrándose por malas juntas. Un buzo cree estar sellado porque el traje aguanta presión. El océano no está de acuerdo. Lee trazas.
+Para HECTON-8 es residuo de jabón, tela sintética, calor de batería, sal de piel, sudor de estrés, adhesivo, lubricante de herramienta, plastificante, esterilizante, hierro de sangre, aislamiento cocido, aliento viejo y la química aguda del miedo escapando por una mala junta de puño. Un buzo confía en el traje porque mantiene presión. El agua lee traza.
 
-Por eso algunas tripulaciones dejan de usar toallitas de limpieza frescas antes de descender. Las toallitas hacen al buzo seguro para la inspección de Black Keel y ruidoso para el agua. Otros frotan los guantes con limo viejo antes de entrar en una sala de alimentación. Algunas tripulaciones llevan tabletas de proteína sacrificables, no para alimentar depredadores como mascotas, sino para lanzar a la corriente un argumento más pequeño antes de que su propio cuerpo se convierta en el grande. Ningún hábito de esos está recomendado oficialmente. La mayoría está escrito en los márgenes de notas de ruta de gente muerta.
+Por eso algunas tripulaciones dejan de usar toallitas limpias antes de bajar. Las toallitas pasan la inspección de Black Keel y hacen que el buzo suene fuerte para la ruta. Otros equipos frotan los guantes con limo viejo antes de entrar en una sala de alimentación. Algunos llevan tabletas de proteína de sacrificio, no para domar depredadores, sino para lanzar una discusión menor a la corriente antes de que su propio cuerpo sea la mayor.
 
-Black Keel vende control de olor como consumible. Deep Reach lo llamaba disciplina de traza. Los Marauders lo llaman no tocar la campana de la cena.
+Ninguno de esos hábitos es procedimiento oficial. La mayoría está escrita en los márgenes de notas de ruta de trabajadores muertos. Black Keel vende control de olor como consumible. Deep Reach lo llamaba disciplina de traza. Marauders lo llaman no tocar la campana de la cena.
 
-## 5. Lo que aprende el jugador
+## 5. Cuando limpio significa alimentado
 
-El jugador aprende que la ecología no es fondo.
+Una ruina limpia no es automáticamente segura.
 
-La vida de una ruina cuenta el tiempo. Películas frescas dicen que una fuga es reciente. Viejos rastros de caparazón dicen que una ruta permaneció mojada. Huesos limpiados dicen que animales pequeños tuvieron acceso antes que los grandes. Un pasillo que de pronto no tiene kril puede estar vacío porque es seguro, o vacío porque algo lo hizo seguro para sí mismo. Una sala de máquinas silenciosa puede estar apagada, o puede ser una emboscada que escucha.
+Tornillos limpios pueden significar limpiadores con caparazón. Cubiertas de cable despejadas pueden significar que los pastadores retiraron el crecimiento blando. Bolsillos de krill vacíos pueden significar que un depredador pasó hace poco. Una puerta con visibilidad perfecta puede significar corriente fuerte, o que un animal grande usa la abertura lo bastante a menudo para dejar las paredes raspadas.
 
-Jugar bien significa preguntar de qué se ha estado alimentando la ruina, qué se ha alimentado de ella y qué está a punto de añadir el jugador. Abrir una escotilla puede iniciar un brote. Cortar un cable puede liberar calor. Sangrar dentro de un guante puede cambiar una ruta. Quitar una estera filtrante puede exponer una corriente que trae algo mayor. Dejar cebo puede salvar una vida o enseñarle una nueva puerta al animal equivocado.
+Los buenos lectores de ruta comparan cosas que no encajan. Una pared polvorienta junto a un pestillo pulido. Un suelo frío bajo una bisagra templada. Concha nueva sobre un rastro viejo de sangre. Ninguna manta filtrante en una sala con fuga activa. Un armario sellado con sal dentro del hueco del tirador. Esas discrepancias dan mejor hora que una marca muerta en un archivo de Atlas.
 
-HECTON-8 no separa recuperación y biología. Un objeto recuperado, una junta rota, un trabajador muerto y una pared caliente entran en el mismo libro de apetito. El océano lleva cuentas con bocas, películas, rastros y silencio.
+La cámara que parece más segura en una ruina suele ser la que ya limpiaron las bocas.
+
+## 6. Manejo de salvamento
+
+La biología puede arruinar una prueba antes de que alguien mienta sobre ella.
+
+Una placa de cuerpo puede viajar por el intestino de un limpiador. Un registrador puede quedar pulido hasta perder la sangre que probaba quién lo llevaba. Una bolsa de muestra puede criar película suficiente para ocultar el sedimento original. Un sello de pared puede desaparecer bajo sellado de concha. Un animal marcado puede llevar un sensor Atlas a un paso donde ningún dron puede seguirlo. Un depredador puede arrastrar una carga a una categoría de reclamación que Keelmark prefiere: irrecuperable, contaminada, disputada.
+
+Las buenas tripulaciones embolsan pruebas antes de limpiarlas. Fotografían hoyos de mordida, crecimiento de concha, bordes de película y ausencia de vida pequeña. Registran olor, temperatura del agua, respuesta del pinger, dirección de corriente y si el objeto fue hallado en agua, limo, intestino, floración, crecimiento de concha o tejido marcado por Atlas. Esos detalles parecen pequeños hasta que un administrativo decide si un trabajador muerto era una persona, una fuente de contaminación o una categoría de carga pagable.
+
+No limpies la historia del objeto antes de que el sistema de reclamaciones pueda leerla mal.
+
+## 7. Regla de campo
+
+Antes de abrir una ruina húmeda, pregunta qué ha estado alimentándose allí.
+
+Luego pregunta qué se alimentó de eso, qué se mantuvo lejos, qué cambió de temperatura, qué abrió una corriente, qué dejó de hacer ruido y qué añadirá tu traje cuando el sello flexe.
+
+Si la respuesta aún vale la reclamación, entra como si la sala ya estuviera ocupada.

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Locker Name Protocol"
+title: "بروتوكول اسم الخزانة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Locker Name Protocol
+# بروتوكول اسم الخزانة
 
-AR LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+بروتوكول اسم الخزانة يجعل الدليل الشخصي قابلا للعب: الأسماء تنجو عبر الأشياء والتآكل وإذن المسار وتعليق Marauder.
 
 ## Scanner
 
-AR LOC HOLD: A locker is personal without needing a family plot.
+أثر خزانة // لوحة اسم، تآكل أداة، pressure tape، ملاحظة تصحيح، ملصق مسار. دليل شخصي بلا حبكة عائلية.
 
 ## Terminal
 
-AR LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+قاعدة الخزانة: احفظ الأسماء التي أزالتها Deep Reach من payroll. يجب أن تربط الخزانة الشارة، الدور، إذن المسار، عادة الإصلاح والشيء غير المكتمل داخلها.
 
 ## Audio
 
-AR LOC HOLD: The company deleted the employee. The rust kept the label.
+حذفت الشركة الموظف. الصدأ أبقى الملصق.
 
 ## Field Note
 
-AR LOC HOLD: The smallest human trace should survive corporate cleanup.
+أصغر أثر بشري يجب أن ينجو من تنظيف الشركة.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/ar_SA. -->

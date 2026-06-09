@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Graines de personnel des sous-bureaux"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Graines de personnel des sous-bureaux
 
-FR LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+Les graines de personnel des sous-bureaux définissent comment les noms inférieurs de Deep Reach doivent apparaître dans le lore de HECTON-8. Le but n'est pas d'inventer une autre liste de méchants ; il est de rendre la bureaucratie lisible et humaine. Les joueurs devraient rencontrer des initiales sur des mémos endommagés, des tampons de bureau répétés, des hashes témoins et des signatures contradictoires jusqu'à ce que Deep Reach cesse d'être un logo et devienne un bâtiment plein de personnes entraînées à protéger la mauvaise chose. Ces graines gardent aussi les futurs articles cohérents : les noms s'attachent aux fonctions, les fonctions aux preuves, et les preuves aux salles que le joueur peut comprendre.
 
 ## Scanner
 
-FR LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+Les noms inférieurs de Deep Reach comptent parce que la catastrophe a été portée par des mains, des initiales et des boîtes de réception, pas par un logo abstrait.
 
 ## Terminal
 
-FR LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE : réception marge de risque / conseil file d'évacuation / analyste continuité Atlas / notaire de paquets / greffier garde de récupération. Utiliser les noms comme ancres de signature, conflits de témoins et preuves de salle, pas comme simple échelle de commandement.
 
 ## Audio
 
-FR LOC HOLD: A clerk can damage a life without owning the whole disaster.
+Les bureaux avaient des noms. C'est pour cela que le papier fait mal.
 
 ## Field Note
 
-FR LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Une corporation devient réelle quand un tampon cache une personne fatiguée.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/fr_FR. -->

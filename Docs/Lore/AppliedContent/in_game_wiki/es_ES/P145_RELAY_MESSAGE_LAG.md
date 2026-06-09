@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Retraso de mensaje de relé"
+title: "Retraso de mensajes de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retraso de mensaje de relé
+# Retraso de mensajes de relé
 
-El retraso de relé permite a Deep Reach amenazar al jugador sin una voz viva en la sala. Máquinas de contrato, notarios, ventanas de reclamación y cláusulas de portador pueden llegar antes que la compasión porque fueron escritas antes, puestas en cola antes y tasadas para sobrevivir a la distancia.
+El retraso de relé permite que HECTON-8 reciba autoridad sin recibir cuidado. Un paquete puede llevar advertencia, deuda, propiedad, custodia o confesión a través de la distancia, pero no puede llevar manos a una sala inundada. Esa separación vuelve aterradora la comunicación: los sistemas remotos siguen siendo poderosos porque fueron escritos pronto, encolados pronto, tasados para la distancia y confiados a máquinas que no saben que el remitente murió.
 
 ## Scanner
 
-Un mensaje puede ser legalmente vinculante y aun así llegar demasiado tarde para salvar aire.
+Vinculación del mensaje válida. Respuesta humana ausente. Aire restante determinado localmente.
 
 ## Terminal
 
-RETRASO DE RELÉ: mensajes locales de Aegir pueden tardar horas o días. Paquetes legales interdominio pueden tardar años. La presión Deep Reach es rancia, automatizada, contractual y aún peligrosa.
+RETRASO DE RELÉ: los paquetes locales de Aegir pueden tardar horas o días. Los paquetes legales entre dominios pueden tardar años. La presión de Deep Reach persiste porque instrucciones viejas, avisos de gravamen, reclamaciones de ruta y negativas automáticas siguen ejecutables después de desaparecer quien las escribió.
 
 ## Audio
 
@@ -35,6 +35,6 @@ La respuesta llega tarde. El gravamen está vigente.
 
 ## Field Note
 
-Sin ansible, la verdad se mueve como carga.
+Sin ansible, la verdad viaja como carga, pero la ley viaja como un calendario armado.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/es_ES. -->

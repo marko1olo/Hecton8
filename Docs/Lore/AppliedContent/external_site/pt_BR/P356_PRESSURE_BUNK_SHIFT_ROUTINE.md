@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Pressure Bunk Shift Routine"
+title: "Rotina de beliche de pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Pressure Bunk Shift Routine
+# Rotina de beliche de pressão
 
-PT-BR LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+A Pressure Bunk Shift Routine mostra a colônia afogada de HECTON-8 pelo hábito, não pela confissão. Uma lousa de fileira trabalhadora lista tom de acordar, checagem de selo, nota de pressão, ficha de água-refeição, custódia de ferramenta e designação de descida. Em uma estação sem amanhecer, essa lista é manhã, folha de trabalho, aviso médico e prova de retorno.
 
-## Scanner
+A força emocional está no quanto a lousa não posa. Ela não diz que alguém foi corajoso. Diz que a chave da bomba devia voltar antes da refeição. Diz que os selos são checados às 03:52. Diz que o sono era dividido por máquinas porque o oceano não se importava se um corpo entendia a hora.
 
-PT-BR LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-PT-BR LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-PT-BR LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-PT-BR LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Siga a lousa e a colônia se torna legível. O mesmo nome pode aparecer como beliche, chave, ficha de água, carimbo de rota e retorno perdido. Isso não é bagunça. É o sistema nervoso do assentamento de pressão, escrito nas menores marcas possíveis.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/pt_BR. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sample_discipline |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; Lore_Localization_Model.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS166_FIRST_SAMPLE_DISCIPLINE_ARTICLES.md |
 | Speaker | Field scanner, custody-label repair note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first sample handling |
@@ -72,17 +72,17 @@ CUSTODY TAB REQUIRED
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| ar_SA | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| de_DE | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| es_ES | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| fr_FR | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| he_IL | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| id_ID | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| ja_JP | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| ko_KR | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| nl_NL | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| pl_PL | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| pt_BR | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| ru_RU | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| uk_UA | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
-| zh_CN | draft_machine_or_llm | LABEL HOLD // Smudge crosses batch code. Rewrite only from matching custody tab. |
+| ar_SA | draft_machine_or_llm | تعليق الملصق // اللطخة تقطع رمز الدفعة. لا تعد الكتابة إلا من بطاقة عهدة مطابقة. |
+| de_DE | draft_machine_or_llm | ETIKETTENSPERRE // Schmierfleck kreuzt Chargencode. Nur nach passender Verwahrungslasche neu schreiben. |
+| es_ES | draft_machine_or_llm | ETIQUETA EN ESPERA // La mancha cruza el código de lote. Reescribe solo desde una pestaña de custodia coincidente. |
+| fr_FR | draft_machine_or_llm | ÉTIQUETTE EN ATTENTE // Bavure sur le code de lot. Réécrire seulement depuis un onglet de garde correspondant. |
+| he_IL | draft_machine_or_llm | עצירת תווית // מריחה חוצה את קוד האצווה. כתוב מחדש רק מלשונית משמורת תואמת. |
+| id_ID | draft_machine_or_llm | LABEL DITAHAN // Noda melintasi kode batch. Tulis ulang hanya dari tab penitipan yang cocok. |
+| ja_JP | draft_machine_or_llm | ラベル保留 // にじみがバッチコードを横切る。一致する保管タブからのみ書き直す。 |
+| ko_KR | draft_machine_or_llm | 라벨 보류 // 번짐이 배치 코드를 가로지른다. 일치하는 보관 탭에서만 다시 적어라. |
+| nl_NL | draft_machine_or_llm | LABEL IN BEWARING // Vlek kruist batchcode. Alleen herschrijven vanaf bijpassend bewaartabje. |
+| pl_PL | draft_machine_or_llm | WSTRZYMANIE ETYKIETY // Smuga przecina kod partii. Przepisz tylko z pasującej zakładki depozytowej. |
+| pt_BR | draft_machine_or_llm | RÓTULO EM ESPERA // Mancha cruza o código do lote. Reescreva apenas a partir da aba de custódia correspondente. |
+| ru_RU | draft_machine_or_llm | МЕТКА НА УДЕРЖАНИИ // Размазано по коду партии. Переписывай только с совпадающего ярлыка хранения. |
+| uk_UA | draft_machine_or_llm | МІТКА НА УТРИМАННІ // Розмазано по коду партії. Переписуй лише зі збіжного ярлика зберігання. |
+| zh_CN | draft_machine_or_llm | 标签暂扣 // 污迹划过批次码。只能按匹配保管签重写。 |

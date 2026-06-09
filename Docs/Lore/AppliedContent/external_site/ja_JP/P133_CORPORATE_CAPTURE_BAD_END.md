@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "企業回収：清潔な救助"
+title: "企業捕獲: 清潔な救助"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 企業回収：清潔な救助
+# 企業捕獲: 清潔な救助
 
-企業回収は助けのように始まるから効く。信号は明瞭で、回収は専門的で、部屋には空気がある。だが作業順序が見えてくる。座標が先、XO custodyが次、Atlasアクセスが三番目、請負者の福祉は審査後である。
+企業捕獲が怖いのは、それが有能だからだ。救助班は略奪者に見えない。手順、清潔な表面、医療用語、custodyを求めるもっともらしい権利を持っている。だから罠は銃声なしに閉じる。
 
-海はプレイヤーを押し潰すのをやめるが、Deep Reachは物語の保存を始める。証言は汚染用語で封印され、payload custodyは医療聴取より先に動き、プレイヤーが運んだすべての名前は責任画面になる。これは死ではない。沈黙を必要とした機械の中で生き残ることだ。
+順序が真実を語る。脈拍確認より先に座標が求められる。XO custodyとAtlasアクセスは証言より先に移動する。請負者は生きているが、物語は汚染審査の下で封印され、運ばれた名前はすべて責任遮蔽になる。これは死ではない。沈黙を必要とした制度の内部で生き残ることだ。
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/ja_JP. -->

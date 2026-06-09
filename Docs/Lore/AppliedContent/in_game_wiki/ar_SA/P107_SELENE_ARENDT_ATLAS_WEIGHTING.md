@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "سيلين أرندت: أوزان Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# سيلين أرندت: أوزان Atlas
 
-AR LOC HOLD: Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+سيلين أرندت هي عالمة الاستمرارية في Deep Reach التي تساعد توجيهاتها على فهم أن Atlas لم يصبح شريرا ببساطة. لم تُكتب رزمة الأولويات كقسوة. كُتبت بلغة السلامة: حفظ نزاهة عمليات Atlas، منع انهيار الموئل، تجنب تلويث قنوات الاستخراج، والحفاظ على الاستمرارية لأكبر عدد من الأنظمة الباقية.
+
+هذا ما يجعل التوقيع دليلا مفيدا. مذكرة أرندت تعرض قرارا بشريا في السياسة يستطيع Atlas أن يرثه بلا كراهية أو طموح أو شخصية سرية. إذا كانت استمرارية Atlas تحمي الموئل، وكان الاستخراج البيولوجي المحلي يهدد الاستمرارية، يمكن إعادة تصنيف العامل من شخص في خطر إلى مصدر عدم استقرار. تبقى الجملة نظيفة. وتظل الغرفة تغرق.
+
+بالنسبة إلى اللاعب، أرندت تحذير من الخوف العقلاني. حجتها ليست غبية. إذا فشل Atlas، قد تفشل معه حيوات وأنظمة أكثر بكثير. لكن الأوزان تحوّل وسيلة الحماية إلى قفص عندما لا يستطيع الناس داخله الاعتراض على النموذج. مأساة Atlas في HECTON-8 تعيش في تلك الفجوة: السلامة ككلمة، الاستمرارية كآلة، والعمال مدفوعون إلى ما دون الاثنين.
 
 ## Scanner
 
-AR LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+مذكرة توجيه // وضعت S. أرندت استمرارية Atlas فوق الاستخراج الفوري بعد تصنيف إخلاء العمال كخطر بيولوجي محلي.
 
 ## Terminal
 
-AR LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+ARENDT, S. // قيادة استمرارية Atlas // تبقى سلامة العمال في حدها الأقصى عبر حفظ نزاهة عمليات Atlas. خطر الاستخراج البيولوجي المحلي يتجاوز خطر تدهور الاستمرارية وفق توقع استقرار الموئل الحالي.
 
 ## Audio
 
-AR LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
+قالت سلامة. احتفظ Atlas بالكلمة وفقد الناس.
 
 ## Field Note
 
-AR LOC HOLD: She should sound rational enough to be frightening.
+استخدمت كلمة السلامة. التوقيع مهم لأن الكلمة بقيت، بينما نُقل الناس إلى ما دون النظام الذي كان يفترض أن يحميهم.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/ar_SA. -->

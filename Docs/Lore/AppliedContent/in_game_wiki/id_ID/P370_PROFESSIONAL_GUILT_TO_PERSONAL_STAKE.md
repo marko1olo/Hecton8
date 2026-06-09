@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dari Rasa Bersalah Profesional ke Kepentingan Pribadi"
+title: "Dari Rasa Bersalah Profesional ke Taruhan Pribadi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dari Rasa Bersalah Profesional ke Kepentingan Pribadi
+# Dari Rasa Bersalah Profesional ke Taruhan Pribadi
 
-Rasa bersalah profesional berubah menjadi kepentingan pribadi tanpa menjadikan protagonis penyebab bencana. Pemain tidak membutuhkan saudara hilang, garis balas dendam, atau peran rahasia sebagai saksi terpilih. Tekanannya lebih dingin dan lebih dewasa. Ia mengenali prosedur. Ia tahu mengapa kolom saksi penting, mengapa stempel rute-aman bisa berbohong, mengapa pengangkut bisa mendengarnya namun tetap tidak mengangkatnya keluar. HECTON-8 menjadi pribadi karena bahasa Deep Reach lama bukan abstraksi baginya. Itu pekerjaan yang dulu harus dipercaya, pekerjaan yang dulu ia dekati, dan kini pekerjaan itu melekat pada nama-nama yang dipulihkan dari ruangan tenggelam. Busurnya bukan pengakuan. Itu penolakan: setelah pemain bisa membaca mesin penelantaran, membiarkannya terkubur menjadi bentuk partisipasi lain.
+Rasa bersalah profesional menjadi taruhan pribadi tanpa menjadikan operator penyebab bencana. Tekanannya lebih sempit dan lebih sulit disingkirkan. Mereka mengenali form, route-safe omission, kolom pemeriksaan tersegel, dan bahasa penerima yang mengubah ruang menjadi claim selesai.
+
+Tidak perlu balas dendam keluarga. Tidak perlu peran komando tersembunyi. Tag yang ditemukan mengikat nama pada prosedur yang dulu dipercaya operator sebagai pekerjaan. Setelah pola itu terbaca, membiarkannya terkubur menjadi omission lain di mesin yang sama. Taruhannya bukan garis darah. Taruhannya pengetahuan kerja yang bertemu bukti dari ruang tenggelam.
 
 ## Scanner
 
-Pola tanda tangan cocok dengan cache prosedur lama. Namanya berubah. Ruangan gagal dengan cara yang sama. Keahlian bukan lagi jarak.
+PROCEDURE MATCH // Urutan lama muncul di catatan gagal baru. Nama berubah; route-safe omission sama. Keahlian bukan lagi jarak.
 
 ## Terminal
 
-RESOLUSI DOSSIER / KEPENTINGAN PROFESIONAL
-bukti pemicu: pengenalan prosedur, tag pekerja yang ditemukan, konflik penerima klaim
-motif dikecualikan: hubungan keluarga, garis balas dendam, status saksi terpilih
-motif aktif: mantan pekerja sistem mengenali penelantaran yang bisa dicegah dan masih dapat membaca mesin yang mengarsipkannya.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Kau datang untuk klaim. Kau tinggal karena dokumen itu mengenal tanganmu.
+Kau datang untuk claim. Form itu memakai tangan lamamu.
 
 ## Field Note
 
-Bukan tanda tanganmu. Tetap keahlianmu. Karena itu ruangan tidak akan diam.
+Bukan tanda tanganmu. Tetap pekerjaanmu. Karena itu ruang ini tidak akan tetap terkubur.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/id_ID. -->

@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Jeda Pesan Relai
 
-Jeda relai membiarkan Deep Reach mengancam pemain tanpa suara hidup di ruangan. Mesin kontrak, notaris, jendela klaim, dan klausul carrier bisa tiba sebelum belas kasihan karena ditulis lebih awal, masuk antrean lebih awal, dan dihargai agar bertahan melintasi jarak.
+Jeda relai membuat HECTON-8 menerima otoritas tanpa menerima perawatan. Paket bisa membawa peringatan, utang, kepemilikan, kustodi, atau pengakuan melintasi jarak, tetapi tidak bisa membawa tangan ke ruangan banjir. Pemisahan itu membuat komunikasi menakutkan: sistem jauh tetap kuat karena ditulis lebih awal, masuk antrean lebih awal, diberi harga untuk jarak, dan dipercaya oleh mesin yang tidak tahu pengirimnya sudah mati.
 
 ## Scanner
 
-Pesan bisa mengikat secara hukum dan tetap datang terlalu terlambat untuk menyelamatkan udara.
+Ikatan pesan valid. Jawaban manusia absen. Sisa udara ditentukan lokal.
 
 ## Terminal
 
-JEDA RELAI: pesan lokal Aegir bisa memakan jam atau hari. Paket hukum antardomain bisa memakan tahun. Tekanan Deep Reach basi, otomatis, kontraktual, dan tetap berbahaya.
+JEDA RELAI: paket lokal Aegir bisa memakan jam atau hari. Paket hukum lintas-domain bisa memakan tahun. Tekanan Deep Reach bertahan karena instruksi lama, pemberitahuan gadai, klaim rute, dan penolakan otomatis tetap bisa dieksekusi setelah orang yang menulisnya menghilang.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Balasannya terlambat. Hak gadai masih berlaku.
 
 ## Field Note
 
-Tanpa ansible, kebenaran bergerak seperti kargo.
+Tanpa ansible, kebenaran bergerak seperti kargo, tetapi hukum bergerak seperti jadwal bersenjata.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/id_ID. -->

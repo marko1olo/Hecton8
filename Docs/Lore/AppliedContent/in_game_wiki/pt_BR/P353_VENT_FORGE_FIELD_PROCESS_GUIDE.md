@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guia de Processo de Campo de Forja de Vent"
+title: "Guia de processo de campo da forja-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Processo de Campo de Forja de Vent
+# Guia de processo de campo da forja-vent
 
-Vent forges são reatores naturais-industriais. Transformam calor, brine e pressure history em ceramics, sealants e charge materials úteis enquanto mantêm cada amostra ligada ao seu caminho térmico.
+Forjas-vent são reatores naturais-industriais. Transformam calor, salmoura, histórico de pressão e resfriamento lento em cerâmicas, selantes e materiais de carga. Uma amostra só serve se seu caminho térmico sobreviver à recuperação.
 
 ## Scanner
 
-Vent-forge chemistry ativa. Qualidade segue pressure history, heat pulse e resfriamento lento, não o brilho da amostra.
+Química de forja-vent ativa. Qualidade segue histórico de pressão, pulso de calor e resfriamento lento, não o brilho da amostra.
 
 ## Terminal
 
-FIELD GUIDE: vent forges cozinham sulfides, noble-gas pockets, ceramics e sealant precursors. A rota de uma amostra por heat, brine e pressure importa mais que seu nome.
+GUIA DE CAMPO: forjas-vent cozinham sulfetos, bolsões de gases nobres, grãos cerâmicos e precursores de selante. A rota da amostra por calor, salmoura e pressão importa mais que seu nome.
 
 ## Audio
 
@@ -35,6 +35,6 @@ O vent não fez minério. Fez um processo que você interrompeu.
 
 ## Field Note
 
-Não levante um lote fresco direto para água fria. Deixe o vent terminar o anneal ou a shell vai craquelar.
+Não levante um lote fresco direto para água fria. Deixe o vent terminar o recozimento ou a casca vai craquelar.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/pt_BR. -->

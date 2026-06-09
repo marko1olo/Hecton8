@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Quarantine Relay Fragment"
+title: "מקטע ממסר הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quarantine Relay Fragment
+# מקטע ממסר הסגר
 
-HE LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+מקטע ממסר ההסגר מגדיר את הקצה המר של הישרדות ב-HECTON-8. המקום אינו רק בריחה מלחץ המים; הוא גם בריחה מרשומות, שרשראות משמורת ותביעות בעלות ששורדות את ההצפה. המקטע נותן לסופים צורה קשוחה יותר: אפשר לחלץ אדם מן האוקיינוס ועדיין לא לשחרר אותו.
 
 ## Scanner
 
-HE LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+אותה חבילת ממסר מאשרת חילוץ ומסרבת לשחרור. האוקיינוס משחרר את הגוף לפני שהמושבה משחררת את האדם.
 
 ## Terminal
 
-HE LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+החזקת ממסר QRF-17 / חילוץ: התקבל / שחרור: נדחה / סיבות: משמורת דגימה לא פתורה, ביקורת אוויר מיושנת, מחלוקת תובע פעילה, מעמד עד זמני.
 
 ## Audio
 
-HE LOC HOLD: You are out of the water. You are not out of custody.
+החזקת ממסר. חילוץ התקבל. שחרור נדחה. אתה מחוץ למים, לא מחוץ למשמורת.
 
 ## Field Note
 
-HE LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+שתי חותמות: גוף חולץ, אדם מוחזק. ביקורת האוויר קדמה לקבלת החילוץ; מחלוקת התובע עדיין פתוחה.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/he_IL. -->

@@ -1,62 +1,80 @@
-<!-- localization_status: draft_machine_or_llm -->
+<!-- localization_status: draft_machine_or_llm_fr_FR -->
 # RÉSEAUX TROPHIQUES DES RUINES, FLORAISONS DE CHAROGNE ET ODEUR HUMAINE
 
-> **Source :** fragments biologiques d'Atlas, notes de route des Marauders, briefings de contamination de Black Keel sur le transfert de traces organiques.  
-> **Voix :** écologue de terrain affecté au risque de récupération, avec des remarques en marge de travailleurs qui ont appris les mêmes leçons en perdant des appâts, du sang, des outils et des amis.  
-> **Note de révision :** les ruines de HECTON-8 ne doivent jamais sembler biologiquement vides. Un espace humain mort devient un événement alimentaire, un abri, une cicatrice chimique et un signal comportemental.
+> **Source :** fragments biologiques Atlas, notes de route Marauder, marges Deep Reach sur l'écologie des fuites et briefings Black Keel sur le transfert de traces organiques.  
+> **Portée :** comment les salles humaines abandonnées deviennent des sites d'alimentation, comment les floraisons de charogne passent dans l'infrastructure, et pourquoi une combinaison étanche modifie encore l'eau.  
+> **Usage terrain :** à lire avant d'entrer dans des ruines mouillées quand la route paraît calme, récemment nettoyée ou trop propre.
 
 ---
 
-## 1. Une ruine est un événement alimentaire
+## 1. Une salle commence à nourrir
 
-Une pièce humaine ne meurt pas d'un seul coup.
+Une salle humaine ne meurt pas d'un coup. Elle devient inégale.
 
-D'abord l'alimentation devient inégale. Les panneaux chauds refroidissent. Les panneaux froids se réchauffent. Les pompes toussent, calent, redémarrent et poussent de la vieille eau dans des endroits restés secs pendant des années. La pièce change de pression. Elle relâche une odeur. Elle perd des écailles de peinture, de la graisse, de la peau, des fibres de tissu, des microbes morts, de l'isolant cuit et de la poussière métallique. Quelque chose dehors le remarque.
+L'alimentation tombe par mur. Un panneau reste chaud. Un autre refroidit. Une pompe cale, redémarre et pousse de la vieille eau dans une gorge de service restée sèche. Une porte de pression s'ouvre d'une paume et donne à l'odeur une ligne droite. La peinture s'écaille là où le sel est passé sous l'apprêt. La graisse se relâche. Les fibres de tissu gonflent. Des microbes morts quittent la grille de vidange. La chaleur d'une batterie garde une entretoise plus tiède que la vase autour.
 
-Les premiers animaux n'arrivent pas parce que la pièce est dramatique. Ils arrivent parce que les gradients ont changé. La chaleur s'est déplacée. La chimie s'est relâchée. Un joint a cédé et a donné à l'eau une ligne d'organique. Une imprimante alimentaire a pourri derrière une porte verrouillée. Un corps a été mal retiré. Un banc de batteries a chauffé un mur plus longtemps que l'autre. La vie de HECTON-8 n'a pas besoin d'une histoire pour enquêter. Elle a besoin d'une différence.
+La vie de HECTON-8 suit ces différences. Elle n'a pas besoin d'une salle tragique, d'un corps visible ou d'une explication humaine. Elle a besoin de chaleur, d'organique, de courant, d'abri, de charge, de minéral tendre, de goût métallique ou d'un chemin vers la même chose plus loin.
 
-C'est pourquoi les bases abandonnées ne sont pas des niveaux vides. Ce sont des repas différés. Chaque écoutille, gaine et passage de câble devient une question posée par l'océan : y a-t-il de la chaleur, du sel, des protéines, du courant, un abri, du métal, une charge, de la lumière, de la pourriture ou un chemin vers davantage de la même chose?
+Les premiers arrivants sont petits. Les tapis filtrants s'étalent sur les fuites lentes. Les brouteurs pâles retirent le film minéral des joints de tuyau. Le krill se rassemble là où la vibration d'une pompe détache la nourriture. Les nettoyeurs à carapace vivent dans les cuvettes de vis et les lèvres de joints. Ils peuvent faire paraître entretenue une salle morte, parce qu'ils retirent les preuves molles avant de toucher les dures.
 
-Quand un Marauder arrive, la réponse peut déjà avoir des dents.
+Quand un Marauder arrive à l'écoutille, la salle peut déjà avoir son ordre d'alimentation.
 
-## 2. Ce que nourrit l'infrastructure humaine
+## 2. Ce que nourrit l'infrastructure
 
-L'infrastructure humaine nourrit plus que des prédateurs.
+Les ruines nourrissent autre chose que des prédateurs.
 
-Les tapis filtrants vivent des fuites lentes. Des brouteurs pâles raclent la vase minérale des joints de tuyaux. Le krill aveugle s'entasse dans les puits de service où les vibrations arrachent les films microbiens. Le kelp de fer s'ancre sur des contreventements chauds près des fuites de courant et grince si doucement qu'un plongeur épuisé peut le prendre pour une machine. De minuscules nettoyeurs cuirassés vivent dans les logements de vis, les lèvres de joints et la céramique fissurée. À distance, ils font croire que les pièces mortes sont entretenues, parce qu'ils retirent d'abord les mauvaises preuves.
+Un mur de batteries tiède nourrit des brouteurs. Un bac d'algues fissuré nourrit une floraison. Une pompe cyclique nourrit le krill en arrachant du film. Un recycleur médical qui fuit nourrit des tapis blancs, qui nourriront ensuite des nettoyeurs à carapace. Un passage de câble nourrit l'iron kelp là où le courant touche la chaleur. Un casier entrouvert nourrit ce qui peut racler le sel du tissu et la peau à l'intérieur d'un gant.
 
-Les grands chasseurs viennent plus tard. Ils ne commencent pas le système; ils l'encaissent. Un traqueur de tranchée n'a pas besoin de comprendre une alarme de porte. Il lui suffit d'apprendre qu'une alarme est suivie de mouvement, que le mouvement est suivi de sang, et que le sang est suivi de petits animaux qui oublient la prudence. Un léviathan ne chasse pas un couloir parce qu'il sait ce qu'est un couloir. Il chasse la bouche d'un courant répété qui sent la viande enfermée et le cuivre chaud.
+Les grands chasseurs arrivent plus tard. Ils ne lancent pas le système ; ils l'encaissent. Un trench stalker n'a pas besoin de comprendre une alarme de porte. Il doit seulement apprendre que les alarmes sont suivies de mouvement, que le mouvement est suivi de sang, et que le sang est suivi de petits animaux qui oublient la prudence. Un contact Leviathan-class ne chasse pas un couloir parce qu'il connaît le mot couloir. Il attend à la bouche d'un courant répété qui sent la viande coincée et le cuivre chaud.
 
-Deep Reach a tenté d'écrire cela comme de la gestion de contamination. Atlas l'a écrit comme une écologie de maintenance. Les travailleurs l'ont écrit plus court : si un lieu sent le repas, ne suppose pas que tu es le premier.
+Deep Reach classait cela en gestion de contamination. Atlas en marquait des parties comme écologie de maintenance. Les notes Marauder résument plus court : si un lieu sent l'endroit nourri, ne suppose pas que tu es le premier.
 
 ## 3. Floraisons de charogne
 
-Les floraisons de charogne ne concernent pas seulement les corps.
+Les floraisons de charogne ne viennent pas seulement des corps.
 
-Une floraison peut commencer avec un équipage mort, oui. Elle peut aussi commencer avec une caisse de pâte nutritive, un réservoir d'algues rompu, une bobine de doublure de combinaison, un congélateur resté chaud trois heures, un recycleur médical qui a fait un cycle avec la mauvaise valve ouverte, ou une poche d'outils laissée dans un coin humide assez longtemps pour se couvrir d'une peau. L'océan ne se soucie pas de savoir quelle part était humaine, corporative, animale ou fabriquée. Il se soucie de ce qui peut être mangé et de ce qui peut porter le fait de manger plus loin.
+Une floraison peut commencer avec un équipage mort, mais aussi avec de la pâte nutritive, une cuve d'algues rompue, un rouleau de doublure de combinaison, une pâte de congélateur réchauffée trois heures, un recycleur médical qui a cyclé avec la mauvaise vanne ouverte, ou une trousse à outils laissée humide assez longtemps pour former une peau. L'eau ne range pas la source dans des catégories morales. Elle trie ce qui peut être mangé, transporté, filtré, caché ou utilisé comme couverture.
 
-La floraison a des étapes. D'abord le trouble : une eau légèrement laiteuse ou poussiéreuse près d'un joint. Puis le tri : petites bouches, éventails filtrants, moustaches blanches, films mous et points mobiles qui disparaissent quand la lumière les touche. Puis l'assurance : bords broutés, vis polies, traces de carapaces, trous de morsure, câbles nettoyés jusqu'à la gaine. Puis la possession : des animaux plus grands utilisent la floraison comme route, cache, lieu d'accouplement ou garde-manger.
+La plupart des floraisons avancent par étapes. D'abord le trouble : de l'eau légèrement lactée près d'un joint ou d'une vidange. Puis le tri : petites bouches, éventails filtrants, moustaches blanches, film mou et points mobiles qui disparaissent sous la lampe. Puis le travail : bords broutés, vis polies, pistes de coquilles, creux de morsure, gaines de câbles nettoyées jusqu'au caoutchouc. Puis l'usage de route : de plus grands animaux utilisent la floraison comme cache, garde-manger, lieu d'accouplement ou repère de courant.
 
-L'étape dangereuse n'est pas toujours la bruyante. Une floraison silencieuse peut signifier que la petite vie a déjà été mangée. Un sol poli peut signifier que les nettoyeurs sont passés. Une odeur de pièces chaudes peut signifier que le sang est vieux mais pas oublié. Une porte sans aucune croissance peut être pire qu'une porte trop couverte, parce que quelque chose la garde nette.
+L'étape bruyante n'est pas toujours la plus dangereuse. Une floraison calme peut signifier que la petite vie a déjà été mangée. Un sol poli peut signifier que les nettoyeurs ont retiré la trace d'avertissement. Une odeur de pièces chaudes peut signifier du sang assez vieux pour s'être diffusé et assez frais pour compter. Une porte sans croissance peut être pire qu'une porte envahie, parce que quelque chose la garde peut-être dégagée.
 
-Les Marauders apprennent à lire l'absence avec autant de soin que l'abondance.
+L'absence est une marque biologique. Traite-la comme telle.
 
 ## 4. Odeur humaine
 
 L'odeur humaine n'est pas une seule odeur.
 
-Pour HECTON-8, c'est du résidu de savon, du tissu synthétique, de la chaleur de batterie, du sel de peau, de la sueur de stress, de l'adhésif, du lubrifiant d'outil, du plastifiant, du stérilisant, du fer du sang, de l'isolant cuit, de l'haleine stagnante et la chimie aiguë de la peur qui traverse les mauvais joints. Un plongeur croit être scellé parce que la combinaison tient la pression. L'océan n'est pas d'accord. Il lit la trace.
+Pour HECTON-8, c'est résidu de savon, tissu synthétique, chaleur de batterie, sel de peau, sueur de stress, adhésif, lubrifiant d'outil, plastifiant, stérilisant, fer du sang, isolant cuit, haleine rassise et chimie aiguë de la peur qui sort par un mauvais joint de manchette. Un plongeur fait confiance à la combinaison parce qu'elle tient la pression. L'eau lit la trace.
 
-C'est pourquoi certains équipages arrêtent d'utiliser des lingettes propres avant une descente. Les lingettes rendent le plongeur acceptable pour l'inspection de Black Keel et bruyant pour l'eau. D'autres frottent leurs gants dans du vieux limon avant d'entrer dans une salle nourrie. Certains emportent des pastilles protéiques sacrifiables, non pour nourrir les prédateurs comme des animaux domestiques, mais pour jeter un débat plus petit dans le courant avant que leur propre corps devienne le plus grand. Aucune de ces habitudes n'est officiellement recommandée. La plupart sont écrites dans les marges de notes de route de morts.
+C'est pourquoi certains équipages cessent d'utiliser des lingettes neuves avant la descente. Les lingettes passent l'inspection Black Keel et rendent le plongeur bruyant pour la route. D'autres frottent les gants dans une vieille vase avant d'entrer dans une salle nourrie. Certains portent des pastilles protéinées sacrificielles, non pour apprivoiser les prédateurs, mais pour jeter un plus petit litige dans le courant avant que leur propre corps ne devienne le plus gros.
 
-Black Keel vend le contrôle d'odeur comme un consommable. Deep Reach appelait cela la discipline de trace. Les Marauders appellent cela ne pas sonner la cloche du dîner.
+Aucune de ces habitudes n'est une procédure officielle. La plupart se trouve en marge des notes de route de travailleurs morts. Black Keel vend le contrôle d'odeur comme consommable. Deep Reach appelait cela discipline de trace. Les Marauders appellent cela ne pas sonner la cloche du dîner.
 
-## 5. Ce que le joueur apprend
+## 5. Quand propre veut dire nourri
 
-Le joueur apprend que l'écologie n'est pas un décor.
+Une ruine propre n'est pas automatiquement sûre.
 
-La vie d'une ruine indique le temps. Des films frais disent qu'une fuite est récente. De vieilles traces de carapaces disent qu'une route est restée humide. Des os nettoyés disent que de petits animaux ont eu accès avant les grands. Un couloir soudain sans krill peut être vide parce qu'il est sûr, ou vide parce que quelque chose l'a rendu sûr pour soi. Une salle des machines silencieuse peut être hors tension, ou elle peut être un affût qui écoute.
+Des vis propres peuvent signaler des nettoyeurs à carapace. Des gaines de câble dégagées peuvent signaler des brouteurs qui ont retiré la croissance molle. Des poches de krill vides peuvent signaler le passage récent d'un prédateur. Une porte à visibilité parfaite peut signaler un courant fort, ou bien un animal plus grand qui utilise assez souvent l'ouverture pour garder les murs raclés.
 
-Bien jouer, c'est demander ce que la ruine a nourri, ce qui s'est nourri d'elle et ce que le joueur va ajouter. Ouvrir une écoutille peut lancer une floraison. Couper un câble peut libérer de la chaleur. Saigner dans un gant peut changer une route. Retirer un tapis filtrant peut exposer un courant qui apporte plus gros. Laisser un appât peut sauver une vie ou apprendre une nouvelle porte au mauvais animal.
+Les bons lecteurs de route comparent les choses qui ne vont pas ensemble. Un mur poussiéreux près d'un loquet poli. Un sol froid sous une charnière tiède. De la coquille neuve sur une vieille piste de sang. Aucun tapis filtrant dans une salle avec fuite active. Une armoire scellée avec du sel dans le creux de la poignée. Ces écarts donnent mieux l'heure qu'un horodatage mort dans un fichier Atlas.
 
-HECTON-8 ne sépare pas la récupération de la biologie. Un objet récupéré, un joint rompu, un travailleur mort et un mur chaud entrent dans le même registre de l'appétit. L'océan tient ses comptes avec des bouches, des films, des traces et du silence.
+La chambre qui paraît la plus sûre dans une ruine est souvent celle que des bouches ont déjà nettoyée.
+
+## 6. Manipulation du salvage
+
+La biologie peut ruiner une preuve avant que quelqu'un mente à son sujet.
+
+Une étiquette de corps peut voyager dans l'intestin d'un nettoyeur. Un enregistreur peut être poli jusqu'à perdre le sang qui prouvait qui le tenait. Un sac d'échantillon peut former assez de film pour cacher le sédiment d'origine. Un tampon mural peut disparaître sous un scellement de coquille. Un animal marqué peut porter un capteur Atlas dans un passage où aucun drone ne peut suivre. Un prédateur peut traîner une charge utile dans une catégorie de réclamation que Keelmark préfère : irrécupérable, contaminée, contestée.
+
+Les bons équipages ensachent les preuves avant de les nettoyer. Ils photographient les creux de morsure, la croissance de coquille, les bords de film et l'absence de petite vie. Ils notent l'odeur, la température de l'eau, la réponse du pinger, la direction du courant et si l'objet a été trouvé dans l'eau, la vase, l'intestin, la floraison, la croissance de coquille ou un tissu marqué Atlas. Ces détails paraissent petits jusqu'au moment où un commis décide si un travailleur mort était une personne, une source de contamination ou une catégorie de fret payable.
+
+N'essuie pas l'histoire de l'objet avant que le système de réclamation ait l'occasion de la lire de travers.
+
+## 7. Règle de terrain
+
+Avant d'ouvrir une ruine mouillée, demande ce qui s'y est nourri.
+
+Demande ensuite ce qui s'est nourri de cela, ce qui est resté à distance, ce qui a changé de température, ce qui a ouvert un courant, ce qui a cessé de faire du bruit et ce que ta combinaison ajoutera quand le joint fléchira.
+
+Si la réponse vaut encore la réclamation, entre comme si la salle était déjà occupée.

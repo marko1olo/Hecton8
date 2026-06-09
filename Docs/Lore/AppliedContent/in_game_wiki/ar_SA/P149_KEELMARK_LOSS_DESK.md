@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "مكتب خسائر Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# مكتب خسائر Keelmark
 
-AR LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark هي غرفة الحساب. تترجم الكارثة إلى فئات خسارة يمكن تأمينها أو منازعتها أو بيعها أو تجاهلها. خطرها ليس قسوة مسرحية، بل قدرة هادئة على إخفاء شخص داخل فئة اسمها تعرض غير قابل للاسترداد.
 
 ## Scanner
 
-AR LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+جدول خسائر: عمود للمعدات، عمود للعمل، وعمود للشهادة المزعجة.
 
 ## Terminal
 
-AR LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+مكتب KEELMARK: يخصص فرز التأمين خسارة الشحن وخسارة السكن وإعاقة العمل وتعرض الشاهد وفئة المادة القابلة للاسترداد قبل أن يسمي أي بيان عام الموتى.
 
 ## Audio
 
-AR LOC HOLD: The ledger is dry because the room was not.
+عدوا المفقودين قبل الأسماء.
 
 ## Field Note
 
-AR LOC HOLD: A loss category is a grave with better stationery.
+مكتب الخسائر لا يحزن. يقرر أي غياب يمكن فوترته.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/ar_SA. -->

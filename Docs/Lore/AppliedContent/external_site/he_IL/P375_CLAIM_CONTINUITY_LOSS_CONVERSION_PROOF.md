@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "המרת אובדן לרציפות claim"
+title: "המרת אובדן עם רציפות תביעה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# המרת אובדן לרציפות claim
+# המרת אובדן עם רציפות תביעה
 
-החוליה האחרונה בשקר של Deep Reach אינה קובץ הסתרה דרמטי. זו המרה חשבונאית שיודעת בדיוק איך לשרוד. ה-ledger מקבל שאנשים נעלמו, מודולים נפגעו ומסלולים נפגעו, ואז מעביר כל עובדה לקטגוריה שמערכת claim יכולה לעבד. היעדר עובדים נעשה unrecoverable loss. ראיה נעשית חומר תחת custody. מטען ששרד נעשה recoverable value. ה-claim עצמו נשאר continuous, כלומר בעלות יכולה לשרוד את המושבה. ברגע הזה HECTON-8 הופך מדוח תאונה למכונה מוסרית. שחקן שמעלה את ה-ledger יכול לחשוף את המתים, למכור את הראיה, לקבור אותה או לנתב אותה מחדש. המסמך יקר כי התאגיד כבר לימד את השוק להעריך אותו.
+המרת האובדן היא המסמך השקט ביותר בשרשרת והקשה ביותר לסליחה. הוא לא מתווכח על הגאות הגדולה, תור הפינוי, שקלול Atlas או ההסגר. הוא מקבל את הנזק שנוצר וממיין אותו לעמודות שיכולות לנוע דרך מקבלים, מבטחים וועדות משמורת.
 
-## Scanner
-
-חותמת שולחן הפסדים חולצה. ה-ledger שרד טוב יותר מהעובדים ששינה את שמם.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. biological workforce הומרה ל-unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-כאן אנשים נעשו עמודה נקייה.
-
-## Field Note
-
-הערת בוזז: ledger יכול לזכור את המתים ועדיין לבזבז אותם.
+המיון הזה הוא פתח המילוט של Deep Reach. כוח העבודה הביולוגי נעשה אובדן בלתי ניתן לשחזור. חומר נשאר ניתן לשחזור. משמורת ראיות נשארת פעילה כי לתביעה עדיין יש ערך. האדם שנושא את החבילה מסוכן כי החבילה קושרת כל החלטה מוקדמת לאותה שורת ספר. החברה לא רק שרדה את האסון; היא בנתה נתיב בעלות נקי דרך המתים.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/he_IL. -->

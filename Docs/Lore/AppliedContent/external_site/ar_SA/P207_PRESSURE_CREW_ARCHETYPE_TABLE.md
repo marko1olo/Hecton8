@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "جدول نماذج طواقم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# جدول نماذج طواقم الضغط
 
-AR LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+تحول نماذج طواقم الضغط عمال HECTON-8 إلى تاريخ عمل قابل للقراءة. لا تفسر المستعمرة بالسير الشخصية أولا؛ تفسر بالعمل. تمنح Pump وSeal وRelay وBrine Map وVent Forge وTriage وPressure Botany وPayload Witness كل اسم وظيفة ومكانا في اقتصاد المحيط وسببا للظهور كدليل. وهكذا يطفو اللور عبر الأشياء والمسارات بدلا من شرح منفصل.
 
 ## Scanner
 
-AR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+الطواقم أفعال قبل أن تكون خلفيات شخصية: تضخ، تغلق، ترحل، ترسم، تصنع، تفرز، تزرع، تشهد.
 
 ## Terminal
 
-AR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump وSeal وRelay وBrine Map وVent Forge وTriage وPressure Botany وPayload Witness. ترتبط كل هوية عامل بعائلة طاقم قبل التفاصيل الشخصية. هكذا تبقى الأدلة مربوطة بالآلات والمسارات وفشل الضغط وثقافة الطعام وقانون الإنقاذ وسلسلة payload النهائية.
 
 ## Audio
 
-AR LOC HOLD: Job first. Memory second. That is how the colony survives.
+العمل أولا. الذاكرة ثانيا. هكذا تنجو المستعمرة على الورق.
 
 ## Field Note
 
-AR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+يقرأ العامل الميت بوضوح أكبر عندما تبقى الغرفة بحاجة إلى العمل الذي كان يعرفه.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ar_SA. -->

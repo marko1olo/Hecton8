@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Escape Recipe Cost Boundary"
+title: "脱出レシピコスト境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Escape Recipe Cost Boundary
+# 脱出レシピコスト境界
 
-JA LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+HECTON-8 を離れることは、まず修理問題だ。信号、シール、誘導、上昇エネルギー、法的ハンドシェイク、payload 保管。正確な費用はレシピ表が持ち、lore は各費用に牙がある理由を持つ。
 
 ## Scanner
 
-JP LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+脱出レシピ行は、部品分類、圧力 tier、ルート証明、権限状態を結びつける。
 
 ## Terminal
 
-JP LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: 適格コストはリレー、シール、誘導、上昇エネルギー、法的ハンドシェイク、payload 権限、受信者リスクを名指しする必要がある。上への道には部品がある。部品には所有者がいる。
 
 ## Audio
 
-JA LOC HOLD: The way up has parts. The parts have owners.
+上への道には部品がある。部品には所有者がいる。
 
 ## Field Note
 
-JP LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+圧力帯は封じ込めルールから来る。正確なコストは recipe table が所有する。
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ja_JP. -->

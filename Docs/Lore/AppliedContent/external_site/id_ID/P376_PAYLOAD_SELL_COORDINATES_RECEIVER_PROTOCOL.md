@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protokol Penerima Jual Koordinat Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protokol Penerima Jual Koordinat Payload
 
-ID LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+Protokol ini bukan penjualan rampasan biasa. Ini adalah transfer jangkauan. Deep Reach sudah punya cukup kertas untuk berdebat tentang HECTON-8; yang kurang adalah jalan tepercaya kembali melewati cekungan rusak. Payload menyediakan jalan itu dengan mengikat koordinat pada keyakinan, kustodi bukti, dan kelas salvage.
 
-## Scanner
-
-ID LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-ID LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-ID LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Pembayaran nyata, begitu juga keringanan utang. Itulah yang membuat rute ini berbahaya tanpa menjadi karikatur. Operator putus asa dapat membersihkan lien dan tetap mengirimkan jalur balik koloni kepada perusahaan yang mengubur catatan waktu. Stempel penerima mengubah bertahan hidup menjadi layanan.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/id_ID. -->

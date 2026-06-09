@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Deep Reach Faction Message Split"
+title: "Divisão de Mensagens da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Deep Reach Faction Message Split
+# Divisão de Mensagens da Deep Reach
 
-PT LOC HOLD: Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+A divisão mantém a Deep Reach institucional, não um vilão caricaturalmente unificado. Uma corporação pode emitir ordens de resgate, ordens de encobrimento e avisos técnicos honestos ao mesmo tempo porque cada escritório defende um livro-caixa diferente.
 
 ## Scanner
 
-PT LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Três fontes da Deep Reach discordam: recuperação quer coordenadas, jurídico quer silêncio, engenharia legada avisa que a bacia vai responder.
 
 ## Terminal
 
-PT LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance solicita coordenadas navegáveis. Asset Silence ordena contenção de provas e nenhum reconhecimento público. Legacy Engineering Node 4 repete um aviso pré-colapso: não perturbar os relés da bacia inferior durante a sombra de Aegir. Não são rebeldes. São departamentos protegendo perdas diferentes.
 
 ## Audio
 
-PT LOC HOLD: A company can be one logo and three knives.
+Um logotipo. Três vozes. Nenhuma limpa.
 
 ## Field Note
 
-PT LOC HOLD: This is not redemption. It is pressure-source readability.
+Usar depois que o jogador ouviu pelo menos dois tons da Deep Reach. A batida é ambiguidade com dentes: instruções conflitantes, posse compartilhada, nenhum aliado limpo.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/pt_BR. -->

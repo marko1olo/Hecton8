@@ -31,7 +31,15 @@ namespace Hecton8.Tests.Editor
         {
             string runtime = ReadProjectFile("Assets", "_Project", "Scripts", "Physics", "Buoyancy", "AnalyticalGerstnerWaveRuntime.cs");
 
-            StringAssert.Contains("tuning.SeaLevelY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.SeaLevelY);", runtime);
+            StringAssert.Contains("private IHectonOceanKinematicsService _oceanKinematicsService;", runtime);
+            StringAssert.Contains("tuning.SeaLevelY = ResolveRuntimeSeaLevelY(tuning.SeaLevelY);", runtime);
+            StringAssert.Contains("private float ResolveRuntimeSeaLevelY(float fallbackSeaLevelY)", runtime);
+            StringAssert.Contains("private bool TryResolveOceanSeaLevelY(out float seaLevelY)", runtime);
+            StringAssert.Contains("TrySanitizeOceanRuntimeSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY)", runtime);
+            StringAssert.Contains("private static bool TrySanitizeOceanRuntimeSeaLevelY(float value, out float seaLevelY)", runtime);
+            StringAssert.Contains("AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(fallbackSeaLevelY)", runtime);
+            StringAssert.Contains("serviceSlot == GlobalRegistryServiceSlot.OceanKinematics", runtime);
+            StringAssert.Contains("_oceanKinematicsService = null;", runtime);
             StringAssert.Contains("float resolvedSeaLevelY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuningDto.SeaLevelY);", runtime);
             StringAssert.Contains("tuningDto.SeaLevelY = resolvedSeaLevelY;", runtime);
             StringAssert.Contains("tuning[0] = tuningDto;", runtime);

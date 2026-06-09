@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Contract Risk Reward Boundary"
+title: "合同风险奖励边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Contract Risk Reward Boundary
+# 合同风险奖励边界
 
-ZH LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+HECTON-8 的可重玩性不是继承力量。它是一份更糟的合同、更紧的窗口、更早的证据要求，以及一艘记得你哪些部分仍是抵押品的载舰。
 
 ## Scanner
 
-CN LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+合同行绑定留置权、风暴窗口、监管顺序、支付上限和条款权重。
 
 ## Terminal
 
-CN LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT：行需要留置严重度、支付上限、风暴窗口、样本监管、证据顺序和 Deep Reach 条款权重。合同是第一个捕食者。
 
 ## Audio
 
-ZH LOC HOLD: The contract is the first predator.
+合同是第一个捕食者。
 
 ## Field Note
 
-CN LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+奖励变化属于合同行，而不是即兴 lore 文本。
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/zh_CN. -->

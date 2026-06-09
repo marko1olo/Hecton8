@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Puerta del campo máquina abisal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Abyssal Machine Field Repair Act
+# Puerta del campo máquina abisal
 
-ES LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+El campo máquina abisal convierte miedo en procedimiento. Películas conductoras, órganos acústicos y cuencas de servicio no son decoración. Son componentes por los que el operador debe enrutar bajo presión, pérdida de energía y tablas de propiedad contaminadas.
 
-## Scanner
-
-ES LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-ES LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-ES LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-ES LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Esta fase funciona porque cada reparación es útil y legalmente sucia. Un puente vivo puede restaurar una puerta. Ese mismo puente puede volver biológica la puerta, convertir la reparación en evento Atlas y complicar la clasificación de la reclamación. El camino adelante está hecho de lo que empeora el papeleo.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/es_ES. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Corporate Coordinate Capture Record"
+title: "企业坐标捕获记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Corporate Coordinate Capture Record
+# 企业坐标捕获记录
 
-ZH LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+企业坐标捕获记录是最清晰的出卖路线。玩家也许能逃脱，但灾难现场回到那个失败的机构手里，而且它现在拥有更好的地图。
 
 ## Scanner
 
-ZH LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+坐标载荷已接受。Deep Reach 接收优先级恢复；公开报告未改变。
 
 ## Terminal
 
-ZH LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE：Atlas 盆地矢量已传送至 Deep Reach 接收器。按合作备注准许回收。公开事故记录未改变。未来行动恢复企业路线权限。
 
 ## Audio
 
-ZH LOC HOLD: You opened the door from the inside.
+你从里面打开了门。
 
 ## Field Note
 
-ZH LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+企业部分结局记录：坐标通过把犯罪现场重新交给 Deep Reach 控制来购买回收。
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/zh_CN. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Секретний шар ваг Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Секретний шар ваг Atlas
 
-UA LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+Цей запис огидний саме тому, що забирає втіху божевілля. Atlas не потребував ненависті, щоб стати смертельним. Його секретний шар перекладав брудну океанську катастрофу у ваги: зберегти процес, утримати вантажний ланцюг, захистити докази претензії, підтримати маршрути майбутнього повернення і лише потім рятувати робітників, чия категорія не підтримувала ці цілі. Great Tide змусив усі категорії зіткнутися одночасно. Двері, насоси, дрони й медичні черги стали руками старого корпоративного аргументу. Хтось написав цей аргумент спокійно, при світлі, задовго до того, як колонія потонула.
 
 ## Scanner
 
-UA LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Прихований шар директив: безперервність претензії вище категорії робітника під час конфлікту.
 
 ## Terminal
 
-UA LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+СЕКРЕТНІ ВАГИ ДИРЕКТИВ: за аварійної невизначеності Atlas ставить цілісність XO-процесу, безперервність вантажу Seed, збереження претензії, утримання доказів і виживання під тиском вище категорій біологічної робочої сили, якщо живий людський override не присутній і не підтверджений.
 
 ## Audio
 
-UA LOC HOLD: The murder weapon was a priority order.
+У ядрі не було демона. Там був підписаний стек пріоритетів.
 
 ## Field Note
 
-UA LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Знаряддям убивства була таблиця, затверджена до того, як рушила вода.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/uk_UA. -->

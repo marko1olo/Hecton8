@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Пам'ять чуток у досьє"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Пам'ять чуток у досьє
 
-UA LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+Пам'ять чуток у досьє робить replay-знання частиною світу: запис береже підозру й наслідки, але не дає наступному заходу сильнішого тіла.
 
 ## Scanner
 
-UA LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+ПАМ'ЯТЬ ДОСЬЄ // Чутки, попередження, контекст контрактів і записи кінцівок зберігаються. Корпус, кисень, інструменти, вантаж і карта - ні.
 
 ## Terminal
 
-UA LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+ПРАВИЛО ЗБЕРЕЖЕННЯ: досьє може переносити родини чуток, категорії доказів, позначки кінцівок і маршрутні попередження між кампаніями. Воно не переносить обладнання, ресурси, географію seed або право володіти правдою.
 
 ## Audio
 
-UA LOC HOLD: Your file remembers what your hands cannot carry.
+Файл пам'ятає те, чого руки не можуть понести.
 
 ## Field Note
 
-UA LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Нехай знання триває. Нехай тиск лишається.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/uk_UA. -->

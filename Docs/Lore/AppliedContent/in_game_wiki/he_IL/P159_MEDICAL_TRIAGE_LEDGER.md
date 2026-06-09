@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "ledger טריאז' רפואי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# ledger טריאז' רפואי
 
-HE LOC HOLD: Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.
+ה-ledger הרפואי לא צריך להפוך את HECTON-8 ל-gore ראוותני. הכוח שלו קר יותר. מטופל הופך ל-pressure-state, אחר כך לחוב חמצן, לעיכוב מנעול, ל-hold אישור. חובשים יכולים לדעת את הטיפול הנכון ועדיין לאבד מטופל כי hatch, שעון מסלול או signoff של Deep Reach מעכבים עזרה. ה-ledger אנושי כי הוא מראה אנשים מנסים לדייק בזמן שהמערכת הופכת דיוק לחסר תועלת.
 
 ## Scanner
 
-HE LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // פגיעת לחץ, היפוקסיה, עיכוב מנעול, מסלול חסר, hold אישור. האימה היא כמה מסודר העזרה חיכתה.
 
 ## Terminal
 
-HE LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+כלל רפואי: לספור גופים בלי gore. השתמש ב-pressure-state, חוב חמצן, עיכוב מסלול, עדיפות triage ו-signoff hold כדי להראות איך הליך יצר מטופלים מהר יותר משהחובשים טיפלו.
 
 ## Audio
 
-HE LOC HOLD: The cleanest handwriting is on the worst page.
+כתב היד הנקי ביותר נמצא בעמוד הגרוע ביותר.
 
 ## Field Note
 
-HE LOC HOLD: Medical text should count bodies without becoming gore.
+טקסט רפואי צריך לספור גופים בלי להפוך ל-gore.
 
 <!-- In-Game Wiki; generated from P159_MEDICAL_TRIAGE_LEDGER/he_IL. -->

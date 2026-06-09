@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Public Ledger Aftershock Record"
+title: "Dossier de contrecoup du registre public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Public Ledger Aftershock Record
+# Dossier de contrecoup du registre public
 
-FR LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+La fin vérité de HECTON-8 n'est pas la pureté. C'est décider de rendre la dissimulation plus difficile tout en acceptant une conséquence incontrôlée : deuil, marchés, procès, lectures sectaires, efforts de sauvetage et vengeance fondés sur les mêmes faits publiés.
 
 ## Scanner
 
-FR LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Miroirs de registre acceptés. Les preuves ne sont plus retirables ; la conséquence n'est plus pilotable.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK : preuves libérées hors garde Deep Reach. Noms d'ouvriers, fragments de vecteur Atlas et marqueurs de responsabilité copiés vers des récepteurs publics. Autorité du joueur sur l'interprétation terminée.
 
 ## Audio
 
-FR LOC HOLD: Truth left the room. It did not ask where to go next.
+La vérité a quitté la pièce. Elle n'a pas demandé où aller.
 
 ## Field Note
 
-FR LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Dossier de vérité publique : les preuves miroir empêchent l'effacement, mais retirent au joueur le contrôle de l'interprétation et des représailles.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/fr_FR. -->

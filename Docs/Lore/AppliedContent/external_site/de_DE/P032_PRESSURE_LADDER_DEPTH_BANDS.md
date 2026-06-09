@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Druckleiter
 
-Sie macht HECTON-8-Tiefe zu harter Survival-Struktur für lange Erkundung.
+Die Druckleiter definiert HECTON-8s Tiefenzugang als Servicekette statt als beliebige Levelschranke: Jedes Band öffnet erst, wenn Druckdichtung, Anzugklasse, Energie, Sauerstoff, Isolation, Signal und Rückkehrplanung gemeinsam bestehen.
 
 ## Scanner
 
-Tiefe wird durch Druckklassen geteilt, nicht durch Levelnamen. Jedes Band braucht eine technische Antwort.
+TIEFENTOR-LESUNG // Band: Serviceabstieg 250-1200 m. Dichtungsreserve 11 %. Anzugplatte akzeptiert Grade C erst nach eingerastetem Batteriepack B2. Rückkehrping unter dritter Schelle schwach. Untere Schleuse nicht mit Mut öffnen.
 
 ## Terminal
 
-Druckleiter: Schelfgerät, Canyonverstärkung, Sole-Isolation, Abyssus-Hülldisziplin, Fabrikzonen-Signalhärtung.
+TIEFENZUGANGSTAFEL
+0-250 m: photischer Schelf / Kurzarbeit mit beschädigter Ausrüstung akzeptiert
+250-1200 m: Serviceschelf / Grade-C-Anzugdichtung, eingerastete Batterie, Leinenping erforderlich
+1200-2800 m: Solecanyon / Isolationswicklung und Auftriebstrimmung erforderlich
+2800-4300 m: abyssales Maschinenfeld / gehärtetes Signal und Hülldisziplin erforderlich
+4300-5600 m: Atlas-Becken / Rückkehrplan muss Druckverlust und Busrauschen überstehen
+Fehler: nächstes Band gesperrt, bis die schwächste Lesung repariert ist
 
 ## Audio
 
-Du steigst nicht ab, weil du mutig bist. Du steigst ab, weil die nächste Dichtung hält.
+Hör auf, mit der Tür zu streiten. Die Dichtungsreserve ist rot, und dein Rückkehrping ist schon spät.
 
 ## Field Note
 
-Der Ozean verriegelt Fortschritt mit Mathematik.
+Dem Tor ist egal, warum du die Route brauchst. Es liest Dichtung, Strom, Sauerstoff, Isolation, Signal und gibt dann Grün oder begräbt den Plan.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/de_DE. -->

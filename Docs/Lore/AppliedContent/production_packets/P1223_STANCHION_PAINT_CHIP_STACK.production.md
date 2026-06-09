@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_walkway_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS195_FIRST_WALKWAY_RAIL_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, stanchion note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first exterior walkway |
@@ -72,17 +72,17 @@ IMPACT HISTORY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| ru_RU | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| ja_JP | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| zh_CN | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| fr_FR | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| es_ES | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| de_DE | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| pl_PL | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| uk_UA | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| ar_SA | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| id_ID | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| ko_KR | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| he_IL | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| pt_BR | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
-| nl_NL | draft_machine_or_llm | STANCHION // Layered paint chips mark repeated knocks. Impact history, not damage rating. |
+| ru_RU | draft_machine_or_llm | СТОЙКА // Слоистые сколы краски отмечают повторные удары. История контактов, не оценка повреждений. |
+| ja_JP | draft_machine_or_llm | 支柱 // 層になった塗装欠けが繰り返しの衝突を示す。衝撃履歴であり損傷等級ではない。 |
+| zh_CN | draft_machine_or_llm | 立柱 // 分层掉漆标出反复碰撞。是撞击历史，不是损伤评级。 |
+| fr_FR | draft_machine_or_llm | MONTANT // Eclats de peinture en couches: chocs repetes. Historique d'impact, pas niveau de degat. |
+| es_ES | draft_machine_or_llm | MONTANTE // Desconchones de pintura en capas marcan golpes repetidos. Historial de impacto, no clasificación de daño. |
+| de_DE | draft_machine_or_llm | PFOSTEN // Geschichtete Lackabplatzer zeigen wiederholte Stosse. Aufprallverlauf, keine Schadenswertung. |
+| pl_PL | draft_machine_or_llm | SLUPEK // Warstwowe odpryski farby znacza powtarzane uderzenia. Historia kontaktow, nie ocena uszkodzen. |
+| uk_UA | draft_machine_or_llm | СТІЙКА // Шаруваті відколи фарби позначають повторні удари. Історія контактів, не оцінка пошкоджень. |
+| ar_SA | draft_machine_or_llm | دعامة // رقائق طلاء طبقية تحدد صدمات متكررة. سجل ارتطام، لا تقييم ضرر. |
+| id_ID | draft_machine_or_llm | TIANG PENOPANG // Serpih cat berlapis menandai benturan berulang. Riwayat benturan, bukan nilai kerusakan. |
+| ko_KR | draft_machine_or_llm | 지주 // 겹겹의 페인트 칩이 반복된 충격을 표시한다. 충격 이력이지 손상 등급이 아니다. |
+| he_IL | draft_machine_or_llm | עמוד מעקה // שבבי צבע בשכבות מסמנים מכות חוזרות. היסטוריית פגיעה, לא דירוג נזק. |
+| pt_BR | draft_machine_or_llm | MONTANTE // Lascas de tinta em camadas marcam batidas repetidas. Histórico de impacto, não índice de dano. |
+| nl_NL | draft_machine_or_llm | STAANDER // Gelaagde verfchips markeren herhaalde stoten. Impactgeschiedenis, geen schadescore. |

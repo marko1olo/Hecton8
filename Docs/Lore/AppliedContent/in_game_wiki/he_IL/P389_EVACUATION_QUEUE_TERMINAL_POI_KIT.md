@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "ערכת ראיות למסוף תור הפינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Evacuation Queue Terminal POI Kit
+# ערכת ראיות למסוף תור הפינוי
 
-HE LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+מסוף תור הפינוי אינו חשוב מפני שהוא אומר שאנשים חיכו. הוא חשוב מפני שמצב הדלת, סטיית השעון, ספירת העובדים וקיבולת המסלול סותרים זה את זה בדרכים שאפשר לבדוק במקום.
 
 ## Scanner
 
-HE LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+ערכת ראיות לנקודת עניין: המסוף מוכיח עיכוב דרך מצב דלת, סטיית שעון, אי התאמת עובדים וקיבולת מסלול.
 
 ## Terminal
 
-HE LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+ערכת מסוף תור: רשימת החזקת מסלול, עיכוב שחרור הסגר, הערת שקלול Atlas, אי התאמת ספירת עובדים, תג סכסוך salvage, פס מצב צוהר, שאריות תג.
 
 ## Audio
 
-HE LOC HOLD: A queue is a body count with cleaner formatting.
+תור הוא ספירת גופות בפורמט נקי יותר.
 
 ## Field Note
 
-HE LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+הערת מרודר: אל תעקור את פס הצוהר לפני סריקת שאריות התג. המתכת תשלם פחות מחותמת הזמן.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/he_IL. -->

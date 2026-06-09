@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: P-63 Pump Room Work Order"
+title: "Orden de trabajo de sala de bombas P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: P-63 Pump Room Work Order
+# Orden de trabajo de sala de bombas P-63
 
-ES LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+La Orden de trabajo de sala de bombas P-63 hace que la primera reparación parezca procedimiento heredado de la colonia, no texto tutorial. Está mojada, es práctica y tiene pequeños miedos. La orden manda despejar el sump, parchear el cold seam, esperar el return pinger y cortar el fused latch solo después de que la presión sostenga. Esa secuencia enseña cómo pensaban los trabajadores de HECTON-8: agua primero, sello después, sonido antes que fuerza, confianza de ruta al final. Las iniciales faltantes del supervisor y el doble círculo sobre la línea de corte hacen que el papel parezca usado, no escrito para el jugador. Es un artefacto pequeño, pero contiene el bucle del juego en miniatura: lee la sala, restaura un sistema, desconfía del corte fácil.
 
 ## Scanner
 
-ES LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+La primera reparación se lee como hábito colonial: bombear, sellar, escuchar, cortar solo si la sala deja de mentir.
 
 ## Terminal
 
-ES LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: despejar sump; parchear cold seam; verificar return pinger; cortar fused latch solo después de que la presión sostenga; imprimir gasket desde stock local; marcar route safe después de tres retornos acoustic return. Iniciales del supervisor ausentes bajo mancha de agua.
 
 ## Audio
 
-ES LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Bomba primero. Sello segundo. Si canta, deja de cortar.
 
 ## Field Note
 
-ES LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+La mitad inferior del portapapeles está empapada. La línea de corte aún se lee porque alguien la rodeó dos veces y escribió si canta, para.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/es_ES. -->

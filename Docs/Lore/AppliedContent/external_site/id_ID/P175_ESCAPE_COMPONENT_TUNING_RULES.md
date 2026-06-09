@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "Aturan Tuning Komponen Kabur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# Aturan Tuning Komponen Kabur
 
-ID LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+Aturan Tuning Komponen Kabur memberi HECTON-8 satu tata bahasa untuk crafting dan ending. Pemain tidak menggiling komponen langka acak. Mereka merakit argumen fisik, navigasi, dan legal tentang mengapa sesuatu dari abyss harus diterima di atas laut.
 
 ## Scanner
 
-ID LOC HOLD: Escape parts should force depth and evidence, not grind.
+Komponen kabur harus memaksa kedalaman dan bukti, bukan grind. Meninggalkan HECTON-8 adalah rantai bukti, bukan satu craft mahal.
 
 ## Terminal
 
-ID LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+KOMPONEN KABUR / relay spine membuktikan kontak / clamp rings membuktikan rating tekanan / guidance core membuktikan timing / ascent charge membuktikan energi / legal handshake menentukan siapa menjawab / evidence payload mengubah konsekuensi dan kustodi.
 
 ## Audio
 
-ID LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+Pergi bukan satu craft. Itu rantai bukti.
 
 ## Field Note
 
-ID LOC HOLD: Every ascent component must have a physical and legal reason.
+Setiap komponen ascent butuh alasan fisik dan legal: kontak, rating, timing, energi, penerima, payload. Jika satu hilang, ending harus berubah, bukan hanya tombol terkunci.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/id_ID. -->

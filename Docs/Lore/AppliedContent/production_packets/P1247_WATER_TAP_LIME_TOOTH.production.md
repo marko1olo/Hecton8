@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_galley_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS196_FIRST_GALLEY_PREP_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, galley tap note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter galley |
@@ -33,7 +33,7 @@ Forbidden facts: no water flow, no potable status, no survival mechanic, no inte
 
 ### Scanner
 
-WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof.
+WATER TAP // Lime tooth marks a dried drip edge. Water history, not flow proof.
 
 ### Codex
 
@@ -71,18 +71,18 @@ WATER HISTORY
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| ru_RU | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| ja_JP | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| zh_CN | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| fr_FR | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| es_ES | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| de_DE | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| pl_PL | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| uk_UA | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| ar_SA | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| id_ID | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| ko_KR | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| he_IL | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| pt_BR | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
-| nl_NL | draft_machine_or_llm | WATER TAP // Lime tooth marks dried drip edge. Water history, not flow proof. |
+| en_US | source_authority | WATER TAP // Lime tooth marks a dried drip edge. Water history, not flow proof. |
+| ru_RU | draft_machine_or_llm | ВОДЯНОЙ КРАН // Известковый зуб отмечает высохший край капли. История воды, не доказательство потока. |
+| ja_JP | draft_machine_or_llm | 水栓 // 石灰の歯が乾いた滴り縁を示す。水の履歴であり流れの証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 水龙头 // 石灰齿痕标出干涸滴水边。是用水历史，不是水流证明。 |
+| fr_FR | draft_machine_or_llm | ROBINET // Dent de calcaire au bord d'une goutte séchée. Historique d'eau, pas preuve de débit. |
+| es_ES | draft_machine_or_llm | GRIFO // Diente de cal marca un borde de goteo seco. Historial de agua, no prueba de flujo. |
+| de_DE | draft_machine_or_llm | WASSERHAHN // Kalkzahn markiert eine getrocknete Tropfkante. Wasserverlauf, kein Durchflussbeweis. |
+| pl_PL | draft_machine_or_llm | KRAN WODY // Wapienny ząb oznacza wyschniętą krawędź kropli. Historia wody, nie dowód przepływu. |
+| uk_UA | draft_machine_or_llm | ВОДЯНИЙ КРАН // Вапняний зуб позначає висохлий край краплі. Історія води, не доказ потоку. |
+| ar_SA | draft_machine_or_llm | صنبور ماء // سن كلسي يحدد حافة تقطر جافة. سجل ماء، لا دليل تدفق. |
+| id_ID | draft_machine_or_llm | KERAN AIR // Gigi kapur menandai tepi tetes yang mengering. Riwayat air, bukan bukti aliran. |
+| ko_KR | draft_machine_or_llm | 수도꼭지 // 석회 이빨 자국이 마른 물방울 가장자리를 표시한다. 물 이력이지 흐름 증거가 아니다. |
+| he_IL | draft_machine_or_llm | ברז מים // שן אבנית מסמנת קצה טפטוף שהתייבש. היסטוריית מים, לא הוכחת זרימה. |
+| pt_BR | draft_machine_or_llm | TORNEIRA // Dente de cal marca a borda seca de um gotejamento. Histórico de água, não prova de fluxo. |
+| nl_NL | draft_machine_or_llm | WATERKRAAN // Kalktand markeert een opgedroogde druppelrand. Watergeschiedenis, geen stroombewijs. |

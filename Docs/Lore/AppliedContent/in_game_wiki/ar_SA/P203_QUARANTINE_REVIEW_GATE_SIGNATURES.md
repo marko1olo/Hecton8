@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Hold Signatures"
+title: "توقيعات بوابة مراجعة الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Hold Signatures
+# توقيعات بوابة مراجعة الحجر
 
-AR LOC HOLD: Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
+سجلات Quarantine Review Gate تبين كيف تتحول لغة السلامة إلى تأخير. لا تحتاج البوابة إلى سطر يأمر بموت أحد. يكفي أن تبقي الاستخراج معلقا ما دامت مخاطر pressure-biology والمراجعة الخارجية ومالك الحفظ غير محسومة. في سلسلة أدلة HECTON-8، التفصيل القاسي هو أن بعض معدات الإخلاء كانت ما زالت تملك طاقة حين طبق الحجز. توقيع Ikenna Sor يحدد البوابة التي عالجت مسارا مفتوحا كغير آمن حتى وصول الشهادة. لم تكن الشهادة لتصل بسرعة عبر تأخير ترحيل Aegir، ولم تخصص Deep Reach قدرة رفع مستقلة تكفي لانتظار التأخير.
 
 ## Scanner
 
-AR LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+تمت استعادة بطاقة مراجعة: extraction state HELD، حقل الخطر BIO/PRESSURE-UNCERTAIN، والشهادة الخارجية غائبة. تحرير المسار محجوب بواسطة gate code.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Action: hold extraction pending pressure-biology certificate and external review. Exception: no independent shuttle capacity assigned. Human tags remain local custody until gate clears.
 
 ## Audio
 
-AR LOC HOLD: Pending review is still a locked door.
+كان في الباب طاقة. تقول البوابة review pending، وبقيت الفتحة حمراء.
 
 ## Field Note
 
-AR LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+ضع هذا بجانب مسارات ناجين مقفلة ومعدات إخلاء بقيت فيها بطارية. حقل hold جعل بابا عاملا مغلقا قانونيا.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/ar_SA. -->

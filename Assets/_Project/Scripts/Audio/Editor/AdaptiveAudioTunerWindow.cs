@@ -55,6 +55,12 @@ namespace Hecton8.Audio.Editor
                 }
             }
 
+            if (mixer.TryGetEditorTelemetry(0, out AudioStemTelemetryEntry latestTelemetry))
+            {
+                EditorGUILayout.Space(6f);
+                DrawCelestialLightTelemetry(latestTelemetry.Flags);
+            }
+
             EditorGUILayout.Space(8f);
             if (GUILayout.Button("Repair Stem Clip Imports"))
                 RepairStemClipImports(mixer);
@@ -167,6 +173,37 @@ namespace Hecton8.Audio.Editor
             }
 
             Handles.EndGUI();
+        }
+
+        private static void DrawCelestialLightTelemetry(uint flags)
+        {
+            bool missing = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightMissing) != 0u;
+            bool fallback = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightFallback) != 0u;
+            bool abyssCritical = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightAbyssCritical) != 0u;
+            bool qualityReduced = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightQualityReduced) != 0u;
+            bool twilight = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightTwilight) != 0u;
+            bool night = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightNight) != 0u;
+            bool bound = (flags & AdaptiveStemAudioMixer.TelemetryFlagCelestialLightBound) != 0u;
+
+            string state = missing
+                ? "Missing"
+                : fallback
+                    ? "Fallback"
+                    : abyssCritical
+                        ? "Abyss critical"
+                        : night
+                            ? "Night phase"
+                            : twilight
+                                ? "Twilight phase"
+                                : qualityReduced
+                                    ? "Quality reduced"
+                                    : bound
+                                        ? "Bound"
+                                        : "Idle";
+            MessageType messageType = missing || fallback ? MessageType.Warning : MessageType.Info;
+            EditorGUILayout.HelpBox("Celestial light bridge: " + state, messageType);
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUILayout.TextField("Telemetry Flags", "0x" + flags.ToString("X8"));
         }
 
         private static void DrawThresholdLine(Rect rect, float value, Color color)

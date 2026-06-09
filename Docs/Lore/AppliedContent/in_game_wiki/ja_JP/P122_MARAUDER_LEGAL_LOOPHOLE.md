@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "マローダー法の抜け穴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# マローダー法の抜け穴
 
-JP LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+マローダーは一つの旗を持つ部族ではない。彼らは請負人、借金を背負った乗員、残骸潜り、追い詰められた整備士であり、遅延が作った抜け穴の中で働く。死んだ植民地にも所有者はいるが、所有者は船体を塞がず、塩水を抜かず、潰れたサービスデッキから記録装置を取り出さない。Deep Reach には切り捨てられる人手が必要だ。ドメインには自分で拾わずに済む証拠が必要だ。乗員には次の哨戒を越えるだけの書類が必要だ。
 
 ## Scanner
 
-JP LOC HOLD: License valid in one lane, criminal in the next.
+ある航路では有効な免許が、次の航路では起訴材料になる。
 
 ## Terminal
 
-JP LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: Aegir Reclamation Pool custody では認可 salvage contractor。Deep Reach の資産文言では黙認された侵入者。Sol 向けの清潔な要約では起訴可能な raider。回収記録が重要人物を困らせない場合だけ emergency responder。
 
 ## Audio
 
-JP LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+同じカッターが、道具にも犯罪にも、最後の救助装置にもなる。
 
 ## Field Note
 
-JP LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder が職名でいられるのは、正しい法廷がそこから利益を得られる間だけだ。
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ja_JP. -->

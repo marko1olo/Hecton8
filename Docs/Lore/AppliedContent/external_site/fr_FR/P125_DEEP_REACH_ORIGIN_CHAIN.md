@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Chaîne d'origine de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Chaîne d'origine de Deep Reach
 
-FR LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+La chaîne d'origine empêche Deep Reach de n'être qu'un bureau maléfique. C'est une économie de route portant plusieurs peaux juridiques, capable d'avoir l'air locale dans chaque juridiction et absente au point d'impact. HECTON-8 utilise cette histoire pour rendre le pouvoir corporatif ancien, ennuyeux et mortel : une machine capable de tuer une colonie sans jamais parler comme un méchant.
 
 ## Scanner
 
-FR LOC HOLD: Old company. New disaster. Same charter language.
+Tresse de chartes : mots de Centauri, argent de Sol, corps d'Aegir.
 
 ## Terminal
 
-FR LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE : Deep Reach a combiné clauses d'autonomie compatibles avec Centauri, finance assurantielle de Sol Core, dette logistique de Barnard et coquilles tardives du projet Aegir. Atlas fut autorisé comme infrastructure de route avant de devenir témoin de mort de masse.
 
 ## Audio
 
-FR LOC HOLD: They brought the empire in filing cabinets.
+Ils ont apporté l'empire dans des classeurs et appelé cela expansion.
 
 ## Field Note
 
-FR LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach n'a pas commencé avec le désastre. C'est pour cela qu'elle lui a survécu.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/fr_FR. -->

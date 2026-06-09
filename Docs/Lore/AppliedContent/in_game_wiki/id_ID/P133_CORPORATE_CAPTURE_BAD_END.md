@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Penangkapan Korporat: Penyelamatan Bersih
 
-Penangkapan Korporat adalah ending buruk yang dibangun dari penyelamatan yang masuk akal. Pemain keluar dari laut dalam keadaan hidup, tetapi otoritas yang menjawab memperlakukan saksi sebagai bahan containment dan payload sebagai pasien sebenarnya.
+Penangkapan korporat dimulai persis seperti bantuan seharusnya dimulai. Sinyalnya bersih, vektor pickup profesional, dan ruangan punya udara yang bisa dihirup. Lalu urutan pertanyaan membuka sifat penyelamatan itu: koordinat pertama, custody kedua, akses Atlas ketiga, kesejahteraan setelah tinjauan. Kontraktor meninggalkan laut hidup-hidup, tetapi otoritas yang menjawab memperlakukan saksi sebagai kontaminasi dan payload sebagai pasien. Kesaksian disegel sebelum menjadi catatan publik. Tubuh selamat dari tekanan hanya untuk masuk ke mesin lebih sunyi yang dibangun untuk mengendalikan bukti.
 
 ## Scanner
 
-Sumber recovery terverifikasi: proxy Deep Reach. Payload diminta sebelum pemeriksaan kesejahteraan.
+Sumber recovery terverifikasi: proksi Deep Reach. Payload diminta sebelum cek nadi.
 
 ## Terminal
 
-PENJEMPUTAN DEEP REACH: recovery team menerima koordinat, XO custody, dan kunci akses Atlas sebelum tinjauan kesejahteraan kontraktor. Kesaksian kontraktor disegel di bawah protokol kontaminasi.
+PICKUP DEEP REACH: tim recovery meminta koordinat, custody XO, kunci akses Atlas, dan segel payload Seed sebelum pemeriksaan kesejahteraan kontraktor. Kesaksian saksi disegel di bawah protokol kontaminasi.
 
 ## Audio
 
-Ruang bersih itu bukan untukmu.
+Ruang bersih bukan untuk saksi.
 
 ## Field Note
 
-Penyelamatan bersih yang meminta koordinat dulu adalah penangkapan dengan udara lebih baik.
+Penyelamatan bersih yang meminta koordinat dulu adalah custody dengan udara hangat.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-ID LOC HOLD: Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.
+Aegir Continuity Holdings adalah cangkang yang membuat Deep Reach menyimpan nilai tanpa mengakui apa pun. Ia memegang sewa rute dorman, opsi habitat tekanan, klaim mineral, titel peralatan rusak, dan hak recovery sementara kombinat publik bicara layanan.
 
 ## Scanner
 
-ID LOC HOLD: The dirty project needs a clean owner with no face.
+Aegir Continuity Holdings memiliki kelangsungan sebagai kata kerja neraca.
 
 ## Terminal
 
-ID LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+CATATAN HOLDINGS: sewa rute, klaim habitat, opsi situs gagal, dan hak kontinuitas aset disimpan di luar kombinat publik.
 
 ## Audio
 
-ID LOC HOLD: No one works there. Everyone signs through it.
+Koloni gagal. Perusahaan holding berlanjut.
 
 ## Field Note
 
-ID LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+Kontinuitas berarti gadai hidup lebih lama daripada kru, habitat, dan jendela permintaan maaf.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/id_ID. -->

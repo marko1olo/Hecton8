@@ -418,7 +418,7 @@ namespace Hecton8.Visor
             }
 
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
         }
 
         /// <inheritdoc />
@@ -452,7 +452,7 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             _material = null;
-            _cachedPlayerContext = null;
+            ClearPlayerContext();
             TryUnregisterHotSwapListener();
         }
 
@@ -462,12 +462,13 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
         }
 
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            ClearPlayerContext();
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -485,9 +486,9 @@ namespace Hecton8.Visor
             if (!s_runtimeSootActive)
                 return false;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
+            if (!IsPlayerCameraUsable(playerCamera) || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
             Vector4 sootParams = s_runtimeSootParams;
@@ -519,6 +520,47 @@ namespace Hecton8.Visor
             runtimeState.Center.y = sootCenter.y;
             runtimeState.Aspect = aspect;
             return true;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsPlayerCameraUsable(Camera camera)
+        {
+            return camera != null && (!Application.isPlaying || camera.isActiveAndEnabled);
         }
 
         private static float ResolveSootQualityCurve01()

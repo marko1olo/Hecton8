@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Trace de langage d’accès révoqué"
+title: "Trace de Langage d'Accès Révoqué"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Trace de langage d’accès révoqué
+# Trace de Langage d'Accès Révoqué
 
-Le langage d’accès révoqué est devenu l’un des verrous les plus discrets de Deep Reach. Une porte pouvait refuser un ancien travailleur, classer la demande comme maintenance ordinaire et laisser tout de même filtrer les termes exacts qui nommaient la route d’évacuation cachée. Sur HECTON-8, cela compte, car le joueur n’a pas besoin d’un aveu propre pour suivre la piste. L’ancienne formulation suffit: protocole de comptage dégradé, témoin substitut, archive route-sûre, routage de préservation de réclamation. Ces mots ont été construits pour l’examen de responsabilité, pas pour le sauvetage. Le refus prouve deux choses à la fois. L’identifiant est mort. La procédure derrière lui ne l’est pas.
+Le langage d'accès révoqué est l'un des verrous discrets de Deep Reach. Un ancien travailleur peut être refusé à la porte tandis que le texte de refus expose encore la procédure derrière la route scellée. Le verrou n'a pas besoin d'avouer. Il suffit qu'il emploie les mauvais anciens mots.
+
+Maintenance reclassification signifie qu'une route humaine a été rendue semblable à du matériel de service. Degraded-count signifie qu'un décompte de travailleurs a été accepté après le moment où il aurait dû être vérifié. Claim-preservation routing signifie que la société a protégé la propriété de la ligne avant les corps dans la ligne. Chaque phrase est assez petite pour passer comme langage de bureau et assez précise pour pointer vers le couloir enterré.
+
+Cela rend l'identifiant mort utile de façon limitée. Il ne peut pas ouvrir l'écoutille. Il peut forcer l'archive à parler son ancien dialecte de responsabilité, et ce dialecte devient une carte.
 
 ## Scanner
 
-Le verrouillage ne dit pas interdit. Il dit reclassification de maintenance, gel de continuité et matériaux de route. Ancienne formulation Deep Reach: un refus qui pointe encore vers la porte enterrée.
+TRACE LOCKOUT // Le texte de refus nomme maintenance reclassification, continuity hold et route materials. La porte rejette le badge mais fuit la route enterrée.
 
 ## Terminal
 
-RÉPONSE D’ACCÈS / ARCHIVE ROUTE-SÛRE
-identifiant: révoqué
-raison: matériaux de continuité d’évacuation réservés au personnel Deep Reach certifié
-termes visibles: comptage dégradé, témoin substitut, route de préservation de réclamation, reclassification de maintenance
-note: les anciens personnels de terrain peuvent voir le langage de refus uniquement pour rapprochement d’incident.
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-Ils n’ont pas effacé le couloir. Ils l’ont enveloppé dans un vocabulaire que seuls les employés coupables comprennent encore.
+Ils n'ont pas effacé le couloir. Ils l'ont enveloppé dans un vocabulaire que le personnel coupable pouvait encore lire.
 
 ## Field Note
 
-Le badge est mort. Le verrouillage parle encore le dialecte de bureau qui a enterré la route.
+Le badge est mort. Le lockout parle encore le dialecte de bureau qui a enterré la route.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/fr_FR. -->

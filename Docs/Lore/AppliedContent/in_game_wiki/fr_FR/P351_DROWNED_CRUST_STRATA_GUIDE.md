@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Guide des strates de croûte noyée
 
-La croûte noyée est l'histoire lisible de HECTON-8 : coupes de colonie, corniches d'effondrement glaciaire, coutures de pressure-glass et bandes minérales indiquent où une route tiendra, cisaillera ou cèdera au toucher.
+La croûte noyée est l'histoire lisible de HECTON-8. Anciennes coupes coloniales, corniches d'effondrement glaciaire, coutures de verre de pression et bandes minérales indiquent où une route tient, cisaille ou cède au toucher. Les équipes salvage la lisent comme un registre abîmé : ce qui fut bâti, ce qui tomba, et ce que l'océan lime depuis.
 
 ## Scanner
 

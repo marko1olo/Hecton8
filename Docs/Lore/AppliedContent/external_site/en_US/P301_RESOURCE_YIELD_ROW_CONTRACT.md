@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Resource Yield Data Boundary
 
-Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+Resource value in HECTON-8 is a chain, not a label. The table owns the number, but the fiction owns why the number exists: who took the sample, under what pressure, with which custody stamp, and how much of that seam the route can still safely strip.
 
 ## Scanner
 
-Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Yield row rejects loose value: class, pressure band, custody, depletion, and hash must agree.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: no number accepted without packet hash, resource class, pressure band, custody grade, rarity curve, and depletion behavior. A sample without pressure history is evidence, not value.
 
 ## Audio
 

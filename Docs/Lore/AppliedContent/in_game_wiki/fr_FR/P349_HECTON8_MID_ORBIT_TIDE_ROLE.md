@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 et la marée d'orbite moyenne"
+title: "Rôle de marée médio-orbitale de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 et la marée d'orbite moyenne
+# Rôle de marée médio-orbitale de HECTON-8
 
-HECTON-8 est la lune où les maths orbitales d'Aegir deviennent personnelles. Elle est assez loin de la pire radiation intérieure, assez proche pour garder l'océan actif, et assez rentable pour que Deep Reach construise sous pression.
+HECTON-8 est la lune où les calculs orbitaux d'Aegir deviennent personnels. Elle est assez loin des pires radiations internes pour de longues opérations, assez proche pour que les marées gardent l'océan en mouvement, et assez précieuse pour que Deep Reach bâtisse sous pression. La même position salit le secours. Phase de marée, masse du transporteur, bruit de tempête et garde légale se rejoignent au-dessus de la combinaison comme un plafond mobile.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Elle se trouve dans la partie de l'échelle où le travail paraît possible jusq
 
 ## Field Note
 
-HECTON-8 paie parce que pression, marée et responsabilité s'y chevauchent.
+HECTON-8 paie parce que pression, marée et responsabilité se superposent dans la même colonne d'eau.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/fr_FR. -->

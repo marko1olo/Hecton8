@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Fins et custody du payload
 
-Hub dossier des fins : custody, evidence, futur d'Atlas et prix du départ.
+Hub des dossiers de fins : chaque sortie est un transfert de custody, pas une couleur morale.
 
 ## Scanner
 
-Spoiler hub : payload receivers, false exits, custody, vérité publique, Atlas continuity et after-action records.
+Spoiler hub : custody du payload, conséquences par receiver, false exits, proof publique, levier de quarantaine et continuité d'Atlas.
 
 ## Terminal
 
-SITE NAV : garder les final payload pages derrière des spoiler gates. Organiser par receiver et proof ownership.
+SITE NAV : garder les pages finales derrière les spoiler gates ; classer par contrôle du corps, des coordonnées, samples, Atlas records et worker proof.
 
 ## Audio
 
-La fin, c'est qui possède la preuve après la remontée.
+La sortie n'est pas la fin. C'est un transfert de custody.
 
 ## Field Note
 
-Les fins restent spoiler-gated et organisées par receiver et custody consequence, pas par labels moraux.
+Si le corps sort mais que la proof est possédée, l'océan n'a pas fini le dossier.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/fr_FR. -->

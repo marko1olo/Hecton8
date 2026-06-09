@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guia de Vidro de Pressão e Selante"
+title: "Guia de vidro de pressão e selante"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Vidro de Pressão e Selante
+# Guia de vidro de pressão e selante
 
-Pressure glass é onde geologia encontra Atlas. A repair network usa fraturas existentes, bordas minerais e pressure memories como rotas, então uma lente útil também pode ser uma fronteira viva.
+Vidro de pressão é onde geologia encontra Atlas. Fraturas antigas, bordas minerais, costuras de biofilme e memória de estresse viram rotas para química de reparo, então uma lente útil também pode ser uma fronteira viva.
 
 ## Scanner
 
-Fratura de pressure-glass selada por química Atlas. Lens stock seguro só se o seal map permanecer intacto.
+Fratura de vidro de pressão selada por química Atlas. Estoque de lentes só é seguro enquanto o mapa de selagem ficar intacto.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass registra tide stress antigo. Atlas sealant segue essas rachaduras porque elas já descrevem as linhas de falha do sistema.
+GUIA DE CAMPO: vidro de pressão registra estresse antigo de maré. Selante Atlas segue essas rachaduras porque elas já descrevem as linhas de falha do sistema.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A rede de reparo lê fraturas como você lê um mapa.
 
 ## Field Note
 
-Não esmerilhe a borda bonita. Siga o fracture map e corte pelo lado morto do seal.
+Não lixe a borda bonita. Siga o mapa de fraturas e corte pelo lado morto do selo.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/pt_BR. -->

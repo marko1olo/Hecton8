@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "פרוטוקול שימור הסגר payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# פרוטוקול שימור הסגר payload
 
-HE LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+פרוטוקול השימור מחזיק את האגן מחוץ לשחזור תאגידי ישיר, אבל אינו משחרר אותו. ה-payload חותם קואורדינטות, מחזיק את אקולוגיית Atlas תחת escrow הסגר ודוחף את הבדיקה לנתיב ציבורי מושהה. זה יכול להגן על מערכות חיות מפני כרייה מיידית. זה גם יכול לבנות כלוב נקי יותר.
 
 ## Scanner
 
-HE LOC HOLD: Preserve route. No clean owner. No clean release.
+מסלול שימור חמוש. ה-payload מקצה משמורת מקבל לבדיקת הסגר מושהית וחוסם העברה ישירה ל-Deep Reach.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+מקבל PAYLOAD // שימור הסגר. מקבל: נתיב escrow הסגר. להחזיק וקטור אגן חתום, לשמר רציפות אקולוגיית Atlas, למנוע שחזור תאגידי ישיר. בדיקה ציבורית מושהית. סמכות שחרור לא פתורה.
 
 ## Audio
 
-HE LOC HOLD: Keeping it alive does not mean keeping it free.
+נשמר חי אינו זהה למשוחרר.
 
 ## Field Note
 
-HE LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+הערת בוזז: דלת נעולה יכולה להגן על חדר. היא גם יכולה להפוך לחדר.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/he_IL. -->

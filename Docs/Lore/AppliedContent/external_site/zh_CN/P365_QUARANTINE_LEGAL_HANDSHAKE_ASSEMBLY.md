@@ -19,22 +19,10 @@ localization_flags: 1
 
 # 隔离法律握手组件
 
-隔离法律握手组件让 extraction 故意变脏：可用引擎仍可能把幸存者送进 corporate custody、延迟公开真相或未解决隔离。
+隔离法律握手组件是最后一个部件，因为HECTON-8的逃离路线终点是权力，不是真空。胶囊可以机械上就绪，但回收仍需要一个愿意命名抵达的接收器。
 
-## Scanner
+插座载入决定这个名字的事实：接收器密钥、隔离状态、载荷custody、债务lien和公共账本延迟。每条路线接受同一枚胶囊的不同版本。Keelmark要质量和lien。Recovery Compliance要坐标和污染状态。公共账本要能够挺过时间和争议的证据。
 
-握手插座。胶囊可以机械上准备完毕，却仍属于错误的 receiver。
-
-## Terminal
-
-RECOVERY HANDSHAKE: 需要 receiver key。Keelmark 接受 mass 和 lien。Recovery Compliance 接受 coordinates 和 quarantine status。Public ledger 延后接受 proof。Unkeyed launch 默认进入 custody dispute。
-
-## Audio
-
-谁回应，谁就决定救援是什么意思。
-
-## Field Note
-
-最后一个组件不是金属，而是有权称你为 recovered 的系统名称。
+这让撤离故意不舒服。最干净的发射仍可能把幸存者送进申索办公室、上锁的医疗扣留，或缓慢的公共案件。修复握手不会让胶囊摆脱政治。它让Marauder选择哪一种政治先把手放到舱门上。
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/zh_CN. -->

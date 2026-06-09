@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Protokół blind return z zatrzymaniem payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Withhold Blind Return Protocol
+# Protokół blind return z zatrzymaniem payload
 
-PL LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Protokół blind return odmawia każdego odbiorcy. Ani korporacja, ani księga, ani ścieżka kwarantanny, ani cel odcięcia nie otrzymują finalnego payload. Nosiciel trzyma mapę i dowody lokalnie, odmawiając Deep Reach czystej drogi powrotu. Zostawia też dług aktywny, dowody publiczne niezłożone i pakiet podatny na wodę, śmierć albo złe przechowywanie.
 
 ## Scanner
 
-PL LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Trasa blind return uzbrojona. Odbiorca nieprzypisany. Wektor basenu, proof hashes i klasa dostępu pozostają lokalne; zastaw i okno odzysku nierozwiązane.
 
 ## Terminal
 
-PL LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+ODBIORCA PAYLOAD // BLIND RETURN WITHHOLD. Odbiorca: brak. Zatrzymaj wektor basenu, proof hashes, klasę salvage, lokalny pakiet dowodów. Odmów Deep Reach mapy dostępu, pokwitowania wypłaty i dozoru odbiorcy. Znany koszt: zastaw nierozwiązany, pełne ryzyko utraty pakietu.
 
 ## Audio
 
-PL LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Brak odbiorcy, brak pokwitowania. Jeśli torbę zaleje, dowody odejdą z nią.
 
 ## Field Note
 
-PL LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Notatka szabrownika: trzymanie mapy to wybór. Po prostu nie masz odbiorcy do obwinienia, jeśli torba pęknie.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/pl_PL. -->

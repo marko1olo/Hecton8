@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Publiczny artykuł o zasobie Blue Debt
 
-Blue debt to pograniczna nazwa Xenon-Omega-bearing pressure substrate na HECTON-8. Może występować jako minerał bogaty w solankę, kieszeń klatratu, skażenie pressure glass, sieć związana biofilmem albo uszkodzony przemysłowy containment material. Jego wartość wynika z obliczeń, containment i przechowywania w środowisku ekstremalnym. Jego niebezpieczeństwo wynika z pieczy: każda próbka pyta, kto ją posiada, kto ją certyfikował i kogo obwini się, jeśli zmieni stan.
+Blue debt nie jest magiczną rudą. To graniczne określenie substratu ciśnieniowego niosącego Xenon-Omega: słonych kieszeni mineralnych, warstw clathrate, skażenia pressure glass, krat związanych biofilmem i uszkodzonego materiału containment, który przetrwał warunki zabijające zwykły sprzęt. Wartość pochodzi z historii pod ciśnieniem. Próbka może zachować ślady obliczeń, zachowanie containment, pamięć sensorów albo stany chemiczne możliwe tylko na HECTON-8.
 
-## Scanner
-
-Żargon jest szczery. Oficjalna nazwa ukrywa odpowiedzialność: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-PUBLICZNY POZIOM ARTYKUŁU / BLUE DEBT
-dozwolone: zachowanie próbek, chemia ciśnienia, nośniki klatratowe i solankowe, wartość containment, użycie obliczeniowe, ryzyko pieczy
-zablokowane: dokładne tabele receptur, tuning payout, późne trasy substrate Atlas
-uwaga redakcyjna: bez magicznej rudy, bez fantazji świecącego loot, bez czystej własności.
-
-## Audio
-
-Nazwali to blue debt, bo każdy użyteczny gram już był komuś winien ciśnienie, papiery albo krew.
-
-## Field Note
-
-Jeśli świeci jak skarb, przepisz. Blue debt ma być użyteczny, mokry, regulowany, niestabilny i już sporny.
+Słowo debt ma znaczenie. Ktoś już zapłacił za powstanie tej materii infrastrukturą, pracą, czasem i ryzykiem. Czysto wyglądający fragment może jednocześnie nieść ekspozycję kwarantanny, pieczę Deep Reach, kary masowe Black Keel i wartość dowodową. Zabranie go nie jest zwykłym wydobyciem; to spór z księgą trasy.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/pl_PL. -->

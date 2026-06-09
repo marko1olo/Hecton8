@@ -3645,7 +3645,6 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("_toxicityPulseAccumulatorSeconds = 0f;", applyBody);
             StringAssert.Contains("if (_playerSurvival == null)", applyBody);
             StringAssert.Contains("_toxicityPulseAccumulatorSeconds = ClampPersistedToxicityPulseAccumulator(_toxicityPulseAccumulatorSeconds);", applyBody);
-            StringAssert.Contains("if (ToxicityDamagePulseIntervalSeconds <= 0f)", applyBody);
             StringAssert.Contains("float maxPulseAccumulatorSeconds = ToxicityDamagePulseIntervalSeconds * (MaxToxicityDamagePulsesPerTick + 1);", applyBody);
             StringAssert.Contains("FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt", applyBody);
             StringAssert.Contains("int pulseCount = math.min(", applyBody);

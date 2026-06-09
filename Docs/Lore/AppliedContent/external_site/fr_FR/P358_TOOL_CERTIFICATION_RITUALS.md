@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Tool Certification Board"
+title: "Tableau de certification des outils"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Tool Certification Board
+# Tableau de certification des outils
 
-FR LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Le tableau de certification des outils enregistre une culture qui faisait plus confiance aux marques qu'aux discours. Tête de cutter réindexée. Cartouche de scellant pesée. Gant de pression doublement signé. Clé de pompe en retard. Kit de descente retenu. Chaque ligne est brutale parce qu'une procédure brutale gardait les gens vivants là où un outil presque correct pouvait tuer en silence.
 
-## Scanner
+Le tableau paraît rituel parce que le travail dangereux répète les mêmes gestes jusqu'à donner une place à la peur. Peser, vérifier, signer, rendre, revérifier. La seconde signature n'était pas décorative; elle rendait la confiance responsable. Si un gant cédait sous pression, la marque disait qui l'avait vu, qui avait pressé, et qui avait voulu l'envoyer quand même.
 
-FR LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-FR LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-FR LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-FR LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Voici une foi ouvrière sans mysticisme. La colonie ne priait pas sur les cutters. Elle obligeait une autre personne fatiguée à regarder l'arête, le joint, le poids et le retour de clé. La survie devenait commune parce que chaque outil portait le nom de quelqu'un d'autre avant de toucher la route.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/fr_FR. -->

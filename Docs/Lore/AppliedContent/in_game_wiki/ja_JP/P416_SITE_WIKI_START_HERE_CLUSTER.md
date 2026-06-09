@@ -19,22 +19,22 @@ localization_flags: 1
 
 # ここから始める: HECTON-8
 
-開始クラスター: 契約、プレイヤー役、HECTON-8の生存圧、Deep Reachの物語にある最初の矛盾。
+ここから始める: HECTON-8は、沈んだ植民地、債務Marauder、きれいすぎるDeep Reachの説明をめぐるsalvage contractとして始まる。
 
 ## Scanner
 
-公開ハブ: 前提、プレイヤーの役割、最初の制約、Deep Reach最初の嘘。
+公開入口: salvage contract、債務Marauder、損傷capsule、Deep Reachの矛盾、最初のAtlas修理痕。
 
 ## Terminal
 
-SITE NAV: 契約接近、元Deep Reach専門員、債務Marauder、損傷カプセル、家族フックなし、Atlas修理痕跡の初出。
+SITE NAV: 契約語、圧力下の生存、no family hook、no instant rescue、evidence before endingsから始める。
 
 ## Audio
 
-salvageのために来た。その動機は海で小さすぎるものになる。
+最初の記録は救助要請ではない。claimだ。
 
 ## Field Note
 
-Spoiler-lightな導線はここから始まる。前提、証拠、そして獲得後の結末。
+まず書類を読む。HECTON-8では、どの文にも真実が少しあるから嘘が生き残る。
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ja_JP. -->

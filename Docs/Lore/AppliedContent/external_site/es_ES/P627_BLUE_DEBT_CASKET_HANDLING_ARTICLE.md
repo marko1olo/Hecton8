@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Manejo del cofre de deuda azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Manejo del cofre de deuda azul
 
-Blue debt value depends on pressure, temperature, custody and silence.
+La deuda azul no se vuelve útil al encontrarla. Se vuelve útil si conserva la condición que la hizo valiosa. Un cofre de presión sellado es contenedor, advertencia y recibo a la vez; evita que el residuo Xenon-Omega, la red crecida a presión o el sustrato contaminado se conviertan en ruido, polvo, pérdida de prueba o señal para el sistema equivocado.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+La primera elección segura no es vender, fabricar ni esconder. Es estabilizar. Un cofre con tira fría intacta puede moverse. Un cofre con sello tibio vuelve sospechosa la prueba. Manejarlo mal convierte el pago en contaminación, ruido y riesgo de ruta.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/es_ES. -->

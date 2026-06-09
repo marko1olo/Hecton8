@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Pressure Bunk Shift Routine
 
-The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+The Pressure Bunk Shift Routine shows HECTON-8's drowned colony through habit instead of confession. A worker row slate lists wake tone, suit-seal check, pressure note, meal-water token, tool custody and descent assignment. In a station without sunrise, that list is morning, payroll, medical warning and proof of return.
 
-## Scanner
+The emotional force is in how little the slate performs. It does not say someone was brave. It says the pump key was due back before meal. It says a worker had to check seals at 03:52. It says sleep was rotated by machinery because the ocean did not care whether a human body understood the hour.
 
-Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-Tired, trained and due back in six hours.
-
-## Field Note
-
-Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Follow the slate and the colony becomes legible. The same name can appear as a bunk, a key, a water token, a route stamp and a missed return. That is not clutter. It is the pressure settlement's nervous system, written in the smallest possible marks.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/en_US. -->

@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Espina de relés
 
-La espina de relés es el esqueleto lento de comunicaciones: turnos de haz, búferes, sellos de custodia y reintentos. Mueve pruebas, reclamos y órdenes entre estrellas, pero no oxígeno a una sala inundada.
+La Espina de relés mantiene unido el espacio humano sin fingir que la distancia desapareció. Es una cadena de ranuras de haz, búferes de paquete, hashes de custodia, calendarios de reintento, bobinas notariales y permisos de clima local. Puede mover órdenes, pruebas, avisos de deuda y pulsos de vida a distancia interestelar. No puede mover oxígeno a una sala inundada.
 
-En HECTON-8 un mensaje puede ser válido, visto y demasiado tarde. Verdad y rescate son problemas logísticos distintos.
+En HECTON-8 el relé es presión, no fondo. Un mensaje puede ser legible e inútil. Un paquete de Deep Reach puede llegar saneado porque quienes escribieron la primera versión ya murieron. Un recibo público de Tau Ceti puede volver peligrosa una prueba años después. Luyten puede probar custodia y dejar al jugador solo en el agua. El relé hace durable la verdad. No la hace rápida.
 
 ## Scanner
 
-Búfer de relé viejo. La edad del paquete saliente supera la relevancia de rescate local. Hash de custodia intacto; ventana de respuesta muerta.
+Búfer de relé obsoleto. Reloj fuente válido, hash de custodia intacto, cola de reintentos agotada. El mensaje adelantó a la masa de rescate y murió en la ranura de espera.
 
 ## Terminal
 
-ESPINA DE RELÉS // Paquete en cola por Aegir local, Luyten Junction y ruta de archivo Sol. Ruta de demora lumínica aceptada. Disputa de prioridad sin resolver. Respuesta humana no operativa para la ventana de supervivencia actual.
+ESTADO ESPINA DE RELÉS // Sin carril ansible. Custodia de paquete válida por búfer local Aegir. Recibo Luyten pendiente por clase de demora lumínica. Respuesta humana obsoleta para supervivencia de compartimento. Mantener autoridad de acción local.
 
 ## Audio
 
-El relé no está roto. Ese es el problema. Hace exactamente lo que permite la distancia.
+Un paquete puede ser cierto, recibido y aun así demasiado tarde.
 
 ## Field Note
 
-Un mensaje puede ser cierto y llegar después de tus huesos.
+La demora no vuelve falsa la verdad. La vuelve solitaria.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/es_ES. -->

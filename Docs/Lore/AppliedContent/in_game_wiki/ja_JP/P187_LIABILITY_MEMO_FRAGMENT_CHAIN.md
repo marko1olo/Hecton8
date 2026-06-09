@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "責任メモ断片連鎖"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# 責任メモ断片連鎖
 
-JP LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+責任メモ断片連鎖は、Deep Reach の証拠をどう読むべきかをプレイヤーに教える。ひとつのメモに犯罪全体は入っていない。各部署は、自分の行動を手続きに見せる一文だけを残した。リスク表は潮汐余裕が失われつつあったことを認める。避難メモは遅延をチャンネル規律に変える。Atlas オーバーライドは継続性を脱出より安全に聞かせる。Keelmark の断片は行方不明の作業員を回収可能損失に変換する。プレイヤーは紙を、浸水した部屋、壊れた経路時計、作業員名と照合しなければならない。断片が部署を守るのをやめ、互いに矛盾し始めたとき、連鎖は読めるようになる。
 
 ## Scanner
 
-JP LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+責任メモは断片として残った。各部署が、自分を守る段落だけを保管したからだ。
 
 ## Terminal
 
-JP LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: リスク余裕表／避難解放メモ／Atlas 継続性オーバーライド／Keelmark 損失変換／回収保管要求。公開要約を受け入れる前に、経路時刻、室内損傷、作業員名を照合せよ。
 
 ## Audio
 
-JP LOC HOLD: Paper is weak alone. Put it against a flooded door.
+彼らは真実を金庫に隠さなかった。断片にしてファイルした。
 
 ## Field Note
 
-JP LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+破れたメモは、正直であるつもりのなかった場所で正直になる。
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/ja_JP. -->

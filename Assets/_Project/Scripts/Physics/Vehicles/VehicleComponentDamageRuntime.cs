@@ -4,6 +4,7 @@ using System.IO;
 #endif
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -79,6 +80,7 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<VehicleDamageTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
         private VaultGenerationHandle<SubmarineKinematicConfig> _kinematicConfigHandle;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private JobHandle _damageHandle;
         private bool _damagePending;
         private bool _buffersLocked;
@@ -125,6 +127,7 @@ namespace Hecton8.Physics.Vehicles
             EnsureSignalLanes();
             TryRegisterHotSwapListener();
             CacheDataVaultCold();
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             EnsureVaultBuffers(forceReinitialize: false);
             WarmCoreBlackboxRoute();
             TryRefreshRootPoseSnapshot(transform, allowPresentationFallback: true);
@@ -140,6 +143,7 @@ namespace Hecton8.Physics.Vehicles
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
             _coreBlackboxWarmed = false;
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -161,6 +165,12 @@ namespace Hecton8.Physics.Vehicles
                 TryUnregisterRuntimeLanes();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterRuntimeLanes();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 
@@ -223,7 +233,7 @@ namespace Hecton8.Physics.Vehicles
                 uint frame = ++_frameCounter;
                 float quality = ResolveQualityWeight();
                 uint vehicleHash = _resolvedVehicleHash;
-                float depthMeters = ResolveDepthMeters(rootAup);
+                float depthMeters = ResolveDepthMeters(rootAup, ResolveVehicleSeaLevelAupY());
 
                 JobHandle dependency = default;
                 if (mockCount > 0)
@@ -1276,12 +1286,41 @@ namespace Hecton8.Physics.Vehicles
             return new quaternion(value.value * math.rsqrt(math.max(lengthSq, 0.0001f)));
         }
 
-        private static float ResolveDepthMeters(double3 rootAup)
+        private double ResolveVehicleSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return DefaultSeaLevelAupY;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
+        }
+
+        private static float ResolveDepthMeters(double3 rootAup, double seaLevelAupY)
         {
             if (!math.all(math.isfinite(rootAup)))
                 return 0f;
 
-            double depthMeters = DefaultSeaLevelAupY - rootAup.y;
+            double depthMeters = seaLevelAupY - rootAup.y;
             if (!math.isfinite(depthMeters))
                 return 0f;
 

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Pressure Suit Service Grades"
+title: "圧力スーツ整備グレード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Pressure Suit Service Grades
+# 圧力スーツ整備グレード
 
-JP LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+圧力スーツのグレードはゲーム的な色階級ではなく、整備記録だ。深度ごとにシールの疲労、スクラバー容量、熱裏地、汚染履歴、旧サービス印が問われる。プレイヤーが深く潜れるのは体力が増えたからではない。誰かの古い安全基準を直し、証明し、もう一度着るからだ。
 
 ## Scanner
 
-JP LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+スーツタグは運用深度、シール疲労、スクラバー余力、熱限界、汚染処理を分類する。
 
 ## Terminal
 
-JP LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-JP LOC HOLD: The suit does not make you brave. It only fails later.
+スーツは勇敢にしない。ただ少し遅く壊れるだけだ。
 
 ## Field Note
 
-JP LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+深いスーツは色違いの防具ではない。記録、交換部品、汚い整備の積み重ねだ。
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/ja_JP. -->

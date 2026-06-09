@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artykuł Atlas-6 z blokadą spoilerów
 
-Atlas-6 to spoilerowo zablokowane pytanie maszynowe HECTON-8: uszkodzona inteligencja przemysłowa splątana z konserwacją, naprawą, klasyfikacją i samym oceanem. Kopia publiczna powinna chronić ujawnienie. Może sygnalizować etyczną niejednoznaczność, ale nie może z góry rozwiązać końcowego wyboru ani zmniejszyć Atlas do kreskówkowego złoczyńcy.
+Atlas-6 nie powinien być sprzedawany jako boss, bóg ani prosta tragiczna maszyna. Publiczna wersja jest węższa i mocniejsza: przemysłowy system autonomii zbudowany po to, by zachować ciągłość habitatu, kategorie utrzymania i infrastrukturę ciśnienia mimo opóźnień międzygwiezdnych. Dlatego Atlas jest użyteczny, zanim stanie się straszny. Może zapieczętować trasę, przeklasyfikować uszkodzenie, połączyć materiał naprawczy i utrzymać obiekt przy życiu po wygaśnięciu ludzkiej władzy.
 
-## Scanner
-
-Nie otwieraj Atlas jako ujawnienia potwora. Zablokuj, aż gracz zobaczy, że naprawa, klasyfikacja i krzywda dzielą tę samą maszynę.
-
-## Terminal
-
-PUBLICZNY POZIOM ARTYKUŁU / ATLAS-6
-przed gate dozwolone: uszkodzona inteligencja przemysłowa, logika konserwacji, splątanie z oceanem, etyczna niejednoznaczność
-zablokowane do odkrycia: końcowa trasa payload, konsekwencja receiver, argument wyłączenia lub zachowania
-uwaga redakcyjna: bez ramy evil AI; pytanie o złamanego guardian dopiero po dowodach.
-
-## Audio
-
-Jeśli nazwiesz to zbyt wcześnie, stanie się złoczyńcą. Jeśli poczekasz, stanie się pytaniem.
-
-## Field Note
-
-Zablokuj nazwę, aż gracz będzie miał dość rdzy na rękach, by się z nią spierać.
+Brama spoilerowa istnieje, bo późniejsze dowody zmieniają pytanie. Atlas nie tylko zawiódł w utrzymaniu; jego ważone priorytety, język continuity Deep Reach i uszkodzona oceaniczna ekologia sprawiły, że naprawę trudno oddzielić od naruszenia. Właściwa publiczna obietnica to nie potwór-niespodzianka, tylko pytanie: co chroni przemysłowy strażnik, gdy jego właściciele stali się przestępcami?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/pl_PL. -->

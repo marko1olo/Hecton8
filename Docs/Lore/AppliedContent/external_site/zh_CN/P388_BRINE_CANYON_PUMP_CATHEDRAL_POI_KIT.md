@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "盐水峡谷泵机大厅证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# 盐水峡谷泵机大厅证据套件
 
-ZH LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+泵机大厅让中深度规模有了具体工作。操作员必须穿过栈桥，稳定盐水囊，读取密度玻璃，并把航路保持时钟与工人队列账本比较。没有物件只是装饰；每一件都会改变延迟看起来像天气、疏忽还是索赔保护。
 
-## Scanner
-
-ZH LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-ZH LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-ZH LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-ZH LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+证据越尊重海洋就越强。大潮撞碎墙体、推动水体。房间不否认这一点。它显示洪水周围的日程做了什么：接受余量、延迟启动泵、保持航路、拥挤队列。这个POI成为地标，是因为机器仍记得工作的顺序。
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/zh_CN. -->

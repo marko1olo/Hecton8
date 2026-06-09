@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="ru" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HECTON-8 Pre-Wiki</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0e12;
+      --panel: #111820;
+      --panel-soft: #16202a;
+      --reader: #0f141a;
+      --line: #2b3845;
+      --line-soft: #1d2832;
+      --text: #edf2f6;
+      --muted: #95a3af;
+      --quiet: #6f7d89;
+      --accent: #6cc6d6;
+      --accent-soft: #17323a;
+      --warn: #d9aa59;
+      --bad: #d57974;
+      --good: #87c98b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.58 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:hover,
+    button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    input,
+    select {
+      min-height: 38px;
+      padding: 8px 10px;
+      width: 100%;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      min-width: 0;
+      padding: 16px;
+    }
+
+    html[dir="rtl"] .sidebar {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+    }
+
+    .brand {
+      margin-bottom: 14px;
+    }
+
+    .brand h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .brand p,
+    .status,
+    .meta,
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .controls {
+      display: grid;
+      gap: 9px;
+      margin-bottom: 14px;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toggle-row {
+      align-items: center;
+      display: flex;
+      gap: 8px;
+      justify-content: space-between;
+    }
+
+    .toggle-row button {
+      min-height: 34px;
+      padding: 6px 10px;
+    }
+
+    .article-list {
+      display: grid;
+      gap: 7px;
+      max-height: calc(100vh - 312px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .article-button {
+      display: grid;
+      gap: 4px;
+      min-height: 66px;
+      padding: 10px;
+      text-align: left;
+    }
+
+    html[dir="rtl"] .article-button {
+      text-align: right;
+    }
+
+    .article-title {
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .article-tags {
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      line-height: 1.35;
+    }
+
+    .pill {
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      color: var(--muted);
+      display: inline-flex;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      padding: 1px 7px;
+    }
+
+    .pill.good {
+      color: var(--good);
+    }
+
+    .pill.warn {
+      color: var(--warn);
+    }
+
+    .pill.bad {
+      color: var(--bad);
+    }
+
+    .main {
+      min-width: 0;
+      padding: 24px 34px 64px;
+    }
+
+    .reader-head {
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+    }
+
+    .reader-head h2 {
+      font-size: 32px;
+      line-height: 1.16;
+      margin: 0 0 10px;
+    }
+
+    .reader-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .reader-actions button {
+      min-height: 34px;
+      padding: 6px 10px;
+    }
+
+    .notice {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--accent);
+      background: var(--panel);
+      border-radius: 6px;
+      color: var(--muted);
+      margin: 0 0 16px;
+      padding: 10px 12px;
+    }
+
+    html[dir="rtl"] .notice {
+      border-left: 1px solid var(--line);
+      border-right: 4px solid var(--accent);
+    }
+
+    .notice.warn {
+      border-left-color: var(--warn);
+      color: var(--warn);
+    }
+
+    html[dir="rtl"] .notice.warn {
+      border-right-color: var(--warn);
+    }
+
+    .reader {
+      background: var(--reader);
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      max-width: 1040px;
+      padding: 24px;
+      overflow-wrap: anywhere;
+    }
+
+    .reader h1,
+    .reader h2,
+    .reader h3 {
+      line-height: 1.2;
+      margin: 24px 0 10px;
+    }
+
+    .reader h1:first-child,
+    .reader h2:first-child,
+    .reader h3:first-child {
+      margin-top: 0;
+    }
+
+    .reader h1 {
+      font-size: 28px;
+    }
+
+    .reader h2 {
+      font-size: 22px;
+    }
+
+    .reader h3 {
+      font-size: 18px;
+    }
+
+    .reader p {
+      margin: 0 0 13px;
+    }
+
+    .reader ul,
+    .reader ol {
+      margin: 0 0 14px 22px;
+      padding: 0;
+    }
+
+    html[dir="rtl"] .reader ul,
+    html[dir="rtl"] .reader ol {
+      margin: 0 22px 14px 0;
+    }
+
+    .reader li {
+      margin: 4px 0;
+    }
+
+    .reader code,
+    .reader pre {
+      direction: ltr;
+      font-family: Consolas, "Liberation Mono", monospace;
+    }
+
+    .reader pre {
+      background: #080b0f;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-left: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      html[dir="rtl"] .sidebar {
+        border-left: 0;
+      }
+
+      .article-list {
+        max-height: 42vh;
+      }
+
+      .main {
+        padding: 20px 16px 48px;
+      }
+
+      .reader {
+        padding: 18px;
+      }
+
+      .reader-head h2 {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>HECTON-8 Pre-Wiki</h1>
+        <p>Локальный просмотр статей AppliedContent без Unity.</p>
+      </div>
+
+      <div class="controls">
+        <input id="searchInput" type="search" placeholder="Поиск по названию, теме, тегам">
+        <div class="control-row">
+          <select id="languageSelect" aria-label="Язык"></select>
+          <select id="surfaceSelect" aria-label="Поверхность"></select>
+        </div>
+        <select id="topicSelect" aria-label="Тема"></select>
+        <div class="control-row">
+          <select id="statusSelect" aria-label="Статус перевода"></select>
+          <select id="spoilerSelect" aria-label="Спойлеры"></select>
+        </div>
+        <div class="toggle-row">
+          <button id="idsToggle" type="button">Показать ID</button>
+          <span id="countStatus" class="status">Загрузка...</span>
+        </div>
+      </div>
+
+      <div id="articleList" class="article-list" aria-label="Статьи"></div>
+    </aside>
+
+    <main class="main">
+      <section class="reader-head">
+        <h2 id="title">Выберите статью</h2>
+        <div id="meta" class="article-tags"></div>
+        <div class="reader-actions">
+          <button id="openRawButton" type="button">Открыть markdown</button>
+          <button id="copyLinkButton" type="button">Скопировать ссылку</button>
+          <button id="sameArticleButton" type="button">Эта статья в другом формате</button>
+        </div>
+      </section>
+      <div id="notice" class="notice">Если браузер открыл файл напрямую и ничего не грузится, запустите локальный сервер из корня проекта.</div>
+      <article id="reader" class="reader">
+        <p>Загрузка индекса...</p>
+      </article>
+    </main>
+  </div>
+
+  <script>
+    "use strict";
+
+    const INDEX_PATH = "Publication_Surface_Index.csv";
+    const DEFAULT_LANGUAGE = "ru_RU";
+    const DEFAULT_SURFACE = "external_site";
+    const RTL = new Set(["ar_SA", "he_IL"]);
+    const LOCALES = [
+      ["en_US", "English"],
+      ["ru_RU", "Русский"],
+      ["ja_JP", "日本語"],
+      ["zh_CN", "简体中文"],
+      ["fr_FR", "Français"],
+      ["es_ES", "Español"],
+      ["de_DE", "Deutsch"],
+      ["pl_PL", "Polski"],
+      ["uk_UA", "Українська"],
+      ["ar_SA", "العربية"],
+      ["id_ID", "Indonesia"],
+      ["ko_KR", "한국어"],
+      ["he_IL", "עברית"],
+      ["pt_BR", "Português BR"],
+      ["nl_NL", "Nederlands"]
+    ];
+
+    const state = {
+      rows: [],
+      filtered: [],
+      selected: null,
+      language: DEFAULT_LANGUAGE,
+      surface: DEFAULT_SURFACE,
+      topic: "",
+      status: "",
+      spoiler: "",
+      query: "",
+      showIds: false,
+      activePacket: "",
+      markdownCache: new Map()
+    };
+
+    const nodes = {
+      search: document.getElementById("searchInput"),
+      language: document.getElementById("languageSelect"),
+      surface: document.getElementById("surfaceSelect"),
+      topic: document.getElementById("topicSelect"),
+      status: document.getElementById("statusSelect"),
+      spoiler: document.getElementById("spoilerSelect"),
+      idsToggle: document.getElementById("idsToggle"),
+      count: document.getElementById("countStatus"),
+      list: document.getElementById("articleList"),
+      title: document.getElementById("title"),
+      meta: document.getElementById("meta"),
+      notice: document.getElementById("notice"),
+      reader: document.getElementById("reader"),
+      openRaw: document.getElementById("openRawButton"),
+      copyLink: document.getElementById("copyLinkButton"),
+      sameArticle: document.getElementById("sameArticleButton")
+    };
+
+    function esc(value) {
+      return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function parseCsv(text) {
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+
+      const records = [];
+      let record = [];
+      let value = "";
+      let quoted = false;
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        if (quoted) {
+          if (ch === "\"") {
+            if (text[i + 1] === "\"") {
+              value += "\"";
+              i += 1;
+            } else {
+              quoted = false;
+            }
+          } else {
+            value += ch;
+          }
+          continue;
+        }
+
+        if (ch === "\"") {
+          quoted = true;
+        } else if (ch === ",") {
+          record.push(value);
+          value = "";
+        } else if (ch === "\n") {
+          record.push(value.replace(/\r$/, ""));
+          records.push(record);
+          record = [];
+          value = "";
+        } else {
+          value += ch;
+        }
+      }
+
+      if (value || record.length) {
+        record.push(value.replace(/\r$/, ""));
+        records.push(record);
+      }
+
+      const header = records.shift() || [];
+      return records
+        .filter((row) => row.length === header.length)
+        .map((row) => {
+          const out = {};
+          for (let i = 0; i < header.length; i += 1) {
+            out[header[i]] = row[i] || "";
+          }
+          return out;
+        });
+    }
+
+    const RUSSIAN_TOPIC_WORDS = {
+      FIRST: "первый",
+      DESCENT: "спуск",
+      DEEPENING: "углубление",
+      HUMAN: "человеческий",
+      SPACE: "космос",
+      AEGIR: "Aegir",
+      ROUTE: "маршрут",
+      SYSTEM: "система",
+      HECTON8: "HECTON-8",
+      ECOLOGY: "экология",
+      CARRIER: "носитель",
+      ESCAPE: "побег",
+      DEEP: "глубокий",
+      REACH: "Deep Reach",
+      PRESSURE: "давление",
+      COLONY: "колония",
+      ATLAS: "Atlas",
+      RESOURCE: "ресурсы",
+      PUBLIC: "публичное",
+      SITE: "сайт",
+      PILLAR: "ключевые",
+      ARTICLES: "статьи",
+      WORKER: "рабочие",
+      FAUNA: "фауна",
+      GEOLOGY: "геология",
+      CONTRACT: "контракт",
+      DOSSIER: "досье",
+      ENDING: "концовки",
+      FINAL: "финал",
+      PAYLOAD: "payload",
+      BLUE: "blue",
+      DEBT: "debt",
+      SHIPS: "корабли",
+      TECHNOLOGY: "технологии",
+      MOON: "луны",
+      LONGFORM: "лонгриды"
+    };
+
+    function topicWords(releaseSetId) {
+      return String(releaseSetId || "NO_TOPIC")
+        .replace(/^RS\d+_?/, "")
+        .split("_")
+        .filter(Boolean);
+    }
+
+    function humanTopic(releaseSetId) {
+      const words = topicWords(releaseSetId);
+      if (state.language === "ru_RU") {
+        return words.map((word) => RUSSIAN_TOPIC_WORDS[word] || word.toLowerCase()).join(" ");
+      }
+      return words
+        .join(" ")
+        .toLowerCase()
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+    }
+
+    function browserLocale(locale) {
+      return String(locale || "en_US").replace("_", "-");
+    }
+
+    function compareTitles(a, b) {
+      try {
+        return String(a.title || "").localeCompare(String(b.title || ""), browserLocale(state.language));
+      } catch {
+        return String(a.title || "").localeCompare(String(b.title || ""));
+      }
+    }
+
+    function statusBucket(row) {
+      const raw = String(row.status_bucket || row.localization_status || "").toLowerCase();
+      if (raw.includes("blocked")) return "blocked";
+      if (raw.includes("draft") || raw.includes("pending") || raw.includes("machine")) return "draft";
+      if (raw.includes("ready") || raw.includes("authority") || raw.includes("reviewed")) return "ready";
+      return "other";
+    }
+
+    function statusLabel(bucket) {
+      if (bucket === "ready") return "готовый/source";
+      if (bucket === "draft") return "черновой перевод";
+      if (bucket === "blocked") return "заблокировано";
+      return "прочее";
+    }
+
+    function pill(text, kind) {
+      const cls = kind ? " pill " + kind : " pill";
+      return "<span class=\"" + cls.trim() + "\">" + esc(text) + "</span>";
+    }
+
+    function setOptions(select, items, current) {
+      select.innerHTML = "";
+      for (const item of items) {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        select.appendChild(option);
+      }
+      if (items.some((item) => item.value === current)) {
+        select.value = current;
+      }
+    }
+
+    function readHash() {
+      const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+      state.language = params.get("lang") || state.language;
+      state.surface = params.get("surface") || state.surface;
+      state.topic = params.get("topic") || "";
+      state.status = params.get("status") || "";
+      state.spoiler = params.get("spoiler") || "";
+      state.query = params.get("q") || "";
+      state.activePacket = params.get("packet") || "";
+      state.showIds = params.get("ids") === "1";
+      nodes.search.value = state.query;
+    }
+
+    function writeHash() {
+      const params = new URLSearchParams();
+      params.set("lang", state.language);
+      params.set("surface", state.surface);
+      if (state.status) params.set("status", state.status);
+      if (state.spoiler) params.set("spoiler", state.spoiler);
+      if (state.query) params.set("q", state.query);
+      if (state.activePacket) params.set("packet", state.activePacket);
+      if (state.showIds) params.set("ids", "1");
+      history.replaceState(null, "", "#" + params.toString());
+    }
+
+    function syncDirection() {
+      const dir = RTL.has(state.language) ? "rtl" : "ltr";
+      document.documentElement.lang = state.language;
+      document.documentElement.dir = dir;
+      nodes.reader.dir = dir;
+      nodes.list.dir = dir;
+      nodes.title.dir = dir;
+    }
+
+    function syncControls() {
+      setOptions(nodes.language, LOCALES.map(([value, name]) => ({ value, label: value + " · " + name })), state.language);
+
+      setOptions(nodes.surface, [
+        { value: "external_site", label: "Сайт / длинная статья" },
+        { value: "in_game_wiki", label: "Вики/PDA / внутриигровое" }
+      ], state.surface);
+
+      const surfaceLocaleRows = state.rows.filter((row) => row.surface === state.surface && row.locale === state.language);
+      const topics = Array.from(new Set(surfaceLocaleRows.map((row) => row.release_set_id))).sort();
+      setOptions(nodes.topic, [{ value: "", label: "Все темы" }].concat(topics.map((id) => ({
+        value: id,
+        label: humanTopic(id)
+      }))), state.topic);
+
+      setOptions(nodes.status, [
+        { value: "", label: "Все статусы" },
+        { value: "ready", label: "Готовый/source" },
+        { value: "draft", label: "Черновой перевод" },
+        { value: "blocked", label: "Заблокировано" },
+        { value: "other", label: "Прочее" }
+      ], state.status);
+
+      const spoilerValues = Array.from(new Set(surfaceLocaleRows.map((row) => row.spoiler_tier || "not_indexed"))).sort();
+      setOptions(nodes.spoiler, [{ value: "", label: "Все спойлеры" }].concat(spoilerValues.map((value) => ({
+        value,
+        label: value === "not_indexed" ? "Спойлер не указан" : "Спойлер " + value
+      }))), state.spoiler);
+
+      nodes.idsToggle.textContent = state.showIds ? "Скрыть ID" : "Показать ID";
+      syncDirection();
+    }
+
+    function queryHaystack(row) {
+      return [
+        row.title,
+        row.release_set_id,
+        humanTopic(row.release_set_id),
+        row.poi_tags,
+        row.biome_tags,
+        row.source_voice,
+        row.article_id,
+        row.unlock_id,
+        row.packet_id
+      ].join(" ").toLowerCase();
+    }
+
+    function filterRows() {
+      const q = state.query.trim().toLowerCase();
+      state.filtered = state.rows
+        .filter((row) => row.surface === state.surface)
+        .filter((row) => row.locale === state.language)
+        .filter((row) => !state.topic || row.release_set_id === state.topic)
+        .filter((row) => !state.status || statusBucket(row) === state.status)
+        .filter((row) => !state.spoiler || (row.spoiler_tier || "not_indexed") === state.spoiler)
+        .filter((row) => !q || queryHaystack(row).includes(q))
+        .sort(compareTitles);
+    }
+
+    function getRowByPacket(packetId) {
+      if (!packetId) return null;
+      return state.rows.find((row) =>
+        row.packet_id === packetId &&
+        row.surface === state.surface &&
+        row.locale === state.language
+      ) || null;
+    }
+
+    function renderList() {
+      nodes.count.textContent = state.filtered.length + " статей";
+      if (!state.filtered.length) {
+        nodes.list.innerHTML = "<div class=\"notice\">Ничего не найдено.</div>";
+        return;
+      }
+
+      nodes.list.innerHTML = state.filtered.map((row) => {
+        const active = state.selected && row.packet_id === state.selected.packet_id ? " active" : "";
+        const bucket = statusBucket(row);
+        const statusKind = bucket === "ready" ? "good" : bucket === "draft" ? "warn" : bucket === "blocked" ? "bad" : "";
+        const ids = state.showIds
+          ? pill(row.packet_id, "") + pill(row.article_id, "")
+          : "";
+        return "<button class=\"article-button" + active + "\" type=\"button\" data-packet=\"" + esc(row.packet_id) + "\">" +
+          "<span class=\"article-title\">" + esc(row.title || row.packet_id) + "</span>" +
+          "<span class=\"article-tags\">" +
+          pill(humanTopic(row.release_set_id), "") +
+          pill(statusLabel(bucket), statusKind) +
+          pill("спойлер " + (row.spoiler_tier || "n/a"), "") +
+          ids +
+          "</span>" +
+          "</button>";
+      }).join("");
+
+      nodes.list.querySelectorAll("button[data-packet]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const row = state.filtered.find((item) => item.packet_id === button.dataset.packet);
+          if (row) selectRow(row, true);
+        });
+      });
+    }
+
+    function stripFrontmatter(markdown) {
+      return String(markdown || "").replace(/^---[\s\S]*?---\s*/, "").replace(/<!--[\s\S]*?-->/g, "").trim();
+    }
+
+    function renderInline(text) {
+      return esc(text)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    }
+
+    function renderMarkdown(markdown) {
+      const body = stripFrontmatter(markdown);
+      if (!body) {
+        return "<p>Пустая статья.</p>";
+      }
+
+      const lines = body.split(/\r?\n/);
+      const html = [];
+      let paragraph = [];
+      let list = [];
+      let code = [];
+      let inCode = false;
+
+      function flushParagraph() {
+        if (paragraph.length) {
+          html.push("<p>" + renderInline(paragraph.join(" ")) + "</p>");
+          paragraph = [];
+        }
+      }
+
+      function flushList() {
+        if (list.length) {
+          html.push("<ul>" + list.map((item) => "<li>" + renderInline(item) + "</li>").join("") + "</ul>");
+          list = [];
+        }
+      }
+
+      function flushCode() {
+        if (code.length) {
+          html.push("<pre><code>" + esc(code.join("\n")) + "</code></pre>");
+          code = [];
+        }
+      }
+
+      for (const raw of lines) {
+        const line = raw.trimEnd();
+        if (line.startsWith("```")) {
+          if (inCode) {
+            inCode = false;
+            flushCode();
+          } else {
+            flushParagraph();
+            flushList();
+            inCode = true;
+          }
+          continue;
+        }
+
+        if (inCode) {
+          code.push(raw);
+          continue;
+        }
+
+        if (!line.trim()) {
+          flushParagraph();
+          flushList();
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,3})\s+(.+)$/);
+        if (heading) {
+          flushParagraph();
+          flushList();
+          const level = heading[1].length;
+          html.push("<h" + level + ">" + renderInline(heading[2]) + "</h" + level + ">");
+          continue;
+        }
+
+        const bullet = line.match(/^[-*]\s+(.+)$/);
+        if (bullet) {
+          flushParagraph();
+          list.push(bullet[1]);
+          continue;
+        }
+
+        paragraph.push(line.trim());
+      }
+
+      flushParagraph();
+      flushList();
+      flushCode();
+      return html.join("\n");
+    }
+
+    async function loadMarkdown(row) {
+      if (!row) return "";
+      const key = row.page_path;
+      if (state.markdownCache.has(key)) {
+        return state.markdownCache.get(key);
+      }
+      const response = await fetch(key);
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status + " while loading " + key);
+      }
+      const text = await response.text();
+      state.markdownCache.set(key, text);
+      return text;
+    }
+
+    function renderSelectedMeta(row) {
+      if (!row) {
+        nodes.meta.innerHTML = "";
+        return;
+      }
+
+      const bucket = statusBucket(row);
+      const statusKind = bucket === "ready" ? "good" : bucket === "draft" ? "warn" : bucket === "blocked" ? "bad" : "";
+      const idHtml = state.showIds
+        ? pill(row.packet_id, "") + pill(row.release_set_id, "") + pill(row.article_id, "") + pill(row.unlock_id, "")
+        : "";
+      nodes.meta.innerHTML =
+        pill(state.language, "") +
+        pill(state.surface === "external_site" ? "сайт" : "вики/PDA", "") +
+        pill(humanTopic(row.release_set_id), "") +
+        pill(statusLabel(bucket), statusKind) +
+        pill("спойлер " + (row.spoiler_tier || "n/a"), "") +
+        (row.source_voice ? pill(row.source_voice, "") : "") +
+        idHtml;
+    }
+
+    async function selectRow(row, fromUser) {
+      state.selected = row;
+      state.activePacket = row.packet_id;
+      nodes.title.textContent = row.title || row.packet_id;
+      renderSelectedMeta(row);
+      nodes.notice.className = "notice";
+      nodes.notice.textContent = "Загрузка статьи...";
+      nodes.reader.innerHTML = "<p>Загрузка...</p>";
+      renderList();
+      if (fromUser) writeHash();
+
+      try {
+        const markdown = await loadMarkdown(row);
+        nodes.reader.innerHTML = renderMarkdown(markdown);
+        const bucket = statusBucket(row);
+        if (bucket === "draft") {
+          nodes.notice.className = "notice warn";
+          nodes.notice.textContent = "Это черновой перевод. Читать можно, но native review/runtime proof не заявлены.";
+        } else {
+          nodes.notice.className = "notice";
+          nodes.notice.textContent = "Источник: generated markdown from AppliedContent packet. Runtime visibility is not implied.";
+        }
+      } catch (error) {
+        nodes.notice.className = "notice warn";
+        nodes.notice.textContent = "Не удалось загрузить markdown. Открой через локальный HTTP server, не file://.";
+        nodes.reader.innerHTML = "<p>" + esc(error.message) + "</p><p>Команда: <code>python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent</code></p>";
+      }
+    }
+
+    function selectBestRow() {
+      const exact = getRowByPacket(state.activePacket);
+      if (exact) {
+        selectRow(exact, false);
+        return;
+      }
+      if (state.filtered.length) {
+        selectRow(state.filtered[0], false);
+        return;
+      }
+      state.selected = null;
+      nodes.title.textContent = "Ничего не найдено";
+      nodes.meta.innerHTML = "";
+      nodes.reader.innerHTML = "<p>Измените поиск или фильтры.</p>";
+    }
+
+    function refresh() {
+      syncControls();
+      filterRows();
+      renderList();
+      selectBestRow();
+      writeHash();
+    }
+
+    function changeSurfaceToOtherFormat() {
+      state.surface = state.surface === "external_site" ? "in_game_wiki" : "external_site";
+      refresh();
+    }
+
+    function openRaw() {
+      if (state.selected && state.selected.page_path) {
+        window.open(state.selected.page_path, "_blank", "noopener");
+      }
+    }
+
+    async function copyLink() {
+      writeHash();
+      const url = location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        nodes.notice.className = "notice";
+        nodes.notice.textContent = "Ссылка скопирована.";
+      } catch {
+        nodes.notice.className = "notice warn";
+        nodes.notice.textContent = url;
+      }
+    }
+
+    async function boot() {
+      readHash();
+      syncDirection();
+      if (location.protocol === "file:") {
+        nodes.notice.className = "notice warn";
+        nodes.notice.textContent = "file:// обычно блокирует загрузку CSV/markdown. Запустите HTTP server.";
+      }
+      const response = await fetch(INDEX_PATH);
+      if (!response.ok) {
+        throw new Error("Cannot load " + INDEX_PATH);
+      }
+      state.rows = parseCsv(await response.text());
+      syncControls();
+      filterRows();
+      renderList();
+      selectBestRow();
+      writeHash();
+    }
+
+    nodes.language.addEventListener("change", () => {
+      state.language = nodes.language.value;
+      refresh();
+    });
+    nodes.surface.addEventListener("change", () => {
+      state.surface = nodes.surface.value;
+      refresh();
+    });
+    nodes.topic.addEventListener("change", () => {
+      state.topic = nodes.topic.value;
+      refresh();
+    });
+    nodes.status.addEventListener("change", () => {
+      state.status = nodes.status.value;
+      refresh();
+    });
+    nodes.spoiler.addEventListener("change", () => {
+      state.spoiler = nodes.spoiler.value;
+      refresh();
+    });
+    nodes.search.addEventListener("input", () => {
+      state.query = nodes.search.value;
+      filterRows();
+      renderList();
+      selectBestRow();
+      writeHash();
+    });
+    nodes.idsToggle.addEventListener("click", () => {
+      state.showIds = !state.showIds;
+      refresh();
+    });
+    nodes.sameArticle.addEventListener("click", changeSurfaceToOtherFormat);
+    nodes.openRaw.addEventListener("click", openRaw);
+    nodes.copyLink.addEventListener("click", copyLink);
+    window.addEventListener("hashchange", () => {
+      readHash();
+      refresh();
+    });
+
+    boot().catch((error) => {
+      nodes.count.textContent = "ошибка";
+      nodes.notice.className = "notice warn";
+      nodes.notice.textContent = "Не удалось загрузить индекс.";
+      nodes.reader.innerHTML =
+        "<p>" + esc(error.message) + "</p>" +
+        "<p>Запуск из корня проекта:</p>" +
+        "<pre><code>python -m http.server 8788 --bind 127.0.0.1 --directory Docs/Lore/AppliedContent</code></pre>" +
+        "<p>Потом открыть: <code>http://127.0.0.1:8788/prewiki.html</code></p>";
+    });
+  </script>
+</body>
+</html>

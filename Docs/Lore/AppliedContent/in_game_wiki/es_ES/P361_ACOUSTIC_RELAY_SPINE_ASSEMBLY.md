@@ -19,22 +19,26 @@ localization_flags: 1
 
 # Conjunto de espina de relé acústico
 
-La huida empieza bajo el agua. La espina de relé acústico permite que una cápsula dañada pruebe posición, reloj y estado de supervivencia antes de que los receptores orbitales la traten como recoverable mass.
+La espina de relé acústico es la primera prueba de que la cápsula existe. Un canal de voz es demasiado frágil después de impacto, pérdida de mástil y ruido de tormenta. La espina usa pressure-code de banda baja a través del agua: costillas cerámicas, piel de cable, pinger floats y un reloj lo bastante estable para repetir posición sin sonar como ruido aleatorio de pecio.
+
+Importa porque la órbita no rescata cada sonido. Black Keel puede oír eventos de presión desde HECTON-8, pero aún los filtra por claim custody, geometría de ruta y timing de receptor. Un tap dañado sin route proof se vuelve fondo. Un tap limpio a reloj incorrecto se vuelve evidence loss. El conjunto convierte sonido en objeto recuperable: posición, survival state, reloj, checksum.
+
+El salvage de la espina es estrecho e implacable. Un Marauder puede reemplazar funda de cable, asentar costillas agrietadas, lastrar los pinger floats y alinear la cadence de paquetes, pero el océano seguirá añadiendo multipath delay, brine distortion y golpes de casco. La espina reparada no pide compasión. Da al receptor suficientes hechos repetidos para arriesgar una recovery window.
 
 ## Scanner
 
-Espina acústica rota. Puede golpear pressure-code a través del agua; la órbita aún lo oye como custody noise dañado.
+ESPINA ACÚSTICA ROTA // Pila de costillas cerámicas, piel de cable abierta, dos pinger floats. Tap de banda baja posible; el receptor orbital lo ignorará si timing y route proof no coinciden.
 
 ## Terminal
 
-ASCENT RELAY: restaurar espina acústica de baja banda antes de la recovery window. High-gain mast perdida. Emergency buoy poco fiable. El receptor Black Keel acepta pressure-code solo tras route proof.
+ASCENT RELAY: restaurar low-band acoustic spine antes de recovery window. High-gain mast perdido. Emergency buoy no fiable. Receptor Black Keel acepta pressure-code solo con route proof, clock match y custody checksum.
 
 ## Audio
 
-Si el Keel nos oye, oye una herida golpeando una tubería.
+Si el Keel nos oye, oye cerámica golpeando coordenadas a través de agua mala.
 
 ## Field Note
 
-La primera llamada de la cápsula no es una voz. Son costillas cerámicas, piel de cable, pinger floats y disciplina de sincronía suficiente para que el océano te repita bien.
+La primera llamada de la cápsula no es una voz. Son costillas, funda de cable, float de lastre y suficiente disciplina de reloj para que el agua repita el mismo hecho dos veces.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/es_ES. -->

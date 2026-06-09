@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Протокол продажу координат payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Протокол продажу координат payload
 
-UK LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+Протокол продажу координат поводиться з HECTON-8 як із відновлюваною власністю. Він перетворює фінальний payload на пакет отримувача для Deep Reach: вектор басейну, сітку впевненості, digest доказів і клас salvage доступу. Відправник отримує гроші й полегшення боргу. Deep Reach отримує карту підходу й чистіший шлях назад у претензію.
 
 ## Scanner
 
-UK LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Маршрут продажу координат зведено. Вектор басейну, карта впевненості й digest доказів ідуть у Deep Reach Recovery Compliance.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+ОТРИМУВАЧ PAYLOAD // ПРОДАЖ КООРДИНАТ. Отримувач: Deep Reach Recovery Compliance. Передати вектор басейну, сітку впевненості, XO proof digest, клас salvage доступу. Повернути квитанцію виплати, зниження застави, штамп пріоритету відновлення. Передати карту доступу при фіксації квитанції.
 
 ## Audio
 
-UK LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Виплата пройшла. Карту передано. Реєстр працівників досі відкритий.
 
 ## Field Note
 
-UK LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Нотатка мародера: якщо перший рядок - сума, читай другий. Другий рядок - access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/uk_UA. -->

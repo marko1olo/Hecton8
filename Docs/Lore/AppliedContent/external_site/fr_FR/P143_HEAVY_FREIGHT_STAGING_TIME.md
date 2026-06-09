@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Temps de staging du fret lourd"
+title: "Temps de mise en scène du fret lourd"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Temps de staging du fret lourd
+# Temps de mise en scène du fret lourd
 
-Le fret lourd cache du temps dans l'infrastructure. Matériel Atlas, cargaison d'ensemencement, stocks de blindage et pièces de freinage peuvent arriver tôt parce qu'ils sont lancés des années avant que le langage public de colonisation les rattrape. Cela ne rend pas le secours d'urgence facile. Une route préparée déplace la masse parce que dépôts, fenêtres de faisceau, flux de pellets et étages de capture attendaient déjà. Une route de catastrophe n'a plus cette patience.
+La mise en scène du fret lourd est l'endroit où la logistique interstellaire devient violence sans arme. Un anneau d'habitat, une coque de réacteur, un crawler de coupe, une nervure de pression ou un stock alimentaire coûte trop cher pour rester une promesse légère. Avant même Aegir, ils attirent assureurs, privilèges, transporteurs, inspecteurs et clauses de repli.
+
+Quand les conditions ont changé, Deep Reach n'a pas eu besoin d'inventer la cruauté. Il suffisait d'honorer la chaîne de cargaison. Chaque tonne déjà mise en route exigeait un receveur, chaque receveur exigeait un chantier, et chaque chantier exigeait des corps. La colonie est devenue la réponse humaine à un fret déjà payé.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/fr_FR. -->

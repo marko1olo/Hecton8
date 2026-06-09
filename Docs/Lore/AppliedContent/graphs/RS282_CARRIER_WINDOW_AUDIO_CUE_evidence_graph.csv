@@ -1,0 +1,2 @@
+packet_id,arc_id,depth_band,route_moment,prereq_packet_ids,next_packet_ids,evidence_type,truth_claim,player_decision,spoiler_tier,primary_surface
+P6800_CARRIER_WINDOW_AUDIO_CUE,carrier_window_audio_feedback,0-500m,first_carrier_window_chime_after_packet_receipt,P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL;P621_AEGIR_RECOVERY_WINDOW_GEOMETRY;P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY,,audio_state_cue,Black Keel audio acknowledgement confirms packet receipt only while the low closure tone keeps recovery lane closed,Log the window and do not move toward ascent on tone alone,0,audio

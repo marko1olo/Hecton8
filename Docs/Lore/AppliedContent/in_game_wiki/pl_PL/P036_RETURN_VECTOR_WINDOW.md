@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Okno wektora powrotu
 
-Okna powrotu zmieniają ucieczkę w twardą sekwencję SF: geometria, pogoda, sygnał i sprzęt.
+Okno wektora powrotu jest pierwszym dowodem, że Black Keel może odpowiedzieć, ale nie może od razu uratować. Carrier idzie automatyczną ścieżką transferową nad Aegir, lecz droga wyjścia z HECTON-8 musi przejść przez pogodę, szum cząstek naładowanych, uszkodzony przekaźnik i niedokończony sprzęt wznoszenia.
+
+Prawidłowe okno powrotu wymaga czterech odczytów naraz: geometrii carrier, luki w burzy powierzchniowej, czystej ścieżki przekaźnika i łańcucha kapsuły zdolnego przeżyć start. Jeśli jeden zawiedzie, ping staje się znacznikiem czasu zamiast odbioru. Ten sam system później obsługuje częściową ekstrakcję, ale nie zamyka długu, depozytu dowodów ani uszkodzonej trasy. Każdą odpowiedź z orbity traktuj jak ograniczenie harmonogramu, dopóki kołyska wznoszenia, rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zostaną odbudowane.
 
 ## Scanner
 
-Geometria orbitalna nie jest przyciskiem ratunku. Black Keel słyszy cię tylko w wąskich oknach Aegira.
+ODCZYT WEKTORA POWROTU // Ping Black Keel odebrany przez lukę burzową Aegir. Zasięg carrier: wysoka ścieżka transferowa. Linia przekaźnika brudna pod ładunkiem chmur. Wznoszenie kapsuły odrzucone, dopóki rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zgłoszą zielonego.
 
 ## Terminal
 
-Predykcja łączności: nośnik wysoko nad Aegirem. Wznoszenie kapsuły wymaga luki w burzy, ciszy cząstek i czystego przekaźnika.
+PREDYKTOR OKNA POWROTU
+Carrier: BLACK KEEL / automatyczna ścieżka transferowa
+Okno: 17 min 40 s po następnym uspokojeniu cząstek naładowanych
+Pogoda: wymagana luka w szkwale powierzchniowym
+Przekaźnik: linia nieba zaszumiona / maszt schronu może powtórzyć raz
+Sprzęt wznoszenia: brak rdzenia naprowadzania, osłona termiczna bez certyfikatu, niska rezerwa baterii
+Działanie: odbudować łańcuch wznoszenia przed uznaniem pingu carrier za odbiór
 
 ## Audio
 
-Black Keel żyje dość, by odpowiedzieć. Nie dość blisko, by uratować.
+Black Keel usłyszał ping. To daje okno, nie drabinę.
 
 ## Field Note
 
-Odpowiedź to czas, nie łaska.
+Odpowiedź nie jest ratunkiem. To zegar, który można przegapić.
 
 <!-- In-Game Wiki; generated from P036_RETURN_VECTOR_WINDOW/pl_PL. -->

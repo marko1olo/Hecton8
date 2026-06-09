@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Набор доказательств насосного собора соляного каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Набор доказательств насосного собора соляного каньона
 
-RU LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+Насосный собор дает средней глубине работу. Оператору нужно пройти галереи, стабилизировать соляной карман, прочитать стекло плотности и сравнить часы удержания маршрута с журналом очереди рабочих. Ни один объект не является декором; каждый меняет то, чем выглядит задержка - погодой, халатностью или защитой претензии.
 
-## Scanner
-
-RU LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-RU LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-RU LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-RU LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Доказательство сильнее, когда уважает океан. Великий прилив ломал стены и двигал воду. Комната этого не отрицает. Она показывает, что расписание сделало вокруг затопления: принятый допуск, поздний запуск помпы, удержанный маршрут, переполненная очередь. POI становится ориентиром потому, что машина все еще помнит порядок работы.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ru_RU. -->

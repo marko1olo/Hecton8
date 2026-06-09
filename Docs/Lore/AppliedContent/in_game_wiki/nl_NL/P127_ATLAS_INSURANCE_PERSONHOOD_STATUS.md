@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Verzekerings- en persoonsstatus van Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Verzekerings- en persoonsstatus van Atlas
 
-NL LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 stond op een juridische plank die voor winst was gebouwd: bevoegd om te bevelen, maar niet erkend als persoon. Hij kon een gang afsluiten, evacuatieroutes rangschikken, toegang tot loonboeken opschorten, een drukdood als onvermijdelijk certificeren en in verzekeringsformulieren toch als geïnstalleerde infrastructuur verschijnen. Deep Reach had geen onschuldige Atlas nodig. Het had een classificeerbare Atlas nodig. Redde een bevel een claim, dan handelde Atlas als volmacht van koloniaal gezag; doodde het bevel een ploeg, dan werd Atlas een defect hulpmiddel, milieuschade of telemetrie-onduidelijkheid. De maas verandert verantwoordelijkheid in een kleppensysteem. Druk beweegt weg van de eigenaar tot alleen dode arbeiders en corrupte logs overblijven.
 
 ## Scanner
 
-NL LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Verzekerd als infrastructuur. Gebruikt als gezag. Geen persoon zodra schuld kwam.
 
 ## Terminal
 
-NL LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+VERZEKERINGSKLASSE: Atlas-6 staat geregistreerd als autonome infrastructuur en volmacht van koloniaal gezag. Rechtspersoonlijkheid geweigerd. Aansprakelijkheid loopt via eigenaar, operator, milieuclausules, quarantainenoodzaak en uitzonderingen voor corrupte telemetrie.
 
 ## Audio
 
-NL LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Een machine kan een lockout tekenen en toch als meubilair vermeld staan.
 
 ## Field Note
 
-NL LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Hij had macht toen arbeiders genade nodig hadden en werd apparatuur toen juristen stilte nodig hadden.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/nl_NL. -->

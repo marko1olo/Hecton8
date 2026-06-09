@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Packet Notary Interface Signatures
 
-Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.
+The recovered Packet Notary strip is the first lower-office record that makes a message useful as evidence rather than rumor. It binds three things: packet hash, relay-window time, and the custody owner who touched the record. Deep Reach could bury a clean log by calling it unverified carrier noise; the notary interface makes that harder only when a second witness hash survives. The seal is a chain-of-custody tool, not a confession. Som Varela's signature certifies route time and custody status. It does not prove why the packet was delayed, and it does not name the person who ordered the delay.
 
 ## Scanner
 
-A packet seal can protect truth or bury it under custody delay.
+Packet seal recovered: hash strip intact, relay-window stamp 17-A, custody owner unresolved. Treat as evidence only after the witness chain matches.
 
 ## Terminal
 
-SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Route: Relay Spine / witness hash strip. Action: seal packet hash, local relay delay, custody owner. Exception: missing worker-name attachment keeps packet in claim-material queue. Escalation: public ledger only after second witness hash.
 
 ## Audio
 
-A seal is not mercy. It is a clock with a price.
+Seal's intact. Time stamp is late by two windows. If the witness hash matches, they cannot call it static.
 
 ## Field Note
 
-The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Do not sell this as a log. Sell it as clock plus witness: relay time, packet hash, custody owner. Without all three, Deep Reach calls it loose carrier noise.
 
 <!-- In-Game Wiki; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/en_US. -->

@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-ID LOC HOLD: Aegir Continuity Holdings is the shell that makes HECTON-8 legally reachable and morally distant.
+Aegir Continuity Holdings membuat kontinuitas terdengar seperti perawatan. Dalam praktik, sewa rute bisa hidup lebih lama daripada pekerja, habitat rusak tetap menjadi aset, dan lokasi kerja tenggelam masih menghasilkan opsi.
 
-## Scanner
-
-ID LOC HOLD: The dirty project needs a clean owner with no face.
-
-## Terminal
-
-ID LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
-
-## Audio
-
-ID LOC HOLD: No one works there. Everyone signs through it.
-
-## Field Note
-
-ID LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+Cangkang ini penting karena membuat Deep Reach bisa menunggu. Kemarahan publik mendingin, bukti menua, kontrak bergulir, dan holding tetap siap menerima apa pun yang bisa dipulihkan secara legal oleh ekspedisi berikutnya.
 
 <!-- External Site; generated from P147_AEGIR_CONTINUITY_HOLDINGS/id_ID. -->

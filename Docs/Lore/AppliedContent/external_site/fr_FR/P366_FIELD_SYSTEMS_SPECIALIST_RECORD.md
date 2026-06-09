@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier de spécialiste des systèmes de terrain"
+title: "Dossier de Spécialiste des Systèmes de Terrain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier de spécialiste des systèmes de terrain
+# Dossier de Spécialiste des Systèmes de Terrain
 
-Le personnage joueur de HECTON-8 entre dans l'océan avec une cicatrice pratique : ancien travail sur les systèmes de terrain de Deep Reach, accès à l'infrastructure d'évacuation, accréditation révoquée et mémoire procédurale suffisante pour lire les machines noyées comme des preuves. Il est Marauder désormais, pas officier de compagnie ni héros passager. Une pompe brisée, un tampon de route ou une formule de responsabilité comptent parce que l'opérateur sait comment ces systèmes devaient protéger les travailleurs avant de devenir du papier.
+Le Dossier de Spécialiste des Systèmes de Terrain donne à l'opérateur central de HECTON-8 un passé utile sans le rendre trop propre. Il n'était pas commandement et pas architecte secret du désastre. Il travaillait près des systèmes censés garder honnêtes les routes d'évacuation, pompes, joints et salles relais.
 
-## Scanner
+Cela compte parce que la colonie abandonnée est pleine de procédures, pas seulement de débris. Un tampon route-safe, une cote de clamp ou une formule maintenance peuvent accuser plus fort qu'un enregistrement spectaculaire. L'opérateur sait à quoi ces dossiers ressemblent quand ils protègent des gens, et à quoi ils ressemblent quand une société veut transformer la protection en paperasse.
 
-Ancienne accréditation systèmes de terrain. Pas un cadre de commandement. Travail d'infrastructure avec assez d'accès pour reconnaître l'endroit où une route a été enterrée.
-
-## Terminal
-
-TRACE PERSONNELLE : systèmes de terrain, infrastructure d'évacuation, certification route-safe. Accès révoqué après révision du silence d'Aegir. Le cache de procédure correspond encore à la séquence de l'opérateur.
-
-## Audio
-
-Tu n'as jamais signé le mensonge. Tu connaissais la grammaire qui le faisait passer l'inspection.
-
-## Field Note
-
-Le badge n'ouvrait plus les portes. Il n'a pas désappris l'ordre des pannes.
+L'accès révoqué rend l'histoire plus tranchante. L'ancien badge ne donne plus le contrôle, mais il laisse la capacité de reconnaître le dialecte de l'échec. HECTON-8 transforme cette mémoire professionnelle en motif: pas la culpabilité d'avoir causé la catastrophe, mais la responsabilité après avoir lu comment des salles évitables ont été classées.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/fr_FR. -->

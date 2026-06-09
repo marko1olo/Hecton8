@@ -19,21 +19,19 @@ localization_flags: 1
 
 # Black Keel台帳
 
-Black Keelは軌道上の命綱だが、救助の夢ではない。保管台帳、保険債務、回収窓、検疫、キャリア権限を持つ請求プール基盤だ。
-
-価値を守るから誘導する。価値を守るから遅らせる。助けることと味方であることは別だ。
+Black Keelはプレイヤーの軌道生命線だが、プレイヤーの船ではない。公にはAegir Reclamation Poolのもの、法的にはKeelmark Mutualが保険、債務、回収露出で包む。古いDeep Reach優先フックはペイロード順、検疫文、航路証明を曲げられる。台帳は実務的だから冷たい。生きた身体、証拠コア、blue-debt試料、工具箱、船体片が同じtonne-windowを争う。
 
 ## Scanner
 
-請求プール・テンダー台帳。公共キャリア保管、保険債務、上昇質量ペナルティ、隠れたDeep Reach優先フック。
+claim-pool tender台帳。Aegir Reclamation Pool保管、Keelmark Mutual露出、4.8 tonne-window留置権、偽装Deep Reach優先フック。
 
 ## Terminal
 
-BLACK KEEL台帳 // 回収サービス条件付き。請求クリアランス未完了。深層優先ルート秘匿。ペイロード権限はキャリア側。契約者生存は、更新された上昇価値なしでは保険貨物を上回らない。
+BLACK KEEL台帳 // 契約者生存は回収可能生体payloadとして登録。証拠コアは保管級待ち。blue-debt材料はcontainment review要求。深部優先受益者偽装。回収価値が保険貨物露出を超えるまでtonne-window債務有効。
 
 ## Audio
 
-Black Keelはお前の船じゃない。お前の負債を知っている機械だ。
+Black Keelは海から救い上げても、上昇の一秒ごとを売れる。
 
 ## Field Note
 

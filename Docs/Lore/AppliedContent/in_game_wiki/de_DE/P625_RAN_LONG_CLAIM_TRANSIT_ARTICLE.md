@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Ran Long Claim Transit
 
-Die Routenplatte unter der alten Relaishaut beantwortet eine Frage, die die meisten Marauder zu spät stellen: Die Menschheit kann Aegir erreichen, aber Reichweite ist keine Rettung. Ran Long Claim hängt an einer langsamen Kette aus gesetzter Fracht, Paketleitern, Treibstoffdepots, Quarantänerecht und Trägern, die Jahre für eine Strecke brauchen, die ein Signal in einer Saison nimmt. Ein Lebensbeweis kann Sol, Luyten und Barnard passieren, während der Körper, der ihn sendete, noch unter lokalem Wetter, Massengrenzen und Schuldbefugnis festliegt. Black Keel kann dich hören. Es kann ein Pfand buchen, eine Verwahrung öffnen und ein tonne-window reservieren. Es kann keinen Trägerrumpf durch Vakuum drücken, nur weil ein Taucher Angst im Wasser hat.
+Ran Long Claim ist der öffentliche Name eines praktischen Widerspruchs. Die Menschheit kann Aegir erreichen, Probes, Fracht, Packet Custody und Claim-Tender ins System schicken. Das heißt nicht, dass ein gestrandeter Marauder gehoben wird, sobald er fragt.
+
+Die Route besteht aus Schichten. Pakete bewegen sich zuerst, weil Information leicht und juristisch nützlich ist. Treibstoffdepots, Receiverreserven und Quarantäneslots sind langsamer. Schwere Fracht ist am langsamsten und von Verträgen um Bremskosten, Payloadbesitz und Recoveryrisiko umgeben.
 
 ## Scanner
 
-ROUTENPLATTE // Ran Long Claim, Aegir-Verkehrsband. Pakete passieren in Fenstern; Rümpfe passieren nach Masse, Schleppzeit, Quarantäne und angenommener Haftung.
+Routenplatte unter alter Relaishaut. Ran-Long-Claim-Gewahrsamskette: Packet Ladder, Treibstoffdepot, Quarantänelane, Carrierqueue und alter Proof-of-life-Beleg.
 
 ## Terminal
 
-LUYTEN-PAKETLEITER // Aegir-Empfang zwischengespeichert. Signalbeweis kann der Trägerfahrt elf Jahre voraus sein. Abhebeerlaubnis verlangt weiter Beam-Lane-Bestätigung, Verwahrstempel und tonne-window-Masse.
+RAN LONG CLAIM // Reichweite bestätigt. Rettung nicht impliziert. Signaltransitklasse unter Schwer-Masse-Transitklasse. Carrierantwort kann physische Bergung um Vertragsjahre schlagen. Lokale Überlebensautorität bis Gewahrsamsfenster schließt.
 
 ## Audio
 
-Black-Keel-Routenfunk: Sol kann den Anspruch beglaubigen. Luyten kann das Paket beweisen. Barnard kann die Hände verkaufen. Keiner davon zieht dich in diesem Umlauf aus HECTON-8.
+Reichweite ist keine Rettung. Ein Signal kann die Dunkelheit kreuzen, während der Körper im Wasser festhängt.
 
 ## Field Note
 
-Wenn eine Platte Sol, Luyten, Barnard und Aegir in einer Zeile führt, lies die Reihenfolge. Sol besitzt das Recht. Luyten besitzt das Paket. Barnard besitzt die Hände. Aegir besitzt das Wetter. Keiner davon besitzt deinen nächsten Atemzug.
+Die Route kann dich hören, bevor sie dich tragen kann.
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/de_DE. -->

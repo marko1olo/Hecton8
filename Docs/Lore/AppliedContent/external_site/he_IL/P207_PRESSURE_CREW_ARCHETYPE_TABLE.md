@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "טבלת ארכיטיפי צוותי לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# טבלת ארכיטיפי צוותי לחץ
 
-HE LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+ארכיטיפי צוותי לחץ הופכים את קאסט העובדים של HECTON-8 להיסטוריית עבודה קריאה. המושבה לא מוסברת קודם כל בביוגרפיות; היא מוסברת בעבודה. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany ו-Payload Witness נותנים לכל שם תפקיד, מקום בכלכלת האוקיינוס וסיבה להופיע כראיה. כך הלור עולה דרך חפצים ונתיבים במקום דרך חשיפה מנותקת.
 
 ## Scanner
 
-HE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+צוותים הם פעלים לפני שהם סיפור רקע: לשאוב, לאטום, לשדר, למפות, לחשל, למיין, לגדל, להעיד.
 
 ## Terminal
 
-HE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany ו-Payload Witness. כל זהות עובד נקשרת למשפחת צוות לפני פרט אישי. כך הראיה נשארת קשורה למכונות, נתיבים, כשלי לחץ, תרבות מזון, חוק חילוץ ושרשרת payload סופית.
 
 ## Audio
 
-HE LOC HOLD: Job first. Memory second. That is how the colony survives.
+עבודה קודם. זיכרון אחר כך. כך המושבה שורדת על הנייר.
 
 ## Field Note
 
-HE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+עובד מת נקרא נקי יותר כשהחדר עדיין צריך את העבודה שהוא הכיר.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/he_IL. -->

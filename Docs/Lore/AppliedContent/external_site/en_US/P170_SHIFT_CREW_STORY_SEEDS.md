@@ -19,22 +19,24 @@ localization_flags: 0
 
 # Shift Crew Story Seeds
 
-Shift Crew Story Seeds turns worker evidence into replay-safe content.
+Shift Crew Story Seeds define the safe variation layer for worker evidence. Roster order, object placement, job pairings, locker props, denial forms and Marauder annotations may vary by seed. Core history does not. Great Tide timing, Deep Reach responsibility, Atlas weighting and evacuation failure remain locked.
+
+This lets HECTON-8 support replay while preserving narrative trust. The player can discover a different worker and still learn the same structural truth: the colony did not fail because a single named person made a mistake. It failed because a system converted people, routes, bodies and tools into accountable-looking paperwork.
 
 ## Scanner
 
-Microstories should change route evidence, not canon truth.
+SHIFT SEED // The roster can change. The guilt cannot.
 
 ## Terminal
 
-SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SHIFT CREW SEEDS // A run may vary roster order, worker pairings, locker contents, denial slips, route chalk, badge fragments and later Marauder correction notes. The seed is allowed to change how the player meets the evidence, not what the evidence proves. Canon events stay fixed; local worker traces make the route feel newly inhabited.
 
 ## Audio
 
-A different locker can hurt the same truth again.
+A different locker can cut into the same truth from another side.
 
 ## Field Note
 
-Seed variety is for order, names and objects, not contradiction.
+Seed variety changes object order, job pairings and Marauder annotations. It must never change the Great Tide or Deep Reach liability.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/en_US. -->

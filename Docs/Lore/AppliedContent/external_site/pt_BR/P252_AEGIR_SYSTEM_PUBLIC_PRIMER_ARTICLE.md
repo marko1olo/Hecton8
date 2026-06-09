@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Introdução Pública ao Sistema Aegir
 
-Aegir é o sistema hospedeiro ao redor de HECTON-8, e importa em todos os sentidos práticos. Sua escada de luas molda marés e janelas de aproximação. Sua geometria de relé permite que evidências viajem mais rápido que massa de resgate. Suas órbitas de transportadora tornam a Black Keel presente, mas não instantaneamente útil. Não há motor milagroso, não há resgate ansible e não há botão de emergência limpo. A versão pública de Aegir deve parecer alcançável o bastante para ser cruel: conectada, programada, precificada e ainda lenta demais para as pessoas presas abaixo.
+Aegir importa porque torna o céu prático. O sistema ao redor de HECTON-8 não é mapa estelar decorativo; é uma máquina de luas, janelas, clima de radiação, sombras de relé, riscos de ice-scatter e geometria de transferência carrier. Uma mensagem pode sair por uma janela estreita enquanto um corpo segue impossível de recuperar. Uma amostra pode ser valiosa e perder o timing de quarentena. Black Keel pode estar presente no sistema e ainda não estar acima de você como um mergulhador assustado deseja.
 
-## Scanner
+É assim que HECTON-8 fica hard-sci-fi sem virar tarefa de escola. O jogador não precisa de aula de mecânica orbital para sentir Aegir. Ele sente quando o sinal passa e o lift não, quando ruído de tempestade corrompe um relé, quando sombra lunar transforma uplink seguro em slot morto, quando uma janela de maré decide se uma rota de canyon é sobrevivível.
 
-Aegir não é pano de fundo. É um cronograma com gravidade, radiação, marés, atraso de relé e janelas de massa caras.
-
-## Terminal
-
-NÍVEL DE ARTIGO PÚBLICO / SISTEMA AEGIR
-permitido: sistema hospedeiro, papel lunar de HECTON-8, janelas de maré, geometria de relé, atraso da transportadora, linguagem de rota sem FTL
-bloqueado: roteamento final do payload, prioridade oculta do receiver, travas exatas de efeméride tardia
-nota editorial: explicar o atraso sem fazer o cenário parecer inalcançável.
-
-## Audio
-
-O sistema é perto o bastante para responder. Essa é a parte cruel. Não é perto o bastante para içar um corpo sob comando.
-
-## Field Note
-
-Não chame Aegir de distante e pare aí. Diga o que a distância faz: põe preço no içamento, atrasa corpos e deixa evidências ultrapassarem o resgate.
+Aegir também é por que a frontier não é vazia. Outras luas carregam papéis de relé, claims frios, beacons mortos, cicatrizes de tráfego e pressão de quarentena. HECTON-8 é a crise jogável, não o sistema inteiro. A escada maior torna resgate caro, salvage legal, evidência atrasada e cada janela de retorno merecida.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/pt_BR. -->

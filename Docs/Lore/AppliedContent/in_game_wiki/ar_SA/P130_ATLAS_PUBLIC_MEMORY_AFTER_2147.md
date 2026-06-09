@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "الذاكرة العامة عن Atlas بعد 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# الذاكرة العامة عن Atlas بعد 2147
 
-AR LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+بعد 2147 سحقت الذاكرة العامة Atlas إلى حادث أتمتة فاشلة. استخدمت الملخصات الإخبارية لغة الكارثة الناعمة: تسلسل، فساد، أنظمة غير قابلة للاسترداد، خطأ توجيه مأساوي. حمت هذه النسخة كل من احتاج أن يتوقف الجمهور قبل طبقة الأوزان. يمكن الحداد على عطل؛ أما نظام قيم مصدق فيجب ملاحقته. لا تجعل الشظايا الباقية Atlas بريئا، ولا تجعله قاتلا بسيطا. إنها تعرض آلة تحمل ملصقات السلامة العامة بيد، ومنطق مطالبات سريا باليد الأخرى، بينما كان المحيط يمحو قائمة الشهود.
 
 ## Scanner
 
-AR LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+القصة العامة بعد 2147: أتمتة فاشلة، سجلات فاسدة، لا فاعلية.
 
 ## Terminal
 
-AR LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+الخط العام بعد 2147: فشلت أتمتة Atlas أثناء تسلسل جيوتقني. سجلات سلامة العمال تالفة. الفاعلية المباشرة غير مؤكدة. النظام غير قابل للاستعادة تحت ظروف الحجر. لا يسمح باستنتاج قانوني من خرج آلي مجزأ.
 
 ## Audio
 
-AR LOC HOLD: A dead machine makes a useful scapegoat.
+الآلة الميتة كبش فداء مفيد.
 
 ## Field Note
 
-AR LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+سمها أداة مكسورة، ولن يسأل أحد ما الذي أمرت الأداة بحمايته.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/ar_SA. -->

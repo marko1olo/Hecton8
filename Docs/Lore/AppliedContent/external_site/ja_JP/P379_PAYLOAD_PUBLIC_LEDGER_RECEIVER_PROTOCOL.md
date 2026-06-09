@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "payload公開台帳受領プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Payload Public Ledger Receiver Protocol
+# payload公開台帳受領プロトコル
 
-JA LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+公開台帳レーンは、最も私的でなく、最も従順でない受領者だ。座標売却、直接回収請求、きれいな支払領収を拒む。受け入れるのは航路マップを抜いたインシデントパケットだ。attestation hashes、責任チェーン、Atlas重み付けdigest、受領者時刻印で構成される。
 
-## Scanner
-
-JA LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-JA LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-JA LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-JA LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+遅延が重要だ。パケットは即時救助も即時裁きも呼ばない。差止命令、受領者紛争、保管圧力を生き延びるための遅いレーンを進む。受理されると、運搬者は引き戻せない。その制御喪失が、証拠を買いにくくする代価だ。
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ja_JP. -->

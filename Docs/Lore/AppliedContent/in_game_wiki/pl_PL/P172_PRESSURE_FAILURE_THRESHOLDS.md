@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Progi awarii pod ciśnieniem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Progi awarii pod ciśnieniem
 
-PL LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+Progi awarii pod ciśnieniem czynią salvage w HECTON-8 fizycznym, a nie abstrakcyjnym. Pojemnik nie jest bezpieczny dlatego, że jego nazwa jest zielona w ekwipunku. Jest bezpieczny, bo skorupa, uszczelka, klamra, znak próby i historia trasy nadal zgadzają się z otaczającą głębokością. Te progi są także zasadą uczciwości wobec gracza. Zanim awaria stanie się stratą, świat powinien mówić: uszczelka tyka, gasket dryfuje, klamra klekocze, włosowata rysa błyszczy, solny nalot rośnie, powrót akustyczny widmieje albo mgła martwej próbki mąci szkło. Każdy sygnał oznacza to samo na różnych poziomach: materiał przeszedł z użytecznego obiektu w lokalne zagrożenie. Dzięki temu crafting, UI i audio środowiska mogą dzielić ten sam język ostrzeżeń. Gracz jest karany za ignorowanie ciśnienia, nie za nieodczytanie ukrytej matematyki.
 
 ## Scanner
 
-PL LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Dobra próbka staje się zagrożeniem, gdy przekroczy złą linię ciśnienia. Oceanu nie obchodzi, że etykieta była prawie dobra.
 
 ## Terminal
 
-PL LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+AWARIA CIŚNIENIA / shallow-rated: tyk uszczelki i pełzanie wody / industrial-rated: dryf gasketu i klekot klamry / brine-rated: włosowata rysa i solny nalot / abyssal-rated: akustyczne widmo, mgła martwej próbki / Atlas-rated: blokada pieczy przed stratą strukturalną.
 
 ## Audio
 
-PL LOC HOLD: Pressure does not care that the label was almost right.
+Ciśnienia nie obchodzi, że etykieta była prawie właściwa.
 
 ## Field Note
 
-PL LOC HOLD: Failure thresholds should be readable before they punish.
+Progi awarii muszą być czytelne przed karą: tyknięcie, dryf, włosowata rysa, solny nalot, mgła martwej próbki. Jeśli gracz uczy się dopiero po stracie, świat oszukuje.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/pl_PL. -->

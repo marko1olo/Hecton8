@@ -8,9 +8,15 @@ namespace Hecton8.Core
     {
         private const float MilliScale = 1000f;
         private const float MaxMilliScalar = int.MaxValue / MilliScale;
+        private const int SurvivalDeathSourceSlotCount = 16;
+        private const int SurvivalDeathSourceReadRetryCount = 2;
 
         private static SurvivalVitalsChangedSignal s_latestSurvivalDeathSignal;
         private static int s_latestSurvivalDeathSignalSequence;
+        private static readonly uint[] s_latestSurvivalDeathSourceIds = new uint[SurvivalDeathSourceSlotCount];
+        private static readonly int[] s_latestSurvivalDeathSourceSequences = new int[SurvivalDeathSourceSlotCount];
+        private static readonly SurvivalVitalsChangedSignal[] s_latestSurvivalDeathSignalsBySource = new SurvivalVitalsChangedSignal[SurvivalDeathSourceSlotCount];
+        private static int s_latestSurvivalDeathSourceCursor;
         private static int s_latestCraftingCompletedSignalSequence;
         private static int s_latestCraftingCompletedUnitCount;
         private static int s_timeDilationScalarMilli = 1000;
@@ -65,6 +71,8 @@ namespace Hecton8.Core
 
             s_latestSurvivalDeathSignal = signal;
             AdvanceSignalSequence(ref s_latestSurvivalDeathSignalSequence);
+            int sequence = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);
+            RecordSurvivalDeathBySource(in signal, sequence);
         }
 
         public static void RecordLegacyPublishDrop()
@@ -76,15 +84,74 @@ namespace Hecton8.Core
 
         public static bool TryGetLatestSurvivalDeath(out SurvivalVitalsChangedSignal signal, out int sequence)
         {
-            sequence = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);
-            signal = s_latestSurvivalDeathSignal;
-            return sequence != 0;
+            signal = default;
+            sequence = 0;
+            int sequenceBefore = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);
+            if (sequenceBefore == 0)
+                return false;
+
+            SurvivalVitalsChangedSignal recordedSignal = s_latestSurvivalDeathSignal;
+            int sequenceAfter = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);
+            if (sequenceBefore != sequenceAfter)
+                return false;
+
+            signal = recordedSignal;
+            sequence = sequenceAfter;
+            return true;
+        }
+
+        public static bool TryGetLatestSurvivalDeathForSource(
+            uint sourceId,
+            out SurvivalVitalsChangedSignal signal,
+            out int sequence)
+        {
+            signal = default;
+            sequence = 0;
+            if (sourceId == 0u)
+                return false;
+
+            for (int i = 0; i < SurvivalDeathSourceSlotCount; i++)
+            {
+                if (Volatile.Read(ref s_latestSurvivalDeathSourceIds[i]) != sourceId)
+                    continue;
+
+                for (int attempt = 0; attempt < SurvivalDeathSourceReadRetryCount; attempt++)
+                {
+                    int sequenceBefore = Volatile.Read(ref s_latestSurvivalDeathSourceSequences[i]);
+                    if (sequenceBefore == 0)
+                        return false;
+
+                    SurvivalVitalsChangedSignal recordedSignal = s_latestSurvivalDeathSignalsBySource[i];
+                    int sequenceAfter = Volatile.Read(ref s_latestSurvivalDeathSourceSequences[i]);
+                    if (sequenceBefore != sequenceAfter)
+                        continue;
+
+                    if (recordedSignal.SourceId != sourceId)
+                        return false;
+
+                    signal = recordedSignal;
+                    sequence = sequenceAfter;
+                    return true;
+                }
+
+                return false;
+            }
+
+            return false;
         }
 
         public static void Reset()
         {
             s_latestSurvivalDeathSignal = default;
             Volatile.Write(ref s_latestSurvivalDeathSignalSequence, 0);
+            for (int i = 0; i < SurvivalDeathSourceSlotCount; i++)
+            {
+                Volatile.Write(ref s_latestSurvivalDeathSourceIds[i], 0u);
+                Volatile.Write(ref s_latestSurvivalDeathSourceSequences[i], 0);
+                s_latestSurvivalDeathSignalsBySource[i] = default;
+            }
+
+            Volatile.Write(ref s_latestSurvivalDeathSourceCursor, 0);
             Volatile.Write(ref s_latestCraftingCompletedSignalSequence, 0);
             Volatile.Write(ref s_latestCraftingCompletedUnitCount, 0);
             Volatile.Write(ref s_timeDilationScalarMilli, 1000);
@@ -92,6 +159,38 @@ namespace Hecton8.Core
             Volatile.Write(ref s_simulationPaused, 0);
             Volatile.Write(ref s_bulletTimeVisualMilli, 0);
             Volatile.Write(ref s_legacyPublishDropCount, 0);
+        }
+
+        private static void RecordSurvivalDeathBySource(in SurvivalVitalsChangedSignal signal, int sequence)
+        {
+            uint sourceId = signal.SourceId;
+            if (sourceId == 0u || sequence == 0)
+                return;
+
+            int emptySlot = -1;
+            for (int i = 0; i < SurvivalDeathSourceSlotCount; i++)
+            {
+                uint recordedSourceId = Volatile.Read(ref s_latestSurvivalDeathSourceIds[i]);
+                if (recordedSourceId == sourceId)
+                {
+                    s_latestSurvivalDeathSignalsBySource[i] = signal;
+                    Volatile.Write(ref s_latestSurvivalDeathSourceSequences[i], sequence);
+                    return;
+                }
+
+                if (recordedSourceId == 0u && emptySlot < 0)
+                    emptySlot = i;
+            }
+
+            int slot = emptySlot >= 0
+                ? emptySlot
+                : unchecked((int)((uint)Volatile.Read(ref s_latestSurvivalDeathSourceCursor) % SurvivalDeathSourceSlotCount));
+            if (emptySlot < 0)
+                AdvanceSignalSequence(ref s_latestSurvivalDeathSourceCursor);
+
+            s_latestSurvivalDeathSignalsBySource[slot] = signal;
+            Volatile.Write(ref s_latestSurvivalDeathSourceSequences[slot], sequence);
+            Volatile.Write(ref s_latestSurvivalDeathSourceIds[slot], sourceId);
         }
 
         private static void AdvanceSignalSequence(ref int sequence)

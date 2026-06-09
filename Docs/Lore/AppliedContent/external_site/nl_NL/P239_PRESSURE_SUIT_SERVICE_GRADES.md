@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Pressure Suit Service Grades"
+title: "Servicegraden van drukpakken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Pressure Suit Service Grades
+# Servicegraden van drukpakken
 
-NL LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+De servicegraden van drukpakken houden HECTON-8s uitrustingsgroei hard sci-fi: dieptecertificering, verbruiksdelen, thermische marges, contaminatiegrenzen en onvolmaakte onderhoudsgeschiedenis.
 
 ## Scanner
 
-NL LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Paklabels classificeren servicediepte, afdichtingsmoeheid, scrubberreserve, thermische tolerantie en contaminatie.
 
 ## Terminal
 
-NL LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-NL LOC HOLD: The suit does not make you brave. It only fails later.
+Het pak maakt je niet dapper. Het faalt alleen later.
 
 ## Field Note
 
-NL LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Een dieper pak is geen gekleurd pantser. Het is papierwerk, onderdelen en smerig onderhoud.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/nl_NL. -->

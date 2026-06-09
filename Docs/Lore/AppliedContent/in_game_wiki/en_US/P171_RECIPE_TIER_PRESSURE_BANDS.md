@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Recipe Tier Pressure Bands
 
-Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
+Recipe Tier Pressure Bands are the grammar behind HECTON-8 crafting. The colony did not separate recipes by convenience; it separated them by what pressure would do to a part after the player left the workbench. Tier 0 keeps the player alive in the shallows with patches, hand seals and salvage that fails honestly. Tier 1 belongs to rated repairs: pump-room parts, old industrial stock and certification marks that prove the object was meant to work under load. Tier 2 moves into pressure hardware, where brine washing, vent curing and acoustic proof decide whether a component is safe or merely shaped like a component. Tier 3 belongs to ascent, Atlas interfaces and abyssal authority: the recipe needs materials, but it also needs receiver state, legal custody and containment proof. This keeps crafting tied to route logic. The question is never just what do you own. It is where has it been, what pressure can it survive, and who will accept the result.
 
 ## Scanner
 
-Recipes should be depth arguments, not shopping lists.
+A HECTON-8 recipe is a depth argument, not a shopping list. The part only counts when it survives the pressure band it claims.
 
 ## Terminal
 
-RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+RECIPE BANDS / T0 survival patch: shallow salvage, hand seal, no custody / T1 rated repair: shelf industrial parts, pump-room certification / T2 pressure hardware: brine wash, vent cure, acoustic proof / T3 ascent or Atlas work: abyssal source, legal receiver, containment receipt.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A recipe is a depth permission form with bolts.
 
 ## Field Note
 
-Tie recipe tiers to pressure rating and route cost.
+Recipe tier must match pressure rating, route cost and custody risk. A cheap bolt in the wrong band is not cheap; it is a future leak.
 
 <!-- In-Game Wiki; generated from P171_RECIPE_TIER_PRESSURE_BANDS/en_US. -->

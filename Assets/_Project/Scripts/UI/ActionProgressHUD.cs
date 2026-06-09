@@ -184,7 +184,7 @@ namespace Hecton8.UI
 
             TMPro.TextMeshProUGUI label = textObject.GetComponent<TMPro.TextMeshProUGUI>();
             label.raycastTarget = false;
-            label.enableWordWrapping = false;
+            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
             label.alignment = TMPro.TextAlignmentOptions.Center;
             label.fontSize = 14f;
             label.color = new Color(0.74f, 1f, 0.96f, 0.92f);

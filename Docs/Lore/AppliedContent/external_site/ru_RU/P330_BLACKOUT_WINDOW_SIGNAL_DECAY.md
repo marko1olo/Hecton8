@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Распад сигнала в blackout window
 
-HECTON-8 использует орбитальную и магнитную среду Aegir, чтобы тишина стала частью навигации и структуры истории.
+Тишина HECTON-8 складывается из астрономии, поврежденной инфраструктуры и корпоративной автоматики. Тень Aegir, утопленные реле, тайминг носителя и юридические очереди превращают связь в погоду: ее приходится учитывать, бояться, чинить и иногда использовать.
 
 ## Scanner
 
-Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Окно связи схлопывается: мокрый релейный хребет, тень Aegir, устаревшая геометрия носителя, юридическая очередь все еще повторяет попытки.
 
 ## Terminal
 
-BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: потери uplink выше допуска. Голосовой канал приостановлен. Текстовые фрагменты могут пройти через отремонтированные акустические узлы хребта. Геометрия орбитального носителя обновится после выхода из магнитной тени Aegir. Автоматические таймеры удержаний и владения продолжают идти без контакта с оператором.
 
 ## Audio
 
-Когда небо закрывается, бумажная очередь продолжает дышать.
+Сначала замолкает небо. Долговые уведомления продолжают стучать.
 
 ## Field Note
 
-RU LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Связывать blackout windows с темпом маршрута: меньше голоса, больше чтения фрагментов, выше ценность отремонтированных реле и местных маяков.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/ru_RU. -->

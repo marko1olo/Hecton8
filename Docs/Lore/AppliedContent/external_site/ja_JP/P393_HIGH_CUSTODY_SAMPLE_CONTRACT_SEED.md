@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: High Custody Sample Contract Seed"
+title: "高保管サンプル契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: High Custody Sample Contract Seed
+# 高保管サンプル契約シード
 
-JA LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+高保管サンプルは、良い価格と悪い箱から始まる。掲示板は特定のサンプルをreceiver-certifiedとして印す。Blue debt粒、組織鉄片、封印ブライン、フィルターパック、まだルート文脈を持つ成長屑。各品は支払い対象になる前に、コンテナ、質量確認、シール状態、保管タグを必要とする。
 
-## Scanner
-
-JA LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-JA LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-JA LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-JA LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+圧力は普通で、醜い。重いサンプルは上昇を遅らせる。割れたシールは支払いを隔離遅延に変える。満杯の清潔ロッカーは、証拠パケット、修理部品、認証素材の選択をオペレーターに迫る。この契約が多く払うのは、所有権を荷重を受けるシステムにするからだ。
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ja_JP. -->

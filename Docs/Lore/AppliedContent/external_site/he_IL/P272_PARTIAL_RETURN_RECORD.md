@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Partial Return Record"
+title: "רשומת חזרה חלקית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Partial Return Record
+# רשומת חזרה חלקית
 
-HE LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+הרשומה מסמנת נשימה של המערכה, לא איפוס. היא שימושית כשיש לנתיב חומרת חילוץ וחלון מוביל פעיל, אך אין סגירת משמורת מספיקה כדי להפוך איסוף לחירות.
 
 ## Scanner
 
-HE LOC HOLD: Extraction granted. Claim unresolved.
+רשומת חזרה חלקית // איסוף Black Keel התקבל. חזרה לאותו seed אושרה תחת שעבוד מוארך; זיכרון סריקות וחבילות ראיות פתוחות נשארים.
 
 ## Terminal
 
-HE LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+רשומת סיום / חזרה חלקית
+איסוף: חילוץ זמני של Black Keel.
+מטרה: תיקון חליפה, מילוי אוויר, טיהור, סנכרון יומן.
+מצב משמורת: שעבוד הוארך; תקופת בידוד צורפה.
+סמכות חזרה: אותו seed, אותו אוקיינוס, אזהרות נתיב נשמרו.
+נתונים מתמשכים: זיכרון סריקה, חבילות ראיות פתוחות, מטען לא פתור.
+אובדן ידוע: ההקלה מחויבת לפני שהיא נעשית חירות.
 
 ## Audio
 
-HE LOC HOLD: Out is not away.
+הלחץ שחרר. החוזה שמר את המושב.
 
 ## Field Note
 
-HE LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+חליפה נקייה ומחזור שינה אחד לא סוגרים חוזה. הנתיב למטה שומר את האזהרות הישנות שלו.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/he_IL. -->

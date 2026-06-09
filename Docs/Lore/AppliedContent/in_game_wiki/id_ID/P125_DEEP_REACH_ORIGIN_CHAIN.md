@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Rantai Asal Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Rantai Asal Deep Reach
 
-ID LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach sudah tua sebelum HECTON-8 tenggelam. Ia belajar berbicara dengan aksen setiap domain yang dibutuhkan: martabat piagam Centauri, disiplin aktuaria Sol Core, kepraktisan salvase Barnard, prosedur kustodi Luyten. Aegir bukan lompatan pertama perusahaan. Ia adalah tempat alat lama akhirnya bertemu samudra yang cukup dalam untuk menyembunyikan biaya. Itu membuat bencananya sistemik, bukan kebetulan.
 
 ## Scanner
 
-ID LOC HOLD: Old company. New disaster. Same charter language.
+Anyaman piagam: kata-kata Centauri, uang Sol, tubuh Aegir.
 
 ## Terminal
 
-ID LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach menggabungkan klausul otonomi yang cocok dengan Centauri, pembiayaan asuransi Sol Core, utang logistik Barnard, dan kemudian cangkang proyek Aegir. Atlas disahkan sebagai infrastruktur rute sebelum menjadi saksi kematian massal.
 
 ## Audio
 
-ID LOC HOLD: They brought the empire in filing cabinets.
+Mereka membawa imperium dalam lemari arsip dan menyebutnya ekspansi.
 
 ## Field Note
 
-ID LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach tidak bermula dari bencana. Itulah sebabnya ia bertahan melewatinya.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/id_ID. -->

@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Okno trasy Aegir
 
-Na HECTON-8 niebo jest częścią lochu. Gazowy olbrzym ustala promieniowanie, księżyce dają cień, pływy idą przez kaniony i szyby.
-
-Gracz uczy się, kiedy wiadomość idzie w górę, kiedy ciało może się wznieść i kiedy otwarte niebo jest pułapką.
+HECTON-8 jest księżycem oceanicznym, ale niebo należy do lochu. Promieniowanie Aegir, cienie księżyców, shuttery przekaźników, plume burzy, pływy i geometria carriera decydują, czy sygnał, ciało, próbka lub rdzeń dowodu mogą odejść. Ważna jest separacja: okno danych to nie ratunek, ratunek to nie skażony cargo. Black Keel liczy, ale pyta, kto posiada masę, kto przyjmie kwarantannę i jaka klauzula chroni Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/pl_PL. -->

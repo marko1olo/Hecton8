@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Storm Window Rush Contract Seed"
+title: "Seed Kontrak Rush Jendela Badai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Storm Window Rush Contract Seed
+# Seed Kontrak Rush Jendela Badai
 
-ID LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Rush Jendela Badai dimulai dengan peta tutupan yang menutup. Pita badai, waktu shutter relai, dan recall bathydrop berada di papan yang sama dengan plafon bayaran. Angka tinggi itu bukan kemurahan; itu harga masuk air ketika jendela pulang aman sudah mengecil.
 
-## Scanner
-
-ID LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-ID LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-ID LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-ID LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Jalur ini mengubah tekanan pada tingkat alat. Pompa macet menghabiskan lebih dari waktu, karena jam recall bergerak saat perbaikan terbuka. Las buruk memakan toleransi rute. Tanda relai yang terlewat dapat mendorong ekstraksi ke blackout. Keluarga kontrak membuat koloni yang sama lebih keras dengan mengubah kapan air berhenti menunggu.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/id_ID. -->

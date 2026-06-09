@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Guidance Timing Core Assembly
 
-A working ascent needs a guidance timing core that understands Aegir's moon geometry, blackout intervals, relay shadows and carrier recovery lanes. Bad timing can lose the capsule without breaking a single part.
+The guidance timing core is the part that stops ascent from becoming a clean burn into nowhere. HECTON-8 is not under an open sky. Aegir moves across the recovery geometry, relay shutters close and open, storm plumes bend acoustic and radio handoff, and Black Keel only watches certain lanes at certain times.
+
+The core does not make the capsule smarter than the ocean. It gives the capsule a clock, an ephemeris slice, a receiver-lane table and enough drift correction to leave the water where someone can classify the event. Early packets can enter the carrier stack as capture noise. Late packets can arrive after the lane has already rolled. A good engine with a bad core may launch exactly as designed and still leave no usable recovery claim.
+
+A repairable core needs four things: a clock stable against deep delay, a current Aegir window, the correct Black Keel lane, and a shutter cache that matches the relay chain above the storm. That is why the assembly feels small and merciless. It does not add thrust. It decides whether thrust becomes an arrival.
 
 ## Scanner
 
-Blank timing core. Aegir geometry decides whether ascent becomes recovery, capture or silence.
+BLANK TIMING CORE // No Aegir ephemeris, no Keel lane table, relay shutter cache empty. Capsule can fire clean and still miss every receiver.
 
 ## Terminal
 
-GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver lane, moon relay shutter and storm-plume drift. Late packets become evidence loss; early packets become capture noise.
+GUIDANCE CORE: install Aegir ephemeris slice, Black Keel receiver-lane table, moon-relay shutter cache and plume-drift correction. Reject local clock if drift exceeds custody stamp tolerance.
 
 ## Audio
 
-Up is not a direction. It is a window with a witness.
+Point the capsule at the window, not the sky.
 
 ## Field Note
 
-There is no simple up from HECTON-8. There is a receiver, a shadow, a storm drift and a packet queue already older than your panic.
+There is no straight up from HECTON-8. There is a moon shadow, a storm plume, a receiver lane and a clock that has to be believed.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/en_US. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Material Payout Record"
+title: "Zapis wypłaty materialnej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Material Payout Record
+# Zapis wypłaty materialnej
 
-PL LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Ten zapis wypłaty ma znaczenie przez pola pokwitowania: co kupił odbiorca, czego brakuje, jakie współrzędne przyjęto, jaka próbka wyszła, jak zmienił się zastaw, których nazwisk nie ma i jaką drogę powrotną dostało Deep Reach.
 
 ## Scanner
 
-PL LOC HOLD: Paid. Not cleared.
+ZAPIS WYPŁATY MATERIALNEJ // Keelmark/Recovery Compliance przyjęło współrzędne basenu i próbkę niebieskiego długu. Zastaw operatora obniżony; dowody pracowników poza notarialną pieczą.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+ZAPIS KOŃCOWY / WYPŁATA MATERIALNA
+Odbiorca: Keelmark/Recovery Compliance.
+Przyjęto: współrzędne basenu Atlas, próbkę niebieskiego długu, hash pieczy przewoźnika.
+Nie dołączono: notarialnego pakietu świadka, rejestru nazwisk pracowników, audytu masy ratunkowej.
+Skutek dla zastawu: obniżony albo zamknięty według tabeli kontraktu.
+Skutek dla Deep Reach: czystsza droga powrotna do HECTON-8.
+Znana strata: dowód można wycenić, nie dając mu głosu.
 
 ## Audio
 
-PL LOC HOLD: The receipt is clean because it ignores the room.
+Rejestr zapłacił za mapę grobu. Pomieszczenia nie otworzył.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Pokwitowanie czyści kolumnę zastawu, nie pomieszczenie. Nazwiska, które nie trafiły do pieczy, po wypłacie nadal są nieobecne.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/pl_PL. -->

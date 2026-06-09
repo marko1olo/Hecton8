@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Escape Recipe Cost Boundary
 
-Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+Escape Recipe Cost Boundary keeps the exit chain mechanical instead of arbitrary. Every ascent part has pressure history, ownership, and proof requirements, so escape feels like repair under law rather than quest tokens in a menu.
 
 ## Scanner
 
-Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Escape recipe row binds component class, pressure tier, route proof, and authority state.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: qualified costs must name relay, seal, guidance, ascent energy, legal handshake, payload authority, and receiver risk. The way up has parts; the parts have owners.
 
 ## Audio
 

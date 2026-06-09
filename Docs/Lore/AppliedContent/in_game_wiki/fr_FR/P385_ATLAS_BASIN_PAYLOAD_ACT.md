@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Basin Payload Act"
+title: "Porte payload du bassin Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Basin Payload Act
+# Porte payload du bassin Atlas
 
-FR LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+La porte du bassin est une décision de récepteur sous pression. Le payload peut vendre les coordonnées, couper Atlas, préserver la quarantaine, publier un paquet de registre expurgé ou rester local sans reçu. Chaque route change garde, dette, écologie et accès aux preuves. Aucune ne rend le bassin intact.
 
 ## Scanner
 
-FR LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Porte de route: bassin Atlas. Le payload final exige route, récepteur, proof hash, état écologique, statut de gage et fenêtre de survie.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+ROUTE DE CAMPAGNE // PAYLOAD BASSIN ATLAS. Résoudre ou refuser: vente de coordonnées, section Atlas, escrow quarantaine, registre public, blind return. Le tampon récepteur change la garde. Aucun état de réclamation propre disponible.
 
 ## Audio
 
-FR LOC HOLD: The last question is not what happened. It is who you send it to.
+La dernière question de route est: qui reçoit le paquet.
 
 ## Field Note
 
-FR LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Note de pillard: choisis le récepteur avant que le sac prenne l'eau. Une réponse parfaite ne tient pas dans ce sac.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/fr_FR. -->

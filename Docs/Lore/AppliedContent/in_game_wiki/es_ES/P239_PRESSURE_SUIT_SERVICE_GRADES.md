@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Suit Service Grades"
+title: "Grados de servicio del traje de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Suit Service Grades
+# Grados de servicio del traje de presión
 
-ES LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Los grados de traje son registros de servicio, no rarezas de equipo. Cada profundidad exige sellos rastreables, capacidad de scrubber, forro térmico, límites de contaminación y sellos antiguos que todavía signifiquen algo. El jugador baja más porque reconstruye una norma de seguridad, no porque encuentre una armadura de otro color.
 
 ## Scanner
 
-ES LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Las etiquetas del traje clasifican profundidad, fatiga de sellos, reserva de scrubber, margen térmico y contaminación.
 
 ## Terminal
 
-ES LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-ES LOC HOLD: The suit does not make you brave. It only fails later.
+El traje no te hace valiente. Solo falla más tarde.
 
 ## Field Note
 
-ES LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Un traje más profundo no es armadura de color. Es papeleo, piezas y mantenimiento feo.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/es_ES. -->

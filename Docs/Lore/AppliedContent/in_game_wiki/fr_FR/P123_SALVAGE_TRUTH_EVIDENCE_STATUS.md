@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Statut probatoire de la vérité récupérée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Statut probatoire de la vérité récupérée
 
-FR LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+La vérité d'Aegir est physique. C'est un enregistreur à moitié fondu dans une cloison, une caméra de casque avec du sel dans les contacts, une porte de pression ouverte du mauvais côté. Rien ne devient justice parce qu'on le trouve. Deep Reach peut appeler cela des données de valorisation. Les assureurs peuvent appeler cela contamination. Un bureau de route peut le déclarer irrecevable si la chaîne se rompt. Le travail n'est pas seulement de remonter la preuve, mais de l'empêcher de devenir une cargaison.
 
 ## Scanner
 
-FR LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paquet de boîte noire : vérité jusqu'au contact du bureau des créances.
 
 ## Terminal
 
-FR LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS : la récupération brute devient par défaut matière à créance. La preuve publique exige un hachage source intact, un horodatage de pression, un paquet témoin, un notaire de relais hors contrôle du réclamant et une chaîne de garde survivant à la perte du navire, à la saumure et aux éditions manuelles.
 
 ## Audio
 
-FR LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Un corps n'est preuve qu'après l'échec de ceux qui voulaient le mal classer.
 
 ## Field Note
 
-FR LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Un fait venu du fond n'est dangereux que s'il garde ses témoins.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/fr_FR. -->

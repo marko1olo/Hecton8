@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Fragmentkette des Haftungsmemos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Fragmentkette des Haftungsmemos
 
-DE LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Die Fragmentkette des Haftungsmemos definiert HECTON-8-Beweise als Rekonstruktion, nicht als Erklärung. Der Artikel gibt Spielern einen Grund, sich für Fetzen, Zeitstempel und beschädigte Verwaltungsräume zu interessieren: Deep Reach hinterließ kein Geständnis, sondern unvereinbare Selbstschutzbehauptungen. Jedes Fragment ist klein genug, um plausibel zu sein, und hässlich genug, um zu zählen. Zusammen zeigen sie, wie das Unternehmen öffentlich Gezeitenphysik beschuldigen und intern Haftung durch Risiko, Evakuierung, Atlas-Kontinuität, Versicherungsumwandlung und Nutzlastverwahrung bewegen kann.
 
 ## Scanner
 
-DE LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Das Haftungsmemo überlebte als Fragmente, weil jedes Büro den Absatz aufbewahrte, der es selbst schützte.
 
 ## Terminal
 
-DE LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: Risikomargentabelle / Evakuierungsfreigabenotiz / Atlas-Kontinuitäts-Override / Keelmark-Verlustumwandlung / Recovery-Verwahrungsantrag. Routenzeit, Raumschäden und Arbeiternamen gegenprüfen, bevor die öffentliche Zusammenfassung akzeptiert wird.
 
 ## Audio
 
-DE LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Sie versteckten die Wahrheit nicht in einem Tresor. Sie legten sie in Stücken ab.
 
 ## Field Note
 
-DE LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Ein zerrissenes Memo ist an den Stellen ehrlich, an denen es das nie sein wollte.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/de_DE. -->

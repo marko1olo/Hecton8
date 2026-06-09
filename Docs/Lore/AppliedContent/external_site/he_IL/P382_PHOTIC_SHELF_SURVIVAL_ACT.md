@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Shelf Survival Act"
+title: "שער המדף הפוטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Shelf Survival Act
+# שער המדף הפוטי
 
-HE LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+המדף נותן למסלול את מילון העבודה שלו: משאבה, אטם, חיתוך, ping, טלאי, מילוי. כל פעולה קטנה ופיזית. דלת נפתחת כי מהדק מחזיק, לא כי המושבה רוצה שיחקרו אותה.
 
-## Scanner
-
-HE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-HE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-HE LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-HE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+שארית Atlas נכנסת כאן כרמז תחזוקה, לא כתשובה סופית. לוח מתוקן, סרט מוליך או טלאי שירות מנותב לא נכון יכולים לעזור למפעיל לשרוד ובה בעת להוכיח שהמערכת כבר נגעה במסלול. הבהירות עושה את העבודה קריאה; החוב עושה אותה דחופה.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/he_IL. -->

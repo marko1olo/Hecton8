@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Assemblage de handshake légal de quarantaine"
+title: "Assemblage de Poignée Juridique de Quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Assemblage de handshake légal de quarantaine
+# Assemblage de Poignée Juridique de Quarantaine
 
-Le dernier composant d'évasion est juridique, médical et probatoire à la fois. Quarantine status, receiver identity, payload custody et evidence state décident si l'ascent devient secours, claim capture ou public proof.
+La poignée juridique de quarantaine est le dernier composant d'évasion parce que HECTON-8 ne traite pas l'arrivée comme un événement purement mécanique. Une capsule peut avoir un anneau scellé, un berceau chargé, un relais fonctionnel et un bon timing, puis arriver sous la mauvaise autorité.
+
+La poignée porte l'identité du récepteur, l'état de quarantaine, la classe de custody de la charge utile, la divulgation de lien et le délai du registre public. Keelmark peut accepter masse et dette avant d'accepter une personne. Recovery Compliance peut accepter des coordonnées tout en gardant l'écoutille sous verrou médical. Un registre public peut accepter la preuve seulement après délai et examen du paquet.
+
+Cet assemblage rend le dernier choix concret. Une clé rapide peut ouvrir l'écoutille sur une revendication d'entreprise. Une clé compliance peut transformer la survie en garde de quarantaine. Une route publique peut protéger les preuves tout en laissant le corps attendre. Le moteur soulève la capsule; la poignée décide ce que recovered veut dire à l'amarrage.
 
 ## Scanner
 
-Prise de handshake. La capsule peut être mécaniquement prête et appartenir encore au mauvais receiver.
+PRISE DE HANDSHAKE // Clé récepteur absente. La mécanique peut certifier la route de lancement; la pile custody choisit encore qui peut appeler l'arrivée recovered.
 
 ## Terminal
 
-RECOVERY HANDSHAKE : receiver key requis. Keelmark accepte mass et lien. Recovery Compliance accepte coordinates et quarantine status. Public ledger accepte proof après délai. Unkeyed launch devient par défaut custody dispute.
+RECOVERY HANDSHAKE: charger jeu de clés récepteur, état de quarantaine, classe de custody payload, délai de registre public et divulgation de lien. Lancement sans clé vers file de litige après ascension propre.
 
 ## Audio
 
-Celui qui répond décide ce que secours veut dire.
+Le moteur peut te soulever. La prise décide qui ouvre l'écoutille.
 
 ## Field Note
 
-Le dernier composant n'est pas du métal. C'est le nom du système autorisé à te déclarer recovered.
+Le dernier verrou est un nom, un état de quarantaine et une signature de registre. L'acier ne décide pas lequel répond.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/fr_FR. -->

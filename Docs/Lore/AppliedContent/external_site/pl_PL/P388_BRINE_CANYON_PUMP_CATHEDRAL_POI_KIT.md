@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Zestaw dowodowy katedry pomp kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Zestaw dowodowy katedry pomp kanionu solanki
 
-PL LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+Katedra pomp daje zadanie skali średniej głębokości. Operator musi przejść pomosty, ustabilizować kieszeń solanki, odczytać szkło gęstości i porównać zegar wstrzymania trasy z rejestrem kolejki robotników. Żaden obiekt nie jest dekoracją; każdy zmienia, czy opóźnienie wygląda jak pogoda, zaniedbanie czy ochrona roszczenia.
 
-## Scanner
-
-PL LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-PL LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-PL LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-PL LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Dowód jest mocniejszy, gdy szanuje ocean. Wielki Pływ złamał ściany i ruszył wodę. Sala temu nie zaprzecza. Pokazuje, co harmonogram zrobił wokół powodzi: przyjęty margines, późny start pompy, wstrzymana trasa, zatłoczona kolejka. POI staje się punktem orientacyjnym, bo maszyna nadal pamięta kolejność pracy.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/pl_PL. -->

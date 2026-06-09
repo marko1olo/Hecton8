@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Цепочка Recovery Compliance"
+title: "Цепочка recovery compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Цепочка Recovery Compliance
+# Цепочка recovery compliance
 
-Цепочка Recovery Compliance определяет, как Deep Reach жив в 2190 без impossible real-time command.
+Цепочка recovery compliance превращает место катастрофы в контролируемое поле активов. Она может разрешить вход, резку, пробы, сбор свидетелей, запечатывание данных и массу возврата. Она также может продолжать спрашивать, живой человек - это доказательство, ответственность, груз или препятствие.
 
 ## Scanner
 
-Текущая угроза - compliance chain, а не злодей на экране.
+Приказ recovery принят. Языка спасения в цепочке нет.
 
 ## Terminal
 
-2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+ЦЕПЬ RECOVERY: постинцидентное действие идет через допуск подрядчиков, опеку доказательств, salvage-права, обращение со свидетелями, маршрутное страхование и публичные формулировки без признания вины. Спасение не управляющий глагол.
 
 ## Audio
 
-Тебя не спасают. Тебя классифицируют.
+Они пришли соблюсти recovery. Это не то же самое, что вернуться за нами.
 
 ## Field Note
 
-Задержка не делает приказ безвредным.
+Compliance приходит в перчатках, с пломбами и без обещания, что кто-то еще считается человеком.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ru_RU. -->

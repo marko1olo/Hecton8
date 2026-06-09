@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "開始claimバリアント"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# 開始claimバリアント
 
-JP LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+開始claimバリアントは、一人の強い主人公を保ちながら、異なる経済フックでHECTON-8をリプレイ可能にする。
 
 ## Scanner
 
-JP LOC HOLD: Same protagonist. Different claim pressure.
+CLAIM VARIANT // 同じ元Deep ReachのMarauder。違う初期債務、賞金、航路機材、試料保管、またはブラックリスト緩和。
 
 ## Terminal
 
-JP LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+開始規則: バリアントは初期圧力、噂アクセス、証拠重み、支払い論理を変える。別主人公を作らず、元Deep Reachという背骨を消さない。
 
 ## Audio
 
-JP LOC HOLD: You can change the job without changing who took it.
+仕事は変えられる。受けた人間は変えない。
 
 ## Field Note
 
-JP LOC HOLD: Variants should color motive, not erase the canon character.
+claimを変えろ。傷は残せ。
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/ja_JP. -->

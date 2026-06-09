@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Compliance链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Compliance链
 
-CN LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+Recovery Compliance链把灾难地点变成受控资产场。它可以批准进入、切割、取样、收集证人、封存数据和返回质量。它也可以继续追问活人到底是证据、责任、货物还是障碍。
 
 ## Scanner
 
-CN LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Recovery命令已接受。链条中没有救援语言。
 
 ## Terminal
 
-CN LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+RECOVERY链：事故后行动经过承包商许可、证据监管、打捞权、证人处理、航线保险和不承认责任的公开措辞。救援不是控制动词。
 
 ## Audio
 
-CN LOC HOLD: You are not rescued. You are classified.
+他们来遵守recovery。那不等于回来找我们。
 
 ## Field Note
 
-CN LOC HOLD: Delay does not make an order harmless.
+Compliance带着手套和封条到来，却不承诺任何人仍是人。
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/zh_CN. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Blackout Window Signal Decay"
+title: "Decaimiento de señal en ventana de apagón"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Blackout Window Signal Decay
+# Decaimiento de señal en ventana de apagón
 
-ES LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+El silencio de HECTON-8 es parte astronomía, parte infraestructura dañada y parte automatización corporativa. La sombra de Aegir, los relés ahogados, el tiempo del portador y las colas legales convierten la comunicación en clima: algo que el jugador planifica, teme, repara y a veces explota.
 
 ## Scanner
 
-ES LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Ventana de señal colapsando: espina de relés mojada, sombra de Aegir, geometría de portador obsoleta, cola legal aún reintentando.
 
 ## Terminal
 
-ES LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: pérdida de uplink por encima de tolerancia. Canal de voz suspendido. Los fragmentos de texto pueden llegar por nodos acústicos reparados de la espina. La geometría del portador orbital se actualizará cuando despeje la sombra magnética de Aegir. Los temporizadores automáticos de gravamen y custodia continúan sin contacto de operador.
 
 ## Audio
 
-ES LOC HOLD: When the sky closes, the paperwork keeps breathing.
+El cielo calla primero. Los avisos de deuda siguen llamando.
 
 ## Field Note
 
-ES LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Vincular las ventanas de apagón al ritmo de la ruta: menos voz, más lectura de fragmentos, más valor para relés reparados y balizas locales.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/es_ES. -->

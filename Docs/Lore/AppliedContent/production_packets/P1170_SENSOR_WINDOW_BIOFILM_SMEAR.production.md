@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sensor_surface |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS179_FIRST_SENSOR_SURFACE_ARTICLES.md |
 | Speaker | Instrument scanner, sensor-window note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first instrument inspection |
@@ -72,17 +72,17 @@ CHECK CLEAN CORNER
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| ru_RU | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| ja_JP | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| zh_CN | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| fr_FR | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| es_ES | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| de_DE | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| pl_PL | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| uk_UA | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| ar_SA | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| id_ID | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| ko_KR | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| he_IL | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| pt_BR | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
-| nl_NL | draft_machine_or_llm | SENSOR WINDOW // Biofilm smear crosses lower edge. Clean reference area before reading. |
+| ar_SA | draft_machine_or_llm | نافذة حساس // لطخة غشاء حيوي تعبر الحافة السفلية. نظف منطقة مرجعية قبل القراءة. |
+| de_DE | draft_machine_or_llm | SENSORFENSTER // Biofilmschmiere kreuzt Unterkante. Referenzbereich vor dem Ablesen reinigen. |
+| es_ES | draft_machine_or_llm | VENTANA DE SENSOR // Mancha de biopelicula cruza el borde inferior. Limpia area de referencia antes de leer. |
+| fr_FR | draft_machine_or_llm | FENETRE DE CAPTEUR // Trace de biofilm sur le bord bas. Nettoyer une zone de reference avant lecture. |
+| he_IL | draft_machine_or_llm | חלון חיישן // מריחת ביופילם חוצה את השפה התחתונה. נקה אזור ייחוס לפני קריאה. |
+| id_ID | draft_machine_or_llm | JENDELA SENSOR // Noda biofilm melintasi tepi bawah. Bersihkan area acuan sebelum membaca. |
+| ja_JP | draft_machine_or_llm | センサー窓 // 下縁を横切るバイオ膜汚れ。読み取り前に基準部を清掃。 |
+| ko_KR | draft_machine_or_llm | 센서 창 // 생물막 얼룩이 아래 가장자리를 가로지른다. 판독 전 기준 부위를 닦는다. |
+| nl_NL | draft_machine_or_llm | SENSORVENSTER // Biofilmveeg kruist onderrand. Reinig referentieplek voor uitlezen. |
+| pl_PL | draft_machine_or_llm | OKNO CZUJNIKA // Smuga biofilmu przecina dolna krawedz. Przed odczytem oczysc obszar odniesienia. |
+| pt_BR | draft_machine_or_llm | JANELA DO SENSOR // Mancha de biofilme cruza a borda inferior. Limpe area de referencia antes da leitura. |
+| ru_RU | draft_machine_or_llm | ОКНО ДАТЧИКА // Мазок биопленки пересекает нижнюю кромку. Очисти контрольный участок перед считыванием. |
+| uk_UA | draft_machine_or_llm | ВІКНО ДАТЧИКА // Мазок біоплівки перетинає нижню крайку. Очисть контрольну ділянку перед зчитуванням. |
+| zh_CN | draft_machine_or_llm | 传感器窗口 // 生物膜污痕越过下缘。读数前清理参照区。 |

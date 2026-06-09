@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS175 gives early consoles, power boxes, and control surfaces physical readability before any UI or interaction-system claim: salt on keycaps, bent toggle guards, waterline lenses, heat-faded fuse bands, and ghosted cable tags.
+RS175 gives early consoles, power boxes, and control surfaces physical readability before any UI or interaction-system claim: salt on keycaps, bent toggle guards, waterline lenses, heat-faded fuse bands, and erased-pencil cable tags.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 

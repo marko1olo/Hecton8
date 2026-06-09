@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Sanitized Accident Reply Window"
+title: "Ventana de respuesta de accidente saneada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Sanitized Accident Reply Window
+# Ventana de respuesta de accidente saneada
 
-ES LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+La Ventana de respuesta de accidente saneada muestra cómo Deep Reach miente antes de que nadie grite. La mentira es procedimental, familiar y vieja: una línea pública de pérdida chocando con prueba física. El horror corporativo de HECTON-8 funciona mejor cuando la respuesta oficial es demasiado limpia para el lugar que la produjo.
 
 ## Scanner
 
-ES LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Ventana de respuesta abierta. Deep Reach repite colapso por tormenta, fallo geológico y evacuación autónoma fallida como si la sala siguiera seca.
 
 ## Terminal
 
-ES LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: marejada de tormenta, colapso geológico, fallo de evacuación autónoma / RESTRICTED ADVICE: no transmitir Atlas continuity no verificada, body-category disputes ni basin-coordinate claims.
 
 ## Audio
 
-ES LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Respondieron a la sala que debías encontrar, no a la sala donde estás.
 
 ## Field Note
 
-ES LOC HOLD: Place after first physical contradiction, not before.
+Colocar tras la primera contradicción física: el jugador debe tener prueba mojada antes de oír el viejo guion público.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/es_ES. -->

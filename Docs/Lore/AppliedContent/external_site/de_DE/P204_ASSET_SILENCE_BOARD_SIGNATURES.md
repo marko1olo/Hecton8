@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Signaturen des Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Signaturen des Asset Silence Board
 
-DE LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+Asset-Silence-Board-Signaturen machen Deep-Reach-Löschung ohne Geständnis lesbar. Die geborgenen Karten halten die Unternehmenssprache sauber: load categories, packet visibility, custody approval, asset risk. Nahe HECTON-8-Objekte machen die Sprache hässlich: Spinde mit Marken, Ledger mit Namen und mute flags, die diese Namen an der claim route stoppen. Der Archivwert liegt im Missverhältnis zwischen dem, was abrechenbar blieb, und dem, was keine Namen mehr trug.
 
 ## Scanner
 
-DE LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Redaction-vote-Karte geborgen: Arbeitername stummgeschaltet, asset-risk category sichtbar, locker count erhalten. Paket-Sichtbarkeit benötigt Custody Approval.
 
 ## Terminal
 
-DE LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: witness-name attachment nach relay review in asset-risk silence category verschieben. Load class, locker count und claim value behalten. Release benötigt approval des Custody Owners.
 
 ## Audio
 
-DE LOC HOLD: Erase the route and the body becomes cargo math.
+Das Board behielt die Kistenzahl. Die Namen schnitten sie heraus.
 
 ## Field Note
 
-DE LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Name weg, Spindmarke noch da. Das Asset Silence Board stimmte über Paket-Sichtbarkeit ab, nicht darüber, ob der Arbeiter existierte.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/de_DE. -->

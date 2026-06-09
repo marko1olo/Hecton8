@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Canyon Liability Act"
+title: "Porte de responsabilité du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Canyon Liability Act
+# Porte de responsabilité du canyon de saumure
 
-FR LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+Dans le canyon, la route cesse d'être du papier salvage et commence à se comporter comme un dossier. Les couches de densité conservent les mauvaises horloges. La saumure garde des traces que l'eau ordinaire effacerait. Une plaque d'évacuation brisée peut rester près d'un journal de marge et renforcer les deux documents.
 
-## Scanner
-
-FR LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-FR LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-FR LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-FR LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+La chaîne compte parce qu'elle ne nie pas la physique. La Grande Marée a frappé. Le mur a cédé. Le mensonge de la compagnie est dans l'ordre des décisions autour de ces faits: marge acceptée, file retardée, route endommagée, réclamation protégée. Le travail visible reste physique: scanner la trace, croiser l'horloge, sortir la preuve.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/fr_FR. -->

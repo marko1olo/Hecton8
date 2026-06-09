@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Hold Interrogation Record"
+title: "سجل استجواب احتجاز الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Hold Interrogation Record
+# سجل استجواب احتجاز الحجر
 
-AR LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+يجعل هذا السجل الإنقاذ غير مريح. النجاة حقيقية، لكن اللاعب يخرج كشاهد وخطر تلوث وحامل خريطة ودليل متنازع عليه قبل أن يصبح حرا مرة أخرى.
 
 ## Scanner
 
-AR LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+المطالب المستعاد حي. علامة الحجر تتجاوز لغة الإنقاذ؛ حمولة الأدلة معزولة.
 
 ## Terminal
 
-AR LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+سجل QUARANTINE HOLD: المطالب البيولوجي استعيد حيا. الحركة مقيدة بانتظار فحص التلوث، ومقابلة التعرض للضغط، ومراجعة حيازة الأدلة. يستبق استجواب المستقبل متجه وصول Atlas قبل التصريح الطبي.
 
 ## Audio
 
-AR LOC HOLD: They saved the body first because the body knew the route.
+أنقذوا الجسد أولا لأن الجسد عرف الطريق.
 
 ## Field Note
 
-AR LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+ملف ما بعد الخروج: يتحول الإنقاذ البيولوجي قبل الحرية إلى حجر واستجواب واستخراج مسار وحيازة payload.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/ar_SA. -->

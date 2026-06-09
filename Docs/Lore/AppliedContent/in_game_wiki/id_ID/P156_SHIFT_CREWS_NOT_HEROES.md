@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Kru Giliran, Bukan Pahlawan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Kru Giliran, Bukan Pahlawan
 
-ID LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 harus memanusiakan koloni melalui pekerjaan sebelum tragedi. Teknisi tekanan mengganti gasket katup, juru masak menghitung token air, juru rute mencap kepulangan yang salah, penyelam menandatangani cutter dan tidak pernah mengembalikannya ke ledger: detail seperti itu membuat orang terbaca tanpa memaksa kait balas dendam keluarga. Koloni tenggelam paling kuat saat terasa seperti tempat yang terputus di tengah rutinitas, bukan museum setelah kematian.
 
 ## Scanner
 
-ID LOC HOLD: The colony becomes human through schedules, not speeches.
+LAPIS MANUSIA // Koloni terasa nyata lewat jadwal, alat aus, kepulangan hilang, dan nama di papan giliran. Bukan pidato.
 
 ## Terminal
 
-ID LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+ATURAN TULIS: catat pekerja sebagai teknisi pompa, medik, juru rute, penyelam, juru masak, operator fabricator, dan supervisor lelah. Roster dengan satu kepulangan hilang bisa lebih menyakitkan daripada monumen.
 
 ## Audio
 
-ID LOC HOLD: They were not symbols. They were late for shift.
+Mereka bukan simbol. Mereka terlambat giliran kerja.
 
 ## Field Note
 
-ID LOC HOLD: People are more believable as workers than as memorial statues.
+Orang lebih meyakinkan sebagai pekerja daripada patung memorial.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/id_ID. -->

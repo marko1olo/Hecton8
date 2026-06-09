@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Colonia y trabajadores
 
-El cluster de colonia y trabajadores impide que HECTON-8 se vuelva un mapa de salas vacías. La versión oficial de Deep Reach mete a las personas en categorías de pérdida, pero los registros supervivientes las conservan por su trabajo: pump chief en un pressure board, relay operator en witness trays, brine crew en rutas de sal y ration ledgers, triage technician en repair tags, forge shift en rejects que nadie tuvo tiempo de ocultar. No son ganchos familiares para el protagonista. Son pruebas laborales. El Marauder lee por qué una puerta quedó abierta, por qué una bomba arrancó tarde y por qué un name tag pequeño puede pesar más que un loss summary limpio.
+La línea de colonia y trabajadores evita que HECTON-8 se convierta en una ruina bonita llena de salas sin nombre. Deep Reach registró la catástrofe como storm, collapse, failed autonomy, Atlas rescue y lost data. Esas palabras son útiles porque comprimen la responsabilidad. Los worker records que sobrevivieron hacen lo contrario. Mantienen los nombres unidos a las decisiones.
+
+Un pump chief sigue visible por una pressure board que no se reinició cuando debía. Una mano de relay queda visible en una bandeja de witness tags retiradas antes de que la línea quedara ciega. Una brine crew deja su forma en route stamps, ration ledgers y guantes quemados por sal. Un triage technician aparece donde un repair tag dice quién pudo gastar oxígeno en un desconocido. Un vent-forge operator sobrevive en rejected parts que deberían haberse ocultado si el loss report fuera limpio.
+
+Por eso el worker cluster rechaza el cheap family hook. HECTON-8 no necesita un padre secreto del protagonista, un hermano perdido ni una foto sentimental para hacer humana la colonia. Una persona se vuelve legible cuando una puerta quedó abierta por el nombre en una pump card, cuando un shift swap cambió quién murió en el pasillo, cuando una firma movió un quarantine delay de safety a liability.
+
+El Marauder lee personas como pressure evidence. Todo buen dossier debe responder primero una pregunta práctica: qué poseyó, demoró, reparó, rechazó, falsificó o protegió este trabajador. Cuando la respuesta está clara, la emoción llega sin pedirla.
+
+La colonia no estaba vacía antes de que entrara el océano. Estaba llena de rutinas, rencores, competencia, shortcuts, miedo y orgullo profesional. Los registros restantes no son placas memoriales. Son documentos de trabajo todavía activos, y algunos aún pueden acusar.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/es_ES. -->

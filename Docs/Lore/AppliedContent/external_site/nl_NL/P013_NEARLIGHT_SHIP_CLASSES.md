@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Nearlight-scheepsklassen
 
-HECTON-8 heeft geen FTL nodig om groot te voelen. Probes konden verloren gaan, zaadschepen droegen instructies, Atlas-carriers verplaatsten dure massa.
+Een nearlight-schip in HECTON-8 is geen wondermotor in een romp. Het is het zichtbare einde van een route-economie. Beamarrays besteden vermogen voor vertrek. Pellet lanes voeren reactiemassa met harde timingdiscipline. Fusion-electric throats, schildijs, radiatoren en cryo voorkomen dat payload een heldere fout wordt. Magsails, aerobrake-huid en receiver windows beslissen of het schip mag stoppen.
 
-Aankomst is even belangrijk als vertrek. Snelheid moet worden kwijtgeraakt via magsails, gasreusgeometrie en harde marges. Daarom kan de claim menselijk zijn terwijl de speler alleen in het water blijft.
+Daarom helpt de klassentabel. Needleprobes verklaren waarom Aegir bekend was voordat het veilig was. Seed ships verklaren waarom machines vóór gemeenschap arriveerden. Atlas-carriers verklaren de schuld en onderhoudscompromissen. System tenders verklaren Black Keels grenzen: het kan de Aegir-claim bewerken, niet interstellaire afstand herschrijven.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/nl_NL. -->

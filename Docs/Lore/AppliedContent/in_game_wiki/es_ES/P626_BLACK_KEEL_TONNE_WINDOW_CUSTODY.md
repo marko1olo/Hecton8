@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "Custodia tonne-window de Black Keel"
+title: "Custodia tonne-window Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custodia tonne-window de Black Keel
+# Custodia tonne-window Black Keel
 
-Un recibo Keelmark explica por qué Black Keel habla en masa antes que en rescate. El portador opera con custodia tonne-window: una ranura legal ajustada a carga física, exposición de seguro y fase del reloj de ruta. Un cuerpo vivo, un núcleo de prueba sellado, un corte de material de proceso Xenon-Omega y una caja de casco recuperable compiten por la misma ventana si el contrato los pone en la misma línea. El sistema es frío, pero no aleatorio. Le dice al jugador qué valora la frontera y qué elección viajará a casa primero.
+La tonne-window es una de las formas más limpias de crueldad fronteriza. Suena a contabilidad porque lo es, pero se cuenta algo físico: masa por una ventana estrecha de recuperación. Black Keel no levanta todo del océano; levanta lo que ruta, seguro, cuarentena y custodia permiten.
+
+Por eso cada payload pesa. Un contratista vivo tiene valor, pero también un núcleo de evidencia contra Deep Reach. Xenon-Omega puede valer más que salvage común y envenenar la cuarentena. Un casco recuperable puede satisfacer a una aseguradora antes que un dossier obrero satisfaga la justicia.
 
 ## Scanner
 
-LÍNEA DE CUSTODIA // La masa tonne-window aceptada puede ser salvamento, prueba, cuerpo u objeto de deuda. Un paquete oído no asigna prioridad de izado; asigna responsabilidad.
+Recibo Keelmark. Una tonne-window asigna masa de payload, fase de ruta, exposición de seguro, clase de cuarentena y prioridad de recuperación a un slot carrier.
 
 ## Terminal
 
-RECIBO DE MASA KEELMARK // La ventana concede custodia a una ranura, no piedad a una persona. Cargas con exceso de masa pasan a la siguiente vuelta salvo que valor de reclamación, clase de cuarentena y geometría del portador limpien juntas.
+CUSTODIA TONNE-WINDOW // Gravamen 4.8 tonne-window activo. Contratista vivo, núcleo de evidencia sellado, corte Xenon-Omega y caja de casco recuperable comparten clase de recuperación salvo repriorización por prueba de custodia. Estado humano solo insuficiente.
 
 ## Audio
 
-Audio de deuda de Black Keel: puedo llevar prueba, metal o a ti. El libro preguntará cuál mantiene solvente la nave.
+Black Keel habla en toneladas porque toneladas es lo que la ventana puede cargar.
 
 ## Field Note
 
-Cuando el portador dice masa aceptada, no dice persona aceptada. Ata la prueba a tu traje antes de que el libro te pida elegir.
+Una tonne-window no es dinero. Es permiso para que la masa salga.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/es_ES. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Memória de rumores do dossiê"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Memória de rumores do dossiê
 
-PT LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+O dossiê Marauder não é um depósito. É a parte do trabalho que sobrevive a um claim fracassado: nomes ouvidos pela metade no relé, cláusulas de contrato com cheiro errado, famílias de finais já expostas, avisos comprados com os últimos minutos de outra pessoa. Uma nova tentativa deve começar com suspeita melhor, não com um submarino melhor.
 
 ## Scanner
 
-PT LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MEMÓRIA DO DOSSIÊ // Rumores, avisos, contexto contratual e registros de finais persistem. Casco, oxigênio, ferramentas, carga e mapa não.
 
 ## Terminal
 
-PT LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+REGRA DE PERSISTÊNCIA: o dossiê pode guardar famílias de rumores, categorias de evidência, marcas de finais e avisos de rota entre campanhas. Não carrega equipamento, recursos, geografia de seed nem posse da verdade.
 
 ## Audio
 
-PT LOC HOLD: Your file remembers what your hands cannot carry.
+O arquivo lembra o que suas mãos não conseguem levar.
 
 ## Field Note
 
-PT LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Deixe o conhecimento persistir. Deixe a pressão ficar.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/pt_BR. -->

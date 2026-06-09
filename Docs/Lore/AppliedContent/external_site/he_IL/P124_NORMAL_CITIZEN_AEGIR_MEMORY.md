@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "זיכרון האזרחים הרגילים על אייגיר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# זיכרון האזרחים הרגילים על אייגיר
 
-HE LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+הזיכרון הציבורי של HECTON-8 דק בכוונה. המרחב האנושי אינו צריך להיות בור; מספיק שיהיה עייף, רחוק ומורגל לקבל סיכומי אובדן. אייגיר מפורסמת מספיק כדי להשפיע על מחירים ומדיניות, אך לא חיה מספיק כדי לכפות חילוץ. החזרה אל האוקיינוס פותחת את הפער בין זיכרון ציבורי לראיה פרטית.
 
 ## Scanner
 
-HE LOC HOLD: Public memory: old disaster, distant resource, no faces.
+גדם ארכיון ציבורי: כולם שמעו על אייגיר, כמעט איש לא זוכר שם.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: אירוע אובדן HECTON-8, 2147. סיבות רשמיות: שרשרת סערות, כשל פינוי, שחיתות אוטומציה, הסגר ביולוגי, טלמטריה לא אמינה. מצב נוכחי: תביעה רדומה, מדד ביטוח עדיין פעיל, תנועה אזרחית לא מומלצת.
 
 ## Audio
 
-HE LOC HOLD: Most people know the place as a line under insurance rates.
+רוב האנשים מכירים את אייגיר כשורה מתחת לתעריף הביטוח שלהם.
 
 ## Field Note
 
-HE LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+אסון נעשה רגיל כאשר הוא כבר מתומחר בחשבון.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/he_IL. -->

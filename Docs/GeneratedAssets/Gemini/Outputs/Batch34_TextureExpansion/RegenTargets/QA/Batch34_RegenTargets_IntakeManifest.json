@@ -1,0 +1,262 @@
+{
+  "schema": "hecton8.batch34.regen_targets.intake.v2",
+  "outputRoot": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets",
+  "operatorPrompt": "Docs/GeneratedAssets/Gemini/Prompts/Batch34/3406_TEXTURE_SOURCE_REGEN_TARGETS_20260608.md",
+  "entries": [
+    {
+      "id": "B34-3409-R1",
+      "sourceId": "B34-3409",
+      "variant": "limestone_ceiling_png_named",
+      "sourceType": "SEAMLESS_TILE",
+      "priority": "REQUIRED",
+      "decision": "REJECT_REGEN_SEAMLESS_HERO_REPEAT",
+      "selected": false,
+      "broadSeamlessAccepted": false,
+      "note": "Strong limestone material, but 2x2 still repeats large drip/green landmark shapes. Keep as local reference only.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\B34-3409-R1_Limestone_Ceiling_Mineral_Drip.png",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3409-R1_limestone_ceiling_png_named.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 2868008,
+      "sha256": "EF0B6046543C72981F5E0CC106FAB04DF82054131CDF52E3B5856D92DA5781F2",
+      "clipping": {
+        "blackPct": 0.152,
+        "whitePct": 0.001
+      },
+      "seamMetrics": {
+        "edgeLR": 16.223,
+        "edgeTB": 19.3757,
+        "bandLR": 29.9843,
+        "bandTB": 28.734
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3409-R1_limestone_ceiling_png_named_2x2.png"
+    },
+    {
+      "id": "B34-3409-R1",
+      "sourceId": "B34-3409",
+      "variant": "limestone_ceiling_jpeg_timestamp",
+      "sourceType": "SEAMLESS_TILE",
+      "priority": "REQUIRED",
+      "decision": "SELECTED_REGEN_SEAMLESS_SOURCE",
+      "selected": true,
+      "broadSeamlessAccepted": true,
+      "note": "Best limestone regen result: lower landmarking than the named PNG and acceptable static 2x2 repeat for cave-ceiling material handoff.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606082255.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 906969,
+      "sha256": "714A8B8189CD52AB75EE78436D9FE1DABAC51C53A9B9AE14EE06B9265D41CDFD",
+      "clipping": {
+        "blackPct": 0.014,
+        "whitePct": 0.0
+      },
+      "seamMetrics": {
+        "edgeLR": 11.5947,
+        "edgeTB": 14.6094,
+        "bandLR": 17.4107,
+        "bandTB": 21.3149
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3409-R1_limestone_ceiling_jpeg_timestamp_2x2.png",
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg",
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_MRAO_Provisional.png"
+      }
+    },
+    {
+      "id": "B34-3418-R1",
+      "sourceId": "B34-3418",
+      "variant": "viewport_glass_jpeg_timestamp",
+      "sourceType": "DECAL_ATLAS",
+      "priority": "REQUIRED",
+      "decision": "SELECTED_REGEN_ALPHA_SOURCE",
+      "selected": true,
+      "broadSeamlessAccepted": false,
+      "note": "Best targeted regen result: isolated decal islands, clean neutral matte, no edge contact. Use for alpha extraction/matte cleanup route.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_viewport_glass_202606082255.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 384764,
+      "sha256": "668680CC69D83C92925B6CB45A39FC27F6ED30FD6AF4C4366E62772A27A98266",
+      "clipping": {
+        "blackPct": 0.0,
+        "whitePct": 0.001
+      },
+      "edgeContent": {
+        "backgroundRgb": [
+          78.0,
+          78.0,
+          78.0
+        ],
+        "contentPct": 5.0,
+        "edgeContentPct": 0.0
+      },
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg"
+    },
+    {
+      "id": "B34-3407-R1",
+      "sourceId": "B34-3407",
+      "variant": "iron_oxide_jpeg_timestamp",
+      "sourceType": "SEAMLESS_TILE",
+      "priority": "OPTIONAL_BACKUP",
+      "decision": "HOLD_LOCAL_PATCH_ONLY_HERO_REPEAT",
+      "selected": false,
+      "broadSeamlessAccepted": false,
+      "note": "Visually useful iron seep crust, but 2x2 repeats large rust mats. Keep as local patch/reference, not broad terrain replacement.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Iron-oxide_seep_crust_material_202606082255.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3407-R1_iron_oxide_jpeg_timestamp.jpeg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 1296471,
+      "sha256": "7845292F81FAF55D0FB7B9C8006BD0DC3FBF0EE263543A28C4BD4A00780848BC",
+      "clipping": {
+        "blackPct": 1.213,
+        "whitePct": 0.017
+      },
+      "seamMetrics": {
+        "edgeLR": 24.0397,
+        "edgeTB": 28.6992,
+        "bandLR": 36.8466,
+        "bandTB": 36.0174
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3407-R1_iron_oxide_jpeg_timestamp_2x2.png"
+    },
+    {
+      "id": "B34-3417-R1",
+      "sourceId": "B34-3417",
+      "variant": "amber_lens_png_named",
+      "sourceType": "SEAMLESS_TILE",
+      "priority": "OPTIONAL_BACKUP",
+      "decision": "SELECTED_CENTER_CROP_SOURCE",
+      "selected": true,
+      "broadSeamlessAccepted": false,
+      "note": "Best amber lens source after cropping away hard frame. Use as lamp/lens material source, not broad seamless terrain.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\B34-3417-R1_Amber_Emergency_Lens_Material.png",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3417-R1_amber_lens_png_named.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 2504421,
+      "sha256": "D236B6907798389B1D703BB17D0A321AE9267298FD09C294F26951B8A97A17EC",
+      "clipping": {
+        "blackPct": 0.0,
+        "whitePct": 0.0
+      },
+      "seamMetrics": {
+        "edgeLR": 20.4909,
+        "edgeTB": 20.3063,
+        "bandLR": 21.5853,
+        "bandTB": 16.9815
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3417-R1_amber_lens_png_named_2x2.png",
+      "cleanedCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/SourceCleaned/B34-3417-R1_amber_lens_png_named_center_crop.png",
+      "cleanedSeamMetrics": {
+        "edgeLR": 16.4411,
+        "edgeTB": 9.4574,
+        "bandLR": 16.4127,
+        "bandTB": 8.7831
+      },
+      "cleanedTilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3417-R1_amber_lens_png_named_center_crop_2x2.png",
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/SourceCleaned/B34-3417-R1_amber_lens_png_named_center_crop.png",
+      "maps": {
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_MRAO_Provisional.png"
+      }
+    },
+    {
+      "id": "B34-3417-R1",
+      "sourceId": "B34-3417",
+      "variant": "amber_lens_jpeg_timestamp",
+      "sourceType": "SEAMLESS_TILE",
+      "priority": "OPTIONAL_BACKUP",
+      "decision": "REJECT_REGEN_SEAMLESS_VERTICAL_SEAM",
+      "selected": false,
+      "broadSeamlessAccepted": false,
+      "note": "Clear vertical seam and rib-density break in 2x2. Keep only as rejected comparison against the PNG crop.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Amber_emergency_light_lens_material_202606082255.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3417-R1_amber_lens_jpeg_timestamp.jpeg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 769837,
+      "sha256": "8FDBD2AF4F7B56F36FE644DCC97F023E0AF6091A085230C3BE84EF9CC817693B",
+      "clipping": {
+        "blackPct": 0.0,
+        "whitePct": 0.0
+      },
+      "seamMetrics": {
+        "edgeLR": 30.7152,
+        "edgeTB": 12.6064,
+        "bandLR": 16.8297,
+        "bandTB": 25.2446
+      },
+      "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/TilePreviews/B34-3417-R1_amber_lens_jpeg_timestamp_2x2.png"
+    },
+    {
+      "id": "B34-3439-V2",
+      "sourceId": "B34-3439",
+      "variant": "spore_pods_unrequested_variant",
+      "sourceType": "UV_ATLAS",
+      "priority": "UNREQUESTED_VARIANT",
+      "decision": "HOLD_ALTERNATE_NOT_TARGETED_EDGE_RISK",
+      "selected": false,
+      "broadSeamlessAccepted": false,
+      "note": "Strong visual alternate, but outside targeted regen set and high edge content. Keep as alternate reference only.",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Alien_spore_pods_seed_sacs_202606082255.jpeg",
+      "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3439-V2_spore_pods_unrequested_variant.jpeg",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 714024,
+      "sha256": "FD4B6E8E4FEB91B3B0C661FB39516DDF9CA9082275133895367E5A593BB74FE4",
+      "clipping": {
+        "blackPct": 0.563,
+        "whitePct": 0.038
+      },
+      "edgeContent": {
+        "backgroundRgb": [
+          29.0,
+          29.0,
+          29.0
+        ],
+        "contentPct": 55.902,
+        "edgeContentPct": 9.558
+      }
+    }
+  ],
+  "selectedFinalCandidates": [
+    {
+      "id": "B34-3409-R1",
+      "sourceId": "B34-3409",
+      "variant": "limestone_ceiling_jpeg_timestamp",
+      "decision": "SELECTED_REGEN_SEAMLESS_SOURCE",
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg",
+      "broadSeamlessAccepted": true
+    },
+    {
+      "id": "B34-3418-R1",
+      "sourceId": "B34-3418",
+      "variant": "viewport_glass_jpeg_timestamp",
+      "decision": "SELECTED_REGEN_ALPHA_SOURCE",
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg",
+      "broadSeamlessAccepted": false
+    },
+    {
+      "id": "B34-3417-R1",
+      "sourceId": "B34-3417",
+      "variant": "amber_lens_png_named",
+      "decision": "SELECTED_CENTER_CROP_SOURCE",
+      "finalCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/SourceCleaned/B34-3417-R1_amber_lens_png_named_center_crop.png",
+      "broadSeamlessAccepted": false
+    }
+  ],
+  "contactSheet": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/PREVIEW_Batch34_RegenTargets_Contact.png"
+}

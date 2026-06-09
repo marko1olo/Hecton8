@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "サルベージキャリア自律限界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Salvage Carrier Autonomy Limits
+# サルベージキャリア自律限界
 
-JA LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+サルベージキャリア自律限界はHECTON-8を接地する。Black Keelが危険なのは、有用であると同時に制限されているからだ。脱出を可能にする会計と回収作業はできるが、個人船に期待される不可能な救助は規則で禁じられている。結果は仲間ではなく、脈を持つインフラだ。
 
 ## Scanner
 
-JA LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keelは、あなたに聞かず債務、テレメトリ、低リスク投下物を動かせる。深海救助の許可は出せない。
 
 ## Terminal
 
-JA LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+自律限界 / 許可: claim processing、テレメトリ販売、回収窓スケジュール、低リスクballastまたはsupply drop、contaminated-mass拒否 / 禁止: crewed descent、deep-rated rescue、lien取消、quarantine override、receiver所有権移転。
 
 ## Audio
 
-JA LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+自律とは自由ではない。債務があなたに聞かず動けるという意味だ。
 
 ## Field Note
 
-JA LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+carrier状態と契約UIに置くこと。戦闘バークではない。自律は会計、回収スケジュール、拒否論理を覆う。
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/ja_JP. -->

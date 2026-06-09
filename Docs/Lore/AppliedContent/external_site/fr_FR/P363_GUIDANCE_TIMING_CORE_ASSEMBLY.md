@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Assemblage de noyau de timing de guidage"
+title: "Assemblage du Coeur de Guidage Temporel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Assemblage de noyau de timing de guidage
+# Assemblage du Coeur de Guidage Temporel
 
-L'Assemblage de noyau de timing de guidage garde le vol spatial de HECTON-8 dur : l'extraction est un problème de route fait d'horloges, d'ombres et de confiance abîmée.
+L'Assemblage du Coeur de Guidage Temporel transforme l'évasion en ingénierie orbitale, pas en simple poussée vers le haut. La capsule d'ascension de HECTON-8 doit traverser l'eau, la météo, la géométrie lunaire et les règles de réception d'entreprise avant qu'une combustion puisse être dite récupérable.
 
-## Scanner
+Le composant tient la carte minutée: éphéméride Aegir, voie de réception Black Keel, cache de volets du relais lunaire, dérive de panache de tempête et tolérance de l'horloge custody. Rien n'est décoratif. Une capsule peut être étanche, chargée et mécaniquement saine, puis manquer la récupération parce que son paquet atteint la mauvaise voie au mauvais moment.
 
-Noyau de timing vide. La géométrie d'Aegir décide si l'ascension devient recovery, capture ou silence.
-
-## Terminal
-
-GUIDANCE CORE : aligner l'horloge capsule sur l'Aegir window, la Black Keel receiver lane, le moon relay shutter et la dérive storm-plume. Les packets tardifs deviennent perte de preuve ; les packets précoces deviennent capture noise.
-
-## Audio
-
-Le haut n'est pas une direction. C'est une fenêtre avec témoin.
-
-## Field Note
-
-Il n'y a pas de simple haut depuis HECTON-8. Il y a un récepteur, une ombre, une dérive de tempête et une packet queue déjà plus vieille que ta panique.
+C'est la part amère du marché de fuite de HECTON-8. Le survivant ne quitte pas la profondeur pour la liberté. La capsule entre dans une étroite fenêtre comptable au-dessus d'un océan qui continue de déformer chaque signal. Réparer le coeur temporel donne au lancement une place dans cette fenêtre. Cela ne rend pas la fenêtre clémente.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/fr_FR. -->

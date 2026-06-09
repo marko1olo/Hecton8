@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Якорный набор имен рабочих B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Якорный набор имен рабочих B
 
-RU LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+Якорный набор имен рабочих B это более глубокий повторяющийся слой рабочих для HECTON-8. Эти имена не должны смягчать ужас; они должны делать систему читаемее. К моменту появления Set B у отказов давления, маршрутных удержаний и задержек триажа уже есть рисунок. Повторяющиеся имена связывают этот рисунок с людьми, а затем с ответственностью Deep Reach.
 
 ## Scanner
 
-RU LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Глубокие имена должны приходить после того, как игрок уже знает рисунок повреждений. Они стоят дороже, потому что вода уже начала доказывать преступление.
 
 ## Terminal
 
-RU LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: повторение в соляном каньоне и абиссальных машинных полях. Привязывай эти имена к witness hashes, маршрутным удержаниям, исключениям триажа, противоречиям ремонта Atlas и следам долга за спасение. Set B это место, где рабочая улика перестает быть локальной трагедией и становится корпоративной причиной.
 
 ## Audio
 
-RU LOC HOLD: A deep name costs more because the water has already proved what happened.
+Глубокое имя стоит дороже, потому что вода уже доказала, что произошло.
 
 ## Field Note
 
-Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Якоря Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- External Site; generated from P209_ANCHOR_WORKER_NAME_SET_B/ru_RU. -->

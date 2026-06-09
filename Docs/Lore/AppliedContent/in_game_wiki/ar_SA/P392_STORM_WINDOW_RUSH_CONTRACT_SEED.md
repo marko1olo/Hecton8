@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Storm Window Rush Contract Seed"
+title: "بذرة عقد اندفاع نافذة العاصفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Storm Window Rush Contract Seed
+# بذرة عقد اندفاع نافذة العاصفة
 
-AR LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+اندفاع نافذة العاصفة عائلة عقود يصبح فيها الطقس والمدار أول نظامي ضغط. المسار لا يضيف قوة موروثة؛ إنه يقصر وقت العمل الآمن، يضيق هندسة الاسترداد، ويعاقب الإصلاح الرديء مبكرا.
 
 ## Scanner
 
-AR LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+بذرة عقد: نافذة اندفاع. دفعة أعلى مرتبطة بانغلاق غطاء العاصفة، وتوقيت ستارة المدار، وسماحية إصلاح أقل.
 
 ## Terminal
 
-AR LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: نافذة العاصفة مضغوطة، ستارة الترحيل المدارية عدائية، سقف الدفع مرفوع، استدعاء bathydrop أبكر، سماحية الإصلاح مخفضة.
 
 ## Audio
 
-AR LOC HOLD: This contract pays because it hates waiting.
+هذا العقد يدفع لأن النافذة تغلق.
 
 ## Field Note
 
-AR LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+ملاحظة مارودر: أجر الاندفاع يبدو أكبر لأن العقد يحاسب كل دقيقة مرتين.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ar_SA. -->

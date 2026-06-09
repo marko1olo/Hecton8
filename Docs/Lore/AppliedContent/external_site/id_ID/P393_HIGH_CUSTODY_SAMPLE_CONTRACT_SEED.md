@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: High Custody Sample Contract Seed"
+title: "Seed Kontrak Sampel Custody Tinggi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: High Custody Sample Contract Seed
+# Seed Kontrak Sampel Custody Tinggi
 
-ID LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Sampel Custody Tinggi dimulai dengan harga lebih baik dan kotak lebih buruk. Papan menandai sampel tertentu sebagai receiver-certified: grit blue debt, serpih jaringan-besi, brine tersegel, paket filter, dan scrap pertumbuhan yang masih membawa konteks rute. Tiap bagian membutuhkan wadah, cek massa, status seal, dan tag custody sebelum dapat dibayar.
 
-## Scanner
-
-ID LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-ID LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-ID LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-ID LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Tekanannya biasa dan buruk. Sampel berat memperlambat pendakian. Seal retak dapat mengubah bayaran menjadi delay karantina. Loker bersih yang penuh dapat memaksa operator memilih antara paket bukti, suku cadang perbaikan, dan material tersertifikasi. Kontrak membayar lebih karena membuat kepemilikan menjadi sistem penahan beban.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/id_ID. -->

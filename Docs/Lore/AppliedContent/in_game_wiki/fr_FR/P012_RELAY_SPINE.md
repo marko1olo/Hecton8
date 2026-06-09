@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Épine de relais
 
-L'épine de relais est le squelette lent des communications : créneaux de faisceau, tampons, sceaux de garde et calendriers de relance. Elle transporte preuves, réclamations et ordres, mais pas d'oxygène vers une salle noyée.
+L'Épine de relais maintient l'espace humain connecté sans prétendre que la distance a disparu. C'est une chaîne de créneaux de faisceau, tampons de paquet, hashes de garde, calendriers de relance, bobines notariales et permissions météo locales. Elle transporte ordres, preuves, dettes et preuves de vie entre les étoiles. Elle ne transporte pas d'oxygène dans une pièce noyée.
 
-Sur HECTON-8, un message peut être valide, vu et trop tardif. Vérité et secours sont deux logistiques différentes.
+Sur HECTON-8, le relais est une pression, pas un décor. Un message peut être lisible et inutile. Un paquet Deep Reach peut arriver assaini parce que les auteurs de la première version sont morts. Un reçu public Tau Ceti peut rendre une preuve dangereuse des années plus tard. Luyten peut prouver la garde et laisser le joueur seul dans l'eau. Le relais rend la vérité durable. Il ne la rend pas rapide.
 
 ## Scanner
 
-Tampon de relais périmé. Âge du paquet sortant hors pertinence de secours local. Hash de garde intact; fenêtre de réponse morte.
+Tampon de relais périmé. Horloge source valide, hash de garde intact, file de relance épuisée. Le message a dépassé la masse de secours et meurt dans le créneau d'attente.
 
 ## Terminal
 
-ÉPINE DE RELAIS // Paquet en file via Aegir local, Luyten Junction et chemin d'archive Sol. Route à délai lumineux acceptée. Conflit de priorité non résolu. Réponse humaine non opérationnelle pour la fenêtre de survie actuelle.
+ÉTAT ÉPINE DE RELAIS // Aucun canal ansible. Garde de paquet valide via tampon local Aegir. Reçu Luyten en attente par classe de délai-lumière. Réponse humaine obsolète pour survie de compartiment. Garder l'autorité d'action locale.
 
 ## Audio
 
-Le relais n'est pas cassé. C'est le problème. Il fait exactement ce que la distance permet.
+Un paquet peut être vrai, reçu, et trop tard pour compter.
 
 ## Field Note
 
-Un message peut être vrai et arriver après tes os.
+Le délai ne rend pas la vérité fausse. Il la rend seule.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/fr_FR. -->

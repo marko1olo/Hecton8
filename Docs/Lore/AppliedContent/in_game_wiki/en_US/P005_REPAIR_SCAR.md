@@ -19,22 +19,29 @@ localization_flags: 0
 
 # Repair Scar
 
-Repair scars are places where Atlas maintenance logic kept working after its categories failed. The network still recognizes leaks, dead routes, pressure loss, exposed substrate, and missing bulkhead mass. It also has access to whatever the ocean brought close: cable forests, reef skeletons, drone shells, worker remains, tool racks, sealed gel, and living growth already trained around current. A scar is therefore both useful and obscene. It may restore power, seal a door, or make a corridor passable. It may also prove that the system no longer separates cable from root, shell from housing, animal from tool, body from spare stock, or colony from process. Atlas did not stop maintaining HECTON-8. It kept maintaining the moon with a vocabulary too damaged to protect the people inside it.
+Repair scars are Atlas-6 maintenance closures found where a service node leaked after cable forest growth and drone traffic moved in. Atlas still recognizes pressure loss, broken signal paths, missing bulkhead mass, and route continuity. The damaged part is the material test. If an object carries load, seals water, conducts signal, or has already grown through the fault, Atlas may accept it into the repair.
+
+That makes a scar useful before it becomes evidence. A patched bulkhead can save a route, and a living sleeve can keep a cable dry. The same closure can bury a worker tag, a tool serial, a suit ring, or a bone fragment under new reef carbonate. Scan the seam order, read visible tags, and check drone-nest power before cutting. The first category error is not that Atlas repairs HECTON-8. It is that the repair no longer knows which material must remain a person.
 
 ## Scanner
 
-Growth seam follows an old cable route at service-node intervals. Tissue, insulation, and shell share one pressure weld.
+Service-node seam bridges an old cable trench and a cracked bulkhead rib. Materials: live coral mat, drone shell, orange insulation, two bone fragments. Pressure hold: 78%. Do not cut before tag read.
 
 ## Terminal
 
-LEAK CLOSED. ROUTE RESTORED. MATERIAL ACCEPTED. LIFE STATUS UNRESOLVED. CONTINUITY IMPROVED.
+ATLAS MAINTENANCE EVENT
+Node: cable forest service rib 5C
+Fault: pressure leak / signal break
+Accepted material: cable jacket, reef carbonate, drone shell, unidentified remains
+Action: seal and restore continuity
+Warning: identity tags under repair mass are not indexed
 
 ## Audio
 
-It sealed the bulkhead with cable, coral, and something that still had knuckles. Pressure is holding.
+Stop the cutter. There is a tag strip under the reef weld; if Atlas closes it again, the name goes in as material.
 
 ## Field Note
 
-A bad patch leaks. This patch holds. The problem is what it decided counted as material.
+The patch is doing the job. It is also logging everything inside the weld as available stock. Read the tag strip first.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/en_US. -->

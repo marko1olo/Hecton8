@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Best Ending: No Clean Hands"
+title: "Best Route: Residue Left Visible"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Best Ending: No Clean Hands
+# Best Route: Residue Left Visible
 
-The best ending in HECTON-8 should not be the ending where everything is repaired. That would make the ocean, the dead workers and the contract machine smaller than the player's checklist. The strongest version lets the player save something concrete: a public record, a living basin, a denied corporate payload, a freed operator, a name that cannot be erased.
+The strongest HECTON-8 ending should not repair the setting into a reward screen. It should let the operator accomplish concrete work: leave Black Keel custody, publish a record, deny Deep Reach a return route, preserve a living basin under quarantine, carry worker names out, or seal an Atlas proof hash where it cannot be priced as cargo.
 
-It must also leave residue. Maybe Atlas survives under quarantine. Maybe severance saves people and kills a form of life. Maybe the truth is public but uncontrollable. Maybe the player leaves debt-free with evidence that will keep hurting people. No Clean Hands is not cynicism. It is respect for scale. The player can act meaningfully without becoming innocent.
+The record must also keep open fields. A paid exit can omit worker names. Public release can create weaponized receivers. Severance can stop damaged authority and injure repair life. Preservation can protect pressure ecology and keep the old sorter active. A good final record shows the saved thing, the receiver, the debt effect, the Atlas state, and the harm still moving through the system.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/en_US. -->

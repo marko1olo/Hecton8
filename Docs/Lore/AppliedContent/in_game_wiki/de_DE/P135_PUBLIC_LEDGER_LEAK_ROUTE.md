@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Leak ins öffentliche Ledger"
+title: "Leck ins öffentliche Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Leak ins öffentliche Ledger
+# Leck ins öffentliche Ledger
 
-Das öffentliche Ledger-Leak ist ein Teilwahrheitsende. Der Spieler sendet genug Beweis, um Auslöschung schwerer zu machen, aber nicht genug, um Atlas, Deep-Reach-Vergeltung oder die Nutzung des Pakets durch öffentliche Institutionen zu kontrollieren.
+Das Leck ins öffentliche Ledger ist eine Route der Teilwahrheit. Das Paket geht durch ein schmales relay-Fenster mit genug witness hash, um Leugnen teuer zu machen, und zu vielen Lücken, um sicher zu sein. Deep Reach kann den Anspruch nicht mehr einfach löschen, aber niemand auf HECTON-8 entscheidet, wer die Wunde als Nächstes nutzt. Versicherer, Bürgergerichte, rivalisierende Domänen, Marauder-Pools und Firmenbüros werden dieselben Beweise anders lesen. Veröffentlichung rettet die Wahrheit vor sauberem Begräbnis. Sie macht sie nicht freundlich.
 
 ## Scanner
 
-Witness hash angenommen. Teilwahrheit verlässt vor vollständiger custody.
+Witness hash akzeptiert. Teilwahrheit geht vor vollständiger custody ab.
 
 ## Terminal
 
-ÖFFENTLICHE LEDGER-ROUTE: Tau-Ceti-packet-notary hat witness hash angenommen; payload unvollständig; claimant-Anfechtung wahrscheinlich; Deep-Reach-Vergeltungsfenster beginnt nach relay-Bestätigung.
+ÖFFENTLICHE LEDGER-ROUTE: Tau Ceti packet notary akzeptierte witness hash; payload unvollständig; claimant-Anfechtung wahrscheinlich; Deep-Reach-Vergeltungsfenster beginnt nach relay-Bestätigung.
 
 ## Audio
 
-Die Wahrheit geht zuerst. Dir gefällt vielleicht nicht, wer sie liest.
+Die Wahrheit geht zuerst. Kontrolle geht nicht mit.
 
 ## Field Note
 
-Öffentlich heißt nicht sicher. Es heißt nur schwerer zu löschen.
+Öffentlich ist nicht sicher. Es ist nur schwerer zu löschen.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/de_DE. -->

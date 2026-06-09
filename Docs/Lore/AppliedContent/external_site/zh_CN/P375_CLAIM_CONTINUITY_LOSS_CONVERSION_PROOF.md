@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "claim连续性损失转换"
+title: "索赔连续性损失转换"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# claim连续性损失转换
+# 索赔连续性损失转换
 
-Deep Reach谎言的最后一环不是戏剧性的掩盖文件，而是一种知道如何存活的会计转换。ledger承认人员失踪、模块受损、路线受危，然后把每个事实移入claim system可处理的类别。工人缺席成为unrecoverable loss。证据成为custody下的material。幸存货物成为recoverable value。claim本身保持continuous，这意味着所有权能比殖民地活得更久。此刻HECTON-8从事故记录变成道德机器。把ledger带上去的玩家可以揭露死者、出售证据、埋葬证据或重新定向证据。文件之所以有价值，是因为公司已经训练市场去重视它。
+损失转换是整条链中最安静、也最难原谅的文件。它不争论大潮、疏散队列、Atlas 权重或检疫。它接受造成的损害，并把损害分进可穿过接收方、保险方和保管委员会的列中。
 
-## Scanner
-
-回收的损失台印章。ledger比它重新命名的工人活得更久。
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED。biological workforce converted to unrecoverable loss。Material and proof custody remain active pending receiver assignment。
-
-## Audio
-
-人在这里变成干净的列。
-
-## Field Note
-
-Marauder笔记：ledger可以记住死者，也仍能花掉他们。
+这种分类就是 Deep Reach 的逃生口。生物劳动力成为不可回收损失。物资仍可回收。证据保管保持有效，因为索赔仍有价值。携带这个资料包的人危险，是因为资料包把每个早先决定都系到同一行总账上。公司不只是活过了灾难；它通过死者建出了一条干净的所有权路径。
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/zh_CN. -->

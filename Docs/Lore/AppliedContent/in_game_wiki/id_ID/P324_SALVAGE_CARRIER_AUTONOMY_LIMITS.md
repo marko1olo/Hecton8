@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Batas Otonomi Carrier Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Salvage Carrier Autonomy Limits
+# Batas Otonomi Carrier Salvage
 
-ID LOC HOLD: Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.
+Batas Otonomi Carrier Salvage mendefinisikan Black Keel sebagai infrastruktur yang masuk akal, bukan AI penyelamat ajaib. Carrier kompeten di jalur yang diizinkan. Ia dapat menjadwalkan recovery window, menolak contaminated mass, menjual claim telemetry, memperbarui lien, menjatuhkan ballast, melepas suplai rendah risiko, dan melindungi receiver state. Kekuatan itu membuatnya terasa hadir di atas laut. Batas pentingnya adalah bahwa semua itu bukan agensi moral. Black Keel tidak bisa memutuskan pemain pantas diselamatkan. Ia tidak bisa membatalkan utang karena situasinya tidak adil. Ia tidak bisa mengotorisasi crewed descent melalui cuaca tekanan Aegir atau menimpa karantina karena suara manusia terdengar takut. Otonominya korporat dan prosedural: utang bisa bergerak lebih cepat daripada manusia memohon. Itu menciptakan hubungan pemain yang lebih tajam daripada AI ramah atau mesin musuh. Carrier membantu, menolak, dan mengawasi dengan aturan yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel dapat memindahkan utang, telemetri, dan drop suplai rendah risiko tanpa bertanya. Ia tidak bisa mengotorisasi deep rescue.
 
 ## Terminal
 
-ID LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+BATAS OTONOMI / diizinkan: claim processing, penjualan telemetri, recovery-window scheduling, ballast atau supply drop rendah risiko, contaminated-mass rejection / dilarang: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-ID LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Otonom bukan berarti bebas. Artinya utang bisa bergerak tanpa bertanya padamu.
 
 ## Field Note
 
-ID LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Simpan di status carrier dan UI kontrak, bukan combat bark. Otonomi mencakup akuntansi, jadwal recovery, dan logika penolakan.
 
 <!-- In-Game Wiki; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/id_ID. -->

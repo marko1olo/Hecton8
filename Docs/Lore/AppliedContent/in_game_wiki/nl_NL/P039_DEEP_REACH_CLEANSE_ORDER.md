@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Zuiveringsorder"
+title: "Actieve Deep Reach Zuiveringsorder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Zuiveringsorder
+# Actieve Deep Reach Zuiveringsorder
 
-Deze order maakt Deep Reach een actuele antagonist: actieve zuivering en extractie, niet alleen verleden.
+Actieve Deep Reach Zuiveringsorder is een huidige werkorder, geen archiefnotitie. Ze toont resource custody, Atlas-toegang en bewijswissen die via proxy-aannemers worden ingepland na de evacuatiestop.
 
 ## Scanner
 
-Orderstack: grondstof, Atlas-toegang, bewijs wissen. Overlevenden lager dan assetcontrole.
+Actieve order geborgen: gecertificeerde monsters innemen, Atlas-kanaal openen, overlevenden isoleren, aansprakelijkheidsbewijs wissen.
 
 ## Terminal
 
-Proxy-richtlijn: contractor ontkenbaar. Monsters bewaren. Atlas-kanaal openen bij acceptabel lokaal risico. Aansprakelijkheidscorpus wissen.
+Proxy-werkorder DR-CLEANSE-19 blijft actief. Ontkenbare aannemers krijgen eerst monster-custody, daarna Atlas-toegang, getuigenherstel laatst. Als Black Keel of het sitedossier aansprakelijkheid blootlegt, verplaatst de purge-wachtrij bewijsarchieven naar cold delete en retagt velddoden als weerverlies.
 
 ## Audio
 
-Deep Reach jaagt niet op je. Ze gebruiken je als goedkopere sonde.
+Die stem is geen reddingsverkeer. Het is een zuiveringsbod.
 
 ## Field Note
 
-Ze kwamen niet terug om sorry te zeggen.
+Het excusesveld is leeg.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/nl_NL. -->

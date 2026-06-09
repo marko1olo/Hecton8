@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Кінцівки та custody payload
 
-Вузол dossier кінцівок: custody, evidence, майбутнє Atlas і ціна відходу.
+Вузол досьє кінцівок: кожен вихід є transfer custody, а не моральною міткою.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, публічна правда, Atlas continuity і after-action records.
+Spoiler hub: custody payload, наслідки receiver, false exits, публічний proof, карантинний важіль і continuity Atlas.
 
 ## Terminal
 
-SITE NAV: final payload pages тримати за spoiler gates. Організувати за receiver і proof ownership.
+SITE NAV: тримати фінальні сторінки за spoiler gates; впорядковувати за контролем тіла, координат, samples, Atlas records і worker proof.
 
 ## Audio
 
-Кінцівка це те, хто володіє доказом після підйому.
+Вихід не є кінцем. Це передача custody.
 
 ## Field Note
 
-Кінцівки лишаються spoiler-gated і організуються за receiver та custody consequence, не за моральними ярликами.
+Якщо тіло вийшло, але proof має власника, океан ще не закрив справу.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/uk_UA. -->

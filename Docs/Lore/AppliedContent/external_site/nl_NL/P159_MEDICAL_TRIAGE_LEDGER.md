@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "Medisch triage-ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# Medisch triage-ledger
 
-NL LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+Medisch triage-ledger maakt vertraagde evacuatie menselijk bewijs: schone categorieën, wachtende hulp en werkers die geteld worden vóór ze worden betreurd.
 
 ## Scanner
 
-NL LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Drukletsel, hypoxie, lockvertraging, ontbrekende route, certificatiehold. De horror is hoe netjes hulp wachtte.
 
 ## Terminal
 
-NL LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+MEDISCHE REGEL: tel lichamen zonder gore. Gebruik pressure-state, zuurstofschuld, routevertraging, triageprioriteit en signoff hold om te tonen hoe procedure sneller patiënten maakte dan medici konden behandelen.
 
 ## Audio
 
-NL LOC HOLD: The cleanest handwriting is on the worst page.
+Het schoonste handschrift staat op de ergste pagina.
 
 ## Field Note
 
-NL LOC HOLD: Medical text should count bodies without becoming gore.
+Medische tekst moet lichamen tellen zonder gore te worden.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/nl_NL. -->

@@ -19,26 +19,28 @@ localization_flags: 1
 
 # Registre de Transit de Réclamation Longue de Ran
 
-Le premier mensonge qu'un Marauder échoué veut croire est simple : contact veut dire sauvetage. Autour de Ran, contact veut seulement dire qu'un paquet a trouvé une fenêtre porteuse. Il peut déplacer une position, un hash témoin, une demande légale, un tarif ou une menace. Il ne déplace pas une coque pressurisée, un médecin, un tender ni une pile de freinage.
+Un registre de réclamation longue de Ran est ce que devient un appel de détresse quand la civilisation l'entend et refuse de prétendre que la physique a changé. Le paquet traverse la route assez vite pour ressembler à une réponse. La réponse n'amène pas de coque. Elle inscrit un réclamant, une position, une charge, une chaîne de garde et une raison pour qu'une autorité hors monde dépense de la masse.
 
-C'est pourquoi les registres de réclamation longue de Ran ressemblent à de la comptabilité. Un survivant vivant n'est qu'un champ. Il faut aussi la confiance des coordonnées, la classe de charge, le grade de garde, la masse d'ascension, le risque de quarantaine, l'assurance de route et la question de qui touche quoi si la personne meurt avant la récupération. Black Keel déplace les paquets parce qu'ils coûtent peu et parce que l'autorité contractuelle vit dans le délai.
+            Le registre est un vieux droit de frontière enroulé autour d'un transit dur. Les relais de Ran acceptent les paquets témoins à vitesse lumière. Les bureaux Luyten hachent le reçu. Black Keel pousse une salve propre par miroirs et fenêtres porteuses. Aucun de ces systèmes ne possède un vaisseau de secours gratuit. Un tender a encore besoin de couloir, d'allocation de freinage, de créneau de réception, de quarantaine et d'un payeur qui survivra à l'audit.
 
-La bonne question n'est pas de savoir si quelqu'un vous a entendu. Probablement oui. La question est ce qu'il a entendu en premier. Un état vivant propre achète une ligne dans une file. Un reçu de route vérifié donne du levier. Une preuve de responsabilité Deep Reach peut changer qui a le droit de tarifer la file. Une charge utile qui compte hors de HECTON-8 peut faire bouger un vaisseau qui abandonnerait un corps seul au fond.
+            Voilà pourquoi la première fenêtre fait mal. Un Marauder veut crier vivant. Le registre a déjà une case pour cela. Le meilleur paquet dit où, avec quelle certitude, ce qui peut monter, qui l'a touché, ce que Deep Reach a abîmé, si le paquet d'ascension ferme, et quelle preuve disparaîtra si personne ne vient. Le corps compte. Le corps seul est bon marché dans la mauvaise colonne.
+
+            La cruauté de Black Keel est surtout de l'arithmétique sans voix humaine. Une personne vivante est une responsabilité. Une personne vivante portant une preuve recevable est un levier. Une personne vivante attachée à des données de route irremplaçables est une charge qui mord. Le registre transforme la peur en champs, car des champs peuvent être tarifés, attestés et contestés après que le signal a quitté HECTON-8.
 
 ## Scanner
 
-REGISTRE DE ROUTE // Hash témoin Luyten intact. Une forte fenêtre porteuse peut emporter une salve propre : position, dégâts, garde, preuve ou supplique. Ce n'est pas un sauvetage.
+REGISTRE DE RÉCLAMATION LONGUE // Tresse témoin Luyten intacte. Une fenêtre porteuse disponible. Champs : état vivant, confiance de coordonnées, masse d'ascension, grade de garde, objection Deep Reach, valeur de charge. Détresse n'est pas ordre de tender.
 
 ## Terminal
 
-REÇU DE ROUTE : RÉCLAMATION LONGUE DE RAN / CRÉNEAU TÉMOIN LPL 7C // L'état vivant seul ne suffit pas à programmer une récupération. Transmettez confiance de coordonnées, état du paquet d'ascension, grade de garde et masse de charge avant examen de priorité du tender.
+BLACK KEEL / REÇU DE RÉCLAMATION LONGUE RAN 7C // Paquet accepté comme réclamation vivante, non comme autorisation de récupération. Transmettez preuve de position, classe de salvage, responsabilité médicale, exposition quarantaine et préférence de premier retour avant dégradation de la fenêtre. Champs vides : charge négative, corps basse priorité.
 
 ## Audio
 
-Relais Black Keel : la fenêtre tient pour une salve propre. Envoyez position, charge ou preuve. Choisissez avant que la tempête mange le verrou porteur.
+Relais Black Keel : vous avez atteint le registre. Bien. Vous êtes un dossier, pas un sauvé. Dépensez la salve en preuve, position ou valeur avant que le porteur glisse.
 
 ## Field Note
 
-Les vaisseaux ne vous sauvent pas. Les routes, peut-être, si le bon bureau a été payé avant que vous soyez mouillé. Dépensez la fenêtre comme de l'air.
+Vivant est une case. Les coordonnées sont un pari. La preuve est un appât signé. Envoyez le paquet qu'ils auront peur d'ignorer.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/fr_FR. -->

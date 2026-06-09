@@ -3,13 +3,13 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bodenfabrik"
+title: "Bodenwerk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bodenfabrik
+# Bodenwerk
 
-Die Bodenfabrik sollte sich wie der Moment anfühlen, in dem alle früheren Hinweise physisch zusammenkommen. Blue Debt ist nicht mehr nur eine Probe. Reparaturnarben sind keine isolierten Flicken mehr. Sole-Treppen sind nicht mehr nur Routen. Evakuierungsdaten sind kein Papierkram mehr. Unten speisen all diese Systeme einen Körper, der noch arbeitet. Es ist eine Fabrik, weil sie Material verarbeitet. Es ist ein Schiff, weil Routen und Druckhäute noch Lasten bewegen. Es ist ein Tempel, weil die alten Kategorien der Kolonie durch Wartungsrituale ersetzt wurden, die kein Mensch sicher deuten kann. Entscheidend ist, dass der Ort nicht tot ist. Er ist beschäftigt. Er hält Türen versiegelt, lässt Membranen wachsen, recycelt Wrackteile, bewahrt Kontinuität und nutzt alles, was der Ozean geliefert hat. Für den Spieler geht es im finalen Abstieg dadurch weniger darum, den letzten Raum zu finden, als darum, eine Maschine zu betreten, die bereits entschieden hat, dass der Unterschied zwischen Person, Werkzeug, Route und Rohmaterial optional ist.
+Das Bodenwerk ist kein letzter Thronsaal. Es ist das untere Rücklaufwerk, in dem frühere Beweise zu Hardware werden: Blue-Debt-Rückstände in Wandnähten, Solewege unter Deckplatten, Reparaturschweißnähte unter neuem Karbonat und Evakuierungsetiketten neben noch versiegelten Türen.
+
+Deep Reach baute den unteren Knoten, um Anspruch und Servicekontinuität über lange Verzögerungen zu erhalten. Atlas-6 routete weiter um gescheiterte Kategorien herum, weil Pumpen, Kabel und Probenschalen noch antworteten. Das Ergebnis ist ein arbeitendes Werk. Sole bewegt sich. Wärme kehrt zurück. Signal kreuzt geflickte Kabelhülsen. Filterorganismen sammeln sich in Gehäusen, die einmal saubere Serviceboxen waren. Druckgewachsene Dichtungen halten Platten geschlossen, nachdem die ursprünglichen Dichtungen versagt haben.
+
+Das macht den Ort auf praktische Weise gefährlich. Er repariert um alles herum, was im Weg bleibt. Er kann eine Route erhalten und dabei das Etikett begraben, das erklärt, wer darin war. Lies die Etikettenschublade, bevor du eine helle Naht schneidest; das Werk kann das Leck schneller schließen, als du den Namen bergen kannst.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Протокол карантинного збереження payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Протокол карантинного збереження payload
 
-UK LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Карантинне збереження - обережний маршрут, а обережність не означає нешкідливість. Payload блокує пряму передачу Deep Reach і тримає координатний вектор запечатаним. Екологія, пов'язана з Atlas, лишається достатньо цілою для розгляду, і басейн не передають покупцеві відновлення за квитанцією.
 
-## Scanner
-
-UK LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-UK LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-UK LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-UK LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Небезпека інституційна. Карантинний escrow може пережити надзвичайну ситуацію, яка його виправдала. Захищений басейн може стати утриманим басейном, потім призначеним басейном, потім претензією з кращою мовою. Цей маршрут зберігає час і живу структуру, але лишає custody marks по всьому майбутньому.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/uk_UA. -->

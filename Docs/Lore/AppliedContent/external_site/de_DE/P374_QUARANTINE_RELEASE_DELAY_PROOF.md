@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Quarantäne-Freigabehalt
 
-Quarantäne ist auf HECTON-8 glaubwürdig, weil Kontamination nicht erfunden ist. Druckexposition, Brine-Chemie und Atlas-kompatibles Wachstum können eine unvorsichtige Rettung tödlich machen. Diese Wahrheit gibt Deep Reach Deckung. Der Release-Hold zeigt, wie Schutzsprache durchs System wanderte, nachdem praktischer Ausgang schon eng war. Das Tor sagte nicht jemanden hinrichten. Es sagte hold until review, biologische Unsicherheit behalten, Asset-Masse akzeptieren, Insurance Ping aktiv lassen. Jeder Satz ist allein verteidigbar. Zusammen, in einer ertrinkenden Kolonie, werden sie Custody. Dieses Packet soll Spieler unruhig machen, weil das Werkzeug real ist: Quarantäne kann nötig sein und trotzdem benutzt werden, um Menschen zu verzögern, bis nur ihr Claim bleibt.
+Quarantänedatensätze gehören zu den am besten verteidigbaren Deep-Reach-Dokumenten. Auf HECTON-8 ist Kontamination keine dekorative Vorschrift. Brinereaktives Wachstum, Druckschäden und Atlas-verknüpfte Biofilme können einen Rettungskorridor in eine zweite Verlustzone verwandeln. Ein echtes Freigabesystem braucht Haltebefehle.
 
-## Scanner
-
-Quarantäne-Halteplatte. Schutzsprache erscheint, nachdem der Ausgang bereits verriegelt ist.
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
-
-## Audio
-
-Quarantäne kann einen Körper retten. Sie kann ihn auch warten lassen, bis er Papier wird.
-
-## Field Note
-
-Marauder-Notiz: Schutz wird nicht durch das Wort Schutz bewiesen. Prüfe die Uhr.
+Die geborgene Platte zeigt einen Halt, der nach dem Schließen der Route genutzt wurde. Arbeiterfreigabe wartet auf Gremiumsbestätigung. Anlagenmasse kommt zuerst in die Bergungswarteschlange. Der Versicherungsping bleibt aktiv. Die Firma musste Gefahr nicht fälschen; sie musste Gefahr auf der Uhr dort platzieren, wo Verzögerung dem Anspruch diente.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/de_DE. -->

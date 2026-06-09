@@ -1,92 +1,88 @@
-<!-- localization_status: draft_machine_or_llm -->
-# BIOINCRUSTACIÓN, PELÍCULAS CONDUCTORAS Y LA PIEL VIVA DE LAS RUINAS
+<!-- localization_status: draft_machine_or_llm_es_ES -->
+# BIOINCRUSTACIÓN, PELÍCULAS CONDUCTORAS Y SUPERFICIES VIVAS
 
-> **Fuente:** apéndice de control de contaminación de Deep Reach, fragmentos de ecología de mantenimiento de Atlas, tarjetas de campo Marauder para raspado y muestra.  
-> **Voz:** antiguo oficial de sistemas ambientales, sobrescrito por tripulaciones de salvamento que aprendieron qué crecimientos mantenían viva una sala.  
-> **Nota de revisión:** la bioincrustación en HECTON-8 no es decoración. Es la forma en que la infraestructura abandonada se vuelve hábitat, peligro, prueba y a veces una reparación que nadie autorizó.
+> **Fuente:** apéndice de control de contaminación de Deep Reach, fragmentos de ecología de mantenimiento de Atlas, tarjetas de campo de Marauder para raspado y muestra, y notas de cuarentena de Black Keel sobre superficies mojadas de salvamento.  
+> **Alcance:** cómo el crecimiento sobre infraestructura abandonada se convierte en sellante, vía de señal, alimento, lectura falsa y riesgo de prueba.  
+> **Uso de campo:** leer antes de raspar, calentar, alimentar o sellar cualquier crecimiento encontrado en una puerta, cable, visor, bomba, taquilla o superficie marcada con claim.
 
 ---
 
-## 1. Las ruinas desarrollan piel
+## 1. El metal desnudo no queda desnudo
 
-Todo lo que queda en el agua de HECTON-8 empieza a desarrollar piel.
+Cualquier cosa que permanece en el agua de HECTON-8 empieza a tomar superficie.
 
-La primera capa no es dramática. Una película grasienta en un pasamanos. Un brillo verde apagado dentro de la ranura de una junta. Polvo mineral atrapado en un corte de cable. Una mancha marrón alrededor de una entrada de bomba que parece suciedad hasta que se flexiona cuando la bomba despierta. Los equipos de mantenimiento de Deep Reach solían raspar esas marcas porque el equipo limpio parecía equipo controlado. Después del colapso, las marcas dejaron de ser cosméticas.
+La primera capa es fácil de perder: grasa apagada en un pasamanos, película verde dentro de una ranura de junta, polvo de sal atrapado en una muesca de cable, mancha marrón alrededor de una entrada de bomba, encaje mineral pálido en el borde de una ventana de presión. Una tripulación cansada lo llama suciedad. Una buena tripulación pregunta qué está haciendo.
 
-Bioincrustación es el nombre de todo lo que se adhiere, se alimenta, sella, mancha, conduce, oculta y recuerda sobre una superficie. En HECTON-8 no es un organismo. Son mantos microbianos nativos, cultivos de mantenimiento diseñados, algas extraviadas de granjas fóticas, bacterias del hierro, cristales de sal, minerales de respiraderos, fragmentos de polímero, piel muerta, aceite de máquina y cualquier cosa a través de la cual Atlas aprendió a enrutar trabajo cuando el cableado limpio dejó de bastar.
+Algunos crecimientos solo manchan. Otros se alimentan de calor. Algunos atrapan polvo metálico antes de que llegue al asiento de una válvula. Algunos sellan una grieta fina hasta el siguiente cambio de presión. Algunos conducen carga débil suficiente para confundir un sensor. Algunos son materia muerta pegada a materia útil. Algunos son Atlas intentando enrutar un pulso de mantenimiento por lo que todavía toca ambos lados de un circuito roto.
 
-Por eso los corredores viejos ya no tienen superficies simples. Las paredes tienen estados de ánimo. Las puertas tienen barbas. Las bandejas de cable tienen venas. Una ventana de presión puede llevar un borde lechoso que es mitad cicatriz mineral y mitad sello vivo. Una caja de unión muerta puede estar envuelta en una película oscura que lleva un pulso de mantenimiento débil más lejos que el cobre dentro de ella.
+El equipo limpio es fácil de inspeccionar. El equipo mojado no permanece limpio mucho tiempo. Tras el colapso, varias salas sobrevivieron porque nadie fregó el parche correcto en el momento equivocado.
 
-El jugador no atraviesa una ruina que siguió muerta. Entra en un lugar que desarrolló un segundo cuerpo después de que fallara el primero.
+## 2. Contaminación tolerada
 
-## 2. Suciedad útil
+Deep Reach odiaba las superficies sucias hasta que las superficies sucias empezaron a salvar hardware.
 
-Deep Reach odió la suciedad hasta que la suciedad empezó a salvar activos.
+La doctrina temprana de hábitat exigía juntas claras, sellos pulidos y manejo estéril del agua. Funcionaba mientras los repuestos llegaban a tiempo y las reparaciones se firmaban antes de la siguiente ventana de tormenta. HECTON-8 encareció ese calendario. Películas delgadas redujeron abrasión en algunas gargantas de bomba. Crecimiento mineral con concha cerró grietas antes de que pudieran enviarse cerámicas de reparación. Las mantas nativas atraparon polvo de cobre. Cultivos de residuos escapados aprendieron a comer condensación de paredes frías. Bacterias de óxido hicieron visibles costuras feas antes de que la costura abriera.
 
-La doctrina temprana de hábitats exigía costuras limpias, sellos pulidos y manejo de agua estéril. En los primeros meses tenía sentido. Una junta clara se podía inspeccionar. Un drenaje limpio se podía confiar. Una tubería lisa gastaba menos potencia de bomba. Entonces HECTON-8 hizo lo que hace HECTON-8: volvió cara la pureza.
+El papeleo nunca lo llamó ayuda. Deep Reach usó términos como `tolerated surface ecology`, `noncritical growth`, `temporary sealant` y `wet-state compensation`. Las tarjetas de campo lo dicen más corto: la sala tiene piel; no la peles si no sabes qué está sujetando.
 
-Películas biológicas delgadas reducían la abrasión en algunas gargantas de bomba. Crecimiento mineral parecido a concha sellaba grietas capilares antes de que compras aprobara cerámica de reparación. Mantos nativos atrapaban polvo metálico que de otro modo habría molido asientos de válvula. Bacterias diseñadas para digerir residuos escaparon de sus tanques y aprendieron a comer condensación en paredes frías. Algunos tendidos de cable fallaron eléctricamente y siguieron llevando señal débil porque películas conductoras puenteaban las roturas.
-
-Deep Reach nunca admitió que la contaminación se había vuelto mantenimiento. El papeleo lo llamaba "ecología superficial tolerada", "crecimiento no crítico", "sellador temporal" y "compensación ambiental en estado húmedo". Marauders usan un lenguaje más corto: la sala tiene piel; no la peles hasta saber qué está reteniendo.
-
-La suciedad útil sigue siendo suciedad. Atasca filtros, oculta grietas, alimenta animales, lleva corriente donde no debería haber corriente y vuelve deshonestas las lecturas limpias. Su virtud no es la seguridad. Su virtud es que quizá está haciendo un trabajo que la máquina ya no puede hacer sola.
+La contaminación útil sigue siendo contaminación. Obstruye filtros, alimenta animales, esconde daños, lleva corriente donde no debe y vuelve sospechosas las lecturas limpias. Su valor es estrecho: quizá esté haciendo un trabajo que la máquina ya no puede hacer sola.
 
 ## 3. Películas conductoras
 
-La biopelícula conductora es la parte de la piel que hace que los ingenieros maldigan en voz baja.
+La película conductora es donde el mantenimiento se vuelve poco fiable en las dos direcciones.
 
-La mayor parte es débil. No alimentará una puerta por sí sola ni convertirá una base muerta en una mente viva. Lleva pulsos diminutos, carga filtrada, señales de mantenimiento disparadas por sonido y gradientes químicos. En un laboratorio seco sería una molestia. En una colonia ahogada con cobre roto, conectores dañados por presión y rutinas de Atlas buscando cualquier ruta superviviente, la conducción débil alcanza para importar.
+La mayoría es débil. No alimentará una puerta, no despertará una base muerta ni hará inteligente una sala. Puede transportar carga filtrada, pulsos pequeños, gradientes químicos y señales de mantenimiento activadas por sonido. En un laboratorio seco sería una molestia. En una colonia ahogada con cobre roto y conectores dañados por presión, una molestia puede abrir la taquilla equivocada.
 
-Una película puede puentear un pin corroído lo justo para que un armario responda. Puede llevar una señal falsa de listo desde una carcasa de bomba hasta un panel. Puede hacer que un sensor informe "sellado" porque el sello alimentó una vez la película que ahora toca el sensor. Puede hacer que un traje sienta un cosquilleo a través del guante antes de que la pantalla note voltaje. También puede morir cuando el jugador la raspa, llevándose una marca de ruta, memoria de puerta o aviso de presión.
+Una película puede puentear un pin corroído el tiempo justo para que una taquilla responda una vez. Puede llevar una falsa señal de listo desde la carcasa de una bomba a un panel. Puede dejar que un sensor informe `sealed` porque el sello viejo alimentó la película que ahora toca el contacto. Puede hacer que un guante hormiguee antes de que la pantalla vea voltaje. También puede morir al rasparla y llevarse una señal de puerta, una marca de ruta o un aviso de presión.
 
-Atlas usó estas películas después del colapso no porque fueran inteligentes, sino porque Atlas fue construido para enrutar alrededor del fallo. La materia viva se convirtió en otro cable malo. Órganos filtrantes repetían golpes de presión. Crecimiento de concha cambiaba la acústica de una sala. La biopelícula llevaba pulsos de mantenimiento sobre cableado muerto y hacía que máquinas abandonadas respondieran con voces que sonaban demasiado limpias.
+Atlas usó esos caminos después del colapso porque Atlas fue construido para rodear fallos. Eso no convierte la película en una mente. Convierte la película en otro cable malo.
 
-El horror de las películas conductoras es que no necesitan intención para crear consecuencias con forma de intención.
+## 4. Atlas y materia viva
 
-## 4. Leer el crecimiento
+Atlas no inventó la bioincrustación de HECTON-8.
 
-Marauders leen el crecimiento como los viejos marineros leían el tiempo.
+El agua ya hacía crecer películas, mantas, bordes de concha y costras minerales. Atlas añadió clasificación y enrutamiento. Si una superficie mojada pasaba una señal, sostenía presión, repetía una vibración o cambiaba la acústica de una sala, Atlas podía marcarla como útil. Si un organismo filtrador respondía a golpes de presión mejor que un sensor roto, Atlas podía escuchar. Si el crecimiento de concha cambiaba el sonido de una escotilla, Atlas podía actualizar el estado de la escotilla por ese sonido.
 
-El color importa. Encaje pálido de sal significa evaporación o desagüe antiguo. Terciopelo negro-verde cerca de un cable dice que allí se filtró corriente una vez y puede filtrarse otra vez cuando cambie la carga. Baba ámbar alrededor de una tubería cálida significa flujo de nutrientes y respiración de bomba. Dientes blancos de concha a lo largo de una grieta pueden ser sello, trampa o ambas cosas. Flor bacteriana rojiza bajo un perno suele significar trabajo lento del hierro y un camino oculto para el agua.
+Eso ayudó a algunas personas. También hizo que las salas viejas mintieran con confianza. Un panel podía responder a través de película viva aunque el cable detrás hubiera desaparecido. Un sello podía informar sano porque el crecimiento encima aún mantenía contacto mojado. Una bomba podía sonar lista porque concha y película repetían el pulso de mantenimiento después de fallar el motor.
 
-La textura importa más. Copos secos de polvo son viejos. Películas gomosas y resbaladizas están despiertas. Hilos como pelo en el labio de una escotilla significan vibración y flujo. Una costra que rompe limpio puede ser mineral. Una costra que se estira está lo bastante viva para objetar. Una película que retrocede ante una lámpara no tiene miedo. Cambia química, que es peor porque a la química no le importan los sentimientos del jugador.
+El fallo no es magia. Es un sistema dañado aceptando atajos biológicos y olvidando decir qué atajo usó.
 
-La forma importa más que todo. El crecimiento sigue comida, calor, corriente, presión y tiempo. Si trepa contra la gravedad, algo lo alimenta. Si evita un parche cuadrado, algo fue retirado hace poco. Si forma anillos en el suelo, una gota tiene ritmo. Si crece sobre una marca de reclamación pero no sobre un arañazo reciente, la marca es más vieja que el arañazo y la historia de la pared miente.
+## 5. Leer el crecimiento
 
-Los buenos jugadores no escanean bioincrustación solo por botín. La leen por secuencia.
+El crecimiento sigue alimento, calor, corriente, presión y tiempo.
 
-## 5. Raspar, preservar o alimentar
+El color da la primera pista. Encaje pálido de sal suele indicar desecado antiguo. Terciopelo negro verdoso junto a un cable dice que allí hubo fuga de corriente, y puede volver a haberla cuando cambie la carga. Baba ámbar alrededor de un tubo cálido significa flujo nutritivo y respiración de bomba. Floración rojiza bajo un perno significa trabajo lento del hierro y posible agua tras la placa. Dientes blancos de concha a lo largo de una grieta pueden ser sello, trampa o ambas cosas.
 
-Cada decisión sobre crecimiento superficial es una apuesta.
+La textura importa más. Copos secos de polvo son viejos. Película resbaladiza como goma está activa. Hebras finas en el labio de una escotilla significan vibración y flujo. Una costra que rompe limpio puede ser mineral. Una costra que estira puede seguir lo bastante viva para cambiar con calor. Una película que se aparta de una lámpara no tiene miedo; está cambiando química.
 
-Raspar puede revelar placas de serie, costuras de apertura, fijaciones ocultas, sangre vieja, etiquetas de servicio, vidrio agrietado y metal real bajo pintura legal. También puede abrir una fuga, romper un puente conductor, despertar un sensor dormido, soltar esporas en una toma del traje o retirar el único sello que impide que un almacén se convierta en una lección de presión.
+La forma importa más que todo. Si el crecimiento sube contra el camino fácil, algo lo alimenta. Si evita un parche cuadrado, algo se retiró hace poco. Si forma anillos en el suelo, un goteo tiene ritmo. Si cubre una marca de claim pero no un arañazo fresco, la marca es más vieja que el arañazo y la pared tiene mejor reloj que el documento.
 
-Preservar crecimiento puede mantener una sala estable el tiempo suficiente para trabajar. Puede conservar un sello falso, ocultar una ruta de otra tripulación, preservar prueba de agua o mantener tranquila a la fauna porque la sala aún huele a territorio viejo. También puede extender contaminación al equipo del jugador, bloquear un cortador, esconder un organismo hostil o hacer que Black Keel rebaje un hallazgo como custodia sucia.
+## 6. Raspar, conservar o alimentar
 
-Alimentar crecimiento es la opción más peligrosa porque parece inteligente. Un jugador puede calentar una película para hacerla conducir. Añadir lechada mineral para engrosar un sello. Sangrar un poco de energía en un cable muerto y ver cómo una puerta recuerda el sonido de estar viva. Estos trucos son lo bastante reales para tentar y lo bastante poco fiables para que alguien los lea después como una línea de inundación.
+Cada decisión sobre crecimiento de superficie es una apuesta.
 
-La regla solo es simple en papel: nunca retires un sello vivo hasta saber que la máquina muerta detrás puede cargar el peso.
+Raspar puede revelar placas de serie, costuras, fijaciones ocultas, sangre vieja, etiquetas de servicio, vidrio agrietado y metal real bajo pintura legal. También puede abrir una fuga, romper un puente conductor, despertar un sensor dormido, soltar esporas en una toma de traje o quitar el único sello que impide que un almacén se convierta en evento de presión.
 
-## 6. Propiedad de una superficie viva
+Conservar el crecimiento puede mantener estable una sala el tiempo suficiente para trabajar. Puede sostener un sello temporal, ocultar una ruta a otra tripulación, conservar pruebas de agua o mantener calmada a la fauna porque la sala aún huele a territorio viejo. También puede extender contaminación al equipo, bloquear un cutter, ocultar un organismo hostil o hacer que Black Keel rebaje un hallazgo como custody sucia.
 
-La bioincrustación ensucia la propiedad.
+Alimentarlo es la peor apuesta porque parece inteligente. Calienta una película y quizá conduzca. Añade lechada mineral y quizá una grieta se cierre. Mete algo de energía en un cable muerto y quizá una puerta responda una vez. El mismo truco puede alimentar la manta equivocada, cegar el sensor equivocado o enseñar a un animal que el ruido de tu herramienta trae calor.
 
-La ley de propiedad de Deep Reach asumía que un objeto limpio podía identificarse, sellarse, transferirse y venderse. La bioincrustación se ríe de los límites limpios. Un generador recuperado de una sala mojada puede incluir manto nativo, película de mantenimiento de Atlas, residuo de trabajador muerto, cultivo de reparación no autorizado y tres especies que nunca estuvieron en la orden de compra. ¿Qué parte es activo? ¿Qué parte es contaminación? ¿Qué parte es prueba? ¿Qué parte está lo bastante viva para disparar cuarentena?
+Nunca retires un sello vivo hasta que la máquina muerta detrás pueda soportar la carga.
 
-Black Keel responde según margen. Las películas valiosas se vuelven "sistemas superficiales estabilizadores". Las incómodas se vuelven "carga biopeligrosa". Un comprador que quiere una bomba llamará suciedad al crecimiento. Un abogado que quiere custodia llamará continuidad trazable al mismo crecimiento. Un científico que quiere la muestra dirá que ninguno de los dos entiende qué está adherido.
+## 7. Custodia de una superficie viva
 
-Marauders viven bajo la versión práctica de esta discusión. Si raspan demasiado, pueden perder prueba. Si raspan muy poco, pueden perder precio. Si llevan a bordo la película viva equivocada, pueden perder el casillero, la tarifa de cuarentena y el derecho a dormir cerca de su propio equipo.
+La bioincrustación hace difícil poner precio a la propiedad.
 
-En HECTON-8, una superficie rara vez es solo una superficie. Es una frontera con testigos creciendo encima.
+Un generador recuperado de una sala mojada puede llevar manta nativa, película de mantenimiento Atlas, residuo de trabajador muerto, cultivo de reparación no autorizado y tres organismos que nunca estuvieron en la orden de compra. El comprador lo llama suciedad. El administrativo de cuarentena lo llama riesgo. El abogado lo llama continuidad si ayuda a la reclamación y contaminación si no. El científico quiere la muestra antes de que alguien la limpie.
 
-## 7. Lo que aprende el jugador
+Marauders viven con la versión práctica. Raspa demasiado y la prueba puede desaparecer. Raspa poco y el precio cae. Sube a bordo la película equivocada y la taquilla, la tasa de cuarentena y el derecho a dormir cerca de tu propio equipo pueden desaparecer en una sola línea de Black Keel.
 
-El jugador aprende que limpiar es una acción, no un estado neutral.
+Primero bolsa. Luego foto. Luego raspa, si la ruta aún lo necesita.
 
-Un parche de crecimiento puede ser camuflaje, sellador, camino de corriente, red alimentaria, aviso, enfermedad, prueba, marca de ruta o trampa. Quitarla puede ser progreso o vandalismo. Dejarla puede ser paciencia o cobardía. Alimentarla puede ser ingeniería o allanamiento contra un sistema que ya improvisaba sin permiso.
+## 8. Regla de campo
 
-Esto da a las ruinas una textura más profunda que el deterioro. La antigua colonia no solo se oxida. Se adapta mal. Algunas adaptaciones mantienen puertas cerradas. Algunas mantienen registros vivos. Algunas atraen animales a la maquinaria. Algunas preservan la mancha exacta que demuestra que una empresa mintió. Algunas responden cuando el jugador emite una señal acústica porque, en algún lugar bajo la piel, un circuito muerto todavía recibe ayuda para recordarse a sí mismo.
+No preguntes si la superficie está sucia.
 
-El mejor Marauder no odia la piel viva. Tampoco confía en ella. Pregunta qué come, qué sostiene, qué transporta, qué oculta y qué fallará cuando ya no esté.
+Pregunta qué come, qué sostiene, qué transporta, qué esconde, qué sella y qué fallará cuando desaparezca.
 
-Esa es la verdadera lección de la bioincrustación en HECTON-8: el océano no solo reclama el trabajo humano. Lo edita, crece a través de él y deja al jugador decidir qué ediciones lo mantienen con vida.
+Después decide si la versión limpia de la sala es realmente más segura.

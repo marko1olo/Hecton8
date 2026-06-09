@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Якірний набір імен працівників A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Якірний набір імен працівників A
 
-UA LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Якірний набір імен працівників A задає ранні повторювані імена колонії для HECTON-8. Ці вісім працівників не дрібниця лору, а ручки пам'яті. Гравець спершу зустрічає їх через предмети й працю, а потім поступово бачить, як ті самі імена перетинають журнали обслуговування, дозволи, звіти про пошкодження та аудіофрагменти. Set A зберігає перші години людськими, не зупиняючи гру заради експозиції.
 
 ## Scanner
 
-UA LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Ранні імена мають повертатися через роботу, а не промови. Мілкий маршрут навчає пам'яті повторенням.
 
 ## Terminal
 
-UA LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: повторення на мілководді та індустріальній полиці. Кожне ім'я має зв'язуватися з одним інструментом, одним маршрутним дозволом, одним пошкодженим робочим предметом і однією пізнішою суперечністю. Ці імена є першим доказом гравця, що колонія була робочим місцем до того, як стала здобиччю.
 
 ## Audio
 
-UA LOC HOLD: Do not mourn the name until the tool tells you why.
+Не оплакуй ім'я, доки інструмент не пояснить чому.
 
 ## Field Note
 
-UA LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Якорі Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/uk_UA. -->

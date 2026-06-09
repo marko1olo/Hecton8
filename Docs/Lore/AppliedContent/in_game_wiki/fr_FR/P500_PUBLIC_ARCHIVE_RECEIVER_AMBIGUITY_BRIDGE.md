@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ambiguite de recepteur dans l'archive publique"
+title: "Conflit de destinataire dans l'archive publique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,33 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Ambiguite de recepteur dans l'archive publique
+# Conflit de destinataire dans l'archive publique
 
-Deux etiquettes de recepteur sur un paquet HECTON-8 ne prouvent pas automatiquement un faux. L'archive publique separe l'adresse d'origine, le premier relais, la quarantaine, le bureau reclamant et l'archive juridique. Ces voies peuvent diverger sans etre innocentes. L'erreur est de croire l'etiquette la plus propre. Deep Reach garde souvent un recepteur public etroit pendant que la garde utile passe ailleurs. Les fragments Atlas peuvent inverser le motif: un recu de relais peut ressembler a une propriete alors qu'il prouve seulement le transit.
+Le destinataire, dans ces paquets, n'est pas une personne. C'est un champ recopié à chaque transfert. Un même paquet d'archive HECTON-8 peut porter une bande d'adresse initiale pour Deep Reach Claims, un tampon de relais Atlas, une retenue de quarantaine de l'annexe peu profonde, un numéro de bureau de réclamation Keelmark et une ligne de dépôt dans l'archive publique. Aucun de ces champs ne prouve seul qui a tenu la preuve, qui l'a modifiée, ni qui a payé pour la rendre visible. Dans le miroir public, le destinataire propre est souvent le bureau autorisé à répondre au courrier, pas l'endroit où le paquet a circulé physiquement.
+
+Lis le conflit de destinataire comme un problème de trajet. Vérifie l'ordre des scellés, l'heure du hash, la ligne d'eau sur la pochette, les marques d'outil sur le plateau et quel bureau avait encore du courant au moment de l'envoi. Si la bande d'adresse nomme un bureau et le reçu de relais un autre, ne parle pas de faux tant que les marques physiques de garde ne rompent pas la séquence. Ne blanchis personne non plus parce que le champ public paraît net. La preuve utile se trouve entre le nom du bureau et les traces laissées par la manipulation.
 
 ## Scanner
 
-AMBIGUITE RECEPTEUR // Bande d'adresse, recu de relais, retenue quarantaine, resume reclamant et ligne d'archive ne nomment pas le meme bureau. Confiance: partielle.
+CONFLIT DE DESTINATAIRE // Visible : bande d'adresse, noeud de relais, retenue de quarantaine, bureau de réclamation, ligne de dépôt d'archive. Requis : ordre des scellés, heure du hash, preuve objet. Confiance : partielle.
 
 ## Terminal
 
-AMBIGUITE DE RECEPTEUR
-Ne fusionnez pas adresse, relais, quarantaine, reclamant et archive en un seul proprietaire.
-Le resume public peut nommer le bureau autorise a repondre. La route de garde peut montrer qui a vraiment tenu le paquet.
-Recepteur final retenu jusqu'a preuve de route.
+CONFLIT DE DESTINATAIRE DANS L'ARCHIVE PUBLIQUE
+Ne fusionnez pas les champs de destinataire.
+Bande d'adresse = destination prévue.
+Reçu de relais = transit.
+Retenue de quarantaine = contrôle.
+Bureau de réclamation = paiement et réponse juridique.
+Ligne de dépôt d'archive = propriétaire de publication.
+Action : garder le destinataire final scellé jusqu'à ce que la séquence physique de garde corresponde au hash du paquet.
 
 ## Audio
 
-Une etiquette propre de recepteur n'est pas toute la route. Suivez le corps du paquet, pas le bureau poli pour le courrier public.
+Cinq bureaux peuvent toucher un paquet. Le nom dans l'index n'est que le bureau qui a répondu le premier.
 
 ## Field Note
 
-Les champs de recepteur sont polis. Les marques de garde sont physiques. Si l'etiquette sourit et que la route saigne, suivez la route.
+Commence par la trace humide, pas par l'en-tête. Les bureaux peuvent renommer un paquet ; ils ne peuvent pas déplacer une ligne de rouille sur le plateau.
 
 <!-- In-Game Wiki; generated from P500_PUBLIC_ARCHIVE_RECEIVER_AMBIGUITY_BRIDGE/fr_FR. -->

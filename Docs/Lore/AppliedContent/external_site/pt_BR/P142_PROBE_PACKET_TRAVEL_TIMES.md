@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Tempos de viagem de pacotes-sonda"
+title: "Tempos de viagem dos pacotes-sonda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tempos de viagem de pacotes-sonda
+# Tempos de viagem dos pacotes-sonda
 
-O tempo dos pacotes de sonda tornou Aegir valioso antes de torná-lo familiar. Uma máquina estreita podia cruzar, medir e relatar enquanto as instituições humanas ainda discutiam orçamento e responsabilidade. Quando a Deep Reach vendia confiança, os pacotes já eram velhos e os modelos de risco já estavam polidos. Esse é o perigo da exploração primeiro por máquinas: o oceano pode ser precificado a partir de uma verdade vencida muito antes de alguém entender o custo de trabalhar ali.
+O tempo de viagem dos pacotes-sonda é uma das forças menos dramáticas e mais danosas do cenário. Os primeiros pacotes Ran-Aegir não eram mentiras. Levavam leituras espectrais reais, estimativas de massa, química do gelo, geometria de relés e esperança de águas rasas. Apenas estavam velhos quando foram tratados como autorização.
+
+Isso torna a falha da colônia mais afiada. HECTON-8 não foi fundada em fantasia pura. Foi fundada em dados que sobreviveram melhor à rota do que ao tempo. Quando leituras novas contradisseram a primeira promessa, a promessa antiga já tinha dívida, contratos, equipamento e planos humanos presos a ela.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/pt_BR. -->

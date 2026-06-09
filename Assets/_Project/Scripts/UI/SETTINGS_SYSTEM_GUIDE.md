@@ -1,86 +1,35 @@
-# Settings System — Implementation Guide
+# Settings System Implementation Guide
 
-## CURRENT STATUS OVERRIDE - 2026-05-13 DOC_AUDIT R5
+Date: 2026-06-09
+Status: CURRENT STATIC SOURCE ROUTE / UNITY PROOF PENDING
+Evidence class: STATIC_SOURCE / STATIC_DOC
 
-This guide is historical and partially stale. Current source reality:
+This guide describes the current settings runtime source route. It is not Unity scene wiring proof, Play Mode proof, profiler proof, GC proof, visual proof, or imported-asset proof.
 
-- `UserOptionsPersistence` owns `Application.persistentDataPath/options.h8cfg` with a fixed `64 KB` payload file wrapper; it is not Easy Save 3 and not PlayerPrefs.
-- Current user quality is a saved 0-3 preference mapped to `HomeostasisBrain` continuous quality weight; Unity quality presets are not runtime authority.
-- URP assets are boot/editor configuration only; runtime scalability flows through continuous Homeostasis/DRS/shader weights.
-- Play Mode, UI field wiring, profiler, GC, and visual settings application remain PENDING VERIFICATION in DOC_AUDIT R5.
+## Source Anchors
 
-## Overview
+- `Assets/_Project/Scripts/UI/SettingsManager.cs`
+- `Assets/_Project/Scripts/UI/SettingsPanel.cs`
+- `Assets/_Project/Scripts/UI/SettingsLivePreview.cs`
+- `Assets/_Project/Scripts/UI/SettingsComparisonView.cs`
+- `Assets/_Project/Scripts/UI/SettingsPanelAnimator.cs`
+- `Assets/_Project/Scripts/UI/SettingsPanelProfiler.cs`
+- `Assets/_Project/Scripts/Input/UserOptionsPersistence.cs`
 
-Unified settings system for HECTON-8. Manages graphics, audio, and video options with persistence via `UserOptionsPersistence` (`options.h8cfg` backend).
+## Owner Boundary
 
-**Owner**: `SettingsManager` (singleton, DontDestroyOnLoad)  
-**UI**: `SettingsPanel` (pause menu, main menu)  
-**Backend**: `UserOptionsPersistence` (`options.h8cfg` persistent-data file backend)
+- `SettingsManager` is the runtime settings owner. It is a `MonoBehaviour` singleton registered through runtime lifecycle, scene-load handling, and `GlobalRegistry` hot-swap callbacks.
+- `UserOptionsPersistence` owns the persistent `options.h8cfg` backend under `Application.persistentDataPath`. Settings must not be documented as PlayerPrefs or Easy Save 3.
+- `SettingsPanel` owns the menu interaction surface. It stages values locally, applies them to `SettingsManager` only through Apply/reset flows, and can cancel pending preview state.
+- `SettingsLivePreview`, `SettingsComparisonView`, `SettingsPanelAnimator`, and `SettingsPanelProfiler` are presentation/support components. They do not own persistent settings truth.
+- `HomeostasisBrain` owns the effective runtime quality pressure after user preference, hardware ceilings, DRS, thermal pressure, and health pressure are combined. `SettingsManager.QualityLevel` is a saved user preference, not final runtime quality truth.
 
----
+## Persistence Route
 
-## Architecture
+`SettingsManager` loads all cached values from `UserOptionsPersistence` during startup, validates/migrates them, applies them, and saves changed properties back to `options.h8cfg`.
 
-### SettingsManager.cs
-- **Singleton**: `SettingsManager.Instance`
-- **Lifecycle**: Awake → LoadAllSettings → ApplyAllSettings
-- **Persistence**: Automatic save on every property change
-- **Zero GC**: Cached fields, dirty flags, no LINQ, no string alloc
+Current persisted keys include:
 
-### SettingsPanel.cs
-- **UI Owner**: Exposes all settings via sliders, toggles, buttons
-- **Zero GC**: Cached delegates, dirty flags for text updates
-- **Lifecycle**: OnEnable → LoadCurrentSettings → RefreshAllUI
-- **Apply/Cancel**: Staged changes, apply on button press
-
----
-
-## Graphics Settings
-
-### Quality Preference
-- **0-3 user index**: Stored for UI/persistence compatibility, mapped through a smooth continuous `0..1` curve.
-- **Runtime authority**: `HomeostasisBrain.SetUserGlobalQualityWeightPreference`; hardware ceilings and DRS still clamp effective output.
-- **Unity presets**: Historical/editor configuration only; runtime settings must not switch Unity preset levels.
-
-### Individual Settings
-- **Field of View**: 60-110° (default 75°)
-- **Shadow Quality**: Off/Low/Medium/High (0-3)
-- **Shadow Distance**: 50-300m (default 200m)
-- **Anti-Aliasing**: None/FXAA/SMAA/TAA (0-3)
-- **Ambient Occlusion**: On/Off (default On)
-- **Bloom**: On/Off (default On)
-- **Motion Blur**: On/Off (default Off)
-- **Texture Quality**: Low/Medium/High/Ultra (0-3, default High)
-
-### Unity API Mapping
-- **QualityLevel**: continuous Homeostasis quality preference, not Unity preset switching
-- **Vsync**: `QualitySettings.vSyncCount` (0=Off, 1=On)
-- **Fullscreen**: `Screen.fullScreen`
-- **Resolution**: `Screen.SetResolution()`
-- **Shadow Distance**: `QualitySettings.shadowDistance`
-- **Texture Quality**: `QualitySettings.globalTextureMipmapLimit` (3=Low, 0=Ultra)
-
----
-
-## Audio Settings
-
-### Volume Controls
-- **Master Volume**: 0-100% (default 80%)
-- **Music Volume**: 0-100% (default 80%)
-- **SFX Volume**: 0-100% (default 80%)
-- **Ambient Volume**: 0-100% (default 80%)
-
-### AudioMixer Integration
-- **Mixer**: `Assets/_Project/MasterMixer.mixer`
-- **Groups**: Master, Music, SFX, Ambient
-- **Exposed Parameters**: MasterVolume, MusicVolume, SfxVolume, AmbientVolume
-- **Conversion**: Linear (0-1) → dB (-80 to 0)
-
----
-
-## Persistence
-
-### Keys
 - `Hecton_QualityLevel`
 - `Hecton_MasterVolume`
 - `Hecton_MusicVolume`
@@ -100,161 +49,50 @@ Unified settings system for HECTON-8. Manages graphics, audio, and video options
 - `Hecton_TextureQuality`
 - `Hecton_GraphicsPreset`
 
-### Backend
-- **UserOptionsPersistence**: `options.h8cfg` file owner under `Application.persistentDataPath`
-- **Save Timing**: Immediate on every property change
-- **Load Timing**: Awake (SettingsManager)
+The manager also persists menu/accessibility/VR preference keys. Do not remove those paths from docs or UI without checking `SettingsManager.cs` and `SettingsPanel.cs`.
 
----
+## Graphics Route
 
-## UI Integration
+- Quality preference is stored as a continuous user index in the `0..6` range and mapped through `HomeostasisBrain.SetUserGlobalQualityWeightPreference`.
+- Graphics preset remains a `0..3` UI grouping for Low/Medium/High/Ultra-style user intent. It is separate from final `HomeostasisBrain.GlobalQualityWeight`.
+- Unity quality presets are not the runtime authority. Do not document runtime scalability as `QualitySettings.SetQualityLevel`.
+- VSync writes `QualitySettings.vSyncCount`.
+- Resolution writes `Screen.SetResolution(width, height, fullscreen)`.
+- Shadow distance writes `QualitySettings.shadowDistance`.
+- Texture quality writes `QualitySettings.globalTextureMipmapLimit`.
+- FOV is applied to a resolved camera. The manager tries serialized camera, player-owned camera, local camera, children, and parents, and keeps a pending FOV apply flag when camera resolution is not ready.
+- Bloom and Motion Blur are applied through a resolved URP `VolumeProfile`.
+- Ambient Occlusion is currently persisted and previewed in UI paths, but Unity 6000 URP SSAO is a renderer feature, not a `VolumeComponent`; this guide must not claim AO is visually applied through `VolumeProfile.TryGet`.
 
-### SettingsPanel Inspector Fields
+## Audio Route
 
-#### Graphics
-- `btnPresetLow`, `btnPresetMedium`, `btnPresetHigh`, `btnPresetUltra` (quality presets)
-- `btnQualityDecrease`, `btnQualityIncrease`, `txtQualityLevel` (quality level)
-- `toggleVsync`, `toggleFullscreen` (video)
-- `sliderFieldOfView`, `txtFieldOfView` (FOV)
-- `btnShadowQualityDecrease`, `btnShadowQualityIncrease`, `txtShadowQuality` (shadows)
-- `sliderShadowDistance`, `txtShadowDistance` (shadow distance)
-- `btnAntiAliasingDecrease`, `btnAntiAliasingIncrease`, `txtAntiAliasing` (AA)
-- `toggleAmbientOcclusion`, `toggleBloom`, `toggleMotionBlur` (post-processing)
-- `btnTextureQualityDecrease`, `btnTextureQualityIncrease`, `txtTextureQuality` (textures)
+- Master/Music/SFX/Ambient volumes are persisted as `0..1` floats.
+- Runtime application uses `AudioMixer.SetFloat` parameter names `MasterVolume`, `MusicVolume`, `SfxVolume`, and `AmbientVolume`.
+- Linear volume is converted to dB with the normal `20 * log10(value)` mapping and a silence floor.
+- Missing mixer binding is a degraded state; it is not proof that audio settings work.
 
-#### Audio
-- `sliderMasterVolume`, `txtMasterVolume`
-- `sliderMusicVolume`, `txtMusicVolume`
-- `sliderSfxVolume`, `txtSfxVolume`
-- `sliderAmbientVolume`, `txtAmbientVolume`
+## UI Route
 
-#### Actions
-- `btnResetDefaults` (reset all to defaults)
-- `btnApply` (apply staged changes)
-- `btnCancel` (revert staged changes)
+- `SettingsPanel` captures values from `SettingsManager` on enable and refreshes TMP/slider/toggle state without applying every edit immediately.
+- Apply writes cached panel values to `SettingsManager`, runs live preview apply, applies graphics preset intent, then calls `ApplyAllSettings`.
+- Cancel rolls back live preview, restores menu visual snapshot state, and refreshes from the last committed values.
+- Reset clears the persisted settings keys through `SettingsManager.ResetToDefaults`, writes defaults, applies them, and refreshes UI.
+- `SettingsPanel` uses cached UnityAction delegates, dirty text buffers, localized label hashes, and `SetValueWithoutNotify` / `SetIsOnWithoutNotify` patterns to avoid listener feedback loops.
 
----
+## Lifecycle And Failure Contract
 
-## Usage Examples
+- `SubsystemRegistration` must reset the runtime singleton so domain reload does not leave a stale `SettingsManager`.
+- Scene load must retry camera/volume/mixer binding and apply pending FOV/post-processing/audio state where possible.
+- `GlobalRegistryServiceSlot.UserOptions` replacement must rebind persistence and flush pending settings without losing the latest cached values.
+- Missing persistence, missing mixer, missing camera, missing volume, invalid stored values, invalid resolution dimensions, and failed `TrySave` are degraded states that must be visible in logs or proof artifacts.
+- No active doc may claim compile/import/scene wiring/visual application/profiler success from this static guide alone.
 
-### Apply Quality Preset
-```csharp
-SettingsManager.Instance.ApplyQualityPreset(2); // High
-```
+## Current Known Gaps
 
-### Change Individual Setting
-```csharp
-SettingsManager.Instance.FieldOfView = 90f;
-SettingsManager.Instance.ShadowDistance = 150f;
-SettingsManager.Instance.Bloom = false;
-```
+- AO visual application still needs a renderer-feature owner path and Unity-side proof.
+- UI field wiring, Play Mode apply/cancel behavior, visual settings effect, profiler/GC, and player persistence roundtrip remain `PENDING VERIFICATION` until fresh Unity artifacts exist.
+- `SettingsPanelProfiler` can capture local apply metrics, but those logs are not a substitute for full runtime profiler/GCMonitor proof.
 
-### Reset to Defaults
-```csharp
-SettingsManager.Instance.ResetToDefaults();
-```
+## Garbage-Collection Rule
 
-### Check Current Settings
-```csharp
-float fov = SettingsManager.Instance.FieldOfView;
-bool bloom = SettingsManager.Instance.Bloom;
-int shadowQuality = SettingsManager.Instance.ShadowQuality;
-```
-
----
-
-## Performance Notes
-
-### Zero GC Compliance
-- ✅ No LINQ
-- ✅ No string concat/interpolation in hot paths
-- ✅ Cached delegates
-- ✅ Dirty flags for text updates
-- ✅ Pre-allocated arrays for quality names
-- ✅ No GetComponent in hot paths
-
-### Cold Allocations
-- `MaterialPropertyBlock` (N/A — no MPB in settings)
-- `AudioMixer` reference (serialized, no alloc)
-- Quality name arrays (static readonly, one-time)
-
----
-
-## Testing Checklist
-
-### Functional
-- [ ] Quality presets apply all settings correctly
-- [ ] Individual settings persist across scene loads
-- [ ] Audio mixer volumes update in real-time
-- [ ] FOV changes apply to main camera
-- [ ] Shadow distance/quality changes visible in-game
-- [ ] Texture quality changes visible (check mipmap limit)
-- [ ] Reset to defaults restores all settings
-
-### Performance
-- [ ] No GC alloc in SettingsPanel.OnEnable
-- [ ] No GC alloc in SettingsPanel.RefreshAllUI
-- [ ] No GC alloc in SettingsManager property setters
-- [ ] No frame drops when changing settings
-
-### Edge Cases
-- [ ] SettingsManager.Instance null-check in OnDisable
-- [ ] UserOptionsPersistence null-check in Load/Save
-- [ ] Invalid preset index (0-3) clamped
-- [ ] Missing UI elements (null-check all SerializeField)
-
----
-
-## Future Work
-
-### URP Volume Integration
-- **AO/Bloom/Motion Blur**: Currently stored but not applied to URP Volume
-- **Implementation**: Add `UnityEngine.Rendering.Universal` reference, find active Volume, toggle overrides
-- **File**: `SettingsManager.ApplyPostProcessing()`
-
-### Camera FOV Application
-- **Current**: FOV stored but not applied to camera
-- **Implementation**: Find main camera, set `Camera.fieldOfView`
-- **File**: `SettingsManager.FieldOfView` setter
-
-### Resolution Dropdown
-- **Current**: Resolution stored but no UI dropdown
-- **Implementation**: Populate dropdown with `Screen.resolutions`, filter by refresh rate
-- **File**: `SettingsPanel.PopulateResolutionDropdown()`
-
----
-
-## Status
-
-**PENDING VERIFICATION**
-
-DOC_AUDIT R5 correction: the historical status bullets below are not fresh verification. No compile, Unity Console, Play Mode, profiler, GCMonitor, or visual settings capture was run in R5; scene/UI wiring and in-game setting effects still require Unity-side proof.
-
-- Code compiles ✅
-- Zero GC compliance ✅
-- Unity scene integration ✅ (SettingsManager in 01_MAIN_MENU, 02_HECTON_WORLD)
-- UI wiring ⚠️ (Inspector fields need manual assignment)
-- In-game testing ❌ (requires user verification)
-- URP Volume integration ❌ (future work)
-- Camera FOV application ❌ (future work)
-
-**Next Steps**:
-1. Assign UI elements in SettingsPanel Inspector (01_MAIN_MENU, 02_HECTON_WORLD)
-2. Test quality presets in Play Mode
-3. Verify settings persistence across scene loads
-4. Implement URP Volume integration for AO/Bloom/Motion Blur
-5. Implement Camera FOV application
-6. Add resolution dropdown UI
-# CURRENT STATUS OVERRIDE
-
-This guide contains stale claims. Use the corrections below as normative until the body text is re-authored.
-
-Previously source-checked before R5; not runtime proof:
-- `FieldOfView` is applied to `mainCamera`
-- Bloom and Motion Blur are applied through a scene `Volume` owner referenced by `[SettingsManager]`
-- `01_MAIN_MENU` scene wiring exists in-scene; manual Inspector assignment is not the primary path anymore
-- `SettingsComparisonView` compares persisted graphics presets, not raw `QualityLevel`
-
-Still not verified / not fully implemented:
-- `AmbientOcclusion` does not currently drive a runtime renderer-feature owner; the UI flag persists, but visual application is still pending
-- Unity 6000 exposes `ScreenSpaceAmbientOcclusion` as a `ScriptableRendererFeature`, so `VolumeProfile.TryGet(...)` is not the correct owner path for AO in the current stack
+Do not move this file or the settings UI support files to `Docs/DEPRECATED` while `SettingsManager`, `SettingsPanel`, and their `.meta` files remain active Unity assets. If a settings guide becomes stale again, replace its body with source-route facts or move it together with its `.meta` only after checking references and scene/prefab GUID usage.

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "벤트 포지 현장 공정 안내서"
+title: "벤트 포지 현장 공정 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 벤트 포지 현장 공정 안내서
+# 벤트 포지 현장 공정 가이드
 
-벤트 포지 현장 공정 안내서는 자원 가치를 현장 취급과 묶는다. 중요한 것은 무엇을 찾았는지만이 아니라 pressure와 cooling이 그것을 recovery까지 버티게 하는 방식이다.
+벤트 포지는 해저의 보물상자가 아니다. 뜨거운 seep 흐름, 염수 밀도, 으깨진 광물 공급, 서두름을 용서하지 않는 압력으로 이루어진 느린 반응로다. 유용한 물질은 자연 퇴적물과 망가진 산업 배치 사이에 놓이는 경우가 많다. 광물 목에서 자란 세라믹 입자, 균열에 구워진 실란트 전구체, 올바른 순서로 냉각될 때만 안정한 전하 막이다.
 
-## Scanner
-
-vent-forge chemistry 활성. 품질은 표본의 광택이 아니라 pressure history, heat pulse, slow cooling을 따른다.
-
-## Terminal
-
-FIELD GUIDE: vent forges는 sulfides, noble-gas pockets, ceramics, sealant precursors를 익힌다. 표본이 heat, brine, pressure를 지난 경로가 이름보다 중요하다.
-
-## Audio
-
-vent는 광석을 만든 것이 아니다. 네가 중단한 공정을 만들었다.
-
-## Field Note
-
-새 lot를 곧장 찬물로 올리지 마라. vent가 anneal을 끝내게 둬라. 그러지 않으면 shell이 잔금 간다.
+그래서 현장 취급이 자원의 일부가 된다. 신선한 로트를 찬물로 끌어올리면 껍질이 갈라진다. 열을 너무 빨리 빼면 깨끗한 샘플이 가루가 된다. 너무 오래 기다리면 벤트가 원하는 층 위에 다른 화학을 써 버린다. Salvage 팀이 벤트 포지를 중시하는 이유는 HECTON-8이 행성 자체에 의해 계속 가공되는 곳처럼 느껴지기 때문이다. 바다는 재료를 숨기기만 하지 않는다. 아직 만들고 있다.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ko_KR. -->

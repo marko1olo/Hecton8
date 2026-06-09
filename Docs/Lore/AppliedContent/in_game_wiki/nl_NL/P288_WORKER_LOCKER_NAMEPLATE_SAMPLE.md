@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Worker Locker Nameplate Sample"
+title: "Voorbeeld van arbeiderslocker-naamplaat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Worker Locker Nameplate Sample
+# Voorbeeld van arbeiderslocker-naamplaat
 
-NL LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Voorbeeld van arbeiderslocker-naamplaat laat zien hoe HECTON-8 mensen herinnert via objecten die nog werk hadden. Ren Okoye wordt niet door biografie geïntroduceerd. De lockerplaat geeft route, gereedschapscertificering, maaltijdbon, handschoenmaatmarkering en een loonstrook die is weggeschuurd door iemand die niet wist welke details ertoe deden. Daarom werkt het artefact. Het bewijst dat bedrijfswissing onhandig kan zijn: de payline verdwijnt, maar de clamp route blijft; status wordt overschreven, maar de handschoenmaat past nog bij een echte hand. De speler moet de naam eerst door arbeid lezen en daarna het geweld van de ontbrekende accountregel voelen.
 
 ## Scanner
 
-NL LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye's plaat behoudt de naam omdat de loonregel makkelijker te wissen was dan het werk.
 
 ## Terminal
 
-NL LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-NL LOC HOLD: Name retained. Payline erased.
+Naam behouden. Loonregel gewist. Werk nog verbonden.
 
 ## Field Note
 
-NL LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / maaltijdbon onder tape geklemd. Payroll stripe weggeschuurd; handschoenmaatmarkering nog zichtbaar.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/nl_NL. -->

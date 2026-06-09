@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fauna_traces |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS171_FIRST_FAUNA_TRACE_ARTICLES.md |
 | Speaker | Field scanner, biological trace note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first fauna trace reading |
@@ -39,7 +39,7 @@ LOOSE SCALE // Shear line clean. Record silt film before pocketing sample.
 
 The scale did not flake away slowly. The shear line is clean enough to show recent force, while the silt film shows how long the trace sat after separation. It is evidence of contact, not a creature sighting.
 
-A trace can be useful before it has a name.
+The film and cut edge matter before any species guess.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD SILT FILM
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| ar_SA | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| de_DE | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| es_ES | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| fr_FR | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| he_IL | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| id_ID | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| ja_JP | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| ko_KR | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| nl_NL | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| pl_PL | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| pt_BR | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| ru_RU | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| uk_UA | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
-| zh_CN | draft_machine_or_llm | LOOSE SCALE // Shear line clean. Record silt film before pocketing sample. |
+| ar_SA | draft_machine_or_llm | حرشفة مفكوكة // خط القص نظيف. سجل طبقة الطمي قبل وضع العينة في الجيب. |
+| de_DE | draft_machine_or_llm | LOSE SCHUPPE // Scherlinie sauber. Siltfilm vor dem Einstecken der Probe erfassen. |
+| es_ES | draft_machine_or_llm | ESCAMA SUELTA // Linea de cizalla limpia. Registra la pelicula de limo antes de guardar la muestra. |
+| fr_FR | draft_machine_or_llm | ECAILLE LIBRE // Ligne de cisaillement nette. Relever le film de limon avant de ranger l'echantillon. |
+| he_IL | draft_machine_or_llm | קשקש רופף // קו הגזירה נקי. רשום את שכבת הטין לפני הכנסת הדגימה לכיס. |
+| id_ID | draft_machine_or_llm | SISIK LEPAS // Garis geser bersih. Catat lapisan lumpur sebelum sampel disimpan. |
+| ja_JP | draft_machine_or_llm | 剥離鱗 // せん断線は清潔。試料をしまう前にシルト膜を記録。 |
+| ko_KR | draft_machine_or_llm | 떨어진 비늘 // 전단선이 깨끗하다. 표본을 넣기 전에 실트막을 기록한다. |
+| nl_NL | draft_machine_or_llm | LOSSE SCHUB // Schuiflijn schoon. Leg de slibfilm vast voordat je het monster opbergt. |
+| pl_PL | draft_machine_or_llm | LUZNA LUSKA // Czysta linia sciecia. Przed schowaniem probki zapisz film pylowy. |
+| pt_BR | draft_machine_or_llm | ESCAMA SOLTA // Linha de cisalhamento limpa. Registre a pelicula de silte antes de guardar a amostra. |
+| ru_RU | draft_machine_or_llm | ОТДЕЛЬНАЯ ЧЕШУЯ // Линия среза чистая. Запиши пленку ила до уборки образца. |
+| uk_UA | draft_machine_or_llm | ОКРЕМА ЛУСКА // Лінія зрізу чиста. Запиши плівку мулу до прибирання зразка. |
+| zh_CN | draft_machine_or_llm | 脱落鳞片 // 剪切线干净。收起样本前先记录粉泥膜。 |

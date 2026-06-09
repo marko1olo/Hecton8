@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Public Index Spoiler Cap"
+title: "Public Index Redaction Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,23 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Index Spoiler Cap
+# Public Index Redaction Rule
 
 ## What the record proves
 
-The public index exists to make the archive usable without burning the route. A title may name an evidence family: custody route, proof class, redaction state, claimant language, scanner gate. That is enough for a player to know what kind of proof they are chasing and why another packet matters.
+A public index row is an access-control record, not a summary. It may show the docket family, custody lane, proof type, redaction flag, scanner gate, and the next object needed to open the packet. That is enough to route a search without exposing the receiver.
 
-The index must not reveal who receives the payload, where the final route lands, what condition the payload is in, what Atlas does with it, which ending branch it pressures, or what legal result follows. Those meanings belong to the earned proof path. If a title gives away the receiver line, the index stops being an archive and becomes a spoiler machine. The correct public promise is simple: this shelf exists, the last page is masked.
+The masked fields matter more than the title. Receiver chain, final coordinates, payload condition, Atlas response, ending pressure, and legal result stay behind the redaction seal until the route earns them. If the index prints a receiver address too early, it does not inform the case; it leaks the route to anyone watching the mirror.
 
 ## How to read it
 
-PUBLIC INDEX CAP STAMP
-Show: category title, custody route, proof class, redaction state, scanner gate, next proof target.
-Hold: receiver chain, final coordinates, payload condition, Atlas consequence, ending branch, legal result.
-Rule: show the shelf, mask the last page. A public index may tell the player what kind of evidence exists, not what the evidence will do at the end of the route.
+PUBLIC INDEX REDACTION STAMP
+Show: title, docket family, custody lane, proof type, redaction flag, scanner gate, next proof object.
+Mask: receiver chain, final coordinates, payload state, Atlas response, ending pressure, legal result.
+Failure: receiver address visible before custody threshold.
+Action: keep route fields sealed until the required packet hash and object proof match.
 
 ## Field note
 
-Category titles travel farther than bodies. Read the shelf, but do not pretend the shelf is the last page. If the last page is free, someone already sold the route.
+Use the index to choose the next proof object. Do not treat a visible category as custody, verdict, or destination.
 
 <!-- External Site; generated from P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE/en_US. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Dossierkennis, geen macht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Dossierkennis, geen macht
 
-NL LOC HOLD: Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.
+Als het dossier macht meedraagt, gaat HECTON-8 niet meer over druk. De zee wordt huiswerk dat al is opgelost. De juiste persistentie is vreemder en harder: de speler herkent een leugen eerder, weet welke contractclausule moet steken, ziet waarom een schone uitbetaling niet schoon is, en daalt toch met een kwetsbaar lichaam af in een verse seed. Wijsheid mag overleven. Veiligheid niet.
 
 ## Scanner
 
-NL LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Geen geërfde zuurstof, rompwaarde, wapens, inventaris, routeautoriteit of magische shortcut. Het dossier bewaart waarschuwingen, geen spieren.
 
 ## Terminal
 
-NL LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+HARDE GRENS: persistente dossierdata mag waarschuwingen, geruchtenfamilies, claimvarianten en eindcontext openen. Het mag geen uitrustingsmacht, hulpbroninventaris, eigendom van wereldwaarheid of routetoestemming bewaren.
 
 ## Audio
 
-NL LOC HOLD: Memory does not reinforce a cracked hull.
+Geheugen versterkt geen gebarsten romp.
 
 ## Field Note
 
-NL LOC HOLD: The player can become wiser. The ocean should not become smaller.
+De speler mag wijzer worden. De oceaan mag niet kleiner worden.
 
 <!-- In-Game Wiki; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/nl_NL. -->

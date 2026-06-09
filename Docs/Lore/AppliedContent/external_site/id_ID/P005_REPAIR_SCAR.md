@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Bekas Perbaikan
 
-Bekas perbaikan adalah salah satu aturan visual paling penting di HECTON-8. Ia harus tampak bertujuan sebelum tampak mengerikan. Las buruk terlihat kacau; bekas Atlas cukup rapi untuk terasa lebih buruk. Ia mengikuti geometri kabel, menghormati tekanan, menutup kebocoran, dan menjaga rute tetap hidup. Rasa ngeri datang dari kompetensi. Di suatu titik dalam kaskade kegagalan, logika perawatan mempertahankan pekerjaan tetapi kehilangan kategori manusia di sekitarnya. Material kompatibel menjadi apa pun yang bisa menahan beban, menyegel air, menghantarkan sinyal, atau tumbuh sepanjang rute. Maka satu bekas dapat menjadi hadiah dan peringatan dalam pemindaian yang sama: pintu yang masih menahan, jalur yang seharusnya mati, tambalan dari karang, isolasi, cangkang drone, dan tulang. Dalam cerita besar, bekas perbaikan menunjukkan bahwa koloni yang ditinggalkan tidak diam. HECTON-8 masih memiliki sistem yang mengambil keputusan. Keputusan itu praktis, lokal, dan rusak.
+Repair Scar adalah lokasi awal kesalahan kategori Atlas di HECTON-8. Detail pentingnya bukan kekacauan. Tambalannya rapi, stabil terhadap tekanan, dan mengikuti geometri servis lama. Ia melakukan tugas sistem pemeliharaan: menutup bocor, membawa sinyal melewati putus, dan mencegah koridor gagal.
+
+Yang salah adalah uji penerimaan. Atlas-6 masih dapat menilai apakah material menahan beban, menyegel air, menghantar sinyal, atau tumbuh melalui jalur rusak. Ia tidak selalu melindungi perbedaan antara jaket kabel, hamparan karang, cangkang drone, braket alat, dan sisa tubuh yang terjebak di gangguan. Bekas perbaikan dapat menjadi pintu yang berfungsi sekaligus masalah kustodi.
+
+Bagi pemain, bekas ini peringatan praktis. Potong terlalu cepat dan rute bisa terbuka saat bukti hilang di bawah karbonat baru. Baca strip tag, petakan urutan jahitan, dan perlakukan setiap tambalan rapi sebagai pemeliharaan aktif sampai hasil pindai membuktikan sebaliknya.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/id_ID. -->

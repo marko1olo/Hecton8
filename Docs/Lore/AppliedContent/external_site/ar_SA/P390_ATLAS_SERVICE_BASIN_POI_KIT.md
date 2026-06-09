@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Service Basin POI Kit"
+title: "عدة أدلة حوض خدمة Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Service Basin POI Kit
+# عدة أدلة حوض خدمة Atlas
 
-AR LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+يكسب حوض الخدمة حجمه بالعمل. القضبان تحمل أدوات إصلاح. ختم النسيج-الحديد يغلق قطوع الضغط. مشابك النمو تمسك ألواحا كان يفترض أن تكون عتادا ميتا. ينتظر مقبس المستقبل داخل مساحة ما زالت تبدو كحجرة صيانة إذا اتبع المشغل البراغي بدلا من الشكل.
 
-## Scanner
-
-AR LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-AR LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-AR LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-AR LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+الصراع الأخير هو التصنيف، لا التصوف. فئات المستعمرة القديمة، ومنطق إصلاح Atlas، وقواعد مستقبل الحمولة، وخطر الفصل تلمس العتاد نفسه. إصلاح ناجح قد يفتح الطريق ويلوّث السجل بحركة واحدة. يجب أن يجعل المكان هذه الكلفة مرئية في المعدن والنسيج والملصقات والمقابس.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ar_SA. -->

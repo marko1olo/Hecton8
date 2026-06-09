@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evidence First Charter Contract Seed"
+title: "Evidence-First Charter Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Evidence First Charter Contract Seed
+# Evidence-First Charter Contract Seed
 
-Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Evidence-First Charter is a contract family that pays less for loose salvage and reserves more route capacity for proof. Accident packets, hatch-state strips, pinger logs and notary cassettes move ahead of heavy parts when the route begins to fail.
 
 ## Scanner
 
-Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Contract seed: evidence-first charter. Lower material payout, larger notary capacity and harsher proof-preservation conflicts.
 
 ## Terminal
 
-SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: material payout reduced, notary cassette capacity raised, proof locker priority active, salvage-strip penalty active, Deep Reach receiver pushback likely.
 
 ## Audio
 
-Truth has a lower listed value until someone tries to bury it.
+The cleanest record pays late and gets people angry early.
 
 ## Field Note
 
-Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Marauder note: a proof locker does not forgive debt. It just keeps the debt from choosing what evidence dies first.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/en_US. -->

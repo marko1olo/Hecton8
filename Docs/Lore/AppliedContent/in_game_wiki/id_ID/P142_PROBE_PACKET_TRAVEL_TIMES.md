@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Waktu Perjalanan Paket Probe"
+title: "Waktu Tempuh Paket Probe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Waktu Perjalanan Paket Probe
+# Waktu Tempuh Paket Probe
 
-Waktu perjalanan probe adalah alasan Deep Reach bisa menilai HECTON-8 sebelum bisa melindungi orang di sana. Catatan pertama sempit, tua saat tiba, dan sudah finansial. Paket bisa membuat klaim tampak matang sementara rencana manusia di baliknya masih dugaan.
+Paket probe membuat Aegir tampak bisa diatur sebelum pekerja mana pun berdiri di bawah airnya. Peta seed, petunjuk mineral, pita bahaya, dan izin rute datang berlapis, masing-masing dicap dengan kebenaran peluncuran yang sudah menua. HECTON-8 mewarisi hantu-hantu itu. Bagan yang tampak mutakhir bisa saja argumen sepuluh tahun dengan format lebih rapi.
 
 ## Scanner
 
-Saksi pertama Aegir adalah paket, bukan kolonis.
+Header paket pulih: tanggal kedatangan lebih tua daripada peta koloni yang diperbaruinya.
 
 ## Terminal
 
-RANTAI SURVEI: probe berbantu sinar dan wahana paket menyeberang lebih dulu, mengembalikan kebenaran basi, menetapkan matematika pengereman, dan membiarkan korporasi menjual rute sebelum rute itu manusiawi.
+CATATAN PAKET PROBE: bundel survei Ran-Aegir bergerak lewat pembakaran bertahap, tidur, tangkapan relai, dan kesabaran murah. Paket bisa akurat saat diluncurkan, usang saat dibuka, dan tetap cukup mahal untuk menjadi kebijakan.
 
 ## Audio
 
-Probe melihat samudra sebelum siapa pun punya kubur di sana.
+Peta itu benar ketika berangkat. Itu masalahnya.
 
 ## Field Note
 
-Probe bisa menghabiskan satu karier manusia menyeberangi rute sebelum siapa pun mempertaruhkan tubuh.
+Probe tidak membawa masa kini. Ia membawa fosil dengan telemetri.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/id_ID. -->

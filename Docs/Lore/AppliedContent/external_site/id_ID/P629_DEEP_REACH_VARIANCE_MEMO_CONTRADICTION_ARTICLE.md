@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Public Archive Evidence Primer
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Kontradiksi memo variance Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Kontradiksi memo variance Deep Reach
 
-Clean office language can expose a lie when timestamps and pump marks disagree.
+Memo Deep Reach pertama tidak perlu mengaku. Ia hanya perlu terlalu bersih di tempat yang salah. Variance adalah kata kantor di ruangan yang menunjukkan pompa berjalan melewati batas, clamp dipasang setelah alarm, work order dibiarkan terbuka, dan cap margin diterima sebelum air datang.
 
-## Scanner
-
-Memo says variance; room marks disagree.
-
-## Terminal
-
-Deep Reach memo language treats dangerous margin as managed variance.
-
-## Audio
-
-Trust the room before the clean word.
-
-## Field Note
-
-Trust the wet room first.
+Itulah kontradiksi yang bisa dipakai pemain lebih awal. Itu tidak menyelesaikan bencana. Itu mengajarkan urutan bukti. Memo bersih adalah suara sumber, bukan kebenaran. Katup macet, stempel waktu, dan tanda pekerja bisa lebih berat daripada kop surat yang benar.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/id_ID. -->

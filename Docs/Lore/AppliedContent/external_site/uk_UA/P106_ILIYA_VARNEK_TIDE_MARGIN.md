@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Ілія Варнек: припливний допуск"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Ілія Варнек: припливний допуск
 
-UA LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+«Ілія Варнек: припливний допуск» — один із перших ясних текстів HECTON-8 про те, як працює відповідальність Deep Reach. Він оминає легку версію корпоративного зла. Варнеку не треба натискати кнопку потопу. Він підписує тлумачення ризику.
 
-## Scanner
+У 2147 році модель Великого припливу ще проходила за середнім значенням. Небезпечне слово — «середнім». Середня поведінка тримала виробничий графік живим, поки екстремальний стек лишався всередині робочої експозиції: припливні вікна Aegir, віддача льодового шельфу, трафік маршрутів тиску й невизначеність компенсації Atlas. Маршрут може бути статистично прийнятним і смертельним для тих, хто зустріне хвіст кривої.
 
-UA LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-UA LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-UA LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-UA LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Для гравця цей доказ перетворює катастрофу з випадку на ланцюг рішень. Мемо Варнека — не зізнання. Це документ, який робить провину читабельною: невизначеність знали, знецінили й передали вниз. Жах бюрократичний, але не сухий. Допуск зробили настільки малим, що робітники могли померти всередині нього.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/uk_UA. -->

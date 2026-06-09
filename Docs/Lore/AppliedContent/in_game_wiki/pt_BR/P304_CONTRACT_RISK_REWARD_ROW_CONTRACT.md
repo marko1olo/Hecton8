@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Contract Risk Reward Boundary"
+title: "Limite de Risco e Recompensa do Contrato"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Contract Risk Reward Boundary
+# Limite de Risco e Recompensa do Contrato
 
-PT LOC HOLD: Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+O limite converte pressão de replay em registros de contrato da tabela. A rota muda porque dívida, tempestade, custódia e cláusulas de responsabilidade mudaram, não porque o mundo esqueceu o que aconteceu.
 
 ## Scanner
 
-PT LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+A linha de contrato liga gravame, janela de tempestade, ordem de custódia, teto de pagamento e peso de cláusula.
 
 ## Terminal
 
-PT LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: linhas exigem severidade de gravame, teto de pagamento, janela de tempestade, custódia de amostra, ordem de provas e peso de cláusula Deep Reach. O contrato é o primeiro predador.
 
 ## Audio
 
-PT LOC HOLD: The contract is the first predator.
+O contrato é o primeiro predador.
 
 ## Field Note
 
-PT LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Mudanças de recompensa pertencem à linha de contrato, não a texto de lore improvisado.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pt_BR. -->

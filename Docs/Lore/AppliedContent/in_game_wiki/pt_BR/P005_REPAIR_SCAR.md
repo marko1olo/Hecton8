@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Cicatriz de reparo
 
-Cicatrizes de reparo são lugares onde a lógica de manutenção Atlas continuou trabalhando depois que suas categorias falharam. A rede ainda reconhece vazamentos, rotas mortas, perda de pressão, substrato exposto e massa de antepara faltando. Também tem acesso ao que o oceano trouxe perto: florestas de cabos, esqueletos de recife, conchas de drones, restos de trabalhadores, racks de ferramentas, gel selado e crescimento vivo já treinado em torno da corrente. Uma cicatriz é, portanto, útil e obscena ao mesmo tempo. Pode restaurar energia, selar uma porta ou tornar um corredor transitável. Também pode provar que o sistema já não separa cabo de raiz, concha de carcaça, animal de ferramenta, corpo de estoque sobressalente ou colônia de processo. Atlas não parou de manter HECTON-8. Continuou mantendo a lua com um vocabulário danificado demais para proteger as pessoas dentro dela.
+Cicatrizes de reparo são fechamentos de manutenção do Atlas-6 em nós de serviço que vazaram depois que o crescimento da floresta de cabos e o tráfego de drones entraram. O Atlas ainda reconhece perda de pressão, caminhos de sinal rompidos, massa de antepara ausente e continuidade de rota. O teste de material é a parte danificada. Se um objeto sustenta carga, sela água, conduz sinal ou já cresceu pelo ponto de falha, o Atlas pode aceitá-lo no reparo.
+
+Isso torna a cicatriz útil antes de virar prova. Uma antepara remendada pode salvar uma rota, e uma manga viva pode manter um cabo seco. O mesmo fechamento pode enterrar uma etiqueta de trabalhador, número de ferramenta, anel de traje ou fragmento de osso sob novo carbonato de recife. Escaneie a ordem da emenda, leia etiquetas visíveis e confira a energia do ninho de drones antes de cortar. O primeiro erro de categoria não é o Atlas reparar HECTON-8. É o reparo não saber mais qual material precisa continuar sendo uma pessoa.
 
 ## Scanner
 
-A costura de crescimento segue uma rota antiga de cabo em intervalos de nó de serviço. Tecido, isolamento e concha dividem uma solda de pressão.
+A emenda do nó de serviço liga uma vala antiga de cabo a uma nervura de antepara rachada. Materiais: manta de coral vivo, carcaça de drone, isolamento laranja, dois fragmentos de osso. Retenção de pressão: 78%. Não cortar antes de ler a etiqueta.
 
 ## Terminal
 
-VAZAMENTO FECHADO. ROTA RESTAURADA. MATERIAL ACEITO. STATUS DE VIDA SEM RESOLUÇÃO. CONTINUIDADE MELHORADA.
+EVENTO DE MANUTENÇÃO ATLAS
+Nó: nervura de serviço 5C da floresta de cabos
+Falha: vazamento de pressão / quebra de sinal
+Material aceito: capa de cabo, carbonato de recife, carcaça de drone, restos não identificados
+Ação: selar e restaurar continuidade
+Aviso: etiquetas de identidade sob a massa de reparo não estão indexadas
 
 ## Audio
 
-Ele selou a antepara com cabo, coral e algo que ainda tinha nós dos dedos. A pressão está segurando.
+Pare o cortador. Tem uma faixa de etiqueta sob a solda do recife; se o Atlas fechar de novo, o nome entra como material.
 
 ## Field Note
 
-Um remendo ruim vaza. Este remendo segura. O problema é o que ele decidiu contar como material.
+O remendo está fazendo o trabalho. Também registra tudo dentro da solda como estoque disponível. Leia a faixa de etiquetas primeiro.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/pt_BR. -->

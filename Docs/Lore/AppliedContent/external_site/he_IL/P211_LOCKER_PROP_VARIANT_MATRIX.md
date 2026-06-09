@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "מטריצת וריאנטים של חפצי לוקר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# מטריצת וריאנטים של חפצי לוקר
 
-HE LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+מטריצת וריאנטים של חפצי לוקר מגדירה איך HECTON-8 הופכת אחסון אישי לראיה קריאה. לוקרים אינם מזבלות ביוגרפיה. הם אובייקטים דחוסים בעולם שמחברים עובד, עבודה, גישת נתיב, נזק והתערבות מאוחרת. כך השחקן קורא את חיי המושבה דרך דברים שעדיין שייכים לחדר.
 
 ## Scanner
 
-HE LOC HOLD: A locker should show work, route access and what got erased.
+לוקר צריך להראות עבודה, גישת נתיב ומה שמישהו ניסה למחוק. מזכרות מותרות רק אחרי שהעבודה קריאה.
 
 ## Terminal
 
-HE LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: כל לוקר כתוב צריך שלושה רמזים קריאים: עבודה, נתיב ונזק. זיכרון דקורטיבי הוא משני. לוקר יכול להכיל אסימון משפחתי או בדיחה פרטית, אבל רק אחרי שכלי, עקבת הרשאה או צלקת מחיקה מספרים לשחקן איך האדם הזה נגע במושבה.
 
 ## Audio
 
-HE LOC HOLD: The locker is not a shrine. It is a failed work order.
+הלוקר אינו מקדש. הוא פקודת עבודה שנכשלה.
 
 ## Field Note
 
-HE LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+וריאנטים: שחיקת כלי, תג הרשאת נתיב, סרט לחץ, מדבקת משמרת, צלקת מחיקת שכר, סימון שימור של Marauder.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/he_IL. -->

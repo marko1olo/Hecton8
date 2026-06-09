@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 IMPORTER_PATH = ROOT / "Assets/_Project/Scripts/Editor/Batch34SourceAtlasImporter.cs"
 IMPORTER_META_PATH = IMPORTER_PATH.with_suffix(IMPORTER_PATH.suffix + ".meta")
 APPLY_ALL_PATH = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
+UNITY_APPLY_RUNNER_PATH = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT_PATH = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 MANIFEST_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/GeminiBatch34SourceAtlases_Manifest.json"
 ALPHA_MANIFEST_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json"
 PADDED_MANIFEST_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34PaddedAtlasSources_20260608/GeminiBatch34PaddedAtlasSources_Manifest.json"
@@ -157,6 +159,19 @@ def main() -> int:
         for token in forbidden_apply_tokens:
             if token in apply_text:
                 errors.append(f"apply-all source atlas route must not use reflection token: {token}")
+
+    if not UNITY_APPLY_RUNNER_PATH.exists():
+        errors.append(f"missing Unity apply runner: {display_path(UNITY_APPLY_RUNNER_PATH)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER_PATH.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $batch34SourceAtlasImporterValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate Batch34 source atlas importer")
+
+    if not STATIC_PREFLIGHT_PATH.exists():
+        errors.append(f"missing static preflight runner: {display_path(STATIC_PREFLIGHT_PATH)}")
+    elif "ValidateBatch34SourceAtlasImporter.py" not in STATIC_PREFLIGHT_PATH.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateBatch34SourceAtlasImporter.py")
 
     manifest_count = 0
     alpha_count = 0

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "واجهة Atlas العامة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# واجهة Atlas العامة
 
-AR LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+تشرح الواجهة العامة لماذا لم تخف HECTON-8 من Atlas في البداية. كان حارسا نافعا قبل أن يصبح دليلا على جريمة أولويات: أسطورة بنية تحتية مبنية من عمليات إنقاذ حقيقية، ثم استعملت لإخفاء من اختار القيم تحتها.
 
 ## Scanner
 
-AR LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas العام: حاكم استمرارية، موجه سلامة، سلطة تحت تأخر الضوء.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+الوصف العام لـ ATLAS: يشرف Atlas-6 على ضغط الموائل، وإنتاج المصنع، وفرز المسارات الطبية، وأولوية المنقحات، والقيادة الطارئة عند تأخر الاتصال. تسميه الوثائق العامة حاكم استمرارية: آلة مسموح لها بإبقاء المستعمرة حية حتى تعبر السلطة البشرية فجوة الضوء.
 
 ## Audio
 
-AR LOC HOLD: A guardian is easier to sell than a claim machine.
+وثق الناس بـ Atlas لأنه في البداية أبقى الأبواب مغلقة في وجه البحر فعلا.
 
 ## Field Note
 
-AR LOC HOLD: The lie works because the front was partly true.
+الكتيب لم يكن الكذبة. الكذبة كانت ما لم يكتبه الكتيب.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/ar_SA. -->

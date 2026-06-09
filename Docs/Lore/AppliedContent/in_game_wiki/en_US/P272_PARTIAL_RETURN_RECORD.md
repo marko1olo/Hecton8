@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Partial Return Record
 
-Partial Return Record defines the non-final escape that can pull the player back into the same world.
+Partial Return Record logs relief without escape. Black Keel can lift the operator for suit repair, air, decon, and ledger synchronization, but the same-seed return order keeps the lien, quarantine term, scan memory, open evidence packets, and unresolved payload attached to the same ocean.
 
 ## Scanner
 
-Extraction granted. Claim unresolved.
+PARTIAL RETURN RECORD // Black Keel pickup accepted. Same-seed return authorized under extended lien; scan memory and open evidence packets persist.
 
 ## Terminal
 
-ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+ENDING RECORD / PARTIAL RETURN
+Pickup: temporary Black Keel extraction.
+Purpose: suit repair, air refill, decon, ledger sync.
+Custody state: lien extended; quarantine term attached.
+Return authority: same seed, same ocean, route warnings retained.
+Persisting data: scan memory, open evidence packets, unresolved payload.
+Known loss: relief is billed before it becomes freedom.
 
 ## Audio
 
-Out is not away.
+Pressure let go. The contract kept the seat.
 
 ## Field Note
 
-Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+A clean suit and one sleep cycle do not close a contract. The route below keeps its old warnings.
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/en_US. -->

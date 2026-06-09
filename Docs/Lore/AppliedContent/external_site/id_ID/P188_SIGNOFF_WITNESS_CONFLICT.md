@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Konflik Tanda Tangan dan Saksi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Konflik Tanda Tangan dan Saksi
 
-ID LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Konflik Tanda Tangan dan Saksi mendefinisikan kontradiksi di balik laporan publik Deep Reach. Perusahaan dapat mengklaim laut membuat penyelamatan mustahil; ia tidak dapat dengan aman mengklaim bahwa tidak ada yang melihat konflik sebelum otoritas pelepasan ditahan. Artikel ini mengubah bukti ruangan menjadi tekanan naratif: log pintu, hash saksi, dan jam rute yang rusak membuat tanda tangan resmi terbaca bukan sebagai ketidakpastian, melainkan penghilangan yang dikendalikan. Bencana tetap fisik, tetapi cerita penutupnya terbukti manusiawi.
 
 ## Scanner
 
-ID LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Tanda tangan menyatakan tinjauan evakuasi tidak memiliki kontradiksi hidup. Hash saksi mengatakan kontradiksi itu ada di ruangan.
 
 ## Terminal
 
-ID LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: tanda tangan publik menandai kegagalan pasang sebagai satu-satunya penyebab. Hash saksi lokal menempatkan penasihat evakuasi, Atlas Safety, dan operasi rute di ruang tinjauan sebelum penahanan pelepasan. Bandingkan log pintu, stempel nama, dan jam rute yang rusak.
 
 ## Audio
 
-ID LOC HOLD: The signatures line up. The bodies do not.
+Laporan bilang tidak ada yang bisa tahu. Log pintu tidak setuju.
 
 ## Field Note
 
-ID LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Tanda tangan bersih hanya sampai ruangan mengingat siapa yang berdiri di sebelahnya.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/id_ID. -->

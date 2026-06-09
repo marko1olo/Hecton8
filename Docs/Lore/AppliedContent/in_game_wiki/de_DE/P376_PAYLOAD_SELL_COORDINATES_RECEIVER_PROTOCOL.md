@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Payload-Protokoll Koordinatenverkauf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Payload-Protokoll Koordinatenverkauf
 
-DE LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+Das Koordinatenverkaufsprotokoll behandelt HECTON-8 als bergbares Eigentum. Es wandelt die letzte Payload in ein Empfängerpaket für Deep Reach um: Beckenvektor, Konfidenzraster, Beweisdigest und Salvage-Zugangsklasse. Der Sender erhält Geld und Schuldenerleichterung. Deep Reach erhält die Anflugkarte und einen saubereren Weg zurück in den Anspruch.
 
 ## Scanner
 
-DE LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Koordinatenverkaufsroute scharf. Beckenvektor, Vertrauenskarte und Beweisdigest gehen an Deep Reach Recovery Compliance.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+PAYLOAD-EMPFÄNGER // KOORDINATENVERKAUF. Empfänger: Deep Reach Recovery Compliance. Übertrage Beckenvektor, Konfidenzraster, XO-Beweisdigest, Salvage-Zugangsklasse. Rückgabe: Auszahlungsbeleg, Pfandreduktion, Wiederherstellungspriorität. Zugangskarte bei Belegsperre übertragen.
 
 ## Audio
 
-DE LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Auszahlung frei. Karte übertragen. Arbeiterbuch bleibt offen.
 
 ## Field Note
 
-DE LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Plünderernotiz: Wenn die erste Zeile der Betrag ist, lies die zweite. Die zweite lautet access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/de_DE. -->

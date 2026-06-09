@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Photic Shelf Survival Act"
+title: "Portão da plataforma fótica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Photic Shelf Survival Act
+# Portão da plataforma fótica
 
-PT LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+A plataforma dá à rota seu vocabulário de trabalho: bomba, vedação, corte, ping, remendo, recarga. Cada ação é pequena e física. Uma porta abre porque uma braçadeira segura, não porque a colônia quer ser explorada.
 
-## Scanner
-
-PT LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-PT LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-PT LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-PT LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+O resíduo Atlas entra aqui como pista de manutenção, não como resposta final. Um painel reparado, um filme condutivo ou um remendo de serviço mal roteado podem ajudar o operador a sobreviver e provar ao mesmo tempo que o sistema já tocou a rota. A claridade torna o trabalho legível; a dívida o torna urgente.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/pt_BR. -->

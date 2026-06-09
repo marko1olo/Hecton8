@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Tuntutan Koordinat Kepatuhan Pemulihan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Recovery Compliance Coordinate Demand
+# Tuntutan Koordinat Kepatuhan Pemulihan
 
-ID LOC HOLD: Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.
+Tuntutan ini mengubah tekanan Deep Reach masa kini menjadi mekanik: pemain memegang koordinat, bukti penguasaan, dan pengetahuan lokal yang dibutuhkan perusahaan. Pesan itu menawarkan pemulihan, tetapi tiap kalimat menagihnya dengan kendali atas HECTON-8.
 
 ## Scanner
 
-ID LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paket terautentikasi sebagai Deep Reach Recovery Compliance: bahasa penyelamatan membungkus tuntutan koordinat, bukti penguasaan, dan status kontaminasi.
 
 ## Terminal
 
-ID LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+PEMBERITAHUAN RECOVERY COMPLIANCE DR-RC-8: kirim vektor akses Atlas, bukti penguasaan Xenon-Omega, status kontaminasi biologis, dan koordinat cekungan saat ini. Evakuasi medis tetap tertunda sampai rantai aset, hak gadai salvage, dan hak kendali lokasi direkonsiliasi. Siaran tanpa izin dapat menurunkan prioritas penyintas menjadi penahanan bukti.
 
 ## Audio
 
-ID LOC HOLD: They can say rescue without meaning rescue.
+Mereka menemukan cara membuat penyelamatan terdengar seperti surat perintah.
 
 ## Field Note
 
-ID LOC HOLD: Use near payload authority decisions and receiver selection.
+Tempatkan di titik ketika pemain bisa memilih apa yang dikirim. Ancaman harus terasa prosedural, bukan teatrikal: bukan pidato penjahat, hanya antrean yang bisa mengubur tubuh.
 
 <!-- In-Game Wiki; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/id_ID. -->

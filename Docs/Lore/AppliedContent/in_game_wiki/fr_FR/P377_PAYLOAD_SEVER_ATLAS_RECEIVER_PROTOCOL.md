@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protocole de section Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protocole de section Atlas payload
 
-FR LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Le protocole de section est une route récepteur destructrice, pas une libération propre. Il peut arrêter une logique de réparation endommagée et refuser à Deep Reach un vecteur de récupération. Il peut aussi détruire l'écologie machine, effacer une mémoire de route utile et créer une piste de preuves lisible comme confinement, sabotage, vol ou pitié selon la loi du récepteur.
 
 ## Scanner
 
-FR LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Route de section armée. Le payload porte les clés de coupe pour continuité Atlas, isolement de mémoire de route et conservation de hash de preuve.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+RÉCEPTEUR PAYLOAD // SECTION ATLAS. Cible: épine de continuité Atlas. Couper boucle de réparation, isoler mémoire de route, préserver hash de preuve, refuser vecteur de récupération corporate. Cascade écologique non résolue. Classification légale contestée.
 
 ## Audio
 
-FR LOC HOLD: If this is mercy, it still leaves a body.
+Atlas peut être coupé. La coupe laisse quand même des marques de garde.
 
 ## Field Note
 
-FR LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Note de pillard: une coupe nette reste une coupe. Photographie les marques de garde avant de tirer.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/fr_FR. -->

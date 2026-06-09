@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Registre d'eau de cantine
 
-Le registre d'eau de cantine est l'un des artefacts humains les plus simples de HECTON-8: une ardoise de salle de repas qui note eau potable, retours de jetons, acces aux pompes et exceptions medicales. Il n'explique pas la catastrophe. Il montre la colonie juste avant que la catastrophe devienne une histoire.
+Le registre d'eau de cantine est une ardoise gonflée de salle de repas, issue d'une colonie qui mesurait l'eau potable avec le même sérieux que la garde des outils. Six jetons manquants, deux dérogations médicales et une correction de salle des pompes suffisent à rendre la pièce vivante: pas héroïque, pas nette, encore en dispute sur des gobelets pendant que le système de pression commençait déjà à céder.
 
-Sa valeur est dans la texture et la preuve. Six jetons manquants semblent mineurs jusqu'a ce que le joueur comprenne ce que signifiait l'eau dans une colonie sous pression. L'eau potable passait par filtres, comptabilite de quart, dérogations médicales et traçabilité de la pompe. Un gobelet absent pouvait etre un travailleur fatigue. Il pouvait aussi etre une equipe malade, une ligne contaminee, un ordre de ration contourne, ou un superviseur cachant une panne locale aux rapports Deep Reach.
+Sur HECTON-8, l'eau n'était jamais seulement de l'eau. Elle passait par les filtres, les chefs de quart, les exceptions médicales, les clés de pompe et la confiance de la cantine. Un jeton manquant pouvait être oubli, vol, maladie, contamination, ou superviseur gardant une panne locale hors des papiers Deep Reach pour un quart de plus.
 
-Le but n'est pas le melodrame. Le registre rend la colonie lisible comme travail: les gens revenaient de quart, se disputaient, corrigeaient les fiches, empruntaient des outils, protegeaient les leurs et tentaient de garder la piece normale pendant que l'ocean entrait deja dans le systeme. Dans HECTON-8, cette trace ordinaire peut devenir preuve.
+N'efface pas la marge au crayon gras. C'est là que la pièce devient humaine. Elle montre des travailleurs protégeant des amis, cachant des symptômes, disputant l'ordre des rations et essayant d'empêcher un seul filtre tourné de devenir panique générale avant le prochain ton de descente.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/fr_FR. -->

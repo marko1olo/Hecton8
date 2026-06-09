@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Variantmatrix voor lockerprops"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Variantmatrix voor lockerprops
 
-NL LOC HOLD: Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.
+De Variantmatrix voor lockerprops houdt arbeidersbewijs fysiek. Een goede locker vertelt de speler wat de arbeider deed, waar die heen mocht en wat de kolonie of latere salvagers probeerden te verwijderen. Gereedschapsslijtage wijst naar crewfamilie. Een routetag wijst naar deuren, liften, pakken of crawlerbaaien. Druktape en dienststickers tonen gewoon onderhoud onder abnormaal risico. Loonwisnarben en Marauder-bewaarmarkeringen tonen het tweede leven van bewijs nadat Deep Reach probeerde een persoon in een kostenregel te veranderen. Het resultaat moet intiem voelen zonder decoratieve rommel te worden.
 
 ## Scanner
 
-NL LOC HOLD: A locker should show work, route access and what got erased.
+Een locker moet werk, routetoegang en wat iemand probeerde te wissen tonen. Aandenken mogen pas nadat het werk leesbaar is.
 
 ## Terminal
 
-NL LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: elke geschreven locker heeft drie leesbare aanwijzingen nodig: werk, route en schade. Decoratieve herinnering is secundair. Een locker mag een familieteken of privégrap bevatten, maar pas nadat gereedschap, vergunningenspoor of wisnarbe vertelt hoe deze persoon de kolonie raakte.
 
 ## Audio
 
-NL LOC HOLD: The locker is not a shrine. It is a failed work order.
+De locker is geen schrijn. Het is een mislukte werkorder.
 
 ## Field Note
 
-NL LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Varianten: gereedschapsslijtage, routevergunningstag, druktape, dienststicker, loonwisnarbe, Marauder-bewaarmarkering.
 
 <!-- In-Game Wiki; generated from P211_LOCKER_PROP_VARIANT_MATRIX/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "بطاقات عمل العمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# بطاقات عمل العمال
 
-AR LOC HOLD: Worker Job Cards turn names into evidence objects.
+بطاقات عمل العمال تحول الأسماء إلى أجسام دليل: خيوط قابلة للعب تجعل المستعمرة بشرية من دون إيقاف حلقة البقاء.
 
 ## Scanner
 
-AR LOC HOLD: A job card is a face the budget could read.
+JOB CARD // اسم، دور، آخر مهمة، إذن مسار، شهادة أداة. وجه يستطيع الميزان قراءته.
 
 ## Terminal
 
-AR LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+قاعدة دليل: يجب أن يرتبط كل اسم مستعاد بشيء تم عمله: مسار مضخة، ledger مطبخ، نداء طبي، عهدة cutter، فحص ضغط، دفعة تصنيع. المهمة تحول الاسم إلى دليل.
 
 ## Audio
 
-AR LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+اسم بلا مهمة يصبح مزارا. المهمة تجعله دليلا.
 
 ## Field Note
 
-AR LOC HOLD: Make names useful before making them tragic.
+اجعل الأسماء مفيدة قبل أن تجعلها مأساوية.
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/ar_SA. -->

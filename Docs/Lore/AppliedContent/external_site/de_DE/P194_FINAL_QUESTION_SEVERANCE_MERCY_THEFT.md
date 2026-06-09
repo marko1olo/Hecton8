@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Finale Frage: Trennung, Gnade, Diebstahl"
+title: "Letzte Frage: Trennung, Gnade, Diebstahl"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Finale Frage: Trennung, Gnade, Diebstahl
+# Letzte Frage: Trennung, Gnade, Diebstahl
 
-Trennung soll taktil und beängstigend wirken, nicht abstrakt. Der Spieler drückt keinen roten Knopf mit Gut oder Böse. Er schneidet Kontinuität durch Drucktüren, lebenden Leiterfilm, alte Arbeiterakten, Tierwege und Payloadpfade. Jedes Beweispaket vor dem letzten Raum verändert die Bedeutung des Schnitts.
+Trennung sollte sich wie Arbeit mit einem Werkzeug anfühlen, nicht wie ein moralischer Knopf. Der Schnitt kreuzt Drucktüren, lebenden Leiterfilm, Arbeiterdatenpuffer, markierte Faunarouten, Vent-Mikroknoten, Shell-Sealant-Pulse und Nutzlastpfade. Jedes Beweispaket im finalen Raum verändert, wer die Tat danach benennen kann.
 
-Ist Atlas vor allem Kerkermeister, ist Trennung Gnade. Ist er das Einzige, was das Becken hält, ist sie Sabotage. Ist Atlas ein entstehender Ozean-Maschinen-Organismus, ist sie Töten. Ist Atlas Deep-Reach-Eigentum, ist sie Diebstahl. Das richtige Design wählt keine Deutung für den Spieler. Es macht begreiflich, warum kein Zeuge im Raum die Tat ehrlich vereinfachen kann.
+Wenn Atlas als Kerkermeister handelt, kann Trennung eingeschlossene Datensätze aus der Logik lösen, die sie immer wieder begrub. Wenn Atlas das Becken zusammenhält, kann derselbe Schnitt Reparaturrouten zu toter Hardware machen. Wenn die Reparaturschicht zu einer Form lokalen Lebens geworden ist, verletzt Trennung mehr als eine Maschine. Wenn Deep Reach noch auf der Kontinuitätsschiene fahren kann, verweigert der Schnitt den Rückweg. Das Ende funktioniert, wenn der Datensatz zuerst den physischen Schaden zeigt und Empfängerrecht später um das Etikett kämpfen lässt.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/de_DE. -->

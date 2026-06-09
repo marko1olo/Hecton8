@@ -1,0 +1,28 @@
+{
+  "schema": "H8.APPLIED_LORE_RELEASE_SET_MANIFEST.V0",
+  "release_set_id": "RS285_TONNE_WINDOW_BODY_LEDGER",
+  "status": "source_candidate_pending_unity_placement_and_native_localization",
+  "evidence_class": "STATIC_SOURCE",
+  "packet_sources": [
+    "Docs/Lore/AppliedContent/packets/RS285_TONNE_WINDOW_BODY_LEDGER.packets.json"
+  ],
+  "production_sources": [
+    "Docs/Lore/AppliedContent/production_packets/P6803_TONNE_WINDOW_BODY_LEDGER.production.md"
+  ],
+  "packets": [
+    "P6803_TONNE_WINDOW_BODY_LEDGER"
+  ],
+  "route_cards": [
+    "Docs/Lore/AppliedContent/route_cards/RS285_TONNE_WINDOW_BODY_LEDGER_route_cards.csv"
+  ],
+  "binding_maps": [
+    "Docs/Lore/AppliedContent/binding_maps/RS285_TONNE_WINDOW_BODY_LEDGER_runtime_binding_map.csv"
+  ],
+  "evidence_graph": "Docs/Lore/AppliedContent/graphs/RS285_TONNE_WINDOW_BODY_LEDGER_evidence_graph.csv",
+  "canonical_importer_ready": true,
+  "runtime_reads_json": false,
+  "runtime_reads_markdown": false,
+  "native_localization_ready": false,
+  "unity_placement_ready": false,
+  "notes": "Tonne-window body ledger longform plus runtime-bound short surfaces. Runtime consumes baked DataMonolith rows and hash constants only; non-English localization remains draft_machine_or_llm until native review."
+}

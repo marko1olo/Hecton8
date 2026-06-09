@@ -40,7 +40,7 @@ namespace Hecton8.Gameplay
         ISubmarineState
     {
         private static int s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         [StructLayout(LayoutKind.Explicit, Size = 80)]
         private struct PidJobOutput
         {
@@ -480,6 +480,7 @@ namespace Hecton8.Gameplay
         private IPhysicsService _physicsService;
         private IDataVault _dataVault;
         private IAnalyticalFlowReadModel _analyticalFlowReadModel;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private Rigidbody _hull;
         private Transform _cachedTransform;
         private SubmarineStateSnapshot _snapshot;
@@ -781,6 +782,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 CompleteBallastSolverJob(forceComplete: true, applyForces: false);
@@ -804,6 +811,7 @@ namespace Hecton8.Gameplay
             _powerGrid = GlobalRegistry.PowerGrid;
             CacheAudioService(GlobalRegistry.Audio);
             _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             RefreshDynamicFloodServicesFromRegistry();
             RefreshOwnerPhaseSnapshotsCold();
             EnsureNativeState();
@@ -933,6 +941,7 @@ namespace Hecton8.Gameplay
             _powerGrid = null;
             ClearCachedAudioService();
             _analyticalFlowReadModel = null;
+            _oceanKinematicsService = null;
             ResetDynamicFloodState(clearSignalFrame: true);
             ClearPendingDynamicFloodFeedback();
             RestoreDynamicFloodAngularDrag();
@@ -1994,9 +2003,39 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static float ResolveFallbackExternalDepthMeters(Vector3 worldCenter)
+        private float ResolveFallbackExternalDepthMeters(Vector3 worldCenter)
         {
-            return math.isfinite(worldCenter.y) ? math.max(0f, DefaultSeaLevelY - worldCenter.y) : 0f;
+            float seaLevelY = ResolveFallbackSeaLevelY();
+            return math.isfinite(worldCenter.y) ? math.max(0f, seaLevelY - worldCenter.y) : 0f;
+        }
+
+        private float ResolveFallbackSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveBallastSeaLevelY(oceanKinematics.SeaLevel, out float oceanSeaLevelY))
+            {
+                return oceanSeaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveBallastSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private void PatchBallastTelemetryComputeMicros(in SubmarineBallastForcePacketDTO packet)

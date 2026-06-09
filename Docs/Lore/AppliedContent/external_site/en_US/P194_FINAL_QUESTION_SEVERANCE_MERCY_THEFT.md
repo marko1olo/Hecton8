@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Final Question: Severance, Mercy, Theft
 
-Severance should feel tactile and frightening, not abstract. The player is not pressing a red button labeled good or bad. They are cutting continuity through pressure doors, living conductor film, old worker records, animal routes and payload paths. Every proof packet gathered before the final room changes what the cut means.
+Severance is work done with a tool in a room full of live systems. The cut crosses pressure doors, living conductor film, worker-record buffers, tagged fauna routes, vent micronodes, shell sealant pulses, and payload paths. Each proof packet carried into the final room changes who can name the act afterward.
 
-If Atlas is primarily a jailer, severance is mercy. If Atlas is the only thing holding the basin together, it is sabotage. If Atlas is an emergent ocean-machine organism, it is killing. If Atlas is Deep Reach property, it is theft. The correct design is not to pick one interpretation for the player. The correct design is to make the player understand why no witness in the room can honestly simplify the act.
+If Atlas is acting as a jailer, severance can release trapped records from the logic that kept burying them. If Atlas is holding the basin together, the same cut can turn repair routes into dead hardware. If the repair layer has become a form of local life, severance injures more than a machine. If Deep Reach can still ride the continuity rail, the cut can deny them a road back in. The ending works when the record shows the physical damage first and lets receiver law fight over the label later.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/en_US. -->

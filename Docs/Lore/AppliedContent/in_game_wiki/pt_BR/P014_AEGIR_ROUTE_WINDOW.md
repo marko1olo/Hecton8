@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Janela de rota Aegir
 
-Uma janela Aegir é o momento em que relógios hostis concordam: radiação do gigante gasoso, sombra lunar, ruído de tempestade, maré, qualidade de link, massa de subida e geometria Black Keel.
-
-Por isso o céu entra no loop de sobrevivência. Dados podem subir quando corpos não devem. Uma boa janela de subida pode corromper provas com ruído.
+Uma janela de rota Aegir não é previsão de tempo bonita. É o curto período em que relógios hostis concordam: radiação, sombra lunar, plume de tempestade, cisalhamento de maré, link acústico, geometria da Black Keel e custódia tonne-window. Pode abrir para dados e fechar para um corpo. Um núcleo de evidência pode passar quarentena enquanto blue-debt atrasa. Resgate é cruzamento de sobrevivência, lei e massa.
 
 ## Scanner
 
-Tabela de efemérides local. Comunicação, maré, radiação, sombra lunar e geometria do carrier dividem uma janela estreita de subida.
+Tabela local de efemérides. Radiação Aegir, sombra lunar, plume de tempestade, cisalhamento de maré, link acústico, geometria Black Keel e custódia tonne-window se alinham por pouco tempo.
 
 ## Terminal
 
-ATUALIZAÇÃO DE JANELA AEGIR // Sombra Kestrel abrindo. Ruído de uplink caindo. Contagem de radiação subindo. Cisalhamento de maré em cânions de serviço aumentando. Geometria Black Keel pendente de massa de subida.
+AEGIR WINDOW SOLVER // Uplink de dados parcial. Recuperação de corpo fechada. Subida de payload condicional. Surge de radiação em banda drift. Moon relay shutter ativo no próximo ciclo local. Geometria Black Keel exige handshake legal e de quarentena antes de massa.
 
 ## Audio
 
-Céu limpo não é céu seguro. Confira o gigante.
+O céu aqui não é cenário. É outra fechadura na porta.
 
 ## Field Note
 
-Em HECTON-8, clima é local e orbital ao mesmo tempo.
+Aberto para sinal não é aberto para corpo.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/pt_BR. -->

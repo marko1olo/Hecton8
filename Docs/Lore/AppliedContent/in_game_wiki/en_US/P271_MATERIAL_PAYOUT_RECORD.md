@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Material Payout Record
 
-Material Payout Record defines the bitter successful salvage ending.
+Material Payout Record is the paid ending receipt. Keelmark/Recovery Compliance accepts basin coordinates, a blue-debt sample, and a carrier custody hash, then reduces or clears the operator lien. The same receipt leaves witness material, worker names, and rescue-mass accounting outside notarized custody, giving Deep Reach a cleaner route back to HECTON-8 than the buried crew received.
 
 ## Scanner
 
-Paid. Not cleared.
+MATERIAL PAYOUT RECORD // Keelmark/Recovery Compliance accepted basin coordinates and blue-debt sample. Operator lien reduced; worker evidence stayed outside notarized custody.
 
 ## Terminal
 
-ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+ENDING RECORD / MATERIAL PAYOUT
+Receiver: Keelmark/Recovery Compliance.
+Accepted: atlas-basin coordinates, blue-debt sample, carrier custody hash.
+Not attached: notarized witness packet, worker name ledger, rescue-mass audit.
+Lien effect: reduced or cleared by contract table.
+Deep Reach effect: cleaner return path to HECTON-8.
+Known loss: evidence can be priced without being heard.
 
 ## Audio
 
-The receipt is clean because it ignores the room.
+The ledger paid for the grave map. It did not open the room.
 
 ## Field Note
 
-Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+The receipt clears the lien column, not the room. Names missing from custody remain missing after payout.
 
 <!-- In-Game Wiki; generated from P271_MATERIAL_PAYOUT_RECORD/en_US. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "طبقة تصحيح Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# طبقة تصحيح Marauder
 
-AR LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+طبقة تصحيح Marauder تربط إجراء Deep Reach بقدرة اللاعب: تعليقات قصيرة تحول اللغة الرسمية إلى حقيقة نجاة.
 
 ## Scanner
 
-AR LOC HOLD: Marauders turn corporate language back into survival facts.
+طبقة تصحيح // وسم الشركة: temporary atmospheric variance. ملاحظة Marauder: CO2 يأكل الحكم أولا.
 
 ## Terminal
 
-AR LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+قاعدة تعليق: ترجم لغة Deep Reach مرة أخرى إلى حقائق نجاة. أبق الملاحظات قصيرة، عملية، غاضبة، ونافعة تحت الضغط.
 
 ## Audio
 
-AR LOC HOLD: A good note does not sound clever. It keeps someone alive.
+الملاحظة الجيدة لا تبدو ذكية. إنها تبقي شخصا حيا.
 
 ## Field Note
 
-AR LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+يجب أن يشعر اللاعب بأن لغة Deep Reach القديمة تُترجم إلى عدد أجساد.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/ar_SA. -->

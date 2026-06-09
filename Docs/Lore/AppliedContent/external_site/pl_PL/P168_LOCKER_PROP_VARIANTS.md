@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "Warianty dowodów ze schowka"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# Warianty dowodów ze schowka
 
-PL LOC HOLD: Locker Prop Variants defines reusable art and wiki hooks for colony evidence.
+HECTON-8 traktuje schowki jako powierzchnie dowodowe, nie pudełka nostalgii. Schowek może zawierać taśmę ciśnieniową, fragment uszczelki, żeton narzędziowni, kredyt posiłku, kredę trasy, naklejkę zmiany, odmowę medlock i późniejszą poprawkę Maraudera. Żaden przedmiot nie musi wyjaśniać katastrofy. Razem pokazują, że zatopiona kolonia była najpierw miejscem pracy z nawykami.
+
+Wartość tkwi w powściągliwości. Schowek nie ma rozkazywać smutku. Ma pokazać, co ktoś robił mokrymi rękami i przy ograniczonym powietrzu: łatał wyciek, pożyczał uszczelkę, znaczył trasę, trzymał odmowę medyczną, oszczędzał posiłek albo zostawiał brudne narzędzie, bo następna zmiana miała dokończyć. Tak proceduralne pokoje zachowują ludzką fakturę.
+
+Salvage jest wyborem. Drobiazgi mają wartość, ale ich układ ma sens. Dobry Marauder zapisuje zestaw przed zabraniem. Niedbały zamienia osobę w części.
 
 ## Scanner
 
-PL LOC HOLD: A locker should say what a worker touched before the flood.
+SCHOWEK // Taśma ciśnieniowa, zużyta uszczelka, pasek kredytu posiłku, żeton narzędziowni, kreda trasy i odmowa medlock leżą na jednej półce. To ostatni praktyczny ekwipunek pracownika, nie dekoracja.
 
 ## Terminal
 
-PL LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+WARIANTY SCHOWKA // Czytaj kolejność przed salvage: taśma przy rękawicach = praca przy wycieku; zużyta uszczelka = częste włazy; kredyt posiłku = dług zmiany; kreda = trasa awaryjna; odmowa medlock = praca mimo choroby; notatka Maraudera = późniejszy spór o dowód.
 
 ## Audio
 
-PL LOC HOLD: The best memorial is a tool still dirty from the last shift.
+Najlepszy pomnik to nie tabliczka. To narzędzie, które wciąż wie, która ręka była zmęczona.
 
 ## Field Note
 
-PL LOC HOLD: Avoid sentimental clutter. Use work marks.
+Nie dekoruj schowków. Składaj je z rzeczy, których zmęczona ręka naprawdę miała powód dotknąć.
 
 <!-- External Site; generated from P168_LOCKER_PROP_VARIANTS/pl_PL. -->

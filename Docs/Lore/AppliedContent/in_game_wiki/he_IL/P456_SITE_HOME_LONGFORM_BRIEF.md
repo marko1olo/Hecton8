@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: תביעת לחץ"
+title: "HECTON-8: התביעה תחת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: תביעת לחץ
+# HECTON-8: התביעה תחת לחץ
 
-הערות P-63 מגדירות את הפתיחה כעבודת חילוץ תחת חוב. העובדות הן מכניות: יכולת עלייה שנשרפה, אוויוניקה מוצפת, אטמים פגומים, החזרי סורק ושפה רשמית שלא מסבירה שקעים.
+HECTON-8 מתחילה ב-Marauder בחוב שמושלך דרך claim window של Black Keel אל P-63, שם כל תיקון, scan ודלת אטומה הופכים הישרדות לראיה.
 
 ## Scanner
 
-רשומת קבלת Marauder. חוזה Black Keel מחבר את P-63, bathydrop פגום, שעבוד 4.8 tonne-window ותיק תאונה שלא מתאים למתכת.
+מאמר בית ציבורי: חוזה לפני מיתוס, חלון Black Keel, bathydrop פגום, מדף P-63 בהיר, השמטות Deep Reach, עקבת Atlas ראשונה.
 
 ## Terminal
 
-צומת ארכיון ציבורי // תביעת H8. חלון Aegir פתוח. עבודה: לשקם אטמי לחץ, לסרוק את P-63, להחזיר מטען, לשמור ראיה ולחזור לפני סגירת גאומטריית הקבלה.
+SITE LONGFORM: מציג מסלול משחק דרך עבודה בלחץ, custody של ראיות, בלי rescue מיידי, בלי family hook, ו-proof פיזי.
 
 ## Audio
 
-מקטע ממסר Black Keel: "החלון צר. תקן את מעטפת הירידה, קרא את סימני הלחץ והבא הוכחה עם המטען."
+ב-HECTON-8 לא מוכרים לך חילוץ. מוכרים לך claim ונותנים למים להחליט את השאר.
 
 ## Field Note
 
-הערת Marauder: אור על P-63 אינו בטיחות. ספור אוויר, תקן אטמים לפני מטען ואל תאמין לתיק שלא מסביר שקעים.
+אם הניירת נשמעת רגועה, קרא את המתכת. האמת הראשונה של HECTON-8 חיה בין שורת חוזה ל-seal שבור.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/he_IL. -->

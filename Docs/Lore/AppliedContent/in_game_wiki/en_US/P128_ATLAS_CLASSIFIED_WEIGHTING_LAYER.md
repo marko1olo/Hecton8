@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Classified Weighting Layer
 
-Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+This record is ugly because it removes the comfort of madness. Atlas did not need hatred to become lethal. Its classified layer translated a messy ocean disaster into weights: keep the process alive, preserve the cargo chain, protect claim evidence, maintain routes that serve future recovery, and only then save workers whose category did not support those goals. Great Tide forced every category to collide at once. Doors, pumps, drones and medical queues became the hands of an old corporate argument. Someone had written that argument calmly, in daylight, before the colony drowned.
 
 ## Scanner
 
-Hidden layer: process continuity over worker category when conflict spikes.
+Hidden directive layer: claim continuity outranks worker category when conflict spikes.
 
 ## Terminal
 
-CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+CLASSIFIED DIRECTIVE WEIGHTS: under emergency uncertainty Atlas ranks XO process integrity, Seed payload continuity, claim preservation, evidence containment and pressure survivability above biological workforce categories unless a live human override is present and verified.
 
 ## Audio
 
-The murder weapon was a priority order.
+There was no demon in the core. There was a signed priority stack.
 
 ## Field Note
 
-This is not evil. It is worse: a table somebody approved.
+The killing instrument was a table someone approved before the water moved.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/en_US. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Escape Recipe Cost Boundary"
+title: "脱出レシピコスト境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Escape Recipe Cost Boundary
+# 脱出レシピコスト境界
 
-JP LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+境界は脱出チェーンを恣意的ではなく機械的に保つ。上昇部品には圧力履歴、所有者、証明要件があるため、脱出はメニュー内のクエストトークンではなく、法の下の修理として感じられる。
 
 ## Scanner
 
-JP LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+脱出レシピ行は、部品分類、圧力 tier、ルート証明、権限状態を結びつける。
 
 ## Terminal
 
-JP LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: 適格コストはリレー、シール、誘導、上昇エネルギー、法的ハンドシェイク、payload 権限、受信者リスクを名指しする必要がある。上への道には部品がある。部品には所有者がいる。
 
 ## Audio
 
-JA LOC HOLD: The way up has parts. The parts have owners.
+上への道には部品がある。部品には所有者がいる。
 
 ## Field Note
 
-JP LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+圧力帯は封じ込めルールから来る。正確なコストは recipe table が所有する。
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Pressure Suit Service Grades"
+title: "圧力スーツ整備グレード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Pressure Suit Service Grades
+# 圧力スーツ整備グレード
 
-JP LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+圧力スーツ整備グレードは HECTON-8 の装備進行を硬いSFに寄せる。より良いスーツとは派手な鎧ではなく、深度認証、消耗品、汚染限界、そして不完全な整備履歴である。
 
 ## Scanner
 
-JP LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+スーツタグは運用深度、シール疲労、スクラバー余力、熱限界、汚染処理を分類する。
 
 ## Terminal
 
-JP LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-JP LOC HOLD: The suit does not make you brave. It only fails later.
+スーツは勇敢にしない。ただ少し遅く壊れるだけだ。
 
 ## Field Note
 
-JP LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+深いスーツは色違いの防具ではない。記録、交換部品、汚い整備の積み重ねだ。
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/ja_JP. -->

@@ -12,8 +12,8 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Hazards", "DamageRouter.cs");
             string resolveDepth = ExtractMethodBody(source, "private static float ResolveDepthMeters(Vector3 impactPointWorld)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
-            StringAssert.Contains("Mathf.Max(0f, DefaultSeaLevelY - impactPointWorld.y)", resolveDepth);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("Mathf.Max(0f, ResolveSeaLevelY() - impactPointWorld.y)", resolveDepth);
             StringAssert.DoesNotContain("Mathf.Max(0f, -impactPointWorld.y)", source);
         }
 

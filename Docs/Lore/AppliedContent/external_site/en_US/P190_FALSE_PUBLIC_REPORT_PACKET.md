@@ -19,22 +19,22 @@ localization_flags: 0
 
 # False Public Report Packet
 
-False Public Report Packet states the Deep Reach public version and the hidden omissions.
+False Public Report Packet states the public Deep Reach version of the colony loss and the omissions that make it false. This is not propaganda that denies the disaster; it is propaganda that edits the disaster into an accident with no responsible hands. The article matters because it lets HECTON-8 keep its hard-sci-fi catastrophe while still proving a cover story. Ocean physics explains why the colony was vulnerable. The missing memos explain why vulnerability became abandonment.
 
 ## Scanner
 
-The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+The public report worked because it kept the real ocean and removed the human choices inside it.
 
 ## Terminal
 
-PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: HECTON-8 loss attributed to exceptional tide cascade, relay delay and quarantine uncertainty. Omitted: accepted risk margins, evacuation release hold, Atlas continuity override, claim conversion and payload-first recovery request.
 
 ## Audio
 
-They did not fake the storm. They buried the choice.
+They told the truth about the water and lied about the hands.
 
 ## Field Note
 
-The strongest lie is mostly true. It removes weighting, margin and delay.
+The best lie did not deny the tide. It used the tide as cover.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/en_US. -->

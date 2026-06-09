@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Anchor Worker Name Set B
 
-Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+Anchor Worker Name Set B carries the roster into darker evidence layers. Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, and Bram Kessel should appear after the player understands that failures repeat by design. Their records belong to brine canyon work, abyssal machine fields, triage exceptions, Atlas repair contradictions, and salvage debt. Set B should feel like the moment a familiar workplace story becomes an accusation with names still attached.
 
 ## Scanner
 
-Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Deeper names should arrive after the player already knows the damage pattern. They cost more because the water has started proving the crime.
 
 ## Terminal
 
-ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: brine canyon and abyssal machine-field recurrence. Bind these names to witness hashes, route holds, triage exceptions, Atlas repair contradictions, and salvage debt trails. Set B is where worker evidence stops being local tragedy and becomes corporate cause.
 
 ## Audio
 

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ending Payout Data Boundary
 
-HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+HECTON-8 endings record who received the proof, what custody they gained, what they paid, and what cost remains unresolved. A number can end a contract line. It cannot end the ocean.
 
 ## Scanner
 
-Ending boundary: receiver, custody, evidence state, payout, consequence.
+Ending row binds receiver, custody, evidence state, payout, and unresolved consequence.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, quarantine delay, and unresolved cost. Credits do not close a crime scene.
 
 ## Audio
 

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_navigation_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS169_FIRST_NAVIGATION_MARK_ARTICLES.md |
 | Speaker | Field scanner, local bearing note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first navigation marks |
@@ -39,7 +39,7 @@ BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing.
 
 The card edge has swollen enough to lie. The ink notch near the brass pin is the better reference because it stayed anchored after the corner took water. Local bearings survive when the player reads the mark that resisted drift.
 
-Bad edges make bad routes.
+Pin and notch stayed fixed; the soaked corner did not.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ USE INK NOTCH
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| ar_SA | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| de_DE | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| es_ES | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| fr_FR | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| he_IL | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| id_ID | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| ja_JP | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| ko_KR | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| nl_NL | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| pl_PL | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| pt_BR | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| ru_RU | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| uk_UA | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
-| zh_CN | draft_machine_or_llm | BEARING CARD // Corner swollen. Use ink notch, not card edge, for local bearing. |
+| ar_SA | draft_machine_or_llm | بطاقة اتجاه // الزاوية متورمة. استخدم شق الحبر لا حافة البطاقة للاتجاه المحلي. |
+| de_DE | draft_machine_or_llm | PEILKARTE // Ecke aufgequollen. Fuer lokale Peilung Tintenkerbe nutzen, nicht Kartenkante. |
+| es_ES | draft_machine_or_llm | TARJETA DE RUMBO // Esquina hinchada. Usa la muesca de tinta, no el borde, para el rumbo local. |
+| fr_FR | draft_machine_or_llm | CARTE DE RELEVEMENT // Coin gonfle. Pour le relevement local, utiliser l'encoche d'encre, pas le bord. |
+| he_IL | draft_machine_or_llm | כרטיס כיוון // הפינה תפוחה. השתמש בחריץ הדיו, לא בשפת הכרטיס, לכיוון מקומי. |
+| id_ID | draft_machine_or_llm | KARTU ARAH // Sudut mengembang. Pakai takik tinta, bukan tepi kartu, untuk arah lokal. |
+| ja_JP | draft_machine_or_llm | 方位カード // 角が膨潤。局所方位はカード端ではなくインク刻みを使う。 |
+| ko_KR | draft_machine_or_llm | 방위 카드 // 모서리가 부풀었다. 지역 방위는 카드 가장자리 말고 잉크 홈을 쓴다. |
+| nl_NL | draft_machine_or_llm | PEILKAART // Hoek is opgezwollen. Gebruik de inktkerf, niet de kaartrand, voor lokale peiling. |
+| pl_PL | draft_machine_or_llm | KARTA NAMIERZANIA // Rog spuchniety. Do lokalnego namiaru uzyj naciecia tuszu, nie krawedzi karty. |
+| pt_BR | draft_machine_or_llm | CARTAO DE RUMO // Canto inchado. Use o entalhe de tinta, nao a borda, para rumo local. |
+| ru_RU | draft_machine_or_llm | КАРТА ПЕЛЕНГА // Угол разбух. Для местного пеленга используй чернильную засечку, не край карты. |
+| uk_UA | draft_machine_or_llm | КАРТКА ПЕЛЕНГА // Кут набух. Для місцевого пеленга використовуй чорнильну засічку, не край картки. |
+| zh_CN | draft_machine_or_llm | 方位卡 // 角部胀起。按墨迹刻口取本地方位，不要按卡边。 |

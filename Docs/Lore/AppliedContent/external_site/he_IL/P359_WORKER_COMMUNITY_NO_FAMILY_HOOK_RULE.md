@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Community Notice"
+title: "הודעת קשרי עבודה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Community Notice
+# הודעת קשרי עבודה
 
-HE LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+הודעת קשרי העבודה היא מסמך חברתי קטן עם קצה קשה. היא מונה שורות דרגשים, מובילי נתיב, עדי מדלוק, קשרי מחסן כלים וחלונות ממסר. היא נראית מנהלית עד שהיגיון הלחץ מתגלה: קשר מחוץ לעולם יכול להתאבל, להתווכח ולזכור, אבל לא להגיע לצוהר לפני המים.
 
-## Scanner
+לכן ב-HECTON-8 איש קשר חירום פירושו בתוך התחנה, מאומן, זמין בטון ומורשה לנתיב העובד. ההגדרה קשוחה, לא חסרת לב. כאשר חזרה שהוחמצה יכולה להפוך לנתיב הצפה, הדאגה לובשת את הצורה הזאת.
 
-HE LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-HE LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-HE LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-HE LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+הלוח גם קושר ראיות יומיומיות לרשת קהילה. מפתח משאבה בחפץ אחד, תיקון מים באחר, חתימת כלי בשלישי: כל סימן מחבר עובד עייף לעובד אחר. זו לא מלודרמה, אלא יישוב לחץ אמין שבו אחריות נעשית צורה של קרבה.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/he_IL. -->

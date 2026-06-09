@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Reguły korektorskich znaków marauderów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Reguły korektorskich znaków marauderów
 
-PL LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Reguły korektorskich znaków marauderów wyjaśniają, jak HECTON-8 pozwala późniejszym odzyskiwaczom dotykać starych dowodów bez łamania kanonu. Znaki korekty dodają żywą warstwę na korporacyjnych papierach: zachować nazwisko, zakwestionować kategorię, ostrzec trasę, wycenić próbkę, ukryć świadka albo oznaczyć dług. Sprawiają, że dowody replay wyglądają na dotknięte przez innych pracowników roszczeń, a każda ręczna zmiana pozostaje funkcjonalna.
 
 ## Scanner
 
-PL LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Znak korekty może ocalić nazwisko, zatruć roszczenie albo ostrzec następnego nurka, że oficjalna kategoria kłamie.
 
 ## Terminal
 
-PL LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: znaki marauderów muszą zmieniać interpretację dowodu, ryzyko trasy albo presję wypłaty. Poprawne znaki zachowują nazwisko pracownika, kwestionują kategorię ubezpieczeniową, ostrzegają trasę, wyceniają próbkę, ukrywają świadka albo oznaczają dług. Puste graffiti łamie łańcuch dowodowy.
 
 ## Audio
 
-PL LOC HOLD: Somebody came before you and still failed to leave clean.
+Ktoś był przed tobą i nadal nie zdołał odejść czysto.
 
 ## Field Note
 
-PL LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Znaki: zachować nazwisko, zakwestionować kategorię, ostrzec trasę, wycenić próbkę, ukryć świadka, oznaczyć dług. Pismo ma zmieniać odczyt, nie dekorować rekwizyt.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/pl_PL. -->

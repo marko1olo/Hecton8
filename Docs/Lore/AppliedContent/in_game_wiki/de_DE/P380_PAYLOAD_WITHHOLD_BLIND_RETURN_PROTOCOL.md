@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Payload-Protokoll Blind Return Withhold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Withhold Blind Return Protocol
+# Payload-Protokoll Blind Return Withhold
 
-DE LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Das Blind-Return-Protokoll verweigert jeden Empfänger. Keine Firma, kein Hauptbuch, keine Quarantänelane und kein Severance-Ziel erhält die finale Payload. Der Träger hält Karte und Beweise lokal, was Deep Reach den sauberen Rückweg verweigert. Es lässt auch Schulden aktiv, öffentliche Beweise ungemeldet und das Paket anfällig für Wasser, Tod oder schlechte Lagerung.
 
 ## Scanner
 
-DE LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Blind-Return-Route scharf. Kein Empfänger zugewiesen. Beckenvektor, Beweishashes und Zugangsklasse bleiben lokal; Pfand und Recovery-Fenster bleiben ungeklärt.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+PAYLOAD-EMPFÄNGER // BLIND RETURN WITHHOLD. Empfänger: keiner. Halte Beckenvektor, Beweishashes, Salvage-Klasse, lokales Beweispaket. Verweigere Deep Reach Zugangskarte, Auszahlungsbeleg und Empfängerverwahrung. Bekannter Preis: Pfand ungeklärt, Paketverlustrisiko total.
 
 ## Audio
 
-DE LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Kein Empfänger, kein Beleg. Wenn die Tasche flutet, gehen die Beweise mit.
 
 ## Field Note
 
-DE LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Plünderernotiz: Die Karte zu behalten ist eine Entscheidung. Du hast nur keinen Empfänger, dem du die zerrissene Tasche vorwerfen kannst.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/de_DE. -->

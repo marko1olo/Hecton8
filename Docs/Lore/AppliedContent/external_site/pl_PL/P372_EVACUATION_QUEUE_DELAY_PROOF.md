@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Zapis opóźnienia kolejki ewakuacji
 
-Zatopiony pokój nadal może przechować czas. Odzyskany zegar pokazuje okrutny porządek: alarm, review, opóźnienie, przekroczenie klasy uszczelnienia, woda. Publiczny język Deep Reach redukuje to do niepełnej ewakuacji podczas nagłej awarii struktury. Pokój się nie zgadza. Jego zapis zachowuje puste pole świadka i trwający przegląd kwarantanny poza punktem, w którym ścieżka ratunku była jeszcze fizycznie użyteczna. To nie twierdzenie, że wszystkich dało się ocalić. To coś dokładniejszego i gorszego: autoryzacja czekała, aż zmaleje liczba możliwych do uratowania. Dla gracza ratunek przestaje brzmieć jak obietnica, a zaczyna jak system pozwoleń.
+Dzienniki ewakuacji łatwo złagodzić, gdy ciał już nie ma. W języku publicznym Deep Reach może powiedzieć, że trasa była niepełna, przerwana albo zdegradowana. Odzyskany zegar kolejki jest mniej elastyczny. Rejestruje bramę odpowiadającą na stan administracyjny po wejściu alarmu ciśnienia do zajętych sekcji.
 
-## Scanner
-
-Odzyskano zegar kolejki. Brama zwolnienia pozostała zamknięta po tym, jak alarmy ciśnienia przeszły z prognozy do korytarza.
-
-## Terminal
-
-EVAC QUEUE // WITNESS SLOT EMPTY. Brak ręcznego potwierdzenia. Przegląd kwarantanny w toku. Ciśnienie trasy przekroczyło klasę uszczelnienia przed końcem autoryzacji.
-
-## Audio
-
-Oni nie zawiedli przy ratowaniu wszystkich. Czekali, aż uratowanie kogokolwiek stanie się trudniejsze.
-
-## Field Note
-
-Notatka Maraudera: zamknięta brama z oczekującym polem to nie wypadek. To decyzja czekająca na podpis.
+Ważne nie jest to, że wszystkich dało się ocalić. Zapis tego nie obiecuje. Pokazuje, że firma nadal miała ścieżkę kontroli i użyła jej do czekania. Ręczne potwierdzenie zostało puste. Rada kwarantanny wisiała w oczekiwaniu. Klasa uszczelnienia przekroczyła limit przed zwolnieniem. Opóźnienie stało się infrastrukturą.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pl_PL. -->

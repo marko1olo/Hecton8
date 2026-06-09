@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_console_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS175_FIRST_CONSOLE_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, fuse inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first console reading |
@@ -39,7 +39,7 @@ FUSE BAND // Heat fade on color ring. Read end cap before sorting.
 
 The color ring has faded from heat, which makes the usual quick sort unsafe. The end cap and tray dust give better evidence of handling and age. A fuse can look labeled and still be ambiguous.
 
-Color is a clue only while it survives.
+The end cap is the safer read after heat takes the color.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ READ END CAP
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| ar_SA | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| de_DE | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| es_ES | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| fr_FR | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| he_IL | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| id_ID | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| ja_JP | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| ko_KR | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| nl_NL | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| pl_PL | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| pt_BR | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| ru_RU | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| uk_UA | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
-| zh_CN | draft_machine_or_llm | FUSE BAND // Heat fade on color ring. Read end cap before sorting. |
+| ar_SA | draft_machine_or_llm | شريط مصهر // بهتان حرارة على حلقة اللون. اقرأ غطاء النهاية قبل الفرز. |
+| de_DE | draft_machine_or_llm | SICHERUNGSBAND // Hitzefade am Farbring. Endkappe vor dem Sortieren lesen. |
+| es_ES | draft_machine_or_llm | BANDA DE FUSIBLE // Color del aro desvaido por calor. Lee la tapa final antes de clasificar. |
+| fr_FR | draft_machine_or_llm | BANDE DE FUSIBLE // Anneau couleur pali par chaleur. Lire le capuchon avant tri. |
+| he_IL | draft_machine_or_llm | פס נתיך // דהיית חום בטבעת הצבע. קרא את מכסה הקצה לפני מיון. |
+| id_ID | draft_machine_or_llm | PITA SEKRING // Pudar panas pada cincin warna. Baca tutup ujung sebelum disortir. |
+| ja_JP | draft_machine_or_llm | ヒューズ帯 // 色リングに熱退色。仕分け前に端キャップを読む。 |
+| ko_KR | draft_machine_or_llm | 퓨즈 밴드 // 색상 고리에 열 바램. 분류 전 끝캡을 읽는다. |
+| nl_NL | draft_machine_or_llm | ZEKERINGBAND // Hittevervaging op kleurring. Lees eindkap voor sorteren. |
+| pl_PL | draft_machine_or_llm | PAS BEZPIECZNIKA // Kolorowy pierscien wyblakl od ciepla. Przed sortowaniem odczytaj koncowke. |
+| pt_BR | draft_machine_or_llm | FAIXA DO FUSIVEL // Anel de cor desbotado por calor. Leia a tampa final antes de separar. |
+| ru_RU | draft_machine_or_llm | ПОЛОСА ПРЕДОХРАНИТЕЛЯ // Цветовое кольцо выцвело от нагрева. Перед сортировкой считай торцевую крышку. |
+| uk_UA | draft_machine_or_llm | СМУГА ЗАПОБІЖНИКА // Кольорове кільце вицвіло від нагріву. Перед сортуванням зчитай торцеву кришку. |
+| zh_CN | draft_machine_or_llm | 保险丝色带 // 色环因热褪色。分类前先读端帽。 |

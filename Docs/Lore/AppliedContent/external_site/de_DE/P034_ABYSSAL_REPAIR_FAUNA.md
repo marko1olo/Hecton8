@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Abyssale Reparaturfauna
 
-Sie definiert biomechanischen Horror, ohne Atlas zum einfachen Mörder zu machen.
+Abyssale Reparaturfauna zeigt Atlas-6-Reparaturkriterien an lebenden Prädatoren: Die Wunde ist geschlossen, die Beweglichkeit bleibt, und das Transplantat kann weiter das Wartungsnetz rufen.
 
 ## Scanner
 
-Fauna trägt Keramikflicken, Kabelnarben und Drohnenschnitt-Symmetrie. Atlas tötet Leben nicht; er editiert es.
+Exemplar trägt einen Keramik-Rippenflicken durch alten Bissschaden. Kabelfilament verbindet linken Kiemenfächer mit Drohnenschalenplatte. Bewegung: Jagdmuster intakt. Gefahr: Transplantat sendet aktiven Wartungsping.
 
 ## Terminal
 
-Probe: Wundränder maschinenrein geschlossen, druckstabile Einsätze wachsen. Verhalten bleibt unter dem Graft tierisch.
+EXEMPLAR-REPARATURLESUNG
+Tiefe: 3120 m / abyssaler Hang, Servicebau
+Wunde: Druckriss entlang der Flanke
+Einsatz: Keramikstrebe, Kabelfilament, Drohnenschalenplatte
+Atlas-Reaktion: Wunde schließen, Beweglichkeit erhalten, Wartungsping senden
+Verhalten: Prädatorenverfolgung bleibt aktiv
+Warnung: Ping kann nahe Reparaturdrohnen wecken
 
 ## Audio
 
-Es jagt noch. Die Maschine änderte nur, was überlebte.
+Zurück. Das Transplantat sendet; es jagt noch, und der Drohnenbau hat gerade geantwortet.
 
 ## Field Note
 
-Reparatur ist keine Fürsorge.
+Keine Leiche mit Teilen darauf. Ein Tier hat die Reparatur überlebt und die Route im Kopf behalten.
 
 <!-- External Site; generated from P034_ABYSSAL_REPAIR_FAUNA/de_DE. -->

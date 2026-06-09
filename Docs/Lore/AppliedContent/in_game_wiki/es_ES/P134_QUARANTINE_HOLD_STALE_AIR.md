@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Retención de cuarentena: aire viciado
 
-La Retención de cuarentena salva el cuerpo y suspende la agency. El jugador escapó de la presión, pero no de la custody. Cada respiración se mide mientras la prueba espera detrás del lenguaje de revisión.
+La retención de cuarentena salva el cuerpo y suspende la agencia. No hace falta un villano en la sala. El formulario dice recuperado vivo, el contador de aire dice ración activa y la siguiente puerta solo abre después de revisión de contaminación, desafío del reclamante y auditoría de pérdidas. La prueba espera detrás de un lenguaje diseñado para sonar razonable. Cada declaración se retrasa más de lo que se permitió vivir a los trabajadores. El océano desapareció, pero la presión aprendió a llevar papeleo.
 
 ## Scanner
 
@@ -27,11 +27,11 @@ Cuerpo recuperado. Testigo sellado. Ración de aire activa.
 
 ## Terminal
 
-RETENCIÓN DE CUARENTENA: contratista recuperado vivo; ración de aire activa; sample custody sin resolver; testimonio externo aplazado hasta revisión de contaminación, desafío del claimant y revisión de pérdida Keelmark.
+RETENCIÓN DE CUARENTENA: contratista recuperado vivo; ración de aire activa; custody de muestra sin resolver; testimonio externo retrasado hasta revisión de contaminación, desafío del reclamante y auditoría de pérdida Keelmark.
 
 ## Audio
 
-La escotilla abre a otra escotilla cerrada.
+La escotilla se abre a otra escotilla cerrada.
 
 ## Field Note
 

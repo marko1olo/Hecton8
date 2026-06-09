@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Camadas de Conhecimento da Causa Real"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Camadas de Conhecimento da Causa Real
 
-PT LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+Camadas de Conhecimento da Causa Real define a forma da culpa da Deep Reach sem transformar toda pessoa dentro da companhia no mesmo monstro. Nenhum escritório possuía a catástrofe inteira. Observadores de campo viram comportamento anormal de maré e margens de sensor entrando em colapso. O escritório de risco traduziu isso em exposição de cauda aceitável. Atlas Safety protegeu pontuações de continuidade. O jurídico de evacuação atrasou autoridade de liberação. Keelmark e mesas de recuperação prepararam linguagem de reivindicação capaz de transformar morte, carga e silêncio em perda gerenciada. Cada camada podia dizer que não sabia o bastante para parar o desastre sozinha. Juntas, sabiam o suficiente para deixar HECTON-8 afundar devagar e legalmente.
 
 ## Scanner
 
-PT LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+A Deep Reach conhecia a verdade em fatias: margens de maré num escritório, ponderação Atlas em outro, atraso de evacuação e conversão de reivindicação em outro lugar.
 
 ## Terminal
 
-PT LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: equipes de maré registram perda de margem; Risk aceita exposição de cauda; Atlas Safety pondera continuidade acima da evacuação; jurídico segura liberações; Keelmark converte mortes em perda recuperável; Recovery Compliance pede carga antes da divulgação.
 
 ## Audio
 
-PT LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Ninguém precisou escrever “deixem morrer”. A tabela já sabia como.
 
 ## Field Note
 
-PT LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Ignorância distribuída não era inocência. Era arquitetura.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/pt_BR. -->

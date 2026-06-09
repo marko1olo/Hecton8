@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_inventory_sorting |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP03_Drowned_Colony_Barnard_Hook.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS165_FIRST_INVENTORY_SORTING_ARTICLES.md |
 | Speaker | Inventory scanner, custody sorting note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1/2, first worker evidence handoff |
@@ -72,17 +72,17 @@ NO SALVAGE MIX
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| ar_SA | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| de_DE | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| es_ES | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| fr_FR | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| he_IL | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| id_ID | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| ja_JP | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| ko_KR | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| nl_NL | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| pl_PL | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| pt_BR | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| ru_RU | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| uk_UA | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
-| zh_CN | draft_machine_or_llm | CUSTODY TRAY // Personal effects only. Keep tagged items out of salvage stock. |
+| ar_SA | draft_machine_or_llm | صينية عهدة // للمتعلقات الشخصية فقط. أبق العناصر الموسومة خارج مخزون الإنقاذ. |
+| de_DE | draft_machine_or_llm | VERWAHRUNGSSCHALE // Nur persönliche Gegenstände. Markierte Teile vom Bergungsbestand fernhalten. |
+| es_ES | draft_machine_or_llm | BANDEJA DE CUSTODIA // Solo efectos personales. Mantén los objetos etiquetados fuera del material de salvamento. |
+| fr_FR | draft_machine_or_llm | BAC DE GARDE // Effets personnels seulement. Garder les objets étiquetés hors du stock de récupération. |
+| he_IL | draft_machine_or_llm | מגש משמורת // חפצים אישיים בלבד. שמור פריטים מתויגים מחוץ למלאי החילוץ. |
+| id_ID | draft_machine_or_llm | BAKI PENITIPAN // Hanya barang pribadi. Jauhkan item bertag dari stok hasil bongkaran. |
+| ja_JP | draft_machine_or_llm | 保管トレー // 私物のみ。タグ付き品をサルベージ在庫に混ぜない。 |
+| ko_KR | draft_machine_or_llm | 보관 트레이 // 개인 물품 전용. 태그 달린 물품은 인양 재고에 넣지 마라. |
+| nl_NL | draft_machine_or_llm | BEWAARBAK // Alleen persoonlijke spullen. Houd gelabelde items uit de bergingsvoorraad. |
+| pl_PL | draft_machine_or_llm | TACA DEPOZYTOWA // Tylko rzeczy osobiste. Oznaczone przedmioty trzymaj poza zapasem odzysku. |
+| pt_BR | draft_machine_or_llm | BANDEJA DE CUSTÓDIA // Apenas pertences pessoais. Mantenha itens etiquetados fora do estoque de salvamento. |
+| ru_RU | draft_machine_or_llm | ЛОТОК ХРАНЕНИЯ // Только личные вещи. Предметы с бирками не клади в общий запас добытого. |
+| uk_UA | draft_machine_or_llm | ЛОТОК ЗБЕРІГАННЯ // Лише особисті речі. Предмети з бирками не клади до загального здобутку. |
+| zh_CN | draft_machine_or_llm | 保管托盘 // 仅限个人物品。带标签物件不得混入打捞物资。 |

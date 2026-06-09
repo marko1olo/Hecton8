@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Marauder Correction Note Sample"
+title: "Amostra de Correção de Saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Marauder Correction Note Sample
+# Amostra de Correção de Saqueador
 
-PT-BR LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+A Amostra de Correção de Saqueador não é uma confissão, e por isso é mais útil. É uma anotação suja sobre um formulário oficial de acidente, escrita por alguém que aprendeu a desconfiar de causas limpas demais. A nota não diz quem matou quem. Ela diz o que deve ser conferido antes que a palavra acidente possa permanecer no arquivo: certificado da bomba, efetivo do turno, categoria dos corpos, divergência do relógio da porta e a fila de autorização que segurou o resgate por tempo suficiente para transformar a sala em prova. Em HECTON-8, o objeto liga prova ambiental e voz de facção. O registro colonial tenta encerrar a história com o clima. A mão do saqueador empurra o jogador de volta para a sala.
 
 ## Scanner
 
-PT-BR LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Correção em lápis graxo sobre um relatório de acidente: não foi clima, não foi pânico, foi atraso de autorização com contagem de corpos.
 
 ## Terminal
 
-PT-BR LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+NOTA DE SAQUEADOR / CAUSA OFICIAL: REJEITADA / ANTES DA REIVINDICAÇÃO VERIFICAR: certificado da bomba, efetivo do turno, categoria dos corpos, divergência do relógio da porta, fila de autorização de resgate.
 
 ## Audio
 
-PT-BR LOC HOLD: Someone else smelled the paperwork rot.
+Alguém sentiu o podre na papelada antes da sala secar.
 
 ## Field Note
 
-PT-BR LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NÃO FOI O CLIMA. ATRASO DE AUTORIZAÇÃO. Verificar certificado da bomba, efetivo do turno, categoria dos corpos. O relógio da porta adianta seis minutos ao carimbo da reivindicação.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/pt_BR. -->

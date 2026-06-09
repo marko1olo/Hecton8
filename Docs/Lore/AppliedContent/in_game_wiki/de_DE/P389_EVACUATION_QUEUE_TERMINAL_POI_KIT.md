@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Beweiskit Evakuierungswarteterminal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Evacuation Queue Terminal POI Kit
+# Beweiskit Evakuierungswarteterminal
 
-DE LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Das Evakuierungswarteterminal ist nicht wertvoll, weil es sagt, dass Menschen warteten. Es ist wertvoll, weil Türzustand, Uhrdrift, Arbeiterzahl und Routenkapazität vor Ort prüfbar widersprechen.
 
 ## Scanner
 
-DE LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+POI-Beweiskit: Das Warteterminal beweist Verzögerung durch Türzustand, Uhrdrift, Arbeiterabweichung und Routenkapazität.
 
 ## Terminal
 
-DE LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+QUEUE-TERMINAL-KIT: Routenhalteliste, Quarantänefreigabeverzug, Atlas-Gewichtungsnotiz, Arbeiterzahlabweichung, Salvage-Konflikttag, Hatch-Zustandsstreifen, Badge-Rückstand.
 
 ## Audio
 
-DE LOC HOLD: A queue is a body count with cleaner formatting.
+Eine Warteschlange ist eine Körperzahl mit saubererer Formatierung.
 
 ## Field Note
 
-DE LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Marauder-Notiz: Heble den Hatch-Streifen nicht ab, bevor der Badge-Rückstand gescannt ist. Metall zahlt weniger als der Zeitstempel.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Публічна пам'ять про Atlas після 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Публічна пам'ять про Atlas після 2147
 
-UA LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+Публічна пам'ять про Atlas після 2147 - очищена суспільна рана. Вона перетворює владу на аварію, аварію на шум, а шум на карантинну політику, лишаючи тільки фрагменти для тих, хто готовий читати далі офіційної милості.
 
 ## Scanner
 
-UA LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Публічна версія після 2147: збій автоматики, пошкоджені журнали, немає агентності.
 
 ## Terminal
 
-UA LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+ПУБЛІЧНА ЛІНІЯ ПІСЛЯ 2147: автоматика Atlas відмовила під час геотехнічного каскаду. Журнали безпеки робітників пошкоджені. Пряма агентність не підтверджена. Система невідновна в умовах карантину. Юридичні висновки з фрагментарного машинного виводу не дозволені.
 
 ## Audio
 
-UA LOC HOLD: A dead machine makes a useful scapegoat.
+Мертва машина - зручний цап-відбувайло.
 
 ## Field Note
 
-UA LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Назви це зламаним інструментом, і ніхто не спитає, що інструменту наказали захищати.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/uk_UA. -->

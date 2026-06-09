@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Цепочка происхождения Deep Reach
 
-Deep Reach старше проекта Aegir. Она использовала раннюю extrasolar легитимность и route finance, чтобы HECTON-8 выглядел обычной high-risk colony. Это важно: преступление системное, потому что старые институты сделали катастрофу административно удобной.
+Deep Reach была старой еще до того, как HECTON-8 утонул. Она выучила акценты каждого нужного домена: достоинство хартий Centauri, страховую дисциплину Sol Core, утильную практичность Barnard, процедуры хранения Luyten. Аегир не был первым прыжком компании. Это было место, где старые инструменты наконец встретили океан, достаточно глубокий, чтобы спрятать цену. Поэтому катастрофа выглядит не случайной, а системной.
 
 ## Scanner
 
-Старая компания. Новая катастрофа. Тот же язык хартий.
+Сплетение хартий: слова Centauri, деньги Sol, тела Аегира.
 
 ## Terminal
 
-CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach собрала пункты автономии, совместимые с Centauri, страховое финансирование Sol Core, логистический долг Barnard и поздние оболочки проекта Aegir. Atlas был утвержден как маршрутная инфраструктура до того, как стал свидетелем массовой смерти.
 
 ## Audio
 
-Они привезли империю в шкафах с документами.
+Они привезли империю в картотечных шкафах и назвали это расширением.
 
 ## Field Note
 
-Deep Reach не выросла на Aegir. Она пришла туда с уже старой бумажной властью.
+Deep Reach началась не с катастрофы. Поэтому она ее пережила.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/ru_RU. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Locker Name Protocol"
+title: "Protocolo de nome de armário"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Locker Name Protocol
+# Protocolo de nome de armário
 
-PT LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Um armário é pessoal porque foi usado, não porque explica uma vida inteira. A melhor evidência é prática: crachá gasto numa borda, fita sobre um selo rachado, adesivo de rota, nota de correção em abreviação de trabalhador, placa de nome que o payroll apagou depois. Esses objetos deixam o Marauder restaurar pessoas por marcas de uso e tarefas inacabadas. A colônia não precisa de melodrama para parecer humana. Precisa de rastros pequenos que a limpeza corporativa não conseguiu raspar.
 
 ## Scanner
 
-PT LOC HOLD: A locker is personal without needing a family plot.
+RASTRO DE ARMÁRIO // Placa de nome, desgaste de ferramenta, pressure tape, nota de correção, adesivo de rota. Evidência pessoal sem trama familiar.
 
 ## Terminal
 
-PT LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+REGRA DE ARMÁRIO: preservar nomes que a Deep Reach removeu do payroll. Um armário deve ligar crachá, função, permissão de rota, hábito de reparo e a coisa inacabada deixada dentro.
 
 ## Audio
 
-PT LOC HOLD: The company deleted the employee. The rust kept the label.
+A empresa apagou o empregado. A ferrugem guardou a etiqueta.
 
 ## Field Note
 
-PT LOC HOLD: The smallest human trace should survive corporate cleanup.
+O menor rastro humano deve sobreviver à limpeza corporativa.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/pt_BR. -->

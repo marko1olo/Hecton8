@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Service Basin POI Kit"
+title: "Zestaw dowodowy basenu serwisowego Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Service Basin POI Kit
+# Zestaw dowodowy basenu serwisowego Atlas
 
-PL LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+Basen serwisowy zarabia na rozmiar pracą. Szyny niosą narzędzia naprawcze. Uszczelnienie tkanka-żelazo zamyka cięcia ciśnieniowe. Zaciski wzrostu trzymają panele, które powinny być martwym sprzętem. Gniazdo odbiornika czeka w przestrzeni, która nadal wygląda jak zatoka konserwacyjna, jeśli operator śledzi śruby zamiast kształtu.
 
-## Scanner
-
-PL LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-PL LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-PL LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-PL LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Ostatni konflikt to klasyfikacja, nie mistyka. Stare kategorie kolonii, logika napraw Atlas, reguły odbiornika ładunku i ryzyko odcięcia dotykają tego samego sprzętu. Udana naprawa może otworzyć drogę i skazić zapis jednym ruchem. POI powinien pokazać ten koszt w metalu, tkance, etykietach i gniazdach.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/pl_PL. -->

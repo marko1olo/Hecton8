@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ledger de Pagamento Material"
+title: "Ledger de Acerto Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger de Pagamento Material
+# Ledger de Acerto Material
 
-O pagamento material é sucesso real feito de extração, certificação e silêncio. Não é final de verdade.
+Ledger de Acerto Material é a rota contábil para blue debt certificado. Ele paga prova de amostra, histórico de custódia e cláusulas de silêncio, deixando testemunho Atlas e responsabilidade Deep Reach fora da conta.
 
 ## Scanner
 
-Amostra blue debt certificada. Pagamento possível. Verdade opcional. Deep Reach prefere essa ordem.
+Amostra blue debt certificada: massa, pureza, log de pressão, cadeia de custódia. O crédito pode fechar antes das provas.
 
 ## Terminal
 
-Cronograma: massa, pureza, histórico de pressão e custódia aceitos. Arquivo de provas pendente.
+O acerto abre quando a caixa selada bate com o ledger da amostra, o histórico de pressão da descida não tem falha e o código de oferta Deep Reach aceita a cadeia de custódia. O fechamento material move crédito para escrow e marca o arquivo Atlas como resíduo não faturável.
 
 ## Audio
 
-A conta fecha. A água não.
+A conta fecha. A água guarda o recibo.
 
 ## Field Note
 
-Um contrato bem-sucedido ainda pode ser uma vida fracassada.
+Uma transferência limpa também pode enterrar algo.
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/pt_BR. -->

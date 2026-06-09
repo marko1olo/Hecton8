@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Locker Name Protocol"
+title: "Protocolo de nome de armário"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Locker Name Protocol
+# Protocolo de nome de armário
 
-PT LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+O Protocolo de nome de armário torna evidência pessoal jogável: nomes sobrevivem por objetos, desgaste, permissão de rota e anotação Marauder.
 
 ## Scanner
 
-PT LOC HOLD: A locker is personal without needing a family plot.
+RASTRO DE ARMÁRIO // Placa de nome, desgaste de ferramenta, pressure tape, nota de correção, adesivo de rota. Evidência pessoal sem trama familiar.
 
 ## Terminal
 
-PT LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+REGRA DE ARMÁRIO: preservar nomes que a Deep Reach removeu do payroll. Um armário deve ligar crachá, função, permissão de rota, hábito de reparo e a coisa inacabada deixada dentro.
 
 ## Audio
 
-PT LOC HOLD: The company deleted the employee. The rust kept the label.
+A empresa apagou o empregado. A ferrugem guardou a etiqueta.
 
 ## Field Note
 
-PT LOC HOLD: The smallest human trace should survive corporate cleanup.
+O menor rastro humano deve sobreviver à limpeza corporativa.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/pt_BR. -->

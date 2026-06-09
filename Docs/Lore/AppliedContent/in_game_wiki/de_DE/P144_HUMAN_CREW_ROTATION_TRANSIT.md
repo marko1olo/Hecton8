@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Transit menschlicher Crewrotation
 
-Menschliche Rotation macht HECTON-8s Verlassenheit glaubwürdig. Arbeiter, Spezialisten und Ersatzcrews bewegen sich langsamer als Anspruchssprache. Eine Person kann Sol unter einem Vertrag verlassen, unter einem anderen erwachen und entdecken, dass der trainierte Notfall bereits Beweismaterial ist.
+Menschliche Rotation war das Versprechen, das Aegir auf Papier bewohnbar machte. Arbeiter akzeptierten lange Zyklen, weil Rückfenster existierten, medizinischer Gewahrsam existierte und das Trägerbuch sie als rückholbare Menschen statt verlassene Masse beschrieb. Praktisch hing jede Rotation von knappen Kojen, Routenschuld, Rechtsfreigabe und davon ab, ob Deep Reach den Zeugen lebend wollte.
 
 ## Scanner
 
-Menschen pendeln nicht nach Aegir. Sie verbringen Jahre als Fracht mit Meinungen.
+Crewplan als gültig gestempelt, nachdem die Hälfte der Namen schon unerreichbar war.
 
 ## Terminal
 
-CREWROTATION: Menschentransport nutzt langsame Fenster, abgeschirmte Habitatsektionen, Niedrigmetabolismus-Zyklen und gestaffelte Rotation. Ein vermisster Arbeiter wird zum verzögerten custody-Problem.
+CREWROTATION: Menschentransfers erfordern Kojenmasse, Strahlungsfreigabe, Schlafaufsicht, Medizinschuld, juristischen Gewahrsam und Rückfensterversicherung. Notfall-Extraktion ist kein Knopf; sie ist eine vorbepreiste Ausnahme, die fast niemand bezahlen kann.
 
 ## Audio
 
-Wenn Zuhause fragt, wo du bist, ist der Raum schon geflutet.
+Ein Rotationsplan ist kein Rettungsplan. Er sieht nur vom Schreibtisch ähnlich aus.
 
 ## Field Note
 
-Ein Grenzarbeiter verkauft Zeit, bevor er Arbeit verkauft.
+Menschen wurden wie Bestand rotiert, bis die Route alle daran erinnerte, dass es Körper waren.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/de_DE. -->

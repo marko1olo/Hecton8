@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Kit de pruebas del anexo somero P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Shallow Annex P-63 POI Kit
+# Kit de pruebas del anexo somero P-63
 
-ES LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+El anexo somero P-63 es el primer lugar donde procedimiento de supervivencia y prueba de responsabilidad comparten mesa. El operador restaura una bomba, sella un bolsillo, lee un paquete de accidente y encuentra un aviso de ruta que no coincide con el daño exterior.
 
 ## Scanner
 
-ES LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Kit de pruebas de POI: P-63 contiene un bolsillo de refugio activo, una reparación de bomba y la primera contradicción oficial.
 
 ## Terminal
 
-ES LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+KIT P-63: bomba de sentina, bandeja de juntas, contacto de cortador, línea pinger, paquete de accidente, aviso de ruta sellado, armario seco, abrazadera de anulación manual.
 
 ## Audio
 
-ES LOC HOLD: First room with air. First room with a lie.
+Primera sala con aire. Primera sala con una mentira.
 
 ## Field Note
 
-ES LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Nota de merodeador: mantén la bomba funcionando antes de leer el paquete. Un refugio muerto produce mala prueba.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/es_ES. -->

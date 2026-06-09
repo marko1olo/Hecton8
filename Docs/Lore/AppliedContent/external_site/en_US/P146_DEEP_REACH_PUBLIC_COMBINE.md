@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Deep Reach Public Combine
 
-Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+The public Deep Reach combine is the first mask, and the most durable one. It does not need to deny that it touched HECTON-8. It touched everything: transport, habitat logistics, route services, insurance interfaces, emergency language, and the administrative vocabulary that made the colony legible to banks before it was legible to families.
 
-## Scanner
-
-The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-A clean title is the cheapest pressure suit.
-
-## Field Note
-
-The seal is clean. The rooms under it are not.
+That breadth is the defense. When a disaster reaches the surface, Deep Reach can point to a public mandate and say it maintained infrastructure. The uglier verbs are pushed into subsidiaries: classify, defer, recover, reinsure, deny, and dispose. The combine keeps the clean noun. The lower rooms keep the bodies.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/en_US. -->

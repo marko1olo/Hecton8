@@ -35,6 +35,6 @@ Je verloor niet het hele schip. Je verloor de ene keten die het schip relevant m
 
 ## Field Note
 
-Eerste-uur-ontsnappingsrecord: de carrier is aanwezig, maar de keten tussen speler, zee, oppervlak en orbit is in benoemde delen gebroken.
+Eerste-uur-ontsnappingsrecord: de carrier is aanwezig, maar de keten tussen pak, zee, oppervlak en orbit is in benoemde delen gebroken.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/nl_NL. -->

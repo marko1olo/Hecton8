@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "payload公開台帳受領プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Payload Public Ledger Receiver Protocol
+# payload公開台帳受領プロトコル
 
-JA LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+公開台帳プロトコルは、Deep Reachが静かに所有できない場所へ証拠を送る。座標を編集し、attestation hashesを封印し、航路保管とAtlas重み付けdigestを付け、遅延リレーへ入る。送信者は受理時に制御を失う。パケットは買いにくく、埋めにくく、使うには遅くなる。
 
 ## Scanner
 
-JA LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+公開台帳ルート起動。座標は遅延リレー前に編集され、attestation hashスタックと責任チェーンは受理時に封印される。
 
 ## Terminal
 
-JA LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PAYLOAD受領者 // 公開台帳レーン。受領者: 分散公開台帳、遅延Tauレーン。座標編集済みインシデントパケット、attestation hashes、航路保管、Atlas重み付けdigest、受領者時刻印を受理。私的支払いと直接回収請求を拒否。リレー受理で撤回終了。
 
 ## Audio
 
-JA LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+台帳がパケットを取った。座標はマスク済み。撤回窓は閉じた。
 
 ## Field Note
 
-JA LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+略奪者メモ: リレー受理前に経路を編集しろ。受理後、パケットはもうお前のものではない。
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/ja_JP. -->

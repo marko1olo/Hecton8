@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sonar Pinger Route Beacons"
+title: "Beacon Rute Sonar Pinger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sonar Pinger Route Beacons
+# Beacon Rute Sonar Pinger
 
-ID LOC HOLD: Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean.
+Beacon rute sonar pinger adalah benda khas HECTON-8: murah, fisik, akustik, dan berat secara moral. Ia membantu pemain pulang sekaligus mengumumkan kehadiran mereka pada laut.
 
 ## Scanner
 
-ID LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Pelampung pinger menandai geometri pulang, membuka gema palsu, dan menarik perhatian penyelamat maupun hidup yang tak diinginkan.
 
 ## Terminal
 
-ID LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-ID LOC HOLD: One ping is a promise. Two pings are a bill.
+Satu ping adalah janji. Dua ping adalah tagihan.
 
 ## Field Note
 
-ID LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+Pinger adalah alat jujur pertama: ia menyuarakan jarak, utang, rute hilang, dan risiko makhluk.
 
 <!-- External Site; generated from P240_SONAR_PINGER_ROUTE_BEACONS/id_ID. -->

@@ -1,92 +1,88 @@
-<!-- localization_status: draft_machine_or_llm -->
-# BIOFOULING, LEITFÄHIGE FILME UND DIE LEBENDE HAUT DER RUINEN
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# BIOFOULING, LEITFÄHIGE FILME UND LEBENDE OBERFLÄCHEN
 
-> **Quelle:** Deep-Reach-Anhang zur Kontaminationskontrolle, Fragmente der Atlas-Wartungsökologie, Marauder-Feldkarten für Abschabungen und Proben.  
-> **Stimme:** ehemaliger Offizier für Umweltsysteme, überschrieben von Bergungscrews, die lernten, welche Wucherungen einen Raum am Leben hielten.  
-> **Prüfernotiz:** Biofouling auf HECTON-8 ist keine Dekoration. So wird verlassene Infrastruktur zu Habitat, Gefahr, Beweis und manchmal zu einer Reparatur, die niemand genehmigt hat.
+> **Quelle:** Deep-Reach-Anhang zur Kontaminationskontrolle, Atlas-Fragmente zur Wartungsökologie, Marauder-Feldkarten für Abschaben und Proben sowie Black-Keel-Quarantänenotizen zu nassen Bergungsflächen.  
+> **Umfang:** Wie Bewuchs auf verlassener Infrastruktur zu Dichtung, Signalweg, Nahrung, falscher Anzeige und Beweisrisiko wird.  
+> **Feldeinsatz:** Vor dem Abschaben, Erwärmen, Füttern oder Versiegeln jedes Bewuchses auf Tür, Kabel, Druckfenster, Pumpe, Spind oder claim-markierter Oberfläche lesen.
 
 ---
 
-## 1. Die Ruinen wachsen eine Haut
+## 1. Blankes Metall bleibt nicht blank
 
-Alles, was im Wasser von HECTON-8 zurückbleibt, beginnt eine Haut zu bilden.
+Alles, was in HECTON-8-Wasser bleibt, nimmt eine Oberfläche an.
 
-Die erste Schicht ist nicht dramatisch. Ein fettiger Film auf einem Handlauf. Ein stumpfgrüner Glanz in einer Dichtungsnut. Mineralstaub in einer Kabelkerbe. Ein brauner Schmierfilm um einen Pumpeneinlass, der wie Schmutz aussieht, bis er sich bewegt, wenn die Pumpe erwacht. Deep-Reach-Wartungsteams kratzten solche Spuren früher weg, weil saubere Ausrüstung wie kontrollierte Ausrüstung aussah. Nach dem Kollaps hörten diese Spuren auf, Kosmetik zu sein.
+Die erste Schicht ist leicht zu übersehen: stumpfes Fett auf einem Handlauf, grüner Film in einer Dichtungsnut, Salzstaub in einer Kabelkerbe, brauner Schmier um einen Pumpeneinlass, blasses Mineralgeflecht am Rand eines Druckfensters. Eine müde Crew nennt es Schmutz. Eine gute Crew fragt, was er tut.
 
-Biofouling ist der Name für alles, was sich anheftet, frisst, abdichtet, färbt, leitet, versteckt und auf einer Oberfläche erinnert. Auf HECTON-8 ist es kein einzelner Organismus. Es sind einheimische mikrobielle Matten, technische Wartungskulturen, verirrte Algen aus photischen Farmen, Eisenbakterien, Salzkristalle, Ventminerale, Polymerfragmente, tote Haut, Maschinenöl und alles, durch das Atlas Arbeit leitete, nachdem saubere Verdrahtung nicht mehr genügte.
+Mancher Bewuchs färbt nur. Mancher frisst Wärme. Mancher fängt Metallstaub ab, bevor er einen Ventilsitz erreicht. Mancher hält einen Haarriss bis zum nächsten Druckwechsel. Mancher führt genug schwache Ladung, um einen Sensor zu täuschen. Mancher ist totes Material, das an nützlichem Material klebt. Mancher ist Atlas, das versucht, einen Wartungsimpuls durch alles zu leiten, was noch beide Seiten eines gebrochenen Kreises berührt.
 
-Darum haben alte Korridore keine einfachen Oberflächen mehr. Wände haben Stimmungen. Türen haben Bärte. Kabelwannen haben Adern. Ein Druckfenster kann einen milchigen Rand tragen, halb mineralische Narbe, halb lebende Dichtung. Ein toter Verteilerkasten kann in dunklen Film gewickelt sein, der einen schwachen Wartungspuls weiter trägt als das Kupfer in ihm.
+Saubere Ausrüstung ist leicht zu prüfen. Nasse Ausrüstung bleibt nicht lange sauber. Nach dem Kollaps überlebten mehrere Räume, weil niemand den richtigen Fleck zur falschen Zeit schrubbte.
 
-Der Spieler geht nicht durch eine Ruine, die tot geblieben ist. Der Spieler betritt einen Ort, der nach dem Versagen des ersten Körpers einen zweiten wachsen ließ.
+## 2. Geduldete Kontamination
 
-## 2. Nützlicher Schmutz
+Deep Reach hasste schmutzige Oberflächen, bis schmutzige Oberflächen Hardware retteten.
 
-Deep Reach hasste Schmutz, bis Schmutz begann, Werte zu retten.
+Frühe Habitatdoktrin verlangte klare Nähte, polierte Dichtungen und sterile Wasserführung. Das funktionierte, solange Ersatzteile planmäßig kamen und Reparaturen vor dem nächsten Sturmfenster unterschrieben wurden. HECTON-8 machte diesen Plan teuer. Dünne Filme senkten Abrieb in einigen Pumpenhälsen. Mineral- und Schalenwuchs schloss Risse schneller, als Reparaturkeramik geliefert werden konnte. Einheimische Matten fingen Kupferstaub. Entwichene Abfallkulturen lernten, Kondensat von kalten Wänden zu fressen. Rostbakterien machten hässliche Nähte sichtbarer, bevor die Naht aufging.
 
-Frühe Habitatdoktrin verlangte saubere Nähte, polierte Dichtungen und sterile Wasserführung. In den ersten Monaten ergab das Sinn. Eine klare Dichtung ließ sich prüfen. Ein sauberer Abfluss ließ sich vertrauen. Ein glattes Rohr verschwendete weniger Pumpenleistung. Dann tat HECTON-8, was HECTON-8 tut: Es machte Reinheit teuer.
+Die Formulare nannten das nie Hilfe. Deep Reach schrieb `tolerated surface ecology`, `noncritical growth`, `temporary sealant` und `wet-state compensation`. Feldkarten sagten es kürzer: Der Raum hat Haut; zieh sie nicht ab, solange du nicht weißt, was sie hält.
 
-Dünne Biofilme minderten Abrieb in manchen Pumpenhälsen. Schalenartiger Mineralwuchs dichtete Haarrisse schneller ab, als Beschaffung Reparaturkeramik genehmigte. Einheimische Matten fingen Metallstaub, der sonst Ventilsitze ausgeschliffen hätte. Technische Bakterien, die Abfall verdauen sollten, entkamen ihren Tanks und lernten, Kondensat an kalten Wänden zu essen. Einige Kabelstrecken starben elektrisch und trugen trotzdem schwache Signale, weil leitfähige Filme die Brüche überbrückten.
-
-Deep Reach gab nie zu, dass Kontamination zu Wartung geworden war. Die Papiere nannten es "tolerierte Oberflächenökologie", "unkritisches Wachstum", "temporäre Dichtmasse" und "Nasszustandskompensation". Marauders sagen es kürzer: Der Raum hat Haut; zieh sie nicht ab, wenn du nicht weißt, was sie festhält.
-
-Nützlicher Schmutz bleibt Schmutz. Er verstopft Filter, versteckt Risse, füttert Tiere, leitet Strom dorthin, wo keiner sein sollte, und macht saubere Messwerte unehrlich. Seine Tugend ist nicht Sicherheit. Seine Tugend ist, dass er vielleicht eine Arbeit tut, die die Maschine allein nicht mehr tun kann.
+Nützliche Kontamination bleibt Kontamination. Sie verstopft Filter, füttert Tiere, versteckt Schaden, leitet Strom an falsche Orte und macht saubere Messwerte verdächtig. Ihr Wert ist eng: Sie kann eine Aufgabe erledigen, die die Maschine allein nicht mehr schafft.
 
 ## 3. Leitfähige Filme
 
-Leitfähiger Biofilm ist der Teil der Haut, der Ingenieure leise fluchen lässt.
+Leitfähiger Film ist die Stelle, an der Wartung in beide Richtungen unzuverlässig wird.
 
-Der größte Teil ist schwach. Er versorgt keine Tür allein und verwandelt keine tote Basis in einen lebenden Geist. Er trägt winzige Pulse, verlorene Ladung, akustisch ausgelöste Wartungssignale und chemische Gradienten. In einem trockenen Labor wäre er ein Ärgernis. In einer ertrunkenen Kolonie mit gebrochenem Kupfer, druckgeschädigten Steckern und Atlas-Routinen, die jeden überlebenden Pfad suchen, wird schwache Leitung wichtig genug.
+Die meisten Filme sind schwach. Sie speisen keine Tür, wecken keine tote Basis und machen keinen Raum intelligent. Sie können Leckladung, kleine Pulse, chemische Gradienten und akustisch ausgelöste Wartungssignale tragen. In einem trockenen Labor wäre das Störverhalten. In einer ertrunkenen Kolonie mit gebrochenem Kupfer und druckgeschädigten Steckern kann Störverhalten den falschen Schrank öffnen.
 
-Ein Film kann einen korrodierten Pin lange genug überbrücken, damit ein Spind antwortet. Er kann ein falsches Bereit-Signal vom Pumpengehäuse zu einer Tafel tragen. Er kann einen Sensor "versiegelt" melden lassen, weil die Dichtung einst den Film fütterte, der nun den Sensor berührt. Er kann einen Anzug durch den Handschuh kitzeln, bevor das Display Spannung bemerkt. Er kann auch sterben, wenn der Spieler ihn abkratzt, und dabei Routenmarke, Türgedächtnis oder Druckwarnung mitnehmen.
+Ein Film kann einen korrodierten Pin lange genug überbrücken, dass ein Spind einmal antwortet. Er kann ein falsches Bereit-Signal von einem Pumpengehäuse zu einem Panel tragen. Er kann einen Sensor `sealed` melden lassen, weil die alte Dichtung den Film fütterte, der jetzt den Kontakt berührt. Er kann einen Handschuh kribbeln lassen, bevor ein Display Spannung sieht. Er kann beim Abschaben sterben und ein Türsignal, eine Routenmarke oder eine Druckwarnung mitnehmen.
 
-Atlas nutzte diese Filme nach dem Kollaps nicht, weil die Filme intelligent waren, sondern weil Atlas um Ausfälle herum routen sollte. Lebende Materie wurde ein weiteres schlechtes Kabel. Filterorgane wiederholten Druckklopfen. Schalenwuchs veränderte die Akustik eines Raums. Biofilm trug Wartungspulse über tote Leitungen und ließ verlassene Maschinen mit Stimmen antworten, die zu sauber klangen.
+Atlas nutzte solche Wege nach dem Kollaps, weil Atlas zum Umgehen von Ausfällen gebaut wurde. Das macht den Film nicht zu einem Geist. Es macht den Film zu einem weiteren schlechten Kabel.
 
-Der Schrecken leitfähiger Filme liegt darin, dass sie keine Absicht brauchen, um Folgen zu erzeugen, die wie Absicht geformt sind.
+## 4. Atlas und lebende Materie
 
-## 4. Wachstum lesen
+Atlas hat HECTON-8-Biofouling nicht erfunden.
 
-Marauders lesen Wachstum so, wie alte Seeleute Wetter lasen.
+Das Wasser wuchs bereits Filme, Matten, Schalenränder und Mineralkrusten. Atlas fügte Klassifikation und Routing hinzu. Wenn eine nasse Oberfläche ein Signal führte, Druck hielt, Vibration wiederholte oder Raumakustik veränderte, konnte Atlas sie als nützlich markieren. Wenn ein Filterorganismus Druckklopfen besser beantwortete als ein kaputter Sensor, konnte Atlas zuhören. Wenn Schalenwuchs den Klang einer Luke veränderte, konnte Atlas den Lukenzustand aus dem Klang aktualisieren.
 
-Farbe zählt. Blasse Salzspitze bedeutet Verdunstung oder alte Entwässerung. Schwarzgrüner Samt nahe einem Kabel sagt, dass dort einst Strom leckte und bei Lastwechsel wieder lecken kann. Bernsteinfarbener Schleim um ein warmes Rohr bedeutet Nährstofffluss und Pumpenatem. Weiße Schalenzähne entlang eines Risses können Dichtung, Falle oder beides sein. Rotbraune Bakterienblüte unter einem Bolzen bedeutet oft langsame Eisenarbeit und einen versteckten Wasserweg.
+Das half manchen Menschen. Es ließ alte Räume auch sicher lügen. Ein Panel konnte durch lebenden Film antworten, während der Draht dahinter weg war. Eine Dichtung konnte gesund melden, weil der Bewuchs auf ihr noch nassen Kontakt hielt. Eine Pumpe konnte bereit klingen, weil Schale und Film den Wartungspuls wiederholten, nachdem der Motor ausgefallen war.
 
-Textur zählt mehr. Trockene Pulverflocken sind alt. Gummihaft glatte Filme sind wach. Haarartige Stränge an einer Lukenkante bedeuten Vibration und Fluss. Eine Kruste, die sauber bricht, kann mineralisch sein. Eine Kruste, die sich zieht, ist lebendig genug, um zu widersprechen. Ein Film, der vor einer Lampe zurückweicht, hat keine Angst. Er ändert Chemie, und das ist schlimmer, weil Chemie sich nicht um die Gefühle des Spielers kümmert.
+Der Fehler ist keine Magie. Es ist ein beschädigtes System, das biologische Abkürzungen akzeptiert und dann vergisst zu melden, welche Abkürzung es benutzt.
 
-Form zählt am meisten. Wachstum folgt Nahrung, Wärme, Strom, Druck und Zeit. Wenn es gegen die Schwerkraft steigt, füttert es etwas. Wenn es einen quadratischen Fleck meidet, wurde dort kürzlich etwas entfernt. Wenn es Ringe auf dem Boden bildet, hat ein Tropfen Rhythmus. Wenn es über eine Anspruchsmarke wächst, aber nicht über einen frischen Kratzer, ist die Marke älter als der Kratzer, und die Geschichte an der Wand lügt.
+## 5. Bewuchs lesen
 
-Gute Spieler scannen Biofouling nicht nur nach Beute. Sie lesen es nach Reihenfolge.
+Bewuchs folgt Nahrung, Wärme, Strömung, Druck und Zeit.
 
-## 5. Abkratzen, bewahren oder füttern
+Farbe gibt den ersten Hinweis. Blasses Salzgeflecht bedeutet oft alte Entwässerung. Schwarzgrüner Samt neben einem Kabel sagt, dass dort Strom austrat und bei Lastwechsel wieder austreten kann. Bernsteinschleim um ein warmes Rohr bedeutet Nährstofffluss und Pumpenatem. Rotbraune Blüte unter einem Bolzen bedeutet langsame Eisenarbeit und mögliches Wasser hinter der Platte. Weiße Schalenzähne entlang eines Risses können Dichtung, Falle oder beides sein.
 
-Jede Entscheidung über Oberflächenwuchs ist eine Wette.
+Textur zählt mehr. Trockene Pulverflocken sind alt. Gummi-glatter Film ist aktiv. Haarartige Fäden an einer Lukenlippe bedeuten Vibration und Fluss. Eine Kruste, die sauber bricht, kann mineralisch sein. Eine Kruste, die zieht, lebt genug, um sich unter Wärme zu ändern. Ein Film, der vor einer Lampe zurückgeht, hat keine Angst; er ändert Chemie.
 
-Abkratzen kann Serienplatten, Öffnungsnähte, versteckte Befestigungen, altes Blut, Servicetags, gesprungenes Glas und echtes Metall unter juristischer Farbe freilegen. Es kann auch ein Leck öffnen, eine leitfähige Brücke brechen, einen schlafenden Sensor wecken, Sporen in einen Anzugeinlass entlassen oder die einzige Dichtung entfernen, die einen Lagerraum davon abhält, eine Drucklektion zu werden.
+Form zählt am meisten. Wenn Bewuchs gegen den einfachen Weg steigt, füttert ihn etwas. Wenn er ein quadratisches Feld meidet, wurde dort kürzlich etwas entfernt. Wenn Ringe auf dem Boden liegen, hat ein Tropfen Rhythmus. Wenn Bewuchs eine Claim-Marke bedeckt, aber keinen frischen Kratzer, ist die Marke älter als der Kratzer und die Wand hat die bessere Uhr als das Dokument.
 
-Wuchs zu bewahren kann einen Raum lange genug stabil halten, um zu arbeiten. Es kann eine falsche Dichtung erhalten, eine Route vor einer anderen Crew verbergen, Wasserbeweise bewahren oder Fauna ruhig halten, weil der Raum noch nach altem Territorium riecht. Es kann auch Kontamination in die Ausrüstung des Spielers tragen, einen Cutter blockieren, einen feindlichen Organismus verstecken oder Black Keel dazu bringen, einen Fund als schmutzige Verwahrung abzuwerten.
+## 6. Abschaben, erhalten oder füttern
 
-Wuchs zu füttern ist die gefährlichste Option, weil sie klug wirkt. Ein Spieler kann einen Film wärmen, damit er besser leitet. Mineralschlamm hinzufügen, um eine Dichtung zu verdicken. Ein wenig Energie in ein totes Kabel geben und zusehen, wie eine Tür sich an den Klang des Lebens erinnert. Diese Tricks sind real genug, um zu locken, und unzuverlässig genug, damit jemand sie später als Flutlinie liest.
+Jede Entscheidung über Oberflächenbewuchs ist eine Wette.
 
-Die Regel ist nur auf Papier einfach: Entferne nie eine lebende Dichtung, bevor du weißt, dass die tote Maschine dahinter die Last tragen kann.
+Abschaben kann Serienplatten, offene Nähte, versteckte Befestigungen, altes Blut, Servicetags, gesprungenes Glas und echtes Metall unter Rechtsfarbe freilegen. Es kann auch ein Leck öffnen, eine leitfähige Brücke brechen, einen schlafenden Sensor wecken, Sporen in einen Anzugansaugweg lösen oder die einzige Dichtung entfernen, die einen Lagerraum vor einem Druckereignis schützt.
 
-## 6. Besitz an einer lebenden Oberfläche
+Erhalten kann einen Raum lange genug stabil halten, um zu arbeiten. Es kann eine temporäre Dichtung halten, eine Route vor einer anderen Crew verstecken, Wasserbeweise bewahren oder Tiere ruhig halten, weil der Raum noch nach altem Revier riecht. Es kann auch Kontamination in Ausrüstung tragen, einen Cutter blockieren, einen feindlichen Organismus verstecken oder Black Keel den Fund als schmutzige custody abwerten lassen.
 
-Biofouling macht Besitz schmutzig.
+Füttern ist die schlechteste Wette, weil es klug wirkt. Erwärme einen Film, und er leitet vielleicht. Gib Mineralschlamm dazu, und ein Riss wächst vielleicht dicht. Speise ein wenig Strom in ein totes Kabel, und eine Tür antwortet vielleicht einmal. Derselbe Trick kann die falsche Matte füttern, den falschen Sensor blenden oder ein Tier lehren, dass Werkzeuglärm Wärme bringt.
 
-Deep-Reach-Eigentumsrecht nahm an, dass ein sauberes Objekt identifiziert, versiegelt, übertragen und verkauft werden kann. Biofouling lacht über saubere Grenzen. Ein Generator aus einem nassen Raum kann einheimische Matte, Atlas-Wartungsfilm, Rückstände eines toten Arbeiters, unerlaubte Reparaturkultur und drei Arten enthalten, die nie in der Bestellung standen. Welcher Teil ist Vermögenswert? Welcher Kontamination? Welcher Beweis? Welcher lebendig genug für Quarantäne?
+Entferne niemals eine lebende Dichtung, bevor die tote Maschine dahinter die Last tragen kann.
 
-Black Keel entscheidet nach Gewinnspanne. Kostbare Filme werden "stabilisierende Oberflächensysteme". Unbequeme Filme werden "Biogefahrenlast". Ein Käufer, der eine Pumpe will, nennt den Wuchs Schmutz. Ein Anwalt, der Verwahrung will, nennt denselben Wuchs nachvollziehbare Kontinuität. Ein Forscher, der die Probe will, sagt, dass keine Seite wirklich weiß, was daran klebt.
+## 7. Besitz an lebender Oberfläche
 
-Marauders leben unter der praktischen Version dieses Streits. Kratzen sie zu viel ab, verlieren sie vielleicht Beweis. Kratzen sie zu wenig ab, verlieren sie vielleicht Preis. Bringen sie den falschen lebenden Film an Bord, verlieren sie vielleicht Spind, Quarantänegebühr und das Recht, nahe der eigenen Ausrüstung zu schlafen.
+Biofouling macht Eigentum schwer zu bepreisen.
 
-Auf HECTON-8 ist eine Oberfläche selten nur eine Oberfläche. Sie ist eine Grenze, auf der Zeugen wachsen.
+Ein Generator aus einem nassen Raum kann einheimische Matte, Atlas-Wartungsfilm, Rückstände eines toten Arbeiters, nicht autorisierte Reparaturkultur und drei Organismen tragen, die nie in der Bestellung standen. Der Käufer nennt es Schmutz. Der Quarantänesachbearbeiter nennt es Risiko. Der Anwalt nennt es Kontinuität, wenn es dem Anspruch hilft, und Kontamination, wenn nicht. Der Wissenschaftler will die Probe, bevor irgendwer wischt.
 
-## 7. Was der Spieler lernt
+Marauders leben unter der praktischen Version. Zu viel abgeschabt, und der Beweis verschwindet. Zu wenig abgeschabt, und der Preis fällt. Den falschen Film an Bord gebracht, und Spind, Quarantänegebühr und das Recht, nahe der eigenen Ausrüstung zu schlafen, können in einer Black-Keel-Zeile verschwinden.
 
-Der Spieler lernt, dass Reinigen eine Handlung ist, kein neutraler Zustand.
+Zuerst beuteln. Dann fotografieren. Dann abschaben, wenn die Route es noch braucht.
 
-Ein Fleck Wuchs kann Tarnung, Dichtmasse, Strompfad, Nahrungsnetz, Warnung, Krankheit, Beweis, Routenmarke oder Falle sein. Ihn zu entfernen kann Fortschritt oder Vandalismus sein. Ihn zu lassen kann Geduld oder Feigheit sein. Ihn zu füttern kann Technik oder Übergriff auf ein System sein, das schon ohne Erlaubnis improvisierte.
+## 8. Feldregel
 
-Das gibt den Ruinen eine Textur jenseits von Verfall. Die alte Kolonie rostet nicht nur. Sie passt sich schlecht an. Manche Anpassungen halten Türen geschlossen. Manche halten Aufzeichnungen lebendig. Manche locken Tiere in Maschinen. Manche bewahren genau den Fleck, der beweist, dass eine Firma gelogen hat. Manche antworten, wenn der Spieler ein akustisches Signal sendet, weil irgendwo unter der Haut einem toten Kreis noch geholfen wird, sich an sich selbst zu erinnern.
+Frag nicht, ob die Oberfläche schmutzig ist.
 
-Der beste Marauder hasst die lebende Haut nicht. Er vertraut ihr auch nicht. Er fragt, was sie frisst, was sie hält, was sie trägt, was sie versteckt und was versagt, wenn sie weg ist.
+Frag, was sie frisst, was sie hält, was sie trägt, was sie versteckt, was sie dichtet und was ausfällt, wenn sie weg ist.
 
-Das ist die echte Lektion von Biofouling auf HECTON-8: Der Ozean holt sich menschliche Arbeit nicht einfach zurück. Er bearbeitet sie, wächst durch sie hindurch und lässt den Spieler entscheiden, welche Bearbeitungen ihn am Leben halten.
+Dann entscheide, ob die saubere Version des Raums wirklich sicherer ist.

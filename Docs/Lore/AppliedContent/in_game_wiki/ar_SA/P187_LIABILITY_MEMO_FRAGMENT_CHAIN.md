@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "سلسلة شظايا مذكرة المسؤولية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# سلسلة شظايا مذكرة المسؤولية
 
-AR LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+تعلم سلسلة شظايا مذكرة المسؤولية اللاعب كيف يقرأ أدلة Deep Reach. لا تحتوي مذكرة واحدة على الجريمة كلها؛ كل مكتب احتفظ بالجملة التي تجعل فعله يبدو إجرائياً. يعترف جدول المخاطر بأن هامش المد كان يفشل. تحول مذكرة الإخلاء التأخير إلى انضباط قناة. يجعل تجاوز Atlas الاستمرارية تبدو أكثر أماناً من الهرب. تحول شظية Keelmark العمال المفقودين إلى خسارة قابلة للاسترداد. على اللاعب أن يقارن الورق بالغرف المغمورة، وساعات المسار المكسورة، وأسماء العمال. تصبح السلسلة قابلة للقراءة فقط عندما تكف الشظايا عن الدفاع عن مكاتبها وتبدأ في التناقض.
 
 ## Scanner
 
-AR LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+نجت مذكرة المسؤولية كشظايا لأن كل مكتب احتفظ بالفقرة التي تحميه هو.
 
 ## Terminal
 
-AR LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: جدول هامش المخاطر / مذكرة إفراج الإخلاء / تجاوز استمرارية Atlas / تحويل خسارة Keelmark / طلب حيازة الاسترداد. قارن وقت المسار، وتلف الغرف، وأسماء العمال قبل قبول الملخص العام.
 
 ## Audio
 
-AR LOC HOLD: Paper is weak alone. Put it against a flooded door.
+لم يخفوا الحقيقة في خزنة. أرشفوها في قطع.
 
 ## Field Note
 
-AR LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+المذكرة الممزقة صادقة في المواضع التي لم تقصد أن تكون فيها صادقة.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/ar_SA. -->

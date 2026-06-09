@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Worker Locker Nameplate Sample"
+title: "工人储物柜名牌样本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Worker Locker Nameplate Sample
+# 工人储物柜名牌样本
 
-ZH LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+工人储物柜名牌样本展示 HECTON-8 如何通过仍有工作的物件记住人。Ren Okoye 不是通过传记出场。储物柜名牌给出路线、工具认证、餐券、手套尺寸标记，以及一条被某个不知道哪些细节重要的人磨掉的薪资条。这就是这个遗物有效的原因。它证明企业擦除可以很笨拙：payline 消失了，但 clamp route 还在；状态被覆盖，但手套尺寸仍适合一只真实的手。玩家应该先通过劳动读到姓名，再感到那条缺失账户线里的暴力。
 
 ## Scanner
 
-ZH LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye 的名牌保住了姓名，因为擦掉薪资行比擦掉工作更容易。
 
 ## Terminal
 
-ZH LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-ZH LOC HOLD: Name retained. Payline erased.
+姓名保留。薪资行抹除。工作仍然附着。
 
 ## Field Note
 
-ZH LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / 餐券夹在胶带下。Payroll stripe 被磨掉；手套尺寸标记仍可见。
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/zh_CN. -->

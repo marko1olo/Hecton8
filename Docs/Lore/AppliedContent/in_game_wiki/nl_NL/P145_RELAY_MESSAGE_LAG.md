@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Relaisberichtvertraging
 
-Relaisvertraging laat Deep Reach de speler bedreigen zonder levende stem in de kamer. Contractmachines, notarissen, claimvensters en carrierclausules kunnen vóór mededogen aankomen omdat ze eerder geschreven, eerder in de rij gezet en geprijsd zijn om afstand te overleven.
+Relaisvertraging laat HECTON-8 autoriteit ontvangen zonder zorg te ontvangen. Een pakket kan waarschuwing, schuld, eigendom, bewaring of bekentenis over afstand dragen, maar geen handen naar een overstroomde kamer brengen. Die scheiding maakt communicatie beangstigend: systemen op afstand blijven machtig omdat ze vroeg zijn geschreven, vroeg in de rij gezet, voor afstand geprijsd en vertrouwd door machines die niet weten dat de afzender dood is.
 
 ## Scanner
 
-Een bericht kan juridisch bindend zijn en toch te laat komen om lucht te redden.
+Berichtbinding geldig. Menselijk antwoord afwezig. Resterende lucht lokaal bepaald.
 
 ## Terminal
 
-RELAISVERTRAGING: lokale Aegir-berichten kunnen uren of dagen duren. Interdomein juridische pakketten kunnen jaren duren. Deep Reach-druk is oud, geautomatiseerd, contractueel en nog steeds gevaarlijk.
+RELAISVERTRAGING: lokale Aegir-pakketten kunnen uren of dagen duren. Juridische pakketten tussen domeinen kunnen jaren duren. Deep Reach-druk blijft bestaan omdat oude instructies, pandrechtberichten, routeclaims en automatische weigeringen uitvoerbaar blijven nadat de persoon die ze schreef verdwenen is.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Het antwoord is laat. Het pandrecht is actueel.
 
 ## Field Note
 
-Geen ansible betekent dat waarheid als vracht beweegt.
+Geen ansible betekent dat waarheid als vracht reist, maar wet als een bewapend schema.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/nl_NL. -->

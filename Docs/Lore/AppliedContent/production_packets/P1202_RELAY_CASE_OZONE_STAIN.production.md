@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_power_status |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS185_FIRST_POWER_STATUS_TRACE_ARTICLES.md |
 | Speaker | Service scanner, relay case note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first power-panel inspection |
@@ -72,17 +72,17 @@ STRESS TRACE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| ru_RU | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| ja_JP | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| zh_CN | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| fr_FR | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| es_ES | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| de_DE | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| pl_PL | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| uk_UA | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| ar_SA | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| id_ID | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| ko_KR | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| he_IL | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| pt_BR | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
-| nl_NL | draft_machine_or_llm | RELAY CASE // Dark stain near vent slit. Treat as stress trace, not fault code. |
+| ru_RU | draft_machine_or_llm | КОРПУС РЕЛЕ // Темное пятно у вентиляционной щели. Считать следом нагрузки, не кодом ошибки. |
+| ja_JP | draft_machine_or_llm | リレーケース // 通気スリット近くに黒い染み。ストレス痕として扱い、故障コードにはしない。 |
+| zh_CN | draft_machine_or_llm | 继电器外壳 // 通风缝旁有暗斑。按受压痕迹处理，不作故障码。 |
+| fr_FR | draft_machine_or_llm | BOITIER DE RELAIS // Tache sombre pres de la fente d'aeration. Trace de stress, pas code de panne. |
+| es_ES | draft_machine_or_llm | CAJA DE RELE // Mancha oscura cerca de ranura de ventilacion. Tratar como rastro de esfuerzo, no codigo de falla. |
+| de_DE | draft_machine_or_llm | RELAISGEHAEUSE // Dunkler Fleck nahe Lueftungsschlitz. Als Belastungsspur lesen, nicht als Fehlercode. |
+| pl_PL | draft_machine_or_llm | OBUDOWA PRZEKAZNIKA // Ciemna plama przy szczelinie wentylacyjnej. To slad obciazenia, nie kod usterki. |
+| uk_UA | draft_machine_or_llm | КОРПУС РЕЛЕ // Темна пляма біля вентиляційної щілини. Вважати слідом навантаження, не кодом збою. |
+| ar_SA | draft_machine_or_llm | غلاف مرحل // بقعة داكنة قرب شق التهوية. عاملها كأثر إجهاد، لا كرمز عطل. |
+| id_ID | draft_machine_or_llm | RUMAH RELAI // Noda gelap dekat celah ventilasi. Anggap jejak tekanan, bukan kode gangguan. |
+| ko_KR | draft_machine_or_llm | 릴레이 케이스 // 통풍 틈 근처 어두운 얼룩. 고장 코드가 아니라 스트레스 흔적으로 본다. |
+| he_IL | draft_machine_or_llm | מארז ממסר // כתם כהה ליד חריץ אוורור. להתייחס כסימן עומס, לא כקוד תקלה. |
+| pt_BR | draft_machine_or_llm | CAIXA DO RELE // Mancha escura perto da fenda de ventilacao. Trate como marca de estresse, nao codigo de falha. |
+| nl_NL | draft_machine_or_llm | RELAISKAST // Donkere vlek bij ventilatiesleuf. Lees als stressspoor, niet als foutcode. |

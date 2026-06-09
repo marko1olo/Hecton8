@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Sonar Pinger Route Beacons"
+title: "Sonar-pinger-routebakens"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Sonar Pinger Route Beacons
+# Sonar-pinger-routebakens
 
-NL LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+De sonar-pinger is goedkoop, maar blijft nuttig. Hij legt een terugkeerlijn, markeert bewijskisten, scheidt valse echo's van echte wanden en bewaart een verloren route als geluid. Tegelijk vertelt hij de oceaan waar je bent. Hij is dus veiligheidsmiddel, schuldmarkering en soms aas.
 
 ## Scanner
 
-NL LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Een pingerdrijver markeert terugkeergeometrie, onthult valse echo's en trekt redding en ongewenst leven aan.
 
 ## Terminal
 
-NL LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-NL LOC HOLD: One ping is a promise. Two pings are a bill.
+Een ping is een belofte. Twee pings zijn een rekening.
 
 ## Field Note
 
-NL LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+De pinger is het eerste eerlijke gereedschap: hij zegt afstand, schuld, routeverlies en levensrisico in geluid.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/nl_NL. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Claimant Language Audit"
+title: "Claim Procedure Language Audit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,35 +17,35 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Claimant Language Audit
+# Claim Procedure Language Audit
 
-Claimant language is one of the colony's quietest weapons. It does not need to deny the pump room, the sealed triage door, or the worker mass left behind the service grille. It only needs to rename them before anyone with power reads the file. A queue becomes a release timing variance. A locked door becomes a quarantine review gate. A body that never returned becomes payout exposure. A damaged salvage return becomes partial eligibility.
+Deep Reach paperwork can bury a record without deleting it. It keeps the room, tag, timestamp, and body count, then swaps the noun beside them. In the Tau mirror cache, Pump Room B marked occupied after flood-time 03:18 is filed as release-window variance. Triage Door 2 latched from the control side is filed as quarantine review. Worker tag R-17 missing while the suit ring sits in salvage mass is filed as Keelmark exposure. A return tray with four empty kit hooks is filed as partial cargo eligibility.
 
-The audit exists so the player can read procedure language as action. Every converted phrase should be traced back to a person, a room, a tool, a route clock, or a pressure event. Deep Reach can keep the witness and still bury the testimony by changing the shelf label. If the category survives but the body disappears, the evidence has already been laundered once.
+Read the record from the floor upward: room, latch, tag, clock, returned object count. Claim procedure language becomes evidence only when it can be pinned to a physical trace. If a file keeps the category and drops the worker, the office has already cleaned the route once.
 
 ## Scanner
 
-CLAIMANT LANGUAGE AUDIT // Worker testimony and damaged rooms can be converted into procedure categories: release timing variance, quarantine review gate, payout exposure, partial return eligibility.
+CLAIM LANGUAGE AUDIT // Procedure category found beside physical evidence. Verify room, latch, worker tag, route clock, and returned kit count before accepting the category.
 
 ## Terminal
 
-PACKET NOTARY INTERFACE: CLAIMANT LANGUAGE AUDIT
-Original line: pump room queue still occupied.
-Claimant conversion: release timing variance.
-Original line: triage door held shut.
-Claimant conversion: quarantine review gate.
-Original line: unrecovered worker mass.
-Claimant conversion: Keelmark payout exposure.
-Original line: return without full payload.
-Claimant conversion: partial return eligibility.
-A category is not neutral when it replaces a person.
+CLAIM LANGUAGE AUDIT / TAU MIRROR INTAKE
+Raw: Pump Room B queue occupied after flood mark 03:18.
+Filed as: release-window variance.
+Raw: Triage Door 2 latched from control side.
+Filed as: quarantine review.
+Raw: Worker tag R-17 absent; suit ring logged in salvage mass.
+Filed as: Keelmark exposure.
+Raw: return tray missing four personal kits.
+Filed as: partial cargo eligibility.
+Reject any category that cannot point to a room, tag, latch, or clock.
 
 ## Audio
 
-Deep Reach does not always delete a witness. Sometimes it keeps the witness and changes the shelf where the witness is stored.
+They did not scrub the line. They changed the filing noun. Start with the room, not the form.
 
 ## Field Note
 
-Categories are how they make a dead worker quiet without losing the invoice. Read the label, then find what had to be cut out for the label to fit.
+If a file sounds clean, count hooks, tags, latches, and clocks. The missing noun is usually the worker.
 
 <!-- In-Game Wiki; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/en_US. -->

@@ -3,7 +3,9 @@ using System;
 using System.IO;
 #endif
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -69,7 +71,7 @@ namespace Hecton8.Physics
 #endif
 
         [SerializeField]
-        private float seaLevel;
+        private float seaLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
         [Header("Sampling")]
         [SerializeField, Range(1, 64)]
@@ -97,6 +99,7 @@ namespace Hecton8.Physics
 #endif
 
         private IDataVault _dataVault;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private VaultGenerationHandle<ReadbackRequestDTO> _requestsHandle;
         private VaultGenerationHandle<ReadbackRequestDTO> _completedRequestsHandle;
         private VaultGenerationHandle<ReadbackResolvedHeightDTO> _resolvedHeightsHandle;
@@ -317,6 +320,7 @@ namespace Hecton8.Physics
 #endif
             CacheGraphicsCapabilitySnapshotCold();
             _dataVault = GlobalRegistry.DataVault;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
             if (EnsureRuntimeReady())
@@ -343,6 +347,7 @@ namespace Hecton8.Physics
             TryUnregisterDispatcherSystems();
             ReleaseGpuBuffers();
             _coreBlackboxWarmed = false;
+            _oceanKinematicsService = null;
 #if UNITY_EDITOR
             if (ReferenceEquals(_activeRuntimeInstance, this))
                 _activeRuntimeInstance = null;
@@ -356,6 +361,7 @@ namespace Hecton8.Physics
             fallbackLargeVesselLengthMeters = math.max(1f, fallbackLargeVesselLengthMeters);
             fallbackLargeVesselBeamMeters = math.max(1f, fallbackLargeVesselBeamMeters);
             fallbackLargeVesselInsetMeters = math.max(0f, fallbackLargeVesselInsetMeters);
+            seaLevel = SanitizeFallbackSeaLevelY(seaLevel);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -363,6 +369,12 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -927,7 +939,7 @@ namespace Hecton8.Physics
             waveHeightSamplerCompute.SetBuffer(_kernelIndex, OceanWaveBufferId, waveBuffer);
             waveHeightSamplerCompute.SetBuffer(_kernelIndex, BuoyancyReadbackRequestsId, requestBuffer);
             waveHeightSamplerCompute.SetInt(WaveSampleCountId, _dispatchRequestCount);
-            waveHeightSamplerCompute.SetFloat(WaveSampleSeaLevelId, seaLevel);
+            waveHeightSamplerCompute.SetFloat(WaveSampleSeaLevelId, ResolveRuntimeSeaLevelY());
             waveHeightSamplerCompute.SetFloat(OceanTimeId, _timeSeconds);
             waveHeightSamplerCompute.SetFloat(OceanQualityId, shaderQuality);
             waveHeightSamplerCompute.SetInt(OceanWaveCountId, activeWaveCount);
@@ -969,6 +981,64 @@ namespace Hecton8.Physics
             activeRef = 1;
             _readbackWriteSlot = (_readbackWriteSlot + 1) % AsyncBuoyancyReadbackConstants.ReadbackRingSize;
             return ReadbackDispatchStatus.Dispatched;
+        }
+
+        private float ResolveRuntimeSeaLevelY()
+        {
+            return TryResolveOceanSeaLevelY(out float resolvedSeaLevelY)
+                ? resolvedSeaLevelY
+                : SanitizeFallbackSeaLevelY(seaLevel);
+        }
+
+        private bool TryResolveOceanSeaLevelY(out float resolvedSeaLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TrySanitizeOceanRuntimeSeaLevelY(oceanKinematics.SeaLevel, out resolvedSeaLevelY))
+            {
+                return true;
+            }
+
+            resolvedSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
+        }
+
+        private static float SanitizeFallbackSeaLevelY(float value)
+        {
+            return TrySanitizeFallbackSeaLevelY(value, out float resolvedSeaLevelY)
+                ? resolvedSeaLevelY
+                : WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+        }
+
+        private static bool TrySanitizeOceanRuntimeSeaLevelY(float value, out float resolvedSeaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                resolvedSeaLevelY = value;
+                return true;
+            }
+
+            resolvedSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
+        }
+
+        private static bool TrySanitizeFallbackSeaLevelY(float value, out float resolvedSeaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                resolvedSeaLevelY = value;
+                return true;
+            }
+
+            resolvedSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
         }
 
         private void ConsumeGpuReadbacksNoWait()

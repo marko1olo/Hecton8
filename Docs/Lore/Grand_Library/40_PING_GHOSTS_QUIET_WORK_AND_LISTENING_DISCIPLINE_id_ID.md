@@ -1,58 +1,80 @@
 <!-- localization_status: draft_machine_or_llm -->
-# HANTU PING, KERJA SUNYI, DAN DISIPLIN MENDENGAR
+# HANTU PING, KERJA SENYAP, DAN DISIPLIN MENDENGAR
 
-> **Sumber:** Primer navigasi akustik Deep Reach, kebijakan pemulihan penerima Black Keel, catatan lapangan audio pakaian Marauder.  
-> **Suara:** Instruktur akustik navigasi, sebagian ditimpa oleh praktik salvage.  
-> **Catatan Peninjau:** HECTON-8 tidak sunyi. Ia penuh hal yang belajar membuat pemain memutuskan apakah suara adalah bukti, umpan, atau memori.
+> **Sumber:** panduan navigasi akustik Deep Reach, log perawatan penerima, kebijakan pemulihan penerima Black Keel, dan catatan lapangan audio setelan milik perompak.  
+> **Cakupan:** balikan akustik, ID penerima yang usang, kebiasaan kerja senyap, dan rekaman suara yang dipakai untuk rute, klaim, dan keputusan risiko.  
+> **Penggunaan lapangan:** baca sebelum mengirim ping aktif, memercayai responder lama, mematikan audio setelan, menyelamatkan penerima, atau memotong di ruangan dengan pendengar tak dikenal.
 
 ---
 
-## 1. Suara Berjalan Berbeda Di Bawah Utang
+## 1. Suara tidak pernah pribadi
 
-Di udara, teriakan milik orang yang membuatnya. Di bawah air HECTON-8, suara menjadi publik sebelum menjadi berguna.
+Di bawah air HECTON-8, suara menjadi milik rute sebelum menjadi milik orang yang membuatnya.
 
-Tekanan membawa bunyi melalui struktur, lumpur, kabel, tulang, dan rangka pakaian. Alat jatuh bisa berbicara melalui tiga ruangan. Start pompa bisa mengumumkan diri kepada makhluk yang tidak punya konsep pompa tetapi memahami ritme. Ping penerima bisa kembali dari dinding, pelat bangkai, cangkang hidup, atau rute yang runtuh setelah peta lama dicetak. Suara bukan garis lurus di sini. Suara adalah negosiasi dengan kerapatan.
+Kunci yang jatuh bisa berjalan lewat pelat dek, baki kabel banjir, rangka setelan, dan lumpur di bawah ruangan berikutnya. Start pompa bisa terbawa lebih jauh lewat struktur daripada lewat air terbuka. Cutter yang terdengar bersih di satu kompartemen bisa terdengar salah lewat bulkhead bengkok. Bicara lebih buruk: lelucon pribadi di kom setelan bisa menjadi getaran di dudukan penerima, dan dudukan itu tidak tahu bahwa suara itu dimaksudkan pribadi.
 
-Deep Reach membangun sistem akustik karena cahaya cepat gagal dan radio menjadi rumor lokal. Ping, bunyi pendek, sapuan frekuensi, ketukan berkode, dengung tether, dan jabat tangan penerima membentuk peta kedua di atas koloni. Peta itu tidak pernah bersih. Peta itu berguna, dan itu kebajikan yang berbeda.
+Deep Reach membangun navigasi akustik karena cahaya cepat gagal dan radio bawah air menjadi kebiasaan lokal berjangkauan pendek. Ping, chirp, ketukan berkode, dengung tether, handshake beacon, dan timing penerima membentuk peta kedua di atas koloni. Peta itu tidak pernah bersih. Peta itu berguna, dan itu hal berbeda.
 
-Marauder mewarisi kekacauan. Mereka tidak hanya bertanya "apakah ia menjawab?" Mereka bertanya apa lagi yang mendengar pertanyaan itu.
+Kru lama menanyakan dua hal sebelum membuat suara: jawaban apa yang kita butuhkan, dan siapa lagi yang menerima pertanyaannya?
 
-## 2. Hantu Ping
+## 2. Hantu ping
 
-Hantu ping adalah jawaban dari sesuatu yang tidak lagi seperti yang dipikirkan sistem.
+Hantu ping adalah balikan dari sesuatu yang sudah tidak berada di tempat yang dikatakan sistem, atau sudah bukan seperti yang dikatakan sistem.
 
-Penerima lama menyimpan penanda setelah dudukannya terpuntir, banjir, atau terpotong. Node navigasi bisa menjawab dari bawah lumpur di tempat rute tidak lagi tersisa. Drone mati bisa mengulang jabat tangan karena dudukan pengisian dayanya masih percaya padanya. Koridor runtuh bisa memantulkan bentuk lorong jika cukup logam terlipat menjadi kebohongan yang tepat. Beberapa hantu tidak berbahaya. Beberapa mahal. Beberapa lapar karena keterkaitan.
+Jenis umum adalah penerima basi. Node terus menjawab setelah dudukannya terpuntir, koridornya banjir, atau dinding di sekitarnya tersayat lepas. Identifikasinya nyata. Posisinya tidak. Unit navigasi setelan melihat ID itu dan ingin percaya rute lama masih ada.
 
-Deep Reach menyebutnya artefak akustik. Black Keel menyebutnya risiko verifikasi. Marauder menyebutnya hantu karena kata itu membuat orang hati-hati tanpa berpura-pura bahwa fenomenanya mistis. Hantu bukan roh. Hantu adalah kepastian basi dengan waktu balik.
+Jenis mahal adalah balikan berbentuk. Logam lambung terlipat bisa memantulkan timing sebuah lorong. Lumpur bisa mengubur beacon tetapi menyisakan antena cukup terbuka untuk menjawab terlambat. Drone mati bisa mengulang handshake pengisian karena cradle masih punya daya. Tenggorok servis yang runtuh bisa terdengar terbuka jika rel pecah membentuk kantong yang tepat.
 
-Pemain belajar bahwa jawaban bukan bukti kehadiran. Jawaban adalah bukti bahwa sesuatu menjawab.
+Deep Reach menyebutnya artefak akustik. Black Keel menyebutnya risiko verifikasi. Perompak menyebutnya hantu ping karena kata itu membuat orang hati-hati tanpa membuat fenomenanya mistis. Hantu adalah kepastian basi dengan jeda yang bisa diukur.
 
-## 3. Kerja Sunyi
+Jawaban bukan bukti rute. Jawaban adalah bukti bahwa sesuatu menjawab.
 
-Kerja sunyi bukan penyelinapan romantis. Itu penghormatan kepada pendengar yang tidak dikenal.
+## 3. Usia penerima
 
-Pekerja belajar suara mana milik alat dan suara mana milik kesalahan. Pemotong hati-hati punya nada. Pemotong terburu-buru punya gigi. Kipas pakaian yang berputar normal menjadi bagian tubuh, tetapi kipas yang melawan garam punya ketidaksabaran basah. Logam di bawah stres bernyanyi sebelum gagal. Fauna hidup sering berhenti membuat suara yang sudah biasa didengar pemain.
+Penerima menua dengan cara yang disembunyikan dokumen.
 
-Marauder menyunting pekerjaan mereka di sekitar hal ini. Mereka memberi bantalan pada klem. Mereka menempelkan tape pada kait longgar. Mereka menghindari bicara tak perlu di bangkai sempit. Mereka mematikan bunyi konfirmasi ketika rute depan punya terlalu banyak permukaan pendengar. Mereka membiarkan beberapa klik tetap hidup karena sunyi bisa membuat orang gugup menciptakan sinyal yang lebih buruk.
+Tag serial bisa tetap terbaca setelah dudukan berputar sembilan puluh derajat. Firmware bisa terus menyiarkan kedalaman baik terakhir karena sel tekanan mati dengan sopan. Log perawatan bisa menampilkan `gasket diganti` ketika teknisi hanya mengelap garam dari konektor dan menagih suku cadangnya. Beacon bisa lolos handshake sementara muka fisiknya menghadap dinding runtuh.
 
-Kerja sunyi tidak berarti tanpa suara. Itu berarti setiap suara harus punya alasan.
+Kebijakan Black Keel memperlakukan penerima utuh sebagai salvage, nilai navigasi, dan kemungkinan bukti klaim. Itu membuat setiap penerima layak dibohongi. Kru bisa menyeret node ke rute yang lebih baik dan mempertahankan ID lama. Pembeli bisa lebih suka log timing bersih daripada log jujur. Pekerja lelah bisa mereset fault karena siklus pompa berikutnya sudah terlambat.
 
-## 4. Mendengar Sebagai Bukti
+Aturan pertama: pisahkan identitas dari lokasi. Aturan kedua: pisahkan lokasi dari akses. Aturan ketiga: tulis aturan mana yang harus kau langgar.
 
-Mendengar dengan baik punya nilai hukum.
+## 4. Kerja senyap
 
-Rekaman bisa membuktikan pompa berjalan sebelum masuk, bahwa pintu mengunci setelah penurunan tekanan, bahwa fauna menempati rute sebelum kru mengganggunya, bahwa beacon darurat masih hidup ketika Black Keel mengklaimnya mati. Rekaman suara tidak menggantikan mata, tetapi mata melewatkan urutan. Suara sering menjadi satu-satunya saksi sekuens.
+Kerja senyap bukan romantika. Itu tidak sama dengan sembunyi. Itu kebiasaan membuat hanya suara yang bisa dibayar oleh pekerjaan.
 
-Ini membuat mendengar berbahaya. Kru yang merekam terlalu banyak bisa merekam pelanggarannya sendiri. Pemain yang menyimpan log penerima bisa menyimpan bukti melawan diri sendiri. Alarm yang dibisukan bisa menyelamatkan fokus dan menghancurkan klaim. Edit audio pakaian pribadi bisa terlihat seperti manipulasi jika petugas inspeksi yang salah ingin membacanya begitu.
+Clamp yang hati-hati mendarat sekali. Clamp ceroboh berbicara sampai seseorang menempelnya dengan pita. Cutter punya nada stabil ketika operator sabar; ketika operator terburu-buru, giginya mengumumkan lewat rangka. Kipas setelan di bawah beban bersih menjadi latar. Kipas yang mengunyah garam terdengar basah, tidak rata, dan mahal. Logam di bawah tegangan memberi peringatan sebelum menyerah, tetapi hanya kepada orang yang menyisakan ruang untuk mendengar.
 
-Laut tidak peduli pada rantai kustodi. Pembeli peduli. Pengadilan peduli. Black Keel peduli saat nyaman, dan itu cukup sering untuk penting.
+Perompak memberi bantalan pada kait longgar, mematikan chirp konfirmasi yang tidak perlu, menjaga pemeriksaan suara pendek di tenggorok wreck, dan membiarkan beberapa klik hidup agar setelan gugup tidak menciptakan sinyal yang lebih buruk. Mereka tidak membuat lokasi tanpa suara. Diam bukan rencana. Mereka membuat setiap suara bisa dipertanggungjawabkan.
 
-## 5. Yang Dipelajari Pemain
+Jika suara tidak punya pemilik, kebutuhan, dan batas waktu, suara itu dihapus.
 
-Pemain belajar bahwa suara adalah alat dengan saksi yang melekat.
+## 5. Mendengar sebagai kerja klaim
 
-Ping bisa memetakan kekosongan, membangunkan rute, mengejutkan fauna, membuktikan sinyal, mengekspos pemain, atau membuang napas. Pendekatan diam bisa mempertahankan klaim atau melewatkan satu-satunya peringatan yang masih bisa diberikan ruangan. Receiver yang dipulihkan bisa menjadi navigasi, bukti, umpan, pemerasan, atau penghiburan.
+Rekaman suara bisa membawa uang, tanggung jawab, dan salah.
 
-Marauder terbaik bukan yang paling sunyi. Marauder terbaik tahu bunyi mana milik bertahan hidup dan bunyi mana hanya milik ego. Mereka tahu kapan mengirim pertanyaan ke gelap dan kapan gelap sudah cukup menjawab.
+Tanda pompa bisa menunjukkan ruangan sudah aktif sebelum masuk. Motor pintu bisa membuktikan kunci berputar setelah penurunan tekanan. Gerak fauna pada hidrofon pasif bisa menunjukkan rute sudah ditempati sebelum kru mengganggunya. Log beacon bisa menunjukkan panggilan darurat masih hidup ketika Black Keel menandai aset mati.
 
-Di HECTON-8, mendengar bukan pasif. Itu salah satu cara pemain mengubah dunia tanpa menyentuhnya.
+Rekaman yang sama bisa membakar kru yang menyimpannya. Log penerima bisa menempatkan setelan di dalam rute terbatas. Alarm yang dibisukan bisa membuat klaim lebih bersih dan korban lebih sulit dibela. Edit audio pribadi bisa terlihat seperti pemalsuan jika inspektur membutuhkan tekanan. Rekaman bersih bernilai karena belum mengatakan siapa yang akan disakiti.
+
+Jangan merekam semua karena kebiasaan. Jangan menghapus karena takut. Simpan cukup suara untuk membuktikan urutan, dan tandai setiap bisu yang mengubah urutan itu.
+
+## 6. Suara sebagai umpan
+
+Suara bisa menjadi alat, tetapi tidak pernah gratis.
+
+Ping aktif bisa membangunkan responder lama, memetakan rongga, mengejutkan fauna, menarik perhatian kru lain, atau memberi tahu penerima tersembunyi bahwa seseorang sedang mencari. Ketukan bertiming bisa menguji dinding tanpa memotong. Beacon palsu bisa menarik pelompat klaim keluar dari rute. Speaker setelan bisa mendorong makhluk menjauh atau mengajarinya dari mana setelan datang.
+
+Manual Deep Reach memisahkan navigasi, pencegahan, dan komunikasi. Koloni cepat berhenti menghormati pemisahan itu. Chirp yang sama bisa menemukan pintu, membuktikan log, mengganggu predator, memanggil drone, dan mengekspos pekerja. Konteks memutuskan tagihan mana datang dulu.
+
+Gunakan suara ketika diam lebih mahal. Gunakan diam ketika jawaban akan lebih berbahaya daripada pertanyaan.
+
+## 7. Aturan lapangan
+
+Sebelum ping, tahu balikan apa yang akan mengubah rencana.
+
+Sebelum memercayai hantu, verifikasi identitas, lokasi, dan akses sebagai fakta terpisah.
+
+Sebelum membisukan suara, tandai apa yang tidak lagi bisa dibuktikan oleh rekaman.
+
+HECTON-8 tidak senyap. Ia penuh pompa, penerima, logam retak, rangka setelan, hewan, dan sistem tua yang masih menjawab terlambat. Mendengar adalah kerja. Mengirim suara adalah kerja. Kru ceroboh melakukan keduanya karena refleks dan membayar selisihnya nanti.

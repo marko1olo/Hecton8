@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: Sertifikat Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: Sertifikat Evakuasi
 
-ID LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+Noor Haldane: Sertifikat Evakuasi adalah artikel bukti Deep Reach tentang kepatuhan sebagai benda mematikan. Haldane bukan penjahat yang berteriak. Ia adalah tanda tangan penasihat yang menjaga evakuasi tetap dapat dipertahankan secara hukum sementara rute fisik gagal.
 
-## Scanner
+Penahanannya dibangun dari syarat yang masuk akal: karantina tekanan-biologis, kustodi pengangkut, tinjauan rute eksternal, penerimaan pelabuhan hilir, rantai tanggung jawab. Tidak ada kata yang absurd. Itulah intinya. Sistem dapat benar dalam bingkainya sendiri dan tetap membunuh dengan menunggu.
 
-ID LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-ID LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-ID LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-ID LOC HOLD: This is the paper signature players should hate.
+Artikel ini memberi pemain cara membaca pintu koloni tua dan papan rute. Jalur evakuasi terkunci bukan hanya mesin rusak. Itu mungkin keputusan hukum yang masih menunggu tinjauan. Noir HECTON-8 lahir dari penundaan itu: tidak ada yang perlu berkata 'biarkan mereka mati' jika sertifikat dapat berkata 'belum' cukup lama.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/id_ID. -->

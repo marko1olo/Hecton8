@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "أفضل نهاية: لا أيد نظيفة"
+title: "أفضل مسار: إبقاء الأثر مرئيا"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# أفضل نهاية: لا أيد نظيفة
+# أفضل مسار: إبقاء الأثر مرئيا
 
-أفضل نهاية في HECTON-8 لا يجب أن تكون النهاية التي يصلح فيها كل شيء. ذلك يجعل المحيط والعمال الموتى وآلة العقد أصغر من قائمة مهام اللاعب. النسخة الأقوى تسمح بإنقاذ شيء ملموس: سجل عام، حوض حي، payload شركة مرفوض، مشغل محرر، اسم لا يمكن حذفه بعد الآن.
+أقوى نهاية في HECTON-8 لا ينبغي أن تصلح المكان ليصبح شاشة مكافأة. يجب أن تسمح للمشغل بعمل ملموس: الخروج من حيازة Black Keel، نشر سجل، منع Deep Reach من طريق عودة، حفظ حوض حي تحت الحجر، إخراج أسماء العمال، أو تثبيت Atlas proof hash في مكان لا يمكن تسعيره كحمولة.
 
-يجب أن تبقى بقايا. ربما ينجو Atlas تحت حجر. ربما ينقذ القطع أناسا ويقتل شكلا من الحياة. ربما تصبح الحقيقة علنية لكنها غير قابلة للسيطرة. ربما يغادر اللاعب بلا دين ومعه دليل سيواصل إيذاء الناس. لا أيد نظيفة ليست سخرية. إنها احترام للمقياس. يستطيع اللاعب أن يفعل شيئا ذا معنى من دون أن يصبح بريئا.
+ويجب أن تبقي السجل حقولا مفتوحة. خروج مدفوع يمكن أن يحذف أسماء العمال. النشر العام يمكن أن يصنع مستقبلين مسلحين بالملف. القطع يمكن أن يوقف سلطة متضررة ويؤذي حياة الإصلاح. الحفظ يمكن أن يحمي بيئة الضغط ويبقي المصنف القديم نشطا. سجل نهائي جيد يعرض الشيء الذي نجا، والمستقبل، وأثر الدين، وحالة Atlas، والضرر الذي لا يزال يتحرك داخل النظام.
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ar_SA. -->

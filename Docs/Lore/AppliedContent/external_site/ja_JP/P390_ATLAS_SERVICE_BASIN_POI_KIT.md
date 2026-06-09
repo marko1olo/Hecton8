@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Service Basin POI Kit"
+title: "Atlasサービスベイスン証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Service Basin POI Kit
+# Atlasサービスベイスン証拠キット
 
-JA LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+サービスベイスンの大きさは作業で得られる。レールは修理工具を運ぶ。組織鉄シーラントは圧力切断部を閉じる。成長クランプは死んだハードウェアであるべきパネルを支える。受信ソケットは、オペレーターが形ではなくボルトを追えばまだ保守ベイに見える空間の奥で待つ。
 
-## Scanner
-
-JA LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-JA LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-JA LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-JA LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+最後の対立は神秘ではなく分類である。旧植民地カテゴリ、Atlas修理ロジック、ペイロード受信ルール、切断リスクが同じハードウェアに触れる。成功した修理は道を開き、同じ動作で記録を汚すことがある。このPOIはそのコストを金属、組織、ラベル、ソケットに見せる必要がある。
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ja_JP. -->

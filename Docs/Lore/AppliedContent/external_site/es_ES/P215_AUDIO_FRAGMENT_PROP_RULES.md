@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Reglas de props de fragmentos de audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Reglas de props de fragmentos de audio
 
-ES LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Las Reglas de props de fragmentos de audio definen cómo HECTON-8 usa voz sin inundar el mundo con monólogos. Cada fragmento de audio necesita fuente física, estado de transcripción dañada, timestamp y contradicción. La voz no debe sustituir evidencia ambiental; debe afilarla, haciendo que salas, props y registros de ruta hablen juntos.
 
 ## Scanner
 
-ES LOC HOLD: Voice is expensive. It must prove something the room also proves.
+La voz es cara. Debe probar algo que la sala también pueda probar con metal, agua, marca temporal o daño.
 
 ## Terminal
 
-ES LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: nada de monólogos flotantes. La voz pertenece a una tira de hidrófono, grabador de traje, caché de terminal, auricular de mantenimiento o fragmento de caja negra. Cada línea reproducible debe tener una fuente, estado de transcripción dañada, timestamp de ruta y una contradicción que el jugador pueda inspeccionar.
 
 ## Audio
 
-ES LOC HOLD: If the room cannot prove me, cut the line.
+Si la sala no puede probarme, corta la línea.
 
 ## Field Note
 
-ES LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Los fragmentos de audio necesitan un prop fuente, daño de transcripción, timestamp de ruta y una contradicción física.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/es_ES. -->

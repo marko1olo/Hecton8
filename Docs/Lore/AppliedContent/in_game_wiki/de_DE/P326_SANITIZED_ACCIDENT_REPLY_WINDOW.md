@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Sanitized Accident Reply Window"
+title: "Bereinigtes Unfallantwortfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Sanitized Accident Reply Window
+# Bereinigtes Unfallantwortfenster
 
-DE LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+Das Bereinigte Unfallantwortfenster gibt Deep Reach eine Gegenwartsstimme, ohne den Konzern allwissend zu machen. Die erste Live-Antwort ist keine Drohung. Sie ist auf leisere Weise schlimmer: eine alte öffentliche Erklärung, die unter neuem Druck durch einen neuen Kanal gedrückt wird. Die Nachricht spricht noch immer von Sturmflut, geologischem Kollaps und autonomem Evakuierungsversagen, weil dieses Skript Deep Reach einmal geschützt hat und das System erneut danach greift. Der Spieler sollte sie erst nach einem physischen Widerspruch hören: falsche Türzeit, schlechtes Pumpenzertifikat, Namen, die Lohnlöschung überlebten, ein Raum, dessen Schäden nicht zum Wetter passen. Timing zählt. Kommt das Skript zuerst, ist es Exposition. Kommt es nach nassen Beweisen, ist es eine Beleidigung. Deep Reach spricht nicht zu dem Raum, in dem der Spieler steht. Es spricht zu dem trockenen Bericht, zu dem dieser Raum werden sollte.
 
 ## Scanner
 
-DE LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Antwortfenster offen. Deep Reach wiederholt Sturmzusammenbruch, geologisches Versagen und autonome Evakuierung, als sei der Raum noch trocken.
 
 ## Terminal
 
-DE LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: Sturmflut, geologischer Kollaps, autonomes Evakuierungsversagen / RESTRICTED ADVICE: keine unverifizierte Atlas continuity, body-category disputes oder basin-coordinate claims senden.
 
 ## Audio
 
-DE LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Sie antworteten dem Raum, den du finden solltest, nicht dem Raum, in dem du stehst.
 
 ## Field Note
 
-DE LOC HOLD: Place after first physical contradiction, not before.
+Nach dem ersten physischen Widerspruch platzieren: Der Spieler sollte nasse Beweise haben, bevor er das alte öffentliche Skript hört.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/de_DE. -->

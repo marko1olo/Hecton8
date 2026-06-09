@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Pakiet fałszywego raportu publicznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Pakiet fałszywego raportu publicznego
 
-PL LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Pakiet fałszywego raportu publicznego to wersja HECTON-8, którą Deep Reach mogła bezpiecznie pokazać światom. Nie wymyśla fałszywego oceanu. Wielki Pływ był realny, opóźnienie przekaźnika było realne, niepewność kwarantanny była realna, i dlatego raport wytrzymuje pobieżną lekturę. Kłamstwo żyje w pominięciach. Usuwa zaakceptowane marginesy ryzyka, opóźnione uprawnienia ewakuacji, ważenie ciągłości Atlas, konwersję ubezpieczeniową i presję depozytu odzysku. Gracz powinien czytać go jako ostatni ruch korporacji: zostawić dość fizyki, by brzmieć trzeźwo, wyciąć dość decyzji, by wymazać winę.
 
 ## Scanner
 
-PL LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Raport publiczny zadziałał, bo zostawił prawdziwy ocean i usunął ludzkie decyzje wewnątrz niego.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: utrata HECTON-8 przypisana wyjątkowej kaskadzie pływów, opóźnieniu przekaźnika i niepewności kwarantanny. Pominięto: zaakceptowane marginesy ryzyka, wstrzymanie zwolnienia ewakuacji, override ciągłości Atlas, konwersję roszczeń i żądanie odzysku najpierw ładunku.
 
 ## Audio
 
-PL LOC HOLD: They did not fake the storm. They buried the choice.
+Powiedzieli prawdę o wodzie i skłamali o rękach.
 
 ## Field Note
 
-PL LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Najlepsze kłamstwo nie zaprzeczyło pływowi. Użyło pływu jako osłony.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/pl_PL. -->

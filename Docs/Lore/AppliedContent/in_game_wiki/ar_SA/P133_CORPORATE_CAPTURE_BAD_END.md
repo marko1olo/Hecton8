@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "أسر شركة: إنقاذ نظيف"
+title: "أسر مؤسسي: إنقاذ نظيف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# أسر شركة: إنقاذ نظيف
+# أسر مؤسسي: إنقاذ نظيف
 
-أسر الشركة نهاية سيئة مبنية من إنقاذ معقول. يغادر اللاعب المحيط حيا، لكن السلطة التي أجابت تعامل الشاهد كمواد containment وتتعامل مع payload كالمريض الحقيقي.
+يبدأ الأسر المؤسسي تماما كما يجب أن تبدأ المساعدة. الإشارة نظيفة، واتجاه pickup محترف، وفي الغرفة هواء قابل للتنفس. ثم يكشف ترتيب الأسئلة حقيقة الإنقاذ: الإحداثيات أولا، ثم custody، ثم وصول Atlas، والسلامة بعد المراجعة. يخرج المتعاقد من المحيط حيا، لكن السلطة التي أجابت تعامل الشاهد كتلوث وpayload كمريض. تختم الشهادة قبل أن تصبح سجلا عاما. ينجو الجسد من الضغط ليدخل آلة أهدأ مبنية للتحكم بالأدلة.
 
 ## Scanner
 
-تم التحقق من مصدر recovery: وكيل Deep Reach. طُلب payload قبل فحص الرفاه.
+مصدر recovery مؤكد: وكيل Deep Reach. طلب payload قبل فحص النبض.
 
 ## Terminal
 
-التقاط DEEP REACH: يقبل recovery team الإحداثيات وXO custody ومفتاح وصول Atlas قبل مراجعة رفاه المتعاقد. شهادة المتعاقد مختومة تحت بروتوكول تلوث.
+PICKUP DEEP REACH: يطلب فريق recovery الإحداثيات وcustody XO ومفتاح وصول Atlas وختم payload Seed قبل مراجعة سلامة المتعاقد. شهادة الشاهد مختومة تحت بروتوكول التلوث.
 
 ## Audio
 
-الغرفة النظيفة ليست لك.
+الغرفة النظيفة ليست للشاهد.
 
 ## Field Note
 
-إنقاذ نظيف يطلب الإحداثيات أولا هو أسر بهواء أفضل.
+إنقاذ نظيف يطلب الإحداثيات أولا هو custody بهواء دافئ.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/ar_SA. -->

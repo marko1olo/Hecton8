@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Cartões de trabalho dos operários"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Cartões de trabalho dos operários
 
-PT LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Um cartão de trabalho é a menor biografia da colônia. Não precisa de infância, romance ou discurso para importar. Precisa de função, carimbo de permissão, última tarefa e aquilo que o trabalhador esperava terminar depois do próximo tom. Quando o jogador encontra esses cartões, pessoas deixam de ser baixas de fundo e viram evidência de rota: alguém segurou a chave da bomba, atrasou uma escotilha, cozinhou para a equipe, assinou um cutter, certificou um selo ou perdeu o retorno porque o sistema fez a ajuda esperar.
 
 ## Scanner
 
-PT LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Nome, função, última tarefa, permissão de rota, certificação de ferramenta. Um rosto que o orçamento conseguia ler.
 
 ## Terminal
 
-PT LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+REGRA DE EVIDÊNCIA: cada nome recuperado deve se ligar a algo feito: rota de bomba, ledger da cozinha, chamada médica, custódia de cutter, checagem de pressão, lote de fabricação. Uma tarefa transforma nome em prova.
 
 ## Audio
 
-PT LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Um nome sem tarefa vira santuário. Uma tarefa o torna evidência.
 
 ## Field Note
 
-PT LOC HOLD: Make names useful before making them tragic.
+Torne nomes úteis antes de torná-los trágicos.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/pt_BR. -->

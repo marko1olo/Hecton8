@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taksonomi Akhir Palsu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taksonomi Akhir Palsu
 
-ID LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+Taksonomi Akhir Palsu menjelaskan struktur replay: sebuah jalan keluar dapat benar-benar terjadi, menguntungkan, dan tetap tidak lengkap secara moral. Dossier menyimpan pengetahuan antarpercobaan, sementara tekanan, utang, dan kebenaran publik menentukan apakah sebuah akhir hanya pelarian atau perhitungan yang nyata.
 
 ## Scanner
 
-ID LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Papan akhir. Ada jalan keluar yang cukup nyata untuk dihitung, dan cukup salah untuk melukai.
 
 ## Terminal
 
-ID LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+KELUARGA AKHIR: pembayaran material; keluar sebagian dan kembali ke seed yang sama; penangkapan korporat; penahanan karantina; rilis buku besar publik; resolusi cekungan Atlas. Catatan hasil harus memisahkan muatan, bukti, dan status utang.
 
 ## Audio
 
-ID LOC HOLD: Leaving is not the same as finishing.
+Keluar dari air bukan berarti pekerjaan selesai.
 
 ## Field Note
 
-ID LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Akhir palsu bukan tipuan. Itu kesepakatan sah yang kehilangan kebenaran.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/id_ID. -->

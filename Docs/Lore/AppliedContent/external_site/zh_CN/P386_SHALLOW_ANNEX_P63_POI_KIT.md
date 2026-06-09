@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "浅水附舱P-63证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Shallow Annex P-63 POI Kit
+# 浅水附舱P-63证据套件
 
-ZH LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63成立，是因为它不把避难和证明分开。房间给操作员空气、舱底泵、密封垫库存、信标线和切割器接触痕。这些东西首先有用；合同可以等，水不会等。
 
-## Scanner
-
-ZH LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-ZH LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-ZH LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-ZH LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+房间稳定后，同一批物件的重量改变。封存航路通知说附舱在受控条件下关闭，但损坏的泵、补过的密封垫托盘和湿透的事故包显示出更粗暴的撤离。第一处矛盾不藏在讲话里。它被螺栓固定在让操作员活下来的地方。
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/zh_CN. -->

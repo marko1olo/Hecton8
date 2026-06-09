@@ -19,22 +19,32 @@ localization_flags: 1
 
 # Escalera de presión
 
-La escalera de presión es la columna de campaña: oxígeno, casco, energía, aislamiento, ruta y ventana orbital sustituyen cerraduras arbitrarias.
+La escalera de presión es la lógica de rutas detrás de la progresión de profundidad de HECTON-8. No es una lista de nombres de nivel. Cada banda más profunda repite la misma pregunta práctica de forma más dura: ¿pueden el sello del traje, la batería, el circuito de oxígeno, el aislamiento, la señal y el ping de retorno sobrevivir juntos al siguiente descenso?
+
+La primera plataforma permite trabajo corto con equipo dañado porque aún se puede encontrar la línea de retorno. La plataforma de servicio añade comprobaciones de grado de traje y cierre de batería en cada compuerta de profundidad. Los cañones de salmuera exigen aislamiento y trim de flotabilidad, porque sal, calor y cambios de densidad convierten una buena lectura en mala durante el descenso. Los campos de máquinas abisales requieren señal endurecida y disciplina de casco; un ping retrasado puede significar que la ruta ya quedó detrás del buzo. La cuenca Atlas suma ruido de bus y pérdida de presión a la misma cadena.
+
+Lee el tablero de mantenimiento antes de tratar una compuerta como permiso. Si una lectura está en rojo, el siguiente descenso no es una ruta: es mal procedimiento. Repara primero el sello, paquete, circuito, envoltura o relé más débil.
 
 ## Scanner
 
-La profundidad se divide por rating de presión, no por nombres de nivel. Cada banda exige otra respuesta de ingeniería.
+LECTURA DE COMPUERTA DE PROFUNDIDAD // Banda: descenso de servicio 250-1200 m. Margen de sello 11 %. La placa del traje acepta Grade C solo después de trabar el paquete de batería B2. Ping de retorno débil bajo la tercera abrazadera. No abras la esclusa inferior con valentía.
 
 ## Terminal
 
-Escalera: equipo de plataforma, refuerzo de cañón, aislamiento de salmuera, disciplina de casco abisal, señal endurecida de fábrica.
+TABLERO DE ACCESO DE PROFUNDIDAD
+0-250 m: plataforma fótica / admite trabajo corto con equipo dañado
+250-1200 m: plataforma de servicio / sello de traje Grade C, batería trabada y ping de cable requeridos
+1200-2800 m: cañón de salmuera / envoltura aislante y trim de flotabilidad requeridos
+2800-4300 m: campo de máquinas abisal / señal endurecida y disciplina de casco requeridas
+4300-5600 m: cuenca Atlas / el plan de retorno debe sobrevivir pérdida de presión y ruido de bus
+Fallo: siguiente banda bloqueada hasta reparar la lectura más débil
 
 ## Audio
 
-No desciendes por valentía. Desciendes porque el siguiente sello aguanta.
+Deja de discutir con la puerta. El margen del sello está en rojo y tu ping de retorno ya llega tarde.
 
 ## Field Note
 
-El océano cierra el progreso con matemáticas.
+A la compuerta no le importa por qué necesitas la ruta. Lee sello, energía, oxígeno, aislamiento y señal; luego da verde o mata la idea.
 
 <!-- In-Game Wiki; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/es_ES. -->

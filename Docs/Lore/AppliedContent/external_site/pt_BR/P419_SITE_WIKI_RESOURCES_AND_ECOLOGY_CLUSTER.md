@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Recursos e Ecologia
 
-O cluster de recursos deve mostrar cadeias de processo, não lista de saque. Um mineral pode vir de drowned crust, de depósito brine trap, de marca de vent heat, de máquina antiga ou de tecido que cresceu em torno do metal após intervenção Atlas. Blue debt liga economia à geologia: o que pode subir já recebeu preço acima. Ecologia não é fundo nem zoológico. A fauna responde a som, pressão, luz, rastro de sal e repair paths danificados. Por isso recursos, biota e provas devem ser lidos juntos: uma amostra pode alimentar uma ferramenta, revelar um acidente e mostrar onde Atlas confundiu reparo com uso do vivo.
+O primeiro erro é chamar os recursos de HECTON-8 de matéria-prima. Lá embaixo, quase nada útil chega intocado. Um fragmento do Drowned Crust carrega histórico de pressão. Um veio de blue debt guarda memória de calor, salmoura e método de extração. Uma placa de carapaça pode ser armadura de recife, vedante fracassado, pele de cabo cultivada pela Atlas e prova jurídica antes mesmo de um Marauder colocá-la numa caixa.
+
+Por isso as páginas de recursos ficam ao lado das páginas de ecologia. A velha colônia não minerava um piso morto. A Deep Reach cortava escadas de salmoura, prateleiras minerais alimentadas por vents, máquinas assoreadas e sistemas filtrantes vivos que já conheciam o ritmo da lua. Depois da catástrofe, a Atlas empurrou seu modelo de reparo para qualquer coisa que pudesse fechar um vazamento ou carregar um sinal. Biofilme virou condutor. Tapete de raízes virou junta. Fauna marcada virou feedback móvel.
+
+Os animais não são caixas de loot com barbatanas. Eles leem vibração, calor, queda de luz, química do sangue, rastros de sal e lodo perturbado. Um pastador pode expor zonas seguras de raspagem apenas fazendo o que sempre fez. A sombra de um predador pode dizer qual corredor carrega o pulso acústico errado. Um animal marcado pode ser rota de reparo, testemunha e perigo na mesma passagem.
+
+O blue debt deixa a conta moral mais suja. A melhor amostra pode ser opaca, selada e feia porque preservou o estado de pressão que prova onde se formou. Um fragmento brilhante pode não valer nada se o vent lavou sua memória. Retirar qualquer um pode mudar um fluxo, acordar um caçador, danificar um remendo Atlas ou apagar um traço de acidente operário mais importante que o pagamento.
+
+A pergunta útil nunca é só o que pode ser colhido. É o que o oceano fazia com aquele material antes de uma mão humana entrar na cadeia. HECTON-8 se torna legível quando geologia, vida, máquinas e custody são tratados como um único sistema que lembra o dano.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/pt_BR. -->

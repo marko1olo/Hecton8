@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Постоянство мародерского досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Постоянство мародерского досье
 
-RU LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+Постоянство мародерского досье задает договор HECTON-8 с повторными заходами: игрок наследует контекст, а не силу. Досье помогает быстрее читать старые ошибки, раньше узнавать контрактные ловушки и понимать, какие концовки были неполными, не превращая память в механическое преимущество, которое ломает давление выживания.
 
 ## Scanner
 
-Dossier spool. Ты сохраняешь знание, не суперсилы.
+Катушка досье. Ты сохраняешь знание, а не сверхсилы.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+ПОСТОЯНСТВО ДОСЬЕ: записи концовок, найденные типы контрактов, семейства слухов, категории доказательств, маршрутные предупреждения и последствия публичного реестра сохраняются. Сила снаряжения, правда мира и локальное состояние давления сбрасываются для каждого seed.
 
 ## Audio
 
-Следующий run начинается со шрамов в файле, а не мышц в костюме.
+Следующий заход начинается со шрамов в файле, а не с мышц в костюме.
 
 ## Field Note
 
-RU LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Досье помнит доказательства и предупреждения; оно не делает давление милосердным.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ru_RU. -->

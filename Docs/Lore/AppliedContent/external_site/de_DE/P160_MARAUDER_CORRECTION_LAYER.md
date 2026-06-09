@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder-Korrekturschicht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder-Korrekturschicht
 
-DE LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Die Marauder-Korrekturschicht verbindet Deep-Reach-Verfahren und Spielerhandeln: kurze Anmerkungen machen offizielle Sprache zu Überlebenswahrheit.
 
 ## Scanner
 
-DE LOC HOLD: Marauders turn corporate language back into survival facts.
+KORREKTURSCHICHT // Konzernlabel: temporary atmospheric variance. Marauder-Notiz: CO2 frisst zuerst das Urteilsvermögen.
 
 ## Terminal
 
-DE LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ANNOTATIONSREGEL: Deep-Reach-Sprache in Überlebensfakten zurückübersetzen. Notizen kurz, praktisch, wütend und unter Druck nützlich halten.
 
 ## Audio
 
-DE LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Eine gute Notiz klingt nicht klug. Sie hält jemanden am Leben.
 
 ## Field Note
 
-DE LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Der Spieler soll spüren, wie alte Deep-Reach-Sprache in Körperzahlen übersetzt wird.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/de_DE. -->

@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Abyssale reparatiefauna
 
-Deze fauna toont dat Atlas-6 organisme, gereedschap, schade en reparatie niet meer scheidt. Overleven bevat industriële delen.
+Abyssale reparatiefauna verschijnt nadat vaste infrastructuur al heeft laten zien dat Atlas-6 slecht reparatiemateriaal accepteert. Hier bereikt dezelfde test levende dieren. De scan leest nog spierrespons, kieuwbeweging, achtervolgingsgedrag en wondranden. Hij leest ook een keramische beugel, kabelfilament, droneschaalplaat en een actieve onderhoudsping door de graft.
+
+Het specimen is geen drone op afstand en geen dood lichaam met machines erop. Atlas sloot een drukwond, behield mobiliteit en liet het dier blijven jagen. Daardoor is de ontmoeting in twee richtingen gevaarlijk: de fauna volgt zijn eigen roofroute, terwijl de graft nabije reparatiedrones kan roepen of het dier als deel van een servicepad kan markeren. Lees graftmateriaal, pinginterval en stroom van het hol voordat je het doel als gewone fauna behandelt.
 
 ## Scanner
 
-Fauna draagt keramische patches, kabelletsels en dronesnede-symmetrie. Atlas doodt leven niet; hij bewerkt het.
+Specimen draagt een keramische ribpatch door oude bijtschade. Kabelfilament verbindt linker kieuwwaaier met een droneschaalplaat. Beweging: jachtpatroon intact. Gevaar: graft zendt actieve onderhoudsping uit.
 
 ## Terminal
 
-Specimen: wondranden machinaal schoon gesloten, drukstabiele inzetstukken groeien. Gedrag blijft dierlijk onder de graft.
+SPECIMEN-REPARATIELEZING
+Diepte: 3120 m / abyssale helling, servicehol
+Wond: drukscheur langs flank
+Inzetstuk: keramische beugel, kabelfilament, droneschaalplaat
+Atlas-reactie: wond sluiten, mobiliteit behouden, onderhoudsping uitzenden
+Gedrag: predatore achtervolging blijft actief
+Waarschuwing: ping kan nabije reparatiedrones wekken
 
 ## Audio
 
-Het jaagt nog. De machine veranderde alleen wat overleefde.
+Achteruit. De graft zendt uit; hij jaagt nog, en het dronehol heeft net geantwoord.
 
 ## Field Note
 
-Reparatie is geen zorg.
+Geen lijk met onderdelen erop. Een dier heeft de reparatie overleefd en de route in zijn kop gehouden.
 
 <!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/nl_NL. -->

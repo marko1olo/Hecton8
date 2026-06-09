@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Community Notice"
+title: "הודעת קשרי עבודה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Community Notice
+# הודעת קשרי עבודה
 
-HE LOC HOLD: Worker community notices keep colony stakes grounded in labor, proximity and obligation. The dead matter through work evidence, not a rescue-family premise.
+הודעת קשרי העבודה אינה בירוקרטיה קרה. זו הדרך שבה מושבה מתחת לאוקיינוס מודה בעובדה פשוטה: אהבה עם השהיית אור אינה פותחת צוהר בשש דקות. אם, בן זוג או חבר ישן יכולים להיות חשובים מאוד, ועדיין חסרי תועלת בזמן אזעקת לחץ. לכן הלוח דרש שורת דרגש, מוביל נתיב, עד מדלוק, שותף משאבה ואיש קשר במחסן הכלים: אנשים קרובים מספיק לשמוע טון שהוחמץ.
+
+כך התחנה נעשתה אינטימית בצורה מעשית. D. Rivas לא היה רק שם על לוח דרגש; הוא היה מפתח משאבה שמישהו ציפה לקבל לפני הארוחה. Mara Venn לא הייתה רק תיקון ביומן המים; היא הייתה היד שידעה איזה מסנן החמיץ ואיזה מפקח מעמיד פנים שזה עדיין לא זיהום. מוביל נתיב יכול היה לחתום על החלפת קשר כי עובד אחד סמך על אחר שיזהה רעד, נשימה שבורה או אטם כפפה שהתחיל לדבר.
+
+שיחות אישיות נדחו מאחורי הממסר, לא נמחקו. ההבדל חשוב. הלוח לא הכחיש את החיים מחוץ ל-HECTON-8; הוא רשם את החיים שיכלו להציל לפני מחזור המחיצה הבא. שם, קהילה פירושה קרבה, יכולת וחזרה חוזרת. אם מישהו לא ענה לטון, הלוח ידע מי צריך לזוז ראשון.
+
+ההודעה עושה את המושבה אנושית בלי להמציא קרבת דם סודית. מגפיים רטובים, כלים משותפים, מים שחייבים, שינה גרועה וההרגל לבדוק זה את זה לפני ירידה קשרו את השמות. האוקיינוס ייקר את המרחק. הרשימה הפכה קרבה לחובה.
 
 ## Scanner
 
-HE LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
+הודעת קשרי עבודה // שורת דרגשים, מוביל נתיב, עד מדלוק, איש קשר במחסן הכלים. שיחות אישיות ממתינות מאחורי תעבורת הממסר; איש קשר חירום הוא מי שיכול לשמוע את הטון הבא.
 
 ## Terminal
 
-HE LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
+הודעת קהילה: לעדכן את עמודת קשר התחנה לפני טון משאבה 3. מובילי נתיב מאשרים החלפות קשר. שיחות אישיות מחוץ לתחנה ממתינות לחלון ממסר. איש קשר חירום חייב להיות בתחנה, מאומן, זמין בטון ומורשה לנתיב העובד.
 
 ## Audio
 
-HE LOC HOLD: They built a roster, not a legend.
+הם הכינו רשימה כי האוקיינוס לא חיכה למשפחות.
 
 ## Field Note
 
-HE LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+הלוח לא שאל מי אוהב את מי. הוא שאל מי יכול לפתוח צוהר, לעצור ערכה, לחתום על רעד, או לשים לב לטון משאבה שלא נענה.
 
 <!-- In-Game Wiki; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/he_IL. -->

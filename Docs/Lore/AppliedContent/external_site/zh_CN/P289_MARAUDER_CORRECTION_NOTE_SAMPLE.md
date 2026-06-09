@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Marauder Correction Note Sample"
+title: "掠夺者更正便条样本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Marauder Correction Note Sample
+# 掠夺者更正便条样本
 
-ZH LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+掠夺者便条是 HECTON-8 最有效的证据表面之一，因为它们会和官方系统争辩，却不会变成全知旁白。这个样本用时间戳、认证、错误类别和队列延误保留怀疑。它不替玩家破案。它教玩家读懂一份被包装成维修记录的谎言。
 
 ## Scanner
 
-ZH LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+事故表上用油脂笔改出的结论：不是天气，不是恐慌，而是一段带着尸体数字的授权延误。
 
 ## Terminal
 
-ZH LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+掠夺者便条 / 官方原因：驳回 / 立案前必须核对：泵证、班次人数、尸体类别、舱门时钟错位、救援授权队列。
 
 ## Audio
 
-ZH LOC HOLD: Someone else smelled the paperwork rot.
+房间还没干，就有人闻到了文书里的腐味。
 
 ## Field Note
 
-ZH LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+不是天气。授权延误。查泵证、班次人数、尸体类别。舱门时钟比申报戳早了六分钟。
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/zh_CN. -->

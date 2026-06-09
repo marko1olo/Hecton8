@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "热泉锻炉野外流程指南"
+title: "热泉锻炉现场流程指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 热泉锻炉野外流程指南
+# 热泉锻炉现场流程指南
 
-vent forges 是自然-工业反应器。它们把热、brine 和 pressure history 变成有用的 ceramics、sealants 和 charge materials，同时让每个样本都保留自己的热路径。
+热泉锻炉是自然-工业反应器。它把热、盐水、压力历史和慢冷却转化为陶瓷、密封剂和带电材料。样本只有在自己的热路径能熬过回收时才有用。
 
 ## Scanner
 
-vent-forge chemistry 活跃。质量取决于 pressure history、heat pulse 和缓慢冷却，而不是样本光泽。
+热泉锻炉化学反应活跃。品质取决于压力历史、热脉冲和慢冷却，而不是样本光泽。
 
 ## Terminal
 
-FIELD GUIDE: vent forges 会烹煮 sulfides、noble-gas pockets、ceramics 和 sealant precursors。样本穿过 heat、brine 和 pressure 的路径比名称更重要。
+现场指南：热泉锻炉会烹煮硫化物、稀有气体口袋、陶瓷颗粒和密封剂前体。样本穿过热、盐水和压力的路径比名字更重要。
 
 ## Audio
 
-vent 没有制造矿石。它制造了一个被你打断的流程。
+热泉没有制造矿石。它制造了一个被你打断的流程。
 
 ## Field Note
 
-不要把新鲜批次直接提进冷水。让 vent 完成 anneal，否则 shell 会龟裂。
+不要把新鲜批次直接提进冷水。让热泉完成退火，否则外壳会龟裂。
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/zh_CN. -->

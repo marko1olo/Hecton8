@@ -1091,7 +1091,7 @@ namespace Hecton8.Data
         /// Resolves a bounded UTF-8 slice for one applied-lore surface.
         /// </summary>
         public static bool TryGetAppliedLoreUtf8(
-            in H8AppliedLorePacketRecord record,
+            H8AppliedLorePacketRecord record,
             H8AppliedLoreSurface surface,
             out ReadOnlySpan<byte> utf8Bytes)
         {

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_flora_contact |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS170_FIRST_FLORA_CONTACT_ARTICLES.md |
 | Speaker | Field scanner, mat flora sample note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first flora contact |
@@ -72,17 +72,17 @@ SPLIT UPPER SAMPLE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| ar_SA | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| de_DE | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| es_ES | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| fr_FR | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| he_IL | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| id_ID | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| ja_JP | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| ko_KR | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| nl_NL | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| pl_PL | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| pt_BR | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| ru_RU | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| uk_UA | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
-| zh_CN | draft_machine_or_llm | FILTER MOSS // Grit trapped at roots. Sample upper frond separate from sediment. |
+| ar_SA | draft_machine_or_llm | طحلب مرشح // الحبيبات عالقة عند الجذور. خذ عينة السعف العلوي منفصلة عن الرواسب. |
+| de_DE | draft_machine_or_llm | FILTERMOOS // Grit an Wurzeln gefangen. Oberen Wedel getrennt vom Sediment beproben. |
+| es_ES | draft_machine_or_llm | MUSGO FILTRANTE // Arena atrapada en las raices. Toma la fronda superior separada del sedimento. |
+| fr_FR | draft_machine_or_llm | MOUSSE FILTRANTE // Particules piegees aux racines. Prelever la fronde superieure separee du sediment. |
+| he_IL | draft_machine_or_llm | טחב מסנן // חצץ לכוד בשורשים. דגום את העלה העליון בנפרד מהמשקע. |
+| id_ID | draft_machine_or_llm | LUMUT SARING // Kerikil terperangkap di akar. Ambil pelepah atas terpisah dari sedimen. |
+| ja_JP | draft_machine_or_llm | フィルターモス // 根に砂粒が捕捉。上部葉状部は堆積物と別に採取。 |
+| ko_KR | draft_machine_or_llm | 여과 이끼 // 뿌리에 모래 알갱이가 걸렸다. 윗잎은 퇴적물과 분리해 채취한다. |
+| nl_NL | draft_machine_or_llm | FILTERMOS // Gruis vast bij wortels. Neem bovenblad apart van sediment. |
+| pl_PL | draft_machine_or_llm | MECH FILTRUJACY // Ziarno utknelo przy korzeniach. Gorna pleche pobierz oddzielnie od osadu. |
+| pt_BR | draft_machine_or_llm | MUSGO FILTRANTE // Graos presos nas raizes. Colete a fronde superior separada do sedimento. |
+| ru_RU | draft_machine_or_llm | ФИЛЬТРУЮЩИЙ МОХ // Песчинки застряли у корней. Верхнюю пластину отбирай отдельно от осадка. |
+| uk_UA | draft_machine_or_llm | ФІЛЬТРУВАЛЬНИЙ МОХ // Піщинки застрягли біля коренів. Верхню пластину відбирай окремо від осаду. |
+| zh_CN | draft_machine_or_llm | 过滤苔 // 根部夹有砂粒。上部叶片需与沉积物分开取样。 |

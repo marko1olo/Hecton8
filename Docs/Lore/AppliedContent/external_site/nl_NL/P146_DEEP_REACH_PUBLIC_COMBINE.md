@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Public Combine"
+title: "Publieke Deep Reach-combine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Public Combine
+# Publieke Deep Reach-combine
 
-NL LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+De publieke Deep Reach-combine is het eerste masker en het duurzaamste. Ze hoeft niet te ontkennen dat ze HECTON-8 heeft aangeraakt. Ze raakte transport, habitatlogistiek, routediensten, verzekeringsinterfaces, noodtaal en de administratieve woordenschat die de kolonie leesbaar maakte voor banken vóór families.
 
-## Scanner
-
-NL LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-NL LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-NL LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-NL LOC HOLD: The seal is clean. The rooms under it are not.
+Die breedte is de verdediging. Wanneer een ramp bovenkomt, kan Deep Reach naar een publiek mandaat wijzen en zeggen dat het infrastructuur onderhield. De vuilere werkwoorden gaan naar dochters: classificeren, uitstellen, terughalen, herverzekeren, weigeren, afvoeren. De combine houdt het schone zelfstandig naamwoord. De lagere kamers houden de lichamen.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/nl_NL. -->

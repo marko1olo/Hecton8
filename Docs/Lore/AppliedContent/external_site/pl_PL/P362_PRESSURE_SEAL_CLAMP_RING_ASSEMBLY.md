@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Zespół pierścienia zaciskowego uszczelki ciśnieniowej"
+title: "Zespół pierścienia zaciskowego uszczelnienia ciśnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zespół pierścienia zaciskowego uszczelki ciśnieniowej
+# Zespół pierścienia zaciskowego uszczelnienia ciśnieniowego
 
-Zespół pierścienia zaciskowego uszczelki ciśnieniowej zmienia naprawę kapsuły w targ z ciśnieniem: deep-rated metal, osadzenie szkła i Atlas bio-sealant mogą uratować albo uwięzić ścieżkę wznoszenia.
+Zespół pierścienia zaciskowego uszczelnienia ciśnieniowego jest drugim twardym limitem w łańcuchu wznoszenia HECTON-8. Akustyczny kręgosłup może sprawić, że orbita słucha, ale pierścień decyduje, czy kapsuła fizycznie oddzieli się od zatopionej struktury.
 
-## Scanner
+Awaria jest wiarygodna, bo zła naprawa może wyglądać na udaną. Shallow seal może trzymać powietrze, zatrzymać przeciek i zostawić pokój używalnym. Może też przerzucić się przez separation seam kapsuły, zanieczyścić pressure-glass seat albo zostawić Atlas shell-sealant na powierzchni, która musi puścić pod launch impulse. Static pressure to nie ten sam test co ascent.
 
-Blizna clamp-ring. Tuleja wznoszenia przeżyła uderzenie, zużywając uszczelkę, która miała zabrać ją do domu.
-
-## Terminal
-
-SEAL CERT: shallow patch trzyma tylko ciśnienie przedziału. Ascent seal wymaga deep-rated clamp ring, pressure-glass seat, shell-sealant map i zweryfikowanego profilu Deep Reach. Atlas-grown sealant może ocalić habitat, blokując czyste oddzielenie.
-
-## Audio
-
-Użyteczna uszczelka żyje w złą stronę.
-
-## Field Note
-
-Łata safe-room może kupić godzinę powietrza. Nie utrzyma impulsu startowego.
+Ten komponent wymaga deep-rated metal, zweryfikowanego crush profile, czystej seat geometry i sealant map z celową krawędzią. Nie wystarczy sprawić, że kapsuła przestanie cieknąć. Naprawa musi wiedzieć, kiedy puścić.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/pl_PL. -->

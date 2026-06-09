@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: Tindakan Pengembalian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: Tindakan Pengembalian
 
-ID LOC HOLD: Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+Vera Sato-Ren adalah tanda tangan Kantor Kepatuhan Pemulihan tahun 2190 yang memberi Deep Reach masa kini wajah tanpa membuatnya hadir secara fisik di mana-mana. Ia bertindak melalui paket, jendela kustodi, klausul pengangkut, dan instruksi tertunda. Tekanannya prosedural: pulihkan koordinat, buktikan rantai XO, laporkan status akses Atlas, jaga diamnya kontraktor jika payload masih dapat dikendalikan.
+
+Bahasa tindakan pengembalian berbahaya karena dapat terdengar seperti bantuan. Penyelamatan tetap mungkin, tetapi hanya setelah kustodi payload. Bantuan dapat ditawarkan, tetapi hanya selama risiko paparan bukti masih dapat dikelola. Marauder yang membaca paket tidak sedang diteriaki penjahat. Ia sedang diukur terhadap jendela yang menutup baik ia menjawab maupun tidak.
+
+Bagi pemain, Sato-Ren mengubah Deep Reach dari kesalahan historis menjadi tekanan masa kini. Koloni tua bukan hanya kuburan. Itu situs klaim aktif. Setiap catatan yang dipulihkan dapat menjadi bukti, tebusan, klausul diam, atau bobot tawar tergantung siapa yang menerimanya pertama. Itulah ancaman Deep Reach modern: bukan armada musuh yang rapi, tetapi sel tekanan hukum yang mencoba memiliki pengembalian sebelum kebenaran keluar dari air.
 
 ## Scanner
 
-ID LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
+PAKET TINDAKAN PENGEMBALIAN // V. Sato-Ren memprioritaskan payload yang dapat dipulihkan, status akses Atlas, dan diamnya kontraktor dalam jendela kustodi sempit.
 
 ## Terminal
 
-ID LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. // Kantor Kepatuhan Pemulihan // Prioritas: koordinat, bukti XO, status akses Atlas, diamnya kontraktor jika dapat dipulihkan dalam jendela. Bantuan penyelamatan tetap bersyarat pada kustodi payload dan risiko paparan bukti.
 
 ## Audio
 
-ID LOC HOLD: She does not need to threaten you. The window already does.
+Ia tidak perlu mengancammu. Jendelanya sudah melakukan itu.
 
 ## Field Note
 
-ID LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Deep Reach masa kini harus datang sebagai tekanan, bukan monolog penjahat. Jendelanya adalah ancaman.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/id_ID. -->

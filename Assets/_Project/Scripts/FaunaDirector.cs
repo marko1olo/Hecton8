@@ -564,6 +564,7 @@ namespace Hecton8.AI
         private FaunaPresentationService _faunaPresentationService;
         private bool _faunaSimulationRegistered;
         private ITerrainProvider _mapMagicRuntime;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IMicroFaunaPresentationPulseSink _sargassumMicroFauna;
         private IObjectPoolService _objectPool;
         private IEcosystemDirectorService _ecosystemDirector;
@@ -736,6 +737,7 @@ namespace Hecton8.AI
             UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
             _sargassumMicroFauna = null;
+            _oceanKinematicsService = null;
 
             if (_dispatcherRegistered)
             {
@@ -807,6 +809,7 @@ namespace Hecton8.AI
         private void RefreshColdRegistryDependencies()
         {
             _mapMagicRuntime = GlobalRegistry.Terrain;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _physicsService = GlobalRegistry.Physics;
             _playerRuntimeContext = ResolveActivePlayerRuntimeContext();
             _dispatcherRuntime = GlobalRegistry.Dispatcher;
@@ -889,6 +892,9 @@ namespace Hecton8.AI
                     _mapMagicRuntime = currentService as ITerrainProvider;
                     _cachedBiomeIndex = -1;
                     _nextBiomeCheckTime = float.NegativeInfinity;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
@@ -1891,7 +1897,8 @@ namespace Hecton8.AI
             }
 
             float spawnY = biomeData.GetRandomSpawnHeight(ref _biomeSpawnRandom, bottomHeight);
-            if (spawnY >= bridge.WaterSurfaceLevel || spawnY <= bottomHeight)
+            float waterSurfaceLevel = ResolveWaterSurfaceLevel(bridge);
+            if (spawnY >= waterSurfaceLevel || spawnY <= bottomHeight)
             {
                 spawnPos = default;
                 return false;
@@ -1906,6 +1913,61 @@ namespace Hecton8.AI
 
             spawnValidationSuccesses++;
             return true;
+        }
+
+        private float ResolveWaterSurfaceLevel(ITerrainProvider terrainProvider)
+        {
+            if (TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel))
+                return oceanWaterSurfaceLevel;
+
+            return terrainProvider != null &&
+                   TryResolveTerrainWaterSurfaceLevel(terrainProvider.WaterSurfaceLevel, out float terrainWaterSurfaceLevel)
+                ? terrainWaterSurfaceLevel
+                : WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+        }
+
+        private bool TryResolveOceanWaterSurfaceLevel(out float waterSurfaceLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel))
+            {
+                return true;
+            }
+
+            waterSurfaceLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
+        }
+
+        private static bool TryResolveTerrainWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) > 0.0001f &&
+                math.abs(candidateWaterSurfaceLevel) <= 1000f)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
         }
 
         private Unity.Mathematics.Random CreateBiomeSpawnRandom()

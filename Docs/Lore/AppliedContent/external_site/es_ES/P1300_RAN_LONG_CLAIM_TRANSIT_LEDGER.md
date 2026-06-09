@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Public Site Hard-Sci-Fi Frontier Article
 spoiler_tier: 1
-title: "Libro de Tránsito de Reclamación Larga de Ran"
+title: "Registro de Tránsito de Reclamación Larga de Ran"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Libro de Tránsito de Reclamación Larga de Ran
+# Registro de Tránsito de Reclamación Larga de Ran
 
-HECTON-8 se apoya en una regla dura: comunicarse es barato comparado con mover masa. Un relé de Black Keel puede contestar porque un paquete viaja por luz, espejos y colas de portadores. Un tender no. Las naves de la ruta Ran siguen obedeciendo aceleración, calor de frenado, programación de carriles de pellets, clima de Aegir y economía de riesgo.
+HECTON-8 trata el primer contacto como papeleo bajo presión porque eso es el rescate interestelar cuando no existe viaje FTL. Un relé Black Keel puede reconocer a un Marauder varado dentro de los tiempos del portador. No puede hacer aparecer una nave. El registro de reclamación larga vive entre esos hechos.
 
-El libro de reclamación larga es la forma administrativa de esa física. No pregunta si el superviviente tiene miedo. Pregunta si las coordenadas son fiables, si el paquete de ascenso sobrevivirá al traslado, si hay hash de testigo Luyten, si Deep Reach puede invocar cuarentena y si la carga es cuerpo, prueba, mercancía o las tres cosas.
+            Dentro del mundo, el registro no es una formalidad. Es el primer objeto duradero que el superviviente posee fuera del océano. Dice que un humano vive, pero también cuán fiables son las coordenadas, cuánta masa hay que elevar, si el paquete de ascenso está sellado, si Deep Reach tiene argumento de cuarentena, si la carga es equipo personal o prueba capaz de cambiar una reclamación, y quién acepta responsabilidad si la recogida arde, falla o vuelve contaminada.
 
-Así la distancia se vuelve presión jugable. El océano no está aislado porque la civilización desapareciera, sino porque la civilización es lenta, propietaria y procedimental. El jugador no espera rescate: construye el paquete, la carga y la palanca que pueden hacer que el rescate valga más que el silencio.
+            Así HECTON-8 mantiene presente a la civilización sin convertirla en una salida fácil. Te oyen. Las oficinas te sellan. Los relés conservan tu paquete. Aseguradoras y dueños de ruta ponen números a tu cuerpo. El horror no es el vacío. El horror es un sistema que sabe exactamente dónde estás y aun así pregunta cuánto vale recuperarte.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/es_ES. -->

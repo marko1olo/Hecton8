@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Protokół przesłuchania w zatrzymaniu kwarantannowym"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Quarantine Hold Interrogation Record
+# Protokół przesłuchania w zatrzymaniu kwarantannowym
 
-PL LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+Protokół czyni ratunek niewygodnym. Przetrwanie jest prawdziwe, ale gracz wychodzi jako świadek, ryzyko skażenia, nośnik mapy i sporny dowód, zanim znów stanie się wolną osobą.
 
 ## Scanner
 
-PL LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Odzyskany roszczący żyje. Flaga kwarantanny nadpisuje język ratunku; payload dowodowy odizolowany.
 
 ## Terminal
 
-PL LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+REJESTR QUARANTINE HOLD: biologiczny roszczący odzyskany żywy. Ruch ograniczony do czasu skanu skażenia, wywiadu ekspozycji ciśnieniowej i przeglądu dozoru dowodów. Przesłuchanie odbiornika priorytetuje wektor dostępu Atlas przed zgodą medyczną.
 
 ## Audio
 
-PL LOC HOLD: They saved the body first because the body knew the route.
+Najpierw uratowali ciało, bo ciało znało trasę.
 
 ## Field Note
 
-PL LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier po wyjściu: biologiczny ratunek przed wolnością zmienia się w kwarantannę, przesłuchanie, wydobycie trasy i dozór payloadu.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/pl_PL. -->

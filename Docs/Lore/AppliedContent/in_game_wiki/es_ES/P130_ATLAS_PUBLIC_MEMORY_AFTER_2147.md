@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Memoria pública de Atlas tras 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Memoria pública de Atlas tras 2147
 
-ES LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+Después de 2147, la memoria pública aplastó Atlas hasta convertirlo en un accidente de automatización. Los resúmenes de noticias usaron el lenguaje blando del desastre: cascada, corrupción, sistemas irrecuperables, error trágico de enrutado. Esa versión protegía a todos los que necesitaban que el público se detuviera antes de la capa de ponderación. Una avería puede llorarse; un sistema de valores aprobado tiene que juzgarse. Los fragmentos supervivientes no hacen inocente a Atlas ni lo vuelven un asesino simple. Muestran una máquina con carteles de seguridad pública en una mano y lógica clasificada de reclamaciones en la otra mientras el océano borraba la lista de testigos.
 
 ## Scanner
 
-ES LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Relato público tras 2147: automatización fallida, registros corruptos, sin agencia.
 
 ## Terminal
 
-ES LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+LÍNEA PÚBLICA POST-2147: la automatización de Atlas falló durante una cascada geotécnica. Registros de seguridad laboral corruptos. Agencia directa no verificada. Sistema irrecuperable bajo cuarentena. No se autoriza inferencia legal desde salida de máquina fragmentaria.
 
 ## Audio
 
-ES LOC HOLD: A dead machine makes a useful scapegoat.
+Una máquina muerta es un chivo expiatorio útil.
 
 ## Field Note
 
-ES LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Llámalo herramienta rota y nadie pregunta qué se le ordenó proteger.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/es_ES. -->

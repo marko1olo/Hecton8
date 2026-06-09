@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "חבילת הדו״ח הציבורי הכוזב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# חבילת הדו״ח הציבורי הכוזב
 
-HE LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+חבילת הדו״ח הציבורי הכוזב היא גרסת HECTON-8 ש-Deep Reach יכלה להראות לעולמות בבטחה. היא אינה ממציאה אוקיינוס מזויף. הגאות הגדולה הייתה אמיתית, עיכוב הממסר היה אמיתי, אי-ודאות ההסגר הייתה אמיתית, ולכן הדו״ח שורד קריאה שטחית. השקר חי בהשמטות. הוא מסיר שולי סיכון שהתקבלו, סמכות פינוי שעוכבה, שקלול רציפות Atlas, המרה ביטוחית ולחץ משמורת שחזור. השחקן צריך לקרוא זאת כמהלך התאגידי האחרון: להשאיר מספיק פיזיקה כדי להישמע שקול, ולחתוך מספיק החלטות כדי למחוק אשמה.
 
 ## Scanner
 
-HE LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+הדו״ח הציבורי עבד מפני שהשאיר את האוקיינוס האמיתי והסיר את הבחירות האנושיות שבתוכו.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: אובדן HECTON-8 מיוחס למפל גאות חריג, עיכוב ממסר ואי-ודאות הסגר. הושמטו: שולי סיכון שהתקבלו, החזקת שחרור פינוי, עקיפת רציפות Atlas, המרת תביעה ובקשת שחזור שמקדימה מטען.
 
 ## Audio
 
-HE LOC HOLD: They did not fake the storm. They buried the choice.
+הם אמרו אמת על המים ושיקרו על הידיים.
 
 ## Field Note
 
-HE LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+השקר הטוב ביותר לא הכחיש את הגאות. הוא השתמש בגאות ככיסוי.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/he_IL. -->

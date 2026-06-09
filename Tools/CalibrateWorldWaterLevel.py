@@ -247,6 +247,8 @@ def main() -> int:
     }
     if args.output:
         path = Path(args.output)
+        if not path.is_absolute():
+            path = ROOT / path
     else:
         suffix = ""
         if abs(args.origin_x_m) > 1.0e-5 or abs(args.origin_z_m) > 1.0e-5:

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Quiet Salvage Contract Seed"
+title: "Semente de contrato de salvage silencioso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Quiet Salvage Contract Seed
+# Semente de contrato de salvage silencioso
 
-PT LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Salvage Silencioso é uma família de contratos com menos alarmes iniciais e linguagem de propriedade mais dura. A rota dá ao operador tempo para reparar, respirar e ler, mas etiquetas de amostra, logs pinger e armários de prova se prendem a um receiver antes do primeiro grande pagamento.
 
 ## Scanner
 
-PT LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Semente de contrato: salvage silencioso. Baixa exposição a tempestade, primeiro pagamento limpo e custódia restrita sobre tudo que prova histórico de rota.
 
 ## Terminal
 
-PT LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: janela de tempestade calma, slot bathydrop pré-liberado, contato inicial com fauna reduzido, trava de custódia reforçada, cláusula de auditoria receiver-first ativa.
 
 ## Audio
 
-PT LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Água calma significa que alguém já moveu o risco para a papelada.
 
 ## Field Note
 
-PT LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Nota de marauder: água calma deixa a mentira do quadro de contrato com dicção melhor.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/pt_BR. -->

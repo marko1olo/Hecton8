@@ -29,6 +29,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
         private Slider _qualityBias;
         private Toggle _active;
         private Toggle _autoRefreshTelemetry;
+        private Label _telemetryStatus;
         private double _nextTelemetryRefresh;
 
         [MenuItem("Hecton8/Rendering/Water Optics/Abyssal Optics Tuner")]
@@ -130,6 +131,11 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 telemetry.Add(bar);
                 _telemetryBars[i] = bar;
             }
+
+            _telemetryStatus = new Label("Celestial light bridge: no runtime sample");
+            _telemetryStatus.style.marginTop = 4;
+            _telemetryStatus.style.unityFontStyleAndWeight = FontStyle.Bold;
+            root.Add(_telemetryStatus);
 
             RegisterCallbacks();
             PullRuntimeState();
@@ -253,9 +259,11 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 !WaterOpticsRuntime.TryGetRuntimeInstance(out WaterOpticsRuntime runtime))
             {
                 ClearTelemetryGraph();
+                UpdateTelemetryStatus(false, default);
                 return;
             }
 
+            bool hasLatestTelemetry = runtime.TryReadLatestTelemetry(out WaterOpticsTelemetryEntry latestTelemetry);
             for (int i = 0; i < TelemetryBarCount; i++)
             {
                 int framesBack = TelemetryBarCount - 1 - i;
@@ -276,6 +284,8 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                     Mathf.Lerp(0.42f, 0.95f, 1f - spectral * 0.35f),
                     1f);
             }
+
+            UpdateTelemetryStatus(hasLatestTelemetry, latestTelemetry);
         }
 
         private void ClearTelemetryGraph()
@@ -288,6 +298,72 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                 _telemetryBars[i].style.height = 1f;
                 _telemetryBars[i].style.backgroundColor = new Color(0.04f, 0.06f, 0.07f, 1f);
             }
+        }
+
+        private void UpdateTelemetryStatus(bool hasEntry, WaterOpticsTelemetryEntry entry)
+        {
+            if (_telemetryStatus == null)
+                return;
+
+            if (!hasEntry)
+            {
+                _telemetryStatus.text = "Celestial light bridge: no runtime sample";
+                _telemetryStatus.style.color = new Color(0.62f, 0.68f, 0.70f, 1f);
+                return;
+            }
+
+            uint flags = entry.Flags;
+            bool missing = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightMissing) != 0u;
+            bool fallback = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightFallback) != 0u;
+            bool artificialCritical = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightArtificialCritical) != 0u;
+            bool qualityReduced = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightQualityReduced) != 0u;
+            bool night = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightNight) != 0u;
+            bool twilight = (flags & WaterOpticsRuntime.TelemetryFlagCelestialLightTwilight) != 0u;
+
+            if (missing)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: missing | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(1.0f, 0.45f, 0.32f, 1f);
+                return;
+            }
+
+            if (artificialCritical)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: artificial critical | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(1.0f, 0.54f, 0.26f, 1f);
+                return;
+            }
+
+            if (fallback)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: fallback | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(1.0f, 0.74f, 0.28f, 1f);
+                return;
+            }
+
+            if (qualityReduced)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: quality reduced | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(0.72f, 0.86f, 1.0f, 1f);
+                return;
+            }
+
+            if (night)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: night phase | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(0.58f, 0.72f, 1.0f, 1f);
+                return;
+            }
+
+            if (twilight)
+            {
+                _telemetryStatus.text = $"Celestial light bridge: twilight phase | flags 0x{flags:X8}";
+                _telemetryStatus.style.color = new Color(0.72f, 0.82f, 1.0f, 1f);
+                return;
+            }
+
+            _telemetryStatus.text = $"Celestial light bridge: bound | flags 0x{flags:X8}";
+            _telemetryStatus.style.color = new Color(0.42f, 0.92f, 0.70f, 1f);
         }
 
         private static Slider Slider(string label, float low, float high, float value)

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "הפרצה המשפטית של marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# הפרצה המשפטית של marauder
 
-HE LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+המאראודרים אינם שבט עם דגל אחד. הם קבלנים, צוותי חוב, צוללי שברים ומכונאים נואשים שעובדים בתוך פרצה שבנה העיכוב. למושבה מתה עדיין יש בעלים, אבל בעלות לא אוטמת גוף, לא שואבת תמלחת ולא שולפת מקליטים מסיפוני שירות מרוסקים. Deep Reach צריכה צוותים שאפשר להתכחש להם. הדומיינים צריכים ראיות שאינם צריכים לאסוף בעצמם. הצוותים צריכים מספיק ניירת כדי לשרוד את הסיור הבא.
 
 ## Scanner
 
-HE LOC HOLD: License valid in one lane, criminal in the next.
+רישיון תקף בנתיב אחד, וכתב אישום בנתיב הבא.
 
 ## Terminal
 
-HE LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor תחת custody של Aegir Reclamation Pool; trespasser נסבל בשפת הנכסים של Deep Reach; raider שניתן להעמיד לדין בסיכומי Sol נקיים; emergency responder רק אם הרשומה שחולצה לא מביכה אף אדם חשוב.
 
 ## Audio
 
-HE LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+אותו חותך יכול להיות כלי, פשע, או מכשיר החילוץ האחרון שנותר.
 
 ## Field Note
 
-HE LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder הוא תואר עבודה רק כל עוד בית המשפט הנכון יכול להרוויח ממנו.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/he_IL. -->

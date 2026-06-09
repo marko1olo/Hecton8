@@ -13,6 +13,7 @@ namespace Hecton8.EditorTools
         private const string MaterialRoot = "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607";
         private const string GeminiSinglesProvider = "GeminiSingles_20260607";
         private const string GeminiMicroPanelProvider = "Gemini_Batch20260607_MicroPanel";
+        private const string GeminiBatch34TextureExpansionProvider = "Gemini_Batch20260608_TextureExpansion";
 
         private static readonly DetailSpec[] Details =
         {
@@ -23,6 +24,7 @@ namespace Hecton8.EditorTools
             new("Assets/_Project/Prefabs/Tools/Held/Tool_SeafloorDrill_Held.prefab", "Detail_RibbedTrimBand", GeminiSinglesProvider, "gemini_20260607_fine_ribbed_metal_trim", new Vector3(0f, 0.04f, 0.36f), new Vector3(0f, 0f, 0f), new Vector3(0.17f, 0.018f, 0.08f)),
             new("Assets/_Project/Prefabs/Tools/Held/Tool_Builder_Held.prefab", "Detail_CleanHousingPlate", GeminiSinglesProvider, "gemini_20260607_clean_nasa_punk_tool_housing_metal", new Vector3(0f, 0.015f, 0.34f), new Vector3(0f, 0f, 0f), new Vector3(0.13f, 0.014f, 0.12f)),
             new("Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab", "Detail_GrayPolymerServiceCap", GeminiMicroPanelProvider, "gemini_Batch20260607_MicroPanel_gray_polymer", new Vector3(0f, 0.055f, 0.26f), new Vector3(0f, 0f, 0f), new Vector3(0.11f, 0.016f, 0.10f)),
+            new("Assets/_Project/Prefabs/Tools/Held/Tool_Flashlight_Held.prefab", "Detail_AmberEmergencyLens", GeminiBatch34TextureExpansionProvider, "gemini_Batch20260608_TextureExpansion_b34_3417_amber_emergency_lens_material", new Vector3(0f, -0.006f, 0.43f), new Vector3(0f, 0f, 0f), new Vector3(0.085f, 0.010f, 0.060f)),
             new("Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab", "Detail_RibbedTrimBand", GeminiSinglesProvider, "gemini_20260607_fine_ribbed_metal_trim", new Vector3(0f, 0.04f, 0.32f), new Vector3(0f, 0f, 0f), new Vector3(0.16f, 0.018f, 0.08f)),
             new("Assets/_Project/Prefabs/Tools/Held/Tool_StunPistol_Held.prefab", "Detail_RubberGripPad", GeminiSinglesProvider, "gemini_20260607_black_waterproof_grip_rubber", new Vector3(0f, -0.09f, 0.02f), new Vector3(0f, 0f, 0f), new Vector3(0.13f, 0.018f, 0.18f)),
             new("Assets/_Project/Prefabs/Tools/Held/Tool_SalvageSampler_Held.prefab", "Detail_AgedServicePatch", GeminiMicroPanelProvider, "gemini_Batch20260607_MicroPanel_aged_green_service_metal", new Vector3(0f, 0.02f, 0.32f), new Vector3(0f, 0f, 0f), new Vector3(0.13f, 0.014f, 0.075f)),
@@ -31,6 +33,7 @@ namespace Hecton8.EditorTools
             new("Assets/_Project/Prefabs/Items/Tools/Item_Tool_SeafloorDrill_World.prefab", "Detail_RibbedTrimBand", GeminiSinglesProvider, "gemini_20260607_fine_ribbed_metal_trim", new Vector3(0f, 0.11f, 0.36f), new Vector3(0f, 0f, 0f), new Vector3(0.22f, 0.035f, 0.13f)),
             new("Assets/_Project/Prefabs/Items/Tools/Item_Tool_Builder_World.prefab", "Detail_CleanHousingPlate", GeminiSinglesProvider, "gemini_20260607_clean_nasa_punk_tool_housing_metal", new Vector3(0f, 0.10f, 0.34f), new Vector3(0f, 0f, 0f), new Vector3(0.22f, 0.032f, 0.18f)),
             new("Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab", "Detail_GrayPolymerServiceCap", GeminiMicroPanelProvider, "gemini_Batch20260607_MicroPanel_gray_polymer", new Vector3(0f, 0.12f, 0.26f), new Vector3(0f, 0f, 0f), new Vector3(0.20f, 0.032f, 0.16f)),
+            new("Assets/_Project/Prefabs/Items/Tools/Item_Tool_Flashlight_World.prefab", "Detail_AmberEmergencyLens", GeminiBatch34TextureExpansionProvider, "gemini_Batch20260608_TextureExpansion_b34_3417_amber_emergency_lens_material", new Vector3(0f, 0.052f, 0.44f), new Vector3(0f, 0f, 0f), new Vector3(0.150f, 0.020f, 0.095f)),
             new("Assets/_Project/Prefabs/Items/Tools/Item_Tool_SalvageSampler_World.prefab", "Detail_AgedServicePatch", GeminiMicroPanelProvider, "gemini_Batch20260607_MicroPanel_aged_green_service_metal", new Vector3(0f, 0.12f, 0.28f), new Vector3(0f, 0f, 0f), new Vector3(0.22f, 0.032f, 0.13f)),
         };
 

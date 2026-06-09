@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Interface bathydrop Black Keel
 
-L'interface bathydrop est l'endroit où le cadre spatial touche le jeu océanique. Que Black Keel existe en orbite ne suffit pas. Le joueur a besoin d'une chaîne : intégrité capsule, contrôle de flottabilité, mât com, loquet d'ascension, joints de pression, calcul relais, timing surface et acceptation transporteur. Un seul maillon rompu change le secours en théorie. L'ouverture reste honnête ainsi. Le joueur n'est pas coincé parce que l'histoire a oublié le vaisseau. Il est coincé parce que la seule machine capable de relier abîme, surface et orbite a échoué d'une façon que l'eau aggrave chaque heure.
+L'interface bathydrop est l'endroit où l'économie des routes touche l'océan. Que Black Keel existe en orbite ne suffit pas. Une ascension fonctionnelle exige une chaîne : intégrité capsule, contrôle de flottabilité, mât de communication, loquet d'ascension, joints de pression, calcul relais, timing de surface et acceptation du transporteur.
+
+Un seul maillon rompu et tout le secours devient théorie. Cela garde l'ouverture honnête. Personne n'est coincé parce que le transporteur a disparu du monde. Le piège existe parce que la seule machine capable de relier abîme, surface et orbite a échoué dans des pièces nommées, et parce que l'eau peut aggraver chaque panne d'heure en heure.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/fr_FR. -->

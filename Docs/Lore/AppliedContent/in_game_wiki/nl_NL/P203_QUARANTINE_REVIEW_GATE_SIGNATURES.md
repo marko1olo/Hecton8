@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Quarantine Hold Signatures"
+title: "Handtekeningen van de Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Quarantine Hold Signatures
+# Handtekeningen van de Quarantine Review Gate
 
-NL LOC HOLD: Quarantine hold signatures keep Deep Reach guilty through delay, not cartoon murder.
+Quarantine Review Gate-records laten zien hoe veiligheidstaal vertraging wordt. De gate heeft geen regel nodig die iemand laat sterven. Hij houdt extractie pending zolang pressure-biology risk, externe review en custody ownership onopgelost zijn. In HECTON-8's bewijsroute is het harde detail dat sommige evacuatiehardware nog stroom had toen de hold werd toegepast. Ikenna Sors handtekening markeert de gate die een open route onveilig hield tot certificering aankwam. Certificering kon niet snel genoeg door Aegirs relaisvertraging komen, en Deep Reach reserveerde niet genoeg onafhankelijke lift om de vertraging uit te zitten.
 
 ## Scanner
 
-NL LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Reviewkaart geborgen: extraction state HELD, risicoveld BIO/PRESSURE-UNCERTAIN, extern certificaat ontbreekt. Routevrijgave geblokkeerd door gate code.
 
 ## Terminal
 
-NL LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Actie: extractie vasthouden tot pressure-biology certificate en externe review. Uitzondering: geen onafhankelijke shuttlecapaciteit toegewezen. Human tags blijven in local custody tot gate vrij is.
 
 ## Audio
 
-NL LOC HOLD: Pending review is still a locked door.
+De deur had nog stroom. De gate zegt review pending, en het luik bleef rood.
 
 ## Field Note
 
-NL LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Leg dit naast afgesloten overlevendenroutes en evacuatiehardware met batterij over. Het hold-veld maakte een werkende deur juridisch dicht.
 
 <!-- In-Game Wiki; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/nl_NL. -->

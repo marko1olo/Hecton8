@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Marques de domaines 2190
 
-En 2190, un même objet brisé peut porter plusieurs propriétaires : norme Sol, réparation Barnard, garde Luyten, réclamation Aegir. HECTON-8 n'est pas une ruine sans histoire; l'histoire est gravée sur le métal pendant que la pièce se noie.
+En 2190, un objet brisé peut avoir plusieurs parents juridiques. Sur HECTON-8, un verrou de pression peut être certifié par Sol, réparé par Barnard, gardé par Luyten, légitimé par Centauri et saisi sous une coquille Aegir. Les marques ne rendent pas la colonie sûre. Elles la rendent documentée.
+
+Cette nuance porte le ton du jeu. HECTON-8 n'est pas au-delà de la civilisation. Elle est sous son côté froid : celui qui peut nommer un support, tarifer un corps, préserver un paquet et échouer quand même à déplacer la masse de secours à temps.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/fr_FR. -->

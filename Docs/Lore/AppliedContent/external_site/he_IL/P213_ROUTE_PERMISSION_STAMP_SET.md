@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "ערכת חותמות הרשאת נתיב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# ערכת חותמות הרשאת נתיב
 
-HE LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+ערכת חותמות הרשאת נתיב מגדירה חפצי גישה עבור HECTON-8. חותמות מחברות זהות עובד לגבולות פיזיים: דלתות, כלי רכב, חליפות, מעליות ולוחות נתיב. מכיוון שכל חותמת יכולה מאוחר יותר לסתור פנקס או שבר שמע, גישה הופכת לביוגרפיה תחת לחץ ולדרך מרכזית לקרוא את התנועה האחרונה של המושבה.
 
 ## Scanner
 
-HE LOC HOLD: A route stamp is stronger than a diary line.
+חותמת נתיב חזקה משורת יומן כי היא מוכיחה מי הורשה לעבור את גבול הלחץ.
 
 ## Terminal
 
-HE LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: הרשאת נתיב חייבת לחבר עובד אחד, דלת או רכב אחד, משפחת צוות אחת וסתירה מאוחרת אחת. חותמת בלי גבול פיזי היא קישוט. חותמת על פתח, מתקן חליפות, מסילת crawler או תג מעלית הופכת לראיית תנועה.
 
 ## Audio
 
-HE LOC HOLD: Access is biography under pressure.
+גישה היא ביוגרפיה תחת לחץ.
 
 ## Field Note
 
-HE LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+חותמות: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. חבר למצב פתח ולחפץ עבודה.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/he_IL. -->

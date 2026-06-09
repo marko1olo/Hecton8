@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "عدة أدلة الملحق الضحل P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Shallow Annex P-63 POI Kit
+# عدة أدلة الملحق الضحل P-63
 
-AR LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+ينجح P-63 لأنه لا يفصل المأوى عن الإثبات. تعطي الغرفة للمشغل هواء، ومضخة حوض، ومخزون حشيات، وخط بينغر، وأثر قاطع. هذه القطع نافعة أولا؛ يمكن للعقد أن ينتظر، أما الماء فلا.
 
-## Scanner
-
-AR LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-AR LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-AR LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-AR LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+بعد استقرار الغرفة يتغير وزن الأشياء نفسها. إشعار المسار المختوم يقول إن الملحق أغلق ضمن شروط مضبوطة، بينما المضخة المتضررة وصينية الحشيات المرقعة وملف الحادث المبلل تعرض خروجا أقسى. أول تناقض لا يختبئ في خطاب. إنه مثبت في المكان الذي أبقى المشغل حيا.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ar_SA. -->

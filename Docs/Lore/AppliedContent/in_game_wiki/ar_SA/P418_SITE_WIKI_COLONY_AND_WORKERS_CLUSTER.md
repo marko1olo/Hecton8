@@ -19,22 +19,22 @@ localization_flags: 1
 
 # المستعمرة والعمال
 
-worker index مستعاد: water ledgers وrelay witness trays وbrine route stamps وtriage repair tags وvent-forge rejects تحفظ الأسماء عبر العمل.
+مركز ملفات العمال: تتذكر HECTON-8 الناس عبر shift boards وmaintenance debts وpressure calls وhandoff marks وسجلات حاولت Deep Reach ضغطها إلى فئات خسارة.
 
 ## Scanner
 
-WORKER INDEX // خمسة سجلات أسماء مرتبطة بالمسار. Pump وrelay وbrine وtriage وforge. احفظ tag chain قبل نزع hardware.
+WORKER INDEX: تحفظ pump boards وrelay trays وbrine stamps وtriage tags وvent-forge rejects الناس كـroute evidence.
 
 ## Terminal
 
-KEELMARK LOSS DESK: احفظ name tags عندما ترتبط بroute أو claim أو custody أو pressure work.
+KEELMARK LOSS DESK: احتفظ بـname tags عندما تشرح pressure decision أو delay أو custody claim أو repair route.
 
 ## Audio
 
-Mara Venn، pump chief: إذا سمعت المضخة تغني نظيفا فسجل ذلك. إذا توقفت عن الغناء فاركض إلى أعلى.
+الاسم على pump card ليس زينة. إنه سبب بقاء الباب مفتوحا.
 
 ## Field Note
 
-ليست عائلة. إنه العمل. اسم على pump card يشرح لماذا بقي الباب مفتوحا.
+ليس طعما عائليا. عمل وضغط وتواقيع وأخطاء. هكذا يواصل الموتى الجدل.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ar_SA. -->

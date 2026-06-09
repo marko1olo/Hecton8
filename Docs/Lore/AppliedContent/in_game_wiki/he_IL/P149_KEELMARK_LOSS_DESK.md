@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "שולחן הפסדים Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# שולחן הפסדים Keelmark
 
-HE LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark הוא חדר החשבון. הוא מתרגם אסון לסוגי הפסד שאפשר לבטח, לערער, למכור או להתעלם מהם. הסכנה אינה אכזריות תיאטרלית אלא היכולת השקטה להעלים אדם בתוך קטגוריה של חשיפה בלתי ניתנת להשבה.
 
 ## Scanner
 
-HE LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+נמצאה טבלת הפסדים: עמודה לציוד, עמודה לעבודה, עמודה לעדות לא נוחה.
 
 ## Terminal
 
-HE LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+שולחן KEELMARK: מיון ביטוחי מקצה אובדן מטען, אובדן מגורים, פגיעת עבודה, חשיפת עד וסוג חומר ניתן להשבה לפני שהצהרה ציבורית נוקבת במתים.
 
 ## Audio
 
-HE LOC HOLD: The ledger is dry because the room was not.
+הם ספרו נעדרים לפני שמות.
 
 ## Field Note
 
-HE LOC HOLD: A loss category is a grave with better stationery.
+שולחן הפסדים אינו מתאבל. הוא מחליט איזו היעדרות אפשר לחייב.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/he_IL. -->

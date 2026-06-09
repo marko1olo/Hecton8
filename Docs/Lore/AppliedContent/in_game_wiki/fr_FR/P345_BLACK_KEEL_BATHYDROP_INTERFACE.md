@@ -35,6 +35,6 @@ Tu n'as pas perdu tout le vaisseau. Tu as perdu la chaîne qui rend le vaisseau 
 
 ## Field Note
 
-Dossier d'évasion première heure : le transporteur est présent, mais la chaîne entre joueur, mer, surface et orbite est cassée en pièces nommées.
+Dossier d'évasion première heure : le transporteur est présent, mais la chaîne entre combinaison, mer, surface et orbite est cassée en pièces nommées.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/fr_FR. -->

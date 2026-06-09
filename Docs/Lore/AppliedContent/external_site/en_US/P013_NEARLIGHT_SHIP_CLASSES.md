@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Nearlight Ship Classes
 
-HECTON-8 does not need faster-than-light travel to feel vast. Its human sphere was built by vehicles with different tolerances for risk. Needleprobes could be fired and lost. Seed ships carried automated instructions. Atlas-class carriers moved the expensive mass: habitats, industrial guts, sleepers and the paperwork attached to them.
+A near-light ship in HECTON-8 is not a miracle engine wrapped in a hull. It is the visible end of a route economy. Beam arrays spend power before the vehicle leaves. Pellet lanes feed reaction mass with brutal timing discipline. Fusion-electric throats, shield ice, radiators and cryo systems keep the payload from becoming a bright mistake. Magsails, aerobrake skins and receiver windows decide whether the ship is allowed to stop.
 
-Arrival is as important as departure. A ship that spends years gaining speed still has to shed that speed through magsails, gas-giant geometry, aerobraking envelopes and ugly safety margins. That is why the player can live under an interstellar claim and still be alone in the water.
+That is why the class table is useful to the player. A needleprobe explains why Aegir was known before it was safe. A seed ship explains why machinery reached HECTON-8 before a stable community did. An Atlas-class carrier explains why the colony arrived already full of debt and maintenance compromises. A system tender explains Black Keel's limits: it can work the Aegir claim, not rewrite interstellar distance. The no-FTL rule is not there to sound serious. It is why a distress call creates paperwork faster than it creates rescue.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/en_US. -->

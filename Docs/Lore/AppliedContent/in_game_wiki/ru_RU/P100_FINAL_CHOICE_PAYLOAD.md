@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload финального выбора"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload финального выбора
 
-Финальное решение спрашивает, что игрок отправляет наверх. Coordinates, samples, names, Atlas access, public proof и quarantine commands создают разные futures. Вопрос не в том, выигрывает ли игрок чисто. Вопрос в том, кто получает достаточно truth, чтобы действовать с HECTON-8 дальше.
+Последнее решение - не чистый экран победы. Это задача доставки с моральным весом. Marauder решает, что поднимется с луны: координаты, образцы, имена рабочих, доступ Atlas, инструкции карантина, публичное доказательство или вообще ничего полезного. Каждый payload создает нового владельца последствий. Deep Reach может вернуть контроль. Публичное право может получить рану, которую наконец видно. Непрерывность Atlas можно перерезать или посадить в клетку. Океано-машинную экологию можно защитить, продать или оставить вне человеческого языка. Концовка - не о том, кто выбрался с чистыми руками. Она о том, кто первым получит достаточно правды, чтобы начать движение.
 
 ## Scanner
 
-Payload matrix. Продать, отсечь, quarantine, publish или оставить новое тело дышать.
+ФИНАЛЬНЫЙ PAYLOAD // Координаты, образцы, имена, доступ Atlas, приказы карантина, публичное доказательство. То, что покинет HECTON-8, решит, кто сможет действовать потом.
 
 ## Terminal
 
-FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+МАТРИЦА PAYLOAD: продать координаты и XO-доказательство; разорвать непрерывность Atlas; сохранить или закрыть на карантин океано-машинную экологию; опубликовать доказательства в публичный ledger; удержать payload и оставить Deep Reach слепыми.
 
 ## Audio
 
-У crime scene, который стал живым неправильным способом, нет чистого владельца.
+У места преступления, которое научилось дышать, не бывает чистого владельца.
 
 ## Field Note
 
-Лучшая концовка должна быть defendable, не чистой.
+Лучшая концовка должна быть защитимой, а не чистой.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/ru_RU. -->

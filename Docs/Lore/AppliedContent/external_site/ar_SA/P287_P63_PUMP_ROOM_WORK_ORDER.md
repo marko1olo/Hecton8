@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: P-63 Pump Room Work Order"
+title: "أمر عمل غرفة المضخات P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: P-63 Pump Room Work Order
+# أمر عمل غرفة المضخات P-63
 
-AR LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+أمر عمل غرفة المضخات P-63 هو HECTON-8 على نطاق صغير: ماء في الغرفة، أداة واحدة في اليد، خط acoustic return، ومسار لا يمكن الوثوق به حتى تجيب البيئة. يجعل الميكانيكيات عادة من عادات المستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+تقرأ أول عملية إصلاح كعادة استعمارية: اضخ، أغلق، استمع، واقطع فقط إذا توقفت الغرفة عن الكذب.
 
 ## Terminal
 
-AR LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: تنظيف sump؛ ترقيع cold seam؛ التحقق من return pinger؛ قطع fused latch فقط بعد ثبات الضغط؛ طباعة gasket من المخزون المحلي؛ وسم route safe بعد تكرار acoustic return ثلاث مرات. أحرف المشرف الأولى مفقودة تحت بقعة ماء.
 
 ## Audio
 
-AR LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+المضخة أولا. الإغلاق ثانيا. إذا غنى، توقف عن القطع.
 
 ## Field Note
 
-AR LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+النصف السفلي من اللوح مشبع بالماء. لا يزال سطر القطع مقروءا لأن أحدهم أحاطه بدائرتين وكتب إذا غنى، توقف.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/ar_SA. -->

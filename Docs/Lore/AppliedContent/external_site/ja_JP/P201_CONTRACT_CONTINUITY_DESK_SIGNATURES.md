@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Contract Continuity Desk Signatures"
+title: "契約継続デスクの署名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Contract Continuity Desk Signatures
+# 契約継続デスクの署名
 
-JP LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+契約継続デスクの署名は、HECTON-8 の冒頭契約の下にある書類層を露出させる。この記事は契約システムに名前、判、機能を与え、サルベージ任務がどのように保管交渉へ変わるかをプレイヤーに見せる。Edda Malk のデスクは、現在を危険にするために植民地犯罪の全体を知る必要がない。先取特権、酸素債務、回収条項を正しい順に結合するだけでよい。オペレーターが署名するころには、船体の外で圧力をかけているのは海だけではない。契約もすでに締め上げている。
 
 ## Scanner
 
-JA LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+冒頭契約の罠は下位署名から作られる。先取特権の統合、酸素付帯条項、ブラックリストリスク、ペイロード保管保留だ。
 
 ## Terminal
 
-JA LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk。Aegir Reclamation Pool の先取特権条件を Black Keel 回収条項と統合。酸素クレジット付帯条項、ブラックリストリスク通知、ペイロード保管保留を添付。オペレーターが受諾する場合、上申不要。
 
 ## Audio
 
-JA LOC HOLD: Nobody says trap. They say continuity.
+その後の全条項がロックされるなら、署名は圧力扉になり得る。
 
 ## Field Note
 
-JP LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+誰も罠に判を押さない。継続性に判を押す。
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ja_JP. -->

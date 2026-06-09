@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "Ledger Triage Medis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# Ledger Triage Medis
 
-ID LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+Ledger Triage Medis mengubah evakuasi tertunda menjadi bukti manusia: kategori bersih, bantuan menunggu, dan pekerja dihitung sebelum diratapi.
 
 ## Scanner
 
-ID LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Cedera tekanan, hipoksia, delay lock, rute hilang, hold sertifikasi. Horornya adalah betapa rapi bantuan menunggu.
 
 ## Terminal
 
-ID LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+ATURAN MEDIS: hitung tubuh tanpa gore. Pakai pressure-state, utang oksigen, delay rute, prioritas triage, dan signoff hold untuk menunjukkan prosedur membuat pasien lebih cepat daripada medik merawat.
 
 ## Audio
 
-ID LOC HOLD: The cleanest handwriting is on the worst page.
+Tulisan tangan paling bersih ada di halaman terburuk.
 
 ## Field Note
 
-ID LOC HOLD: Medical text should count bodies without becoming gore.
+Teks medis harus menghitung tubuh tanpa menjadi gore.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/id_ID. -->

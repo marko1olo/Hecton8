@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Partial Return Lien Extension"
+title: "Продовження утримання для часткового повернення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Partial Return Lien Extension
+# Продовження утримання для часткового повернення
 
-UK LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+Продовження утримання закріплює replay-постійність як знання, а не силу спорядження. Гравець повертається, бо змінилися досьє й борг, а не тому, що HECTON-8 стала легшою.
 
 ## Scanner
 
-UK LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Повернення схвалено під продовженим утриманням. Прапори знання зберігаються; інвентар ізольовано й знято.
 
 ## Terminal
 
-UK LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+НАКАЗ PARTIAL RETURN: повторний вхід у той самий seed дозволено під продовженим утриманням, переглянутим штормовим вікном і збереженим досьє знань. Фізичний інвентар скинуто карантином зберігання; інструменти лишаються власністю носія до закриття перевірки доказів.
 
 ## Audio
 
-UK LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+Маршрут пам'ятає, що ти довів. Океан залишає решту собі.
 
 ## Field Note
 
-UK LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Запис повторного входу: same-seed повернення несе знання, борговий тиск, зміни шторму й custody reset замість успадкованого спорядження.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/uk_UA. -->

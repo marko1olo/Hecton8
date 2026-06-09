@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistencia del dossier de saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistencia del dossier de saqueador
 
-ES LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+El dossier de saqueador es la memoria de campaña que sobrevive entre intentos de salvamento. Conserva finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias de lo que el jugador ya publicó u ocultó. No arrastra fuerza del traje, presión segura, salas limpias ni un océano más amable. El conocimiento cambia decisiones. No vuelve inocua la profundidad.
 
 ## Scanner
 
-ES LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Bobina de dossier. Conservas conocimiento, no superpoderes.
 
 ## Terminal
 
-ES LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTENCIA DEL DOSSIER: registros de finales, tipos de contrato descubiertos, familias de rumores, categorías de pruebas, avisos de ruta y consecuencias del libro público retenidos. Potencia del equipo, verdad del mundo y estado local de presión se reinician por semilla.
 
 ## Audio
 
-ES LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+La siguiente incursión empieza con cicatrices en el archivo, no con músculos en el traje.
 
 ## Field Note
 
-ES LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+El dossier recuerda pruebas y avisos; no vuelve amable la presión.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/es_ES. -->

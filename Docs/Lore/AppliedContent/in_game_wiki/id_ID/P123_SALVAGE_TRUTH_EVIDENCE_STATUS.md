@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Status Bukti Kebenaran Salvase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Status Bukti Kebenaran Salvase
 
-ID LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+Kebenaran di Aegir bersifat fisik. Perekam setengah melebur ke sekat, kamera helm dengan garam di kontaknya, pintu tekanan yang terbuka dari sisi yang salah. Semua itu tidak menjadi keadilan hanya karena ditemukan. Deep Reach bisa menyebutnya data valuasi. Asuransi bisa menyebutnya kontaminasi. Kantor rute bisa menyebutnya tidak sah jika rantai kustodi putus. Pekerjaannya bukan hanya mengambil bukti, tetapi mencegah bukti berubah nama menjadi kargo.
 
 ## Scanner
 
-ID LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paket kotak hitam: kebenaran sampai meja klaim menyentuhnya.
 
 ## Terminal
 
-ID LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: salvase mentah secara default menjadi bahan klaim. Bukti publik membutuhkan hash sumber utuh, cap tekanan-waktu, paket saksi, notaris relay di luar kendali pengklaim, dan jalur kustodi yang bertahan dari hilangnya kapal, paparan brine, dan suntingan manual.
 
 ## Audio
 
-ID LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Mayat baru menjadi bukti setelah seseorang gagal salah mengarsipkannya.
 
 ## Field Note
 
-ID LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Fakta dari kedalaman hanya berbahaya jika saksi-saksinya tetap ada.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/id_ID. -->

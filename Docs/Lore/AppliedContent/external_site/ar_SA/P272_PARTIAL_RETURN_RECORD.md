@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Partial Return Record"
+title: "سجل العودة الجزئية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Partial Return Record
+# سجل العودة الجزئية
 
-AR LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+هذا السجل يضع علامة على نفس للحملة، لا إعادة ضبط. ينفع عندما يملك المسار عتاد استخراج ونافذة ناقل حية، لكنه لا يملك إغلاق عهدة كافياً ليصبح الالتقاط حرية.
 
 ## Scanner
 
-AR LOC HOLD: Extraction granted. Claim unresolved.
+سجل العودة الجزئية // قُبل التقاط Black Keel. عودة إلى seed نفسه مصرح بها تحت رهن ممدد؛ ذاكرة المسح وحزم الأدلة المفتوحة تبقى.
 
 ## Terminal
 
-AR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+سجل النهاية / عودة جزئية
+الالتقاط: استخراج مؤقت بواسطة Black Keel.
+الغرض: إصلاح البدلة، تعبئة الهواء، إزالة التلوث، مزامنة الدفتر.
+حالة العهدة: الرهن ممدد؛ مدة الحجر مرفقة.
+سلطة العودة: seed نفسه، المحيط نفسه، تحذيرات المسار محفوظة.
+بيانات مستمرة: ذاكرة المسح، حزم أدلة مفتوحة، حمولة غير محسومة.
+الخسارة المعروفة: الراحة تُفوتر قبل أن تصبح حرية.
 
 ## Audio
 
-AR LOC HOLD: Out is not away.
+ترك الضغط قبضته. احتفظ العقد بالمقعد.
 
 ## Field Note
 
-AR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+بدلة نظيفة ودورة نوم واحدة لا تغلق عقداً. المسار في الأسفل يحتفظ بتحذيراته القديمة.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/ar_SA. -->

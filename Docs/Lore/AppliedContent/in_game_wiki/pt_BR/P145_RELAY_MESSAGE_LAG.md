@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Atraso de mensagem de relé"
+title: "Atraso de mensagens de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atraso de mensagem de relé
+# Atraso de mensagens de relé
 
-Atraso de relé permite que a Deep Reach ameace o jogador sem voz viva na sala. Máquinas de contrato, notários, janelas de reivindicação e cláusulas de carrier podem chegar antes de compaixão porque foram escritos antes, enfileirados antes e precificados para sobreviver à distância.
+Atraso de relé permite que HECTON-8 receba autoridade sem receber cuidado. Um pacote pode carregar aviso, dívida, propriedade, custódia ou confissão através da distância, mas não pode levar mãos a uma sala inundada. Essa separação torna a comunicação assustadora: sistemas remotos continuam poderosos porque foram escritos cedo, enfileirados cedo, precificados para distância e confiados a máquinas que não sabem que o remetente morreu.
 
 ## Scanner
 
-Uma mensagem pode ser legalmente vinculante e ainda chegar tarde demais para salvar ar.
+Vínculo da mensagem válido. Resposta humana ausente. Ar restante determinado localmente.
 
 ## Terminal
 
-ATRASO DE RELÉ: mensagens locais de Aegir podem levar horas ou dias. Pacotes legais interdomínio podem levar anos. Pressão Deep Reach é velha, automatizada, contratual e ainda perigosa.
+ATRASO DE RELÉ: pacotes locais de Aegir podem levar horas ou dias. Pacotes legais entre domínios podem levar anos. A pressão da Deep Reach persiste porque instruções antigas, avisos de gravame, reivindicações de rota e recusas automáticas continuam executáveis depois que a pessoa que as escreveu desaparece.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A resposta está atrasada. O gravame está vigente.
 
 ## Field Note
 
-Sem ansible, verdade se move como frete.
+Sem ansible, a verdade viaja como carga, mas a lei viaja como cronograma armado.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/pt_BR. -->

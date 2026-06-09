@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Claimcontinuïteit verliesconversie"
+title: "Claimcontinuiteit verliesconversie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Claimcontinuïteit verliesconversie
+# Claimcontinuiteit verliesconversie
 
-De bewijsketen eindigt in conversie. Deep Reach kan schade erkennen en eigendom houden als werkers verliezen worden, bewijs material custody wordt en de claim blijft leven. Daarom draagt de speler niet alleen waarheid. Hij draagt iets dat het systeem weet te kopen.
+De keten eindigt bij het grootboek omdat het grootboek al het andere kan overleven. Arbeiders worden niet terughaalbaar verlies, beschadigde modules worden materiaalbewaring, en bewijs blijft aan de claim hangen. Wie deze documenten draagt, draagt geen sentiment. Die draagt een probleem voor elke ontvanger die de claim zonder lichamen wil.
 
 ## Scanner
 
-Loss-deskstempel geborgen. Het ledger overleefde beter dan de werkers die het hernoemde.
+Stempel van verliesbureau geborgen. Arbeidersstatus wordt omgezet naar niet terughaalbaar voordat bewijsbewaring de actieve claim verlaat.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+KEELMARK-VERLIES // CONTINUITEIT BEHOUDEN. Biologische beroepskracht omgezet naar niet terughaalbaar verlies. Materiaalbewaring en bewijsbewaring actief tot toewijzing ontvanger.
 
 ## Audio
 
-Hier werden mensen een schone kolom.
+Hier werden namen een schone kolom.
 
 ## Field Note
 
-Marauder-notitie: een ledger kan de doden onthouden en ze toch uitgeven.
+Plunderaarsnotitie: een grootboek kan de doden onthouden en ze toch uitgeven.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/nl_NL. -->

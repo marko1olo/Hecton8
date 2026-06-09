@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Pregunta final: venta de la escena del crimen
 
-Este final es más fuerte cuando no castiga al jugador de forma mecánica. Un Marauder desesperado puede cumplir todo lo que pedía el contrato: llegar a la cuenca, recuperar coordenadas, probar el valor de la muestra, conservar el registro XO y entregar un payload que Black Keel pueda tasar. El resultado debe sentirse legal y frío. La deuda se cancela porque el sistema reconoce valor, no justicia.
+El final de venta debe sentirse lo bastante legítimo para doler. Un Marauder endeudado puede cumplir el contrato: llegar a la cuenca, recuperar coordenadas, probar el valor de la muestra, conservar el registro XO y entregar una carga que el transportista pueda valorar. El libro responde porque los objetos valen, no porque los muertos hayan sido escuchados.
 
-Ese es el horror. HECTON-8 no se pierde porque nadie sepa leer la evidencia. Se pierde porque la evidencia puede convertirse en propiedad. Si el jugador vende la escena sin una cadena pública de testigos, Deep Reach obtiene papeles limpios, mejor geometría de aproximación y una razón para volver con abogados antes que con rescate. El final paga al jugador y enseña qué clase de civilización puede pagar salvage interestelar.
+El recibo decide qué viaja después. Si el material testigo no se notariza aparte, Deep Reach recibe geometría de aproximación, valoración de muestra y una vía de custodia sin libro de nombres de trabajadores adjunto. Keelmark puede pagar. El operador puede irse. La sala de abajo se convierte en registro de activo antes que en testimonio, y por eso la ruta de pago pertenece al eje final y no a una caja de fracaso.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/es_ES. -->

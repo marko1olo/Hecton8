@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Скрытая beneficiary clause Deep Reach
 
-Современная роль Deep Reach - не всемогущее управление. Это бумага с зубами: proxy ownership, recovery clauses и legal pressure вокруг старой затопленной катастрофы.
+Скрытая beneficiary clause Deep Reach задает современную форму заговора HECTON-8. Deep Reach - не всемогущий кукловод. Это beneficiary, спрятанный в recovery priority, страховом маршруте и shell custody. Результат страшнее именно потому, что он обычен: бумага с зубами вокруг катастрофы, которая так и не перестала платить.
 
 ## Scanner
 
-Contract clause отредактирована. Beneficiary chain идет через proxy loss desk.
+Deep Reach не напечатана в hire sheet. Она появляется там, где сходятся деньги, приоритет приемника и доступ к координатам.
 
 ## Terminal
 
-BENEFICIARY TRACE: Deep Reach отсутствует в видимом hire sheet и присутствует в priority recovery channel. Proxy holder скрывает liability и сохраняет coordinate access.
+BENEFICIARY TRACE / видимый наниматель: proxy loss desk / скрытый beneficiary: shell, связанная с Deep Reach / liability: изолирована / coordinate access: сохранен / priority recovery channel: открывается раньше contractor distress lane.
 
 ## Audio
 
@@ -35,6 +35,6 @@ BENEFICIARY TRACE: Deep Reach отсутствует в видимом hire shee
 
 ## Field Note
 
-Не писать это как монолог злодея. Показать clause и дать игроку вывести давление самому.
+Держать процедурно: редактирование, proxy loss desk, beneficiary trace, recovery channel. Пусть игрок сам выводит давление.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/ru_RU. -->

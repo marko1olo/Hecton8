@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "旧程序识别线索"
+title: "旧程序识别提示"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 旧程序识别线索
+# 旧程序识别提示
 
-旧程序识别把主角的过去变成可游玩的工具。玩家追随的不是神秘线索，也不是私人预言，而是一张他曾经必须信任的安全表格。路线安全章说这条线已经认证。房间里的证据说工人数量被改过。人工见证栏原本要强制第二个人进行核对，如今却被连续性办公室封存。矛盾就在这里。Deep Reach不只是隐藏了一条路线。它把保护工人的语言拿来使用，让遗弃看起来像行政上已经完成。主角的切身利益从专业识别开始：这张表本来就是为了防止这种失败。
+旧程序识别从安全表单开始，不从供认开始。route-safe certification本应把走廊与人数、泵房标签组，以及数字不一致时的第二次人工检查绑定在一起。在这份记录里，申报occupants被接受为degraded-count，房间里的标签数仍在反驳，复核字段却被Continuity Office封住。
+
+这个矛盾已经足够。操作员不需要指挥访问权也能读懂。Deep Reach用保护工人的语言，让遗弃看起来在行政上已经关闭。表单失败不是因为有人漏了一行。那条本该阻止计数的行，被改成了保护claim的行。
 
 ## Scanner
 
-路线安全章还在。工人数量被两种墨迹改写。人工见证栏已封存。这张表本来是为了抓住这种谎言，直到有人把谎言变成政策。
+ROUTE-SAFE表单 // 申报occupants被降为degraded。泵房标签与工人计数不符。人工复核字段由Continuity Office封住。
 
 ## Terminal
 
-疏散连续性表 / 路线安全认证
-路线: 辅助撤离线
-申报人数: 已接受降级人数
-人工见证: 由连续性办公室封存
-现场修正: 工人清单与泵房标签不一致
-状态: 保全索赔，未准许撤离。
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-你认识这张表。它本该阻止一间还有人呼吸的房间被算成空房。
+你认识这张表。标签不一致，房间就没有清空。
 
 ## Field Note
 
-这张表本该强制再数一次。到了这里，它强制沉默。
+这张表本该强制再次计数。这里它让错误计数看起来完成。
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/zh_CN. -->

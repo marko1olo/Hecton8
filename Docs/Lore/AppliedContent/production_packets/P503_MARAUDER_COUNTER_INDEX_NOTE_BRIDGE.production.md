@@ -40,7 +40,7 @@ Runtime layer: Narrative
 
 Surface targets: public article, wiki note, PDA/codex note, scanner tag, terminal annotation, evidence caption
 
-Spoiler level: counter-index concept visible at level 1; exact Marauder route and final consequence held behind later proof gates.
+Spoiler level: counter-index concept visible at level 1; exact Marauder route and final consequence held behind later evidence records.
 
 Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
@@ -66,7 +66,7 @@ Player use: teaches the player to compare public index labels with physical rout
 
 Forbidden facts: no final receiver, no full counter-route, no protected claimant, no final-route branch, no Atlas consequence, no legal verdict, no rescue promise, no native review, no source insertion, no h8bin state, no DataMonolith state, no public deployment state.
 
-Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, public archive, counter-index, witness hash, salvage market, scanner gate.
+Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, public archive, counter-index, witness hash, salvage market, scanner evidence marker.
 
 LocIDs: proposed in Future Integration Notes.
 
@@ -76,45 +76,42 @@ Localization status: English authority row; non-English draft rows require futur
 
 **Website article seed:**
 
-Marauder counter-indexes grew because public evidence indexes are never neutral once the evidence becomes searchable. A clean public category helps readers. It also helps brokers, insurers, bounty crews, and Deep Reach offices find the same fragment. The counter-index answers with physical route marks: where the object was touched, which custody stamp survived, which witness hash remained stable, and which public label looked too convenient.
+Marauders started counter-index cards because a public archive index exposes enough to search and enough to buy. A public shelf label can point to a packet family; it can also give a broker, insurer, bounty crew, or Deep Reach desk the same lead. The counter-index keeps a second line beside the public one: raw route mark from the sleeve or tray, surviving custody stamp, witness hash, damage note, and any cleanup-bid flag. It does not decide the final receiver. It blocks the public category from overwriting the physical route.
 
-The counter-index is not a verdict. It is a refusal to let the public shelf become the only map. When a public index says "ledger," the counter-index asks who paid for the ledger to stay clean. When the index says "quarantine," it asks who benefited from the delay. When the index says "claimant-safe," it asks whether the missing detail protected a person or an office.
+Read the card in pairs. Public label beside counter-label. Shelf family beside object route. Witness hash beside payment pressure. If the counter-index marks every public label as bait, it is overcorrecting; suspicion can damage the trail too. Keep both labels until object proof resolves the conflict.
 
 **Wiki article seed:**
 
-Marauder counter-index: a private or field-side index that preserves physical route marks beside public category labels. It is used to resist cleanup bids, receiver ambiguity, claimant-safe omissions, and spoiler-safe public grouping. Counter-index entries must remain qualified because Marauder suspicion is evidence pressure, not final proof.
+Marauder counter-index: a field-side index card that preserves a physical route mark beside a public archive label. It is used when public grouping may expose, bait, or erase evidence. Entries must list public label, counter-label, custody stamp, witness hash, damage note, and next proof. A counter-index is a caution record, not a verdict.
 
 **PDA / codex entry:**
 
-Marauder note: do not let the clean shelf decide the route. Use public index labels to find the packet family, then follow the object, custody stamp, witness hash, and damage marks. If the public label is too clean, write the counter-label beside it and keep moving.
+Marauder note: use the public index to find the packet family, then keep the counter-label beside it. Follow object route, custody stamp, witness hash, damage marks, and cleanup pressure before trusting either label.
 
 **Scanner entry:**
 
-Counter-index mark detected. Public category label and Marauder route note disagree. Confidence: partial. Required next proof: object custody, witness hash, cleanup bid, or terminal annotation.
+COUNTER-INDEX MARK // Public shelf label and field route note disagree. Confidence: partial. Required next proof: object custody, witness hash, damage mark, cleanup bid, or terminal annotation.
 
 **Terminal note:**
 
 MARAUDER COUNTER-INDEX NOTE
-
-Public label found.
-
-Counter-label added.
-
-Do not erase either line. The index finds the shelf. The counter-index tests the route.
-
-Action: preserve both labels until object proof resolves the conflict.
+Public label: retained.
+Counter-label: retained.
+Do not erase either line.
+Index finds shelf family. Counter-index preserves field route.
+Action: keep both labels until object proof resolves conflict.
 
 **Evidence caption:**
 
-Counter-index card. A Marauder route note disputes the public shelf label. This is evidence of contested handling, not proof of final truth.
+Counter-index card. A Marauder field note disputes the public shelf label. This proves contested handling, not the final receiver or route result.
 
 **Spoiler policy:**
 
-Counter-index language may appear early. Exact private route, final receiver, protected claimant, Atlas consequence, and legal result stay masked until later proof gates.
+Counter-index warnings may appear early. Exact private route, final receiver, protected claimant, Atlas consequence, legal result, and ending branch stay masked until later evidence locks open.
 
 **String-pool key plan:**
 
-Use hashed LocIDs in the Narrative layer. Keep short counter-index strings for scanner labels and longer source text for codex/wiki/public article surfaces. Runtime must not parse this Markdown.
+Use hashed LocIDs in the Narrative layer. Runtime must not parse this Markdown. Live all-locale surface rows are stored in `Docs/Lore/AppliedContent/packets/RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE.packets.json`.
 
 ## Future Integration Notes
 
@@ -151,65 +148,27 @@ Ultra: add dense counter-index comparison and filterable public/private label ta
 
 ## Localization
 
-### en_US
-Status: source_authority
-Text: A Marauder counter-index keeps a physical route label beside the public archive label. It is useful because clean categories can guide readers and predators at the same time. The counter-index is suspicion with a route mark, not a verdict. Follow custody stamp, object damage, witness hash, cleanup pressure, and terminal annotation before deciding which label carries the evidence.
+Live localized source rows are maintained in `Docs/Lore/AppliedContent/packets/RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE.packets.json`, packet `P503_MARAUDER_COUNTER_INDEX_NOTE_BRIDGE`. Do not copy one-paragraph locale summaries from old briefs; every locale has separate website, wiki, PDA, scanner, terminal, caption, and spoiler-policy text.
 
-### ar_SA
-Status: draft_machine_or_llm
-Text: يحتفظ فهرس مارودر المضاد بوسم مسار مادي بجانب وسم الأرشيف العام. فائدته أن الفئات النظيفة قد ترشد القراء والمفترسين في الوقت نفسه. الفهرس المضاد هو شك مع علامة مسار، وليس حكما. اتبع ختم الحيازة وضرر الجسم وبصمة الشاهد وضغط التنظيف وتعليق الطرفية قبل اختيار الوسم الذي يحمل الدليل.
+Locale status:
 
-### de_DE
-Status: draft_machine_or_llm
-Text: Ein Marauder-Gegenindex haelt ein physisches Routenlabel neben dem oeffentlichen Archivlabel. Saubere Kategorien koennen Leser und Jaeger zugleich fuehren. Der Gegenindex ist Verdacht mit Routenmarke, kein Urteil. Folge Verwahrungsstempel, Objektschaden, Zeugenhash, Cleanup-Druck und Terminalnotiz, bevor du entscheidest, welches Label den Beweis traegt.
+- en_US: source_authority
+- ar_SA: draft_machine_or_llm
+- de_DE: draft_machine_or_llm
+- es_ES: draft_machine_or_llm
+- fr_FR: draft_machine_or_llm
+- he_IL: draft_machine_or_llm
+- id_ID: draft_machine_or_llm
+- ja_JP: draft_machine_or_llm
+- ko_KR: draft_machine_or_llm
+- nl_NL: draft_machine_or_llm
+- pl_PL: draft_machine_or_llm
+- pt_BR: draft_machine_or_llm
+- ru_RU: draft_machine_or_llm
+- uk_UA: draft_machine_or_llm
+- zh_CN: draft_machine_or_llm
 
-### es_ES
-Status: draft_machine_or_llm
-Text: Un contraindice Marauder conserva una etiqueta de ruta fisica junto a la etiqueta del archivo publico. Es util porque las categorias limpias pueden guiar a lectores y depredadores a la vez. El contraindice es sospecha con marca de ruta, no veredicto. Sigue sello de custodia, dano del objeto, hash testigo, presion de limpieza y nota de terminal antes de elegir la etiqueta.
-
-### fr_FR
-Status: draft_machine_or_llm
-Text: Un contre-index Marauder garde une etiquette de route physique a cote de l'etiquette d'archive publique. Les categories propres peuvent guider les lecteurs et les predateurs en meme temps. Le contre-index est un soupcon avec marque de route, pas un verdict. Suivez cachet de garde, degat de l'objet, hash temoin, pression de nettoyage et note terminale avant de choisir l'etiquette.
-
-### he_IL
-Status: draft_machine_or_llm
-Text: אינדקס נגדי של מארודר שומר תווית מסלול פיזית לצד תווית הארכיון הציבורי. הוא שימושי כי קטגוריות נקיות יכולות להוביל קוראים וטורפים יחד. האינדקס הנגדי הוא חשד עם סימן מסלול, לא פסק דין. עקבו אחרי חותמת משמורת, נזק החפץ, גיבוב עד, לחץ ניקוי והערת מסוף לפני בחירת התווית.
-
-### id_ID
-Status: draft_machine_or_llm
-Text: Kontraindeks Marauder menyimpan label rute fisik di samping label arsip publik. Itu berguna karena kategori bersih dapat menuntun pembaca dan pemburu sekaligus. Kontraindeks adalah kecurigaan dengan tanda rute, bukan putusan. Ikuti cap kustodi, kerusakan objek, hash saksi, tekanan pembersihan, dan catatan terminal sebelum memilih label bukti.
-
-### ja_JP
-Status: draft_machine_or_llm
-Text: マローダーの対抗インデックスは、公開アーカイブラベルの横に物理ルートのラベルを残す。きれいなカテゴリは読者にも捕食者にも同時に道を示すためだ。対抗インデックスはルート印を持つ疑念であり、判決ではない。保管印、物体の損傷、証人ハッシュ、清掃圧力、端末注記を追ってからラベルを判断する。
-
-### ko_KR
-Status: draft_machine_or_llm
-Text: 마라우더 역색인은 공개 아카이브 라벨 옆에 물리적 경로 라벨을 남긴다. 깨끗한 분류는 독자와 약탈자를 동시에 안내할 수 있기 때문이다. 역색인은 경로 표시가 붙은 의심이지 판결이 아니다. 보관 도장, 물체 손상, 증인 해시, 정리 압박, 터미널 주석을 따라간 뒤 어느 라벨이 증거를 담는지 판단해야 한다.
-
-### nl_NL
-Status: draft_machine_or_llm
-Text: Een Marauder-tegenindex bewaart een fysiek routelabel naast het openbare archieflabel. Schone categorieen kunnen lezers en jagers tegelijk sturen. De tegenindex is verdenking met een routemerk, geen vonnis. Volg bewaarstempel, objectschade, getuigehash, cleanupdruk en terminalnotitie voordat je beslist welk label het bewijs draagt.
-
-### pl_PL
-Status: draft_machine_or_llm
-Text: Kontrindeks Marauderow trzyma fizyczna etykiete trasy obok publicznej etykiety archiwum. Czyste kategorie moga prowadzic czytelnikow i drapiezcow jednoczesnie. Kontrindeks to podejrzenie ze znakiem trasy, nie wyrok. Sprawdz pieczec depozytu, uszkodzenie obiektu, hash swiadka, presje czyszczenia i notatke terminala przed wyborem etykiety.
-
-### pt_BR
-Status: draft_machine_or_llm
-Text: Um contraindice Marauder mantem uma etiqueta de rota fisica ao lado do rotulo do arquivo publico. Categorias limpas podem guiar leitores e predadores ao mesmo tempo. O contraindice e suspeita com marca de rota, nao veredito. Siga carimbo de custodia, dano do objeto, hash de testemunha, pressao de limpeza e nota de terminal antes de escolher o rotulo.
-
-### ru_RU
-Status: draft_machine_or_llm
-Text: Контриндекс Marauder держит физическую метку маршрута рядом с публичной архивной меткой. Чистые категории могут вести читателей и охотников одновременно. Контриндекс - это подозрение с маршрутной отметкой, а не приговор. Проверь печать хранения, повреждение объекта, хэш свидетеля, давление очистки и терминальную пометку перед выбором метки.
-
-### uk_UA
-Status: draft_machine_or_llm
-Text: Контріндекс Marauder тримає фізичну мітку маршруту поруч із публічною архівною міткою. Чисті категорії можуть вести читачів і мисливців одночасно. Контріндекс - це підозра з маршрутною позначкою, а не вирок. Перевір печатку зберігання, пошкодження об'єкта, хеш свідка, тиск очищення і термінальну примітку перед вибором мітки.
-
-### zh_CN
-Status: draft_machine_or_llm
-Text: Marauder 反索引把实体路线标签保存在公开档案标签旁边。干净的类别可以同时引导读者和掠食者。反索引是带路线标记的怀疑，不是判决。先追踪保管印、物体损伤、见证哈希、清理压力和终端注释，再判断哪一个标签承载证据。
+Native review is still absent for non-English rows; draft status is honest and must not be upgraded without review.
 
 ## QA Notes
 

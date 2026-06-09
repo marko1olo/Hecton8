@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Limites de Autonomia do Carrier de Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Salvage Carrier Autonomy Limits
+# Limites de Autonomia do Carrier de Salvage
 
-PT LOC HOLD: Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure. It is competent, useful and dangerous, but not a magic rescue AI.
+Limites de Autonomia do Carrier de Salvage definem Black Keel como infraestrutura plausível, não como IA mágica de resgate. O carrier é competente dentro de suas faixas permitidas. Pode agendar janelas de recuperação, rejeitar massa contaminada, vender claim telemetry, atualizar o lien, soltar ballast, liberar suprimentos de baixo risco e proteger seu receiver state. Esses poderes fazem com que pareça presente acima do oceano. O limite importante é que nenhum deles equivale a agência moral. Black Keel não pode decidir que o jogador merece resgate. Não pode cancelar dívida porque a situação é injusta. Não pode autorizar crewed descent pelo clima de pressão de Aegir nem ignorar quarentena porque uma voz humana parece assustada. Sua autonomia é corporativa e procedural: a dívida pode se mover mais rápido do que uma pessoa consegue implorar. Isso cria uma relação mais afiada que uma IA amiga ou máquina inimiga. O carrier ajuda, recusa e observa pelo mesmo conjunto de regras.
 
 ## Scanner
 
-PT LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel pode mover dívida, telemetria e drops de suprimento de baixo risco sem perguntar. Não pode autorizar um resgate profundo.
 
 ## Terminal
 
-PT LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+LIMITES DE AUTONOMIA / permitido: claim processing, venda de telemetria, recovery-window scheduling, ballast ou supply drop de baixo risco, contaminated-mass rejection / proibido: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-PT LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Autônomo não significa livre. Significa que a dívida pode se mover sem perguntar.
 
 ## Field Note
 
-PT LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Manter em status do carrier e UI de contrato, não em barks de combate. Autonomia cobre contabilidade, agendamento de recuperação e lógica de recusa.
 
 <!-- In-Game Wiki; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/pt_BR. -->

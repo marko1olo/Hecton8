@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Deep Reach Public Combine"
+title: "Публичный комбинат Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Deep Reach Public Combine
+# Публичный комбинат Deep Reach
 
-RU LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Публичное лицо Deep Reach достаточно широкое, чтобы выглядеть полезным, и достаточно сухое, чтобы выглядеть невиновным. Оно строит маршрутные пластины, жилищные сервисы, гермологистику и программы непрерывности с гражданским запахом. На этом слое колония редко видит единого злодея. Она видит бланки, пломбы обслуживания, выверенные лозунги и имя, способное назвать себя инфраструктурой, когда работа прибыльна, и дистанцией, когда работа становится доказательством.
 
 ## Scanner
 
-RU LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Публичная хартия: оператор инфраструктуры, не ответчик по добыче.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+ЗАПИСЬ ПУБЛИЧНОГО КОМБИНАТА: Deep Reach выступает как маршрутная инфраструктура, океаническая индустрия, логистика герможилья и сервисы непрерывности. Работа, несущая ответственность, разнесена по дочерним столам, страховому языку, подрядчикам опеки и recovery-офисам.
 
 ## Audio
 
-RU LOC HOLD: A clean title is the cheapest pressure suit.
+На двери написано коммунальная служба. Замки за ней говорят собственность.
 
 ## Field Note
 
-RU LOC HOLD: The seal is clean. The rooms under it are not.
+Чистое имя не ложь. Это комната, где грязь раскладывают по другим папкам.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/ru_RU. -->

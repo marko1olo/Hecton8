@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Worker Locker Nameplate Sample
 
-Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Worker Locker Nameplate Sample shows how HECTON-8 remembers people through objects that still had jobs. Ren Okoye is not introduced by biography. The locker plate gives route, tool certification, meal token, glove-size mark, and a payroll stripe sanded away by somebody who did not know which details mattered. That is why the artifact works. It proves that corporate erasure can be clumsy: the payline disappears, but the clamp route remains; the status is overwritten, but the glove-size mark still fits a real hand. The player should read the name through labor first, then feel the violence of the missing account line.
 
 ## Scanner
 
-Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye's plate keeps the name because the payline was easier to erase than the work.
 
 ## Terminal
 
-LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-Name retained. Payline erased.
+Name retained. Payline erased. Work still attached.
 
 ## Field Note
 
-REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Payroll stripe sanded off; glove-size mark still visible.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/en_US. -->

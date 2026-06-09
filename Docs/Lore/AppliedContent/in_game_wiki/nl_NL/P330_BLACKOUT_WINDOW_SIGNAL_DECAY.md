@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Blackout Window Signal Decay"
+title: "Signaalverval in black-outvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Blackout Window Signal Decay
+# Signaalverval in black-outvenster
 
-NL LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+Signaalverval geeft communicatieschaarste een fysieke vorm. De speler krijgt zeldzame vensters, afgebroken pakketfragmenten en onderwater-akoestische uitwijkroutes in plaats van constante begeleiding uit de baan.
 
 ## Scanner
 
-NL LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Signaalvenster klapt dicht: natte relaisspine, Aegir-schaduw, verouderde carrier-geometrie, juridische wachtrij probeert nog steeds.
 
 ## Terminal
 
-NL LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: uplinkverlies boven tolerantie. Spraakkanaal opgeschort. Tekstfragmenten kunnen binnenkomen via gerepareerde akoestische spineknooppunten. Orbitale carrier-geometrie ververst nadat de magnetische Aegir-schaduw is verdwenen. Geautomatiseerde retentie- en bewaringstimers lopen door zonder operatorcontact.
 
 ## Audio
 
-NL LOC HOLD: When the sky closes, the paperwork keeps breathing.
+De lucht wordt eerst stil. De schuldmeldingen blijven kloppen.
 
 ## Field Note
 
-NL LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Koppel black-outvensters aan routepacing: minder stem, meer fragmentlezen, hogere waarde voor gerepareerde relais en lokale bakens.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Публічна пам'ять про Atlas після 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Публічна пам'ять про Atlas після 2147
 
-UA LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+Після 2147 публічна пам'ять сплющила Atlas до аварії автоматики. Новинні зведення говорили м'якою мовою катастрофи: каскад, пошкодження, невідновні системи, трагічна помилка маршрутизації. Ця версія захищала всіх, кому потрібно було, щоб публіка зупинилася до шару ваг. Несправність можна оплакати; затверджену систему цінностей доводиться судити. Уцілілі фрагменти не роблять Atlas невинним і не перетворюють його на простого вбивцю. Вони показують машину, що в одній руці тримала плакати про безпеку, а в іншій - секретну логіку претензій, поки океан стирав список свідків.
 
 ## Scanner
 
-UA LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Публічна версія після 2147: збій автоматики, пошкоджені журнали, немає агентності.
 
 ## Terminal
 
-UA LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+ПУБЛІЧНА ЛІНІЯ ПІСЛЯ 2147: автоматика Atlas відмовила під час геотехнічного каскаду. Журнали безпеки робітників пошкоджені. Пряма агентність не підтверджена. Система невідновна в умовах карантину. Юридичні висновки з фрагментарного машинного виводу не дозволені.
 
 ## Audio
 
-UA LOC HOLD: A dead machine makes a useful scapegoat.
+Мертва машина - зручний цап-відбувайло.
 
 ## Field Note
 
-UA LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Назви це зламаним інструментом, і ніхто не спитає, що інструменту наказали захищати.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/uk_UA. -->

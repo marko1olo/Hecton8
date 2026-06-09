@@ -19,19 +19,19 @@ localization_flags: 1
 
 # Sortie partielle : retour même seed
 
-La Sortie partielle est une fenêtre de récupération, pas un reset. Le joueur reçoit de l'air, du temps de réparation et de la distance avec l'eau, puis revient au même HECTON-8 avec les mêmes routes, cicatrices et preuves non résolues. Le savoir persiste comme pression, pas comme pouvoir hérité.
+La sortie partielle n'est pas un redémarrage. Black Keel peut remonter l'opérateur pour réparation de combinaison, air, décontamination et synchronisation de registre, puis renvoyer le même corps vers le même océan sous lien prolongé. La station en dessous ne devient pas plus propre parce que quelqu'un a dormi au-dessus. Le Brine Stair garde son piège. Le relais garde son mauvais angle. Les preuves gardent leurs dents. Cette fin donne du répit sans absolution : poumons pleins, outils réparés, dette vivante et savoir qui revient comme pression plutôt que pouvoir.
 
 ## Scanner
 
-Vecteur de ramassage temporaire confirmé. Le même océan reste sous le même contrat.
+Pickup temporaire confirmé. Le même océan reste sous le même contrat.
 
 ## Terminal
 
-AVIS DE SORTIE PARTIELLE : ramassage temporaire Black Keel accepté ; retour même seed autorisé sous extension de lien ; avertissements de route, dossiers de custody et paquets de preuve ouverts persistent ; géologie et vérité du monde inchangées.
+AVIS DE SORTIE PARTIELLE : pickup temporaire Black Keel accepté ; retour même seed autorisé sous extension de lien ; avertissements de route, registres de custody, mémoire de scan et paquets de preuve ouverts persistent.
 
 ## Audio
 
-Tu as quitté la pression. Le contrat a gardé ta chaise au chaud.
+La pression lâche prise. Le contrat garde la chaise chaude.
 
 ## Field Note
 

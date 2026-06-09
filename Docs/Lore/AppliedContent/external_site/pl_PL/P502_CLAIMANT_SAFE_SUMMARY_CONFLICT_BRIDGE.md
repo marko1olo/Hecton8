@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Konflikt bezpiecznego streszczenia roszczenia"
+title: "Konflikt streszczenia bezpiecznego dla roszczeń"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Konflikt bezpiecznego streszczenia roszczenia
+# Konflikt streszczenia bezpiecznego dla roszczeń
 
-## Co to dowodzi
+## Co potwierdza wpis
 
-Bezpieczne streszczenie roszczenia nie jest neutralnym skrotem, lecz chronionym przepisaniem. Moze usunac nazwiska, zaokraglic wspolrzedne, zmienic obrazenia w kategorie, zmiekczyc czasownik trasy albo podstawic biuro uprawnione do odpowiedzi. Moze chronic ludzi; Deep Reach moze tym samym jezykiem chowac nacisk. Konflikt z surowym obiektem jest dowodem pominiecia.
+Streszczenie bezpieczne dla roszczeń nie jest krótszą prawdą. To autoryzowana redakcja dla trasy roszczenia. Może usuwać nazwiska pracowników, rozmywać współrzędne, zastępować szczegóły obrażeń kategorią wypłaty, zmieniać zatrzymane na w kolejce albo pokazywać tylko biuro uprawnione do odpowiedzi na pocztę publiczną. Część usunięć chroni żywe załogi, prywatność medyczną lub niedomkniętą trasę odzysku. Inne chronią Deep Reach przed problemem przechowania. Konflikt między streszczeniem a surowym przedmiotem jest dowodem, bo samo cięcie ma właściciela, znacznik czasu i beneficjenta.
+
+Czytaj streszczenie obok przedmiotu, który je wymusił: koszulki znacznika, kasety audio, worka próbki, logu drzwi ciśnieniowych, pierścienia kombinezonu albo zdjęcia tacy. Lista pominięć ma być widoczna. Zapytaj, co usunięto, z jakim znacznikiem ryzyka prawnego to się łączy, kto zażądał redakcji i czy przedmiot może przywrócić kontekst bez wymyślania nazwisk lub współrzędnych. Jeśli surowy przedmiot dowodzi więcej niż streszczenie, zachowaj lukę. Nie wypełniaj jej czystym zdaniem.
 
 ## Jak to czytać
 
-KONFLIKT BEZPIECZNEGO STRESZCZENIA
-Streszczenie jest bezpieczne publicznie. Surowy obiekt moze nie byc.
-Nie przywracaj nazw ani wspolrzednych z domyslow.
-Zachowaj liste pominiec, dowod trasy i znak ryzyka.
+KONFLIKT STRESZCZENIA BEZPIECZNEGO DLA ROSZCZEŃ
+Streszczenie dopuszczone do obsługi publicznej. Surowy przedmiot nie.
+Nie przywracaj nazwisk, współrzędnych ani obrażeń z domysłu.
+Następny dowód: lista pominięć, żądający, znacznik ryzyka prawnego, trasa przedmiotu, czas przechowania.
+Działanie: trzymać streszczenie i surowy przedmiot połączone, dopóki pominięcie nie ma właściciela.
 
 ## Notatka terenowa
 
-Gdy streszczenie mowi bezpieczne, zapytaj dla kogo. Zachowaj liste pominiec.
+Streszczenie może chronić pracownika albo biurko. Trasa przedmiotu pokazuje które.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/pl_PL. -->

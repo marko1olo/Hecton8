@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "מעמד הראיות של אמת חילוץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# מעמד הראיות של אמת חילוץ
 
-HE LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+האמת על אייגיר היא פיזית. מקליט חצי מותך בתוך מחיצה, מצלמת קסדה עם מלח במגעים, דלת לחץ שנפתחה מהצד הלא נכון. שום דבר מזה אינו הופך לצדק רק משום שנמצא. Deep Reach יכולה לקרוא לזה נתוני הערכה. מבטחים יכולים לקרוא לזה זיהום. משרד נתיב יכול לקרוא לזה בלתי קביל אם השרשרת נשברת. העבודה אינה רק לחלץ ראיה, אלא למנוע ממנה להפוך למטען.
 
 ## Scanner
 
-HE LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+חבילת קופסה שחורה: אמת עד ששולחן התביעות נוגע בה.
 
 ## Terminal
 
-HE LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: חילוץ גולמי הופך כברירת מחדל לחומר תביעה. ראיה ציבורית דורשת האש מקור שלם, חותמת לחץ-זמן, חבילת עד, נוטריון ממסר מחוץ לשליטת התובע ונתיב משמורת ששורד אובדן ספינה, חשיפה לתמלחת ועריכות ידניות.
 
 ## Audio
 
-HE LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+גופה היא ראיה רק אחרי שמישהו נכשל בתיוק הלא נכון שלה.
 
 ## Field Note
 
-HE LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+עובדה מן העומק מסוכנת רק אם היא שומרת את העדים שלה.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/he_IL. -->

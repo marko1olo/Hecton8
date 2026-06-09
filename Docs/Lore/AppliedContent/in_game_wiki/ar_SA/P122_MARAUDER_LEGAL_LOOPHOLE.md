@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "الثغرة القانونية للمغيرين"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# الثغرة القانونية للمغيرين
 
-AR LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+المارودرز ليسوا قبيلة تحت راية واحدة. إنهم متعاقدون، وأطقم مديونة، وغواصو حطام، وميكانيكيون محاصرون يعملون داخل ثغرة صنعها التأخير. المستعمرة الميتة ما زال لها مالك، لكن الملكية لا ترقع الهياكل ولا تضخ المحلول الملحي ولا تسحب المسجلات من أسطح الخدمة المسحوقة. تحتاج Deep Reach إلى أطقم تستطيع إنكارها. وتحتاج النطاقات إلى أدلة لا تجمعها بنفسها. وتحتاج الأطقم إلى ورق يكفي للنجاة من الدورية التالية.
 
 ## Scanner
 
-AR LOC HOLD: License valid in one lane, criminal in the next.
+رخصة صالحة في ممر، وقابلة للاتهام في الممر التالي.
 
 ## Terminal
 
-AR LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor تحت custody حوض Aegir Reclamation Pool؛ متسلل متسامح معه في لغة أصول Deep Reach؛ raider قابل للملاحقة في ملخصات Sol النظيفة؛ emergency responder فقط إذا كان السجل المستعاد لا يحرج شخصا مهما.
 
 ## Audio
 
-AR LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+يمكن للقاطع نفسه أن يكون أداة، أو جريمة، أو آخر وسيلة إنقاذ باقية.
 
 ## Field Note
 
-AR LOC HOLD: Marauder is a job title only when the right court is listening.
+لا تكون marauder وظيفة إلا ما دام القاضي الصحيح يستطيع الربح منها.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ar_SA. -->

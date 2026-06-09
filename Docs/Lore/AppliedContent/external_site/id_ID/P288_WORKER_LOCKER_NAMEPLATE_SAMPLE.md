@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Worker Locker Nameplate Sample"
+title: "Sampel Plat Nama Loker Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Worker Locker Nameplate Sample
+# Sampel Plat Nama Loker Pekerja
 
-ID LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+Sampel Plat Nama Loker Pekerja mengubah satu loker menjadi catatan manusia yang padat. Ren Okoye bertahan melalui akses rute, sertifikasi alat, token makan, dan bekas penghapusan. Objek ini menunjukkan gaya bukti utama HECTON-8: identitas dipertahankan oleh pekerjaan setelah memori payroll gagal.
 
 ## Scanner
 
-ID LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Plat Ren Okoye mempertahankan nama karena baris gaji lebih mudah dihapus daripada pekerjaan.
 
 ## Terminal
 
-ID LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-ID LOC HOLD: Name retained. Payline erased.
+Nama tertahan. Baris gaji dihapus. Pekerjaan masih menempel.
 
 ## Field Note
 
-ID LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / token makan dijepit di bawah tape. Stripe payroll diamplas; tanda ukuran sarung tangan masih terlihat.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/id_ID. -->

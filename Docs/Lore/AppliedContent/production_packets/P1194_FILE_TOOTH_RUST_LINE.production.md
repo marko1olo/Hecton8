@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_tool_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS183_FIRST_TOOL_TRACE_ARTICLES.md |
 | Speaker | Tool scanner, file edge note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first tool inspection |
@@ -39,7 +39,7 @@ FILE TEETH // Rust line crosses bite. Edge condition needs separate check.
 
 The rust line runs across several teeth, not along the handle. That puts the wet history on the working edge.
 
-An edge can look intact from a distance and still carry the wrong kind of memory.
+The rust line is the part to check before assigning the file to work.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CHECK EDGE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| ru_RU | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| ja_JP | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| zh_CN | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| fr_FR | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| es_ES | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| de_DE | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| pl_PL | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| uk_UA | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| ar_SA | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| id_ID | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| ko_KR | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| he_IL | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| pt_BR | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
-| nl_NL | draft_machine_or_llm | FILE TEETH // Rust line crosses bite. Edge condition needs separate check. |
+| ru_RU | draft_machine_or_llm | ЗУБЬЯ НАПИЛЬНИКА // Линия ржавчины пересекает насечку. Состояние кромки требует отдельной проверки. |
+| ja_JP | draft_machine_or_llm | ヤスリ目 // 錆線が刃目を横切る。縁の状態は別確認が必要。 |
+| zh_CN | draft_machine_or_llm | 锉齿 // 锈线横穿咬合面。边缘状态需要单独检查。 |
+| fr_FR | draft_machine_or_llm | DENTS DE LIME // Ligne de rouille sur la morsure. Etat du bord a verifier separement. |
+| es_ES | draft_machine_or_llm | DIENTES DE LIMA // Linea de oxido cruza el mordiente. El estado del borde requiere revision aparte. |
+| de_DE | draft_machine_or_llm | FEILENZAEHNE // Rostlinie kreuzt Biss. Kantenzustand braucht eigene Pruefung. |
+| pl_PL | draft_machine_or_llm | ZEBY PILNIKA // Linia rdzy przecina zgryz. Stan krawedzi wymaga osobnej kontroli. |
+| uk_UA | draft_machine_or_llm | ЗУБЦІ НАПИЛКА // Лінія іржі перетинає насічку. Стан крайки потребує окремої перевірки. |
+| ar_SA | draft_machine_or_llm | أسنان مبرد // خط صدأ يعبر العض. حالة الحافة تحتاج فحصا منفصلا. |
+| id_ID | draft_machine_or_llm | GIGI KIKIR // Garis karat melintasi gigitan. Kondisi tepi perlu pemeriksaan terpisah. |
+| ko_KR | draft_machine_or_llm | 줄 이빨 // 녹 선이 날 부분을 가로지른다. 가장자리 상태는 별도 확인이 필요하다. |
+| he_IL | draft_machine_or_llm | שיני פצירה // קו חלודה חוצה את הנשיכה. מצב השפה דורש בדיקה נפרדת. |
+| pt_BR | draft_machine_or_llm | DENTES DA LIMA // Linha de ferrugem cruza a mordida. Condicao da borda precisa de verificacao separada. |
+| nl_NL | draft_machine_or_llm | VIJLTANDEN // Roestlijn kruist beet. Randconditie vraagt aparte controle. |

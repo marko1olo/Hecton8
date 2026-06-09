@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Deep Reach Faction Message Split"
+title: "Pecahnya Pesan Faksi Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Deep Reach Faction Message Split
+# Pecahnya Pesan Faksi Deep Reach
 
-ID LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+Pemain seharusnya mendengar Deep Reach sebagai sistem yang tertekan: kendali liabilitas, pemulihan salvage, rasa bersalah rekayasa lama, tekanan asuransi, dan otomatisasi kotak hitam yang saling silang di atas koloni tenggelam. Konflik itu tidak membebaskan perusahaan. Ia membuat perusahaan lebih berbahaya karena tidak ada satu suara pun yang sepenuhnya mengendalikannya.
 
 ## Scanner
 
-ID LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Tiga sumber Deep Reach saling bertentangan: pemulihan menginginkan koordinat, legal menginginkan diam, rekayasa lama memperingatkan cekungan akan menjawab.
 
 ## Terminal
 
-ID LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance meminta koordinat yang dapat dinavigasi. Asset Silence memerintahkan penahanan bukti dan tanpa pengakuan publik. Legacy Engineering Node 4 mengulang peringatan pra-runtuh: jangan ganggu relai cekungan bawah selama bayangan Aegir. Mereka bukan pemberontak. Mereka departemen yang melindungi kerugian berbeda.
 
 ## Audio
 
-ID LOC HOLD: A company can be one logo and three knives.
+Satu logo. Tiga suara. Tidak ada yang bersih.
 
 ## Field Note
 
-ID LOC HOLD: This is not redemption. It is pressure-source readability.
+Gunakan setelah pemain mendengar setidaknya dua nada Deep Reach. Ketukannya adalah ambiguitas yang menggigit: instruksi bertentangan, kepemilikan bersama, tanpa sekutu bersih.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/id_ID. -->

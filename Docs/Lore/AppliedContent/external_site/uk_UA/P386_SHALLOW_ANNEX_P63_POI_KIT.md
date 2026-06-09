@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Набір доказів мілководного відсіку P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Shallow Annex P-63 POI Kit
+# Набір доказів мілководного відсіку P-63
 
-UK LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 працює, бо не відділяє сховище від доказу. Кімната дає оператору повітря, трюмну помпу, запас прокладок, лінію пінгера і слід різака. Спершу ці речі корисні; контракт може зачекати, вода - ні.
 
-## Scanner
-
-UK LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-UK LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-UK LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-UK LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Коли кімната стабілізована, ті самі предмети отримують іншу вагу. Запечатане повідомлення маршруту говорить про закриття в контрольованих умовах, а пошкоджена помпа, залатаний лоток прокладок і мокрий пакет аварії показують грубіший вихід. Перша суперечність не схована в промові. Вона прикручена до місця, яке втримало оператора живим.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/uk_UA. -->

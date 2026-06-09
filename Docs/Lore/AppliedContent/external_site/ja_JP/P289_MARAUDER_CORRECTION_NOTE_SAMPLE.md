@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Marauder Correction Note Sample"
+title: "略奪者の訂正メモ標本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Marauder Correction Note Sample
+# 略奪者の訂正メモ標本
 
-JA LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+略奪者のメモは、公式システムと争いながら全知の解説にはならない、HECTON-8らしい証拠面である。この標本は時刻、証明、誤った区分、承認遅延という実務的な印で疑いを保つ。事件を解決して渡すのではない。保守記録として提出された嘘の読み方を教える。
 
 ## Scanner
 
-JA LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+事故報告書に油性鉛筆で入った訂正。原因は天候でも恐慌でもない。遺体数を抱えた承認遅延だ。
 
 ## Terminal
 
-JA LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+略奪者メモ / 公式原因: 却下 / 申請前確認: ポンプ証明、勤務人数、遺体区分、扉時計の不一致、救助承認キュー。
 
 ## Audio
 
-JA LOC HOLD: Someone else smelled the paperwork rot.
+区画が乾く前に、誰かが書類の腐臭に気づいていた。
 
 ## Field Note
 
-JA LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+天候ではない。承認遅延。ポンプ証明、勤務人数、遺体区分を確認。扉時計は申請印より六分進んでいる。
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ja_JP. -->

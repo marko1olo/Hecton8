@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Roster Size Rule"
+title: "قاعدة حجم سجل العمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Roster Size Rule
+# قاعدة حجم سجل العمال
 
-AR LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise.
+قاعدة حجم سجل العمال هي عقد السكان للأدلة المقروءة في المستعمرة. تمنح HECTON-8 اثنتين وسبعين هوية عامل: أربع وعشرين مرساة للدليل السردي المتكرر وثمانيا وأربعين هوية seed-role لتغيير الإعادة. ينبغي للاعب أن يتعرف إلى الأسماء تدريجيا لأن العالم يكررها مع عمل مرفق: خزانة، أداة، ختم مسار، أمر إصلاح، وسم صوتي أخير. تبدو المستعمرة أكبر من قائمتها، لكن الدليل يبقى مؤلفا بما يكفي كي يعلق في الذاكرة.
 
 ## Scanner
 
-AR LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.
+اثنان وسبعون اسما ليست نصا للزينة. إنها ميزانية ذاكرة المستعمرة: أيد كافية ليبدو المكان عاملا، وعدد قليل يكفي كي تشير الخزانة ووسم الإصلاح وآخر مناوبة إلى الشخص نفسه.
 
 ## Terminal
 
-AR LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: يحمل السجل الحي 72 هوية عامل. أربع وعشرون منها أسماء مرساة تعود عبر الخزائن والسجلات والأدوات المتضررة وأختام الإذن وشظايا الصوت. ثمان وأربعون منها أسماء seed-role لتغيير الإعادة. يجوز للاسم المولد أن يغير ترتيب الأدلة؛ لا يجوز له أن يصبح حشوا قابلا للرمي.
 
 ## Audio
 
-AR LOC HOLD: A name is evidence only when the room can prove the job.
+يصير الاسم دليلا عندما تستطيع الغرفة إثبات العمل.
 
 ## Field Note
 
-AR LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+إذا لم يستطع الاسم أن يعود لاحقا ومعه عمل واضح، فاحذفه من السجل.
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/ar_SA. -->

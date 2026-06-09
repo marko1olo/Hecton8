@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protocole de vente de coordonnées payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protocole de vente de coordonnées payload
 
-FR LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+Le protocole de vente de coordonnées traite HECTON-8 comme une propriété récupérable. Il convertit le payload final en paquet récepteur pour Deep Reach: vecteur de bassin, grille de confiance, digest de preuves et classe d'accès salvage. L'expéditeur reçoit argent et allègement de dette. Deep Reach reçoit la carte d'approche et une voie plus propre vers la réclamation.
 
 ## Scanner
 
-FR LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Route de vente de coordonnées armée. Vecteur de bassin, carte de confiance et digest de preuves vont vers Deep Reach Recovery Compliance.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+RÉCEPTEUR PAYLOAD // VENTE DE COORDONNÉES. Récepteur: Deep Reach Recovery Compliance. Transmettre vecteur de bassin, grille de confiance, digest XO de preuves, classe d'accès salvage. Retour: reçu de paiement, réduction de gage, tampon de priorité de récupération. Transférer carte d'accès au verrouillage du reçu.
 
 ## Audio
 
-FR LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Paiement validé. Carte transférée. Registre travailleurs encore ouvert.
 
 ## Field Note
 
-FR LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Note de pillard: si la première ligne est le montant, lis la seconde. La seconde dit access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/fr_FR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tawaran Pembersihan Pasar Bukti"
+title: "Tawaran Pembersihan Bukti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Tawaran Pembersihan Pasar Bukti
+# Tawaran Pembersihan Bukti
 
-Tawaran pembersihan adalah upaya berbayar mengubah perjalanan fragmen: membersihkan, mengganti nama, menekan, menempelkan ke lot salvage, atau memindahkan ke kategori aman. Itu membuktikan seseorang melihat jejak kertas cukup berharga untuk diganggu, bukan kebenaran, kepalsuan, atau kesalahan pembeli. Dalam HECTON-8 ikuti pembayaran, label asli, label bersih, rewrite klaim, dan transfer kustodi.
+Tawaran pembersihan bukan putusan. Itu adalah pesanan pembelian terhadap rute bukti. Permintaan itu bisa meminta perantara mengeringkan tag, menormalkan label, memindahkan fragmen ke lot salvase, menunda publikasi, menerjemahkan nama pekerja menjadi kategori pembayaran, atau mengubur objek mentah di balik ringkasan yang aman bagi penggugat. Ini penting karena uang muncul sebelum catatan berubah. Pembayar bisa bersalah, takut, ceroboh, atau sedang membeli waktu; tawaran itu sendiri membuktikan tekanan pada jejak, bukan kebenaran fragmen.
+
+Baca tawaran menurut urutan. Label asli, asal tawaran, penahanan escrow, akun penangan, label bersih, pemindahan kustodi, dan rute objek harus tetap bersama. Jika label bersih muncul sebelum pembayaran, itu bisa saja penanganan arsip normal. Jika pembayaran datang sebelum penggantian label, seseorang membeli perubahan rute. Simpan label asli di sebelah label bersih, atau arsip ikut menjadi bagian dari pembersihan.
 
 ## Scanner
 
-TAWARAN PEMBERSIHAN // Permintaan berbayar untuk membersihkan, mengklasifikasi ulang, menekan, atau mengalihkan fragmen. Hanya sinyal tekanan.
+TAWARAN PEMBERSIHAN // Permintaan berbayar terhadap rute bukti. Dibutuhkan: label asli, asal tawaran, penahanan escrow, akun penangan, label bersih, pemindahan kustodi, rute objek.
 
 ## Terminal
 
 TAWARAN PEMBERSIHAN BUKTI
-Jangan baca baris pembayaran sebagai vonis.
-Bukti berikut: asal tawaran, tahanan pembayaran, transfer kustodi, penulisan ulang klaim, dan rute objek.
-Simpan label asli di samping label bersih.
+Jangan perlakukan pembayaran sebagai putusan.
+Pembayaran sebelum penggantian label = perubahan rute yang dibeli.
+Penggantian label sebelum pembayaran = mungkin penanganan arsip.
+Bukti berikutnya: penahanan escrow, akun penangan, pemindahan kustodi, label lama, label bersih, rute objek.
+Tindakan: simpan kedua label sampai rute objek terselesaikan.
 
 ## Audio
 
-Tawaran adalah bau, bukan putusan. Simpan label kotor di samping yang bersih.
+Pembayaran ditemukan sebelum label berubah. Biarkan nama lama tetap di layar.
 
 ## Field Note
 
-Tawaran adalah bau, bukan putusan. Simpan label kotor di samping yang bersih.
+Jangan pernah mengarsipkan label bersih sendirian. Label lama dan jam pembayaran adalah buktinya.
 
 <!-- In-Game Wiki; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/id_ID. -->

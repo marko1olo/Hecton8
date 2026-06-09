@@ -120,7 +120,7 @@ namespace Hecton8.Tests.Editor
                     "IngestGameplaySignals",
                     "SignalBus<EntityDeathSignal>.GetFrameSnapshot",
                     "SignalBus<ItemAcquiredSignal>.GetFrameSnapshot",
-                    "SurvivalSignalRoute.TryGetLatestDeath",
+                    "SurvivalSignalRoute.TryGetLatestDeathForSource",
                     "_lastSurvivalDeathSignalSequence",
                     "IngestLatestSurvivalDeathSignal",
                     "TryRecordSurvivalDeathTelemetry",
@@ -234,31 +234,72 @@ namespace Hecton8.Tests.Editor
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs");
             string source = File.ReadAllText(path);
+            string onEnable = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
+            string callback = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
             string reset = ExtractMethodBody(source, "private void ResetHotPathCounters()");
             string ingest = ExtractMethodBody(source, "private void IngestSurvivalDeathSignals(uint timestampSeconds, uint frameId)");
-            string latest = ExtractMethodBody(source, "private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId)");
+            string latest = ExtractMethodBody(source, "private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId, uint sourceId)");
             string record = ExtractMethodBody(source, "private bool TryRecordSurvivalDeathTelemetry(");
             string frame = ExtractMethodBody(source, "private static uint ResolveSurvivalDeathSignalFrame(");
+            string cachePlayer = ExtractMethodBody(source, "private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)");
+            string clearPlayer = ExtractMethodBody(source, "private void ClearPlayerRuntimeContext()");
+            string refreshSurvival = ExtractMethodBody(source, "private void RefreshSurvivalSignalBinding()");
+            string resolveSource = ExtractMethodBody(source, "private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)");
 
+            StringAssert.Contains("using Hecton8.Gameplay;", source);
+            StringAssert.Contains("private uint _survivalDeathSignalSourceId;", source);
+            StringAssert.Contains("private IPlayerRuntimeContext _playerRuntimeContext;", source);
+            StringAssert.Contains("private HectonSurvivalSystem _survivalSystem;", source);
             StringAssert.Contains("private int _lastSurvivalDeathSignalSequence;", source);
+
+            StringAssert.Contains("CachePlayerRuntimeContext(GlobalRegistry.Player);", onEnable);
+            StringAssert.Contains("RefreshSurvivalSignalBinding();", onEnable);
+            Assert.That(
+                onEnable.IndexOf("ResetHotPathCounters();", StringComparison.Ordinal),
+                Is.LessThan(onEnable.IndexOf("CachePlayerRuntimeContext(GlobalRegistry.Player);", StringComparison.Ordinal)));
+            Assert.That(
+                onEnable.IndexOf("CachePlayerRuntimeContext(GlobalRegistry.Player);", StringComparison.Ordinal),
+                Is.LessThan(onEnable.IndexOf("RefreshSurvivalSignalBinding();", StringComparison.Ordinal)));
+
+            StringAssert.Contains("if (serviceSlot == GlobalRegistryServiceSlot.Player)", callback);
+            StringAssert.Contains("CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);", callback);
+            StringAssert.Contains("RefreshSurvivalSignalBinding();", callback);
+            Assert.That(
+                callback.IndexOf("if (serviceSlot == GlobalRegistryServiceSlot.Player)", StringComparison.Ordinal),
+                Is.LessThan(callback.IndexOf("if (serviceSlot != GlobalRegistryServiceSlot.DataVault)", StringComparison.Ordinal)));
+
             StringAssert.Contains("_lastSurvivalDeathSignalSequence = 0;", reset);
+            StringAssert.Contains("ClearPlayerRuntimeContext();", onDisable);
+            StringAssert.Contains("ClearPlayerRuntimeContext();", onDestroy);
+            Assert.That(
+                onDisable.IndexOf("ClearPlayerRuntimeContext();", StringComparison.Ordinal),
+                Is.LessThan(onDisable.IndexOf("if (!StopWorker())", StringComparison.Ordinal)));
+            Assert.That(
+                onDestroy.IndexOf("ClearPlayerRuntimeContext();", StringComparison.Ordinal),
+                Is.LessThan(onDestroy.IndexOf("if (StopWorker())", StringComparison.Ordinal)));
             StringAssert.Contains("if (!_hasLastKnownPlayerAup)", ingest);
-            StringAssert.Contains("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);", ingest);
+            StringAssert.Contains("uint sourceId = _survivalDeathSignalSourceId;", ingest);
+            StringAssert.Contains("if (sourceId == 0u)", ingest);
+            StringAssert.Contains("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId, sourceId);", ingest);
             StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", ingest);
             StringAssert.Contains("ResolveSurvivalDeathSignalFrame(in signal, frameId)", ingest);
-            StringAssert.Contains("TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame);", ingest);
+            StringAssert.Contains("TryRecordSurvivalDeathTelemetry(in signal, sourceId, timestampSeconds, signalFrame);", ingest);
             Assert.That(
-                ingest.IndexOf("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);", StringComparison.Ordinal),
+                ingest.IndexOf("IngestLatestSurvivalDeathSignal(timestampSeconds, frameId, sourceId);", StringComparison.Ordinal),
                 Is.LessThan(ingest.IndexOf("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", StringComparison.Ordinal)));
 
-            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)", latest);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)", latest);
             StringAssert.Contains("if (sequence == _lastSurvivalDeathSignalSequence)", latest);
-            StringAssert.Contains("if (TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame))", latest);
+            StringAssert.Contains("if (TryRecordSurvivalDeathTelemetry(in signal, sourceId, timestampSeconds, signalFrame))", latest);
             StringAssert.Contains("_lastSurvivalDeathSignalSequence = sequence;", latest);
+            StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)", latest);
             Assert.That(
-                latest.IndexOf("TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame)", StringComparison.Ordinal),
+                latest.IndexOf("TryRecordSurvivalDeathTelemetry(in signal, sourceId, timestampSeconds, signalFrame)", StringComparison.Ordinal),
                 Is.LessThan(latest.IndexOf("_lastSurvivalDeathSignalSequence = sequence;", StringComparison.Ordinal)));
 
+            StringAssert.Contains("if (sourceId == 0u || signal.SourceId != sourceId)", record);
             StringAssert.Contains("SurvivalVitalsChangedSignalFlags.Death", record);
             StringAssert.Contains("if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)", record);
             StringAssert.DoesNotContain("&& signal.DeathCause == 0", record);
@@ -271,6 +312,16 @@ namespace Hecton8.Tests.Editor
                 Is.LessThan(record.IndexOf("_lastSurvivalDeathFrame = signalFrame;", StringComparison.Ordinal)));
 
             StringAssert.Contains("return signal.Frame != 0u ? signal.Frame : fallbackFrameId;", frame);
+            StringAssert.Contains("_playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;", cachePlayer);
+            StringAssert.Contains("_survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;", cachePlayer);
+            StringAssert.Contains("_playerRuntimeContext = null;", clearPlayer);
+            StringAssert.Contains("_survivalSystem = null;", clearPlayer);
+            StringAssert.Contains("_survivalDeathSignalSourceId = 0u;", clearPlayer);
+            StringAssert.Contains("_lastSurvivalDeathSignalSequence = 0;", clearPlayer);
+            StringAssert.Contains("uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);", refreshSurvival);
+            StringAssert.Contains("_survivalDeathSignalSourceId = sourceId;", refreshSurvival);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)", refreshSurvival);
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))", resolveSource);
         }
 
         [Test]

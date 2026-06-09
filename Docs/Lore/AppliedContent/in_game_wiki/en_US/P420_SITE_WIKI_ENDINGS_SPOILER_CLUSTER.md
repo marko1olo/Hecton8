@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Endings and Payload Custody
 
-Ending dossier hub: custody, evidence, Atlas' future and the price of leaving.
+Ending dossier hub: every exit is a custody transfer, not a moral color tag.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, public truth, Atlas continuity and after-action records.
+Spoiler hub: payload custody, receiver consequences, false exits, public proof, quarantine leverage and Atlas continuity.
 
 ## Terminal
 
-SITE NAV: hide final payload pages behind spoiler gates. Organize by receiver and proof ownership.
+SITE NAV: gate final pages; sort outcomes by who controls the body, coordinates, samples, Atlas records and worker proof.
 
 ## Audio
 
-The ending is who owns the proof afterward.
+The exit is not the end. It is a custody transfer.
 
 ## Field Note
 
-Navigation cluster record: endings stay spoiler-gated and organized by receiver and custody consequence, not moral labels.
+If the body escapes but the proof is owned, the ocean has not finished the case.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/en_US. -->

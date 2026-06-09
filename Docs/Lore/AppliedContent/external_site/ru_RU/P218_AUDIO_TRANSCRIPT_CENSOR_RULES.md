@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правила audio transcript censor"
+title: "Полосы повреждения расшифровки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правила audio transcript censor
+# Полосы повреждения расшифровки
 
-RU LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Голосовой лог HECTON-8 не становится цельным только потому, что в нем есть звук. Расшифровка должна показывать свои раны.
 
-## Scanner
+Полосы повреждения делают эти раны честными. Они могут отмечать статику, потерю пакетов, юридическую редакцию, искажение давлением, плохое разделение голосов, сбой машинного перевода или позднюю правку. Без этого слоя каждая сломанная запись превращается либо в фальшивую ясность, либо в фальшивую загадку. С ним игрок видит разницу между тем, что мир потерял, и тем, что кто-то решил убрать.
 
-Damaged audio может скрывать truth, но subtitles все равно должны служить игроку.
+Правило жесткое, потому что игра держится на уликах. Повреждение может прятать имена, серийники и спойлерные грузы. Оно может создавать подозрение. Оно может заставить маршрут чувствоваться опасным до того, как игрок увидит дверь. Но оставшаяся расшифровка все равно должна нести действие: не открывай шлюз, возвращайся по сервисной лестнице, считай кислород вручную, игнорируй зеленую лампу статуса, оставь официальную строку видимой.
 
-## Terminal
-
-TRANSCRIPT RULE: damaged words могут маскировать names, payloads или timestamps. Core warning, objective и route-critical text остаются читаемыми.
-
-## Audio
-
-Static может скрыть имя. Он не может скрыть тревогу.
-
-## Field Note
-
-RU LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Для локализации и доступности полоса - часть контента, а не примечание после дела. Переведенная расшифровка должна сохранять роль говорящего, давление времени и читаемые предупреждения. Редакция работает как атмосфера только тогда, когда игрок все еще может действовать. Иначе это просто сломанный интерфейс, притворяющийся лором.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ru_RU. -->

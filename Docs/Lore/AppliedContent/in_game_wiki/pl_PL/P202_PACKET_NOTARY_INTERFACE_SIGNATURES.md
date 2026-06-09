@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Podpisy Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Podpisy Packet Notary Interface
 
-PL LOC HOLD: Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.
+Odzyskany pasek Packet Notary to pierwszy zapis niższego biura, który czyni wiadomość użytecznym dowodem zamiast pogłoską. Łączy trzy rzeczy: packet hash, czas okna przekaźnika i właściciela depozytu, który dotykał zapisu. Deep Reach mógł zakopać czysty log jako niesprawdzony szum nośnej; interfejs notarialny utrudnia to tylko wtedy, gdy przetrwa drugi witness hash. Pieczęć jest narzędziem łańcucha depozytu, nie przyznaniem się. Podpis Som Vareli certyfikuje czas trasy i status depozytu. Nie dowodzi, dlaczego pakiet opóźniono, ani nie wskazuje osoby, która to nakazała.
 
 ## Scanner
 
-PL LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Odzyskano pieczęć pakietu: pasek hash nienaruszony, okno przekaźnika 17-A, właściciel depozytu nierozstrzygnięty. Traktować jako dowód dopiero po zgodności witness chain.
 
 ## Terminal
 
-PL LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Trasa: Relay Spine / witness hash strip. Działanie: opieczętować packet hash, lokalne opóźnienie przekaźnika i właściciela depozytu. Wyjątek: brak załącznika z nazwiskiem pracownika trzyma pakiet w kolejce claim material. Eskalacja: public ledger po drugim witness hash.
 
 ## Audio
 
-PL LOC HOLD: A seal is not mercy. It is a clock with a price.
+Pieczęć jest cała. Znacznik czasu spóźnia się o dwa okna. Jeśli witness hash pasuje, nie nazwą tego zakłóceniami.
 
 ## Field Note
 
-PL LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Nie sprzedawaj tego jako logu. Sprzedaj jako zegar ze świadkiem: czas przekaźnika, packet hash, właściciel depozytu. Bez tych trzech pól Deep Reach nazwie to luźnym szumem nośnej.
 
 <!-- In-Game Wiki; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/pl_PL. -->

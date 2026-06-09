@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Brine Canyon Density Ladder Guide
 
-Brine Canyon Density Ladder Guide treats HECTON-8's trenches as engineering geography: the path down is built from density, not scenery.
+A brine canyon looks like empty water until a lamp edge bends, a gauge hesitates, or a dropped tool stops falling where it should not. HECTON-8's dense layers turn depth into architecture. Fresh water, salt load, cold seep residue, clay silt, and chemical film stack into invisible floors that can carry a cloud of mineral flakes or swallow a drone signal whole.
 
-## Scanner
-
-Brine ladder detected: layered density, false floor, sonar bend. Follow the edges; open water lies here.
-
-## Terminal
-
-FIELD GUIDE: brine canyons hide pressure shelves, current ledges, resource pockets and scanner false positives. Hull rating and density transition decide which ledge is a route and which is a drop.
-
-## Audio
-
-A canyon is a staircase if your hull can pay for each step.
-
-## Field Note
-
-Use vane shadows like steps. A blank reading in brine is not empty space; it is the instrument losing the argument.
+The canyon teaches survival before it teaches profit. Follow vane shadows. Watch the mud line. Trust a quiet instrument less inside brine than outside it. Resource pockets collect where density slows the fall of useful matter, but the same pockets hide stalled gas, dead sensors, and pressure changes sharp enough to punish cheap hulls. Going down is never just going deeper. It is crossing agreements between fluids.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/en_US. -->

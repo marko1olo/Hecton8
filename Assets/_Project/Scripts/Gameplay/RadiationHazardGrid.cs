@@ -43,7 +43,7 @@ namespace Hecton8.Gameplay
         private const float MinCellSizeMeters = SaveData.RadiationGridMinCellSizeMeters;
         private const float MaxCellSizeMeters = SaveData.RadiationGridMaxCellSizeMeters;
         private const float DefaultSourceRadiusMeters = 18f;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const float MaxSourceRadiusMeters = SaveData.RadiationGridMaxCellSizeMeters * GridResolution;
         private const float StaticVfxThreshold = 0.5f;
         private const float IodineDoseReduction = 50f;
@@ -195,6 +195,7 @@ namespace Hecton8.Gameplay
         private IDataVault _dataVault;
         private VoxelSdfReadModel _voxelSdfReadModel;
         private IVoxelSonarSdfReadLeaseModel _voxelSdfReadLeaseModel;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private SimulationPhaseSystem _simulationPhase;
         private PostSimulationPhaseSystem _postSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
@@ -403,6 +404,7 @@ namespace Hecton8.Gameplay
             TryUnregisterRuntimeLanes();
             TryUnregisterHotSwapListener();
             CompleteRadiationJobsForTeardownRelease();
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -412,6 +414,7 @@ namespace Hecton8.Gameplay
 
             TryUnregisterRuntimeLanes();
             TryUnregisterHotSwapListener();
+            _oceanKinematicsService = null;
             DisposeNativeBuffers();
         }
 
@@ -1501,6 +1504,7 @@ namespace Hecton8.Gameplay
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _voxelSdfReadLeaseModel = _voxelSdfReadModel as IVoxelSonarSdfReadLeaseModel;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1551,6 +1555,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _voxelSdfReadModel = currentService as VoxelSdfReadModel;
                     _voxelSdfReadLeaseModel = currentService as IVoxelSonarSdfReadLeaseModel;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
             }
         }
@@ -2822,13 +2829,42 @@ namespace Hecton8.Gameplay
             return capacity > 0 ? (int)(value % (uint)capacity) : 0;
         }
 
-        private static float ResolvePlayerDepthMeters(double3 playerAbsolute)
+        private float ResolvePlayerDepthMeters(double3 playerAbsolute)
         {
             if (!math.isfinite(playerAbsolute.y))
                 return 0f;
 
-            double depthMeters = DefaultSeaLevelY - playerAbsolute.y;
+            double depthMeters = ResolveTelemetrySeaLevelY() - playerAbsolute.y;
             return (float)math.min(1000000d, math.max(0d, depthMeters));
+        }
+
+        private double ResolveTelemetrySeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return seaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private void RecordTelemetry(in AbsoluteUniversePosition playerAup, float intensity01, float accumulatedRads, uint flags)

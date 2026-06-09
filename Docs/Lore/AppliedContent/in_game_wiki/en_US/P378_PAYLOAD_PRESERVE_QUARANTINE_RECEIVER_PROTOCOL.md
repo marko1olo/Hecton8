@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Payload Preserve Quarantine Receiver Protocol
 
-The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+The preservation protocol keeps the basin out of direct corporate recovery, but it does not free it. The payload seals coordinates, holds Atlas ecology under quarantine escrow and pushes review into a delayed public lane. That can protect living systems from immediate extraction. It can also build a cleaner cage.
 
 ## Scanner
 
-Preserve route. No clean owner. No clean release.
+Preservation route armed. Payload assigns receiver custody to delayed quarantine review and blocks direct Deep Reach transfer.
 
 ## Terminal
 
-PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+PAYLOAD RECEIVER // PRESERVE QUARANTINE. Receiver: quarantine escrow lane. Hold basin vector sealed, preserve Atlas ecology continuity, deny direct corporate recovery. Public review delayed. Release authority unresolved.
 
 ## Audio
 
-Keeping it alive does not mean keeping it free.
+Kept alive is not the same as released.
 
 ## Field Note
 
-Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Marauder note: a locked door can protect a room. It can also become the room.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/en_US. -->

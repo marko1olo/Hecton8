@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: High Custody Sample Contract Seed"
+title: "Semilla de contrato de muestra de alta custodia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: High Custody Sample Contract Seed
+# Semilla de contrato de muestra de alta custodia
 
-ES LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Muestra de Alta Custodia empieza con mejor precio y peor caja. El tablero marca ciertas muestras como certificadas por receptor: grano de blue debt, escamas tejido-hierro, salmuera sellada, paquetes de filtro y restos de crecimiento que aún llevan contexto de ruta. Cada pieza necesita contenedor, control de masa, estado de sello y etiqueta de custodia antes de ser pagable.
 
-## Scanner
-
-ES LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-ES LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-ES LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-ES LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+La presión es corriente y fea. Una muestra pesada frena una subida. Un sello roto puede convertir pago en demora de cuarentena. Una taquilla limpia llena puede obligar al operador a elegir entre paquete de prueba, pieza de reparación y material certificado. El contrato paga más porque convierte la propiedad en un sistema que soporta carga.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/es_ES. -->

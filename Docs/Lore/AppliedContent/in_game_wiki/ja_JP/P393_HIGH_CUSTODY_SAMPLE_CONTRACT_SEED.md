@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: High Custody Sample Contract Seed"
+title: "高保管サンプル契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: High Custody Sample Contract Seed
+# 高保管サンプル契約シード
 
-JA LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+高保管サンプルは、資源価値と証拠取り扱いが早い段階で衝突する契約群である。Blue debt、組織鉄残留物、封印水、汚染フィルターパックは、コンテナ、タグ、質量、ルート保管が intact の間だけ高く支払われる。
 
 ## Scanner
 
-JA LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+契約シード: 高保管サンプル。大きな支払いは質量会計、隔離遅延、receiver認証コンテナに結び付く。
 
 ## Terminal
 
-JA LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: 保管級サンプル有効、サンプル質量台帳厳格、隔離遅延上昇、receiverシール必須、ルート廃棄ペナルティ有効。
 
 ## Audio
 
-JA LOC HOLD: A sample can weigh more after it enters the ledger.
+サンプルは台帳に受け入れられた後で重くなる。
 
 ## Field Note
 
-JA LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+マローダーメモ: 利益と呼ぶ前に袋を量れ。receiverは不足グラムを海よりきつく請求できる。
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ja_JP. -->

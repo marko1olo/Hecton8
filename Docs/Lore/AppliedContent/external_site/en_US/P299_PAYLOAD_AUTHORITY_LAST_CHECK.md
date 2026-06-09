@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Payload Authority Last Check
 
-HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+HECTON-8's ending is not only whether the player survives. It is who receives the proof and what that receiver is allowed to do with the ocean after the witness leaves.
 
 ## Scanner
 
-Payload check: receiver changes meaning, not only reward.
+Payload check: receiver choice changes ownership, not only reward.
 
 ## Terminal
 
-PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence, and post-return liability. Receiver selection defines who may act on proof after departure.
 
 ## Audio
 

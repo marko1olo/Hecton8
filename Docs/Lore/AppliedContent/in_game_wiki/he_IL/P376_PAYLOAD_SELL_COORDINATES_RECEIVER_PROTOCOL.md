@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "פרוטוקול מכירת קואורדינטות payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# פרוטוקול מכירת קואורדינטות payload
 
-HE LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+פרוטוקול מכירת הקואורדינטות מתייחס ל-HECTON-8 כרכוש שניתן לשחזר. הוא ממיר את ה-payload הסופי לחבילת מקבל עבור Deep Reach: וקטור אגן, רשת ביטחון, תקציר ראיות ודרגת גישת salvage. השולח מקבל כסף והקלה בחוב. Deep Reach מקבלת מפת גישה ודרך נקייה יותר חזרה לתביעה.
 
 ## Scanner
 
-HE LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+מסלול מכירת קואורדינטות חמוש. וקטור אגן, מפת אמון ותקציר ראיות מנותבים אל Deep Reach Recovery Compliance.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+מקבל PAYLOAD // מכירת קואורדינטות. מקבל: Deep Reach Recovery Compliance. שדר וקטור אגן, רשת ביטחון, XO proof digest, דרגת גישת salvage. החזר קבלת תשלום, הפחתת שעבוד, חותמת עדיפות שחזור. העבר מפת גישה בנעילת הקבלה.
 
 ## Audio
 
-HE LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+התשלום אושר. המפה הועברה. ספר העובדים עדיין פתוח.
 
 ## Field Note
 
-HE LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+הערת בוזז: אם השורה הראשונה היא הסכום, קרא את השנייה. השנייה היא access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/he_IL. -->

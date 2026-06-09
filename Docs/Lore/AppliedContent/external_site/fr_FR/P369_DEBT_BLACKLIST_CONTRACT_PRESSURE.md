@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pression de contrat par dette et liste noire"
+title: "Pression de Contrat Blacklist de Dette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pression de contrat par dette et liste noire
+# Pression de Contrat Blacklist de Dette
 
-HECTON-8 cadre son protagoniste par l’économie de frontière plutôt que par le destin. Dette, listes noires, garde de pool de réclamations, crédit oxygène, accès aux couchettes et anciens identifiants Deep Reach rendent le contrat de salvage coercitif sans rendre le joueur impuissant.
+La Pression de Contrat Blacklist de Dette explique pourquoi un ancien travailleur Deep Reach compétent devient Marauder sur HECTON-8. Le contrat n'a pas besoin d'enlèvement. Il lui faut une blacklist, un registre berth, un oxygen credit et une fenêtre de route qui n'attend pas.
 
-## Scanner
-
-Avis de privilège lié à la garde Black Keel. Refuser reste légal, mais cloue au sol: pas de couchette, pas de crédit oxygène propre, pas de fenêtre de route hors d’Aegir.
-
-## Terminal
-
-ACCEPTATION DE RÉCLAMATION / FENÊTRE DE LEVÉE DE LISTE NOIRE
-statut contractuel: Marauder lié par dette
-transporteur: garde de pool de réclamations Black Keel
-conditions de levée: masse récupérable, preuve de garde, conformité du receveur
-échec: liste noire active; accès couchette refusé; soutien oxygène converti en service facturable.
-
-## Audio
-
-Ce n’était pas un enlèvement. C’était le genre de choix que la frontière vend comme liberté: signer, plonger, ou rester propre sur le papier et piégé en pratique.
-
-## Field Note
-
-Le privilège n’a pas pointé une arme. Il a pointé la facture d’air, la liste des couchettes et la prochaine fenêtre de route.
+Black Keel offre du travail dans cette pression. Accepter le claim rend à l'opérateur une route vers le mouvement, mais chaque partie de cette route est mesurée: recoverable mass, custody proof, receiver compliance, debt relief. Refuser garde les mains propres sur papier pendant que les routes pratiques se ferment. C'est la cruauté du contrat: il laisse un choix et taxe un côté jusqu'à ce qu'il en soit à peine un.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/fr_FR. -->

@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Panduan Lapisan Kerak Tenggelam
 
-Kerak tenggelam adalah sejarah HECTON-8 yang bisa dibaca: potongan koloni lama, rak runtuhan es, sambungan pressure-glass, dan pita mineral menunjukkan tempat rute bisa bertahan, tergeser, atau gagal saat disentuh.
+Kerak tenggelam adalah sejarah HECTON-8 yang dapat dibaca. Potongan koloni lama, rak runtuhan es, sambungan kaca tekanan, dan pita mineral menunjukkan rute mana yang bisa menahan, tergeser, atau gagal saat disentuh. Tim salvage membacanya seperti buku besar rusak: apa yang dibangun, apa yang jatuh, dan apa yang terus digerus samudra sejak itu.
 
 ## Scanner
 

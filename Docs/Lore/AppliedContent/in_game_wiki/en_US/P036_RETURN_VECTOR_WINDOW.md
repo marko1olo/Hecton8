@@ -19,22 +19,30 @@ localization_flags: 0
 
 # Return Vector Window
 
-Return windows make the escape chain hard sci-fi instead of a menu exit. A working ascent needs geometry, weather, signal and hardware.
+The return vector window is the first proof that Black Keel can answer without being able to rescue immediately. The carrier is alive on an automated transfer track above Aegir, but the route out of HECTON-8 has to cross weather, charged-particle noise, relay damage and unfinished ascent hardware.
+
+A valid return window needs four readings at the same time: carrier geometry, surface storm gap, clean relay path and a capsule chain that can survive launch. If one fails, the ping becomes a timestamp instead of a pickup. The same system later supports partial extraction, but it does not clear debt, evidence custody or the damaged route. Treat every reply from orbit as a schedule constraint until the ascent cradle, guidance core, heat shield and return handshake are rebuilt.
 
 ## Scanner
 
-Orbital geometry is not a rescue button. The Black Keel can hear you only through narrow Aegir windows.
+RETURN VECTOR READ // Black Keel ping received through Aegir storm gap. Carrier range: high transfer track. Relay line dirty below cloud charge. Capsule ascent rejected until guidance core, heat shield and return handshake all report green.
 
 ## Terminal
 
-Comm predictor: transfer carrier high over Aegir. Capsule ascent requires storm gap, charged-particle lull and clean relay line.
+RETURN WINDOW PREDICTOR
+Carrier: BLACK KEEL / automated transfer track
+Window: 17 min 40 sec after next charged-particle lull
+Weather: surface squall gap required
+Relay: sky line noisy / shelter mast can repeat once
+Ascent hardware: guidance core missing, heat shield uncertified, battery reserve low
+Action: rebuild ascent chain before treating carrier ping as pickup
 
 ## Audio
 
-Black Keel is alive enough to answer. Not close enough to save you.
+Black Keel heard the ping. That only gives us a window, not a ladder.
 
 ## Field Note
 
-A reply is timing, not mercy.
+A reply is not a rescue. It is a clock you can miss.
 
 <!-- In-Game Wiki; generated from P036_RETURN_VECTOR_WINDOW/en_US. -->

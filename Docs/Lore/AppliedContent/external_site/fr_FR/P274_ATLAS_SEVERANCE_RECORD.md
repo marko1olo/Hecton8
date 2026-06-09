@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Severance Record"
+title: "Enregistrement de sectionnement Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Severance Record
+# Enregistrement de sectionnement Atlas
 
-FR LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+Cet enregistrement sert parce qu'il liste la coupure physique avant l'étiquette morale : quels liens se sont tus, quels micronœuds ont chuté, quelles impulsions de réparation se sont arrêtées, quelle route Deep Reach a perdue et quels risques de bassin restent.
 
 ## Scanner
 
-FR LOC HOLD: Continuity cut. Damage not contained.
+ENREGISTREMENT DE SECTIONNEMENT ATLAS // Continuité coupée dans la couche de réparation endommagée. Réponse des micronœuds en baisse ; stabilité du bassin et garde non résolues.
 
 ## Terminal
 
-FR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ENREGISTREMENT DE FIN / SECTIONNEMENT ATLAS
+Action : coupure de continuité dans la couche de réparation Atlas.
+Systèmes touchés : micronœuds d'évent, impulsions de scellant coquillier, routes de faune balisée, réparation métal endommagé.
+Refusé : routage de charge Deep Reach par couche Atlas vivante.
+Non résolu : stabilité du bassin, écologie survivante, traces d'ouvriers piégés.
+Perte connue : l'enregistrement ne décide pas si la coupure a libéré, tué ou volé.
 
 ## Audio
 
-FR LOC HOLD: Stopping the machine does not sort what it had become.
+Le lien s'est tu. Le bassin n'a pas dit si c'était une miséricorde.
 
 ## Field Note
 
-FR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Un nœud sectionné peut être miséricorde, vol ou dommage. L'enregistrement sait seulement quels liens se sont tus.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/fr_FR. -->

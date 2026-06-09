@@ -75,6 +75,46 @@ Static source anchors:
 - black-box route: `OceanKinematicsTelemetryEntry[300]`; source dump target is `Docs/AgentLogs/Dump_SHINOBU_261.bin` on fault;
 - proof gap: Unity import, Play Mode, profiler/GC, Frame Debugger/RenderGraph, Crest scene binding, and visual water quality remain `PENDING VERIFICATION`.
 
+## 2.2 Current Static Source Anchor - Water-Level Calibration
+
+Evidence class: STATIC_SOURCE only. The current sea-level calibration route is first-party and split from terrain macro geology. Terrain may produce seafloor height and terrain-provider fallback values; it does not own the calibrated ocean surface.
+
+Static source anchors:
+
+- contract owner: `Assets/_Project/Scripts/World/Contracts/WorldWaterLevelCalibrationContracts.cs`;
+- scene/Crest authoring owner: `Assets/_Project/Scripts/Plugins/Crest/WorldWaterLevelCalibrationAuthoring.cs`;
+- editor install/validation route: `Assets/_Project/Scripts/Plugins/Crest/Editor/CrestWorldWaterLevelCalibrationInstaller.cs`;
+- generated source artifact: `Docs/GeneratedAssets/Terrain/MacroGeology/WorldWaterLevelCalibration_Extent30000m_Res192.json`;
+- migrated-away path: `Assets/_Project/Scripts/World/WorldWaterLevelCalibrationAuthoring.cs` is not the current authoring location.
+
+Runtime contract:
+
+- `WorldWaterLevelCalibrationDTO` publishes requested, resolved, and fallback water level Y, calibration travel meters, authoring/runtime seeds, source hash, and flags;
+- `WorldWaterLevelCalibrationMath` clamps non-finite or out-of-envelope values through `DefaultWaterLevelY = 14.02`, `MinimumCalibrationTravelMeters = 100`, and `MaximumAbsoluteWaterLevelY = 1000`;
+- `WorldWaterLevelCalibrationRuntimeRegistry` holds the active read model, resets at subsystem registration, clears on owner disable, and marks duplicate owners through `DuplicateOwner`;
+- `WorldWaterLevelCalibrationAuthoring` is `ExecuteAlways`, applies the resolved Y to the Crest root or override transform, binds a local `Crest.OceanRenderer` when present, and publishes debug flags;
+- `CrestWorldWaterLevelCalibrationInstaller` reads the generated JSON lane order `strictCandidateLevels`, then `bestLevels`, then `allLevels`, installs the authoring component on `Assets/_Project/Prefabs/Ocean_Crest.prefab`, can install the prefab into `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, and refuses to mutate assets while Play Mode, compiling, or importing/updating is active.
+
+Consumer route:
+
+- `ShinobuOceanSurfaceAtmosphereRuntime` reads `WorldWaterLevelCalibrationRuntimeRegistry` first when resolving `SeaLevel`, then falls back through weather/serialized sea level;
+- `GlobalRegistry.OceanKinematics` is the runtime sea-level read route for buoyancy, resource distribution, biome/depth matrix logic, Sargassum/flora systems, PDA map fallback, storm propagation, Atlas signal depth, bioluminescence darkness, chunk residency, and other systems that need water depth;
+- MapMagic/terrain bridges may expose water surface fallback values, but active ocean kinematics is the preferred live source when initialized;
+- save/load terrain identity may compare water calibration metadata, but saves must not serialize an entire water field or turn water presentation into save truth.
+
+Failure modeling required before acceptance:
+
+- generated calibration artifact missing, malformed, stale, or without a readable lane;
+- requested water level non-finite, outside `MaximumAbsoluteWaterLevelY`, or farther than calibration travel from fallback;
+- Crest prefab or scene has no `OceanRenderer`, missing `Crest4KinematicsAdapter`, missing calibration component, or Crest root Y does not match resolved calibration Y;
+- duplicate calibration owners register in one domain lifetime;
+- registry survives domain reload incorrectly, stale read model remains after scene unload, or owner disables without unregistering;
+- installer runs during Play Mode, compile, import/update, or without the target prefab/scene;
+- consumers read default `14.02` while assuming a calibrated value was applied;
+- terrain, atmosphere, physics, or UI code starts writing a competing sea-level truth instead of consuming ocean kinematics/calibration.
+
+Proof gap: Unity import, installer execution, prefab diff, world-scene binding, Play Mode registry replacement, save/load identity mismatch, profiler/GC, and player traversal remain `PENDING VERIFICATION`.
+
 ## 3. Cinematic Fake First
 
 Before adding any dynamic water simulation, prove that these cheaper routes are insufficient:

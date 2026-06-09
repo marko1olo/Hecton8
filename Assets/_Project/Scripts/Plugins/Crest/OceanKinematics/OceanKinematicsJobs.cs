@@ -128,7 +128,7 @@ namespace Hecton8.Physics
             FluidSampleResultDTO result = default;
             if (!IsFinite(request.RequestedAUP))
             {
-                result.WaterHeight = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
+                result.WaterHeight = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(Tuning.OceanSurfaceY);
                 result.SurfaceVelocity = float3.zero;
                 WriteResult(resultIndex, result);
                 return;
@@ -137,7 +137,7 @@ namespace Hecton8.Physics
             double3 rootAup = math.select(double3.zero, Tuning.OceanRootAUP, math.isfinite(Tuning.OceanRootAUP));
             double3 deltaAup = request.RequestedAUP - rootAup;
             float3 local = ToFiniteFloat3(deltaAup);
-            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
+            float surfaceY = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(Tuning.OceanSurfaceY);
             float depthCull = math.max(0f, SanitizeFinite(Tuning.DepthCullingThresholdMeters, OceanKinematicsConstants.DefaultDepthCullMeters));
             if (surfaceY - local.y > depthCull)
             {
@@ -306,7 +306,7 @@ namespace Hecton8.Physics
                 return;
 
             FluidSampleResultDTO result = default;
-            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
+            float surfaceY = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(Tuning.OceanSurfaceY);
             if (!IsFinite(request.RequestedAUP))
             {
                 result.WaterHeight = surfaceY;
@@ -589,7 +589,7 @@ namespace Hecton8.Physics
             if (!hit)
             {
                 result = default;
-                result.WaterHeight = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
+                result.WaterHeight = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(Tuning.OceanSurfaceY);
                 result.SurfaceVelocity = float3.zero;
             }
 
@@ -674,15 +674,22 @@ namespace Hecton8.Physics
                 OceanKinematicsSampleRequestDTO request = CompletedRequests[i];
                 uint hash = OceanKinematicsHashUtility.ResolveRequestHash(in request);
                 float4 sample = ReadbackSamples[i];
-
-                FluidSampleResultDTO result = default;
-                result.WaterHeight = math.select(0f, sample.x, math.isfinite(sample.x));
-                bool velocityFinite = math.isfinite(sample.y) && math.isfinite(sample.z) && math.isfinite(sample.w);
-                result.SurfaceVelocity = math.select(float3.zero, new float3(sample.y, sample.z, sample.w), velocityFinite);
-
+                bool sampleFinite = math.all(math.isfinite(sample));
                 uint slot = hash % unchecked((uint)CachedResults.Length);
                 OceanCachedFluidSampleDTO cached = default;
                 cached.RequestHash = hash;
+
+                if (!sampleFinite)
+                {
+                    cached.Flags = OceanKinematicsConstants.FlagAsyncCached | OceanKinematicsConstants.FlagNonFinite;
+                    CachedResults[unchecked((int)slot)] = cached;
+                    continue;
+                }
+
+                FluidSampleResultDTO result = default;
+                result.WaterHeight = sample.x;
+                result.SurfaceVelocity = new float3(sample.y, sample.z, sample.w);
+
                 cached.Result = result;
                 cached.Flags = OceanKinematicsConstants.FlagActive | OceanKinematicsConstants.FlagAsyncCached;
                 CachedResults[unchecked((int)slot)] = cached;
@@ -721,7 +728,7 @@ namespace Hecton8.Physics
 
             int count = math.min(math.max(0, ResolveRequestCount()), Requests.Length);
             int resultCount = Results.IsCreated ? math.min(count, Results.Length) : 0;
-            float surfaceY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(Tuning.OceanSurfaceY);
+            float surfaceY = OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(Tuning.OceanSurfaceY);
             float depthCull = math.max(0f, SanitizeFinite(Tuning.DepthCullingThresholdMeters, OceanKinematicsConstants.DefaultDepthCullMeters));
             double3 rootAup = math.select(double3.zero, Tuning.OceanRootAUP, math.isfinite(Tuning.OceanRootAUP));
             int depthCulled = 0;

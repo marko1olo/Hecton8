@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane : certificat d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane : certificat d'évacuation
 
-FR LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+Noor Haldane : certificat d'évacuation est un article de preuve Deep Reach sur la conformité comme objet létal. Haldane n'est pas une méchante qui crie. Elle est la signature du conseil qui garde l'évacuation juridiquement défendable pendant que la route physique échoue.
 
-## Scanner
+Son blocage est construit à partir d'exigences plausibles : quarantaine pression-biologique, garde transporteur, révision externe de route, acceptation portuaire aval, chaîne de responsabilité. Aucun de ces mots n'est absurde. C'est le point. Le système peut avoir raison dans son propre cadre et tuer quand même en attendant.
 
-FR LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-FR LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-FR LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-FR LOC HOLD: This is the paper signature players should hate.
+L'article donne aux joueurs une manière de lire les vieilles portes de colonie et les panneaux de route. Un chemin d'évacuation verrouillé n'est pas seulement une machine cassée. Ce peut être une décision juridique encore en attente de révision. Le noir de HECTON-8 vient de ce délai : personne n'a besoin de dire « laissez-les mourir » si le certificat peut dire « pas encore » assez longtemps.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/fr_FR. -->

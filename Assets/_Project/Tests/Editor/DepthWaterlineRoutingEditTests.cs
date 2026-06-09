@@ -32,15 +32,27 @@ namespace Hecton8.Tests.Editor
         public void VisorAestheticProfilesPreferMovementDepthAndFallbackToProductionSeaLevel()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorUberPostFeature.cs");
+            string noirSource = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorUberPostFeature.Noir.cs");
+            string combinedSource = source + "\n" + noirSource;
             string selectProfile = ExtractMethodBody(source, "private bool TrySelectAestheticProfileSnapshot(");
             string resolveDepth = ExtractMethodBody(source, "private float ResolveAestheticProfileDepthMeters(Camera renderCamera)");
             string fallbackDepth = ExtractMethodBody(source, "private static float ResolveCameraDepthFromProductionSeaLevel(Camera renderCamera)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("CacheNoirPlayerContext(GlobalRegistry.Player)", noirSource);
+            StringAssert.Contains("CacheNoirPlayerContext(currentService as IPlayerRuntimeContext)", noirSource);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolveNoirPlayerContext()", noirSource);
+            StringAssert.Contains("private static bool IsNoirPlayerContextUsable(IPlayerRuntimeContext playerContext)", noirSource);
+            StringAssert.Contains("playerContext is Behaviour behaviour", noirSource);
+            StringAssert.Contains("ClearNoirPlayerContext();", source);
             StringAssert.Contains("float depthMeters = ResolveAestheticProfileDepthMeters(renderCamera);", selectProfile);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolveNoirPlayerContext();", resolveDepth);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveDepth);
             StringAssert.Contains("DefaultSeaLevelY - position.y", fallbackDepth);
             StringAssert.DoesNotContain("float depthMeters = math.max(0f, -renderCamera.transform.position.y);", source);
+            StringAssert.DoesNotContain("_noirPlayerContext = currentService as IPlayerRuntimeContext;", combinedSource);
+            StringAssert.DoesNotContain("_noirPlayerContext = GlobalRegistry.Player;", combinedSource);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _noirPlayerContext;", combinedSource);
         }
 
         [Test]
@@ -50,7 +62,14 @@ namespace Hecton8.Tests.Editor
             string resolveWeight = ExtractMethodBody(source, "private float ResolveSurfaceFogWeight01(Camera renderCamera, float nearSurfaceBypassDepthMeters, bool attenuateNearSurface)");
             string fallbackDepth = ExtractMethodBody(source, "private static float ResolveCameraDepthFromProductionSeaLevel(Camera renderCamera)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player)", source);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext)", source);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+            StringAssert.Contains("playerContext is Behaviour behaviour", source);
+            StringAssert.Contains("ClearPlayerContext();", source);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", resolveWeight);
             StringAssert.Contains("playerContext.IsInitialized", resolveWeight);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveWeight);
             StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", resolveWeight);
@@ -68,14 +87,69 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("return Smooth01(playerMovement.CurrentDepth / safeDepth);", source);
             StringAssert.DoesNotContain("playerContext.PlayerMovement", resolveWeight);
             StringAssert.DoesNotContain("playerMovement.CurrentDepth", resolveWeight);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;", source);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
+        }
+
+        [Test]
+        public void AtmosphereSootFeatureRejectsStalePlayerCameraBinding()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonAtmosphereSootFeature.cs");
+            string runtimeState = ExtractMethodBody(source, "private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, out RuntimeState runtimeState)");
+
+            StringAssert.Contains("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player)", source);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext)", source);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+            StringAssert.Contains("private static bool IsPlayerCameraUsable(Camera camera)", source);
+            StringAssert.Contains("playerContext is Behaviour behaviour", source);
+            StringAssert.Contains("ClearPlayerContext();", source);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", runtimeState);
+            StringAssert.Contains("!IsPlayerCameraUsable(playerCamera)", runtimeState);
+            StringAssert.Contains("ReferenceEquals(renderCamera, playerCamera)", runtimeState);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;", source);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
+        }
+
+        [Test]
+        public void VRDiegeticFocusRejectsStalePlayerCameraBinding()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVRDiegeticFocusController.cs");
+            string resolveOrigin = ExtractMethodBody(source, "private Transform ResolveEyeSelectionOrigin()");
+
+            StringAssert.Contains("CachePlayerContext(GlobalRegistry.Player)", source);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext)", source);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+            StringAssert.Contains("private static bool IsCameraUsable(Camera camera)", source);
+            StringAssert.Contains("private static bool IsTransformUsable(Transform target)", source);
+            StringAssert.Contains("playerContext is Behaviour behaviour", source);
+            StringAssert.Contains("ClearPlayerContext();", source);
+            StringAssert.Contains("IsTransformUsable(eyeSelectionOrigin)", resolveOrigin);
+            StringAssert.Contains("Camera camera = IsCameraUsable(fallbackEyeCamera) ? fallbackEyeCamera : null;", resolveOrigin);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", resolveOrigin);
+            StringAssert.Contains("IsCameraUsable(camera) && IsTransformUsable(camera.transform)", resolveOrigin);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = GlobalRegistry.Player;", source);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
         }
 
         [Test]
         public void ScooterVolumetricShaftsNoirBlendRejectsStaleMovementFallback()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonScooterVolumetricShaftsFeature.cs");
+            string addPasses = ExtractMethodBody(source, "public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)");
             string noirBlend = ExtractMethodBody(source, "private float ResolveUnderwaterNoirBlend()");
 
+            StringAssert.Contains("CachePlayerContext(GlobalRegistry.Player)", source);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext)", source);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+            StringAssert.Contains("playerContext is Behaviour behaviour", source);
+            StringAssert.Contains("ClearPlayerContext();", source);
+            StringAssert.Contains("ResolvePlayerContext()", addPasses);
             StringAssert.Contains("playerContext.IsInitialized", noirBlend);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", noirBlend);
             StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", noirBlend);
@@ -85,6 +159,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("playerContext.PlayerMovement", noirBlend);
             StringAssert.DoesNotContain("playerMovement.CurrentDepth", noirBlend);
             StringAssert.DoesNotContain("playerMovement.CurrentDepth - SurfaceNoirSuppressionDepth", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = GlobalRegistry.Player;", source);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
         }
 
         [Test]
@@ -108,7 +185,7 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVolumetricParticulateFogFeature.cs");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
             StringAssert.Contains("float cameraDepthMeters = ResolveCameraDepthFromProductionSeaLevel(cameraPosition);", source);
             StringAssert.Contains("private static float ResolveCameraDepthFromProductionSeaLevel(float3 cameraPosition)", source);
             StringAssert.Contains("DefaultSeaLevelY - cameraPosition.y", source);
@@ -119,10 +196,10 @@ namespace Hecton8.Tests.Editor
         public void AbyssalThermalDamageDepthUsesProductionSeaLevel()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "AbyssalThermalManager.cs");
-            string resolveDepth = ExtractMethodBody(source, "private static float ResolveDamageDepthMeters(Vector3 positionWS)");
+            string resolveDepth = ExtractMethodBody(source, "private float ResolveDamageDepthMeters(Vector3 positionWS)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
-            StringAssert.Contains("DefaultSeaLevelY - positionWS.y", resolveDepth);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("ResolveDamageSeaLevelY() - positionWS.y", resolveDepth);
             StringAssert.DoesNotContain("math.max(0f, -positionWS.y)", source);
         }
 
@@ -140,8 +217,11 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDAMapTab.cs");
             string resolveDepth = ExtractMethodBody(source, "private float ResolvePlayerDepthMeters()");
+            string resolveWater = ExtractMethodBody(source, "private double ResolveFallbackSeaLevelY()");
+            string sanitizeWater = ExtractMethodBody(source, "private static bool TryResolveSeaLevelY(");
 
-            StringAssert.Contains("private const double DefaultSeaLevelY = 14.02d;", source);
+            StringAssert.Contains("private const double DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("using Hecton8.World;", source);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveDepth);
             StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", resolveDepth);
             StringAssert.Contains("return math.max(0f, movementState.DepthMeters);", resolveDepth);
@@ -149,7 +229,11 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return 0f;", resolveDepth);
             StringAssert.Contains("biomeMatrixDirector.isActiveAndEnabled", resolveDepth);
             StringAssert.Contains("math.isfinite(biomeMatrixDirector.CurrentDepthMeters)", resolveDepth);
-            StringAssert.Contains("DefaultSeaLevelY - absoluteY", resolveDepth);
+            StringAssert.Contains("double seaLevelY = ResolveFallbackSeaLevelY();", resolveDepth);
+            StringAssert.Contains("seaLevelY - absoluteY", resolveDepth);
+            StringAssert.Contains("oceanKinematics.SeaLevel", resolveWater);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeWater);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", sanitizeWater);
             Assert.That(
                 resolveDepth.IndexOf("playerContext.TryGetMovementRuntimeState", StringComparison.Ordinal),
                 Is.LessThan(resolveDepth.IndexOf("WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector", StringComparison.Ordinal)));
@@ -176,12 +260,16 @@ namespace Hecton8.Tests.Editor
         public void BiolumDepthDarknessUsesProductionSeaLevelInsteadOfAupZeroPlane()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "VFX", "Bioluminescence", "BiolumPulseSyncRuntime.cs");
-            string darkness = ExtractMethodBody(source, "private static float ResolveAupDepthDarknessScalar(double3 aupReference)");
-            string depth = ExtractMethodBody(source, "private static float ResolveAupDepthMeters(double3 aupReference)");
+            string darkness = ExtractMethodBody(source, "private static float ResolveAupDepthDarknessScalar(double3 aupReference, double seaLevelAupY)");
+            string depth = ExtractMethodBody(source, "private static float ResolveAupDepthMeters(double3 aupReference, double seaLevelAupY)");
+            string sanitize = ExtractMethodBody(source, "private static bool TryResolveSeaLevelAupY(");
 
             StringAssert.Contains("private const double DefaultSeaLevelAupY = 14.02d;", source);
-            StringAssert.Contains("float depthMeters = ResolveAupDepthMeters(aupReference);", darkness);
-            StringAssert.Contains("DefaultSeaLevelAupY - aupReference.y", depth);
+            StringAssert.Contains("using Hecton8.World;", source);
+            StringAssert.Contains("float depthMeters = ResolveAupDepthMeters(aupReference, seaLevelAupY);", darkness);
+            StringAssert.Contains("seaLevelAupY - aupReference.y", depth);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitize);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", sanitize);
             StringAssert.DoesNotContain("float depthMeters = math.max(0f, -yMeters);", source);
         }
 
@@ -212,9 +300,16 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Data", "Monolith", "H8AppliedLoreRuntime.cs");
             string resolveDepth = ExtractMethodBody(source, "private static float ResolveDepth01(in AbsoluteUniversePosition aup)");
+            string resolveWater = ExtractMethodBody(source, "private static double ResolveCurrentSeaLevelY()");
+            string sanitizeWater = ExtractMethodBody(source, "private static bool TryResolveSeaLevelY(");
 
-            StringAssert.Contains("private const double DefaultSeaLevelY = 14.02d;", source);
-            StringAssert.Contains("DefaultSeaLevelY - absoluteY", resolveDepth);
+            StringAssert.Contains("private const double DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
+            StringAssert.Contains("using Hecton8.World;", source);
+            StringAssert.Contains("ResolveCurrentSeaLevelY() - absoluteY", resolveDepth);
+            StringAssert.Contains("GlobalRegistry.OceanKinematics", resolveWater);
+            StringAssert.Contains("oceanKinematics.SeaLevel", resolveWater);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeWater);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", sanitizeWater);
             StringAssert.DoesNotContain("math.max(0.0, -absoluteY)", source);
         }
 
@@ -609,6 +704,66 @@ namespace Hecton8.Tests.Editor
                 Is.LessThan(resolveDepth.IndexOf("HectonSurvivalSystem survivalSystem = _subscribedSurvivalSystem", StringComparison.Ordinal)));
             StringAssert.DoesNotContain("if (_subscribedSurvivalSystem != null)", resolveDepth);
             StringAssert.DoesNotContain("return playerMovement != null ? Mathf.Max(0f, playerMovement.CurrentDepth) : 0f;", source);
+        }
+
+        [Test]
+        public void VisorHudPlayerRuntimeBindingsClearOnTeardownAndIgnoreUninitializedContext()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "VisorHUDController.cs");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
+            string hotSwap = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string coldCache = ExtractMethodBody(source, "private void CacheRegistryServicesCold()");
+            string refreshRuntime = ExtractMethodBody(source, "private void RefreshRuntimeReferenceCache()");
+            string applyCached = ExtractMethodBody(source, "private void ApplyCachedPlayerContext(");
+            string resolveSurvival = ExtractMethodBody(source, "private void ResolveSurvivalSystemReference()");
+            string resolveTool = ExtractMethodBody(source, "private PlayerTool ResolveActivePlayerTool()");
+            string resolveHull = ExtractMethodBody(source, "private float ResolveHullStress01()");
+            string clearBindings = ExtractMethodBody(source, "private void ClearPlayerRuntimeBindings()");
+            string clearResolved = ExtractMethodBody(source, "private void ClearResolvedPlayerRuntimeBindings()");
+
+            StringAssert.Contains("ClearPlayerRuntimeBindings();", onDisable);
+            StringAssert.Contains("ClearPlayerRuntimeBindings();", onDestroy);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false)", hotSwap);
+            StringAssert.Contains("ApplyCachedPlayerContext(allowRegistryFallback: false)", hotSwap);
+            StringAssert.Contains("CachePlayerContext(GlobalRegistry.Player)", coldCache);
+            StringAssert.Contains("if (IsPlayerContextUsable(_cachedPlayerContext))", refreshRuntime);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = allowRegistryFallback ? ResolvePlayerContext() : _cachedPlayerContext;", applyCached);
+            StringAssert.Contains("if (!IsPlayerContextUsable(playerContext) || !playerContext.IsInitialized)", applyCached);
+            StringAssert.Contains("ClearResolvedPlayerRuntimeBindings();", applyCached);
+            StringAssert.Contains("_survivalSystem = playerContext.SurvivalSystem;", applyCached);
+            StringAssert.Contains("_traumaDispatcher = playerContext.TraumaDispatcher;", applyCached);
+            StringAssert.Contains("_playerHealth = playerContext.PlayerHealth;", applyCached);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", resolveSurvival);
+            StringAssert.Contains("playerContext != null && !playerContext.IsInitialized", resolveSurvival);
+            StringAssert.Contains("ClearResolvedPlayerRuntimeBindings();", resolveSurvival);
+            AssertTextBefore(resolveSurvival, "playerContext != null && !playerContext.IsInitialized", "GameBootstrapper.TryGetCurrentPlayerTransform");
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", resolveTool);
+            StringAssert.Contains("IsPlayerContextUsable(playerContext) && playerContext.IsInitialized", resolveTool);
+            StringAssert.Contains("? playerContext.ToolManager", resolveTool);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", resolveHull);
+            StringAssert.Contains("IsPlayerContextUsable(playerContext) && playerContext.IsInitialized", resolveHull);
+            StringAssert.Contains("? playerContext.PlayerMovement", resolveHull);
+            StringAssert.Contains("return IsBehaviourUsable(playerMovement) ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;", resolveHull);
+            StringAssert.Contains("ClearPlayerContext();", clearBindings);
+            StringAssert.Contains("ClearResolvedPlayerRuntimeBindings();", clearBindings);
+            StringAssert.Contains("RefreshSurvivalSubscription(null);", clearResolved);
+            StringAssert.Contains("_survivalSystem = null;", clearResolved);
+            StringAssert.Contains("_traumaDispatcher = null;", clearResolved);
+            StringAssert.Contains("_playerHealth = null;", clearResolved);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+            StringAssert.Contains("private void CachePlayerContext(IPlayerRuntimeContext playerContext, bool allowRegistryFallback = true)", source);
+            StringAssert.Contains("private void ClearPlayerContext()", source);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+            StringAssert.Contains("private static bool IsBehaviourUsable(Behaviour behaviour)", source);
+            StringAssert.Contains("playerContext is Behaviour behaviour", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+            StringAssert.DoesNotContain("_cachedPlayerContext = GlobalRegistry.Player;", source);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
+            Assert.That(applyCached.IndexOf("_cachedPlayerContext = null;", StringComparison.Ordinal), Is.LessThan(0));
+            Assert.That(resolveSurvival.IndexOf("GameBootstrapper.TryGetCurrentPlayerTransform", StringComparison.Ordinal), Is.GreaterThan(resolveSurvival.IndexOf("ClearResolvedPlayerRuntimeBindings();", StringComparison.Ordinal)));
+            StringAssert.DoesNotContain("PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;", source);
+            StringAssert.DoesNotContain("HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;", source);
         }
 
         [Test]
@@ -1101,8 +1256,11 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "AtlasSignal", "AtlasSignalSystem.cs");
             string resolveDepth = ExtractMethodBody(source, "private float ResolveCurrentDepthMeters(in AbsoluteUniversePosition playerAup)");
+            string resolveWater = ExtractMethodBody(source, "private double ResolveCurrentSeaLevelAupY()");
+            string sanitizeWater = ExtractMethodBody(source, "private static bool TryResolveSeaLevelAupY(");
 
             StringAssert.Contains("private const double DefaultSeaLevelAupY = 14.02d;", source);
+            StringAssert.Contains("using Hecton8.World;", source);
             StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveDepth);
             StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", resolveDepth);
             StringAssert.Contains("return math.max(0f, movementState.DepthMeters);", resolveDepth);
@@ -1117,7 +1275,10 @@ namespace Hecton8.Tests.Editor
             Assert.That(
                 resolveDepth.IndexOf("if (playerContext == null)", StringComparison.Ordinal),
                 Is.LessThan(resolveDepth.IndexOf("HectonPlayerMovement playerMovement = _playerMovement", StringComparison.Ordinal)));
-            StringAssert.Contains("DefaultSeaLevelAupY - absoluteY", resolveDepth);
+            StringAssert.Contains("ResolveCurrentSeaLevelAupY() - absoluteY", resolveDepth);
+            StringAssert.Contains("oceanKinematics.SeaLevel", resolveWater);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeWater);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", sanitizeWater);
             StringAssert.DoesNotContain("return math.max(0f, (float)-absoluteY);", source);
         }
 

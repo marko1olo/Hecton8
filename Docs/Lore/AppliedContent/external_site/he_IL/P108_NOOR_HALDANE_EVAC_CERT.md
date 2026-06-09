@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "נור הלדיין: תעודת פינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# נור הלדיין: תעודת פינוי
 
-HE LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+נור הלדיין: תעודת פינוי הוא מאמר ראיה של Deep Reach על ציות כאובייקט קטלני. הלדיין אינה נבלית צועקת. היא חתימת היועצת ששומרת על פינוי בר-הגנה משפטית בזמן שהנתיב הפיזי נכשל.
 
-## Scanner
+העיכוב שלה בנוי מדרישות סבירות: הסגר לחץ-ביולוגי, משמורת מוביל, ביקורת נתיב חיצונית, קבלת נמל המשך, שרשרת אחריות. אף אחת מהמילים אינה מגוחכת. זו הנקודה. המערכת יכולה להיות צודקת בתוך המסגרת שלה ועדיין להרוג באמצעות המתנה.
 
-HE LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-HE LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-HE LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-HE LOC HOLD: This is the paper signature players should hate.
+המאמר נותן לשחקנים דרך לקרוא דלתות מושבה ישנות ולוחות נתיב. דרך פינוי נעולה אינה רק מכונה שבורה. ייתכן שהיא החלטה משפטית שעדיין מחכה לביקורת. הנואר של HECTON-8 נולד מהעיכוב הזה: אף אחד לא צריך לומר 'תנו להם למות' אם התעודה יכולה לומר 'עדיין לא' מספיק זמן.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/he_IL. -->

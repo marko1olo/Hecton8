@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Brine Canyon Density Ladder Guide
 
-Brine canyons make depth physical. They teach density layers, hull limits, pressure failures and resource pockets before the lower routes open.
+Brine canyons make depth physical. Their density layers, suspended silt, cold seep pockets, and instrument blind zones teach hull limits before the lower routes open. The way down is not a staircase in rock. It is a ladder made from fluids that disagree about where a body belongs.
 
 ## Scanner
 

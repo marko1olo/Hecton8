@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "أشرطة تلف نصوص الصوت"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# أشرطة تلف نصوص الصوت
 
-AR LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+سجل الصوت في HECTON-8 لا يكتمل لمجرد أنه يحتوي على صوت. يجب أن يظهر النص جروحه.
 
-## Scanner
+أشرطة التلف تجعل تلك الجروح صادقة. يمكنها أن تميز التشويش، وفقدان الحزم، والتنقيح القانوني، وتشوه الضغط، وفشل فصل المتكلمين، وفشل الترجمة الآلية، أو تعديلا لاحقا. من دون هذه الطبقة يصبح كل تسجيل مكسور إما وضوحا زائفا أو غموضا زائفا. معها يرى اللاعب الفرق بين ما فقده العالم وما اختار شخص ما إزالته.
 
-AR LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+القاعدة صارمة لأن اللعبة تعتمد على الدليل. يمكن للتلف أن يخفي أسماء وأرقاما وحمولات كاشفة. يمكنه أن يصنع الشك. يمكنه أن يجعل المسار يبدو خطرا قبل أن يرى اللاعب الباب. لكن النص الباقي يجب أن يحمل الفعل: لا تفتح القفل، عد عبر سلم الخدمة، عد الأكسجين يدويا، تجاهل مصباح الحالة الأخضر، أبق السطر الرسمي ظاهرا.
 
-## Terminal
-
-AR LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-AR LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-AR LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+في التوطين والإتاحة، الشريط جزء من المحتوى. يجب أن يحافظ النص المترجم على دور المتكلم وضغط الوقت والتحذيرات المقروءة. لا يصبح التنقيح جوا إلا عندما يستطيع اللاعب أن يتصرف. وإلا فهو واجهة مكسورة تتظاهر بأنها لور.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/ar_SA. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Набір доказів насосного собору соляного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Набір доказів насосного собору соляного каньйону
 
-UK LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+Насосний собор дає середній глибині роботу. Оператору треба пройти галереї, стабілізувати соляну кишеню, прочитати скло щільності й порівняти годинник утримання маршруту з журналом черги робітників. Жоден об'єкт не є декором; кожен змінює те, чим виглядає затримка - погодою, недбалістю чи захистом претензії.
 
-## Scanner
-
-UK LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-UK LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-UK LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-UK LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Доказ сильніший, коли поважає океан. Великий приплив ламав стіни й рухав воду. Кімната цього не заперечує. Вона показує, що розклад зробив навколо затоплення: прийнятий допуск, пізній запуск помпи, утриманий маршрут, переповнена черга. POI стає орієнтиром, бо машина досі пам'ятає порядок роботи.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/uk_UA. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel Claim-Pool Charter
 
-Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem. The player has access to an orbital asset, but access is not ownership and proximity is not rescue. The carrier is debt infrastructure: useful enough to make escape imaginable, constrained enough to keep every return route entangled with claims, quarantine and recovery value.
 
 ## Scanner
 
-Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+The Black Keel is not your ship. It is a claim-pool recovery asset with your name in its debt ledger.
 
 ## Terminal
 
-CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+CHARTER EXCERPT / BLACK KEEL: autonomous salvage carrier / custody: Aegir Reclamation Pool / contractor transport: permitted / hull ownership: denied / rescue priority: subordinate to insured receiver state, quarantine handshake and claim value.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The carrier did not come for you. It came for a claim with your name attached.
 
 ## Field Note
 
-Use this on the first contract or carrier-status screen.
+Use on first carrier-status screen: access granted, ownership denied, rescue priority conditional, lien active.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/en_US. -->

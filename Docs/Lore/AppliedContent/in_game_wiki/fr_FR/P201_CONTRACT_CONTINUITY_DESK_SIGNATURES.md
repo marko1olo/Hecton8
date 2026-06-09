@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Contract Continuity Desk Signatures"
+title: "Signatures du bureau de continuité contractuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Contract Continuity Desk Signatures
+# Signatures du bureau de continuité contractuelle
 
-FR LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+Les signatures du bureau de continuité contractuelle montrent comment le travail d'ouverture du joueur devient une pression juridique avant que le joueur comprenne la mer. Le piège n'est pas une seule phrase malveillante. Il est assemblé à partir de signatures de routine assez ennuyeuses pour passer : fusion de privilèges Aegir Reclamation Pool, clause de récupération Black Keel, avenant crédit oxygène, avis de risque de liste noire et retenue de garde de charge utile. Chaque signature est petite. Ensemble, elles rendent le refus coûteux, le silence profitable et le secours conditionnel. C'est le visage des bureaux bas de Deep Reach : pas un trône, mais des pupitres capables de transformer la survie en rupture de contrat.
 
 ## Scanner
 
-FR LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Le piège du contrat d'ouverture est bâti par signatures basses : fusion de privilèges, avenant oxygène, risque de liste noire et retenue de charge utile.
 
 ## Terminal
 
-FR LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED : Edda Malk, Contract Continuity Desk. Fusionner les privilèges Aegir Reclamation Pool avec les clauses de récupération Black Keel. Joindre avenant crédit oxygène, avis de risque liste noire et retenue de garde de charge utile. Escalade inutile si l'opérateur accepte.
 
 ## Audio
 
-FR LOC HOLD: Nobody says trap. They say continuity.
+Une signature peut devenir une porte de pression quand chaque clause se verrouille après elle.
 
 ## Field Note
 
-FR LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Personne ne tamponne un piège. On tamponne la continuité.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/fr_FR. -->

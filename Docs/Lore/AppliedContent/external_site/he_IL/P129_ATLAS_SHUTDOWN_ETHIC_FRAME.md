@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "מסגרת האתיקה של כיבוי Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# מסגרת האתיקה של כיבוי Atlas
 
-HE LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+מסגרת הכיבוי מונעת מ-Atlas להפוך למיתוס חיסול נקי. בעיית הסמכות האחרונה של HECTON-8 היא משמורת: מה מסתיים, מה משתחרר, ולמי שייכת התוצאה כשהכבל מחשיך.
 
 ## Scanner
 
-HE LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+כיבוי אינו פעולה אחת: רחמים, הוצאה להורג, שחרור, גניבה.
 
 ## Terminal
 
-HE LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+מסגרת אתית: ניתוק Atlas עשוי לסיים לולאת תיקון פגומה, להשמיד רציפות ייחודית בין אוקיינוס למכונה, לשחרר ראיות מהליך תאגידי או להעביר חומר אסטרטגי לשומר הבא. יש לרשום משמורת לפני שימוש בשפה מוסרית.
 
 ## Audio
 
-HE LOC HOLD: Pull one cable and four courts invent four verbs.
+משוך כבל אחד וארבעה בתי משפט ימציאו ארבעה פעלים.
 
 ## Field Note
 
-HE LOC HOLD: The game should not give the player a clean word for this.
+פועל נקי יהיה עוד סיפור כיסוי.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/he_IL. -->

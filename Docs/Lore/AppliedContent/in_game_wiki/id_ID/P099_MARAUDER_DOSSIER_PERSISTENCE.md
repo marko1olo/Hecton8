@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistensi Dossier Penjarah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistensi Dossier Penjarah
 
-ID LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+Dossier Penjarah adalah memori kampanye yang bertahan di antara percobaan salvage. Ia menyimpan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi dari hal yang sudah dipublikasikan atau disembunyikan pemain. Ia tidak membawa kekuatan setelan, tekanan aman, ruangan yang sudah bersih, atau laut yang lebih ramah. Pengetahuan mengubah keputusan. Ia tidak membuat kedalaman menjadi tidak berbahaya.
 
 ## Scanner
 
-ID LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Gulungan dossier. Kamu menyimpan pengetahuan, bukan kekuatan super.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTENSI DOSSIER: catatan akhir, jenis kontrak yang ditemukan, keluarga rumor, kategori bukti, peringatan rute, dan konsekuensi buku besar publik disimpan. Kekuatan perlengkapan, kebenaran dunia, dan keadaan tekanan lokal direset per seed.
 
 ## Audio
 
-ID LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+Percobaan berikutnya dimulai dengan bekas luka di file, bukan otot di setelan.
 
 ## Field Note
 
-ID LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Dossier mengingat bukti dan peringatan; ia tidak membuat tekanan menjadi pemaaf.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/id_ID. -->

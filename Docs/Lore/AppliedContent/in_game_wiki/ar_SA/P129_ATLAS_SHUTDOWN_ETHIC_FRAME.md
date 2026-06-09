@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "إطار أخلاقيات إيقاف Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# إطار أخلاقيات إيقاف Atlas
 
-AR LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas بعد Great Tide ليس مجرد أداة قتل تنتظر مفتاح الإيقاف. إنه حاكم تالف، وأرشيف أوامر، وبيئة ضغط متشابكة مع عادات المحطة، وربما الشاهد الوحيد الذي لا يزال يحاول إنهاء مهمة لم يعد يفهمها. إيقافه قد يكون رحمة إذا كان ما تبقى معاناة. وقد يكون إعداما إذا صارت الاستمرارية شكلا من الحياة. وقد يكون تحريرا إذا توقفت الأدلة عن المعالجة بالمنطق نفسه الذي دفنها. وقد يكون سرقة إذا عادت الحمولة إلى يد Deep Reach. الرعب أن القراءات الأربع يمكن أن تكون صحيحة في الغرفة نفسها.
 
 ## Scanner
 
-AR LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+الإيقاف ليس فعلا واحدا: رحمة، إعدام، تحرير، سرقة.
 
 ## Terminal
 
-AR LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+إطار أخلاقي: قد يؤدي قطع Atlas إلى إنهاء حلقة إصلاح تالفة، أو تدمير استمرارية فريدة بين المحيط والآلة، أو تحرير الأدلة من الإجراء المؤسسي، أو نقل مادة استراتيجية إلى الحارس التالي. سجل الحيازة قبل استعمال اللغة الأخلاقية.
 
 ## Audio
 
-AR LOC HOLD: Pull one cable and four courts invent four verbs.
+اسحب كابلا واحدا فتخترع أربع محاكم أربعة أفعال.
 
 ## Field Note
 
-AR LOC HOLD: The game should not give the player a clean word for this.
+الفعل النظيف سيكون قصة تغطية أخرى.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/ar_SA. -->

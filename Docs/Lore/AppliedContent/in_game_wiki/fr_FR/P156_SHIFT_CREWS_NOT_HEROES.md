@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Équipes de quart, pas héros"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Équipes de quart, pas héros
 
-FR LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 doit rendre la colonie humaine par le travail avant la tragédie. Un technicien pression change un joint de valve, une cuisinière compte les jetons d'eau, un commis de route tamponne le mauvais retour, un plongeur sort un cutter et ne le rend jamais au registre : ces détails rendent les gens lisibles sans imposer un motif de vengeance familiale. La colonie noyée est plus forte quand elle ressemble à un lieu interrompu dans sa routine, pas à un musée construit après la mort.
 
 ## Scanner
 
-FR LOC HOLD: The colony becomes human through schedules, not speeches.
+COUCHE HUMAINE // La colonie devient réelle par les horaires, les outils usés, les retours manqués et les noms sur les tableaux. Pas par les discours.
 
 ## Terminal
 
-FR LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+RÈGLE D'ÉCRITURE : noter les travailleurs comme techniciens de pompe, médecins, commis de route, plongeurs, cuisiniers, opérateurs de fabricateur et superviseurs épuisés. Un planning avec un retour manquant blesse plus qu'un monument.
 
 ## Audio
 
-FR LOC HOLD: They were not symbols. They were late for shift.
+Ils n'étaient pas des symboles. Ils étaient en retard pour le quart.
 
 ## Field Note
 
-FR LOC HOLD: People are more believable as workers than as memorial statues.
+Les gens sont plus crédibles comme travailleurs que comme statues mémorielles.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/fr_FR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Varian Claim Awal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Varian Claim Awal
 
-ID LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+Claim awal adalah kebohongan di bagian atas perintah kerja. Salvage utang, bounty bukti, hardware rute hilang, kustodi sampel berbahaya, keringanan blacklist: tiap varian mengubah alasan papan membiarkan Marauder turun ke air. Ia harus memberi warna pada motif dan tekanan pertama, bukan mengganti protagonis dengan topeng baru.
 
 ## Scanner
 
-ID LOC HOLD: Same protagonist. Different claim pressure.
+VARIAN CLAIM // Marauder eks-Deep-Reach yang sama. Utang pertama, bounty, hardware rute, kustodi sampel, atau keringanan blacklist berbeda.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+ATURAN AWAL: varian mengubah tekanan awal, akses rumor, bobot bukti, dan logika bayaran. Mereka tidak menciptakan hero alternatif atau menghapus tulang punggung eks Deep Reach.
 
 ## Audio
 
-ID LOC HOLD: You can change the job without changing who took it.
+Kau bisa mengubah pekerjaan tanpa mengubah orang yang mengambilnya.
 
 ## Field Note
 
-ID LOC HOLD: Variants should color motive, not erase the canon character.
+Ubah claim. Pertahankan bekas lukanya.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/id_ID. -->

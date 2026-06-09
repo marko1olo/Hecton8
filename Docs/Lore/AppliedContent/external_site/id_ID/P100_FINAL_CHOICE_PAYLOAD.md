@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload Pilihan Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload Pilihan Akhir
 
-ID LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+Payload Pilihan Akhir mendefinisikan filosofi ending HECTON-8: pemain memilih apa yang meninggalkan bulan, siapa menerimanya, dan apa yang dimungkinkan bagi Deep Reach, hukum publik, Atlas, dan ekologi samudra-mesin.
 
 ## Scanner
 
-ID LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD AKHIR // Koordinat, sampel, nama, akses Atlas, perintah karantina, bukti publik. Apa yang meninggalkan HECTON-8 menentukan siapa bisa bertindak setelahnya.
 
 ## Terminal
 
-ID LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+MATRIKS PAYLOAD: jual koordinat dan bukti XO; putus kontinuitas Atlas; lindungi atau karantina ekologi samudra-mesin; publikasikan bukti ke ledger publik; tahan payload dan biarkan Deep Reach buta.
 
 ## Audio
 
-ID LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+Tidak ada kepemilikan bersih untuk TKP yang belajar bernapas.
 
 ## Field Note
 
-ID LOC HOLD: The best ending should be defensible, not clean.
+Ending terbaik harus bisa dibela, bukan bersih.
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/id_ID. -->

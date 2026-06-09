@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Ploegen, geen helden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Ploegen, geen helden
 
-NL LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 moet de kolonie menselijk maken via werk vóór tragedie. Een druktechnicus vervangt een kleppakking, een kok telt watertokens, een routeklerk zet de verkeerde terugkeerstempel, een duiker tekent een cutter uit en tekent hem nooit terug in. Zulke details maken mensen leesbaar zonder een familie-wraakhaak op te dringen. De verdronken kolonie is het sterkst wanneer ze voelt als een plek die midden in routine werd onderbroken, niet als een museum na de dood.
 
 ## Scanner
 
-NL LOC HOLD: The colony becomes human through schedules, not speeches.
+MENSELIJKE LAAG // De kolonie wordt echt via roosters, versleten gereedschap, gemiste terugkeer en namen op dienstborden. Niet via toespraken.
 
 ## Terminal
 
-NL LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+SCHRIJFREGEL: noteer werkers als pomptechnici, medici, routeklerken, duikers, koks, fabricator-operators en vermoeide supervisors. Een rooster met één gemiste terugkeer kan harder raken dan een monument.
 
 ## Audio
 
-NL LOC HOLD: They were not symbols. They were late for shift.
+Ze waren geen symbolen. Ze waren te laat voor dienst.
 
 ## Field Note
 
-NL LOC HOLD: People are more believable as workers than as memorial statues.
+Mensen zijn geloofwaardiger als werkers dan als gedenkbeelden.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/nl_NL. -->

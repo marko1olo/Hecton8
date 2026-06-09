@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Zestaw dowodowy terminala kolejki ewakuacyjnej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Evacuation Queue Terminal POI Kit
+# Zestaw dowodowy terminala kolejki ewakuacyjnej
 
-PL LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+Terminal kolejki powinien przypominać pokój zbudowany po to, by administracyjnie wygładzić cierpienie. Terminal listuje wstrzymania trasy, opóźnienie zwolnienia kwarantanny, wagi Atlas i liczby robotników, ale ściany niosą brudniejszy zapis: pasek stanu włazu, osad identyfikatora, brakujące znaki przepustowości i tag salvage na panelu, który ktoś nadal chce sprzedać.
 
-## Scanner
-
-PL LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-PL LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-PL LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-PL LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+POI zyskuje ciężar przez konflikt. Wyjęcie części może otworzyć trasę albo spłacić dług, ale może też zniszczyć powierzchnię dowodzącą opóźnienia. Właściwy odczyt nie jest przyznaniem się. To zestaw niepasujących obiektów, które zmuszają operatora do wyboru, co przetrwa nurkowanie.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/pl_PL. -->

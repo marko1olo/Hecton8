@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Marauder Correction Note Sample"
+title: "Muestra de nota correctora de saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Marauder Correction Note Sample
+# Muestra de nota correctora de saqueador
 
-ES LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Las notas de saqueador son una de las mejores superficies de prueba de HECTON-8 porque discuten con los sistemas oficiales sin convertirse en narración omnisciente. Esta muestra conserva la sospecha mediante marcas prácticas: horarios, certificados, una mala categoría y una demora en la cola. No resuelve el caso por el jugador. Enseña a leer una mentira archivada como mantenimiento.
 
 ## Scanner
 
-ES LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Corrección con lápiz graso sobre un parte de accidente: no fue clima, no fue pánico, fue una demora de autorización con recuento de cuerpos.
 
 ## Terminal
 
-ES LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+NOTA DE SAQUEADOR / CAUSA OFICIAL: RECHAZADA / ANTES DE RECLAMAR: certificado de bomba, turno, categoría de cuerpos, desfase del reloj de puerta, cola de autorización de rescate.
 
 ## Audio
 
-ES LOC HOLD: Someone else smelled the paperwork rot.
+Alguien olió la podredumbre del papeleo antes de que la sala se secara.
 
 ## Field Note
 
-ES LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NO FUE EL CLIMA. DEMORA DE AUTORIZACIÓN. Revisar certificado de bomba, turno, categoría de cuerpos. El reloj de la puerta adelanta seis minutos al sello de reclamación.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/es_ES. -->

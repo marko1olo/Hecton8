@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "工人 job cards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# 工人 job cards
 
-CN LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Job card 是殖民地最小的传记。它不需要童年、爱情或演讲才有重量。它需要角色、许可戳、最后任务，以及工人以为下一声提示后还会完成的事。当玩家找到这些卡片时，人们不再是背景伤亡，而是路线证据：有人握着泵钥匙，有人拖延了舱门，有人为一队人做饭，有人签出切割器，有人认证密封，也有人因为系统让救援等待而没能返回。
 
 ## Scanner
 
-CN LOC HOLD: A job card is a face the budget could read.
+JOB CARD // 姓名、角色、最后任务、路线许可、工具认证。预算能读懂的一张脸。
 
 ## Terminal
 
-CN LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+证据规则：每个找回的姓名都应连接到某件做过的事：泵路线、厨房 ledger、医疗呼叫、切割器保管、压力检查、制造批次。任务把姓名变成证明。
 
 ## Audio
 
-CN LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+没有任务的名字会变成神龛。任务让它成为证据。
 
 ## Field Note
 
-CN LOC HOLD: Make names useful before making them tragic.
+先让名字有用，再让它们悲伤。
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/zh_CN. -->

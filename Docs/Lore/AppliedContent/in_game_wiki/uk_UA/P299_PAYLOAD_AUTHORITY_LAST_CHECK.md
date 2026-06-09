@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Authority Last Check"
+title: "Остання перевірка повноважень payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Authority Last Check
+# Остання перевірка повноважень payload
 
-UK LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+Остання перевірка дає фінальному UI жорстке питання. Гравець обирає не скриню з нагородою, а того, хто отримає масу, доказ, імена, координати й дозвіл діяти.
 
 ## Scanner
 
-UK LOC HOLD: Payload check: receiver changes meaning, not only reward.
+Перевірка payload: вибір приймача змінює власність, а не лише нагороду.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: вибрати приймач, масу, зберігання доказів, екологічний наслідок і відповідальність після повернення. Вибір приймача визначає, хто зможе діяти на підставі доказу після відходу.
 
 ## Audio
 
-UK LOC HOLD: What leaves will own what remains.
+Те, що піде, володітиме тим, що залишиться.
 
 ## Field Note
 
-UK LOC HOLD: Use immediately before irreversible ending route selection.
+Використати безпосередньо перед незворотним вибором маршруту кінцівки.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/uk_UA. -->

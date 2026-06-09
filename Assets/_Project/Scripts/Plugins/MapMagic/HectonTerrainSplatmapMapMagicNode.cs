@@ -60,6 +60,15 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Sediment Strength")]
         public float sedimentStrength = 1f;
 
+        [Den.Tools.GUI.ValAttribute("Macro Geology")]
+        public bool useMacroGeology = true;
+
+        [Den.Tools.GUI.ValAttribute("Macro Seed")]
+        public int macroSeed = WorldMacroGeologyFields.DefaultAuthoringSeed;
+
+        [Den.Tools.GUI.ValAttribute("Water Surface Y")]
+        public float waterSurfaceY = 0f;
+
         public float Complexity => 1.2f;
 
         public float Progress(TileData data) => data.GetProgress(this);
@@ -167,7 +176,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                     RockSlopeThresholdDegrees = math.clamp(rockSlopeThresholdDegrees, 0f, 89f),
                     SlopeBlendWidthDegrees = math.max(0.001f, slopeBlendWidthDegrees),
                     CavityStrength = math.max(0f, cavityStrength),
-                    SedimentStrength = math.max(0f, sedimentStrength)
+                    SedimentStrength = math.max(0f, sedimentStrength),
+                    UseMacroGeology = useMacroGeology ? 1u : 0u,
+                    MacroGeologyParams = BuildMacroGeologyParams(),
+                    WorldOriginXZ = new double2(heightSource.worldPos.x, heightSource.worldPos.z)
                 };
 
                 handle = job.Schedule(cellCount, ResolveBatchCount(cellCount));
@@ -227,6 +239,22 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static int ResolveBatchCount(int cellCount)
         {
             return math.max(1, math.min(64, cellCount / 16));
+        }
+
+        private WorldMacroGeologyParams BuildMacroGeologyParams()
+        {
+            uint authoringSeed = unchecked((uint)math.max(1, macroSeed));
+            uint worldSeed = WorldMacroGeologyFields.CombineWorldSeed(authoringSeed, ResolveRuntimeWorldSeed());
+            WorldMacroGeologyParams parameters = WorldMacroGeologyParams.CreateDefault(worldSeed);
+            parameters.WaterSurfaceY = math.isfinite(waterSurfaceY) ? waterSurfaceY : 0f;
+            return parameters;
+        }
+
+        private static int ResolveRuntimeWorldSeed()
+        {
+            return global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed)
+                ? runtimeWorldSeed
+                : 0;
         }
 
         private static void RegisterTempJobBuffers(

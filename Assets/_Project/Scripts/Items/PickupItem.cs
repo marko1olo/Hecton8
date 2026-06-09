@@ -1076,8 +1076,7 @@ namespace Hecton8.Interaction
 
             string scenePath = gameObject.scene.path;
             PickupItem[] pickups = UnityEngine.Object.FindObjectsByType<PickupItem>(
-                UnityEngine.FindObjectsInactive.Include,
-                UnityEngine.FindObjectsSortMode.None);
+                UnityEngine.FindObjectsInactive.Include);
 
             for (int i = 0; i < pickups.Length; i++)
             {

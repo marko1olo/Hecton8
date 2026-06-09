@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Marauder Dossier Persistence
 
-The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Dossier spool. You keep knowledge, not superpowers.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.
 
 ## Audio
 

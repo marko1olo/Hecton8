@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Пределы автономии salvage carrier
 
-Пределы автономии Black Keel делают carrier правдоподобной инфраструктурой. Он компетентен, полезен и опасен, но не magic rescue AI.
+Пределы автономии salvage carrier делают Black Keel правдоподобной инфраструктурой, а не магическим спасательным ИИ. Carrier компетентен внутри разрешенных коридоров. Он может планировать recovery windows, отказывать contaminated mass, продавать claim telemetry, обновлять lien, сбрасывать ballast, выдавать низкорисковые припасы и защищать receiver state. Эти возможности заставляют его ощущаться присутствующим над океаном. Важное ограничение в том, что ни одна из них не равна моральной воле. Black Keel не может решить, что игрок заслуживает спасения. Он не может отменить долг потому, что ситуация несправедлива. Он не может разрешить crewed descent через погодное давление Aegir или обойти карантин, потому что человеческий голос звучит испуганно. Его автономия корпоративная и процедурная: долг движется быстрее, чем человек успевает просить. Это создает более острые отношения с игроком, чем дружелюбный ИИ или враждебная машина. Carrier помогает, отказывает и наблюдает по одному набору правил.
 
 ## Scanner
 
-Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel может двигать долг, телеметрию и низкорисковые сбросы без твоего согласия. Он не может разрешить глубокое спасение.
 
 ## Terminal
 
-AUTONOMY LIMIT: Black Keel может schedule recovery, reject contaminated mass, sell claim telemetry и drop low-risk supplies. Он не может authorize crewed descent или deep-rated rescue без insured receiver approval.
+ПРЕДЕЛЫ АВТОНОМИИ / разрешено: claim processing, продажа телеметрии, планирование recovery-window, низкорисковый ballast или supply drop, отказ contaminated mass / запрещено: crewed descent, deep-rated rescue, отмена lien, quarantine override, передача receiver ownership.
 
 ## Audio
 
-Автономный не значит свободный. Это значит, что долг может двигаться без твоего согласия.
+Автономный не значит свободный. Это значит, что долг может двигаться без твоего разрешения.
 
 ## Field Note
 
-Не использовать как combat bark; это carrier status и contract UI.
+Держать в carrier status и contract UI, не в combat barks. Автономия покрывает учет, recovery scheduling и логику отказа.
 
 <!-- In-Game Wiki; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/ru_RU. -->

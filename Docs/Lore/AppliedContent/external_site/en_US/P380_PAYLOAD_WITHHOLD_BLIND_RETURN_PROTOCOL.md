@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Payload Withhold Blind Return Protocol
 
-A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return is the refusal route. It keeps the payload out of every formal receiver and leaves the basin vector local. Deep Reach receives no access map. The public ledger receives no incident packet. Quarantine receives no escrow assignment. Atlas receives no cut key.
 
-## Scanner
-
-Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+The refusal has teeth and costs. It can keep predators away from the basin for one more interval, but it also leaves proof in a fragile container with a fragile person. Debt stays open. Custody stays informal. If the pack floods or the carrier dies in a corridor, the chain can vanish without anyone having to suppress it.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/en_US. -->

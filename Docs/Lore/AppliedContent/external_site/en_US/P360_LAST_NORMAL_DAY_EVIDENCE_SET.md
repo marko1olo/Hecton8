@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Last Normal Day Evidence Set
 
-HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+The Last Normal Day Evidence Set is a field method for reading HECTON-8's drowned colony. It collects small signs of interruption: an unclaimed locker plate, an unsigned correction, an open pump task, a clipped meal token, a route clock still waiting. None of these objects knows it has become evidence.
 
-## Scanner
+The strength is restraint. The room does not need a farewell recording or a perfectly placed tragedy. It only needs to show that normal procedure was still alive when failure crossed the threshold. People were counting water, returning tools, correcting boards and expecting lunch. That ordinary continuity makes the break feel worse.
 
-Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-The last day did not know it was last.
-
-## Field Note
-
-Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+The set also carries blame. Official accident wording often smooths the room; the physical contradictions roughen it again. Pump certificate, shift count, body category, door-clock mismatch: together they can turn a bland closure into a question someone tried not to ask. For HECTON-8, the last normal day is the moment when routine still believes it will continue.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/en_US. -->

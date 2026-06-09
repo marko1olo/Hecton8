@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ślad języka cofniętego dostępu"
+title: "Ślad Języka Cofniętego Dostępu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ślad języka cofniętego dostępu
+# Ślad Języka Cofniętego Dostępu
 
-Protagonista czyta blokady Deep Reach jak dowody. Cofnięte poświadczenia zamykają dostęp, ale treść wciąż odsłania zakopaną trasę: zdegradowane stany, świadków zastępczych, reklasyfikację konserwacji i język zachowania roszczeń.
+Ślad Języka Cofniętego Dostępu opiera się na prostej zasadzie HECTON-8: zamknięte drzwi nadal mogą się zdradzić. Systemy Deep Reach projektowano tak, by odmawiały, klasyfikowały i chroniły roszczenia ostrożnym językiem. Gdy stare credential zawodzi, język zostaje.
 
-## Scanner
+Użyteczne wskazówki nie są hasłami. To korporacyjne frazy o fizycznych skutkach: maintenance reclassification, degraded counts, substitute checks i claim-preservation routes. Zwykły gość widzi odmowę. Były field systems worker widzi zapis tego, co drzwi miały ukryć.
 
-Blokada nie mówi zakazano. Mówi: reklasyfikacja konserwacji, wstrzymanie ciągłości, materiały trasy. Stare sformułowania Deep Reach: odmowa, która nadal wskazuje zakopane drzwi.
-
-## Terminal
-
-ODPOWIEDŹ DOSTĘPU / ARCHIWUM TRASY BEZPIECZNEJ
-poświadczenie: cofnięte
-powód: materiały ciągłości ewakuacji ograniczone do certyfikowanego personelu Deep Reach
-widoczne terminy: zdegradowany stan osobowy, świadek zastępczy, trasa zachowania roszczeń, reklasyfikacja konserwacji
-uwaga: dawny personel terenowy może widzieć język odmowy wyłącznie do uzgodnienia incydentu.
-
-## Audio
-
-Nie usunęli korytarza. Owinęli go słownictwem, które wciąż rozumie tylko winny personel.
-
-## Field Note
-
-Identyfikator jest martwy. Blokada nadal mówi biurowym dialektem, którym zakopano trasę.
+Dzięki temu śledztwo pozostaje zakorzenione w pracy i odpowiedzialności. Operator nie potrzebuje magicznego klucza ani wyznania złoczyńcy. Martwy identyfikator, ekran odmowy i złe terminy maintenance wystarczą, by zacząć iść trasą, którą Deep Reach próbowała zakopać pod procedurą.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/pl_PL. -->

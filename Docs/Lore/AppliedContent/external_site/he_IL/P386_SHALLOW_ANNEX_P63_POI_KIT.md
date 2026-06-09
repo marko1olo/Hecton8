@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "ערכת ראיות לנספח הרדוד P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Shallow Annex P-63 POI Kit
+# ערכת ראיות לנספח הרדוד P-63
 
-HE LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 עובד מפני שהוא לא מפריד בין מחסה להוכחה. החדר נותן למפעיל אוויר, משאבת שיפוליים, מלאי אטמים, קו פינגר ומגע חותך. החלקים האלה שימושיים קודם; החוזה יכול לחכות, המים לא.
 
-## Scanner
-
-HE LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-HE LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-HE LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-HE LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+אחרי שהחדר יציב, אותם עצמים מקבלים משקל אחר. הודעת המסלול החתומה מתארת סגירה בתנאים מבוקרים, בזמן שהמשאבה הפגועה, מגש האטמים המטולא ותיק התאונה הרטוב מציגים יציאה קשה יותר. הסתירה הראשונה לא מסתתרת בנאום. היא מוברגת למקום שהשאיר את המפעיל בחיים.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/he_IL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "فيرا ساتو-رين: إجراء العودة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# فيرا ساتو-رين: إجراء العودة
 
-AR LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+فيرا ساتو-رين: إجراء العودة هي الجسر بين كارثة Deep Reach القديمة وحملة اللاعب الحاضرة. تمثل مكتب امتثال الاسترداد في 2190، حيث لم يعد Deep Reach بحاجة إلى الوقوف في الغرفة كي يمارس القوة. يرسل حزم إجراء العودة.
 
-## Scanner
+تطلب الحزمة إحداثيات ودليل XO وحالة وصول Atlas وصمت المتعاقد ضمن نافذة حيازة. هذا الشكل مهم. التهديد ليس خطابا. التهديد هو التوقيت. إذا كانت الحمولة قابلة للاسترداد، يستطيع Deep Reach عرض الإنقاذ أو الغطاء القانوني أو وصول الناقل. إذا زاد خطر الأدلة، يستطيع النظام نفسه تحويل اللاعب إلى مسؤولية.
 
-AR LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-AR LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-AR LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-AR LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+تحافظ هذه المقالة على واقعية الفصيل. Deep Reach خطير لأنه ما زال إجرائيا ومليئا بالمال وصبورا. يريد الاسترداد قبل الإنقاذ، والحيازة قبل الحقيقة. ساتو-رين هي حافة هذه الآلة على هيئة إنسان.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/ar_SA. -->

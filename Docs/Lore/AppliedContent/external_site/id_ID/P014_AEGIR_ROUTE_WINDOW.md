@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Jendela Rute Aegir
 
-Di HECTON-8, langit adalah bagian dungeon. Raksasa gas menentukan radiasi, bulan memberi bayangan, pasang bergerak lewat ngarai dan poros.
-
-Pemain belajar kapan pesan bisa naik, kapan tubuh bisa naik, dan kapan langit terbuka adalah jebakan.
+HECTON-8 adalah bulan laut, tetapi langit bagian dari dungeon. Cuaca radiasi Aegir, bayangan bulan, shutter relai, plume badai, pasang, dan geometri carrier menentukan apakah sinyal, tubuh, sampel, atau bukti bisa pergi. Aturan pentingnya pemisahan: jendela data bukan jendela penyelamatan, penyelamatan bukan jendela kargo tercemar. Black Keel menghitung, tetapi bertanya siapa pemilik massa, siapa menerima karantina, dan klausul mana melindungi Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/id_ID. -->

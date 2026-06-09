@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Variantes de props de libro de triaje"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Variantes de props de libro de triaje
 
-ES LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+Las Variantes de props de libro de triaje mantienen el daño legible sin convertir salas en exhibiciones de sufrimiento. Un libro de triaje debe mostrar cómo la lesión se movía por la burocracia: abreviatura crush-status, deuda de oxígeno, route hold tachado, estado de equipo, nota de estabilización Atlas y brecha de witness hash. El objetivo no es decorar la colonia con dolor. El objetivo es probar que la demora tenía camino, y que ese camino tenía dueños. Un buen prop de triaje hace que el jugador pregunte por qué un trabajador fue contado, otro retenido y un tercero desapareció en lenguaje de certificación.
 
 ## Scanner
 
-ES LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+La evidencia médica debe exponer demora y enrutamiento, no decorar la sala con sufrimiento.
 
 ## Terminal
 
-ES LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: cada entrada de libro debe atar la lesión a presión, denegación de ruta, estado de equipo, demora de certificación o cadena de testigo ausente. El dolor solo no basta. El prop debe mostrar quién podía moverse, quién fue retenido y qué sistema hizo que la demora pareciera procedural.
 
 ## Audio
 
-ES LOC HOLD: Pain is not proof until the route bears the mark.
+El dolor no es prueba hasta que la ruta lleva la marca.
 
 ## Field Note
 
-ES LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Variantes: abreviatura crush-status, marca de deuda de oxígeno, route hold tachado, nota de estabilización Atlas, brecha de witness hash.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/es_ES. -->

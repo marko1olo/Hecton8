@@ -19,22 +19,22 @@ localization_flags: 1
 
 # סיומים ו-payload custody
 
-מרכז תיקי סיום: custody, evidence, עתיד Atlas ומחיר העזיבה.
+מרכז תיקי סיום: כל יציאה היא custody transfer, לא תווית צבע מוסרית.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, אמת ציבורית, Atlas continuity ו-after-action records.
+Spoiler hub: payload custody, receiver consequences, false exits, public proof, מנוף quarantine והמשכיות Atlas.
 
 ## Terminal
 
-SITE NAV: להשאיר final payload pages מאחורי spoiler gates. לארגן לפי receiver ו-proof ownership.
+SITE NAV: לשמור דפי סיום מאחורי spoiler gates; לסדר לפי מי שולט בגוף, בקואורדינטות, samples, Atlas records ו-worker proof.
 
 ## Audio
 
-הסיום הוא מי מחזיק בראיה אחרי העלייה.
+היציאה אינה הסוף. היא העברת custody.
 
 ## Field Note
 
-סיומים נשארים spoiler-gated ומאורגנים לפי receiver ו-custody consequence, לא לפי תוויות מוסריות.
+אם הגוף ברח אבל proof נמצא בבעלות, האוקיינוס עוד לא סיים את התיק.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/he_IL. -->

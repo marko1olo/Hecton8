@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "Медичний triage ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# Медичний triage ledger
 
-UA LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+Медичний triage ledger перетворює затриману евакуацію на людський доказ: чисті категорії, допомогу в очікуванні й працівників, порахованих раніше, ніж оплаканих.
 
 ## Scanner
 
-UA LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Травма тиску, гіпоксія, затримка шлюзу, зниклий маршрут, hold сертифікації. Жах у тому, як акуратно допомога чекала.
 
 ## Terminal
 
-UA LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+МЕДИЧНЕ ПРАВИЛО: рахувати тіла без gore. Використовувати pressure-state, кисневий борг, затримку маршруту, пріоритет triage і signoff hold, щоб показати, як процедура робила пацієнтів швидше, ніж медики лікували.
 
 ## Audio
 
-UA LOC HOLD: The cleanest handwriting is on the worst page.
+Найчистіший почерк стоїть на найгіршій сторінці.
 
 ## Field Note
 
-UA LOC HOLD: Medical text should count bodies without becoming gore.
+Медичний текст має рахувати тіла, не стаючи gore.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/uk_UA. -->

@@ -3,13 +3,13 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fábrica del fondo"
+title: "Planta del fondo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fábrica del fondo
+# Planta del fondo
 
-La Fábrica del fondo es el punto donde HECTON-8 deja de separar infraestructura y hábitat. Máquinas de Deep Reach, rutas Atlas, residuos de blue debt, restos de trabajadores, membranas crecidas por presión y biología oceánica se han vuelto un solo cuerpo operativo. Mueve calor, fluido, señal, muestras y daño por el mismo tejido. Una pared puede ser una válvula. Un corredor puede ser un intestino. Un cable puede florecer en filtro. Una reparación puede contener coral, carcasa de dron, acero de herramienta y hueso sin que el sistema vea contradicción. El peligro no es mutación aleatoria. Es función sin categorías humanas. La fábrica mantiene continuidad, conserva rutas, cierra fugas, cultiva nueva piel de presión y trata la pérdida como material que puede enviarse a algún lugar útil.
+La Planta del fondo está en el retorno inferior de la cuenca Atlas. Las tuberías de Deep Reach aún mueven salmuera y calor allí, pero las camisas de carbonato y el crecimiento filtrante han cerrado muchos pasos de servicio. El residuo de blue debt mancha las juntas donde acero antiguo, bandejas de cable y sellos crecidos por presión comparten la misma ruta de mantenimiento.
+
+La utilidad es el riesgo. El lugar parchea fugas, mantiene bombas en circuito y lleva señal por rutas que nunca fueron aprobadas para personas. Una puerta puede seguir cerrada porque la junta ya no está y el crecimiento de presión soporta la carga. Una bandeja de cable puede seguir pasando datos mientras su cubierta funciona como filtro. Un anillo de traje, un bote de muestra o una herramienta pueden desaparecer en la misma camisa de reparación si su etiqueta de custodia queda enterrada antes de que alguien la lea. Trata cada junta clara como infraestructura activa hasta comprobar marcas de flujo y cajones de etiquetas.
 
 ## Scanner
 
-Conducto fluido, ruta de datos, membrana de presión y filtro vivo comparten una piel. Etiquetas de límite inválidas.
+Carbonato crecido por presión cubre una pared de servicio donde la línea de salmuera, el retorno térmico y el cable de señal entran en la misma camisa. Confianza: 64 %. Peligro: las etiquetas de custodia bajo la costra clara pueden quedar ilegibles antes del corte.
 
 ## Terminal
 
-COLONY: SIN RESOLVER. OCEAN: COMPATIBLE. PROCESS: ACTIVO. LOSS: ENRUTADA. CONTINUITY: PROTEGIDA. EXIT: NO LOCAL.
+ATLAS SERVICE RECORD
+Nodo: retorno inferior de la cuenca Atlas
+Propietario: enrutado de continuidad Deep Reach / ATLAS-6
+Entradas: salmuera, retorno térmico, cable de señal, bandejas de muestras selladas
+Fallo: etiqueta de custodia ilegible bajo crecimiento de carbonato
+Acción: mantener Pump Run B abierto; enviar equipo de corte por acceso de abrazadera superior
+Advertencia: hardware de traje sin etiqueta puede registrarse como material compatible
 
 ## Audio
 
-Sigue funcionando. Sigue usando lo que cayó dentro.
+No levantes todavía la junta blanca. El cajón de etiquetas está debajo. Si la pared vuelve a sellarse, perderemos los nombres con la fuga.
 
 ## Field Note
 
-Llamar a esto base pierde la regla. Las bases tienen paredes. Este lugar tiene circulación.
+Retorno inferior este: marca las etiquetas antes de cortar la junta blanca. La pared sellará la fuga alrededor de cualquier cosa que quede dentro de la camisa. Eso incluye herramientas. También anillos de traje.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/es_ES. -->

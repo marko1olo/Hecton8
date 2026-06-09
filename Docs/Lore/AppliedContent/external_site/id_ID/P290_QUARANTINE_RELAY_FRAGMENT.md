@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Quarantine Relay Fragment"
+title: "Fragmen Relai Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Quarantine Relay Fragment
+# Fragmen Relai Karantina
 
-ID LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Fragmen Relai Karantina menentukan sisi pahit bertahan hidup di HECTON-8. Latarnya bukan hanya soal lolos dari tekanan air; ini juga soal lolos dari catatan, rantai tahanan, dan klaim kepemilikan yang bertahan setelah banjir. Fragmen ini memberi bentuk akhir yang lebih keras: seseorang bisa diangkat dari laut dan tetap belum bebas.
 
 ## Scanner
 
-ID LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Paket relai yang sama menyetujui ekstraksi dan menolak pelepasan. Laut melepas tubuh sebelum koloni melepas orangnya.
 
 ## Terminal
 
-ID LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+TAHANAN RELAI QRF-17 / EKSTRAKSI: DITERIMA / PELEPASAN: DITOLAK / ALASAN: rantai sampel belum selesai, tinjauan udara usang, sengketa pengklaim aktif, status saksi sementara.
 
 ## Audio
 
-ID LOC HOLD: You are out of the water. You are not out of custody.
+Tahanan relai. Ekstraksi diterima. Pelepasan ditolak. Kau keluar dari air, bukan dari tahanan.
 
 ## Field Note
 
-ID LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Dicap dua kali: TUBUH DIPULIHKAN, ORANG DITAHAN. Tinjauan udara lebih tua dari tanda terima penyelamatan; sengketa pengklaim masih terbuka.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/id_ID. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Znaki domen 2190
 
-W 2190 jeden zepsuty przedmiot może mieć kilku właścicieli: standard Sol, naprawę Barnard, opiekę Luyten, roszczenie Aegir. Izolacja HECTON-8 nie bierze się z braku historii; historia zostaje na metalu, gdy pokój tonie.
+W 2190 jeden uszkodzony przedmiot może mieć kilku prawnych rodziców. Na HECTON-8 zamek ciśnieniowy może być certyfikowany przez Sol, naprawiony przez Barnard, przechowany przez Luyten, uzasadniony przez Centauri i zajęty przez powłokę Aegir. Znaki nie czynią kolonii bezpieczną. Czynią ją udokumentowaną.
+
+Ta różnica buduje ton gry. HECTON-8 nie leży poza cywilizacją. Leży pod jej zimną stroną: tą, która potrafi nazwać wspornik, wycenić ciało, zachować pakiet i nadal nie przesunąć masy ratunkowej na czas.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/pl_PL. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_ration_checks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS173_FIRST_RATION_CHECK_ARTICLES.md |
 | Speaker | Survival scanner, aquaculture ration note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first ration checking |
@@ -72,17 +72,17 @@ RECORD HARVEST BAND FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| ar_SA | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| de_DE | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| es_ES | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| fr_FR | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| he_IL | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| id_ID | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| ja_JP | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| ko_KR | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| nl_NL | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| pl_PL | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| pt_BR | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| ru_RU | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| uk_UA | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
-| zh_CN | draft_machine_or_llm | ALGAE PASTE // Separation line visible. Record harvest band before moving sleeve. |
+| ar_SA | draft_machine_or_llm | معجون طحالب // خط انفصال ظاهر. سجل شريط الحصاد قبل تحريك الغلاف. |
+| de_DE | draft_machine_or_llm | ALGENPASTE // Trennlinie sichtbar. Ernteband vor dem Bewegen der Hülle erfassen. |
+| es_ES | draft_machine_or_llm | PASTA DE ALGAS // Línea de separación visible. Registra la banda de cosecha antes de mover la funda. |
+| fr_FR | draft_machine_or_llm | PÂTE D'ALGUES // Ligne de séparation visible. Relever la bande de récolte avant de déplacer l'étui. |
+| he_IL | draft_machine_or_llm | משחת אצות // קו הפרדה נראה. רשום את רצועת הקציר לפני הזזת השרוול. |
+| id_ID | draft_machine_or_llm | PASTA ALGA // Garis pemisahan terlihat. Catat pita panen sebelum kemasan dipindah. |
+| ja_JP | draft_machine_or_llm | 藻類ペースト // 分離線が見える。スリーブを動かす前に収穫帯を記録。 |
+| ko_KR | draft_machine_or_llm | 조류 페이스트 // 분리선이 보인다. 슬리브를 움직이기 전에 수확 밴드를 기록하라. |
+| nl_NL | draft_machine_or_llm | ALGENPASTA // Scheidingslijn zichtbaar. Registreer oogstband voor de sleeve beweegt. |
+| pl_PL | draft_machine_or_llm | PASTA Z ALG // Linia rozwarstwienia widoczna. Zapisz pasek zbioru przed ruszeniem osłony. |
+| pt_BR | draft_machine_or_llm | PASTA DE ALGAS // Linha de separação visível. Registre a faixa de colheita antes de mover o invólucro. |
+| ru_RU | draft_machine_or_llm | ПАСТА ИЗ ВОДОРОСЛЕЙ // Видна линия расслоения. Запиши полосу сбора перед перемещением оболочки. |
+| uk_UA | draft_machine_or_llm | ПАСТА З ВОДОРОСТЕЙ // Видна лінія розшарування. Запиши смугу збору перед переміщенням оболонки. |
+| zh_CN | draft_machine_or_llm | 藻膏 // 可见分层线。移动套袋前记录收获标带。 |

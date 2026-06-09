@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_flora_contact |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS170_FIRST_FLORA_CONTACT_ARTICLES.md |
 | Speaker | Field scanner, buoyant flora note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first flora contact |
@@ -39,7 +39,7 @@ GAS BLADDER // Bead line intact. Scan before puncture or pressure change.
 
 The bead line is still continuous beneath the translucent skin. Once punctured, pressure and shape will change faster than the scanner can reconstruct. The useful record exists before handling.
 
-Fragile evidence rewards patience.
+The line must be recorded while the skin is still closed.
 
 ### PDA Log
 
@@ -64,7 +64,7 @@ SCAN BEFORE HANDLING
 
 - Use as early buoyant-flora, sample, or ecology article.
 - Can support future flora/resource systems without claiming runtime implementation.
-- Keep oxygen and buoyancy claims out of gameplay truth.
+- Keep oxygen and buoyancy readings out of gameplay claims.
 - Importer/publication readiness remains false until localization, packet bundle, and Unity content proof exist.
 
 ## Locale Rows
@@ -72,17 +72,17 @@ SCAN BEFORE HANDLING
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| ar_SA | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| de_DE | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| es_ES | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| fr_FR | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| he_IL | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| id_ID | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| ja_JP | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| ko_KR | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| nl_NL | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| pl_PL | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| pt_BR | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| ru_RU | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| uk_UA | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
-| zh_CN | draft_machine_or_llm | GAS BLADDER // Bead line intact. Scan before puncture or pressure change. |
+| ar_SA | draft_machine_or_llm | كيس غاز // خط الخرزات سليم. امسحه قبل الثقب أو تغير الضغط. |
+| de_DE | draft_machine_or_llm | GASBLASE // Perlenlinie intakt. Vor Einstich oder Druckwechsel scannen. |
+| es_ES | draft_machine_or_llm | VEJIGA DE GAS // Linea de cuentas intacta. Escanea antes de perforar o cambiar la presion. |
+| fr_FR | draft_machine_or_llm | VESSIE DE GAZ // Ligne de perles intacte. Scanner avant perforation ou changement de pression. |
+| he_IL | draft_machine_or_llm | שלפוחית גז // קו החרוזים שלם. סרוק לפני ניקוב או שינוי לחץ. |
+| id_ID | draft_machine_or_llm | KANTONG GAS // Garis butir utuh. Pindai sebelum ditusuk atau tekanan berubah. |
+| ja_JP | draft_machine_or_llm | ガス嚢 // ビード列は無傷。穿刺や圧力変化の前にスキャン。 |
+| ko_KR | draft_machine_or_llm | 가스 주머니 // 구슬선이 온전하다. 찌르거나 압력이 바뀌기 전에 스캔한다. |
+| nl_NL | draft_machine_or_llm | GASBLAAS // Parellijn intact. Scan voor doorprikken of drukverandering. |
+| pl_PL | draft_machine_or_llm | PECHERZ GAZOWY // Linia pecherzykow cala. Skanuj przed nakluciem albo zmiana cisnienia. |
+| pt_BR | draft_machine_or_llm | BOLSA DE GAS // Linha de contas intacta. Escaneie antes de perfurar ou mudar a pressao. |
+| ru_RU | draft_machine_or_llm | ГАЗОВЫЙ ПУЗЫРЬ // Линия капсул цела. Сканируй до прокола или смены давления. |
+| uk_UA | draft_machine_or_llm | ГАЗОВИЙ МІХУР // Лінія капсул ціла. Скануй до проколу або зміни тиску. |
+| zh_CN | draft_machine_or_llm | 气囊 // 珠状线完整。刺破或压力变化前先扫描。 |

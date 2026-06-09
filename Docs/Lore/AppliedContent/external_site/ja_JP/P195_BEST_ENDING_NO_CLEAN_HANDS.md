@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "最良エンド: 清潔な手はない"
+title: "最良ルート：残留を見えるままに"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最良エンド: 清潔な手はない
+# 最良ルート：残留を見えるままに
 
-HECTON-8の最良エンドは、すべてが修理された結末であってはいけない。それでは海、死んだ作業員、契約機械がプレイヤーのチェックリストより小さくなる。最も強い形は、具体的な何かを救わせる。公開記録、生きた盆地、拒まれた企業payload、自由になったオペレーター、消せない名前。
+HECTON-8で最も強い結末は、舞台を報酬画面へ修理してはいけない。オペレーターに具体的な仕事を達成させるべきだ。Black Keel保管から出る、記録を公開する、Deep Reachの戻り道を拒む、生きた盆地を隔離下で保存する、作業員名を持ち出す、あるいはAtlas proof hashを貨物として値付けできない場所に封じる。
 
-同時に残滓が必要だ。Atlasは隔離下で生き残るかもしれない。切断は人間を救い、生命の形を殺すかもしれない。真実は公開されるが制御不能かもしれない。プレイヤーは債務なしで去り、なお人を傷つけ続ける証拠を持つかもしれない。清潔な手はない、は冷笑ではない。規模への敬意だ。プレイヤーは意味ある行動を取れるが、無垢には戻れない。
+記録には未解決欄も残るべきだ。支払い済みの出口は作業員名を省ける。公開リリースはファイルを武器にする受信者を生む。切断は損傷した権限を止め、修復生命を傷つける。保存は圧力生態を守り、古い分類器を動かし続ける。良い最終記録は、救われたもの、受信者、債務効果、Atlas状態、そしてまだシステム内を動く被害を示す。
 
 <!-- External Site; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/ja_JP. -->

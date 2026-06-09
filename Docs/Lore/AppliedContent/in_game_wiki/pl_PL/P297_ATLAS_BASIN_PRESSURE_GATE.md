@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Basin Pressure Gate"
+title: "Brama ciśnieniowa basenu Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Basin Pressure Gate
+# Brama ciśnieniowa basenu Atlas
 
-PL LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+Brama kotwiczy finałowy próg w klasie skafandra, dowodzie ciśnienia i konflikcie władzy. Drzwi nie są mistyczne; to system przemysłowy decydujący, czy gracz liczy się jako dostęp, dowód czy skażenie.
 
 ## Scanner
 
-PL LOC HOLD: Basin gate requires pressure proof and authority response.
+Brama basenu żąda dowodu ciśnienia, władzy trasy i ciała, które może sklasyfikować.
 
 ## Terminal
 
-PL LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: dowód ciśnienia niepełny. Klasa skafandra przyjęta poniżej progu zejścia. Zacisk autorytetu rozpoznaje odwołany wzorzec Deep Reach, nie bieżącego roszczącego. Ręczne obejście wymaga lokalnego obciążenia, wyboru odbiornika i payloadu świadka.
 
 ## Audio
 
-PL LOC HOLD: It knows the old key. It does not know you.
+Zna stary klucz. Nie zna ciebie.
 
 ## Field Note
 
-PL LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Finałowy próg ma czytać się jak brama serwisowa do żywej fabryki, nie fantastyczny portal.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/pl_PL. -->

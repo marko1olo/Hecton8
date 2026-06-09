@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "איליה ורנק: מרווח הגאות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# איליה ורנק: מרווח הגאות
 
-HE LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+המאמר איליה ורנק: מרווח הגאות הוא אחד המקומות הראשונים שבהם HECTON-8 מראה בבירור כיצד פועלת אחריות Deep Reach. הוא נמנע מהגרסה הקלה של רוע תאגידי. ורנק לא צריך ללחוץ על כפתור הצפה. הוא חותם על פרשנות של סיכון.
 
-## Scanner
+בשנת 2147 מודל הגאות הגדולה עדיין עבר בממוצע. זו המילה המסוכנת. התנהגות ממוצעת שמרה על לוח הייצור בחיים, בזמן שהערימה הקיצונית נשארה בתוך חשיפת העובדים: חלונות גאות Aegir, החזר מדף הקרח, תנועת נתיבי לחץ ואי-ודאות פיצוי Atlas. נתיב יכול להיות קביל סטטיסטית ועדיין קטלני לאנשים שפוגשים את זנב העקומה.
 
-HE LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-HE LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-HE LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-HE LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+בשביל השחקן, הראיה הזאת משנה את האסון מתאונה לשרשרת החלטות. המזכר של ורנק אינו הודאה. הוא מסמך שהופך אשמה לקריאה: אי-הוודאות הייתה ידועה, הוזלה והועברה מטה. האימה בירוקרטית בלי להיות יבשה. המרווח הוקטן מספיק כדי שעובדים ימותו בתוכו.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/he_IL. -->

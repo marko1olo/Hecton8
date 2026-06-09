@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Beweiskit Brine-Canyon-Pumpkathedrale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Beweiskit Brine-Canyon-Pumpkathedrale
 
-DE LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+Die Brine-Canyon-Pumpkathedrale ist ein Industrievolumen aus Druck, Dichte und Verzögerung. Ihre Maschinen beschuldigen niemanden allein, doch Sichtglas, Halteuhr, Pumpenspuren und Warteliste bilden zusammen eine nutzbare Haftungskette.
 
 ## Scanner
 
-DE LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+POI-Beweiskit: Die Pumpkathedrale verbindet Dichteglas, Pumpenschaden, Routenuhren und Arbeiterwartelisten.
 
 ## Terminal
 
-DE LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+PUMPKATHEDRALEN-KIT: Dichtesichtglas, Brinepumpen-Kerbe, akzeptierte Margennotiz, Routenhalteuhr, Arbeiterwarteliste, Pumpstartschlüssel, überflutete Stegmarke.
 
 ## Audio
 
-DE LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Die Pumpen bewegten Wasser. Der Raum führte bessere Akten als das Büro.
 
 ## Field Note
 
-DE LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Marauder-Notiz: Fotografiere das Sichtglas, bevor du die Tasche ablässt. Sobald die Brine wandert, liegt die Margenlinie flacher.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/de_DE. -->

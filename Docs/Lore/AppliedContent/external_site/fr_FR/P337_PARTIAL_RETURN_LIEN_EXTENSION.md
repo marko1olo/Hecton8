@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Partial Return Lien Extension"
+title: "Prolongation de privilège pour retour partiel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Partial Return Lien Extension
+# Prolongation de privilège pour retour partiel
 
-FR LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
+La structure de replay de HECTON-8 traite les sorties partielles comme des dossiers, pas des remises à zéro. Une fuite ratée peut encore faire avancer la campagne en changeant ce qui est su, ce qui est dû et quelle fenêtre s'ouvre ensuite.
 
 ## Scanner
 
-FR LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Retour approuvé sous privilège prolongé. Les marqueurs de connaissance persistent ; l'inventaire est mis en quarantaine et retiré.
 
 ## Terminal
 
-FR LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ORDRE PARTIAL RETURN : réentrée même seed autorisée sous privilège prolongé, fenêtre de tempête révisée et dossier de connaissance conservé. Inventaire physique remis à zéro par quarantaine de garde ; les outils restent propriété du transporteur jusqu'à clôture de l'examen des preuves.
 
 ## Audio
 
-FR LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+La route se souvient de ce que tu as prouvé. L'océan garde le reste.
 
 ## Field Note
 
-FR LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Dossier de réentrée : retour même seed avec connaissance, dette, variations de tempête et remise à zéro de garde plutôt qu'équipement hérité.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/fr_FR. -->

@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Aegir Moon Ladder Sky Window
 
-Aegir's moons are not calendar decoration. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute mark traffic lanes, relay shadows, tide timing, blackout risk and transfer cost. The player reads sky bands as route pressure, not as exact orbital math.
+Aegir's moons are not calendar decoration. They are the sky's route grammar. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute mark traffic lanes, relay shadows, tide timing, blackout risk and transfer cost.
 
-## Scanner
-
-MOON TAG // Relay noise falling. Window usable if storm band holds.
-
-## Terminal
-
-EPHEMERIS NOTE // HECTON-8 window band favorable. Kestrel relay shadow rising. Strong packet window short.
-
-## Audio
-
-Do not stare at the sky. Read it, then send.
-
-## Field Note
-
-Pretty moons are still weights on the line.
+The player does not need exact orbital constants to use the sky. A moon behind weather can still mean a bad relay path. A bright window can mean one clean packet. A conjunction can mean tide load, not wonder. The ladder makes the sky readable without turning it into a live astronomy simulator.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/en_US. -->

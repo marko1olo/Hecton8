@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Payload-Protokoll Öffentliches Hauptbuch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Public Ledger Receiver Protocol
+# Payload-Protokoll Öffentliches Hauptbuch
 
-DE LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Das Public-Ledger-Protokoll sendet Beweise dorthin, wo Deep Reach sie nicht still besitzen kann. Es redigiert Koordinaten, versiegelt Attestierungs-Hashes, hängt Routenverwahrung und Atlas-Gewichtungsdigest an und tritt in ein verzögertes Relay ein. Der Sender verliert bei Annahme die Kontrolle. Das Paket wird schwerer zu kaufen, schwerer zu begraben und langsamer zu nutzen.
 
 ## Scanner
 
-DE LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Public-Ledger-Route scharf. Koordinaten vor verzögertem Relay redigiert; Attestierungs-Hash-Stapel und Haftungskette bei Annahme versiegelt.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PAYLOAD-EMPFÄNGER // PUBLIC LEDGER LANE. Empfänger: verteiltes öffentliches Hauptbuch, verzögerte Tau-Lane. Akzeptiere koordinatenredigiertes Ereignispaket, Attestierungs-Hashes, Routenverwahrung, Atlas-Gewichtungsdigest, Empfängerzeitstempel. Verwerfe private Auszahlung und direkten Recovery-Anspruch. Rückruf endet bei Relay-Annahme.
 
 ## Audio
 
-DE LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Hauptbuch nahm Paket. Koordinaten maskiert. Rückruffester geschlossen.
 
 ## Field Note
 
-DE LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Plünderernotiz: Redigiere die Route, bevor das Relay annimmt. Nach Annahme gehört das Paket nicht mehr dir.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/de_DE. -->

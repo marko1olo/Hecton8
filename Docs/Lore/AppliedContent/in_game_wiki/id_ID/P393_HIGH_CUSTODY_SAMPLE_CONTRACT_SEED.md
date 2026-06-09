@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: High Custody Sample Contract Seed"
+title: "Seed Kontrak Sampel Custody Tinggi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: High Custody Sample Contract Seed
+# Seed Kontrak Sampel Custody Tinggi
 
-ID LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Sampel Custody Tinggi adalah keluarga kontrak tempat nilai sumber daya dan penanganan bukti bertabrakan sejak awal. Blue debt, residu jaringan-besi, air tersegel, dan paket filter terkontaminasi membayar lebih hanya selama wadah, tag, massa, dan custody rute tetap utuh.
 
 ## Scanner
 
-ID LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Seed kontrak: sampel custody tinggi. Bayaran lebih besar terikat akuntansi massa, hambatan karantina, dan wadah tersertifikasi receiver.
 
 ## Terminal
 
-ID LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: sampel grade custody aktif, ledger massa sampel ketat, delay karantina naik, seal receiver wajib, penalti buang rute aktif.
 
 ## Audio
 
-ID LOC HOLD: A sample can weigh more after it enters the ledger.
+Sampel menjadi lebih berat setelah ledger menerimanya.
 
 ## Field Note
 
-ID LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Catatan marauder: timbang kantong sebelum menyebutnya untung. Receiver dapat menagih gram hilang lebih keras daripada hantaman laut.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/id_ID. -->

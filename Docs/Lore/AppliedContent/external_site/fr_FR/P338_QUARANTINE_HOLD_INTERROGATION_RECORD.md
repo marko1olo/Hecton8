@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Dossier d'interrogatoire en rétention sanitaire"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Hold Interrogation Record
+# Dossier d'interrogatoire en rétention sanitaire
 
-FR LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.
+Une sortie de HECTON-8 peut réussir physiquement et être catastrophique politiquement. Le joueur quitte peut-être l'océan pour entrer dans une pièce où chaque question traite son corps comme le seul journal de route survivant.
 
 ## Scanner
 
-FR LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Réclamant récupéré vivant. Le marqueur de quarantaine écrase le langage de sauvetage ; la charge de preuve est isolée.
 
 ## Terminal
 
-FR LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+DOSSIER QUARANTINE HOLD : réclamant biologique récupéré vivant. Déplacement restreint en attente de scan de contamination, entretien d'exposition à la pression et revue de garde des preuves. L'interrogatoire récepteur priorise le vecteur d'accès Atlas avant l'autorisation médicale.
 
 ## Audio
 
-FR LOC HOLD: They saved the body first because the body knew the route.
+Ils ont sauvé le corps d'abord, parce que le corps connaissait la route.
 
 ## Field Note
 
-FR LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier post-sortie : le sauvetage biologique devient quarantaine, interrogatoire, extraction de route et garde de payload avant la liberté.
 
 <!-- External Site; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/fr_FR. -->

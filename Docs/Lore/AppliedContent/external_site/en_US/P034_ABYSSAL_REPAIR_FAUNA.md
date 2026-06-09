@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Abyssal Repair Fauna
 
-Abyssal Repair Fauna defines the biomechanical horror escalation without reducing Atlas to a simple murderer.
+Abyssal Repair Fauna shows Atlas-6 repair criteria applied to living predators: the wound is sealed, mobility remains, and the graft can still call the maintenance network.
 
 ## Scanner
 
-Fauna carries ceramic patches, cable scars and drone-cut symmetry. Atlas is not killing life; it is editing it.
+Specimen carries a ceramic rib patch through old bite damage. Cable filament bridges the left gill fan to a drone-shell plate. Movement: hunting pattern intact. Hazard: graft broadcasts a live maintenance ping.
 
 ## Terminal
 
-Specimen note: wound margins show machine-clean closure and pressure-stable insert growth. Behavior remains animal under the graft.
+SPECIMEN REPAIR READ
+Depth: 3120 m / abyssal slope service den
+Wound: pressure tear along flank
+Insert: ceramic brace, cable filament, drone shell plate
+Atlas response: close wound, retain mobility, broadcast maintenance ping
+Behavior: predator pursuit remains active
+Warning: ping may wake nearby repair drones
 
 ## Audio
 
-It still hunts. The machine only changed what survived.
+Back off. The graft is broadcasting; it is still hunting, and the drone den just answered.
 
 ## Field Note
 
-Repair is not care.
+Not a corpse with parts on it. An animal survived the repair and kept the route in its head.
 
 <!-- External Site; generated from P034_ABYSSAL_REPAIR_FAUNA/en_US. -->

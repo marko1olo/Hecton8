@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Pressure Suit Service Grades"
+title: "Klasy serwisowe kombinezonów ciśnieniowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Pressure Suit Service Grades
+# Klasy serwisowe kombinezonów ciśnieniowych
 
-PL LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Klasy kombinezonów są dokumentacją serwisową, nie poziomami koloru. Każda głębokość wymaga śledzonych uszczelek, zapasu scrubbera, warstwy cieplnej, limitów skażenia i starych pieczęci, które nadal coś znaczą. Gracz schodzi niżej, bo odtwarza normę bezpieczeństwa, a nie dlatego, że znalazł magiczną zbroję.
 
 ## Scanner
 
-PL LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Znaczniki kombinezonu opisują głębokość pracy, zmęczenie uszczelek, zapas scrubbera, tolerancję termiczną i skażenie.
 
 ## Terminal
 
-PL LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-PL LOC HOLD: The suit does not make you brave. It only fails later.
+Kombinezon nie daje odwagi. Po prostu psuje się później.
 
 ## Field Note
 
-PL LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Głębszy kombinezon to nie kolorowa zbroja. To papier, części i brzydka konserwacja.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/pl_PL. -->

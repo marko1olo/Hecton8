@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Locker Name Protocol"
+title: "Протокол именных шкафчиков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Locker Name Protocol
+# Протокол именных шкафчиков
 
-RU LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+Шкафчик личный потому, что им пользовались, а не потому, что он объясняет всю жизнь. Лучшая улика шкафчика практична: бейдж, стертый по одному краю, лента на треснувшем уплотнении, маршрутная наклейка, правка рабочей скорописью, табличка имени, которую payroll позже стер. Эти предметы позволяют Marauder возвращать людей через следы использования и незаконченные задачи. Колонии не нужна мелодрама, чтобы быть человеческой. Ей нужны маленькие следы, которые корпоративная зачистка не смогла соскоблить.
 
 ## Scanner
 
-RU LOC HOLD: A locker is personal without needing a family plot.
+СЛЕД ШКАФЧИКА // Табличка имени, износ инструмента, pressure tape, правка, маршрутная наклейка. Личная улика без семейной мелодрамы.
 
 ## Terminal
 
-RU LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ПРАВИЛО ШКАФЧИКА: сохранять имена, которые Deep Reach убрал из payroll. Шкафчик должен связывать бейдж, роль, маршрутный допуск, привычку ремонта и незавершенную вещь внутри.
 
 ## Audio
 
-RU LOC HOLD: The company deleted the employee. The rust kept the label.
+Компания удалила сотрудника. Ржавчина сохранила ярлык.
 
 ## Field Note
 
-RU LOC HOLD: The smallest human trace should survive corporate cleanup.
+Самый маленький человеческий след должен пережить корпоративную зачистку.
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/ru_RU. -->

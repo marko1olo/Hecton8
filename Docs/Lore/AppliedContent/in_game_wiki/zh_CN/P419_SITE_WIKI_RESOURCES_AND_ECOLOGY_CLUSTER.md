@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 资源与生态
 
-资源/生态枢纽：drowned crust、brine ladders、vent chemistry、living systems和Atlas受损repair logic。
+资源与生态中心：Drowned Crust、盐水阶梯、喷口化学、blue debt、捕食者线索、带标签的动物，以及把活系统当硬件使用的 Atlas 修复。
 
 ## Scanner
 
-发布导航枢纽：geology、blue debt、fauna grammar与Atlas修复网络误用。
+发布中心：Drowned Crust、盐水阶梯、blue debt 压力史、动物线索，以及 Atlas 修复误用。
 
 ## Terminal
 
-SITE NAV：native geology、process feedstock、Atlas-altered resources、shallow ecology和encounter grammar作为一张process map。
+SITE NAV：按来源、压力史、活体接触、采集损伤和 custody 价值读取样本。
 
 ## Audio
 
-这里没有东西只是loot。
+这里没有东西只是 loot。
 
 ## Field Note
 
-当材料、生物与evidence pressure共享同一路线时，resources and ecology必须放在一起。
+干净样本很少最有价值。先问它由什么形成，什么碰过它，以及取走它时伤害了什么。
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/zh_CN. -->

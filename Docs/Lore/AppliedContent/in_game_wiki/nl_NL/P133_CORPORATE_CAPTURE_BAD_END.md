@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Corporate gevangenneming: schone redding"
+title: "Corporate capture: schone redding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Corporate gevangenneming: schone redding
+# Corporate capture: schone redding
 
-Corporate Gevangenneming is een slecht einde gebouwd uit een plausibele redding. De speler verlaat de oceaan levend, maar de antwoordende autoriteit behandelt de getuige als containment-materiaal en de payload als de echte patiënt.
+Corporate capture begint precies zoals hulp zou moeten beginnen. Het signaal is schoon, de pickupvector professioneel en de kamer heeft ademlucht. Daarna verraadt de volgorde van vragen de redding: coördinaten eerst, custody tweede, Atlas-toegang derde, welzijn na review. De contractor verlaat de oceaan levend, maar de antwoordende autoriteit behandelt de getuige als contaminatie en de payload als patiënt. Getuigenis wordt verzegeld voordat het publiek record kan worden. Het lichaam overleeft de druk om een stillere machine voor bewijscontrole binnen te gaan.
 
 ## Scanner
 
-Recovery-bron geverifieerd: Deep Reach-proxy. Payload gevraagd vóór welzijnscontrole.
+Recovery-bron geverifieerd: Deep Reach-proxy. Payload gevraagd vóór polscontrole.
 
 ## Terminal
 
-DEEP REACH-OPHAAL: recovery team accepteert coördinaten, XO custody en Atlas-toegangssleutel vóór welzijnscontrole van de contractant. Getuigenis van contractant verzegeld onder contaminatieprotocol.
+DEEP REACH-PICKUP: recovery-team vraagt coördinaten, XO-custody, Atlas-toegangssleutel en Seed-payloadzegel vóór welzijnscontrole van contractor. Getuigenis verzegeld onder contaminatieprotocol.
 
 ## Audio
 
-De schone kamer is niet voor jou.
+De cleanroom is niet voor de getuige.
 
 ## Field Note
 
-Een schone redding die eerst coördinaten wil, is gevangenneming met betere lucht.
+Een schone redding die eerst coördinaten vraagt, is custody met warme lucht.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/nl_NL. -->

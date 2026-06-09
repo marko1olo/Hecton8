@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_service_label |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS181_FIRST_SERVICE_LABEL_ARTICLES.md |
 | Speaker | Service scanner, field mark note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter labels |
@@ -72,17 +72,17 @@ OLD DIRECTION
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| ru_RU | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| ja_JP | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| zh_CN | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| fr_FR | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| es_ES | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| de_DE | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| pl_PL | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| uk_UA | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| ar_SA | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| id_ID | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| ko_KR | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| he_IL | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| pt_BR | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
-| nl_NL | draft_machine_or_llm | HAND ARROW // Overspray covers tail. Direction may predate later work. |
+| ar_SA | draft_machine_or_llm | سهم يدوي // الرش الزائد يغطي الذيل. الاتجاه قد يسبق العمل اللاحق. |
+| de_DE | draft_machine_or_llm | HANDPFEIL // Ueberspruehung deckt Schwanz. Richtung kann aelter sein als spaetere Arbeit. |
+| es_ES | draft_machine_or_llm | FLECHA MANUAL // Sobrerrociado cubre la cola. La direccion puede ser anterior al trabajo posterior. |
+| fr_FR | draft_machine_or_llm | FLECHE MANUELLE // Surpulverisation couvre la queue. La direction peut preceder les travaux suivants. |
+| he_IL | draft_machine_or_llm | חץ ידני // ריסוס עודף מכסה את הזנב. הכיוון עשוי להיות קודם לעבודה המאוחרת. |
+| id_ID | draft_machine_or_llm | PANAH TANGAN // Overspray menutup ekor. Arah bisa lebih tua dari pekerjaan berikutnya. |
+| ja_JP | draft_machine_or_llm | 手書き矢印 // オーバースプレーが尾を覆う。方向は後の作業より古い可能性。 |
+| ko_KR | draft_machine_or_llm | 손글씨 화살표 // 덧분사가 꼬리를 덮었다. 방향은 이후 작업보다 오래됐을 수 있다. |
+| nl_NL | draft_machine_or_llm | HANDPIJL // Overspray bedekt staart. Richting kan ouder zijn dan later werk. |
+| pl_PL | draft_machine_or_llm | RECZNA STRZALKA // Nadprysk zakrywa ogon. Kierunek moze byc starszy niz pozniejsza praca. |
+| pt_BR | draft_machine_or_llm | SETA MANUAL // Overspray cobre a cauda. Direcao pode ser anterior ao trabalho posterior. |
+| ru_RU | draft_machine_or_llm | РУЧНАЯ СТРЕЛКА // Напыление закрывает хвост. Направление могло быть старше поздней работы. |
+| uk_UA | draft_machine_or_llm | РУЧНА СТРІЛКА // Напилення закриває хвіст. Напрям міг бути старішим за пізнішу роботу. |
+| zh_CN | draft_machine_or_llm | 手写箭头 // 过喷覆盖尾端。方向可能早于后续作业。 |

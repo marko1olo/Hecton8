@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Canyon Liability Act"
+title: "Brama odpowiedzialności kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Canyon Liability Act
+# Brama odpowiedzialności kanionu solanki
 
-PL LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+W kanionie trasa przestaje być papierami salvage i zaczyna zachowywać się jak akta sprawy. Warstwy gęstości przechowują złe zegary. Solanka trzyma ślady, które zwykła woda by wymazała. Pęknięta płyta ewakuacji może leżeć obok logu marginesu i wzmacniać oba dokumenty.
 
-## Scanner
-
-PL LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-PL LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-PL LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-PL LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Łańcuch ma znaczenie, bo nie zaprzecza fizyce. Wielki Pływ uderzył. Ściana zawiodła. Kłamstwo firmy siedzi w kolejności decyzji wokół tych faktów: przyjęty margines, opóźniona kolejka, uszkodzona trasa, chronione roszczenie. Widoczna praca pozostaje fizyczna: skanuj ślad, dopasuj zegar, wynieś dowód.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/pl_PL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Service Basin POI Kit"
+title: "Beweiskit Atlas-Servicebecken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Service Basin POI Kit
+# Beweiskit Atlas-Servicebecken
 
-DE LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Das Atlas-Servicebecken soll die Endtiefe in Technik erden. Wartungsschienen, lebende Dichtung und Empfängersockel zeigen ein System, das Druckinfrastruktur reparieren will, während die falsche Kategorietabelle noch daran hängt.
 
 ## Scanner
 
-DE LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+POI-Beweiskit: Das Servicebecken mischt Industrieschienen, lebende Dichtung, Arbeiterkategorien und Empfängersockel.
 
 ## Terminal
 
-DE LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+SERVICEBECKEN-KIT: Wartungsschiene, Gewebe-Eisen-Siegel, alte Koloniekategorietabelle, Payload-Empfängersockel, Trennungsrisikomarker, Wachstumsklemme, Werkzeugwiege.
 
 ## Audio
 
-DE LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Es betete nicht. Es plante Wartung, bis die Kategorien brachen.
 
 ## Field Note
 
-DE LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Marauder-Notiz: Scanne die Kategorietabelle, bevor du den Sockel berührst. Das Becken repariert die Route vielleicht, indem es ändert, wofür die Route dich hält.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/de_DE. -->

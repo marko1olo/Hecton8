@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protocol voor native naamlocalisatie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protocol voor native naamlocalisatie
 
-NL LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+Dit protocol bewaart arbeidersidentiteit in 15 talen. Namen, badgestrips en compacte varianten worden per locale geschreven; functies, afdelingen, shifts, routes en labels apart vertaald. Een naam is een bewijsobject, geen live string.
 
 ## Scanner
 
-NL LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Deze strip is geschreven, niet live vertaald. De persoon overleeft de interface alleen als de interface stopt met improviseren.
 
 ## Terminal
 
-NL LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+NAAMLOCALISATIE // Persoonsnamen, korte strips en badgefragmenten worden per locale gebaked. Functies, afdelingen, routevergunningen en shiftnotities lokaliseren daaromheen. RTL en CJK vereisen geschreven korte vormen, veilige afbreking en geen live recompositie in scanner, locker-UI, terminals of externe wiki.
 
 ## Audio
 
-NL LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Een naam die de UI breekt is geen respect. Het is de kolonie die de arbeider twee keer wist.
 
 ## Field Note
 
-NL LOC HOLD: No live name translation. Preserve identity through baked strings.
+Laat een runtime fallback nooit een dode arbeider hernoemen. Een gebroken naam is nog een uitwissing.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/nl_NL. -->

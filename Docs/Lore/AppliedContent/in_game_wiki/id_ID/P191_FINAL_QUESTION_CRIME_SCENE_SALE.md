@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pertanyaan Akhir: Menjual TKP"
+title: "Pertanyaan Akhir: Penjualan TKP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pertanyaan Akhir: Menjual TKP
+# Pertanyaan Akhir: Penjualan TKP
 
-Menjual TKP adalah rute sukses material. Pemain selamat, bisa melunasi utang, bahkan pergi membawa uang. Biayanya: bukti koloni menjadi tuas bagi jaringan otoritas yang sama yang mengubur situs, menahan massa penyelamatan, dan memperlakukan tubuh sebagai cuaca kontrak.
+Penjualan TKP adalah poros keberhasilan material. Operator dapat selamat, menutup utang, dan pergi membawa uang karena Keelmark/Recovery Compliance mengakui koordinat, nilai sampel, bukti XO, dan hash kustodi carrier. Lampiran yang hilang penting: tanpa paket saksi terpisah, nama pekerja, akuntansi massa penyelamatan, dan tanggung jawab Deep Reach tetap di luar tanda terima berbayar.
 
 ## Scanner
 
-Koordinat, bukti XO, dan rantai kustodi bersih bisa membeli jalan keluar. Itu juga menjual ruang pembunuhan kembali kepada pihak yang memberi harganya.
+POROS PENJUALAN TKP // Keelmark dapat menutup tanggungan dengan koordinat cekungan Atlas, sampel utang biru, bukti saksi XO, dan hash kustodi carrier. Bukti pekerja tetap di luar tanda terima kecuali dinotariskan terpisah.
 
 ## Terminal
 
-SUMBU PENJUALAN FINAL: koordinat cekungan Atlas, sampel blue debt layak, bukti saksi XO, dan hash kustodi carrier dapat melunasi lien operator. Jika bukti tidak dinotariskan terpisah, Deep Reach mendapat jalan kembali ke HECTON-8 yang lebih bersih daripada jalan penyelamatan para pekerja mati.
+POROS AKHIR / PENJUALAN TKP
+Penerima: Keelmark/Recovery Compliance.
+Diterima: koordinat cekungan Atlas, sampel utang biru layak, bukti saksi XO, hash kustodi carrier.
+Dampak tanggungan: utang operator ditutup atau dikurangi oleh tabel kontrak.
+Diabaikan secara default: ledger nama pekerja, audit massa penyelamatan, paket saksi publik.
+Keuntungan Deep Reach: geometri kembali dan penilaian sampel tiba tanpa rantai kustodi yang bermusuhan.
+Kehilangan diketahui: peta kubur dapat menjadi properti sebelum menjadi kesaksian.
 
 ## Audio
 
-Kau bisa membayar utang dengan peta kuburan. Ledger akan menyebutnya kerja.
+Kamu bisa menjual peta kubur. Tanda terima tetap menyebutnya kerja.
 
 ## Field Note
 
-Ini bukan ending gagal lelucon. Ini ending berbayar, dengan tanda terima, lien lunas, dan masa depan lebih buruk bagi siapa pun yang masih di bawah.
+Ini jalan keluar berbayar dengan tanda terima. Baris berbahaya adalah yang kosong: tidak ada ledger nama pekerja terlampir.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/id_ID. -->

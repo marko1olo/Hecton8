@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Підписи Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Підписи Packet Notary Interface
 
-UA LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+Міжзоряна затримка не робила кожне повідомлення HECTON-8 марним. Вона робила його зберігання дорогим. Стрічка Packet Notary фіксує, яке ретрансляційне вікно несло пакет, який hash його засвідчив і який власник тримав запис до випуску. У відновлених матеріалах HECTON-8 цей механізм може захистити робочий лог або залишити його в claim material, доки не додадуть другого свідка. Архівна примітка: цей запис визначає маршрут доказу, а не повний ланцюг команд Deep Reach.
 
 ## Scanner
 
-UA LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Пакетну печатку відновлено: хеш-стрічка ціла, мітка ретрансляційного вікна 17-A, власник зберігання не визначений. Вважати доказом лише після збігу witness chain.
 
 ## Terminal
 
-UA LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Маршрут: Relay Spine / witness hash strip. Дія: засвідчити packet hash, локальну затримку ретрансляції та власника зберігання. Виняток: бракує додатка з іменем працівника, тому пакет лишається в черзі claim material. Ескалація: public ledger тільки після другого witness hash.
 
 ## Audio
 
-UA LOC HOLD: A seal is not mercy. It is a clock with a price.
+Печатка ціла. Часова мітка запізнилася на два вікна. Якщо witness hash збіжиться, вони вже не назвуть це перешкодами.
 
 ## Field Note
 
-UA LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Не продавай це як лог. Продавай як годинник із свідком: час ретрансляції, packet hash, власник зберігання. Без трьох полів Deep Reach спише запис на шум носія.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/uk_UA. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # ブルーデット圧力履歴ガイド
 
-blue debt は危険な substrate に巻かれた契約言語だ。Pressure history、custody marks、signal drift が、清潔な支払い、Atlas の leverage、Deep Reach の帰還動機のどれになるかを決める。
+ブルーデットは危険な基質に巻き付いた契約言語だ。圧力履歴、保管印、信号ドリフトが、清潔な支払い、Atlasの交渉材料、Deep Reachが戻る理由のどれになるかを決める。
 
 ## Scanner
 
-blue debt 試料タグ済み。export 前に pressure history、containment stage、signal drift を確認。
+ブルーデット試料をタグ付け。搬出前に圧力履歴、封じ込め段階、保管連鎖、信号ドリフトを確認。
 
 ## Terminal
 
-MARAUDER NOTE: blue debt は Xenon-Omega-bearing pressure-stable substrate の salvage スラング。輝くからではなく、extreme computation と energy isolation が好むから価値がある。
+略奪者メモ: ブルーデットはXenon-Omegaを含む圧力安定基質へのsalvage俗語。光るからではなく、極限計算とエネルギー隔離に合うから価値がある。
 
 ## Audio
 
-請求書が届いた後、人はそれを blue debt と呼ぶ。
+請求書が届いてから、人はそれをブルーデットと呼ぶ。
 
 ## Field Note
 
-色は grade ではない。clean custody の静かな容器は支払いになる。歌う容器は drone wake を買う。
+色は等級ではない。保管が清潔で静かな容器は金になる。歌う容器はドローンの航跡を買う。
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/ja_JP. -->

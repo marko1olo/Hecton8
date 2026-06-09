@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-Aegir Continuity Holdings держит Deep Reach рядом без live command. Это paperwork с зубами, достаточными чтобы направлять carrier.
+Aegir Continuity Holdings - оболочка, позволяющая Deep Reach сохранять стоимость, ничего не признавая. Она держит спящие маршрутные аренды, опционы герможилья, минеральные претензии, права на поврежденное оборудование и recovery-права, пока публичный комбинат говорит о сервисе.
 
 ## Scanner
 
-Грязному проекту нужен чистый владелец без лица.
+Aegir Continuity Holdings владеет выживанием как бухгалтерским глаголом.
 
 ## Terminal
 
-SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+ЗАПИСЬ ХОЛДИНГА: маршрутные аренды, жилищные претензии, опционы проваленных площадок и права непрерывности активов держатся вне публичного комбината.
 
 ## Audio
 
-Там никто не работает. Через него все подписывают.
+Колония провалилась. Холдинг продолжил работу.
 
 ## Field Note
 
-Shell companies - способ, которым crime scene учится выставлять счет самому себе.
+Непрерывность значит, что залоги переживают экипажи, жилища и окна извинений.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/ru_RU. -->

@@ -391,6 +391,7 @@ namespace Hecton8.Audio
         private float _pendingVocalWarningScheduleMicros;
         private GameObject _playerToxicityTargetObject;
         private uint _playerToxicityTargetHash = PlayerToxicityFallbackEntityHash;
+        private uint _playerSurvivalVitalsSourceId;
         private int _lastToxicityExposureSnapshotGeneration;
         private uint _currentAudioBankHashID;
         private uint _lastDispatchedAudioBankHashID;
@@ -600,7 +601,9 @@ namespace Hecton8.Audio
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                RefreshPlayerToxicityTargetHash(playerContext);
+                RefreshPlayerSurvivalVitalsSourceId(playerContext);
                 _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
                 return;
             }
@@ -622,7 +625,9 @@ namespace Hecton8.Audio
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                RefreshPlayerToxicityTargetHash(playerContext);
+                RefreshPlayerSurvivalVitalsSourceId(playerContext);
                 _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
                 return;
             }
@@ -815,6 +820,7 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredRuntime, 0) != 0)
                 GlobalRegistry.UnregisterVocalWarningRuntime(this);
+            _playerSurvivalVitalsSourceId = 0u;
         }
 
         private void EnsureNativeStorage()
@@ -1181,6 +1187,7 @@ namespace Hecton8.Audio
         {
             _globalQualityWeight01 = ResolveGlobalQualityWeight01();
             RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+            RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
             _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
         }
 
@@ -1196,6 +1203,16 @@ namespace Hecton8.Audio
             _playerToxicityTargetObject = playerObject;
             uint targetHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
             _playerToxicityTargetHash = targetHash != 0u ? targetHash : PlayerToxicityFallbackEntityHash;
+        }
+
+        private void RefreshPlayerSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            var survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _playerSurvivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         private bool TryRegisterRuntimeService()
@@ -1274,6 +1291,7 @@ namespace Hecton8.Audio
             Volatile.Write(ref _registeredUpdate, 0);
             Volatile.Write(ref _registeredSlowTick, 0);
             Volatile.Write(ref _registeredLateFrameTick, 0);
+            _playerSurvivalVitalsSourceId = 0u;
             DisposeNativeStorage();
             enabled = false;
             Destroy(this);
@@ -1299,6 +1317,7 @@ namespace Hecton8.Audio
             CompletePendingVocalWarningJobsForTeardown();
             ReleaseVaultBackedStorage();
             _dataVault = null;
+            _playerSurvivalVitalsSourceId = 0u;
             ClearPresentationState(true);
             ClearLastDispatchRoute();
         }
@@ -1352,6 +1371,7 @@ namespace Hecton8.Audio
                 _vwsClockSeconds += dt;
                 _globalQualityWeight01 = ResolveGlobalQualityWeight01();
                 RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+                RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
                 RefreshVesselTelemetryHandleIfMissing(frame);
                 _vesselCareTone01 = ReadVesselCareTone01();
                 float vesselCareTone01 = _vesselCareTone01;
@@ -1390,6 +1410,7 @@ namespace Hecton8.Audio
                     SurvivalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshotArray(),
                     ListenerAup = listenerAup,
                     PlayerToxicityTargetHash = _playerToxicityTargetHash != 0u ? _playerToxicityTargetHash : PlayerToxicityFallbackEntityHash,
+                    PlayerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId,
                     TimeSeconds = _vwsClockSeconds,
                     DeltaSeconds = dt,
                     FallbackCooldownSeconds = ResolveCooldownSeconds(fallbackCooldownSeconds),
@@ -2631,6 +2652,7 @@ namespace Hecton8.Audio
             [ReadOnly, NoAlias] public NativeArray<SurvivalVitalsChangedSignal>.ReadOnly SurvivalSignals;
             public AbsoluteUniversePosition ListenerAup;
             public uint PlayerToxicityTargetHash;
+            public uint PlayerSurvivalVitalsSourceId;
             public float TimeSeconds;
             public float DeltaSeconds;
             public float FallbackCooldownSeconds;
@@ -2778,9 +2800,13 @@ namespace Hecton8.Audio
                         evaluations++;
                 }
 
-                for (int i = 0; i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)
+                uint playerSurvivalVitalsSourceId = PlayerSurvivalVitalsSourceId;
+                for (int i = 0; playerSurvivalVitalsSourceId != 0u && i < SurvivalSignals.Length && evaluations < MaxEvaluations; i++)
                 {
                     SurvivalVitalsChangedSignal signal = SurvivalSignals[i];
+                    if (signal.SourceId != playerSurvivalVitalsSourceId)
+                        continue;
+
                     uint survivalFlags = signal.Flags;
                     float oxygen01 = math.saturate(math.select(0f, signal.Oxygen01, math.isfinite(signal.Oxygen01)));
                     bool oxygenLow =

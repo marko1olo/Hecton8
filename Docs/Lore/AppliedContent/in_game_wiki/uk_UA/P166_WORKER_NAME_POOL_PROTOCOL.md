@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Worker Name Pool Record"
+title: "Реєстр імен працівників"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Worker Name Pool Record
+# Реєстр імен працівників
 
-UK LOC HOLD: The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.
+Ім'я працівника в HECTON-8 - це короткий ланцюг доказів. Воно каже, який домен відправив тіло в океан, яка робота тримала це тіло корисним, у який маршрут людина могла входити законно і який уламок бейджа потім лишився в шафці, кліпсі маніфесту чи на дошці зміни.
+
+Пул імен потрібен, щоб повторні забіги здавалися заселеними, не переписуючи канон. Технік насосів може в одному seed опинитися біля журналу прокладок, а в іншому біля відмови medlock, але Great Tide, вина Deep Reach і географія станції не змінюються. Міняється порядок знахідок, а не злочин.
+
+Добрі імена тримаються землі. Це не жарти, не колекційні картки й не дешеві драматичні гачки. Вони мають звучати як люди, що чекали платню, доплату за тиск, обідній кредит і наступну зміну. Коли Marauder читає ім'я перед тим, як забрати інструменти під ним, кімната на мить перестає бути контейнером і стає робочим місцем.
 
 ## Scanner
 
-UK LOC HOLD: Names are evidence, not collectible flavor.
+ІМЕННА СМУГА // Смуга походження, маршрутний дозвіл, роль зміни й подряпаний фрагмент бейджа сходяться на одному працівникові. Спершу прочитай ім'я, потім розбирай шафку.
 
 ## Terminal
 
-UA LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+ПРОТОКОЛ ІМЕН // Особистості працівників складаються зі сталого особового імені, доменної смуги походження, тискової посади, літери зміни, фрагмента бейджа й маршрутного дозволу. Система може міняти порядок і пари за seed, але не має права перетворювати людей на випадкові ярлики луту. Особові імена авторяться для локалі; роль, маршрут і доступ несуть механічний сенс.
 
 ## Audio
 
-UK LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+Ім'я було першим предметом, який колонія спробувала розібрати на деталі.
 
 ## Field Note
 
-UK LOC HOLD: Seed names must preserve identity without making family melodrama.
+Імена не декор. Ім'я показує, хто мав право бути у вологому відсіку, коли станція почала брехати.
 
 <!-- In-Game Wiki; generated from P166_WORKER_NAME_POOL_PROTOCOL/uk_UA. -->

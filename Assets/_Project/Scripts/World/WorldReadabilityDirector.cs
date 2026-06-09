@@ -24,6 +24,13 @@ namespace Hecton8.World
         private const int NotificationPublishRetryFrameLimit = 3;
         private static readonly uint _NotificationMissWarningHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.NotificationMiss"));
         private static readonly uint _NotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification"));
+        private static readonly uint _BiomeNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.Biome"));
+        private static readonly uint _ZoneNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.Zone"));
+        private static readonly uint _DepthZoneNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.DepthZone"));
+        private static readonly uint _DepthNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.Depth"));
+        private static readonly uint _RouteNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.Route"));
+        private static readonly uint _SafePocketNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.SafePocket"));
+        private static readonly uint _CelestialLightNotificationContextHash = unchecked((uint)LocHash.Compute("WorldReadabilityDirector.Notification.CelestialLight"));
 
         [Header("References")]
         [Tooltip("Live biome matrix owner used for biome framing reads.")]
@@ -70,6 +77,18 @@ namespace Hecton8.World
         [SerializeField] private bool _debugRouteLegible;
         [Tooltip("Whether the current world context still reads as a safe pocket.")]
         [SerializeField] private bool _debugSafePocket;
+        [Tooltip("Whether the current celestial light readability payload is valid for world guidance.")]
+        [SerializeField] private bool _debugCelestialLightValid;
+        [Tooltip("Last observed celestial light stratum for world guidance.")]
+        [SerializeField] private int _debugCelestialLightStratum = -1;
+        [Tooltip("Last observed underwater visibility from the celestial light bridge.")]
+        [SerializeField] private float _debugCelestialUnderwaterVisibilityMeters;
+        [Tooltip("Last observed ambient readability from the celestial light bridge.")]
+        [SerializeField] private float _debugCelestialAmbientReadability01;
+        [Tooltip("Last observed deep-darkness pressure from the celestial light bridge.")]
+        [SerializeField] private float _debugCelestialDeepDarkness01;
+        [Tooltip("Whether natural light has become non-navigational and artificial light is required.")]
+        [SerializeField] private bool _debugCelestialArtificialLightCritical;
 
         private bool _registeredToTickManager;
         private bool _registeredLateFrame;
@@ -86,11 +105,16 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private IFirstHourReadModel _firstHourDirector;
         private IDepthZoneReadModel _cachedDepthZoneReadModel;
+        private ICelestialLightReadabilityReadModel _cachedCelestialLightReadModel;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _nextNotificationTime;
         private int _notificationMissCount;
         private int _pendingNotificationRetryCount;
+        private uint _pendingNotificationContextHash;
+        private bool _lastCelestialLightGuidanceValid;
+        private uint _lastCelestialLightGuidanceMask;
+        private uint _lastCelestialLightDepthStratum = uint.MaxValue;
 
         public int NotificationMissCount => _notificationMissCount;
 
@@ -140,11 +164,14 @@ namespace Hecton8.World
             _pendingMessage = null;
             _pendingSeverity = SeverityInfo;
             _pendingNotificationRetryCount = 0;
+            _pendingNotificationContextHash = _NotificationContextHash;
             _nextNotificationTime = 0f;
             _notificationMissCount = 0;
             _debugPendingMessage = "None";
             _debugPendingSeverity = SeverityInfo;
             _debugNextNotificationTime = 0f;
+            _cachedCelestialLightReadModel = null;
+            ResetCelestialLightGuidanceState();
         }
 
         private void TryRegister()
@@ -186,8 +213,16 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
                     _cachedDepthZoneReadModel = currentService as IDepthZoneReadModel;
                     break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    ResetCelestialLightGuidanceState();
+                    CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
+                    break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    TryRegister();
                     break;
             }
         }
@@ -196,9 +231,22 @@ namespace Hecton8.World
         {
             _firstHourDirector = GlobalRegistry.FirstHourReadModel;
             _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
             _playerRuntimeContext = GlobalRegistry.Player;
             if (_cachedDepthZoneReadModel == null && depthZoneDirector != null)
                 _cachedDepthZoneReadModel = depthZoneDirector;
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _cachedCelestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _cachedCelestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -244,11 +292,14 @@ namespace Hecton8.World
             IDepthZoneReadModel depthZoneReadModel = _cachedDepthZoneReadModel ?? depthZoneDirector;
             DepthZoneProfile currentDepthZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
             ResolveCurrentDepthContext(out int currentDepthTier, out float currentDepthMeters);
+            CelestialLightReadabilitySnapshot celestialLight = ResolveCelestialLightReadability();
+            uint celestialLightGuidanceMask = ResolveCelestialLightGuidanceMask(in celestialLight);
 
             if (!CanPublishReadability())
             {
                 ClearPendingMessage();
                 CaptureObservedContext(currentBiome, currentZone, currentDepthZone, currentDepthTier);
+                CaptureObservedCelestialLightContext(in celestialLight, celestialLightGuidanceMask);
                 UpdateDiagnostics();
                 return;
             }
@@ -278,8 +329,17 @@ namespace Hecton8.World
             }
 
             TryQueueRouteStateGuidance(currentBiome, currentZone, currentDepthZone, currentDepthTier);
+            TryQueueCelestialLightGuidance(
+                currentBiome,
+                currentZone,
+                currentDepthZone,
+                currentDepthTier,
+                currentDepthMeters,
+                in celestialLight,
+                celestialLightGuidanceMask);
 
             _hasObservedContext = true;
+            CaptureObservedCelestialLightContext(in celestialLight, celestialLightGuidanceMask);
             UpdateDiagnostics();
         }
 
@@ -388,6 +448,7 @@ namespace Hecton8.World
             _pendingSeverity = SeverityInfo;
             _hasPendingMessage = false;
             _pendingNotificationRetryCount = 0;
+            _pendingNotificationContextHash = _NotificationContextHash;
             _debugPendingMessage = "None";
             _debugPendingSeverity = SeverityInfo;
         }
@@ -407,16 +468,102 @@ namespace Hecton8.World
             _hasObservedContext = true;
         }
 
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
+        {
+            return ResolveCelestialLightReadability(resetGuidanceOnMissing: true);
+        }
+
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadabilityForDiagnostics()
+        {
+            return ResolveCelestialLightReadability(resetGuidanceOnMissing: false);
+        }
+
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability(bool resetGuidanceOnMissing)
+        {
+            ICelestialLightReadabilityReadModel readModel = _cachedCelestialLightReadModel;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                if (resetGuidanceOnMissing)
+                    ResetCelestialLightGuidanceState();
+
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _cachedCelestialLightReadModel;
+                if (!IsCelestialLightReadModelUsable(readModel))
+                    return default;
+            }
+
+            return readModel.LightReadabilitySnapshot;
+        }
+
+        private void ResetCelestialLightGuidanceState()
+        {
+            _lastCelestialLightGuidanceValid = false;
+            _lastCelestialLightGuidanceMask = 0u;
+            _lastCelestialLightDepthStratum = uint.MaxValue;
+            _debugCelestialLightValid = false;
+            _debugCelestialLightStratum = -1;
+            _debugCelestialUnderwaterVisibilityMeters = 0f;
+            _debugCelestialAmbientReadability01 = 0f;
+            _debugCelestialDeepDarkness01 = 0f;
+            _debugCelestialArtificialLightCritical = false;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static uint ResolveCelestialLightGuidanceMask(in CelestialLightReadabilitySnapshot light)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u ||
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) == 0u)
+            {
+                return 0u;
+            }
+
+            uint mask = (light.DepthStratum & 0xFu) + 1u;
+            if ((light.Flags & ((uint)CelestialLightReadabilityFlags.LightPhaseTwilight |
+                                (uint)CelestialLightReadabilityFlags.LightPhaseNight |
+                                (uint)CelestialLightReadabilityFlags.EclipseOrNight)) != 0u)
+                mask |= 1u << 8;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.BiolumFavored) != 0u)
+                mask |= 1u << 9;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u)
+                mask |= 1u << 10;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Fallback) != 0u)
+                mask |= 1u << 11;
+            if (light.UnderwaterVisibilityMeters > 0.001f && light.UnderwaterVisibilityMeters < 18f)
+                mask |= 1u << 12;
+
+            return mask;
+        }
+
+        private void CaptureObservedCelestialLightContext(
+            in CelestialLightReadabilitySnapshot light,
+            uint guidanceMask)
+        {
+            bool valid = guidanceMask != 0u;
+            _lastCelestialLightGuidanceValid = valid;
+            _lastCelestialLightGuidanceMask = guidanceMask;
+            _lastCelestialLightDepthStratum = valid ? light.DepthStratum : uint.MaxValue;
+        }
+
         private void TryQueueBiomeGuidance(HectonBiomeMatrixProfile profile)
         {
             string message = ResolveBiomeGuidanceMessage(profile, out int severity);
-            QueueOrPublish(message, severity);
+            QueueOrPublish(message, severity, _BiomeNotificationContextHash);
         }
 
         private void TryQueueZoneGuidance(WorldZoneAnchor zone)
         {
             string message = ResolveZoneGuidanceMessage(zone, out int severity);
-            QueueOrPublish(message, severity);
+            QueueOrPublish(message, severity, _ZoneNotificationContextHash);
         }
 
         private void TryQueueDepthZoneGuidance(
@@ -425,7 +572,7 @@ namespace Hecton8.World
             DepthZoneProfile depthZone)
         {
             string message = ResolveDepthZoneGuidanceMessage(profile, zone, depthZone, out int severity);
-            QueueOrPublish(message, severity);
+            QueueOrPublish(message, severity, _DepthZoneNotificationContextHash);
         }
 
         private void TryQueueDepthGuidance(
@@ -436,7 +583,7 @@ namespace Hecton8.World
             float depthMeters)
         {
             string message = ResolveDepthGuidanceMessage(profile, zone, depthZone, depthTier, depthMeters, out int severity);
-            QueueOrPublish(message, severity);
+            QueueOrPublish(message, severity, _DepthNotificationContextHash);
         }
 
         private void TryQueueRouteStateGuidance(
@@ -454,32 +601,70 @@ namespace Hecton8.World
                     ? ResolveRouteRecoveryMessage(profile, zone, depthZone)
                     : ResolveRouteLossMessage(profile, zone, depthZone, depthTier);
                 int severity = routeLegible ? SeverityInfo : SeverityWarning;
-                QueueOrPublish(message, severity);
+                QueueOrPublish(message, severity, _RouteNotificationContextHash);
             }
 
             if (_hasObservedContext && safePocket && !_lastSafePocket)
             {
                 string message = ResolveSafePocketMessage(profile, zone);
-                QueueOrPublish(message, SeverityInfo);
+                QueueOrPublish(message, SeverityInfo, _SafePocketNotificationContextHash);
             }
 
             _lastRouteLegible = routeLegible;
             _lastSafePocket = safePocket;
         }
 
-        private void QueueOrPublish(string message, int severity)
+        private void TryQueueCelestialLightGuidance(
+            HectonBiomeMatrixProfile profile,
+            WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
+            int depthTier,
+            float depthMeters,
+            in CelestialLightReadabilitySnapshot light,
+            uint guidanceMask)
+        {
+            bool valid = guidanceMask != 0u;
+            uint stratum = valid ? light.DepthStratum : uint.MaxValue;
+            if (_hasObservedContext &&
+                valid == _lastCelestialLightGuidanceValid &&
+                guidanceMask == _lastCelestialLightGuidanceMask &&
+                stratum == _lastCelestialLightDepthStratum)
+            {
+                return;
+            }
+
+            string message = ResolveCelestialLightGuidanceMessage(
+                profile,
+                zone,
+                depthZone,
+                depthTier,
+                depthMeters,
+                in light,
+                guidanceMask,
+                out int severity);
+            QueueOrPublish(message, severity, _CelestialLightNotificationContextHash);
+        }
+
+        private void QueueOrPublish(string message, int severity, uint contextHash)
         {
             if (string.IsNullOrWhiteSpace(message))
                 return;
 
-            if (_hasPendingMessage && _pendingMessage == message && _pendingSeverity == severity)
+            uint resolvedContextHash = contextHash != 0u ? contextHash : _NotificationContextHash;
+            if (_hasPendingMessage &&
+                _pendingMessage == message &&
+                _pendingSeverity == severity &&
+                _pendingNotificationContextHash == resolvedContextHash)
+            {
                 return;
+            }
 
             if (_hasPendingMessage && _pendingSeverity > severity)
                 return;
 
             _pendingMessage = message;
             _pendingSeverity = severity;
+            _pendingNotificationContextHash = resolvedContextHash;
             _hasPendingMessage = true;
             _pendingNotificationRetryCount = 0;
             _debugPendingMessage = message;
@@ -523,7 +708,7 @@ namespace Hecton8.World
 
             if (!pushed)
             {
-                ReportReadabilityNotificationMiss(severity);
+                ReportReadabilityNotificationMiss(severity, _pendingNotificationContextHash);
                 return false;
             }
 
@@ -540,13 +725,33 @@ namespace Hecton8.World
             return _pendingNotificationRetryCount >= NotificationPublishRetryFrameLimit;
         }
 
-        private void ReportReadabilityNotificationMiss(int severity)
+        private void ReportReadabilityNotificationMiss(int severity, uint contextHash)
         {
             _notificationMissCount++;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                _NotificationMissWarningHash,
-                _NotificationContextHash ^ unchecked((uint)math.max(0, severity)),
-                math.max(1, _notificationMissCount));
+            PublishReadabilityNotificationMissTelemetry(contextHash, severity, _notificationMissCount);
+        }
+
+        private static void PublishReadabilityNotificationMissTelemetry(uint contextHash, int severity, int missCount)
+        {
+            try
+            {
+                uint resolvedContextHash = contextHash != 0u ? contextHash : _NotificationContextHash;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _NotificationMissWarningHash,
+                    resolvedContextHash ^ unchecked((uint)math.max(0, severity)),
+                    math.max(1, missCount));
+            }
+            catch (Exception telemetryException)
+            {
+                LogReadabilityNotificationTelemetryException(telemetryException);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogReadabilityNotificationTelemetryException(Exception telemetryException)
+        {
+            Debug.LogWarning("[WorldReadabilityDirector] Notification miss telemetry failed: " + telemetryException.Message);
         }
 
         private static string ResolveBiomeGuidanceMessage(HectonBiomeMatrixProfile profile, out int severity)
@@ -854,6 +1059,71 @@ namespace Hecton8.World
             return null;
         }
 
+        private static string ResolveCelestialLightGuidanceMessage(
+            HectonBiomeMatrixProfile profile,
+            WorldZoneAnchor zone,
+            DepthZoneProfile depthZone,
+            int depthTier,
+            float depthMeters,
+            in CelestialLightReadabilitySnapshot light,
+            uint guidanceMask,
+            out int severity)
+        {
+            severity = SeverityInfo;
+            if (guidanceMask == 0u)
+                return null;
+
+            bool fallback = (light.Flags & (uint)CelestialLightReadabilityFlags.Fallback) != 0u;
+            if (fallback)
+            {
+                severity = SeverityWarning;
+                return "Optics are unstable. Trust instrument depth, sonar, and beacon routes.";
+            }
+
+            bool artificialCritical = (light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u;
+            if (artificialCritical)
+            {
+                severity = light.DepthStratum >= (uint)CelestialLightDepthStratum.Abyss2000PlusMeters
+                    ? SeverityCritical
+                    : SeverityWarning;
+
+                if (zone != null && zone.RouteCritical && !string.IsNullOrWhiteSpace(zone.GameplayIntent))
+                    return zone.GameplayIntent;
+
+                if (profile != null && !string.IsNullOrWhiteSpace(profile.safePocketIdentity))
+                    return profile.safePocketIdentity;
+
+                return "Natural light is gone. Commit to headlamps, sonar pings, and short landmark hops.";
+            }
+
+            if (light.DepthStratum >= (uint)CelestialLightDepthStratum.Deep500To2000Meters ||
+                depthTier >= 6 ||
+                depthMeters >= 500f)
+            {
+                severity = SeverityWarning;
+                if (depthZone != null && !string.IsNullOrWhiteSpace(depthZone.description))
+                    return depthZone.description;
+
+                return "Surface light no longer reads the route. Use silhouettes, biolum, and beacons.";
+            }
+
+            bool twilightOrNight =
+                (light.Flags & ((uint)CelestialLightReadabilityFlags.LightPhaseTwilight |
+                                (uint)CelestialLightReadabilityFlags.LightPhaseNight |
+                                (uint)CelestialLightReadabilityFlags.EclipseOrNight)) != 0u;
+            if (twilightOrNight && light.DepthStratum >= (uint)CelestialLightDepthStratum.Mesophotic100To500Meters)
+            {
+                severity = SeverityWarning;
+                return "Natural light is fading. Tighten beacon spacing before the route closes.";
+            }
+
+            bool biolumFavored = (light.Flags & (uint)CelestialLightReadabilityFlags.BiolumFavored) != 0u;
+            if (biolumFavored && light.DepthStratum >= (uint)CelestialLightDepthStratum.Mesophotic100To500Meters)
+                return "Biolum landmarks are readable. Keep floodlights disciplined.";
+
+            return null;
+        }
+
         private void UpdateDiagnostics()
         {
             _debugBiome = _lastBiomeProfile != null && !string.IsNullOrWhiteSpace(_lastBiomeProfile.biomeName)
@@ -868,6 +1138,18 @@ namespace Hecton8.World
             ResolveCurrentDepthContext(out _debugDepthTier, out _debugDepthMeters);
             _debugRouteLegible = _lastRouteLegible;
             _debugSafePocket = _lastSafePocket;
+
+            CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadabilityForDiagnostics();
+            _debugCelestialLightValid =
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Valid) != 0u &&
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) != 0u;
+            _debugCelestialLightStratum = _debugCelestialLightValid ? (int)light.DepthStratum : -1;
+            _debugCelestialUnderwaterVisibilityMeters = _debugCelestialLightValid ? light.UnderwaterVisibilityMeters : 0f;
+            _debugCelestialAmbientReadability01 = _debugCelestialLightValid ? light.AmbientReadability01 : 0f;
+            _debugCelestialDeepDarkness01 = _debugCelestialLightValid ? light.DeepDarkness01 : 0f;
+            _debugCelestialArtificialLightCritical =
+                _debugCelestialLightValid &&
+                (light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u;
         }
     }
 }

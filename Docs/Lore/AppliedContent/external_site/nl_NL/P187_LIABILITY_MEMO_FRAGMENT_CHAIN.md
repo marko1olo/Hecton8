@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Fragmentketen van het Aansprakelijkheidsmemo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Fragmentketen van het Aansprakelijkheidsmemo
 
-NL LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Fragmentketen van het Aansprakelijkheidsmemo definieert HECTON-8-bewijs als reconstructie, niet als uitleg. Het artikel geeft spelers een reden om om snippers, tijdstempels en beschadigde administratieruimtes te geven: Deep Reach liet geen bekentenis achter, maar onverenigbare zelfbescherming. Elk fragment is klein genoeg om plausibel te zijn en lelijk genoeg om te tellen. Samen laten ze zien hoe het bedrijf publiekelijk getijdefysica kan beschuldigen terwijl het intern aansprakelijkheid verplaatst via risico, evacuatie, Atlas-continuïteit, verzekeringsconversie en vrachtbewaring.
 
 ## Scanner
 
-NL LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Het aansprakelijkheidsmemo overleefde als fragmenten omdat elk kantoor de alinea bewaarde die het zelf beschermde.
 
 ## Terminal
 
-NL LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: risicomargetabel / evacuatievrijgavenotitie / Atlas-continuïteitsoverride / Keelmark-verliesconversie / recovery-bewaringsverzoek. Controleer routetijd, kamerschade en arbeidersnamen voordat de publieke samenvatting wordt aanvaard.
 
 ## Audio
 
-NL LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Ze verborgen de waarheid niet in een kluis. Ze archiveerden haar in stukken.
 
 ## Field Note
 
-NL LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Een gescheurd memo is eerlijk op de plaatsen waar het dat niet wilde zijn.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/nl_NL. -->

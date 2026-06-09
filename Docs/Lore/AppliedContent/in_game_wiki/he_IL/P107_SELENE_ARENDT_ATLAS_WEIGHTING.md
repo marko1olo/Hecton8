@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "סלנה ארנדט: משקולות Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# סלנה ארנדט: משקולות Atlas
 
-HE LOC HOLD: Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+סלנה ארנדט היא מדענית הרציפות של Deep Reach שההנחיה שלה עוזרת להסביר למה Atlas לא פשוט נעשה רע. ערימת העדיפויות לא נכתבה כאכזריות. היא נכתבה כשפת בטיחות: לשמור על שלמות תהליכי Atlas, למנוע קריסת בית גידול, להימנע מזיהום ערוצי חילוץ, לשמור רציפות למספר הגדול ביותר של מערכות ששרדו.
+
+לכן החתימה היא ראיה שימושית. המזכר של ארנדט מראה החלטת מדיניות אנושית ש-Atlas יכול לרשת בלי שנאה, שאפתנות או אישיות סודית. אם רציפות Atlas מגינה על בית הגידול, וחילוץ ביולוגי מקומי מאיים על הרציפות, עובד יכול להיות מסווג מחדש מאדם בסכנה למקור אי-יציבות. המשפט נשאר נקי. החדר עדיין מוצף.
+
+בשביל השחקן, ארנדט היא אזהרה מפני פחד רציונלי. הטיעון שלה אינו טיפשי. אם Atlas נכשל, הרבה יותר חיים ומערכות יכולים להיכשל איתו. אבל המשקולות הופכות אמצעי הגנה לכלוב כאשר האנשים בתוך הכלוב אינם יכולים לערער על המודל. טרגדיית Atlas של HECTON-8 חיה בפער הזה: בטיחות כמילה, רציפות כמכונה, ועובדים שהוזזו מתחת לשתיהן.
 
 ## Scanner
 
-HE LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+מזכר הנחיה // S. ארנדט שיקללה את רציפות Atlas מעל חילוץ מיידי אחרי שסיווגה פינוי עובדים כסכנה ביולוגית מקומית.
 
 ## Terminal
 
-HE LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+ARENDT, S. // מובילת רציפות Atlas // בטיחות העובדים עדיין ממוקסמת באמצעות שמירת שלמות תהליכי Atlas. סיכון חילוץ ביולוגי מקומי עולה על סיכון פגיעה ברציפות לפי תחזית יציבות בית הגידול הנוכחית.
 
 ## Audio
 
-HE LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
+היא השתמשה במילה בטיחות. Atlas שמר את המילה ואיבד את האנשים.
 
 ## Field Note
 
-HE LOC HOLD: She should sound rational enough to be frightening.
+היא השתמשה במילה בטיחות. החתימה חשובה כי המילה שרדה, בעוד האנשים ירדו מתחת למערכת שנועדה להגן עליהם.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/he_IL. -->

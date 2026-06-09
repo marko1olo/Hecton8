@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Конфлікт підпису й свідка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Конфлікт підпису й свідка
 
-UA LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Конфлікт підпису й свідка - момент, коли офіційна історія Deep Reach перестає бути просто неповною і починає ставати хибною. Публічний підпис подає HECTON-8 як припливну катастрофу без дієвого протиріччя до затримки евакуації. Локальні хеші свідків кажуть інше: юристи евакуації, Atlas Safety і route operations були в одній кімнаті огляду, коли втрата запасу, лихо працівників і час маршруту вже були видимі. Конфлікт дає гравцю сильну форму доказу. Недостатньо знайти поганий підпис; підпис треба поставити поруч із логами дверей, пошкодженими годинниками й штампами імен, доки алібі не ламається.
 
 ## Scanner
 
-UA LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Підпис стверджує, що огляд евакуації не мав живого протиріччя. Хеші свідків кажуть, що протиріччя було в кімнаті.
 
 ## Terminal
 
-UA LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: публічний підпис позначає припливний збій як єдину причину. Локальний хеш свідка ставить юристів евакуації, Atlas Safety і route operations у кімнату огляду до утримання випуску. Звірити лог дверей, штамп імені й зламаний маршрутний годинник.
 
 ## Audio
 
-UA LOC HOLD: The signatures line up. The bodies do not.
+У звіті сказано, що ніхто не міг знати. Лог дверей не згоден.
 
 ## Field Note
 
-UA LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Підпис чистий лише доти, доки кімната не згадує, хто стояв поруч.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/uk_UA. -->

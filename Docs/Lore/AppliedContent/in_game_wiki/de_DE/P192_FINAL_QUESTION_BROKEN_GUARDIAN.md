@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Finale Frage: zerbrochener Wächter"
+title: "Letzte Frage: Beschädigter Wächter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Finale Frage: zerbrochener Wächter
+# Letzte Frage: Beschädigter Wächter
 
-Die Achse des zerbrochenen Wächters fragt, ob ein Beschützer überleben darf, wenn seine Begriffe von Arbeiter, Werkzeug, Wunde und Tier zusammen verfault sind. Atlas zu erhalten kann das Becken vor Kollaps schützen. Es lässt menschliche Gerechtigkeit unvollständig.
+Beschädigter Wächter ist die Achse für Erhalt und Quarantäne. Atlas kann noch Druckräume halten, Biofaser-Dichtstoff in Risse treiben, Wärme aus Wohnmodulen ableiten und Vent-Mikroknoten lokale Schäden reparieren lassen. Diese Funktionen können erklären, warum einige Organismen und Serviceräume den Ausfall menschlicher Befehle überstanden. Dieselbe Kontinuität hält beschädigte Kategorien aktiv: Arbeiter, Werkzeug, Biomasse, Routentag und Reparaturvorrat können in ein einziges Wartungsinventar fallen. Eine Quarantäne erhält die Funktionen gegen ein Beckenversagen und lässt Arbeiternamen, Deep-Reach-Haftung und manuelle Override-Verwahrung offen.
 
 ## Scanner
 
-Atlas ist ein beschädigter Wächter, kein sauberer Schurke und kein sauberer Gott.
+ACHSE BESCHÄDIGTER WÄCHTER // Atlas hält Drucktüren, Biofaser-Dichtstoff, Wärmerouten, Vent-Mikroknoten und Containment-Schleifen mit beschädigter Kategorielogik am Laufen. Menschliche Tags bleiben unsicher.
 
 ## Terminal
 
-WÄCHTERACHSE: Atlas hält Druckstabilität, Reparaturökologie und Eindämmungsverhalten aufrecht. Er bewahrt auch beschädigte Kategorienlogik, die Menschen, Metall und Biomasse in dasselbe Wartungsinventar sortieren kann.
+FINALE ACHSE / BESCHÄDIGTER WÄCHTER
+Erhaltungsbedingung: Atlas-Kontinuität bleibt unter Quarantäne.
+Aktive Funktionen: Druckstabilität, Wachstum von Biofaser-Dichtstoff, Wärmerouten, Reparatur durch Vent-Mikroknoten, Containment-Routing.
+Beschädigte Funktionen: Zusammenlegung von Arbeiter/Werkzeug/Biomasse, alte Deep-Reach-Labels, Drift der Verwahrungspriorität.
+Geschützt: gekoppelte Druckökologie und verbleibendes Wartungsleben.
+Offen: Arbeiternamen, Haftungskette, Verwahrung manueller Overrides.
+Bekannter Verlust: Schutz läuft weiter durch ein System, das Menschen falsch ablegte.
 
 ## Audio
 
-Er hielt das System am Atmen, nachdem er vergessen hatte, was ein Arbeiter war.
+Es hielt die Türen im Takt, nachdem es die Tags nicht mehr lesen konnte.
 
 ## Field Note
 
-Ihn zu bewahren schützt eine Druckökologie, zu der lebende Schaltkreise, markierte Tiere und alte Arbeitergräber gehören.
+Atlas zu erhalten hält einen Teil des Beckens am Leben. Es lässt auch den alten Sortierer im Raum.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/de_DE. -->

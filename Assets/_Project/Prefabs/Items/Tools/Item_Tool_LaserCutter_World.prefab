@@ -69,7 +69,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 21bb5814f706ec140ab043a48c6da7b5, type: 2}
+  - {fileID: 2100000, guid: 418aebe9032d20048a184c1f1a98062e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -128,6 +128,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Interaction.PickupItem
   itemData: {fileID: 11400000, guid: d8fcb47bfb390ba419cca007a7dcabb4, type: 2}
   quantity: 1
+  persistWorldState: 1
+  stableWorldStateId: 
 --- !u!114 &7985043108422708796
 MonoBehaviour:
   m_ObjectHideFlags: 0

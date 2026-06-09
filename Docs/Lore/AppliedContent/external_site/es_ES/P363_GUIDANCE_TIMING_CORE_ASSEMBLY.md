@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de núcleo de sincronía de guiado"
+title: "Conjunto del Núcleo de Temporización de Guiado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de núcleo de sincronía de guiado
+# Conjunto del Núcleo de Temporización de Guiado
 
-El Conjunto de núcleo de sincronía de guiado mantiene duro el vuelo espacial de HECTON-8: extraction es un problema de ruta hecho de relojes, sombras y confianza dañada.
+El Conjunto del Núcleo de Temporización de Guiado convierte la huida en ingeniería orbital, no en un simple empuje hacia arriba. La cápsula de ascenso de HECTON-8 debe cruzar agua, clima, geometría lunar y reglas corporativas de recepción antes de que una combustión pueda llamarse recuperable.
 
-## Scanner
+El componente guarda el mapa temporizado: efemérides de Aegir, carril receptor de Black Keel, caché de persianas del relé lunar, deriva del penacho de tormenta y tolerancia del reloj de custody. Nada de eso es decorativo. Una cápsula puede estar sellada, cargada y mecánicamente sana, y aun así perder la recuperación porque su paquete llega al carril equivocado en el momento equivocado.
 
-Núcleo de timing en blanco. La geometría de Aegir decide si el ascenso es recovery, capture o silencio.
-
-## Terminal
-
-GUIDANCE CORE: alinear reloj de cápsula con Aegir window, Black Keel receiver lane, moon relay shutter y deriva storm-plume. Packets tardíos se vuelven pérdida de evidencia; packets tempranos se vuelven capture noise.
-
-## Audio
-
-Arriba no es una dirección. Es una ventana con testigo.
-
-## Field Note
-
-No hay un arriba simple desde HECTON-8. Hay un receptor, una sombra, deriva de tormenta y una packet queue ya más vieja que tu pánico.
+Ahí está la parte amarga del pacto de escape de HECTON-8. El superviviente no sale de la profundidad hacia la libertad. La cápsula entra en una estrecha ventana contable sobre un océano que sigue deformando cada señal. Reparar el núcleo temporal le da al lanzamiento un lugar en esa ventana. No vuelve amable la ventana.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/es_ES. -->

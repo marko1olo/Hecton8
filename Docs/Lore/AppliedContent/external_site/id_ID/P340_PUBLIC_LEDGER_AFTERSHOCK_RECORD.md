@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Public Ledger Aftershock Record"
+title: "Catatan Guncangan Buku Besar Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Public Ledger Aftershock Record
+# Catatan Guncangan Buku Besar Publik
 
-ID LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+Akhir kebenaran HECTON-8 bukan kemurnian. Itu keputusan membuat penyembunyian lebih sulit sambil menerima konsekuensi tak terkendali: duka, pasar, gugatan, pembacaan kultus, upaya penyelamatan, dan balas dendam memakai fakta yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Cermin ledger diterima. Bukti tidak lagi bisa dihapus; konsekuensi tidak lagi bisa diarahkan.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: bukti dilepas di luar kustodi Deep Reach. Nama pekerja, fragmen vektor Atlas, dan tag liabilitas dicerminkan ke penerima publik. Otoritas pemain atas interpretasi dihentikan.
 
 ## Audio
 
-ID LOC HOLD: Truth left the room. It did not ask where to go next.
+Kebenaran meninggalkan ruangan. Ia tidak bertanya harus ke mana.
 
 ## Field Note
 
-ID LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Catatan kebenaran publik: bukti bercermin mencegah penghapusan, tetapi mengakhiri kontrol pemain atas penafsiran dan pembalasan.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/id_ID. -->

@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Leben des Lichtschelfs
 
-Das Leben des Lichtschelfs ist die ökologische Eröffnungsbasislinie von HECTON-8. Es ist kein sicheres Aquarium und kein toter Ozean, der auf den Schrecken wartet. Die oberen 0-250 Meter erhalten noch Licht, Wärmewandel und Himmelsrhythmus, deshalb schreibt natives Leben die erste Routensprache in Farbe: Sauerstoffmatten auf Stein, transparente Graser, die Bahnen durch Algen schneiden, pressureweed, das sich vor dem Schwall neigt, und Routenalgen, die Strömungen um Wrackteile zeichnen. Diese Schönheit zählt. Sie gibt dem Spieler einen Grund zu verstehen, warum Deep Reach den Mond wollte und warum ein gestrandeter Marauder darum kämpfen könnte, ihn zu lesen, statt ihn nur zu plündern. Der Schelf lehrt auch die Kernregel der Welt: Lesbar heißt nicht harmlos. Eine helle Matte kann atembares Wasser halten und eine kontaminierte Naht verbergen. Ein Glasgraser-Schwarm kann eine sichere Bahn markieren oder verschwinden, weil etwas Größeres hindurchzog. Pressureweed kann vor Wetter, Räuberverdrängung oder einem Druckimpuls aus der Infrastruktur darunter warnen. Vor Kabelriffen, vor Reparaturnarben, bevor Atlas Leben in Wartungslogik verwandelt, zeigt der Mond, was er allein tat.
+Das Leben des Lichtschelfs ist die ökologische Basislinie im oberen Wasser von HECTON-8. Das Oberflächenband erhält noch Licht, Wärmewandel und Himmelsrhythmus, deshalb hinterlässt natives Leben lesbare Routenbeweise, bevor weiter unten Atlas-Reparaturlogik erscheint: Sauerstoffmatten, Glasgraser-Bahnen, pressureweed-Biegung und Routenalgen um Wrackteile. Der Schelf erklärt, warum Deep Reach den Mond wollte, ohne ihn harmlos zu machen. Jedes nützliche Zeichen trägt einen Fehlerpfad. Die Matte, die einen Atemzug kauft, kann Kontamination verstecken; die Algenbahn, die Rückstrom markiert, kann unter Sturm-Schlick oder Räuberdruck wandern.
 
 ## Scanner
 
-BIOTA DES LICHTSCHELFS // Lebende Matten, Glasgraser, pressureweed und Routenalgen bestätigt. Helles Wasser liefert Sauerstoff und Routenzeichen; es verzeiht weder schlechtes Wetter noch Räuber noch eine verlorene Rückleine.
+LICHTSCHELF-SCAN // Sauerstoffmatte auf Basaltkante. Frische Glasgraser-Bahn schneidet durch grünen Bewuchs. Pressureweed vor Schwall nach Westen gebogen. Routenalgen markieren Strom zurück zur Schutzlinie. Gefahren: Flachwasserräuber, Sturm-Schlick, lose Rückleine.
 
 ## Terminal
 
-SCHELFVERMESSUNG: native photische Ökologie außerhalb der Atlas-Reparaturdominanz. Basisproben: Sauerstoffmatte, transparente Graserspur, pressureweed-Biegelinie, Routenalgen-Kielwasser. Vor der Ernte gegen Kabelriff-Wuchs und Reparaturnarbengewebe vergleichen.
+SCHELF-BASISVERMESSUNG
+Tiefe: 0-250 m
+Probe A: Sauerstoffmatte / mineralgespeist / Atemtasche mit geringem Volumen
+Probe B: Glasgraser-Bahn / frischer Schnitt / Räuberstreuung unbekannt
+Probe C: pressureweed-Flex / Westbiegung vor Schwall
+Probe D: Routenalgen / Strom zurück zur Schutzlinie
+Vergleichen mit: Kabelwurzelmatte, Reparaturnarbengewebe, Drucktor-Biofilm
 
 ## Audio
 
-Das erste lebende Wasser ist keine Gnade. Es ist eine Basislinie, durch die man schwimmen kann.
+Ich sehe den Rückstrom. Binde dich an, bevor du der Farbe folgst.
 
 ## Field Note
 
-Die erste Farbe ist keine Gnade. Der Mond zeigt nur, wie normal aussah, bevor die Maschinen es lernten.
+Helles Wasser ist nützlich, bevor es sicher ist. Zähle Mattenfarbe, Graserbahnen, Weed-Biegung und Leinenspannung, bevor du ihm vertraust.
 
 <!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/de_DE. -->

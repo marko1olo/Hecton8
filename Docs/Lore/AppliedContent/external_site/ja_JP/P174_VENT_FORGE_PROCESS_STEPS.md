@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Vent Forge Process Steps"
+title: "噴出孔鍛造工程"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Vent Forge Process Steps
+# 噴出孔鍛造工程
 
-JA LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+噴出孔鍛造工程は、HECTON-8製造のハードSF的な魅力を説明する。惑星は熱と圧力を供給し、植民地は壊れたクランプと工程記憶を残し、プレイヤーは判断を加える。この一本の読める連鎖が、将来のクラフト、環境語り、音響フィードバックを支えられる。
 
 ## Scanner
 
-JA LOC HOLD: Vent forging should feel like using the planet against itself.
+噴出孔鍛造は魔法の金工ではない。惑星の熱、圧力、タイミングを借り、部品を惑星に奪わせない作業だ。
 
 ## Terminal
 
-JA LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+噴出孔鍛造工程 / 01 素材からブラインを抜く / 02 パルス前に固定 / 03 噴出上昇で予熱 / 04 圧力緩みで封止 / 05 冷戻り流で急冷 / 06 音響リングで認証 / 失敗: 歪んだ屑、塩ブルーム、圧力亀裂部品。
 
 ## Audio
 
-JA LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+月そのものが炉だ。あなたはそれを借りる許可を得ただけだ。
 
 ## Field Note
 
-JA LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+工程はパージ、クランプ、予熱、封止、急冷、リング試験として読めるべきだ。危険は炎ではなく、圧力の短い緩みを逃すことにある。
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/ja_JP. -->

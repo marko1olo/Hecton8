@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Penanganan Peti Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Penanganan Peti Blue Debt
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Blue debt tidak menjadi berguna saat ditemukan. Ia berguna jika tetap berada dalam kondisi yang membuatnya bernilai. Peti tekanan tersegel adalah wadah, peringatan, dan tanda terima sekaligus; ia mencegah residu Xenon-Omega, kisi tumbuh-tekanan, atau substrat tercemar berubah menjadi derau, bubuk, kehilangan bukti, atau sinyal yang dapat didengar sistem yang salah.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+Pilihan aman pertama bukan menjual, membuat, atau menyembunyikan. Pilihannya adalah menstabilkan. Casket dengan strip dingin utuh bisa dipindahkan. Casket dengan seal hangat membuat bukti meragukan. Penanganan buruk mengubah bayaran menjadi kontaminasi, noise, dan risiko rute.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/id_ID. -->

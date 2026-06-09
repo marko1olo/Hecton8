@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Conjunto de sellos de permiso de ruta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Conjunto de sellos de permiso de ruta
 
-ES LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+El Conjunto de sellos de permiso de ruta da lenguaje visual al movimiento. Los sellos PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY y WITNESS no son rangos. Son permisos de presión: quién podía cruzar una escotilla, reclamar un traje, liberar un crawler o entrar en un cierre de mantenimiento cuando la colonia fallaba. El sello siempre debe emparejarse con un estado físico: abierto, sellado, denegado, sobrescrito, inundado o corregido después por mano marauder. Así el jugador reconstruye el movimiento colonial sin necesitar un personaje que lo explique.
 
 ## Scanner
 
-ES LOC HOLD: A route stamp is stronger than a diary line.
+Un sello de ruta pesa más que una línea de diario porque prueba quién podía cruzar el límite de presión.
 
 ## Terminal
 
-ES LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: el permiso de ruta debe conectar un trabajador, una puerta o vehículo, una familia de cuadrilla y una contradicción posterior. Un sello sin frontera física es decoración. Un sello en escotilla, rack de traje, raíl crawler o tag de elevador se vuelve evidencia de movimiento.
 
 ## Audio
 
-ES LOC HOLD: Access is biography under pressure.
+El acceso es biografía bajo presión.
 
 ## Field Note
 
-ES LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Sellos: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Emparejar con estado de escotilla y objeto de trabajo.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/es_ES. -->

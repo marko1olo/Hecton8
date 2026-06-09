@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מכלול טבעת מהדק איטום לחץ"
+title: "הרכבת טבעת מהדק אטם לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מכלול טבעת מהדק איטום לחץ
+# הרכבת טבעת מהדק אטם לחץ
 
-מכלול טבעת מהדק איטום הלחץ הופך תיקון קפסולה למיקוח עם לחץ: מתכת deep-rated, מושב זכוכית ו-Atlas bio-sealant יכולים להציל או לכלוא את נתיב העלייה.
+הרכבת טבעת מהדק אטם הלחץ היא הגבול הקשיח השני בשרשרת העלייה של HECTON-8. העמוד האקוסטי יכול לגרום למסלול להקשיב, אבל הטבעת קובעת אם הקפסולה יכולה להיפרד פיזית מהמבנה הטבוע.
 
-## Scanner
+הכשל אמין כי התיקון הלא נכון יכול להיראות מוצלח. shallow seal יכול להחזיק אוויר, לעצור דליפה ולהשאיר חדר שמיש. הוא יכול גם לגשר על separation seam של הקפסולה, ללכלך pressure-glass seat או להשאיר Atlas shell-sealant על משטח שחייב להשתחרר תחת launch impulse. static pressure אינו אותו מבחן כמו ascent.
 
-צלקת clamp-ring. שרוול העלייה שרד את הפגיעה בכך שבזבז את האטם שהיה אמור לקחת אותו הביתה.
-
-## Terminal
-
-SEAL CERT: shallow patch מחזיק רק לחץ מדור. Ascent seal דורש deep-rated clamp ring, pressure-glass seat, shell-sealant map ופרופיל Deep Reach מאומת. Atlas-grown sealant עשוי לשמר habitat תוך חסימת הפרדה נקייה.
-
-## Audio
-
-האטם השימושי חי בכיוון הלא נכון.
-
-## Field Note
-
-טלאי safe-room יכול לקנות שעה של אוויר. הוא לא יחזיק דחף שיגור.
+הרכיב דורש deep-rated metal, crush profile מאומת, seat geometry נקייה ו-sealant map עם קצה מכוון. לא מספיק לגרום לקפסולה להפסיק לדלוף. התיקון חייב לדעת מתי לשחרר.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/he_IL. -->

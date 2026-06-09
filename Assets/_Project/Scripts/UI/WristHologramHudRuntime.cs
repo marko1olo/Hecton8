@@ -389,6 +389,7 @@ namespace Hecton8.UI
         private int _survivalPressureHoldFrames;
         private GameObject _playerToxicityTargetObject;
         private uint _playerToxicityTargetHash = PlayerToxicityFallbackEntityHash;
+        private uint _playerSurvivalVitalsSourceId;
         private int _lastToxicityExposureSnapshotGeneration;
         private string _projectRoot;
         private string _csvOverridePath;
@@ -562,6 +563,7 @@ namespace Hecton8.UI
             _frontQuadCount = 0;
             _lastUploadCount = -1;
             _lastUploadedFrameIndex = -1;
+            _playerSurvivalVitalsSourceId = 0u;
             PdaProjectorOnDisable();
         }
 
@@ -742,6 +744,7 @@ namespace Hecton8.UI
             _pdaSignals.Clear();
             _vitalsQueueCount = 0;
             _pdaQueueCount = 0;
+            _playerSurvivalVitalsSourceId = 0u;
         }
 
         private bool HasRequiredVaultHandles()
@@ -972,6 +975,7 @@ namespace Hecton8.UI
             RefreshQualityPolicy();
             DecayTransientHazardVitals(deltaTime);
             RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+            RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
             DrainGlobalSignalSnapshots();
 
             if (enableMockSignals)
@@ -1017,16 +1021,23 @@ namespace Hecton8.UI
 
         private void DrainGlobalSignalSnapshots()
         {
-            ReadOnlySpan<SurvivalVitalsChangedSignal> vitals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < vitals.Length; i++)
+            uint survivalVitalsSourceId = _playerSurvivalVitalsSourceId;
+            if (survivalVitalsSourceId != 0u)
             {
-                SurvivalVitalsChangedSignal signal = vitals[i];
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
-                    _latestVitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u)
-                    _latestVitals.Power01 = FiniteSaturate(signal.Energy01);
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u)
-                    _latestVitals.Health01 = FiniteSaturate(signal.Integrity01);
+                ReadOnlySpan<SurvivalVitalsChangedSignal> vitals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < vitals.Length; i++)
+                {
+                    SurvivalVitalsChangedSignal signal = vitals[i];
+                    if (signal.SourceId != survivalVitalsSourceId)
+                        continue;
+
+                    if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
+                        _latestVitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);
+                    if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u)
+                        _latestVitals.Power01 = FiniteSaturate(signal.Energy01);
+                    if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Integrity) != 0u)
+                        _latestVitals.Health01 = FiniteSaturate(signal.Integrity01);
+                }
             }
 
             ReadOnlySpan<RadiationDoseSignal> doses = SignalBus<RadiationDoseSignal>.GetFrameSnapshot();
@@ -2381,9 +2392,11 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);
+                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
+                RefreshPlayerToxicityTargetHash(playerContext);
+                RefreshPlayerSurvivalVitalsSourceId(playerContext);
                 _lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;
-                PdaProjectorRebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                PdaProjectorRebindPlayerRuntimeContext(playerContext);
                 return;
             }
 
@@ -2412,6 +2425,7 @@ namespace Hecton8.UI
         {
             CacheDataVaultCold(GlobalRegistry.DataVault);
             RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);
+            RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
             PdaProjectorRebindPlayerRuntimeContext(GlobalRegistry.Player);
             RefreshQualityPolicy();
         }
@@ -2433,6 +2447,16 @@ namespace Hecton8.UI
             _playerToxicityTargetObject = playerObject;
             uint targetHash = playerObject != null ? unchecked((uint)EntityId.ToULong(playerObject.GetEntityId())) : 0u;
             _playerToxicityTargetHash = targetHash != 0u ? targetHash : PlayerToxicityFallbackEntityHash;
+        }
+
+        private void RefreshPlayerSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            var survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _playerSurvivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         private void TryRegisterHotSwapListener()

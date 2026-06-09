@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Registro de demora de cola de evacuación"
+title: "Registro de demora de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro de demora de cola de evacuación
+# Registro de demora de evacuación
 
-Una sala inundada aún puede conservar tiempos. El reloj recuperado muestra un orden cruel: alarma, revisión, demora, exceso de clase de sello, agua. El lenguaje público de Deep Reach lo reduce a evacuación incompleta durante fallo estructural súbito. La sala discrepa. Su registro mantiene un campo de testigo vacío y una revisión de cuarentena pendiente más allá del momento en que una ruta de rescate aún servía físicamente. No afirma que todos pudieran salvarse. Es peor y más preciso: la autorización esperó hasta que el número de personas salvables bajó. Cuando el jugador encuentra el registro, rescate deja de sonar a promesa y empieza a sonar a sistema de permisos.
+Los registros de evacuación son fáciles de suavizar cuando los cuerpos ya no están. En lenguaje público, Deep Reach puede decir que una ruta estaba incompleta, interrumpida o degradada. El reloj de cola recuperado es menos flexible. Registra una compuerta respondiendo a estado administrativo después de que la alarma de presión ya había entrado en secciones ocupadas.
 
-## Scanner
-
-Reloj de cola recuperado. La puerta de liberación siguió cerrada después de que las alarmas de presión pasaran de previsión a corredor.
-
-## Terminal
-
-EVAC QUEUE // WITNESS SLOT EMPTY. Confirmación manual ausente. Revisión de cuarentena pendiente. La presión de ruta superó la clase de sello antes de resolverse la autorización.
-
-## Audio
-
-No fallaron al salvar a todos. Esperaron hasta que salvar a cualquiera fue más difícil.
-
-## Field Note
-
-Nota de merodeador: una puerta cerrada con un campo pendiente no es accidente. Es una decisión esperando firma.
+El detalle importante no es que todos pudieran salvarse. El registro no promete eso. Muestra que la compañía aún tenía una vía de control y la usó para esperar. La confirmación manual quedó vacía. La junta de cuarentena siguió pendiente. La clase de sello cruzó su límite antes de la autorización. La demora se volvió infraestructura.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/es_ES. -->

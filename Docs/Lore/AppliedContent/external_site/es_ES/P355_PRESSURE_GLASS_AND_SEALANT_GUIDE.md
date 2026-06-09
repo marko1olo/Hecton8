@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guía de vidrio de presión y sellante
 
-La Guía de vidrio de presión y sellante ancla el horror biomecánico de HECTON-8 en lógica de reparación: Atlas sigue grietas, cables, biofilms y pressure scars porque los sistemas rotos ya ofrecen caminos.
+El vidrio de presión empezó como material colonial práctico: claro para mirillas, resistente para puertas presurizadas y bastante barato para colarlo en juntas de servicio. Años bajo el agua cambiaron su papel. Las mareas escribieron estrés en los paneles. Los minerales empañaron bordes. El biofilm aprendió las grietas. Cuando llegó la química Atlas, no necesitó inventar una ruta por la colonia. El vidrio roto ya la había dibujado.
 
-## Scanner
-
-Fractura de pressure-glass sellada por química Atlas. Stock de lentes seguro solo si el seal map permanece intacto.
-
-## Terminal
-
-FIELD GUIDE: pressure glass registra viejo tide stress. Atlas sealant sigue esas grietas porque las grietas ya describen las líneas de fallo del sistema.
-
-## Audio
-
-La red de reparación lee fracturas como tú lees un mapa.
-
-## Field Note
-
-No muelas el borde bonito. Sigue el fracture map y corta desde el lado muerto del seal.
+Por eso un almacén de lentes puede ser valioso y peligroso a la vez. Corta desde el lado muerto de un sello y el vidrio se vuelve salvage. Muele el borde vivo y la red de reparación gana un camino más limpio. El sellante no es solo pegamento en HECTON-8. Es una decisión sobre qué fallos pueden cerrarse, cuáles siguen mapeados y cuáles se vuelven puerta para algo que todavía intenta reparar el cuerpo equivocado.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/es_ES. -->

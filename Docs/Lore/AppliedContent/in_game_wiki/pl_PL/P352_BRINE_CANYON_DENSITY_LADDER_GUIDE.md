@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodnik po drabinie gęstości kanionu solanki"
+title: "Przewodnik drabiny gęstości kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik po drabinie gęstości kanionu solanki
+# Przewodnik drabiny gęstości kanionu solanki
 
-Kaniony brine czynią głębokość fizyczną. Uczą warstw gęstości, limitów kadłuba, awarii ciśnienia i resource pockets, zanim otworzą się niższe trasy.
+Kaniony solanki czynią głębokość fizyczną. Warstwy gęstości, zawieszony muł, kieszenie zimnych wysięków i ślepe strefy instrumentów uczą granic kadłuba, zanim otworzą się niższe trasy. Droga w dół nie jest schodami w skale. To drabina z płynów, które spierają się, gdzie powinno być ciało.
 
 ## Scanner
 

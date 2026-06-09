@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "Black-Keel-tonne-window-Verwahrung"
+title: "Black Keel Tonne-Window-Gewahrsam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black-Keel-tonne-window-Verwahrung
+# Black Keel Tonne-Window-Gewahrsam
 
-Ein Keelmark-Beleg erklärt, warum Black Keel in Masse spricht, bevor es von Rettung spricht. Der Träger läuft auf tonne-window-Verwahrung: ein rechtlicher Slot, abgestimmt auf physische Nutzlast, Versicherungsrisiko und eine Phase der Routenuhr. Ein lebender Körper, ein versiegelter Beweiskern, ein Schnitt Xenon-Omega-Prozessmaterial und eine Kiste verwertbarer Hülle konkurrieren um dasselbe Fenster, wenn der Vertrag sie auf dieselbe Zeile setzt. Das System ist kalt, aber nicht zufällig. Es sagt dem Spieler, was die Grenze bewertet und welche Wahl zuerst nach Hause reist.
+Das Tonne-Window ist eine klare Form von Frontier-Grausamkeit. Es klingt wie Buchhaltung, weil es Buchhaltung ist, aber gezählt wird Physik: Masse durch ein enges Recoveryfenster. Black Keel hebt nicht alles aus dem Ozean, sondern was Route, Versicherung, Quarantäne und Gewahrsam erlauben.
+
+Darum wird jede Payloadwahl scharf. Ein lebender Contractor hat Wert, aber ein Beweiskern gegen Deep Reach auch. Xenon-Omega-Material kann mehr wert sein als Salvage und zugleich Quarantäne vergiften. Rumpf kann einen Versicherer schneller befriedigen als ein Worker Dossier die Gerechtigkeit.
 
 ## Scanner
 
-VERWAHRLINIE // Akzeptierte tonne-window-Masse kann Bergungsgut, Beweis, Körper oder Schuldobjekt sein. Ein gehörtes Paket vergibt keinen Liftvorrang; es vergibt Haftung.
+Keelmark-Beleg. Ein Tonne-Window bildet Payloadmasse, Routenphase, Versicherungsrisiko, Quarantäneklasse und Recoverypriorität auf einen Carrier-Slot ab.
 
 ## Terminal
 
-KEELMARK-MASSENBELEG // Das Fenster gewährt Verwahrung für einen Slot, keine Gnade für eine Person. Übermassige Nutzlast rollt in den nächsten Pass, außer Anspruchswert, Quarantäneklasse und Trägergeometrie klären zusammen.
+TONNE-WINDOW GEWAHRSAM // 4.8-Tonne-Window-Pfand aktiv. Lebender Contractor, versiegelter Beweiskern, Xenon-Omega-Prozessschnitt und bergbare Rumpfkiste teilen Recoveryklasse, bis Custody Proof neu priorisiert. Humanstatus allein reicht nicht für Full-Window-Override.
 
 ## Audio
 
-Black-Keel-Schuldfunk: Ich kann Beweis, Metall oder dich tragen. Das Ledger fragt, was davon das Schiff zahlungsfähig hält.
+Black Keel spricht in Tonnen, weil Tonnen das sind, was das Fenster tragen kann.
 
 ## Field Note
 
-Wenn der Träger akzeptierte Masse sagt, meint er nicht akzeptierte Person. Binde deinen Beweis an den Anzug, bevor das Ledger dich wählen lässt.
+Ein Tonne-Window ist kein Geld. Es ist Erlaubnis für Masse, zu gehen.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/de_DE. -->

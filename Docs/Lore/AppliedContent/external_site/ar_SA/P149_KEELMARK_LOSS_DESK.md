@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "مكتب خسائر Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# مكتب خسائر Keelmark
 
-AR LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+مكتب خسائر Keelmark ليس اليد التي تغرق ممرا. إنه اليد التي تقرر كيف يدخل الممر الغارق إلى الدفاتر. لهذا يهم. يستطيع المؤمن جعل القتل يبدو كطقس إذا كانت الفئات جاهزة مبكرا.
 
-## Scanner
-
-AR LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-AR LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-AR LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-AR LOC HOLD: A loss category is a grave with better stationery.
+تعلم جداول Keelmark شركة Deep Reach اللغة التي ستنجو من التحقيق. المعدات تستهلك. السكن يتضرر. العمل يعلق. الشهود يصبحون مكشوفين أو مخترقين أو غير قابلين للاسترداد. الأسماء أثقل، لذلك يتجنبها المكتب حتى يجبر.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/ar_SA. -->

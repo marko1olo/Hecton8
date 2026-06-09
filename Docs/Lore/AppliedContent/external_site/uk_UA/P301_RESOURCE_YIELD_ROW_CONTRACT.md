@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Resource Yield Data Boundary"
+title: "Межа даних ресурсної віддачі"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Resource Yield Data Boundary
+# Межа даних ресурсної віддачі
 
-UA LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+Цінність ресурсу в HECTON-8 — це ланцюг, а не ярлик. Таблиця володіє числом, але fiction володіє причиною: хто взяв зразок, під яким тиском, з яким штампом зберігання і скільки цієї жили маршрут ще може безпечно зняти.
 
 ## Scanner
 
-UA LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+Рядок віддачі відкидає голу ціну: клас, тиск, зберігання, виснаження і hash мають збігтися.
 
 ## Terminal
 
-UA LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: жодне число не приймається без packet hash, класу ресурсу, діапазону тиску, рангу зберігання, кривої рідкісності й поведінки виснаження. Зразок без історії тиску є доказом, а не цінністю.
 
 ## Audio
 
-UK LOC HOLD: A sample without pressure history is not a value.
+Зразок без історії тиску не має ціни.
 
 ## Field Note
 
-UA LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Числа yield лишаються попередніми, доки pressure band, custody grade, depletion behavior і packet hash не узгоджені.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/uk_UA. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "ماريك إيبارا: تحويل الخسائر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# ماريك إيبارا: تحويل الخسائر
 
-AR LOC HOLD: Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+ماريك إيبارا: تحويل الخسائر يتحدث عن الاختفاء الثاني للمستعمرة. الأول كان ماديا: أبواب ضغط، مسارات مغمورة، أجساد غير مستعادة. الثاني كان إداريا: تحول العامل إلى فئة حمولة غير محلولة.
 
-## Scanner
+يستخدم جدول إيبارا لغة تأمين تقنية كسلاح. حالة الضغط، حالة التلوث، حالة الأجور ودليل الحيازة تحدد إن كان الشخص سيصبح مطالبة أو تأخيرا أو فئة مفتوحة إلى ما لا نهاية. القسوة ليست خطابا. إنها في جدول يبقى مفتوحا لأن المفتوح أرخص.
 
-AR LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
-
-## Terminal
-
-AR LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
-
-## Audio
-
-AR LOC HOLD: A missing person became a pending category. That was cheaper.
-
-## Field Note
-
-AR LOC HOLD: Insurance language should feel colder than gunfire.
+تدعم المقالة حلقة الأدلة: الأسماء والوسوم وسجلات الأسرّة مهمة لأنها تستطيع إجبار النظام على التوقف عن معاملة عامل ميت كحمولة غير محلولة.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/ar_SA. -->

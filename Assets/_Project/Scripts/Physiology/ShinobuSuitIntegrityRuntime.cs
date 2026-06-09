@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Determinism;
@@ -77,6 +78,7 @@ namespace Hecton8.Physiology
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
+        private IHectonOceanKinematicsService _oceanKinematics;
         private ITickDispatcher _tickDispatcher;
         private JobHandle _activeJobHandle;
         private AbsoluteUniversePosition _lastPlayerAup;
@@ -142,6 +144,7 @@ namespace Hecton8.Physiology
             UnlockJobBuffers();
             ReleaseVaultHandles();
             ClearCachedHandles();
+            _oceanKinematics = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
@@ -168,6 +171,12 @@ namespace Hecton8.Physiology
                 ClearTargetHashCache();
                 _playerAupValid = false;
                 RefreshPlayerCombatTargetHashCold(_playerContext);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematics = currentService as IHectonOceanKinematicsService;
                 return;
             }
 
@@ -239,7 +248,7 @@ namespace Hecton8.Physiology
             try
             {
                 tuningArray[0] = tuning;
-                double resolvedSeaLevelAupY = ResolveSeaLevelAupY(seaLevelAupY);
+                double resolvedSeaLevelAupY = ResolveRuntimeSeaLevelAupY();
                 double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, resolvedSeaLevelAupY, 0d);
                 AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
                 double3 seaLevelAup = new double3(playerDouble.x, resolvedSeaLevelAupY, playerDouble.z);
@@ -398,7 +407,7 @@ namespace Hecton8.Physiology
                 return false;
 
             SuitIntegrityTuningDTO tuning = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]);
-            double3 seaLevel = new double3(0d, ResolveSeaLevelAupY(seaLevelAupY), 0d);
+            double3 seaLevel = new double3(0d, ResolveRuntimeSeaLevelAupY(), 0d);
             if (System.Threading.Interlocked.CompareExchange(ref s_mockAupScratchBusy, 1, 0) != 0)
                 return false;
 
@@ -441,6 +450,7 @@ namespace Hecton8.Physiology
         {
             _dataVault = GlobalRegistry.DataVault;
             _playerContext = GlobalRegistry.Player;
+            _oceanKinematics = GlobalRegistry.OceanKinematics;
             _tickDispatcher = GlobalRegistry.TickDispatcher;
             _lastDispatcherTimeSeconds = -1d;
             ClearTargetHashCache();
@@ -692,6 +702,35 @@ namespace Hecton8.Physiology
                    math.abs(candidateSeaLevelAupY) <= 1000d
                 ? candidateSeaLevelAupY
                 : DefaultSeaLevelAupY;
+        }
+
+        private double ResolveRuntimeSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematics;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return ResolveSeaLevelAupY(this.seaLevelAupY);
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private static void CommitMockHydrostaticPressure(

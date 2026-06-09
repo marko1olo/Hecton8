@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Bunk Shift Routine"
+title: "روتين سرير الضغط في الوردية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Bunk Shift Routine
+# روتين سرير الضغط في الوردية
 
-AR LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+تعرض Routine سرير الضغط مستعمرة HECTON-8 الغارقة عبر العادة لا الاعتراف. تسرد لوحة صف العمال نغمة الإيقاظ، فحص الختم، ملاحظة الضغط، رمز الماء-الوجبة، عهدة الأداة، وتكليف النزول. في محطة بلا شروق، تصبح تلك القائمة صباحا، وسجل عمل، وتحذيرا طبيا، ودليل عودة.
 
-## Scanner
+القوة العاطفية في أن اللوحة لا تتصنع. لا تقول إن أحدا كان شجاعا. تقول إن مفتاح المضخة مستحق قبل الوجبة. تقول إن الأختام تفحص في 03:52. تقول إن النوم قسمته الآلة لأن المحيط لا يهتم إن كان الجسد يفهم الساعة.
 
-AR LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-AR LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-AR LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-AR LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+اتبع اللوحة فتصبح المستعمرة مقروءة. الاسم نفسه قد يظهر كسرير، ومفتاح، ورمز ماء، وختم مسار، وعودة فائتة. هذا ليس فوضى. إنه الجهاز العصبي لمستوطنة الضغط، مكتوب بأصغر العلامات.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/ar_SA. -->

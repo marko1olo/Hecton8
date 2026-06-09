@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Salvage Truth Evidence Status
 
-Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+Truth on Aegir is physical. It is a recorder half-fused into a bulkhead, a helmet camera with salt in the contacts, a pressure door that opened from the wrong side. None of it becomes justice by being found. Deep Reach can call it valuation data. Insurers can call it contamination. A route office can call it inadmissible if the chain breaks. The work is not only to recover evidence, but to keep it from being turned into cargo.
 
 ## Scanner
 
-Evidence only if custody survives pressure, salt and lawyers.
+Black-box packet: truth until the claim desk touches it.
 
 ## Terminal
 
-EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: raw salvage defaults to claim material. Public evidence requires intact source hash, pressure-time stamp, witness packet, relay notary outside claimant control and a custody path that survives ship loss, brine exposure and manual edits.
 
 ## Audio
 
-A corpse is proof only after somebody agrees not to misfile it.
+A corpse is proof only after somebody fails to misfile it.
 
 ## Field Note
 
-Truth is not enough. It needs a route that cannot be bought before arrival.
+A fact from the deep is only dangerous if it keeps its witnesses.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/en_US. -->

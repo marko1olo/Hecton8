@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Material Exit Receipt Audit"
+title: "Audit du reçu de sortie matérielle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Material Exit Receipt Audit
+# Audit du reçu de sortie matérielle
 
-FR LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
+Les fausses sorties de HECTON-8 ne sont pas des écrans d'échec déguisés. Ce sont de vrais résultats qui montrent ce que le joueur a choisi de valoriser : masse, preuve, noms, liberté ou droit de décider à qui appartient l'histoire après la fuite.
 
 ## Scanner
 
-FR LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Le reçu de sortie valide la masse récupérée. La garde des preuves est brisée ; les noms des ouvriers restent refusés.
 
 ## Terminal
 
-FR LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+REÇU AFTER-ACTION : paiement de sauvetage libéré pour masse récupérable et risque contractuel. Vérité des coordonnées non résolue. Statut de responsabilité Deep Reach inchangé. Registre des noms d'ouvriers rejeté comme preuve hors garde. Sortie accordée ; le dossier reste propriété du transporteur.
 
 ## Audio
 
-FR LOC HOLD: You got paid. That is not the same as getting out clean.
+Tu as été payé. Ce n'est pas sortir propre.
 
 ## Field Note
 
-FR LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Dossier d'après-action pour une sortie payée mais moralement incomplète : la récompense passe, la chaîne de preuve échoue, les noms restent hors garde officielle.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/fr_FR. -->

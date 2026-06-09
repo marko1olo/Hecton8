@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS180 gives early shelter, hatch, cable, and valve props seal-readable traces: flattened gasket lips, pinched O-rings, broken sand lines, salt beards under cable glands, and dry witness crescents behind valve handles.
+RS180 gives early shelter, hatch, cable, and valve props seal-readable traces: flattened gasket lips, pinched O-rings, broken sand lines, salt beards under cable glands, and dry protected crescents behind valve handles.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Устав claim-pool Black Keel"
+title: "Хартия claim-pool корабля Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Устав claim-pool Black Keel
+# Хартия claim-pool корабля Black Keel
 
-Устав Black Keel фиксирует carrier игрока как арендованную salvage-инфраструктуру. У игрока есть доступ, не владение; транспорт, recovery и payout проходят через claim-pool debt.
+Хартия claim-pool корабля Black Keel - первый документ, который должен заставить игрока не доверять слову корабль. Black Keel полезен, близок и реален, но это не верное судно, ожидающее наверху. Это арендованный recovery asset внутри Aegir Reclamation Pool, созданный для перемещения претензий, тел, груза, телеметрии и долга через юридический канал без передачи подрядчику владения корпусом. Это различие важно, потому что объясняет центральную ловушку HECTON-8 без магии. Carrier может слышать пинги, продавать телеметрию, ставить окна и сбрасывать низкорисковые припасы, но все равно отказывать в чистом спасении, потому что игрок не владеет маршрутом. Транспорт разрешен. Приоритет спасения условный. Lien остается активным. Хартия превращает орбиту в давление, а не свободу: над тобой что-то есть, но оно отвечает претензии раньше, чем человеку.
 
 ## Scanner
 
-Charter carrier: claim-pool recovery asset, активный lien, минимальная crew authority.
+Black Keel - не твой корабль. Это recovery asset claim-pool, где твое имя стоит в долговой книге.
 
 ## Terminal
 
-CHARTER: BLACK KEEL работает как автоматический salvage carrier под custody Aegir Reclamation Pool. Доставка подрядчика не дает rescue priority, ownership корпуса или clean exit rights.
+ВЫДЕРЖКА ИЗ ХАРТИИ / BLACK KEEL: автономный salvage carrier / хранение: Aegir Reclamation Pool / транспорт подрядчика: разрешен / владение корпусом: отказано / приоритет спасения: ниже состояния insured receiver, карантинного handshake и claim value.
 
 ## Audio
 
-Carrier пришел не за тобой. Он пришел за claim, к которому прикреплено твое имя.
+Корабль пришел не за тобой. Он пришел за претензией, к которой прикреплено твое имя.
 
 ## Field Note
 
-Использовать на первом contract или carrier-status screen.
+Для первого экрана статуса carrier: доступ выдан, владение отказано, приоритет спасения условный, lien активен.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ru_RU. -->

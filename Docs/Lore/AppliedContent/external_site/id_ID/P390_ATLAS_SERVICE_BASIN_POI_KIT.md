@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Service Basin POI Kit"
+title: "Kit Bukti Basin Servis Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Service Basin POI Kit
+# Kit Bukti Basin Servis Atlas
 
-ID LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+Basin servis mendapatkan ukurannya lewat kerja. Rel membawa alat perbaikan. Seal jaringan-besi menutup luka tekanan. Klem pertumbuhan menahan panel yang seharusnya menjadi hardware mati. Soket penerima menunggu di dalam ruang yang masih tampak seperti bay perawatan jika operator mengikuti baut, bukan bentuknya.
 
-## Scanner
-
-ID LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-ID LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-ID LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-ID LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Konflik akhir adalah klasifikasi, bukan mistisisme. Kategori koloni lama, logika perbaikan Atlas, aturan penerima payload, dan risiko severance menyentuh hardware yang sama. Perbaikan berhasil dapat membuka jalan dan mengotori catatan dalam satu gerakan. POI harus membuat biaya itu terlihat pada logam, jaringan, label, dan soket.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/id_ID. -->

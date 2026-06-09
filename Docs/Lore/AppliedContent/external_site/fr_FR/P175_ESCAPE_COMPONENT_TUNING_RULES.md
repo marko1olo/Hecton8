@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "Règles d'accord des composants d'évasion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# Règles d'accord des composants d'évasion
 
-FR LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+Les Règles d'accord des composants d'évasion donnent à HECTON-8 une grammaire commune pour craft et fins. Le joueur ne farme pas des pièces rares arbitraires. Il assemble un argument physique, navigationnel et légal expliquant pourquoi quelque chose venu de l'abysse devrait être accepté au-dessus de l'océan.
 
 ## Scanner
 
-FR LOC HOLD: Escape parts should force depth and evidence, not grind.
+Les pièces d'évasion doivent forcer profondeur et preuve, pas grind. Quitter HECTON-8 est une chaîne de preuves, pas un craft coûteux.
 
 ## Terminal
 
-FR LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+COMPOSANTS D'ÉVASION / relay spine prouve le contact / clamp rings prouvent la cote de pression / guidance core prouve le timing / ascent charge prouve l'énergie / legal handshake décide qui répond / evidence payload change conséquence et garde.
 
 ## Audio
 
-FR LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+Partir n'est pas un craft. C'est une chaîne de preuves.
 
 ## Field Note
 
-FR LOC HOLD: Every ascent component must have a physical and legal reason.
+Chaque composant d'ascension doit avoir une raison physique et légale : contact, cote, timing, énergie, receveur, charge utile. En manquer une doit changer la fin, pas seulement bloquer un bouton.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/fr_FR. -->

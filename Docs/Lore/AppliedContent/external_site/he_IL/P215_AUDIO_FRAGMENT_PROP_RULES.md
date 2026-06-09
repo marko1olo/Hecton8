@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "כללי חפצי שברי שמע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# כללי חפצי שברי שמע
 
-HE LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+כללי חפצי שברי שמע מגדירים איך HECTON-8 משתמשת בקול בלי להציף את העולם במונולוגים. כל שבר שמע צריך מקור פיזי, מצב תמליל פגום, חותמת זמן וסתירה. קול לא צריך להחליף ראיה סביבתית; הוא צריך לחדד אותה, לגרום לחדרים, חפצים ורשומות נתיב לדבר יחד.
 
 ## Scanner
 
-HE LOC HOLD: Voice is expensive. It must prove something the room also proves.
+קול הוא יקר. הוא חייב להוכיח משהו שהחדר יכול להוכיח גם במתכת, מים, חותמת זמן או נזק.
 
 ## Terminal
 
-HE LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: אין מונולוגים מרחפים. קול שייך לרצועת הידרופון, מקליט חליפה, cache טרמינל, שפופרת תחזוקה או שבר קופסה שחורה. לכל שורה ניתנת להשמעה חייבים להיות מקור, מצב תמליל פגום, חותמת זמן נתיב וסתירה אחת שהשחקן יכול לבדוק.
 
 ## Audio
 
-HE LOC HOLD: If the room cannot prove me, cut the line.
+אם החדר לא יכול להוכיח אותי, חתוך את השורה.
 
 ## Field Note
 
-HE LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+שברי שמע צריכים חפץ מקור, נזק בתמליל, חותמת זמן של נתיב וסתירה פיזית אחת.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/he_IL. -->

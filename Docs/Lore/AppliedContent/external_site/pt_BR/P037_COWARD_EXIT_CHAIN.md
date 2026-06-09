@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cadeia de Saída Covarde"
+title: "Cadeia de Saída de Emergência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Cadeia de Saída Covarde
+# Cadeia de Saída de Emergência
 
-Essa família respeita agência sem recompensar ignorância de modo limpo. É rota real, não game-over falso.
+Cadeia de Saída de Emergência transforma a fuga cedo em procedimento. A nave pode deixar HECTON-8 após trabalho técnico suficiente, mas o registro do local segue aberto: pacotes de verdade, prova de responsabilidade e certificação material ficam embaixo.
 
 ## Scanner
 
-Esta saída é real e vazia: cápsula reparada, clima estreito, sem verdade, sem pagamento limpo.
+A cadeia de lançamento cedo é real, mas toda luz é provisória: vedação do casco, reserva B2, ping de retorno, brecha de tempestade, farol de reivindicação.
 
 ## Terminal
 
-Cadeia de subida após vedação, bateria reserva, ping de relay e previsão de brecha. Ledger: salvage incompleto.
+A subida de emergência só abre quando o berço prende, as válvulas de lastro secam, Black Keel repete a janela P036 e a rajada de superfície deixa um corredor limpo. O livro contratual carimba a partida como incompleta: sem testemunho Atlas, pacote de responsabilidade Deep Reach ou pagamento certificado.
 
 ## Audio
 
-Você pode correr. O oceano atrás não vai se explicar.
+Lançar é possível. Encerramento não está a bordo.
 
 ## Field Note
 
-Sair cedo deve parecer resolvido, não satisfatório.
+A cápsula aceita um passageiro antes de o local aceitar um registro.
 
 <!-- External Site; generated from P037_COWARD_EXIT_CHAIN/pt_BR. -->

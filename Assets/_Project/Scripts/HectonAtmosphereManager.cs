@@ -48,8 +48,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Celestial;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 using Hecton.Localization;
 using UnityEngine;
@@ -628,11 +630,11 @@ namespace Hecton8.Atmosphere
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener, IAtmosphereRenderSettingsBridge, IAtmosphereReadModel, IGlobalRegistryHotSwapListener
+    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, ISaveable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener, IAtmosphereRenderSettingsBridge, IAtmosphereReadModel, IGlobalRegistryHotSwapListener
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
-        private const float DefaultWaterSurfaceY = 14.02f;
+        private const float DefaultWaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const int AbyssAtmospherePresentationDtoStrideBytes = 48;
 
         Material IAtmosphereRenderSettingsBridge.Skybox => AtmosphereDirector.Skybox;
@@ -834,6 +836,7 @@ namespace Hecton8.Atmosphere
         private HectonPlayerMovement _playerMovement;
         private Transform _playerCameraTransform;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private HectonCelestialEngine _cachedCelestialEngine;
         private bool _renderSettingsSunFallbackChecked;
 
@@ -845,6 +848,9 @@ namespace Hecton8.Atmosphere
         private bool _registeredLateFrameTick;
         private bool _registeredAtmosphereRuntime;
         private bool _registeredHotSwapListener;
+        private bool _registeredSaveParticipant;
+        private ISaveService _saveService;
+        private ISaveService _registeredSaveService;
         private float _lastAtmosphereSlowTickTime;
         private float _atmosphereTimelineAccumulator;
         private int _nextAtmosphereTimelineWarningFrame;
@@ -855,8 +861,13 @@ namespace Hecton8.Atmosphere
         private static readonly uint _AtmosphereTimelineContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.SlowTick"));
         private static readonly uint _AbyssAtmosphereLayoutWarningHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.AbyssAtmosphereLayout"));
         private static readonly uint _AbyssAtmosphereLayoutContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.Awake"));
+        private static readonly uint _CelestialLightPhaseLoadWarningHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.CelestialLightPhaseLoad"));
+        private static readonly uint _CelestialLightPhaseLoadNonFiniteContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.CelestialLightPhaseNonFinite"));
+        private static readonly uint _CelestialLightPhaseLoadOwnerFallbackContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.CelestialLightPhaseOwnerFallback"));
+        private static readonly uint _CelestialLightPhaseLoadRejectedContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.CelestialLightPhaseRejected"));
         private const double AtmosphereTimelineBudgetMilliseconds = 0.2d;
         private const int AtmosphereTimelineWarningCooldownFrames = 30;
+        private int _lastCelestialLightPhaseLoadWarningTelemetryFrame = -1;
 
         private AtmosphereProfile _activeBiomeProfile;
         private AtmosphereProfile _activeMatrixProfile;
@@ -943,6 +954,8 @@ namespace Hecton8.Atmosphere
         public float EclipseRemainingTime      => _eclipseRemainingTime;
         public float CycleDuration             => _cycleDuration;
         public float OrbitalInclination        => _orbitalInclination;
+        public int SavePriority                => 4;
+        public int LoadPriority                => 4;
 
         /// <summary>
         /// v4.3 CLARIFICATION:
@@ -1022,6 +1035,7 @@ namespace Hecton8.Atmosphere
             {
                 TryRegisterService();
                 TryRegisterHotSwapListener();
+                TryRegisterSaveParticipant();
                 TryRegister();
                 TryRegisterLateFrame();
 
@@ -1071,6 +1085,7 @@ namespace Hecton8.Atmosphere
 
             if (Application.isPlaying)
             {
+                TryUnregisterSaveParticipant();
                 TryUnregister();
                 TryUnregisterLateFrame();
                 TryUnregisterHotSwapListener();
@@ -1089,6 +1104,8 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying || wasRegisteredRuntime)
                 ResetCycleShaderGlobals();
             ReleaseAegirRingShadowCookie();
+            ClearPlayerRuntimeReferences();
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -1098,6 +1115,7 @@ namespace Hecton8.Atmosphere
             {
                 MapMagicBiomeEvents.Unregister(this);
                 BiomeMatrixEvents.Unregister(this);
+                TryUnregisterSaveParticipant();
                 TryUnregister();
                 TryUnregisterLateFrame();
                 TryUnregisterHotSwapListener();
@@ -1107,12 +1125,14 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying || wasRegisteredRuntime)
                 ResetCycleShaderGlobals();
             ReleaseAegirRingShadowCookie();
+            ClearPlayerRuntimeReferences();
+            _oceanKinematicsService = null;
 
         }
 
         private void EnsureAegirRingShadowCookie()
         {
-            if (_cachedCelestialEngine != null)
+            if (IsCelestialEngineUsable(_cachedCelestialEngine))
             {
                 if (_aegirRingShadowCookie != null)
                     ReleaseAegirRingShadowCookie();
@@ -1240,6 +1260,45 @@ namespace Hecton8.Atmosphere
             _registeredAtmosphereRuntime = false;
         }
 
+        private void TryRegisterSaveParticipant()
+        {
+            if (_registeredSaveParticipant)
+                return;
+
+            ISaveService saveService = _saveService;
+            if (!IsSaveServiceUsable(saveService))
+            {
+                saveService = GlobalRegistry.Save;
+                _saveService = saveService;
+            }
+
+            if (!IsSaveServiceUsable(saveService))
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+            _registeredSaveParticipant = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_registeredSaveParticipant && _registeredSaveService == null)
+                return;
+
+            ISaveService saveService = _registeredSaveService != null ? _registeredSaveService : _saveService;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _registeredSaveService = null;
+            _saveService = null;
+            _registeredSaveParticipant = false;
+        }
+
+        private static bool IsSaveServiceUsable(ISaveService saveService)
+        {
+            return saveService != null && saveService.IsInitialized;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -1248,12 +1307,23 @@ namespace Hecton8.Atmosphere
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Player:
-                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerContext(currentService as IPlayerRuntimeContext);
                     CachePlayerMovement();
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    SyncWaterSurfaceFromPlayerMovement();
+                    break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
-                    _cachedCelestialEngine = currentService as HectonCelestialEngine;
+                    CacheCelestialEngine(currentService as HectonCelestialEngine);
                     EnsureAegirRingShadowCookie();
+                    QueueAegirDirectionOwnerRefresh();
+                    break;
+                case GlobalRegistryServiceSlot.Save:
+                    TryUnregisterSaveParticipant();
+                    _saveService = currentService as ISaveService;
+                    if (isActiveAndEnabled)
+                        TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
                     if (_biomeMatrixDirector == null || ReferenceEquals(previousService, _biomeMatrixDirector))
@@ -1712,7 +1782,8 @@ namespace Hecton8.Atmosphere
             Shader.SetGlobalFloat(_shaderID_HectonNightFactor, 0f);
             Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, HectonVegetationConstants.SargassumBiolumPhaseMultiplier);
             Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, Vector4.zero);
-            Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(0f, 0f, 1f, 0f));
+            if (ShouldPublishAegirDirectionFallback())
+                Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(0f, 0f, 1f, 0f));
             Shader.SetGlobalVector(_shaderID_H8AbyssAbsorptionColor, Vector4.zero);
             Shader.SetGlobalVector(_shaderID_H8AbyssAtmosphereParams, Vector4.zero);
             Shader.SetGlobalVector(_shaderID_CausticOffset, Vector4.zero);
@@ -1947,6 +2018,33 @@ namespace Hecton8.Atmosphere
             _pendingGiantAbyssLightDirty = true;
         }
 
+        private void QueueAegirDirectionOwnerRefresh()
+        {
+            _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
+            QueueGiantAbyssLight();
+        }
+
+        private void CacheCelestialEngine(HectonCelestialEngine engine)
+        {
+            _cachedCelestialEngine = IsCelestialEngineUsable(engine)
+                ? engine
+                : null;
+        }
+
+        private HectonCelestialEngine ResolveCachedCelestialEngine()
+        {
+            if (IsCelestialEngineUsable(_cachedCelestialEngine))
+                return _cachedCelestialEngine;
+
+            _cachedCelestialEngine = null;
+            return null;
+        }
+
+        private static bool IsCelestialEngineUsable(HectonCelestialEngine engine)
+        {
+            return engine != null && (!Application.isPlaying || engine.isActiveAndEnabled);
+        }
+
         private void FlushGiantAbyssLight()
         {
             if (!_pendingGiantAbyssLightDirty)
@@ -2049,7 +2147,7 @@ namespace Hecton8.Atmosphere
 
         private void PublishGiantAbyssLight()
         {
-            HectonCelestialEngine celestial = _cachedCelestialEngine;
+            HectonCelestialEngine celestial = ResolveCachedCelestialEngine();
             float3 aegirDirection = new float3(0f, 0f, 1f);
             float planetPhase = 0f;
             float eclipseBacklit = 0f;
@@ -2101,12 +2199,24 @@ namespace Hecton8.Atmosphere
             }
 
             float4 directionPayload = new float4(aegirDirection, planetPhase);
-            if (math.all(math.isfinite(directionPayload)) &&
-                math.any(math.abs(directionPayload - _cachedAegirDirection) > 0.0001f))
+            if (ShouldPublishAegirDirectionFallback())
             {
-                _cachedAegirDirection = directionPayload;
-                Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(directionPayload.x, directionPayload.y, directionPayload.z, directionPayload.w));
+                if (math.all(math.isfinite(directionPayload)) &&
+                    math.any(math.abs(directionPayload - _cachedAegirDirection) > 0.0001f))
+                {
+                    _cachedAegirDirection = directionPayload;
+                    Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(directionPayload.x, directionPayload.y, directionPayload.z, directionPayload.w));
+                }
             }
+            else
+            {
+                _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
+            }
+        }
+
+        private bool ShouldPublishAegirDirectionFallback()
+        {
+            return !IsCelestialEngineUsable(_cachedCelestialEngine);
         }
 
         private float ResolveAegirRingShadowMultiplier(HectonCelestialEngine celestial, float3 aegirDirection)
@@ -2442,6 +2552,91 @@ namespace Hecton8.Atmosphere
 
         #region ══════════ Public API ══════════
 
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            float timeOfDay01 = TimeOfDay;
+            if (!math.isfinite(timeOfDay01))
+            {
+                data.celestialLightPhaseSerialized = false;
+                data.celestialLightTimeOfDay01 = SaveData.CelestialLightTimeOfDayDefault;
+                return;
+            }
+
+            data.celestialLightPhaseSerialized = true;
+            data.celestialLightTimeOfDay01 = Mathf.Repeat(timeOfDay01, 1f);
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            if (data == null || !data.celestialLightPhaseSerialized)
+                return;
+
+            HectonCelestialEngine celestial = ResolveCachedCelestialEngine();
+            if (celestial == null)
+                celestial = GlobalRegistry.CelestialEngine;
+
+            if (!math.isfinite(data.celestialLightTimeOfDay01))
+            {
+                if (IsCelestialEngineUsable(celestial))
+                    celestial.RecordCelestialLightPhaseLoadNonFinite(data.celestialLightTimeOfDay01);
+
+                ReportCelestialLightPhaseLoadWarning(
+                    "ignored: non-finite time-of-day",
+                    _CelestialLightPhaseLoadNonFiniteContextHash);
+                return;
+            }
+
+            float timeOfDay01 = math.saturate(data.celestialLightTimeOfDay01);
+            if (IsCelestialEngineUsable(celestial) &&
+                celestial.TryApplyRuntimeTimeOfDay01(timeOfDay01))
+            {
+                return;
+            }
+
+            if (TrySetTimeOfDay(timeOfDay01))
+            {
+                if (IsCelestialEngineUsable(celestial))
+                    celestial.RecordCelestialLightPhaseLoadFallback(timeOfDay01);
+
+                ReportCelestialLightPhaseLoadWarning(
+                    "restored through atmosphere fallback: celestial owner unavailable",
+                    _CelestialLightPhaseLoadOwnerFallbackContextHash);
+                return;
+            }
+
+            if (IsCelestialEngineUsable(celestial))
+                celestial.RecordCelestialLightPhaseLoadRejected(timeOfDay01);
+
+            ReportCelestialLightPhaseLoadWarning(
+                "ignored: runtime owner rejected phase",
+                _CelestialLightPhaseLoadRejectedContextHash);
+        }
+
+        private void ReportCelestialLightPhaseLoadWarning(string reason, uint contextHash)
+        {
+            PublishCelestialLightPhaseLoadWarningTelemetry(contextHash);
+
+            Hecton8.Core.H8Debug.LogWarning(
+                "[HectonAtmosphere] Celestial light phase save payload " + reason + ".",
+                this);
+        }
+
+        private void PublishCelestialLightPhaseLoadWarningTelemetry(uint contextHash)
+        {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastCelestialLightPhaseLoadWarningTelemetryFrame == frame)
+                return;
+
+            _lastCelestialLightPhaseLoadWarningTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CelestialLightPhaseLoadWarningHash,
+                contextHash,
+                1f);
+        }
+
         public void TriggerEclipse(float duration)
         {
             if (duration <= 0f) return;
@@ -2462,9 +2657,43 @@ namespace Hecton8.Atmosphere
 
         public void SetTimeOfDay(float normalized)
         {
-            _cycleTimer = math.saturate(normalized) * _cycleDuration;
-            double completedCycles = math.floor(_elapsedCycleTimeSeconds / _cycleDuration);
+            TrySetTimeOfDay(normalized);
+        }
+
+        public bool TrySetTimeOfDay(float normalized)
+        {
+            if (!math.isfinite(normalized))
+                return false;
+
+            ApplyTimeOfDayImmediate(math.saturate(normalized));
+            return true;
+        }
+
+        private void ApplyTimeOfDayImmediate(float normalized)
+        {
+            _cycleDuration = math.max(1f, math.isfinite(_cycleDuration) ? _cycleDuration : 1f);
+            _cycleTimer = normalized * _cycleDuration;
+
+            double completedCycles = !double.IsNaN(_elapsedCycleTimeSeconds) && !double.IsInfinity(_elapsedCycleTimeSeconds) && _elapsedCycleTimeSeconds > 0d
+                ? Math.Floor(_elapsedCycleTimeSeconds / _cycleDuration)
+                : 0d;
             _elapsedCycleTimeSeconds = completedCycles * _cycleDuration + _cycleTimer;
+
+            RotateSun();
+            EnvironmentState resolvedState = ResolveState();
+            AtmosphereProfile resolvedProfile = ResolveProfile(resolvedState);
+            _currentState = resolvedState;
+            _currentValues = resolvedProfile != null
+                ? AtmosphereSnapshot.FromProfile(resolvedProfile)
+                : AtmosphereSnapshot.Default;
+            _transitionOrigin = _currentValues;
+            _transitionProgress = 1f;
+
+            SyncWaterSurfaceFromPlayerMovement();
+            ComputeSunValues();
+            QueueGiantAbyssLight();
+            QueueAbyssAtmospherePresentation();
+            FlushLateFramePresentation();
         }
 
         public void SetWaterSurfaceLevel(float worldY)
@@ -2498,9 +2727,18 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SyncWaterSurfaceFromPlayerMovement()
         {
+            if (TryResolveOceanSeaLevelY(out float oceanSeaLevelY))
+            {
+                _waterSurfaceY = oceanSeaLevelY;
+                return;
+            }
+
             if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
             {
-                _waterSurfaceY = SanitizeWaterSurfaceY(movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters));
+                float movementWaterSurfaceY = movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters);
+                _waterSurfaceY = TryResolveRuntimeWaterSurfaceY(movementWaterSurfaceY, out float resolvedMovementWaterSurfaceY)
+                    ? resolvedMovementWaterSurfaceY
+                    : DefaultWaterSurfaceY;
                 return;
             }
 
@@ -2510,26 +2748,70 @@ namespace Hecton8.Atmosphere
             if (_playerMovement == null)
                 return;
 
-            _waterSurfaceY = SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);
+            _waterSurfaceY = TryResolveRuntimeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY)
+                ? playerWaterSurfaceY
+                : DefaultWaterSurfaceY;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveSeaLevelY()
         {
+            if (TryResolveOceanSeaLevelY(out float oceanSeaLevelY))
+                return oceanSeaLevelY;
+
             if (TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState))
-                return SanitizeWaterSurfaceY(movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters));
+            {
+                float movementWaterSurfaceY = movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters);
+                return TryResolveRuntimeWaterSurfaceY(movementWaterSurfaceY, out float resolvedMovementWaterSurfaceY)
+                    ? resolvedMovementWaterSurfaceY
+                    : DefaultWaterSurfaceY;
+            }
 
             if (!HasPlayerRuntimeContext() && _playerMovement != null)
-                return SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);
+            {
+                return TryResolveRuntimeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY)
+                    ? playerWaterSurfaceY
+                    : DefaultWaterSurfaceY;
+            }
 
             return SanitizeWaterSurfaceY(_waterSurfaceY);
+        }
+
+        private bool TryResolveOceanSeaLevelY(out float seaLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveRuntimeWaterSurfaceY(oceanKinematics.SeaLevel, out seaLevelY))
+            {
+                return true;
+            }
+
+            seaLevelY = DefaultWaterSurfaceY;
+            return false;
+        }
+
+        private static bool TryResolveRuntimeWaterSurfaceY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultWaterSurfaceY;
+            return false;
         }
 
         private static float SanitizeWaterSurfaceY(float worldY)
         {
             return math.isfinite(worldY) &&
                    math.abs(worldY) > 0.0001f &&
-                   math.abs(worldY) <= 1000f
+                   math.abs(worldY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? worldY
                 : DefaultWaterSurfaceY;
         }
@@ -2546,11 +2828,11 @@ namespace Hecton8.Atmosphere
             if (_playerMovement != null && math.isfinite(_playerMovement.CurrentDepth))
                 return math.max(0f, _playerMovement.CurrentDepth);
 
-            if (_playerCameraTransform != null)
-                return math.max(0f, _waterSurfaceY - _playerCameraTransform.position.y);
+            if (IsTransformUsable(_playerCameraTransform))
+                return math.max(0f, ResolveSeaLevelY() - _playerCameraTransform.position.y);
 
-            if (_playerTransform != null)
-                return math.max(0f, _waterSurfaceY - _playerTransform.position.y);
+            if (IsTransformUsable(_playerTransform))
+                return math.max(0f, ResolveSeaLevelY() - _playerTransform.position.y);
 
             return 0f;
         }
@@ -2559,7 +2841,7 @@ namespace Hecton8.Atmosphere
         private bool TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState)
         {
             movementState = default;
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             if (playerContext == null ||
                 !playerContext.IsInitialized ||
                 !playerContext.TryGetMovementRuntimeState(out movementState) ||
@@ -2577,7 +2859,7 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool HasPlayerRuntimeContext()
         {
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             return playerContext != null;
         }
 
@@ -2586,31 +2868,41 @@ namespace Hecton8.Atmosphere
             _playerMovement = null;
             _playerCameraTransform = null;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             if (playerContext != null)
             {
                 Transform contextTransform = playerContext.PlayerTransform;
-                if (_playerTransform == null && contextTransform != null)
+                if ((_playerTransform == null || !IsTransformUsable(_playerTransform)) &&
+                    IsTransformUsable(contextTransform))
+                {
                     _playerTransform = contextTransform;
+                }
 
                 if (_playerTransform != null && ReferenceEquals(_playerTransform, contextTransform))
                 {
-                    _playerMovement = playerContext.PlayerMovement;
+                    HectonPlayerMovement contextMovement = playerContext.PlayerMovement;
+                    if (IsPlayerMovementUsable(contextMovement))
+                        _playerMovement = contextMovement;
+
                     Camera contextCamera = playerContext.PlayerCamera;
-                    if (contextCamera != null)
+                    if (IsCameraUsable(contextCamera))
                         _playerCameraTransform = contextCamera.transform;
                 }
             }
 
-            if (_playerTransform != null)
+            if (IsTransformUsable(_playerTransform))
             {
                 if (_playerMovement == null)
-                    _playerTransform.TryGetComponent(out _playerMovement);
+                {
+                    _playerTransform.TryGetComponent(out HectonPlayerMovement movement);
+                    if (IsPlayerMovementUsable(movement))
+                        _playerMovement = movement;
+                }
 
                 if (_playerCameraTransform == null)
                 {
                     Camera playerOwnedCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
-                    if (playerOwnedCamera != null)
+                    if (IsCameraUsable(playerOwnedCamera))
                         _playerCameraTransform = playerOwnedCamera.transform;
                 }
             }
@@ -2618,13 +2910,76 @@ namespace Hecton8.Atmosphere
 
         private void CacheRegistryRuntimeReferences()
         {
-            _playerRuntimeContext = GlobalRegistry.Player;
-            _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
+            CachePlayerContext(GlobalRegistry.Player);
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            CacheCelestialEngine(GlobalRegistry.CelestialEngine);
+            _saveService = GlobalRegistry.Save;
             CacheRenderSettingsSunCold();
             if (_biomeMatrixDirector == null)
                 _biomeMatrixDirector = GlobalRegistry.BiomeMatrix;
             if (_proceduralFieldSampler == null)
                 _proceduralFieldSampler = GlobalRegistry.ProceduralFieldSampler;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
+        {
+            if (!IsPlayerContextUsable(_playerRuntimeContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _playerRuntimeContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                if (!ReferenceEquals(_playerRuntimeContext, playerContext))
+                {
+                    _playerMovement = null;
+                    _playerCameraTransform = null;
+                }
+
+                _playerRuntimeContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _playerRuntimeContext = IsPlayerContextUsable(fallback) ? fallback : null;
+            _playerMovement = null;
+            _playerCameraTransform = null;
+        }
+
+        private void ClearPlayerRuntimeReferences()
+        {
+            _playerRuntimeContext = null;
+            _playerMovement = null;
+            _playerCameraTransform = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsPlayerMovementUsable(HectonPlayerMovement movement)
+        {
+            return movement != null && (!Application.isPlaying || movement.isActiveAndEnabled);
+        }
+
+        private static bool IsCameraUsable(Camera camera)
+        {
+            return camera != null && (!Application.isPlaying || camera.isActiveAndEnabled);
+        }
+
+        private static bool IsTransformUsable(Transform target)
+        {
+            return target != null && (!Application.isPlaying || target.gameObject.activeInHierarchy);
         }
 
         private void CacheRenderSettingsSunCold()

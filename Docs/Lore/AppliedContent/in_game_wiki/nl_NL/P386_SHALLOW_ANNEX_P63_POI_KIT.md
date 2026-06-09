@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Bewijskit Ondiep Annex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Shallow Annex P-63 POI Kit
+# Bewijskit Ondiep Annex P-63
 
-NL LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Ondiep Annex P-63 is de eerste plek waar overlevingsprocedure en aansprakelijkheidsbewijs dezelfde tafel delen. De operator herstelt een pomp, dicht een pocket, leest een ongevalspakket en vindt een routemelding die niet past bij de schade buiten.
 
 ## Scanner
 
-NL LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+POI-bewijskit: P-63 bevat een werkende schuilpocket, een pompreparatie en de eerste officiele tegenspraak.
 
 ## Terminal
 
-NL LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+P-63-KIT: lenspomp, pakkingbak, snijcontact, pingerlijn, ongevalspakket, verzegelde routemelding, droge locker, handmatige overbruggingsklem.
 
 ## Audio
 
-NL LOC HOLD: First room with air. First room with a lie.
+Eerste kamer met lucht. Eerste kamer met een leugen.
 
 ## Field Note
 
-NL LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Marauder-notitie: houd de pomp aan voordat je het pakket leest. Een dode schuilplek maakt slecht bewijs.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/nl_NL. -->

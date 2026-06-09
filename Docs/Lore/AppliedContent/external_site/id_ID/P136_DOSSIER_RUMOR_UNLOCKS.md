@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Memori Rumor Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Memori Rumor Dossier
 
-ID LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+Memori Rumor Dossier membuat pengetahuan replay menjadi diegetik: catatan menyimpan curiga dan akibat tanpa memberi tubuh lebih kuat pada percobaan berikutnya.
 
 ## Scanner
 
-ID LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MEMORI DOSSIER // Rumor, peringatan, konteks kontrak, dan catatan akhir bertahan. Lambung, oksigen, alat, kargo, dan peta tidak.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+ATURAN PERSISTENSI: dossier boleh menyimpan keluarga rumor, kategori bukti, penanda akhir, dan peringatan rute lintas kampanye. Ia tidak membawa alat, sumber daya, geografi seed, atau kepemilikan kebenaran.
 
 ## Audio
 
-ID LOC HOLD: Your file remembers what your hands cannot carry.
+Berkas itu mengingat apa yang tak bisa dibawa tanganmu.
 
 ## Field Note
 
-ID LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Biarkan pengetahuan bertahan. Biarkan tekanan tetap ada.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/id_ID. -->

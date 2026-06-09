@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Насосна мілководного анекса P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Насосна мілководного анекса P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 стає корисним лише після ремонту насосної. Ручна відкачка знижує воду, відкриває старі шафи з інструментами й тримає польовий фабрикатор у безпечному вікні ремонтних повноважень.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+ВПУСК НАСОСНОЇ // Забитий, але придатний до сервісу. Ручний трюмний маршрут доступний. Спершу осушити, потім різати.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+ОБСЛУГОВУВАННЯ P-63 // Незначне проникнення води зареєстровано. Ручну відкачку прийнято. Польовий фабрикатор тримає чергу прокладок, хомутів і контактного різака, доки впуск не очиститься.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Крути насос, доки підлога не відповість. Якщо різати першим, затопиш шафу з інструментами.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Сухий кут - не дім. Це десять хвилин на думку. Забери їх.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/uk_UA. -->

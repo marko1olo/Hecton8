@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "حمولة الاختيار النهائي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# حمولة الاختيار النهائي
 
-AR LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+حمولة الاختيار النهائي تحدد فلسفة نهايات HECTON-8: يختار اللاعب ما يغادر القمر، ومن يتلقاه، وما يتيحه ذلك لـ Deep Reach والقانون العام وAtlas وبيئة المحيط-الآلة.
 
 ## Scanner
 
-AR LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD نهائي // إحداثيات، عينات، أسماء، وصول Atlas، أوامر حجر، دليل عام. ما يغادر HECTON-8 يقرر من يستطيع الفعل بعد ذلك.
 
 ## Terminal
 
-AR LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+مصفوفة PAYLOAD: بع الإحداثيات ودليل XO؛ اقطع استمرارية Atlas؛ احفظ أو احجر بيئة المحيط-الآلة؛ انشر الأدلة إلى ledger العام؛ احجب payload واترك Deep Reach عمياء.
 
 ## Audio
 
-AR LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+لا توجد ملكية نظيفة لمسرح جريمة تعلم أن يتنفس.
 
 ## Field Note
 
-AR LOC HOLD: The best ending should be defensible, not clean.
+أفضل نهاية يجب أن تكون قابلة للدفاع، لا نظيفة.
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/ar_SA. -->

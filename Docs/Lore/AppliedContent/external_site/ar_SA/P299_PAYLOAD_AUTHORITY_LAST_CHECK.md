@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Authority Last Check"
+title: "الفحص الأخير لسلطة payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Authority Last Check
+# الفحص الأخير لسلطة payload
 
-AR LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+نهاية HECTON-8 ليست فقط هل ينجو اللاعب. إنها من يتلقى الدليل وما يسمح لذلك المستقبل أن يفعله بالمحيط بعد رحيل الشاهد.
 
 ## Scanner
 
-AR LOC HOLD: Payload check: receiver changes meaning, not only reward.
+فحص payload: اختيار المستقبل يغير الملكية، لا المكافأة فقط.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: اختر المستقبل والكتلة وحيازة الأدلة والعاقبة البيئية ومسؤولية ما بعد العودة. يحدد اختيار المستقبل من يستطيع العمل على الدليل بعد المغادرة.
 
 ## Audio
 
-AR LOC HOLD: What leaves will own what remains.
+ما يغادر سيملك ما يبقى.
 
 ## Field Note
 
-AR LOC HOLD: Use immediately before irreversible ending route selection.
+يستخدم مباشرة قبل اختيار مسار النهاية غير القابل للرجوع.
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/ar_SA. -->

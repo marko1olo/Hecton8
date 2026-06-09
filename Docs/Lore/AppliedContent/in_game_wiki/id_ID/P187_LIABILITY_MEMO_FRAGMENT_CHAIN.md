@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Rantai Fragmen Memo Liabilitas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Rantai Fragmen Memo Liabilitas
 
-ID LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+Rantai Fragmen Memo Liabilitas mengajari pemain cara membaca bukti Deep Reach. Tidak ada satu memo pun yang memuat seluruh kejahatan; setiap kantor menyimpan kalimat yang membuat tindakannya sendiri terlihat prosedural. Tabel risiko mengakui margin pasang sedang gagal. Catatan evakuasi mengubah penundaan menjadi disiplin kanal. Override Atlas membuat kontinuitas terdengar lebih aman daripada kabur. Fragmen Keelmark mengubah pekerja hilang menjadi kerugian yang dapat dipulihkan. Pemain harus mencocokkan kertas dengan ruangan yang banjir, jam rute yang rusak, dan nama pekerja. Rantai ini baru terbaca ketika fragmen berhenti membela kantor masing-masing dan mulai saling bertentangan.
 
 ## Scanner
 
-ID LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Memo liabilitas bertahan sebagai fragmen karena setiap kantor menyimpan paragraf yang melindungi dirinya sendiri.
 
 ## Terminal
 
-ID LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: tabel margin risiko / catatan pelepasan evakuasi / override kontinuitas Atlas / konversi kerugian Keelmark / permintaan kustodi pemulihan. Cocokkan waktu rute, kerusakan ruangan, dan nama pekerja sebelum menerima ringkasan publik.
 
 ## Audio
 
-ID LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Mereka tidak menyembunyikan kebenaran di brankas. Mereka mengarsipkannya dalam potongan.
 
 ## Field Note
 
-ID LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Memo yang robek jujur di tempat yang tidak pernah dimaksudkan untuk jujur.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/id_ID. -->

@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Öffentliche Einführung in HECTON-8
 
-HECTON-8 ist ein ertrunkener industrieller Ozeanmond im Aegir-System. Er ist schön, bevor er belastend wird: helle Schelfe, lebendige Flachwasser, hartes blaues Licht, druckfeste Kolonieknochen und tiefere Ruinen, in denen Deep-Reach-Papiere noch mit Maschinen streiten. Du kommst als Marauder unter Vertragsdruck an, nicht als Tourist und nicht als erwählter Retter. Die öffentliche Prämisse ist einfach: den Ozean überleben, das Wrack lesen, bergen, was noch sprechen kann, und lernen, warum Rettung dich lange hören kann, bevor sie dich erreicht.
+HECTON-8 beginnt nicht als tote Ruine. Es beginnt als Ort, für den interstellare Entfernung einmal bezahlt wurde: helle photische Schelfe, hartes blaues Wasser, druckfeste Kolonieknochen, klare Untiefen, in denen alte Maschinen durch lebenden Ozean sichtbar bleiben. Das erste Versprechen ist Schönheit. Die erste Bedrohung ist, dass diese Schönheit bereits bepreist wurde.
 
-## Scanner
+Die spielbare Prämisse beginnt mit einem Marauder unter Vertragsdruck, nicht mit einem Touristen, Erben oder Familienrächer. Du steigst ab, weil Schuld, Blacklist-Risiko und Aegir-Salvage-Recht den Job zugleich möglich und gefährlich machen. Der Drop geht schief. Der Ozean kümmert sich nicht um faire Verträge. Die ersten Stunden sind praktisch: Schutz, Pumpen, Dichtungen, Sauerstoff, Werkzeuge, Signal. Die Geschichte kommt durch Objekte, die noch Besitzer haben.
 
-Freigabe für öffentliche Einführung: den Mond zuerst schön zeigen. Den Ozean nicht verkaufen, indem das Verbrechen versteckt wird.
-
-## Terminal
-
-ÖFFENTLICHER PRIMER / SPOILER-SICHER
-erlaubt: Aegir-Ozeanmond, helle Schelfe, ertrunkene Industriekolonie, Marauder-Salvage-Rückkehr, Deep-Reach-Ruinen
-gesperrt: finale Payload-Route, Atlas-Auflösung, Folgen des Ending-Empfängers
-Redaktionsnotiz: Schönheit zuerst, Beweis danach, kein falsches Rettungsversprechen.
-
-## Audio
-
-Das flache Wasser ist keine Maske. Es ist das, was sie fast gebaut hätten, bevor die Tiefe die Quittungen aufbewahrte.
-
-## Field Note
-
-Verkauf zuerst den Ozean. Dann lass Rost, Tags und Routenstempel beweisen, dass der Ozean nicht unschuldig ist.
+Das ist HECTON-8s öffentliches Gesicht: Ozeanüberleben mit industriellem Gedächtnis. Deep Reach baute hier Druckrouten und Arbeiterhabitate. Black Keel kann aus dem Orbit antworten, aber Entfernung, Wetter und Gewahrsam nicht löschen. Der Mond ist schön genug, damit Verlust zählt, und dokumentiert genug, damit jede Marke Beweis wird.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/de_DE. -->

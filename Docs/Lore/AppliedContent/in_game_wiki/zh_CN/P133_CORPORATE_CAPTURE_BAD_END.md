@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 企业捕获：干净救援
 
-企业捕获是由可信救援构成的坏结局。玩家活着离开海洋，但回应的权力把证人当成containment材料，把payload当成真正的病人。
+企业捕获一开始完全像救援。信号干净，pickup向量专业，房间里有可呼吸的空气。随后问题顺序暴露了救援的本质：坐标第一，custody第二，Atlas访问第三，福利审查在后。承包者活着离开海洋，但回应的权力把证人当作污染，把payload当作病人。证言在成为公共记录前被封存。身体活过了压力，却进入一台更安静的证据控制机器。
 
 ## Scanner
 
-回收来源已验证：Deep Reach代理。payload在健康检查前被请求。
+回收源确认：Deep Reach代理。脉搏检查前请求payload。
 
 ## Terminal
 
-DEEP REACH接回：recovery team在承包者福利审查前接收坐标、XO custody和Atlas访问钥匙。承包者证词按污染协议封存。
+DEEP REACH PICKUP：回收队在承包者福利审查前请求坐标、XO custody、Atlas访问钥匙和Seed payload封印。证人证言按污染协议封存。
 
 ## Audio
 
-洁净室不是为你准备的。
+洁净室不是为证人准备的。
 
 ## Field Note
 
-先要坐标的干净救援，就是空气更好的捕获。
+先问坐标的干净救援，是带暖空气的custody。
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/zh_CN. -->

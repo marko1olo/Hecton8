@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Konflikt claimant-sicherer Zusammenfassung"
+title: "Konflikt einer claim-sicheren Zusammenfassung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Konflikt claimant-sicherer Zusammenfassung
+# Konflikt einer claim-sicheren Zusammenfassung
 
-## Was es belegt
+## Was der Eintrag belegt
 
-Eine claimant-sichere Zusammenfassung ist kein neutraler Kurztext, sondern ein geschuetztes Rewrite. Sie kann Namen entfernen, Koordinaten runden, Verletzungen kategorisieren, Routenverben weicher machen oder das Antwortbuero ersetzen. Das kann Menschen schuetzen; Deep Reach kann dieselbe Sicherheitssprache nutzen, um Hebel zu begraben. Der Konflikt mit dem Rohobjekt ist kein Fehler, sondern Beweis dessen, was entfernt wurde.
+Eine claim-sichere Zusammenfassung ist keine kürzere Wahrheit. Sie ist eine autorisierte Schwärzung für eine Anspruchsroute. Sie kann Arbeiternamen entfernen, Koordinaten verwischen, Verletzungsdetails durch eine Auszahlungskategorie ersetzen, gehalten in eingereiht ändern oder nur die Stelle nennen, die öffentliche Post beantworten darf. Manche Streichungen schützen lebende Crews, medizinische Privatsphäre oder eine noch offene Bergungsroute. Andere schützen Deep Reach vor einem Verwahrproblem. Der Konflikt zwischen Zusammenfassung und Rohobjekt ist Beweis, weil der Schnitt selbst einen Besitzer, eine Zeitmarke und einen Nutznießer hat.
 
-## Wie man es liest
+Lies die Zusammenfassung neben dem Objekt, das sie erzwungen hat: Tag-Hülle, Audiokassette, Probenbeutel, Drucktürprotokoll, Anzugring oder Schalenfoto. Halte die Auslassungsliste sichtbar. Frage, was entfernt wurde, zu welcher rechtlichen Risikomarke es gehört, wer die Schwärzung anforderte und ob das Objekt Kontext wiederherstellen kann, ohne Namen oder Koordinaten zu erfinden. Beweist das Rohobjekt mehr als die Zusammenfassung sagt, bewahre die Lücke. Fülle sie nicht mit einem sauberen Satz.
 
-CLAIMANT-SICHERER KONFLIKT
-Zusammenfassung ist oeffentlich sicher. Rohobjekt vielleicht nicht.
-Keine Namen oder Koordinaten aus Vermutung wiederherstellen.
-Auslassungsliste, Routenbeweis und Risikomarke bewahren.
+## Wie man ihn liest
+
+KONFLIKT CLAIM-SICHERER ZUSAMMENFASSUNG
+Zusammenfassung ist für öffentliche Handhabung freigegeben. Rohobjekt nicht.
+Keine Namen, Koordinaten oder Verletzungsdetails aus Vermutung wiederherstellen.
+Nächster Beweis: Auslassungsliste, Anforderer, rechtliche Risikomarke, Objektroute, Verwahrzeit.
+Aktion: Zusammenfassung und Rohobjekt verbunden halten, bis die Auslassung einen Besitzer hat.
 
 ## Feldnotiz
 
-Wenn eine Zusammenfassung sicher sagt, frag: fuer wen. Behalte die Auslassungsliste.
+Eine Zusammenfassung kann einen Arbeiter schützen oder einen Schreibtisch. Die Objektroute zeigt, was zutrifft.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/de_DE. -->

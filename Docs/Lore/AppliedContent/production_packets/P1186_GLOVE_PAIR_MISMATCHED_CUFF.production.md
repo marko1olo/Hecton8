@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_locker_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS182_FIRST_LOCKER_TRACE_ARTICLES.md |
 | Speaker | Locker scanner, glove storage note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter locker |
@@ -33,11 +33,11 @@ Forbidden facts: no equipment stats, no ownership identity, no contamination ver
 
 ### Scanner
 
-GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history.
+GLOVE PAIR // Cuffs wear differently. Stored together, not used alike.
 
 ### Codex
 
-The gloves hang together, but the cuffs tell different histories. One cuff is shiny from repeated pull, the other still carries salt dust near the seam.
+The gloves hang together, but the cuffs show different use. One cuff is shiny from repeated pull, the other still carries salt dust near the seam.
 
 Paired storage does not prove paired use.
 
@@ -48,7 +48,7 @@ Workwear note:
 - Pair: stored together.
 - Left cuff: pull shine.
 - Right cuff: salt dust.
-- Use class: mismatched history.
+- Use class: mismatched use.
 
 Read storage and wear as separate facts.
 
@@ -58,7 +58,7 @@ GLOVE PAIR
 
 CUFFS DO NOT MATCH
 
-STORAGE, NOT HISTORY
+STORAGE, NOT SAME USE
 
 ## Future Integration Notes
 
@@ -71,18 +71,18 @@ STORAGE, NOT HISTORY
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| ru_RU | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| ja_JP | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| zh_CN | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| fr_FR | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| es_ES | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| de_DE | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| pl_PL | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| uk_UA | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| ar_SA | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| id_ID | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| ko_KR | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| he_IL | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| pt_BR | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
-| nl_NL | draft_machine_or_llm | GLOVE PAIR // Cuffs wear differently. Treat as matched storage, not matched history. |
+| en_US | source_authority | GLOVE PAIR // Cuffs wear differently. Stored together, not used alike. |
+| ar_SA | draft_machine_or_llm | زوج قفازات // الأساور مهترئة بطرق مختلفة. مخزنة معا، لا مستخدمة بالطريقة نفسها. |
+| de_DE | draft_machine_or_llm | HANDSCHUHPAAR // Manschetten unterschiedlich abgenutzt. Zusammen gelagert, nicht gleich benutzt. |
+| es_ES | draft_machine_or_llm | PAR DE GUANTES // Punhos gastados de forma distinta. Guardados juntos, no usados igual. |
+| fr_FR | draft_machine_or_llm | PAIRE DE GANTS // Manchettes usees differemment. Rangees ensemble, pas utilisees pareil. |
+| he_IL | draft_machine_or_llm | זוג כפפות // השרוולים שחוקים אחרת. אוחסנו יחד, לא שימשו באותו אופן. |
+| id_ID | draft_machine_or_llm | PASANGAN SARUNG TANGAN // Manset aus berbeda. Disimpan bersama, bukan dipakai sama. |
+| ja_JP | draft_machine_or_llm | 手袋ペア // 袖口の摩耗が違う。一緒に保管、同じ使われ方ではない。 |
+| ko_KR | draft_machine_or_llm | 장갑 한 쌍 // 커프 마모가 다르다. 함께 보관됐지만 같은 방식으로 쓰인 것은 아니다. |
+| nl_NL | draft_machine_or_llm | HANDSCHOENPAAR // Manchetten verschillend versleten. Samen opgeslagen, niet gelijk gebruikt. |
+| pl_PL | draft_machine_or_llm | PARA REKAWIC // Mankiety zuzyte inaczej. Trzymane razem, nie uzywane tak samo. |
+| pt_BR | draft_machine_or_llm | PAR DE LUVAS // Punhos gastos de modo diferente. Guardadas juntas, nao usadas igual. |
+| ru_RU | draft_machine_or_llm | ПАРА ПЕРЧАТОК // Манжеты изношены по-разному. Хранились вместе, но использовались не одинаково. |
+| uk_UA | draft_machine_or_llm | ПАРА РУКАВИЦЬ // Манжети зношені по-різному. Зберігалися разом, але використовувались не однаково. |
+| zh_CN | draft_machine_or_llm | 一副手套 // 袖口磨损不同。一起存放，不代表用法相同。 |

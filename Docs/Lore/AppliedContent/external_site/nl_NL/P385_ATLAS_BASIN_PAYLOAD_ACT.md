@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas-bekkenpayloadpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Basin Payload Act
+# Atlas-bekkenpayloadpoort
 
-NL LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Het Atlas-bekken is waar de route stopt met vragen wat er gebeurde en begint te vragen wie het bruikbare pakket krijgt. Bewijsketen, bekkenvector, salvage-klasse en proof hash kunnen niet allemaal onaangeraakt blijven. Een ontvanger moet gekozen, geweigerd of vervangen worden door lokale hold.
 
-## Scanner
-
-NL LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-NL LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-NL LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-NL LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Dat is de laatste druk: geen route maakt de plaats delict schoon. Coördinatenverkoop betaalt en stelt het bekken bloot. Severance snijdt terugwegen af en doodt bruikbare structuur. Quarantaine bewaart en houdt vast. Het openbare grootboek publiceert zonder kaart. Blind return weigert iedereen en riskeert pakketverlies. De campagne eindigt met custody, niet met comfort.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/nl_NL. -->

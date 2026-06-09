@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Storm Window Rush Contract Seed"
+title: "Sturmfenster-Eilauftrag-Vertragssamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Storm Window Rush Contract Seed
+# Sturmfenster-Eilauftrag-Vertragssamen
 
-DE LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Sturmfenster-Eilauftrag ist eine Vertragsfamilie, in der Wetter und Orbit die ersten Drucksysteme werden. Die Route gibt keine geerbte Macht dazu; sie verkürzt sichere Arbeitszeit, verengt Rückholgeometrie und bestraft schlampige Reparaturen früher.
 
 ## Scanner
 
-DE LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Vertragssamen: Eilfenster. Höhere Auszahlung an schließende Sturmdeckung, Orbitalschutter-Zeit und geringere Reparaturreserve gebunden.
 
 ## Terminal
 
-DE LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: Sturmfenster komprimiert, orbitaler Relaisshutter feindlich, Auszahlungsdeckel erhöht, Bathydrop-Rückruf früher, Reparaturtoleranz reduziert.
 
 ## Audio
 
-DE LOC HOLD: This contract pays because it hates waiting.
+Dieser Vertrag zahlt, weil das Fenster schließt.
 
 ## Field Note
 
-DE LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Marauder-Notiz: Eilzahlung sieht größer aus, weil der Vertrag jede Minute zweimal berechnet.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/de_DE. -->

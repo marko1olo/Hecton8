@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Registre Black Keel
 
-Black Keel n'est pas un vaisseau ami. C'est un tender claim-pool qui lit corps, charge utile, quarantaine, masse d'ascension et assurance comme entrées du même registre.
-
-Il n'a pas besoin de haïr le joueur. Il peut répondre poliment, accepter un hash de détresse et refuser la récupération jusqu'à changement des chiffres.
+Black Keel n'est pas un vaisseau ami au-dessus de HECTON-8. C'est un tender claim-pool : outil, registre, porte de quarantaine et machine d'assurance. Il peut entendre le joueur, router un paquet, calculer une fenêtre et lever de la masse. Il peut aussi préférer preuve, échantillon ou coque assurée à la personne qui demande de l'aide. Pas un méchant, mais fiable dans son contrat et dangereux si l'on confond contrat et pitié.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/fr_FR. -->

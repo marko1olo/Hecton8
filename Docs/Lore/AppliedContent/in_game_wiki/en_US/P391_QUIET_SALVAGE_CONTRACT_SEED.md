@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Quiet Salvage Contract Seed
 
-Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Quiet Salvage is a contract family with fewer early alarms and harsher ownership language. The route gives the operator time to repair, breathe and read, but specimen tags, pinger logs and proof lockers bind to a receiver before the first major claim is paid.
 
 ## Scanner
 
-Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Contract seed: quiet salvage. Low storm exposure, clean first payout, restricted custody on anything that proves route history.
 
 ## Terminal
 
-SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: storm window calm, bathydrop slot pre-cleared, early fauna contact reduced, custody lock stronger, receiver-first audit clause active.
 
 ## Audio
 
-Low storm windows are never free. They are bought somewhere else.
+Quiet water means somebody already moved the risk into the paperwork.
 
 ## Field Note
 
-Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Marauder note: calm water lets you hear the contract board lie with better diction.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/en_US. -->

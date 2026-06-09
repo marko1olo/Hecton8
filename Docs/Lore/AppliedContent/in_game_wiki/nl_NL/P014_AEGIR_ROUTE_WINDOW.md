@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Aegir-routevenster
 
-Een Aegir-venster is het moment waarop vijandige klokken kort overeenkomen: gasreusstraling, maanschaduw, stormruis, getij, linkkwaliteit, opstijgmassa en Black Keel-geometrie.
-
-Daarom hoort de lucht in de survival-loop. Data kan stijgen wanneer lichamen dat niet moeten. Een goed opstijgvenster kan bewijs in ruis kapotmaken.
+Een Aegir-routevenster is geen mooi weerbericht. Het is het korte moment waarop vijandige klokken genoeg overeenkomen: straling, maanschaduw, stormplume, getijdenshear, akoestische link, Black Keel-geometrie en tonne-window custody. Het kan open zijn voor data en dicht voor een lichaam. Een bewijskern kan quarantaine halen terwijl blue-debt vertraagt. Redding is geen knop maar kruising van overleving, recht en massa.
 
 ## Scanner
 
-Lokale efemeridetabel. Communicatie, getij, straling, maanschaduw en carriergeometrie delen één smal opstijgvenster.
+Lokale ephemeristabel. Aegir-straling, maanschaduw, stormplume, getijdenshear, akoestische linkkwaliteit, Black Keel-geometrie en tonne-window custody vallen kort samen.
 
 ## Terminal
 
-AEGIR-VENSTERUPDATE // Kestrel-schaduw klaart. Uplinkruis daalt. Stralingscount stijgt. Getijschering in servicecanyons neemt toe. Black Keel-bergingsgeometrie wacht op opstijgmassa.
+AEGIR WINDOW SOLVER // Data-uplink gedeeltelijk. Lichaamsrecovery gesloten. Payloadstijging voorwaardelijk. Stralingssurge in driftband. Moon relay shutter actief volgende lokale cyclus. Black Keel-transfergeometrie vereist juridische en quarantaine-handshake voor massacommit.
 
 ## Audio
 
-Een heldere hemel is geen veilige hemel. Controleer de reus.
+De lucht is hier geen scenery. Het is nog een slot op de deur.
 
 ## Field Note
 
-Op HECTON-8 is weer tegelijk lokaal en orbitaal.
+Open voor signaal is niet open voor lichaam.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/nl_NL. -->

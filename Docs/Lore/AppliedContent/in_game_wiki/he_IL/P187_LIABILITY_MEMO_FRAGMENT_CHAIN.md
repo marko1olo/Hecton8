@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "שרשרת שברי מזכר האחריות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# שרשרת שברי מזכר האחריות
 
-HE LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+שרשרת שברי מזכר האחריות מלמדת את השחקן כיצד לקרוא ראיות של Deep Reach. שום מזכר יחיד אינו מכיל את כל הפשע; כל משרד שמר את המשפט שגרם לפעולתו להיראות פרוצדורלית. טבלת סיכון מודה ששולי הגאות כשלו. הערת פינוי הופכת עיכוב למשמעת ערוץ. עקיפת Atlas גורמת לרציפות להישמע בטוחה יותר מבריחה. שבר של Keelmark ממיר עובדים נעדרים להפסד בר-השבה. השחקן חייב להצליב נייר עם חדרים מוצפים, שעוני מסלול שבורים ושמות עובדים. השרשרת נעשית קריאה רק כשהשברים מפסיקים להגן על משרדיהם ומתחילים לסתור זה את זה.
 
 ## Scanner
 
-HE LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+מזכר האחריות שרד כשברים מפני שכל משרד שמר את הפסקה שהגנה עליו.
 
 ## Terminal
 
-HE LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: טבלת שולי סיכון / הערת שחרור פינוי / עקיפת רציפות Atlas / המרת הפסד Keelmark / בקשת משמורת שחזור. יש להצליב זמן מסלול, נזק חדרים ושמות עובדים לפני קבלת הסיכום הציבורי.
 
 ## Audio
 
-HE LOC HOLD: Paper is weak alone. Put it against a flooded door.
+הם לא הסתירו את האמת בכספת. הם תייקו אותה בחלקים.
 
 ## Field Note
 
-HE LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+מזכר קרוע כן במקומות שבהם לא התכוון להיות כן.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/he_IL. -->

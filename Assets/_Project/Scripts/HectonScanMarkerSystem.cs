@@ -49,7 +49,6 @@ namespace Hecton8.Gameplay
         private int _writeIndex;
         private Transform _playerTransform;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private HectonPlayerMovement _cachedPlayerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
         // COLD ALLOC: Matrix4x4[64] — instanced marker draw mirror — owner: HectonScanMarkerSystem
@@ -107,6 +106,8 @@ namespace Hecton8.Gameplay
             UnregisterTick();
             UnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
+            _cachedPlayerContext = null;
+            _playerTransform = null;
         }
 
         private void OnDestroy()
@@ -118,7 +119,7 @@ namespace Hecton8.Gameplay
             _runtimeMarkerMaterial = null;
             _runtimeMarkerMesh = null;
             _cachedPlayerContext = null;
-            _cachedPlayerMovement = null;
+            _playerTransform = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -143,8 +144,11 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            IPlayerRuntimeContext previousContext = _cachedPlayerContext;
+            Transform previousPlayerTransform = previousContext != null ? previousContext.PlayerTransform : null;
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+            if (previousPlayerTransform != null && ReferenceEquals(_playerTransform, previousPlayerTransform))
+                _playerTransform = null;
             RefreshPresentationReferencesFromCachedContext();
         }
 
@@ -399,7 +403,7 @@ namespace Hecton8.Gameplay
         private bool RefreshPresentationReferencesFromCachedContext()
         {
             IPlayerRuntimeContext context = _cachedPlayerContext;
-            if (context != null)
+            if (context != null && context.IsInitialized)
             {
                 if (_playerTransform == null)
                     _playerTransform = context.PlayerTransform;
@@ -493,7 +497,6 @@ namespace Hecton8.Gameplay
         {
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-            _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -517,15 +520,12 @@ namespace Hecton8.Gameplay
         {
             playerAup = default;
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (_cachedPlayerMovement == null && playerContext != null)
+            if (playerContext != null &&
+                playerContext.IsInitialized &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                _cachedPlayerMovement = playerContext.PlayerMovement;
-            }
-
-            HectonPlayerMovement movement = _cachedPlayerMovement;
-            if (movement != null)
-            {
-                playerAup = movement.PredictedAup;
+                playerAup = movementState.PredictedAup;
                 if (playerAup.IsFinite())
                     return true;
             }

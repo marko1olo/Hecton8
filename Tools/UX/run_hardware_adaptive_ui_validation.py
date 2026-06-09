@@ -273,6 +273,14 @@ def _resolve_prompt_source(root: Path) -> dict[str, object]:
     }
 
 
+def _read_required_text(root: Path, relative_path: Path, failures: list[str]) -> str:
+    path = root / relative_path
+    if not path.exists():
+        failures.append(f"missing required artifact: {relative_path}")
+        return ""
+    return path.read_text(encoding="utf-8-sig")
+
+
 def main() -> int:
     root = ROOT
     results = [_run_command(root, name, command) for name, command in COMMANDS]
@@ -327,11 +335,12 @@ def main() -> int:
     if self_validation_failures:
         report["status"] = "FAIL"
 
-    status_log_failures = validate_status_log_consistency(
-        (root / STATUS_PATH).read_text(encoding="utf-8-sig"),
-        (root / RATIONALE_PATH).read_text(encoding="utf-8-sig"),
-        (root / LOG_PATH).read_text(encoding="utf-8-sig"),
-        (root / BLOCKER_PATH).read_text(encoding="utf-8-sig"),
+    missing_status_log_failures: list[str] = []
+    status_log_failures = missing_status_log_failures + validate_status_log_consistency(
+        _read_required_text(root, STATUS_PATH, missing_status_log_failures),
+        _read_required_text(root, RATIONALE_PATH, missing_status_log_failures),
+        _read_required_text(root, LOG_PATH, missing_status_log_failures),
+        _read_required_text(root, BLOCKER_PATH, missing_status_log_failures),
         report,
     )
     report["statusLogSelfValidation"] = {

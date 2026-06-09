@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "Цивільно-корпоративний розкол доменів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# Цивільно-корпоративний розкол доменів
 
-UA LOC HOLD: The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue.
+Цивільно-корпоративний розкол доменів задає право ізоляції HECTON-8: не щільна імперія, а кілька далеких центрів влади з несумісними claim, затриманими пакетами й достатньою двозначністю, щоб Deep Reach залишила працівників під океаном.
 
 ## Scanner
 
-UA LOC HOLD: Legal map. Same species, different owners of truth.
+Юридична карта: один вид, кілька власників запису.
 
 ## Terminal
 
-UA LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core тримає старе фінансове право й сертифікацію; Centauri несе перші колоніальні хартії; Barnard Yards унормував salvage-працю; Tau Ceti може перетворити докази на публічне право; Luyten контролює custody пакетів; Aegir лишається корпоративним claim, доки хтось не доведе інше.
 
 ## Audio
 
-UA LOC HOLD: The farther you go, the more the law becomes a receipt.
+Що далі йде сигнал, то більше закон звучить як бухгалтерія.
 
 ## Field Note
 
-UA LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+Порятунок блокує не лише відстань. Його блокує питання, хто має право назвати застряглих людей громадянами.
 
 <!-- External Site; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/uk_UA. -->

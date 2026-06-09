@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Стартовая contract card долга игрока"
+title: "Стартовая contract card с lien игрока"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Стартовая contract card долга игрока
+# Стартовая contract card с lien игрока
 
-Протагонист HECTON-8 не турист. Это скомпрометированный профессионал, возвращающийся через salvage work к катастрофе, которую его старый работодатель не сдержал.
+Протагонист HECTON-8 - бывший специалист Deep Reach, ставший salvage operator. Такое происхождение делает историю взрослой и практичной: игрок приходит за работой, а не за судьбой. Эмоциональный поворот зарабатывается доказательствами, контрактами и распознанным старым доступом, позволяя тайне стать личной без сведения ее к семейной мести.
 
 ## Scanner
 
-Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+Стартовая карта не делает тебя избранной жертвой. Она делает тебя бывшим специалистом Deep Reach с lien, ключом и причиной врать себе.
 
 ## Terminal
 
-CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACT START / оператор: независимый salvage contractor / бывший доступ: Deep Reach field key, неактивен, но распознан / lien: активен / заявленный мотив: claim value / скрытое давление: prior exposure, знакомый маршрут, beneficiary conflict.
 
 ## Audio
 
@@ -35,6 +35,6 @@ CONTRACT START: independent operator, former Deep Reach field access, salvage li
 
 ## Field Note
 
-Без lost-relative hook. Держать мотив professional-to-personal.
+Без lost-relative hook. Мотив начинается как работа: salvage value, старый field access, профессиональная засветка, скрытое личное давление.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/ru_RU. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Basin Payload Act"
+title: "שער payload אגן Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Basin Payload Act
+# שער payload אגן Atlas
 
-HE LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+אגן Atlas הוא המקום שבו המסלול מפסיק לשאול מה קרה ומתחיל לשאול מי מקבל את החבילה השימושית. שרשרת הראיות, וקטור האגן, דרגת salvage ו-proof hash אינם יכולים כולם להישאר ללא שינוי. צריך לבחור מקבל, לסרב לו או להחליף אותו בהחזקה מקומית.
 
-## Scanner
-
-HE LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-HE LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-HE LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+זה הלחץ הסופי: שום מסלול לא מנקה את זירת הפשע. מכירת קואורדינטות משלמת וחושפת את האגן. חיתוך מנתק דרכי חזרה והורג מבנה שימושי. הסגר משמר ומחזיק. הספר הציבורי מפרסם בלי מפה. Blind return מסרב לכולם ומסכן את אובדן החבילה. הקמפיין מסתיים במשמורת, לא בנחמה.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/he_IL. -->

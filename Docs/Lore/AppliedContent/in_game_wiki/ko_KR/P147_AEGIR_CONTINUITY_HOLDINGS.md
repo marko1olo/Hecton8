@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-KO LOC HOLD: Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.
+Aegir Continuity Holdings는 Deep Reach가 아무것도 인정하지 않고 가치를 유지하게 하는 껍데기다. 휴면 항로 임대, 압력 거주지 옵션, 광물 청구, 손상 장비 소유권, recovery 권리를 보유하고 공공 컴바인은 서비스를 말하게 둔다.
 
 ## Scanner
 
-KO LOC HOLD: The dirty project needs a clean owner with no face.
+Aegir Continuity Holdings는 생존을 대차대조표의 동사로 소유한다.
 
 ## Terminal
 
-KO LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+홀딩 기록: 항로 임대, 거주지 청구, 실패 현장 옵션, 자산 연속권은 공공 컴바인 밖에 보관된다.
 
 ## Audio
 
-KO LOC HOLD: No one works there. Everyone signs through it.
+식민지는 실패했다. 홀딩 회사는 계속됐다.
 
 ## Field Note
 
-KO LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+연속성은 담보가 승무원, 거주지, 사과 창보다 오래 산다는 뜻이다.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/ko_KR. -->

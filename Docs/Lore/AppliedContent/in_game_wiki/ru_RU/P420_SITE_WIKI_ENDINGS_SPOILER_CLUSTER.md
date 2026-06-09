@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Концовки и custody payload
 
-Узел dossier концовок: custody, evidence, будущее Atlas и цена ухода.
+Узел досье концовок: каждый выход является передачей custody, а не цветной моральной меткой.
 
 ## Scanner
 
-Spoiler hub: получатели payload, false exits, custody, публичная правда, continuity Atlas и after-action records.
+Spoiler hub: custody payload, последствия receiver, false exits, публичный proof, карантинный рычаг и continuity Atlas.
 
 ## Terminal
 
-SITE NAV: скрывать final payload pages за spoiler gates. Организовать по receiver и ownership proof.
+SITE NAV: держать финальные страницы за spoiler gates; сортировать исходы по контролю тела, координат, samples, Atlas records и worker proof.
 
 ## Audio
 
-Концовка определяется тем, кто владеет доказательством после подъема.
+Выход не конец. Это передача custody.
 
 ## Field Note
 
-Концовки остаются spoiler-gated и организуются по receiver и custody consequence, не по моральным ярлыкам.
+Если тело ушло, но proof кому-то принадлежит, океан еще не закончил дело.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ru_RU. -->

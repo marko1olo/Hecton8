@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przewodnik terenowy procesu vent-forge"
+title: "Przewodnik procesu terenowego kuźni wentowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik terenowy procesu vent-forge
+# Przewodnik procesu terenowego kuźni wentowej
 
-Przewodnik terenowy procesu vent-forge wiąże wartość zasobu z obsługą w terenie: ważne jest nie tylko, co znaleziono, lecz jak pressure i cooling pozwolą temu przetrwać recovery.
+Kuźnia wentowa nie jest skrzynią skarbów na dnie. To powolny reaktor z gorącego wysięku, gęstości solanki, zmielonego wsadu mineralnego i ciśnienia, które nie wybacza pośpiechu. Użyteczny materiał często leży między naturalnym osadem a zepsutą partią przemysłową: ziarna ceramiczne rosną w gardłach minerałów, prekursory uszczelniacza wypiekają się w pęknięciach, a naładowane filmy pozostają stabilne tylko wtedy, gdy chłodzenie idzie we właściwej kolejności.
 
-## Scanner
-
-Vent-forge chemistry aktywna. Jakość zależy od pressure history, heat pulse i powolnego chłodzenia, nie od połysku próbki.
-
-## Terminal
-
-FIELD GUIDE: vent forges gotują sulfides, noble-gas pockets, ceramics i sealant precursors. Droga próbki przez heat, brine i pressure ważniejsza jest niż jej nazwa.
-
-## Audio
-
-Vent nie zrobił rudy. Zrobił proces, który przerwałeś.
-
-## Field Note
-
-Nie wynoś świeżej partii prosto do zimnej wody. Pozwól vent dokończyć anneal, albo shell spęka.
+Obsługa terenowa staje się częścią zasobu. Wyciągnij świeżą partię do zimnej wody, a skorupa spęka. Spuść ciepło zbyt szybko, a czysta próbka stanie się proszkiem. Czekaj zbyt długo, a went zapisze inną chemię na warstwie, której potrzebujesz. Ekipy salvage cenią kuźnie wentowe, bo sprawiają, że HECTON-8 wydaje się obrabiany przez samą planetę: ocean nie tylko ukrywa materiały, on nadal je wytwarza.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/pl_PL. -->

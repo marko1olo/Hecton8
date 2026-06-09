@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Blue Debt Sample Quality
 
-Blue Debt Sample Quality defines payout and evidence classes.
+Blue Debt Sample Quality defines HECTON-8's resource morality. The best samples are not simply worth more currency. They carry custody chains, pressure history and evidence value. That lets salvage, crafting, trading and endings speak the same language: what you bring up from the ocean can pay you, accuse someone, or make you harder to release.
 
 ## Scanner
 
-Blue debt quality is value, risk and evidence in one number.
+Blue Debt quality is value, risk and evidence in one number. The richer the sample, the less it behaves like loot.
 
 ## Terminal
 
-QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+QUALITY CLASSES / shard: low custody, safe trade / casketed bloom: pressure-rated value / harmonic glass: acoustic proof and high Deep Reach interest / live-contaminated sample: evidence priority, unstable handling / dead contaminated glass: low payout, high legal odor.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The more it is worth, the less it is only loot.
 
 ## Field Note
 
-Quality should affect payout, containment and ending pressure.
+Quality changes payout, containment cost, route pressure and ending leverage. A clean shard pays; a live-contaminated sample makes someone answer.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/en_US. -->

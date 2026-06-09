@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Brecha legal marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Brecha legal marauder
 
-PT LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Saqueadores não são uma tribo com uma única bandeira. São contratados, tripulações endividadas, mergulhadores de destroços e mecânicos desesperados trabalhando dentro de uma brecha criada pelo atraso. Uma colônia morta ainda tem dono, mas propriedade não remenda casco, não bombeia salmoura nem retira gravadores de conveses de serviço esmagados. A Deep Reach precisa de equipes que possa negar. Os domínios precisam de provas que não tenham de coletar. As tripulações precisam de papel suficiente para sobreviver à próxima patrulha.
 
 ## Scanner
 
-PT LOC HOLD: License valid in one lane, criminal in the next.
+Licença válida numa rota, acusação na próxima.
 
 ## Terminal
 
-PT LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor sob custody do Aegir Reclamation Pool; invasor tolerado na linguagem de ativos da Deep Reach; raider processável nos resumos limpos de Sol; emergency responder apenas se o registro recuperado não constranger ninguém importante.
 
 ## Audio
 
-PT LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+O mesmo cortador pode ser ferramenta, crime ou o único dispositivo de resgate que restou.
 
 ## Field Note
 
-PT LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder só é cargo enquanto o tribunal certo consegue lucrar com isso.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/pt_BR. -->

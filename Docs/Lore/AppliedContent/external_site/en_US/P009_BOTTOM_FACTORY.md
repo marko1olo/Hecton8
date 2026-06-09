@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: en_US
 surface: external_site
@@ -19,6 +19,10 @@ localization_flags: 0
 
 # Bottom Factory
 
-The Bottom Factory should feel like the moment every earlier clue physically joins. Blue debt is no longer only a sample. Repair scars are no longer isolated patches. Brine stairs are no longer only routes. Evacuation records are no longer paperwork. At the bottom, all of those systems feed one body that still works. It is a factory because it processes material. It is a ship because routes and pressure skins still move loads. It is a temple because the colony's old categories have been replaced by maintenance rituals no one human can safely interpret. The key is that the place is not dead. It is busy. It keeps doors sealed, grows membranes, recycles wreckage, preserves continuity, and uses whatever the ocean has delivered. For the player, this makes the final descent less about finding the last room and more about entering a machine that has already decided the difference between person, tool, route, and raw material is optional.
+Bottom Factory is not a final throne room. It is the lower return plant where earlier evidence becomes hardware: blue debt residue in wall seams, brine routes under deck plates, repair welds under new carbonate, and evacuation tags still trapped beside sealed doors.
+
+Deep Reach built the lower node to keep claim and service continuity alive during long delay. Atlas-6 kept routing around failed categories because the pumps, cables, and sample trays still answered. The result is a working plant. Brine moves. Heat returns. Signal crosses patched cable sleeves. Filter organisms collect in housings that were once clean service boxes. Pressure-grown seals hold plates shut after the original gaskets fail.
+
+That makes the site dangerous in a practical way. It patches around tools, tags, suit hardware, and sample trays left in the path. It can preserve a route while burying the tag that explains who was in it. Read the tag drawer before cutting a pale seam; the factory may seal the leak faster than you can recover the name.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/en_US. -->

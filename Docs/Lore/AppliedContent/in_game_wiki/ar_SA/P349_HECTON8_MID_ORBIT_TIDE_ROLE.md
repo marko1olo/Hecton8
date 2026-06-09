@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "دور HECTON-8 المدّي في المدار الأوسط"
+title: "دور HECTON-8 المداري المتوسط في المد والجزر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# دور HECTON-8 المدّي في المدار الأوسط
+# دور HECTON-8 المداري المتوسط في المد والجزر
 
-HECTON-8 هو الموضع الذي تصير فيه رياضيات Aegir شخصية. بعيد بما يكفي عن أسوأ إشعاع داخلي، قريب بما يكفي ليبقي المد المحيط حيا، وقيم بما يكفي كي تبني Deep Reach تحت الضغط.
+HECTON-8 هو القمر الذي تصبح فيه رياضيات Aegir المدارية أمرا شخصيا. يقع بعيدا بما يكفي عن أسوأ إشعاع داخلي لعمليات طويلة، وقريبا بما يكفي لتبقي المد والجزر المحيط متحركا، وثمينا بما يكفي لكي تبني Deep Reach تحت الضغط. الموضع نفسه يجعل الإنقاذ قذرا. طور المد، وكتلة الناقل، وضجيج العاصفة، والحيازة القانونية تلتقي فوق البدلة كسقف متحرك.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ HECTON-8 هو الموضع الذي تصير فيه رياضيات Aegir شخص�
 
 ## Field Note
 
-HECTON-8 يدفع لأنه يقع حيث يتقاطع الضغط والمد والمسؤولية.
+يدفع HECTON-8 لأن الضغط والمد والمسؤولية تتراكب في عمود الماء نفسه.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/ar_SA. -->

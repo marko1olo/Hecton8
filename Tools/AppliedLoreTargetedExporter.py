@@ -14,6 +14,7 @@ import csv
 import io
 import json
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,21 @@ from AppliedLorePageExporter import (
     safe_text,
 )
 from AppliedLoreTextIntegrity import find_text_integrity_errors
+
+
+def configure_csv_field_limit() -> None:
+    """Allow validation to read generated longform publication rows."""
+
+    limit = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(limit)
+            return
+        except OverflowError:
+            limit //= 10
+
+
+configure_csv_field_limit()
 
 
 PACKET_SOURCE_GLOB = "*.json"
@@ -182,6 +198,16 @@ def load_packet_sources(base: Path, explicit_paths: tuple[Path, ...] = ()) -> li
             packet.setdefault("_manifest_status", manifest_status)
             add_packet(packets_by_id, packet, source_path)
 
+    return [packets_by_id[key] for key in sorted(packets_by_id)]
+
+
+def merge_packets_by_id(*packet_groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    packets_by_id: dict[str, dict[str, Any]] = {}
+    for packets in packet_groups:
+        for packet in packets:
+            packet_id = safe_text(packet.get("packet_id"))
+            if packet_id:
+                packets_by_id[packet_id] = packet
     return [packets_by_id[key] for key in sorted(packets_by_id)]
 
 
@@ -728,8 +754,11 @@ def export_targeted(
         )
         if refresh_indexes:
             stats.refreshed_indexes = True
-            stats.locale_indexes_written, stats.locale_indexes_unchanged = refresh_locale_indexes(base, all_packets, dry_run)
-            stats.status_index_written = refresh_localization_status_index(base, all_packets, dry_run)
+            index_packets = all_packets
+            if explicit_packet_sources:
+                index_packets = merge_packets_by_id(load_packet_sources(base, ()), all_packets)
+            stats.locale_indexes_written, stats.locale_indexes_unchanged = refresh_locale_indexes(base, index_packets, dry_run)
+            stats.status_index_written = refresh_localization_status_index(base, index_packets, dry_run)
 
     validate_selected_pages(base, selected_packets)
     validate_publication_surface_index(base, selected_packets)

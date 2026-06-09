@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Basin Payload Act"
+title: "Puerta payload de la cuenca Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Basin Payload Act
+# Puerta payload de la cuenca Atlas
 
-ES LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+La cuenca Atlas es donde la ruta deja de preguntar qué ocurrió y empieza a preguntar quién recibe el paquete útil. La cadena de pruebas, el vector de cuenca, la clase salvage y el proof hash no pueden quedar todos intactos. Hay que elegir receptor, negarlo o sustituirlo por una retención local.
 
-## Scanner
-
-ES LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-ES LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-ES LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-ES LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Esa es la presión final: ninguna ruta limpia la escena. La venta de coordenadas paga y expone la cuenca. El corte cierra retornos y mata estructura útil. La cuarentena preserva y retiene. El libro público publica sin mapa. Blind return rechaza a todos y arriesga perder el paquete. La campaña termina con custodia, no con consuelo.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/es_ES. -->

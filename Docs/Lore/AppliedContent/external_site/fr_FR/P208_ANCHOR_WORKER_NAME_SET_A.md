@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Jeu de noms ouvriers d'ancrage A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Jeu de noms ouvriers d'ancrage A
 
-FR LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Le Jeu de noms ouvriers d'ancrage A définit les premiers noms récurrents de la colonie pour HECTON-8. Ces huit travailleurs ne sont pas de simples anecdotes de lore ; ce sont des poignées de mémoire. Le joueur les rencontre d'abord par les objets et le travail, puis voit peu à peu les mêmes noms traverser dossiers de maintenance, autorisations, rapports de dégâts et fragments audio. Set A garde les premières heures humaines sans arrêter le jeu pour exposer.
 
 ## Scanner
 
-FR LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Les premiers noms doivent revenir par le travail, pas par des discours. La route peu profonde enseigne la mémoire par répétition.
 
 ## Terminal
 
-FR LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A : récurrence sur les hauts-fonds et le plateau industriel. Chaque nom doit se lier à un outil, une autorisation de route, un objet de travail endommagé et une contradiction plus tardive. Ces noms sont la première preuve que la colonie était un lieu de travail avant de devenir du salvage.
 
 ## Audio
 
-FR LOC HOLD: Do not mourn the name until the tool tells you why.
+Ne pleure pas le nom avant que l'outil dise pourquoi.
 
 ## Field Note
 
-FR LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Ancrages Set A : Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/fr_FR. -->

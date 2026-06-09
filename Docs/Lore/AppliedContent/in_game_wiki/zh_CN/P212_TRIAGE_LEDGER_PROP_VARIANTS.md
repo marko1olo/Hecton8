@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "分诊账本道具变体"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# 分诊账本道具变体
 
-CN LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+分诊账本道具变体让伤害可读，而不是把房间变成痛苦展示。分诊账本应显示伤害如何穿过官僚系统：挤压状态速记、氧债、航线扣押划线、设备状态、Atlas 稳定化备注、witness hash 缺口。重点不是用疼痛装饰殖民地。重点是证明拖延有路径，而路径有所有者。好的分诊道具会让玩家追问：为什么一个工人被计入，另一个被扣住，第三个消失进认证措辞里。
 
 ## Scanner
 
-CN LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+医疗证据应暴露拖延和路线，而不是用痛苦装饰房间。
 
 ## Terminal
 
-CN LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: 每条账本记录都必须把伤害连接到压力、航线拒绝、设备状态、认证拖延或缺失的见证链。单独的痛苦还不够。道具必须显示谁能移动，谁被扣住，以及哪个系统把拖延伪装成流程。
 
 ## Audio
 
-CN LOC HOLD: Pain is not proof until the route bears the mark.
+在航线带上标记之前，痛苦不是证据。
 
 ## Field Note
 
-CN LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+变体：挤压状态速记、氧债标记、航线扣押划线、Atlas 稳定化备注、witness hash 缺口。
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/zh_CN. -->

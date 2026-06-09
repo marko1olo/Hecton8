@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Transit Rotasi Kru Manusia
 
-Rotasi manusia membuat ditinggalkannya HECTON-8 terasa masuk akal. Pekerja, spesialis, dan kru pengganti bergerak lebih lambat daripada bahasa klaim. Seseorang bisa meninggalkan Sol dengan satu kontrak, bangun dengan kontrak lain, dan mengetahui bahwa darurat yang ia latih sudah menjadi bukti.
+Rotasi manusia adalah janji yang membuat Aegir layak huni di atas kertas. Pekerja menerima siklus panjang karena jendela pulang ada, kustodi medis ada, dan ledger carrier menyebut mereka orang yang bisa dipulangkan, bukan massa yang ditinggalkan. Dalam praktik, setiap rotasi bergantung pada kelangkaan ranjang, utang rute, izin hukum, dan apakah Deep Reach masih ingin saksi itu hidup.
 
 ## Scanner
 
-Manusia tidak komuter ke Aegir. Mereka menghabiskan tahun sebagai kargo yang punya pendapat.
+Jadwal kru dicap valid setelah separuh nama sudah tak terjangkau.
 
 ## Terminal
 
-ROTASI KRU: transport manusia memakai jendela lambat, seksi habitat berpelindung, siklus metabolisme rendah, dan rotasi bertahap. Pekerja hilang menjadi masalah custody yang tertunda.
+ROTASI KRU: transfer manusia memerlukan massa ranjang, jatah radiasi, pengawasan tidur, utang medis, kustodi hukum, dan asuransi jendela pulang. Ekstraksi darurat bukan tombol; itu pengecualian praharga yang hampir tak bisa dibayar siapa pun.
 
 ## Audio
 
-Saat rumah bertanya di mana kamu, ruangan itu sudah kebanjiran.
+Rencana rotasi bukan rencana penyelamatan. Keduanya hanya tampak mirip dari meja.
 
 ## Field Note
 
-Pekerja frontier menjual waktu sebelum menjual tenaga.
+Manusia dirotasi seperti inventaris sampai rute mengingatkan semua orang bahwa mereka adalah tubuh.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/id_ID. -->

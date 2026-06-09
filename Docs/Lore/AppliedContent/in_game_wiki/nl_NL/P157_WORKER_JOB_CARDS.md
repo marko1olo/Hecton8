@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Werkkaarten van arbeiders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Werkkaarten van arbeiders
 
-NL LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Een werkkaart is de kleinste biografie van de kolonie. Ze heeft geen jeugd, romance of toespraak nodig om te tellen. Ze heeft een rol nodig, een toestemmingsstempel, een laatste taak en datgene wat de werker na de volgende toon dacht af te maken. Wanneer de speler deze kaarten vindt, zijn mensen geen achtergrondslachtoffers meer maar routebewijs: iemand hield de pompsleutel, vertraagde een luik, kookte voor een ploeg, tekende een cutter uit, certificeerde een afdichting of miste de terugkeer omdat het systeem hulp liet wachten.
 
 ## Scanner
 
-NL LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Naam, rol, laatste taak, routetoestemming, gereedschapscertificaat. Een gezicht dat het budget kon lezen.
 
 ## Terminal
 
-NL LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+BEWIJSREGEL: elke teruggevonden naam moet vastzitten aan iets dat gedaan werd: pomproute, keukenledger, medbay-oproep, cutterbewaring, drukcontrole, fabricagebatch. Een taak maakt van een naam bewijs.
 
 ## Audio
 
-NL LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Een naam zonder taak wordt een altaar. Een taak maakt er bewijs van.
 
 ## Field Note
 
-NL LOC HOLD: Make names useful before making them tragic.
+Maak namen nuttig voordat je ze tragisch maakt.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/nl_NL. -->

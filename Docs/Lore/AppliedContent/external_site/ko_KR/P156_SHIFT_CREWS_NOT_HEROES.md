@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "영웅이 아니라 교대조"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# 영웅이 아니라 교대조
 
-KO LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+영웅이 아니라 교대조는 HECTON-8의 인간 쓰기 규칙이다. 노동자는 일, 피로, 습관, 절차 실패로 기억된다.
 
 ## Scanner
 
-KO LOC HOLD: The colony becomes human through schedules, not speeches.
+인간층 // 식민지는 일정표, 닳은 도구, 돌아오지 않은 귀환, 근무판의 이름으로 실제가 된다. 연설이 아니다.
 
 ## Terminal
 
-KO LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+작성 규칙: 노동자를 펌프 기술자, 의무병, 경로 서기, 잠수부, 조리원, fabricator 조작원, 지친 감독으로 기록한다. 하나의 미귀환이 있는 근무표는 기념비보다 아프다.
 
 ## Audio
 
-KO LOC HOLD: They were not symbols. They were late for shift.
+그들은 상징이 아니었다. 교대에 늦었을 뿐이다.
 
 ## Field Note
 
-KO LOC HOLD: People are more believable as workers than as memorial statues.
+사람은 추모 조각상보다 노동자로서 더 믿을 만하다.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/ko_KR. -->

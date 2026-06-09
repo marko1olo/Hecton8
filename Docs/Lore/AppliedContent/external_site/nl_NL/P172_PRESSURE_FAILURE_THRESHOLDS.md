@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Drempels voor drukfalen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Drempels voor drukfalen
 
-NL LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Drempels voor drukfalen definiëren de leesbare rand tussen hulpbron en gevaar. Ze laten HECTON-8 diepte omzetten in spelersgrammatica: visuele stress, audiotikken, scannerwaarschuwingen, salvagerisico en craftinggevolgen wijzen allemaal naar dezelfde fysieke regel. Een sample faalt omdat de wereld erop drukt, niet omdat een inventarisnummer stil verliep.
 
 ## Scanner
 
-NL LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Een goede sample wordt gevaarlijk wanneer hij de verkeerde druklijn kruist. De oceaan geeft er niets om dat het label bijna klopte.
 
 ## Terminal
 
-NL LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+DRUKFALEN / shallow-rated: afdichtingstik en waterkruip / industrial-rated: gasketdrift en klemgeklapper / brine-rated: haarlijnscheur en zoutbloei / abyssal-rated: akoestische ghosting, dood-samplemist / Atlas-rated: bewaringslockout voor structureel verlies.
 
 ## Audio
 
-NL LOC HOLD: Pressure does not care that the label was almost right.
+Druk geeft er niets om dat het label bijna goed was.
 
 ## Field Note
 
-NL LOC HOLD: Failure thresholds should be readable before they punish.
+Faalgrenzen moeten leesbaar zijn voor de straf: tik, drift, haarlijn, zoutbloei, dood-samplemist. Als de speler pas leert na verlies, speelt de wereld vals.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/nl_NL. -->

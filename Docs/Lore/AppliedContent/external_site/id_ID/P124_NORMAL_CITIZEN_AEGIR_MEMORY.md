@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Ingatan Warga Biasa tentang Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Ingatan Warga Biasa tentang Aegir
 
-ID LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+Ingatan publik HECTON-8 sengaja dibuat tipis. Ruang manusia tidak perlu bodoh; cukup lelah, jauh, dan terlatih menerima ringkasan kehilangan. Aegir cukup terkenal untuk memengaruhi harga dan kebijakan, tetapi tidak cukup hidup untuk memaksa penyelamatan. Kembalinya orang ke samudra membuka celah antara ingatan publik dan bukti pribadi.
 
 ## Scanner
 
-ID LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Sisa arsip publik: semua orang pernah mendengar Aegir, hampir tak ada yang ingat nama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: peristiwa kehilangan HECTON-8, 2147. Penyebab resmi: kaskade badai, kegagalan evakuasi, korupsi otomasi, karantina biologis, telemetri tidak andal. Status kini: klaim dorman, indeks asuransi tetap aktif, perjalanan sipil tidak dianjurkan.
 
 ## Audio
 
-ID LOC HOLD: Most people know the place as a line under insurance rates.
+Kebanyakan orang mengenal Aegir sebagai baris di bawah tarif asuransi mereka.
 
 ## Field Note
 
-ID LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Bencana bisa menjadi biasa saat sudah masuk ke tagihan.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/id_ID. -->

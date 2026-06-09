@@ -19,21 +19,19 @@ localization_flags: 1
 
 # Livro Black Keel
 
-Black Keel é a linha orbital do jogador, mas não uma fantasia de resgate. Pertence à infraestrutura claim-pool: livros de custódia, dívida de seguro, janelas de recuperação, quarentena e autoridade do carrier.
-
-Guia porque guiar protege valor. Atrasa porque atraso também protege valor. Ajuda sem estar do seu lado.
+Black Keel é a linha orbital do jogador, mas não é a nave do jogador. Publicamente pertence ao Aegir Reclamation Pool; legalmente a Keelmark Mutual a envolve em seguro, dívida e exposição de recuperação. Hooks antigos da Deep Reach ainda dobram ordem de payload, quarentena e certificados de rota. O livro é frio porque é prático: corpo vivo, núcleo de evidência, amostra blue-debt, caixa de ferramentas e corte de casco competem pela mesma tonne-window.
 
 ## Scanner
 
-Livro de tender claim-pool. Custódia pública do carrier, dívida de seguro, penalidades de massa de subida e hooks Deep Reach ocultos.
+Livro de tender claim-pool. Custódia Aegir Reclamation Pool, exposição Keelmark Mutual, lien 4.8 tonne-window e hooks Deep Reach mascarados.
 
 ## Terminal
 
-LIVRO BLACK KEEL // Serviço de recuperação condicional. Liberação de claim incompleta. Rota de prioridade profunda mascarada. Autoridade de payload permanece no carrier. Sobrevivência do contratado não supera carga segurada sem valor de subida atualizado.
+LIVRO BLACK KEEL // Sobrevivência do contratado registrada como payload biológico recuperável. Núcleo de evidência pendente de classe de custódia. Material blue-debt exige revisão containment. Beneficiário de prioridade profunda mascarado. Dívida tonne-window ativa até valor de recovery superar exposição de carga segurada.
 
 ## Audio
 
-Black Keel não é sua nave. É a máquina que sabe o que você deve.
+Black Keel pode te salvar do oceano e ainda vender cada segundo da subida.
 
 ## Field Note
 

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Opstijgenergieladingassemblage"
+title: "Assemblage van de Opstijgenergielading"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Opstijgenergieladingassemblage
+# Assemblage van de Opstijgenergielading
 
-De Opstijgenergieladingassemblage verbindt grondstoffeneconomie met narratieve gevolgen: blue debt en vent-forged hardware bepalen ontsnappingsbetrouwbaarheid, bewijscustody en compromis.
+De Assemblage van de Opstijgenergielading is waar HECTON-8s salvage-economie ophoudt abstract te zijn. Hetzelfde drukgegroeide materiaal dat carrier-aandacht koopt, kan ook de impulslading worden die een capsule uit zee tilt.
 
-## Scanner
+Die ruil is gevaarlijk omdat blue debt geen magische brandstof is. Het is Xenon-Omega-procesmateriaal met drukhistorie, besmettingstoestand, insluitingsgedrag en juridische waarde. Een vent-forged heat cell kan gecontroleerde energie leveren. Een ruw monster kan breken, het custody-record vergiftigen of geldige recovery veranderen in betwiste vracht.
 
-Energiekradle gekerfd door pressure pulse. Een goedkope lading maakt een nette kist.
-
-## Terminal
-
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator en custody stamp vereist. Raw fuel geweigerd. Ongecertificeerde blue debt breekt onder launch impulse en maakt recovery claim ongeldig.
-
-## Audio
-
-Je kunt de lift verkopen of erop rijden. Niet allebei.
-
-## Field Note
-
-Elke gram in de kradle is ontsnapping, bewijs of blue-debt payout. De capsule vergeeft geen hebzucht.
+Een volledige lading bevat daarom hardware en claimtaal in dezelfde wieg: heat cell, isolator, impulshuls, massarecord en ondertekende custody stamp. Houd hem intact en de capsule heeft gecertificeerde lift. Breek hem voor uitbetaling en de oceaan laat de motor misschien nog ontsteken, maar niemand erboven hoeft te accepteren wat aankomt.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/nl_NL. -->

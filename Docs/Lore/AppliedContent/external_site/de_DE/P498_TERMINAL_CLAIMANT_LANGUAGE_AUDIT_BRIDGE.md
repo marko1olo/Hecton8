@@ -14,32 +14,32 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Audit der Anspruchssprache
 
-## Was der Datensatz belegt
+## Was der Eintrag trägt
 
-Anspruchssprache ist eine der leisesten Waffen der Kolonie. Sie muss den Pumpenraum, die verriegelte Triage-Tur oder die Arbeitermasse hinter dem Servicegitter nicht leugnen. Sie muss sie nur umbenennen, bevor jemand mit Macht die Datei liest. Eine Warteschlange wird zur Freigabezeitabweichung. Eine geschlossene Tur wird zum Quarantane-Pruftor. Ein nicht zuruckgekehrter Korper wird zur Zahlungsexposition. Eine beschadigte Bergungsruckkehr wird zur Teileignung.
+Deep-Reach-Papier kann einen Eintrag vergraben, ohne ihn zu löschen. Es behält Raum, Marke, Zeitstempel und Körperzählung und tauscht dann das Nomen daneben aus. Im Tau-Spiegelcache wird Pumpenraum B, nach Flutzeit 03:18 als belegt markiert, als Abweichung im Freigabefenster abgelegt. Triage-Tür 2, von der Kontrollseite verriegelt, wird zur Quarantäneprüfung. Die fehlende Arbeitsmarke R-17, während der Anzugring in der Bergungsmasse liegt, wird zur Keelmark-Exposition. Eine Rückgabeschale mit vier leeren Kit-Haken wird zur teilweisen Frachtfähigkeit.
 
-Der Audit dient dazu, Verfahrenssprache als Handlung zu lesen. Jede umgewandelte Phrase muss zu Mensch, Raum, Werkzeug, Routenuhr oder Druckereignis zuruckverfolgt werden. Deep Reach kann den Zeugen behalten und die Aussage trotzdem begraben, indem es das Regaletikett andert. Wenn die Kategorie bleibt und der Korper verschwindet, wurde der Beweis bereits einmal gewaschen.
+Lies den Eintrag vom Boden nach oben: Raum, Riegel, Marke, Uhr, Zahl der zurückgegebenen Objekte. Anspruchsverfahrenssprache wird erst Beweis, wenn sie an eine physische Spur geheftet werden kann. Wenn eine Datei die Kategorie behält und den Arbeiter fallen lässt, hat das Büro die Route schon einmal gereinigt.
 
-## Wie er zu lesen ist
+## Wie man ihn liest
 
-PAKET-NOTARINTERFACE: ANSPRUCHSSPRACHEN-AUDIT
-Original: Pumpenraum-Warteschlange weiterhin belegt.
-Umwandlung: Freigabezeitabweichung.
-Original: Triage-Tur geschlossen gehalten.
-Umwandlung: Quarantane-Pruftor.
-Original: nicht geborgene Arbeitermasse.
-Umwandlung: Keelmark-Zahlungsexposition.
-Original: Ruckkehr ohne volle Nutzlast.
-Umwandlung: Teilruckgabe-Eignung.
-Eine Kategorie ist nicht neutral, wenn sie einen Menschen ersetzt.
+AUDIT DER ANSPRUCHSSPRACHE / TAU-SPIEGELAUFNAHME
+Rohspur: Warteschlange Pumpenraum B nach Flutmarke 03:18 belegt.
+Abgelegt als: Abweichung im Freigabefenster.
+Rohspur: Triage-Tür 2 von der Kontrollseite verriegelt.
+Abgelegt als: Quarantäneprüfung.
+Rohspur: Arbeitsmarke R-17 fehlt; Anzugring in Bergungsmasse protokolliert.
+Abgelegt als: Keelmark-Exposition.
+Rohspur: Rückgabeschale ohne vier persönliche Kits.
+Abgelegt als: teilweise Frachtfähigkeit.
+Jede Kategorie ablehnen, die nicht auf Raum, Marke, Riegel oder Uhr zeigt.
 
 ## Feldnotiz
 
-Kategorien bringen tote Arbeiter zum Schweigen, ohne die Rechnung zu verlieren. Lies das Etikett und finde, was herausgeschnitten wurde, damit es passt.
+Wenn eine Datei zu sauber klingt, zähle Haken, Marken, Riegel und Uhren. Das fehlende Nomen ist meist der Arbeiter.
 
 <!-- External Site; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/de_DE. -->

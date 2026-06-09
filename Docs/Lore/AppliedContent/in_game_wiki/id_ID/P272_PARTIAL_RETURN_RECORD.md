@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Partial Return Record"
+title: "Catatan Kembali Parsial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Partial Return Record
+# Catatan Kembali Parsial
 
-ID LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.
+Catatan Kembali Parsial mencatat jeda tanpa pelarian. Black Keel dapat mengangkat operator untuk perbaikan setelan, udara, decon, dan sinkronisasi ledger, tetapi perintah kembali ke seed yang sama mempertahankan tanggungan, masa karantina, memori pindai, paket bukti terbuka, dan payload belum selesai pada samudra yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Extraction granted. Claim unresolved.
+CATATAN KEMBALI PARSIAL // Penjemputan Black Keel diterima. Kembali ke seed yang sama diizinkan di bawah tanggungan diperpanjang; memori pindai dan paket bukti terbuka tetap ada.
 
 ## Terminal
 
-ID LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+CATATAN AKHIR / KEMBALI PARSIAL
+Penjemputan: ekstraksi sementara Black Keel.
+Tujuan: perbaikan setelan, isi ulang udara, decon, sinkronisasi ledger.
+Status kustodi: tanggungan diperpanjang; masa karantina dilampirkan.
+Wewenang kembali: seed yang sama, samudra yang sama, peringatan rute dipertahankan.
+Data bertahan: memori pindai, paket bukti terbuka, payload belum selesai.
+Kehilangan diketahui: lega ditagihkan sebelum menjadi bebas.
 
 ## Audio
 
-ID LOC HOLD: Out is not away.
+Tekanan melepas. Kontrak menjaga kursinya.
 
 ## Field Note
 
-ID LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Setelan bersih dan satu siklus tidur tidak menutup kontrak. Rute di bawah mempertahankan peringatan lamanya.
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/id_ID. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Tangga Ending Palsu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Tangga Ending Palsu
 
-ID LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+Tangga Ending Palsu menjaga cakupan replay tetap terbaca: beberapa keluar, empat keluarga besar yang belum selesai, dan basin Atlas sebagai pusat gravitasi.
 
 ## Scanner
 
-ID LOC HOLD: Four major false families before the deep Atlas resolutions.
+TANGGA ENDING // Bayaran material, kembali sebagian, penangkapan korporat atau karantina, kebocoran ledger publik. Empat keluarga palsu sebelum jawaban Atlas dalam.
 
 ## Terminal
 
-ID LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+CAKUPAN DOSSIER: tandai banyak jalan keluar, tapi kelompokkan dalam keluarga jelas. Bayaran material, keluar/kembali sebagian, penangkapan/karantina korporat, dan bocoran ledger publik berada di bawah resolusi payload basin Atlas.
 
 ## Audio
 
-ID LOC HOLD: The dossier can mark many exits before it marks an answer.
+Dossier bisa menandai jalan keluar sebelum menandai jawaban.
 
 ## Field Note
 
-ID LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Cukup ending untuk menghargai gaya. Tidak cukup untuk membuat kebenaran murah.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/id_ID. -->

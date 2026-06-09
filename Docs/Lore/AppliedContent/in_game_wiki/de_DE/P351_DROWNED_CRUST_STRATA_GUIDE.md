@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Feldführer für ertrunkene Krustenschichten"
+title: "Führer zu ertrunkenen Krustenschichten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feldführer für ertrunkene Krustenschichten
+# Führer zu ertrunkenen Krustenschichten
 
-Die ertrunkene Kruste ist HECTON-8s lesbare Geschichte: alte Kolonieschnitte, Eiskollaps-Simse, pressure-glass-Nähte und Mineralbänder zeigen, wo eine Route hält, schert oder bei Berührung versagt.
+Die ertrunkene Kruste ist HECTON-8s lesbare Geschichte. Alte Kolonieschnitte, Eissturzsimse, Druckglasnähte und Mineralbänder zeigen, wo eine Route hält, schert oder bei Berührung versagt. Salvage-Crews lesen sie wie ein beschädigtes Hauptbuch: was gebaut wurde, was fiel und woran der Ozean seither schleift.
 
 ## Scanner
 

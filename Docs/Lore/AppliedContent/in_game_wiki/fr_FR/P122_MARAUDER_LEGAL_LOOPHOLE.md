@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Faille juridique des marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Faille juridique des marauders
 
-FR LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Les maraudeurs ne sont pas une tribu sous un seul drapeau. Ce sont des sous-traitants, des équipages endettés, des plongeurs d'épave et des mécaniciens acculés qui travaillent dans une faille née du retard. Une colonie morte a encore un propriétaire, mais un propriétaire ne colmate pas une coque, ne pompe pas la saumure et ne sort pas les enregistreurs des ponts écrasés. Deep Reach a besoin d'équipes qu'elle peut renier. Les domaines ont besoin de preuves qu'ils ne collectent pas eux-mêmes. Les équipages ont besoin d'assez de papier pour survivre à la prochaine patrouille.
 
 ## Scanner
 
-FR LOC HOLD: License valid in one lane, criminal in the next.
+Licence valide dans une voie, inculpable dans la suivante.
 
 ## Terminal
 
-FR LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS : licensed salvage contractor sous custody de l'Aegir Reclamation Pool ; intrus toléré dans le langage d'actifs Deep Reach ; raider poursuivable dans les résumés propres de Sol ; emergency responder seulement si le dossier récupéré ne gêne personne d'important.
 
 ## Audio
 
-FR LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Le même cutter peut être un outil, un crime ou le seul dispositif de sauvetage restant.
 
 ## Field Note
 
-FR LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder n'est un métier que tant que le bon tribunal peut en tirer profit.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/fr_FR. -->

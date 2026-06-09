@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protocole de localisation native des noms"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protocole de localisation native des noms
 
-FR LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+Ce protocole définit comment HECTON-8 conserve l'identité des travailleurs dans 15 langues. Les noms, bandes de badge et variantes compactes sont écrits par locale; titres, départements, rôles de quart, routes et labels se traduisent séparément. Un nom est un objet-preuve, pas une chaîne à recomposer en direct.
 
 ## Scanner
 
-FR LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Cette bande est écrite, pas traduite en direct. La personne survit à l'interface seulement si l'interface cesse d'improviser.
 
 ## Terminal
 
-FR LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+LOCALISATION DES NOMS // Noms personnels, bandes courtes et fragments de badge sont baked par locale. Titres, départements, permissions de route et notes de quart se localisent autour. RTL et CJK exigent formes courtes écrites, retours sûrs et aucune recomposition live dans scanner, UI de casier, terminaux ou wiki externe.
 
 ## Audio
 
-FR LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Un nom qui casse l'UI n'est pas du respect. C'est la colonie qui supprime le travailleur une deuxième fois.
 
 ## Field Note
 
-FR LOC HOLD: No live name translation. Preserve identity through baked strings.
+Ne jamais laisser un fallback runtime renommer un travailleur mort. Un nom cassé est une autre forme d'effacement.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/fr_FR. -->

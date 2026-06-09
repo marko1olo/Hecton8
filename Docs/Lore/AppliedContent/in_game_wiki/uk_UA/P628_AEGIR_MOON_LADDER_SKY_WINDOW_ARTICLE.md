@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Небесне вікно місячної драбини Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Небесне вікно місячної драбини Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Місячна драбина Aegir - це маршрутна інформація. Мітки місяців показують якість сигналу, припливний тиск, релейну тінь і ризик transfer-вікна без живої орбітальної симуляції.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+МІТКА МІСЯЦЯ // Релейний шум падає. Вікно придатне, якщо штормова смуга втримається.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+ЕФЕМЕРИДНА НОТАТКА // Смуга вікна HECTON-8 сприятлива. Релейна тінь Kestrel зростає. Сильне пакетне вікно коротке.
 
 ## Audio
 
-Read the sky, then send.
+Не витріщайся в небо. Прочитай його, тоді надсилай.
 
 ## Field Note
 
-Pretty moons are weights.
+Красиві місяці все одно є вагою на лінії.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/uk_UA. -->

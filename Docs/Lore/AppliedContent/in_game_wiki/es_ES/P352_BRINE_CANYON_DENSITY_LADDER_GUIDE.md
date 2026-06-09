@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guía de escalera de densidad de cañones de salmuera"
+title: "Guía de escalera de densidad de cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guía de escalera de densidad de cañones de salmuera
+# Guía de escalera de densidad de cañón de salmuera
 
-Los cañones de brine vuelven física la profundidad. Enseñan capas de densidad, límites del casco, fallos de presión y resource pockets antes de abrir rutas inferiores.
+Los cañones de salmuera hacen física la profundidad. Capas de densidad, limo suspendido, bolsas de filtración fría y zonas ciegas de instrumentos enseñan límites de casco antes de abrir rutas bajas. El camino hacia abajo no es una escalera de roca. Es una escalera de fluidos que discuten dónde debe estar un cuerpo.
 
 ## Scanner
 

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Набор route permission stamps"
+title: "Набор штампов маршрутного допуска"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Набор route permission stamps
+# Набор штампов маршрутного допуска
 
-Набор route permission stamps дает игроку восстанавливать движение колонии через физический access evidence.
+Набор штампов маршрутного допуска дает движению визуальный язык. Штампы PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY и WITNESS не являются знаками ранга. Это напорные разрешения: кто мог пройти через люк, забрать костюм, выпустить crawler или войти в ремонтный шлюз, когда колония отказывала. Штамп всегда должен сочетаться с физическим состоянием: открыто, запечатано, отказано, перезаписано, затоплено или позже исправлено рукой мародера. Так игрок восстанавливает движение колонии без персонажа, который все объясняет.
 
 ## Scanner
 
-Route stamp сильнее строки из дневника.
+Маршрутный штамп сильнее строки дневника, потому что доказывает, кого пропустили через напорную границу.
 
 ## Terminal
 
-STAMP RULE: route permission связывает одного worker, одну door или vehicle, одну job family и одно later contradiction.
+STAMP RULE: маршрутный допуск должен связывать одного рабочего, одну дверь или машину, одну бригадную семью и одно позднее противоречие. Штамп без физической границы это декор. Штамп на люке, стойке костюмов, рельсе crawler или бирке лифта становится уликой движения.
 
 ## Audio
 
-Access это biography under pressure.
+Доступ это биография под давлением.
 
 ## Field Note
 
-Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Связывать с hatch state и job object.
+Штампы: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Сочетать с состоянием люка и рабочим предметом.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/ru_RU. -->

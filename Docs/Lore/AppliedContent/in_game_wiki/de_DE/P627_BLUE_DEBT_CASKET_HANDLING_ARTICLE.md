@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Umgang mit Blauschuld-Kassette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Umgang mit Blauschuld-Kassette
 
-Blue debt is condition-dependent salvage.
+Blaue Schuld ist zustandsabhängiges Bergungsgut. Halte sie versiegelt, kalt und druckstabil, bevor du über Werkzeugmaterial, Claim-Wert, Köder oder Beweis entscheidest.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+DRUCKKASSETTE // Stabil, solange kalt und versiegelt. Nicht entlüften. Vor Transport klemmen, wenn die Naht warm wird.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+XO-KONTINUITÄTSSUBSTRAT // Druckzustand erhalten. Zivile Lagerung verboten. Probentelemetrie nur über Claim-Grade-Custody routen.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Wenn die Kassette im Sonar zu zählen beginnt, gehört sie nicht mehr nur dir.
 
 ## Field Note
 
-Stabilize before you spend it.
+Blaue Schuld zahlt, weil sie mit drei Besitzern ankommt: dem Finder, dem Käufer und dem Ding, das merkte, dass sie bewegt wurde.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/de_DE. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Procedurele blokkade van Pavel Sorn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Procedurele blokkade van Pavel Sorn
 
-NL LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+Pavel Sorn geeft de HECTON-8-ramp haar gewoonste menselijke scharnier: een lokale contractfunctionaris met genoeg gezag om een evacuatie te vertragen en te weinig moed om de keten van clausules te breken. Zijn procedurele blokkade is geen schurkenmonoloog en geen geheim moordbevel. Het is een dienstmemo binnen het recht van Deep Reach, waar elke levensreddende handeling eerst langs certificering, aansprakelijkheidsrouting, Atlas-continuïteitszegels en claimbewaringstaal moet voordat ze redding mag heten. Het dossier telt omdat het schuld menselijk houdt zonder haar simpel te maken. Sorn zag de nood van de arbeiders, begreep dat de stijgwachtrij een doodvonnis werd en koos toch de zin die eerst het kantoor beschermde: vrijgave vasthouden tot het kanaal vrij is.
 
 ## Scanner
 
-NL LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn gaf geen bevel tot een slachting. Hij deed iets dat op papier makkelijker te overleven was: hij liet de evacuatievrijgave in de wachtbak liggen.
 
 ## Terminal
 
-NL LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Contractkantoor / administratiedek. Evacuatievrijgave blijft onder PROCEDURELE BLOKKADE: externe certificering ontbreekt, Atlas-continuïteitszegel onopgelost, aansprakelijkheidskanaal verzadigd. Nood van arbeiders erkend. Stijging niet autoriseren tot claimbewaring en quarantainetaal duidelijk zijn.
 
 ## Audio
 
-NL LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Hij bleef “in behandeling” schrijven terwijl de zee de lagere dekken nam.
 
 ## Field Note
 
-NL LOC HOLD: Useful evil often signs in normal handwriting.
+De kolonie stierf niet omdat één man lachte voor een gesloten deur. Ze stierf omdat de deur een formulier had.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/nl_NL. -->

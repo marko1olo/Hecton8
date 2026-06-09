@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Registro de demora de cola de evacuación"
+title: "Registro de demora de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro de demora de cola de evacuación
+# Registro de demora de evacuación
 
-Esta prueba convierte la evacuación en secuencia. La puerta no quedó solo aislada por el agua; permaneció en revisión mientras las alarmas de presión entraban en corredores ocupados. El campo de testigo vacío importa porque el sistema pedía confirmación humana cuando los humanos ya habían perdido acceso al panel.
+Este registro convierte la evacuación en una demora ordenada, no en un resultado ausente. Primero alarma, luego revisión, luego exceso de clase de sello, luego salida demasiado tarde. Deep Reach puede llamar incompleta a la evacuación; el reloj de cola muestra una compuerta mantenida cerrada por procedimiento después de que la presión cruzó la línea segura.
 
 ## Scanner
 
-Reloj de cola recuperado. La puerta de liberación siguió cerrada después de que las alarmas de presión pasaran de previsión a corredor.
+Reloj de cola recuperado. La compuerta de salida siguió en revisión manual después de que las alarmas de presión alcanzaran secciones ocupadas del corredor.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Confirmación manual ausente. Revisión de cuarentena pendiente. La presión de ruta superó la clase de sello antes de resolverse la autorización.
+COLA EVAC // MUELLE E-7. Confirmación manual vacía. Junta de cuarentena pendiente. Clase de sello superada antes de la autorización de salida. El cierre obedeció al estado de cola, no al daño por inundación.
 
 ## Audio
 
-No fallaron al salvar a todos. Esperaron hasta que salvar a cualquiera fue más difícil.
+Esperaron aprobación mientras la ruta perdía aire.
 
 ## Field Note
 
-Nota de merodeador: una puerta cerrada con un campo pendiente no es accidente. Es una decisión esperando firma.
+Nota de saqueador: una compuerta cerrada con confirmación vacía es una decisión esperando un nombre.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/es_ES. -->

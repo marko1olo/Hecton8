@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Pressure Suit Service Grades"
+title: "Сервісні класи тискових костюмів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Pressure Suit Service Grades
+# Сервісні класи тискових костюмів
 
-UA LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+Сервісні класи тискових костюмів тримають прогрес HECTON-8 у hard sci-fi: сертифікація глибини, витратники, теплові поля, межі забруднення й недосконалі історії ремонту.
 
 ## Scanner
 
-UA LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Мітки костюма класифікують робочу глибину, втому ущільнень, запас scrubber, тепловий допуск і забруднення.
 
 ## Terminal
 
-UA LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-UA LOC HOLD: The suit does not make you brave. It only fails later.
+Костюм не робить тебе хоробрим. Він лише ламається пізніше.
 
 ## Field Note
 
-UA LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Глибший костюм — не кольорова броня. Це папери, деталі й брудне обслуговування.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/uk_UA. -->

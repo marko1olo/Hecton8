@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Legal Insurance Automated Ping
 
-Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+Legal Insurance Automated Ping is a compact expression of HECTON-8's bureaucratic horror. Present-day Deep Reach can speak through automated insurance custody as effectively as through a person. The system asks what the survivor is carrying before it asks whether the survivor should be saved.
 
 ## Scanner
 
-Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Automated ping received. Rescue language has been replaced by receiver proof, mass class and custody status.
 
 ## Terminal
 
-INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / required before recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The first thing they ask is not whether you are alive. It is what you are carryi
 
 ## Field Note
 
-Short bark candidate. Do not spam; use at route thresholds.
+Short bark candidate at route thresholds. Use sparsely; the cruelty is in what the system asks first.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/en_US. -->

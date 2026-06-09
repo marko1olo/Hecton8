@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Atmosphere;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -130,6 +131,7 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<SuitIntegrityDTO> _suitIntegrityStateReadHandle;
 
         private IDataVault _dataVault;
+        private IHectonOceanKinematicsService _oceanKinematics;
         private IThermodynamicsService _thermodynamicsService;
         private IThermodynamicsService _thermalGridReadbackService;
         private ITickDispatcher _tickDispatcher;
@@ -233,6 +235,7 @@ namespace Hecton8.Physiology
             ReleaseMetabolismVaultHandles(_dataVault);
             ReleaseShaderGlobalsBuffers();
             ClearCachedHandles();
+            _oceanKinematics = null;
         }
 
         /// <inheritdoc />
@@ -244,6 +247,7 @@ namespace Hecton8.Physiology
             ReleaseMetabolismVaultHandles(_dataVault);
             ReleaseShaderGlobalsBuffers();
             ClearCachedHandles();
+            _oceanKinematics = null;
         }
 
         /// <inheritdoc />
@@ -275,6 +279,10 @@ namespace Hecton8.Physiology
                 CompleteFrameJobForTeardown();
                 ReleaseThermalGridReadback();
                 _thermodynamicsService = currentService as IThermodynamicsService;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematics = currentService as IHectonOceanKinematicsService;
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
@@ -407,6 +415,7 @@ namespace Hecton8.Physiology
                     integrationJob.ExposureSignals = (MetabolicExposureSignalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exposureSignals);
                     integrationJob.DetailTelemetry = (MetabolicDetailTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(detailTelemetry);
                     integrationJob.Tuning = tuning;
+                    integrationJob.SeaLevelAupY = ResolveMetabolismSeaLevelAupY();
                     integrationJob.ThermalGridRootAup = thermalRootAup;
                     integrationJob.ChemicalGridRootAup = chemicalRootAup;
                     integrationJob.ThermalGridResolution = thermalResolution;
@@ -1861,8 +1870,38 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
+            _oceanKinematics = GlobalRegistry.OceanKinematics;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             _tickDispatcher = GlobalRegistry.TickDispatcher;
+        }
+
+        private double ResolveMetabolismSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematics;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
         }
 
         private void TryRegisterTicks()

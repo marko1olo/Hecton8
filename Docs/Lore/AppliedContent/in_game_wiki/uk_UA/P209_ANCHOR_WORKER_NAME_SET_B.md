@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Якірний набір імен працівників B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Якірний набір імен працівників B
 
-UA LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+Якірний набір імен працівників B несе список у темніші шари доказів. Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung і Bram Kessel мають з'являтися після того, як гравець розуміє: відмови повторюються за задумом. Їхні записи належать роботі в соляному каньйоні, абісальним машинним полям, виняткам тріажу, суперечностям ремонту Atlas і боргам за salvage. Set B має відчуватися як мить, коли знайома історія робочого місця стає обвинуваченням з іменами, що все ще прикріплені.
 
 ## Scanner
 
-UA LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Глибші імена мають приходити після того, як гравець уже знає візерунок пошкоджень. Вони коштують дорожче, бо вода вже почала доводити злочин.
 
 ## Terminal
 
-UA LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: повторення в соляному каньйоні й абісальних машинних полях. Прив'язуй ці імена до witness hashes, маршрутних утримань, винятків тріажу, суперечностей ремонту Atlas і слідів боргу за salvage. Set B це місце, де доказ працівника перестає бути локальною трагедією й стає корпоративною причиною.
 
 ## Audio
 
-UA LOC HOLD: A deep name costs more because the water has already proved what happened.
+Глибоке ім'я коштує більше, бо вода вже довела, що сталося.
 
 ## Field Note
 
-UA LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Якорі Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/uk_UA. -->

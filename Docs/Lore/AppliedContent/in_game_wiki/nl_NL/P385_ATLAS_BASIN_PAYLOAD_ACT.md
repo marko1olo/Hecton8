@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas-bekkenpayloadpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Basin Payload Act
+# Atlas-bekkenpayloadpoort
 
-NL LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+De bekkenpoort is een ontvangerbesluit onder druk. De payload kan coördinaten verkopen, Atlas snijden, quarantaine bewaren, een geredigeerd grootboekpakket publiceren of lokaal blijven zonder bewijs. Elke route verandert custody, schuld, ecologie en bewijstoegang. Geen enkele brengt het bekken terug naar een onaangeraakte staat.
 
 ## Scanner
 
-NL LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Routepoort: Atlas-bekken. Finale payload vereist route, ontvanger, proof hash, ecologiestatus, lienstatus en overlevingsvenster.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+CAMPAGNEROUTE // ATLAS-BEKKEN PAYLOAD. Los op of weiger: coördinatenverkoop, Atlas-severance, quarantaine-escrow, openbaar grootboek, blind return. Ontvangerstempel verandert custody. Geen schone claimstatus beschikbaar.
 
 ## Audio
 
-NL LOC HOLD: The last question is not what happened. It is who you send it to.
+De laatste routevraag is wie het pakket ontvangt.
 
 ## Field Note
 
-NL LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Plunderaarsnotitie: kies de ontvanger voordat de tas water neemt. Een perfect antwoord past niet in deze tas.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/nl_NL. -->

@@ -19,22 +19,27 @@ localization_flags: 1
 
 # Kabelriff-Symbiose
 
-Kabelriff-Symbiose macht aufgegebene Infrastruktur zu einem lesbaren Öko-Industrie-Hybrid.
+Kabelriff-Symbiose ist HECTON-8s Warnung in mittlerer Tiefe: Leben kann verlassene Serviceleitungen funktionsfähig halten und zugleich Isolationsfehler verbergen, die später Atlas-Reparaturlogik anziehen.
 
 ## Scanner
 
-Flora wächst auf Stromstämmen und Signalleitungen. Das Riff nutzt Kolonieverkabelung als Skelett.
+Kabelwurzelmatte greift den P63-Stromstamm an drei Klemmringen. Signal läuft noch unter der grünen Manschette. Isolationsfehler am unteren Rand sichtbar. Gefahr: Drohnen- und Weiderverkehr folgt aktivem Strom.
 
 ## Terminal
 
-Wartung: Kabelwurzelmatten mindern Abrieb und halten Signal, ziehen aber Drohnen und Weidefauna an.
+SERVICEGRABEN-NOTIZ
+Leitung: P63-Stromstamm / Relaispaar C
+Zustand: biologische Manschette reduziert Abrieb
+Fehler: orange Isolierung unter unterer Matte freigelegt
+Verkehr: Weider und Wartungsdrohnen nahe aktivem Strom
+Aktion: Kontinuität scannen, bevor Bewuchs geschnitten wird
 
 ## Audio
 
-Ein lebendes Riff lernte die Form eines Servicekorridors.
+Das Riff ist keine Dekoration. Es hält dieses Relais trocken, und die Drohnen wissen, dass Strom anliegt.
 
 ## Field Note
 
-Die erste Verschmelzung ist nützlich, bevor sie entsetzlich wird.
+Grünen Bewuchs nicht entfernen, nur weil er falsch aussieht. Wenn er den Mantel trocken hält, Fehler markieren und darum herum routen.
 
 <!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/de_DE. -->

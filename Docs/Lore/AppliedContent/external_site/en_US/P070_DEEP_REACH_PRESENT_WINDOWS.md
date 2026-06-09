@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Present Windows
 
-Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Deep Reach Present Windows preserves the hard-sci-fi distance of HECTON-8 while keeping corporate pressure alive. Deep Reach cannot teleoperate the seabed, instantly rescue the operator or rewrite the planet in real time. What it can do is worse for the story: it can leave procedures, proxies and claim systems in place, then speak only during rare windows when the player has something worth bargaining over. This article defines that late-game pressure. The corporation's power is not magic communication; it is ownership language that survived the disaster and still knows how to price a human life against evidence, quarantine and salvage.
 
 ## Scanner
 
-Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach cannot steer HECTON-8 by radio, but its delayed windows, proxy notices and Black Keel clauses still decide what help costs.
 
 ## Terminal
 
-LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH PROXY: operator recovery negotiable after evidence review, payload custody, quarantine compliance and Atlas authority-key transfer. Refusal preserves claimant status but voids immediate extraction priority.
 
 ## Audio
 
-When they finally speak, they ask for the thing that proves they should not have it.
+When their voice reaches you, it is already a contract.
 
 ## Field Note
 
-Their voice is delayed. Their leverage is already here.
+Their answer arrives late. Their conditions arrived years ago.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/en_US. -->

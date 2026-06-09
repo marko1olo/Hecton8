@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Quiet Salvage Contract Seed"
+title: "זרע חוזה Salvage שקט"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quiet Salvage Contract Seed
+# זרע חוזה Salvage שקט
 
-HE LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+Salvage שקט מתחיל בחריץ נקי: פעילות סערה נמוכה, פחות מגעים מוקדמים, חלון bathydrop שנראה משולם עד הסוף. הצורה הזו מועילה לריצת salvage ארוכה כי המפעיל יכול לייצב כלים ומחסה לפני שהמסלול מתחיל לקחת חלקים בחזרה.
 
-## Scanner
-
-HE LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-HE LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-HE LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-HE LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+החוב יושב במשמורת. דגימות, תיקי תאונה, יומני pinger והודעות מסלול נקשרים לביקורת מקלט-ראשון לפני תשלום מלא. הריצה שקטה יותר מפני שהלוח כבר החליט למי שייכת הראיה הנקייה.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/he_IL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "古い手順を認識する合図"
+title: "旧手順認識キュー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 古い手順を認識する合図
+# 旧手順認識キュー
 
-古い手順の認識は、主人公の過去をプレイ可能な道具に変える。プレイヤーは神秘的な手掛かりや個人的な予言を追っているのではない。かつて信じるしかなかった安全様式を読んでいる。ルート安全印は、そのラインが認証済みだと告げる。部屋の証拠は、作業員数が書き換えられたと告げる。二度目の人間による確認を強制するはずだった手動証人欄は、継続性オフィスによって封印されている。その矛盾がフックになる。Deep Reachは単に経路を隠したのではない。作業員保護の言葉を使って、置き去りを行政上完了したように見せた。主人公の利害は職能的な認識から始まる。この様式は、まさにこの失敗を防ぐために作られていた。
+旧手順認識は自白ではなく安全フォームから始まる。route-safe certificationは、廊下を人数、ポンプ室タグ、そして数が合わない場合の人間による再確認へ結びつけるはずだった。この記録では申告occupantsがdegraded-countとして受理され、部屋のタグ数はまだ異議を出し、再確認欄はContinuity Officeに封じられている。
+
+その矛盾だけで足りる。オペレーターに指揮アクセスは要らない。Deep Reachは作業員保護の言葉で、置き去りを事務上完了したように見せた。フォームは一行を忘れたから壊れたのではない。数を止めるはずの行が、claimを守る行へ変えられた。
 
 ## Scanner
 
-ルート安全印が残っている。作業員数は二種類のインクで上書きされている。手動証人欄は封印済み。この種の嘘を捕まえるための様式だったが、誰かが方針に変えた。
+ROUTE-SAFE FORM // 申告occupantsはdegraded扱い。ポンプ室タグが作業員数と不一致。手動再確認欄はContinuity Officeにより封印。
 
 ## Terminal
 
-避難継続性様式 / ルート安全認証
-経路: 補助退避ライン
-申告人数: 劣化人数算定を承認
-手動証人: 継続性オフィスにより封印
-現場訂正: 作業員名簿がポンプ室タグと不一致
-状態: 請求保全、抽出許可なし。
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-君はこの様式を知っている。まだ人が息をしている部屋を空室として数えさせないためのものだった。
+このフォームは知っている。タグが合わないなら、その部屋は cleared ではない。
 
 ## Field Note
 
-この様式はもう一度数えさせるためのものだった。ここでは沈黙を強制した。
+このフォームは再集計を強制するためのものだった。ここでは誤った数を完了済みにした。
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/ja_JP. -->

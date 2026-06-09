@@ -1,15 +1,15 @@
 ---
 packet_id: P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.public_truth_lost_control
-unlock_id: unlock.final_question_public_truth_lost_control
+article_id: final_axis.public_ledger_lost_control
+unlock_id: unlock.final_question_public_ledger_lost_control
 poi_tags: poi.public_ledger_payload_gate;poi.tau_ceti_notary_burst
 biome_tags: biome.relay_archive;biome.public_archive
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "השאלה הסופית: אמת ציבורית, שליטה אבודה"
+title: "השאלה הסופית: יומן ציבורי, שליטה אבודה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# השאלה הסופית: אמת ציבורית, שליטה אבודה
+# השאלה הסופית: יומן ציבורי, שליטה אבודה
 
-נתיב האמת הציבורית שובר את ההסתרה הנקייה. הוא גם שובר את הבעלות על התוצאות. ראיות יכולות להציל שמות ממחיקה, ליצור לחץ חילוץ אמיתי ולהזמין כל טורף עם שולחן משפטי או ערוץ תפילה.
+נתיב היומן הציבורי מחליף משמורת בקבלה. החבילה יוצאת מהאגן עם האש עדות, שרשרת אחריות, תקציר מצב Atlas, קואורדינטות חוב כחול מושחרות והוכחת נתיב מטען לפני ש-Deep Reach יכולה לסגור את הארכיון לבדה. זה מגן על שמות מפני מחיקה פשוטה, אך גם מוסר את הקובץ לרגולטורים, נושים, רשתות שורדים, בתי דין של דומיין, מתחרים וכל מקבל מהיר מספיק כדי להגיש ראשון.
 
 ## Scanner
 
-פרסום ההוכחה מונע מחיקה. הוא גם מוסר את הגילוי לכל מי שיכול להשתמש בו לרעה מהר מספיק.
+ציר יומן ציבורי // נוטריון חבילת Tau/Luyten מקבל האש עדות לפני משמורת מלאה. Deep Reach מאבדת סגירת ארכיון יחידה; השולח מאבד את סדר המקבלים.
 
 ## Terminal
 
-ציר האמת הציבורית: hash עד, שרשרת אחריות, מצב Atlas, קואורדינטות blue debt ונתיב payload יכולים לצאת משליטת Deep Reach. אחרי הפרסום המפעיל כבר אינו שולט בפעולת המקבלים, בתגובת השוק או במי שמגיע ראשון.
+ציר סופי / יומן ציבורי
+גורם: האש עדות יוצא ממשמורת HECTON-8 דרך burst נוטריוני של Tau/Luyten.
+נישא: שרשרת אחריות, תקציר מצב Atlas, קואורדינטות חוב כחול מושחרות, הוכחת נתיב מטען.
+נחסם: סגירת ארכיון בבעלות יחידה של Deep Reach.
+אבד: סדר מקבלים, פרשנות שוק, שליטה בהגעה ראשונה.
+תור סיכון: סנקציות, הקפאת נתיבים, לחץ חילוץ, עותקי הגשה, חבילות נגד לדוח כוזב.
 
 ## Audio
 
-האמת עוזבת את היד שלך מהר יותר מכל חילוץ.
+החותמת מצילה את הקובץ. היא לא בוחרת מי קורא אותו.
 
 ## Field Note
 
-אמת ציבורית אינה צדק טהור. היא יוצרת סנקציות, כתות, מכירות פומביות, תביעות, לחץ חילוץ וclaims מחקים.
+קבלה ציבורית מייקרת מחיקה. היא גם מפעילה שולחנות סנקציה, הקפאת נתיבים, ויכוחי חילוץ, עותקי הגשה וציד קואורדינטות לפני שספינה מגיעה אל Aegir.
 
 <!-- In-Game Wiki; generated from P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL/he_IL. -->

@@ -2729,16 +2729,19 @@ namespace Hecton8.World
         {
             float referenceWaterLevel = DefaultVegetationWaterLevel;
 
-            MapMagicBridge mapMagicRuntime = _mapMagicRuntime;
-            if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicRuntime) &&
-                TryResolveVegetationWaterLevel(mapMagicRuntime.WaterSurfaceLevel, out float mapMagicWaterLevel))
-            {
-                _mapMagicRuntime = mapMagicRuntime;
-                referenceWaterLevel = mapMagicWaterLevel;
-            }
-            else if (_oceanKinematicsProvider != null && TryResolveVegetationWaterLevel(_oceanKinematicsProvider.SeaLevel, out float oceanWaterLevel))
+            if (_oceanKinematicsProvider != null && TryResolveOceanVegetationWaterLevel(_oceanKinematicsProvider.SeaLevel, out float oceanWaterLevel))
             {
                 referenceWaterLevel = oceanWaterLevel;
+            }
+            else
+            {
+                MapMagicBridge mapMagicRuntime = _mapMagicRuntime;
+                if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicRuntime) &&
+                    TryResolveVegetationWaterLevel(mapMagicRuntime.WaterSurfaceLevel, out float mapMagicWaterLevel))
+                {
+                    _mapMagicRuntime = mapMagicRuntime;
+                    referenceWaterLevel = mapMagicWaterLevel;
+                }
             }
 
             if (fluidReadModel != null && TryResolveVegetationWaterLevel(fluidReadModel.WaterLevel, out float fluidWaterLevel))
@@ -2750,11 +2753,24 @@ namespace Hecton8.World
             return referenceWaterLevel;
         }
 
+        private static bool TryResolveOceanVegetationWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultVegetationWaterLevel;
+            return false;
+        }
+
         private static bool TryResolveVegetationWaterLevel(float candidateWaterLevel, out float waterLevel)
         {
             if (math.isfinite(candidateWaterLevel) &&
                 math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;

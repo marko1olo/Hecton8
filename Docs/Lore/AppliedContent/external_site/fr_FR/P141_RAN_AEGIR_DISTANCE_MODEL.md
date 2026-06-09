@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Modèle de distance Ran-Aegir
 
-La distance Ran-Aegir est le nombre qui transforme l'isolement en physique. Une portée de classe dix années-lumière suffit aux sondes, au fret, à l'ancien droit et à l'appétit d'entreprise, mais elle reste trop longue pour que la compassion arrive au rythme d'une respiration humaine. HECTON-8 utilise cet écart comme pression : les messages vont plus vite que les vaisseaux, les réclamations plus vite que les personnes, et une pièce noyée meurt avant qu'une réponse du monde intérieur devienne pertinente.
+Le modèle de distance Ran-Aegir est le socle discret de la pression de HECTON-8. Aegir occupe une zone moyenne cruelle : assez proche pour justifier plaques de route, matériel seed, privilèges de fret, notaires distants et colonie d'extraction permanente ; assez loin pour que personne n'improvise la miséricorde quand une porte de pression cède.
+
+La différence compte. Messages, réclamations juridiques, horaires de transport, vaisseaux de secours et corps humains n'avancent pas sur la même horloge. Un avertissement peut filer pendant que le vaisseau censé répondre reste coincé dans le carburant, la fenêtre, la masse et l'autorisation du propriétaire. Deep Reach a appris à utiliser cet écart. La colonie a vécu dedans.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/fr_FR. -->

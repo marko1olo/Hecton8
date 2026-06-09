@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Faction Message Split
 
-The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+Players should hear Deep Reach as a system under stress: liability control, salvage recovery, old engineering guilt, insurer pressure, and black-box automation crossing wires over a drowned colony. The conflict does not absolve the company. It makes the company more dangerous because no single voice fully controls it.
 
 ## Scanner
 
-Message sources conflict: asset recovery, legal silence, old engineering warning.
+Three Deep Reach sources disagree: recovery wants coordinates, legal wants silence, legacy engineering warns the basin will answer.
 
 ## Terminal
 
-SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance requests navigable coordinates. Asset Silence orders evidence containment and no public acknowledgment. Legacy Engineering Node 4 repeats a pre-collapse warning: do not disturb the lower basin relays during Aegir shadow. These are not rebels. They are departments protecting different losses.
 
 ## Audio
 
-A company can be one logo and three knives.
+One logo. Three voices. None of them clean.
 
 ## Field Note
 
-This is not redemption. It is pressure-source readability.
+Use after the player has heard at least two Deep Reach tones. The beat is ambiguity with teeth: conflicting instructions, shared ownership, no clean ally.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/en_US. -->

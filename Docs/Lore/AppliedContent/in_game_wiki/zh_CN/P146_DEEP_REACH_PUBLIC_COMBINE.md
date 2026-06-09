@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Deep Reach Public Combine"
+title: "Deep Reach公共联合体"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Deep Reach Public Combine
+# Deep Reach公共联合体
 
-ZH LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Deep Reach的公共联合体面孔足够宽，能显得有用；足够干，能显得无辜。它建设航线板、栖居服务、压力物流和听起来像民政的连续性项目。在这一层，殖民地很少看到单一恶人。它看到的是信纸、维护封条、审计口号，以及一个在盈利时自称基础设施、在成为证据时自称距离的名字。
 
 ## Scanner
 
-ZH LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+公共章程板：基础设施运营方，不是采掘被告。
 
 ## Terminal
 
-ZH LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+公共联合体记录：Deep Reach以航线基础设施、海洋工业、压力栖居物流和连续性服务出现。承担责任的工作被分配给子公司柜台、保险语言、监管承包商和回收办公室。
 
 ## Audio
 
-ZH LOC HOLD: A clean title is the cheapest pressure suit.
+门牌写着公共事业。门后的锁说所有权。
 
 ## Field Note
 
-ZH LOC HOLD: The seal is clean. The rooms under it are not.
+干净的名字不是谎言。它是把污物归档到别处的房间。
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/zh_CN. -->

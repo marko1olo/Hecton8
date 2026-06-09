@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: High Custody Sample Contract Seed"
+title: "高托管样本合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: High Custody Sample Contract Seed
+# 高托管样本合同种子
 
-ZH LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+高托管样本是一组让资源价值和证据处理提前冲突的合同。Blue debt、组织铁残留、封存水和污染滤包只有在容器、标签、质量和航路custody完整时才会支付更高金额。
 
 ## Scanner
 
-ZH LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+合同种子：高托管样本。更高付款绑定质量核算、隔离拖延和receiver认证容器。
 
 ## Terminal
 
-ZH LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY：custody级样本启用，样本质量账本严格，隔离延迟提高，receiver封签必需，航路丢弃惩罚启用。
 
 ## Audio
 
-ZH LOC HOLD: A sample can weigh more after it enters the ledger.
+样本被账本接收后会变得更重。
 
 ## Field Note
 
-ZH LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+掠夺者备注：先称袋子，再叫它利润。receiver追收缺失克数时，比海水打人还狠。
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/zh_CN. -->

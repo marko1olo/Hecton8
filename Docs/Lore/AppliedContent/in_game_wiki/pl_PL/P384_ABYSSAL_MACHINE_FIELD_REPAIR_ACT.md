@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Brama abisalnego pola maszyn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Abyssal Machine Field Repair Act
+# Brama abisalnego pola maszyn
 
-PL LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Pole abisalne zmusza operatora do użycia systemu, który uszkodził roszczenie. Wzrost Atlas może mostkować zasilanie, łatać sprzęt trasy i przenosić sygnał przez żywy materiał. Każda udana naprawa zmienia też klasyfikację: narzędzie, organizm, aktywo, skażenie i dowód stale przecinają pola.
 
 ## Scanner
 
-PL LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Brama trasy: abisalne pole maszyn. Ekologia napraw Atlas staje się użytecznym sprzętem trasy z ryzykiem dozoru.
 
 ## Terminal
 
-PL LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+TRASA KAMPANII // ABISALNE POLE MASZYN. Wymagane: film przewodzący, organ akustyczny, basen serwisowy, pressure-safe reroute. Wyjście naprawy może przywrócić sprzęt i zepsuć klasę własności w tym samym przejściu.
 
 ## Audio
 
-PL LOC HOLD: It fixed the wall before it decided what the wall was.
+Naprawiło ścianę, zanim nazwało ścianę.
 
 ## Field Note
 
-PL LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Notatka szabrownika: jeśli rośnie przez panel, skanuj przed cięciem. Może tylko dlatego panel nadal działa.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/pl_PL. -->

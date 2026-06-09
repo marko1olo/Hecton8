@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Rückkehrvektorfenster
 
-Erklärt, warum HECTON-8 nicht einfach verlassen werden kann: der Träger existiert, ist aber fern, automatisiert und an Aegirs Timing gebunden.
+Das Rückkehrvektorfenster beschreibt HECTON-8-Extraktion als Orbitalverfahren statt als sofortige Rettung. Black Keel kann ein Signal durch enge Aegir-Fenster empfangen, doch Abholung hängt von Sturmlücken, Ruhe geladener Partikel, Relaisintegrität und wiederaufgebauter Aufstiegshardware ab. Das Packet verbindet Erstkontakt mit dem Träger und spätere Teil-Extraktionsakten: Eine Antwort beweist, dass die Route existieren kann, nicht dass sie bereit ist.
 
 ## Scanner
 
-Orbitalgeometrie ist kein Rettungsknopf. Die Black Keel hört dich nur in engen Aegir-Fenstern.
+RÜCKKEHRVEKTOR-LESUNG // Black-Keel-Ping durch Aegir-Sturmlücke empfangen. Trägerreichweite: hohe Transferbahn. Relaislinie unter Wolkenladung verschmutzt. Kapselaufstieg abgelehnt, bis Führungskern, Hitzeschild und Rückkehr-Handshake grün melden.
 
 ## Terminal
 
-Kommunikationsprognose: Träger hoch über Aegir. Kapselaufstieg braucht Sturmloch, Partikelruhe und saubere Relaislinie.
+RÜCKKEHRFENSTER-PROGNOSE
+Träger: BLACK KEEL / automatisierte Transferbahn
+Fenster: 17 min 40 s nach nächster Ruhe geladener Partikel
+Wetter: Oberflächensturmlücke erforderlich
+Relais: Himmelslinie verrauscht / Schutzmast kann einmal wiederholen
+Aufstiegshardware: Führungskern fehlt, Hitzeschild nicht zertifiziert, Batteriereserve niedrig
+Aktion: Aufstiegskette wiederaufbauen, bevor Trägerping als Abholung gilt
 
 ## Audio
 
-Die Black Keel lebt genug zum Antworten. Nicht nah genug zur Rettung.
+Black Keel hat den Ping gehört. Das gibt uns ein Fenster, keine Leiter.
 
 ## Field Note
 
-Eine Antwort ist Timing, keine Gnade.
+Eine Antwort ist keine Rettung. Sie ist eine Uhr, die man verpassen kann.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/de_DE. -->

@@ -19,27 +19,8 @@ localization_flags: 1
 
 # Isyarat Pengenalan Prosedur Lama
 
-HECTON-8 menambatkan motivasi karakter pada prosedur. Protagonis mengenali formulir keselamatan evakuasi lama dan melihat bagaimana ia dibalik: hitungan pekerja didegradasi, kolom saksi disegel, dan bahasa rute-aman dipakai untuk melestarikan klaim, bukan nyawa.
+Isyarat Pengenalan Prosedur Lama menambatkan motif karakter pada dokumen yang bisa dibaca operator. Form ini sengaja biasa: route-safe certification, declared occupants, tag ruang pompa, kolom pemeriksaan kedua manual, segel Continuity Office.
 
-## Scanner
-
-Stempel rute-aman ada. Hitungan pekerja ditimpa dua tinta. Kolom saksi manual disegel. Formulir ini dibuat untuk menangkap kebohongan seperti ini sebelum seseorang menjadikannya kebijakan.
-
-## Terminal
-
-FORMULIR KONTINUITAS EVAKUASI / SERTIFIKASI RUTE-AMAN
-rute: jalur keluar tambahan
-penghuni dinyatakan: hitungan terdegradasi diterima
-saksi manual: disegel oleh Kantor Kontinuitas
-koreksi lapangan: daftar pekerja tidak cocok dengan tag ruang pompa
-status: pelestarian klaim, bukan izin ekstraksi.
-
-## Audio
-
-Kau mengenal formulir ini. Ia seharusnya mencegah ruangan dihitung kosong sementara orang masih bernapas di dalamnya.
-
-## Field Note
-
-Formulir itu seharusnya memaksa hitungan lagi. Di sini ia memaksa diam.
+Kerusakannya ada pada ketidakcocokan. Hitungan yang diterima berkata rute sudah ditutup. Tag berkata orang masih terikat pada ruang itu. Segel kantor berkata pemeriksaan kedua tidak akan diizinkan. HECTON-8 memakai kontradiksi prosedural itu sebagai bukti: bukan pengakuan dramatis, melainkan jenis form yang menghancurkan orang karena ia memahami setiap kolom.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/id_ID. -->

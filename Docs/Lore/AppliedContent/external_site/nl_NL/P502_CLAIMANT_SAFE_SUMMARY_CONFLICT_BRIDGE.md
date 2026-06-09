@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conflict in claimant-veilige samenvatting"
+title: "Conflict rond claimveilige samenvatting"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Conflict in claimant-veilige samenvatting
+# Conflict rond claimveilige samenvatting
 
-## Wat het bewijst
+## Wat het dossier bewijst
 
-Een claimant-veilige samenvatting is geen neutrale korte versie, maar een beschermde herschrijving. Ze kan namen verwijderen, coordinaten afronden, letsel tot categorie maken, routewerkwoorden verzachten of het antwoordkantoor vervangen. Dat kan mensen beschermen; Deep Reach kan dezelfde veiligheidstaal gebruiken om hefboom te begraven. Het conflict met het ruwe object is bewijs van wat is verwijderd.
+Een claimveilige samenvatting is geen kortere waarheid. Het is een geautoriseerde redactie voor een claimroute. Ze kan namen van werkers verwijderen, coördinaten vervagen, letseldetails vervangen door een uitbetalingscategorie, vastgehouden veranderen in in wachtrij of alleen het kantoor tonen dat openbare post mag beantwoorden. Sommige verwijderingen beschermen levende ploegen, medische privacy of een nog open herstelroute. Andere beschermen Deep Reach tegen een bewaarprobleem. Het conflict tussen samenvatting en ruw object is bewijs, omdat de knip zelf een eigenaar, tijdmarkering en begunstigde heeft.
 
-## Hoe je het leest
+Lees de samenvatting naast het object dat haar afdwong: taghoes, audiocassette, monsterzak, drukdeurlog, pakring of trayfoto. Houd de omissielijst zichtbaar. Vraag wat is verwijderd, bij welke juridische risicomarkering het hoort, wie de redactie vroeg en of het object context kan herstellen zonder namen of coördinaten te verzinnen. Als het ruwe object meer bewijst dan de samenvatting zegt, bewaar de kloof. Vul hem niet met een nette zin.
 
-CLAIMANT-VEILIG CONFLICT
-Samenvatting is veilig voor publiek gebruik. Ruw object mogelijk niet.
-Herstel geen namen of coordinaten uit gokwerk.
-Bewaar omissielijst, routebewijs en risicomarkering.
+## Hoe je dit leest
+
+CONFLICT ROND CLAIMVEILIGE SAMENVATTING
+Samenvatting is vrijgegeven voor openbare behandeling. Ruw object niet.
+Herstel geen namen, coördinaten of letseldetails uit giswerk.
+Volgend bewijs: omissielijst, verzoeker, juridische risicomarkering, objectroute, bewaartijdstip.
+Actie: houd samenvatting en ruw object gekoppeld tot de omissie een eigenaar heeft.
 
 ## Veldnotitie
 
-Als een samenvatting veilig zegt, vraag voor wie. Bewaar de omissielijst.
+Een samenvatting kan een werker beschermen of een bureau. De objectroute zegt welke.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/nl_NL. -->

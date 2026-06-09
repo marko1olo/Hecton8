@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Marauder Correction Note Sample"
+title: "Voorbeeld van een rovercorrectie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Marauder Correction Note Sample
+# Voorbeeld van een rovercorrectie
 
-NL LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Roversnotities zijn sterke bewijsoppervlakken in HECTON-8 omdat ze met officiële systemen twisten zonder alwetende lore te worden. Dit voorbeeld houdt twijfel levend via praktische markeringen: tijden, certificaten, een verkeerde categorie en wachtrijvertraging. Het lost de zaak niet op voor de speler. Het leert een leugen lezen die als onderhoud werd ingediend.
 
 ## Scanner
 
-NL LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Vetpotloodcorrectie op een ongevalsformulier: niet het weer, niet paniek, maar autorisatievertraging met een lichamentelling eraan vast.
 
 ## Terminal
 
-NL LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+ROVERSNOTITIE / OFFICIËLE OORZAAK: VERWORPEN / VOOR CLAIM CONTROLEREN: pompcertificaat, ploegentelling, lichaamscategorie, deurklok-afwijking, reddingsautorisatiewachtrij.
 
 ## Audio
 
-NL LOC HOLD: Someone else smelled the paperwork rot.
+Iemand rook de rot in het papierwerk voordat de kamer droog was.
 
 ## Field Note
 
-NL LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NIET HET WEER. AUTORISATIE VERTRAAGD. Controleer pompcertificaat, ploegentelling, lichaamscategorie. De deurklok loopt zes minuten voor op de claimstempel.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/nl_NL. -->

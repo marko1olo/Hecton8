@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-Black Keel is not a friendly ship waiting to lift the player home. It is a claim-pool tender built to hold custody over salvage value in the Aegir system. Its ledger sees bodies, payloads, quarantine risk, ascent mass and insurance exposure as related entries.
+Black Keel is not a friendly home ship waiting above HECTON-8. It is a claim-pool tender: part workhorse, part ledger, part quarantine gate, part insurance machine. It can hear the player, route a packet, calculate a recovery window and eventually lift mass. It can also decide that the evidence core, the sample or the insured hull cut has a better claim on the window than the person asking for help.
 
-That is the right kind of cold for HECTON-8. The carrier does not need to hate the player. It can answer politely, route a packet correctly, accept a distress hash and still refuse a pickup until the numbers change. The horror sits in the gap between being recognized and being worth recovery.
+That does not make Black Keel a villain. It makes it one of HECTON-8's best machines: reliable inside its contract and dangerous when mistaken for mercy. The player can use it, bargain with it, trick its priorities and force better evidence into its custody. But the carrier will never become a loyal companion by tone alone. Its ledger remembers the starting lien, the quarantine risk, the Deep Reach hooks and the fact that every kilogram leaving the ocean changes who gets paid.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/en_US. -->

@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Probe Packet Travel Times
 
-Probe packet time made Aegir valuable before it became familiar. A narrow machine could cross, measure, and report while the human institutions behind it were still arguing over budgets and liability. By the time Deep Reach sold confidence, the packets were already old and the risk models already polished. That is the danger of machine-first exploration: the ocean can be priced from stale truth long before anyone understands what it costs to work there.
+Probe packet travel time is one of the least dramatic and most damaging forces in the setting. The early Ran-Aegir packets were not lies. They carried real spectral readings, mass estimates, ice chemistry, relay geometry, and shallow-water hope. They were simply old by the time people treated them as a permission slip.
+
+That makes the colony's failure sharper. HECTON-8 was not founded on pure fantasy. It was founded on data that had survived the route better than it had survived time. When newer readings contradicted the first promise, the older promise already had debt, contracts, equipment, and human plans attached.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/en_US. -->

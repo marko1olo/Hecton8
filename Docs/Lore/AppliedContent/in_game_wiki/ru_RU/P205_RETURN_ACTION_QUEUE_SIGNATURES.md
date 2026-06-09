@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Подписи Return Action Queue
 
-Подписи Return Action Queue доказывают, что Deep Reach не только старые логи; кто-то до сих пор хочет payload первым.
+Подписи Return Action Queue связывают старое дело HECTON-8 с давлением 2190 года. Очередь не исторический архив. Она обрабатывает задержанные пакеты во время живых окон Aegir и ранжирует, что Black Keel или владелец ретрансляции должен сделать первым. В восстановленной ленте payload custody, receipt координат и quarantine handshake стоят выше contractor recovery. Так Deep Reach остается опасен без командира в комнате: нижний офис все еще может направлять окно спасения, решая, какое действие стало достаточно чистым для выполнения.
 
 ## Scanner
 
-У старого преступления есть живая очередь.
+Получена живая return strip: приоритет payload custody HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 открыто на двенадцать минут.
 
 ## Terminal
 
-SIGNATURE SEED: Amara Keene, Return Action Queue. Функция: ставит payload custody выше contractor rescue во время живых Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Окно: Aegir live relay. Действие: поставить payload custody, receipt координат и quarantine handshake выше contractor recovery. Carrier clause: Black Keel может задержать pickup, пока custody state не чистый.
 
 ## Audio
 
-Они не призраки. Они delayed paperwork with engines.
+Очередь Keene живая. Rescue стоит за payload custody, пока мы не изменим handshake.
 
 ## Field Note
 
-RU LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Это не старая бумага. Штамп очереди свежий: задержанный пакет, carrier clause, приказ payload-first. Проверь язык восстановления Black Keel, прежде чем доверять подбору.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/ru_RU. -->

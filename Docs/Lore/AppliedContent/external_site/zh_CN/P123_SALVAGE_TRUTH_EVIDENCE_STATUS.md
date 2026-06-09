@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "打捞真相的证据状态"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# 打捞真相的证据状态
 
-CN LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+回收证据让 HECTON-8 的阴谋慢慢发热。殖民地沉默，不是因为什么都没发生，而是因为每一件证物都有市场价值、责任价值和法律价值。真相通过保管路线和受损实物浮出，而不是靠一次方便的认罪来结束。
 
 ## Scanner
 
-CN LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+黑匣子数据包：在索赔部门碰到它之前都是真相。
 
 ## Terminal
 
-CN LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS：原始打捞物默认归入索赔材料。公共证据需要完整源哈希、压力时间戳、见证数据包、不受索赔方控制的中继公证，以及能经受船只损失、盐水暴露和人工修改的保管链。
 
 ## Audio
 
-CN LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+一具尸体只有在有人没能把它错归档之后，才成为证据。
 
 ## Field Note
 
-CN LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+来自深处的事实只有保住见证者时才危险。
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/zh_CN. -->

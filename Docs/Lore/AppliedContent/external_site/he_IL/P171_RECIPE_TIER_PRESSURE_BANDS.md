@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Recipe Tier Pressure Bands"
+title: "רצועות לחץ של דרגות מתכון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Recipe Tier Pressure Bands
+# רצועות לחץ של דרגות מתכון
 
-HE LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+רצועות הלחץ של דרגות המתכון מגדירות כיצד HECTON-8 נמנע מיצירת הישרדות גנרית. חומרים אינם עלויות מופשטות. הם ראיות מדורגות לחץ עם היסטוריית נתיב, הסמכה והשלכות חוקיות. אותו מבנה יכול להניע מתכונים, אזהרות סורק, תוויות UI ומאמרי לור בלי לפצל את שפת המשחק והבדיה.
 
 ## Scanner
 
-HE LOC HOLD: Recipes should be depth arguments, not shopping lists.
+מתכון ב-HECTON-8 הוא טיעון עומק, לא רשימת קניות. החלק נחשב רק אם הוא שורד את רצועת הלחץ שהוא טוען לה.
 
 ## Terminal
 
-HE LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+רצועות מתכון / T0 טלאי הישרדות: חילוץ רדוד, איטום ידני, ללא משמורת / T1 תיקון מדורג: חלקים תעשייתיים מהמדף, הסמכת חדר משאבות / T2 חומרת לחץ: שטיפת תמלחת, הקשחה בפתח, הוכחה אקוסטית / T3 עלייה או Atlas: מקור תהומי, מקבל חוקי, קבלת הכלה.
 
 ## Audio
 
-HE LOC HOLD: A recipe is a depth permission form with bolts.
+מתכון הוא טופס אישור עומק עם ברגים.
 
 ## Field Note
 
-HE LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+דרגת המתכון חייבת להתאים לדירוג הלחץ, עלות הנתיב וסיכון המשמורת. בורג זול ברצועה הלא נכונה אינו זול; הוא דליפה עתידית.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/he_IL. -->

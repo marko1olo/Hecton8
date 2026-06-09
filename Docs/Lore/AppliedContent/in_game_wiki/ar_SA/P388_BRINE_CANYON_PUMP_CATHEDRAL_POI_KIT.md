@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "عدة أدلة كاتدرائية مضخات وادي الملح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# عدة أدلة كاتدرائية مضخات وادي الملح
 
-AR LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+كاتدرائية مضخات وادي الملح حجم صناعي مبني حول الضغط والكثافة والتأخير. آلاتها لا تتهم أحدا وحدها، لكن زجاجة القياس وساعة الحجز وآثار المضخة ودفتر الطابور تصطف في سلسلة مسؤولية قابلة للاستخدام.
 
 ## Scanner
 
-AR LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+عدة أدلة نقطة اهتمام: تطابق كاتدرائية المضخات زجاج الكثافة، ضرر المضخات، ساعات المسار وسجلات طابور العمال.
 
 ## Terminal
 
-AR LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+عدة كاتدرائية المضخات: زجاجة قياس كثافة، خدش مضخة ملحية، مذكرة هامش مقبول، ساعة حجز مسار، دفتر طابور عمال، مفتاح بدء مضخة، علامة رصيف مغمور.
 
 ## Audio
 
-AR LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+حركت المضخات الماء. حفظت الغرفة سجلات أفضل من المكتب.
 
 ## Field Note
 
-AR LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+ملاحظة مارودر: صور زجاجة الكثافة قبل تفريغ الجيب. عندما تتحرك المياه المالحة يصبح خط الهامش أكثر تسطحا.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ar_SA. -->

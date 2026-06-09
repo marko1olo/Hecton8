@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier veldsystemenspecialist"
+title: "Dossier van de Veldsystemenspecialist"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier veldsystemenspecialist
+# Dossier van de Veldsystemenspecialist
 
-Dit dossier verklaart de eerste bekwaamheid van de operator zonder hem tot uitverkoren getuige te maken. Deep Reach trainde hem rond pompen, afdichtingswaarden, relaykamers, bypasskaarten, evacuatiewachtrijen en route-safe-taal. De oude systemen weigeren zijn naam, maar tonen nog altijd vertrouwde procedure. Schuld begint als herkenning: een afwateringsvolgorde, een klemwaarde, een schoongepoetste wachtzin, een kamer die faalde in precies de volgorde die hij moest voorkomen.
+Het field systems-dossier verklaart vakbekwaamheid zonder de operator een geheime commandant te maken. Deep Reach trainde dit werk rond pompen, sealratings, bypasskaarten, relaiskamers, evacuatierijen en route-safe-certificering. Het was infrastructuurarbeid met genoeg toegang om een begraven route te herkennen.
+
+Na intrekking opent het credentiaal geen beveiligde deuren meer. De training verdwijnt niet. Een drainageorder, een clamp-rating, een verzegeld handmatig telveld of een opgeschoonde hold-zin leest nog steeds als werk dat ooit vertrouwd werd. Daarom wordt verdronken machinewerk bewijs in plaats van decor: de operator ziet waar een veiligheidsproces gebogen werd tot achterlating compleet leek.
+
+Het dossier houdt de achtergrond smal. Geen commandomacht. Geen zuivere bekentenis. Geen heldhaftige passagiersstatus. Alleen een voormalige Deep Reach-systeemwerker die de machine kan lezen die mensen uit de telling archiveerde.
 
 ## Scanner
 
-Oude veldsystemenmachtiging. Geen commandostaf. Infrastructuurwerk met genoeg toegang om te herkennen waar een route werd begraven.
+FIELD SYSTEMS-CREDENTIAAL // Evacuatie-infrastructuur, route-safe-certificering, toegang tot pompkamer. Geen commandomachtiging; proceduregeheugen blijft bruikbaar.
 
 ## Terminal
 
-PERSONEELSSPOOR: veldsystemen, evacuatie-infrastructuur, route-safe-certificering. Machtiging ingetrokken na Aegir-stiltereview. Procedurecache past nog steeds bij de volgorde van de operator.
+PERSONNEL TRACE: veldsystemenspecialist, evacuatie-infrastructuur, route-safe-certificering. Machtiging ingetrokken na Aegir signal review. Procedurecache past nog bij operatorvolgorde.
 
 ## Audio
 
-Jij hebt de leugen nooit ondertekend. Je kende de grammatica waardoor hij door de keuring kwam.
+Je hebt de leugen nooit ondertekend. Je kende de grammatica waarmee hij door inspectie kwam.
 
 ## Field Note
 
-De badge opende geen deuren meer. Hij wiste de volgorde van falen niet uit.
+De badge stopte met deuren openen. Hij leerde de volgorde van falen niet af.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/nl_NL. -->

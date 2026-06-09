@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "대조석 여유율 흔적"
+title: "대조 마진 흔적"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 대조석 여유율 흔적
+# 대조 마진 흔적
 
-이 흔적은 두 가지를 동시에 증명한다. 대조석은 실제였고, 치명적 여유율은 보고서가 인정하기 전에 보였다. Deep Reach가 물을 올리라고 명령한 것은 아니다. 그들은 식민지 압력 한계가 이미 여유를 잃은 경로 창을 받아들였고, sign-off 없는 cascade만 공개했다.
+이 센서는 대조를 가짜로 만들지 않는다. 시간을 고정한다. Deep Reach가 공개 보고서에서 위험을 인정하기 전에 식민지의 설계 여유는 이미 사라졌다. 항로 권한은 상업 예외로 창을 열어 두었고, 이후 그 예외를 뺀 캐스케이드 체인을 공개했다.
 
 ## Scanner
 
-회수된 조석 센서. 최대 전단은 식민지 설계치를 넘었지만, 경고 여유율 파손은 공개 cascade 시각보다 먼저 기록됐다.
+조석 센서 회수. 전단 스파이크는 실제다. 마진 붕괴는 Deep Reach의 공개 캐스케이드 시각보다 16분 먼저 나타난다.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. 경로 권한자가 tail-risk 임계값을 승인. 운용자 메모는 공개 사고 체인에서 제거됨. 원시 흔적은 brine-buffer 메모리에 보존.
+조석 배열 // P-63 북부 능선. 꼬리 마진 정지 하한 미만. 항로 창은 상업 예외로 유지. 공개 사고 체인은 예외 주석을 누락. brine-buffer 체크섬 정상.
 
 ## Audio
 
-바다는 거짓말하지 않았다. 보고서가 했다.
+조류가 복도를 부쉈다. 거짓은 시계에서 시작된다.
 
 ## Field Note
 
-Marauder 메모: 악당 연설을 찾지 마라. 누군가 지운 줄을 찾아라.
+약탈자 메모: 원시 흔적을 보관하라. 삭제된 마진 한 줄은 어떤 연설보다 세다.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/ko_KR. -->

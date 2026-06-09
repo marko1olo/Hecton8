@@ -1277,6 +1277,27 @@ Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unit
 - RenderGraph ownership: `VisorFluidPass.RecordRenderGraph` reads active color, depth, opaque color, optional compute-resolved diegetic lens mask, and imported constant buffers; writes `_HectonVisorFluidDistortion`; and assigns `resourceData.cameraColor`. It uses authored `FeatureSettings.material` and optional `lensComputeShader`; it is not allowed to instantiate runtime materials or become gameplay water/pressure truth.
 - Presentation boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation approximations. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
 
+## Current Decal Routes
+
+Decals are presentation evidence, not gameplay truth.
+
+Runtime trauma and visor decals:
+
+- `DynamicDecalVaultRuntime` owns Vault-backed fixed decal request/runtime/telemetry buffers under the VFX owner route.
+- `DeferredDecalPass` is the current screen-space trauma consumer. It composites the published buffer in a bounded render pass; it must not spawn `DecalProjector`, Canvas blood, per-trauma GameObjects, particle splats, fracture meshes, or material clones.
+- Damage/impact producers publish typed unmanaged signals. The decal route consumes those snapshots and may fail closed on missing cold storage, non-finite matrices, upload stalls, queue overflow, or visual-sync ownership conflicts.
+- Screen-space decal output may be scaled by `GlobalQualityWeight` for active count, decay, refraction richness, atlas sampling, and density only. It must not change damage truth, save identity, rollback/Merkle state, DTO layout, or interaction authority.
+
+Generated world-support decals:
+
+- Batch34 decal and UV atlases are source assets until imported, padded/split/alpha-checked, and bound through editor tooling.
+- `WorldSupportGeneratedDecalMaterialBuilder` is the current first-party material builder for generated world-support decals. It must fail at the exact missing source id/path, use transparent render state, and avoid warning-only aggregate failure masking.
+- `WorldProceduralSupportFinalAuthoring` must attach deterministic first-party quad decal children for support/world props. It must not depend on vendor ScifiFacility decal prefabs or instantiate vendor decal objects.
+- `Batch34VisorTraumaDecalArrayIntegrator` bakes promoted Batch34 alpha candidates into the visor trauma `Texture2DArray` and binds compatible `DeferredDecalPass` renderer features.
+- `Tools/ValidateWorldSupportGeminiMaterialRoute.py` and `Tools/ValidateBatch34VisorTraumaDecalArrayRoute.py` are static contract guards. Passing them is not Unity import, renderer binding, Frame Debugger, profiler, visual, or player-build proof.
+
+Required failure modeling before runtime acceptance: no source texture, bad alpha/padding, missing material GUID, wrong transparent state, stale vendor prefab dependency, duplicate decal owner, queue full, stale renderer feature handle, missing atlas slice, scene unload, domain reload, and save/load attempts to treat decal presentation as gameplay state.
+
 ## Noir Color Doctrine
 
 Pure black is forbidden on scene geometry. Black water needs structure. The minimum abyssal floor luminance must preserve silhouette, route, and instrument readability.
@@ -1611,6 +1632,24 @@ Every accepted system must document:
 - black-box telemetry fields.
 
 If the ownership record is missing, the system is not accepted.
+
+## Integration Handoff Lock
+
+A runtime system is not integrated merely because the class, manager, prefab, or validator exists.
+
+New or changed systems that claim integration must name and prove:
+
+- producer route: what event, owner phase, authoring data, scene object, or player action feeds it;
+- consumer route: which gameplay/UI/audio/VFX/save/telemetry owners read the result;
+- scene/prefab/asset binding route, or explicit reason no Unity binding is required;
+- configuration/data source and generated/baked artifact if data-driven;
+- dispatcher phase and registration/unregistration path;
+- failure path, fallback, and black-box/telemetry fields;
+- save/load identity when state persists;
+- Compact/Middle/High/Ultra behavior when presentation, cadence, or capacity changes;
+- proof command or Unity/player artifact for the claimed integration level.
+
+If any route is unknown, the system remains `PENDING VERIFICATION` or `BLOCKER`; do not fill the gap with a new wrapper, fallback manager, global lookup, or report.
 
 ## Data Access Law
 
@@ -2945,6 +2984,118 @@ For production lore/content, every required locale row must contain draft text o
 
 Do not claim `native_reviewed` or `runtime_ready` without the review/proof artifact.
 
+Production AppliedContent localization is file-backed. Locale text must be present in the packet/source data that feeds export/import, not only in chat or a planning note. When `in_game_wiki`, `external_site`, scanner, terminal, audio, or field-note surfaces are in scope, the matching surface text must exist per required locale or carry an explicit `BLOCKED_TRANSLATION_DRAFT` row.
+
+## Multilingual AI-Style Localization Firewall
+
+Localization is not a place to launder bad English source text. If a source paragraph is abstract, aphoristic, metaphor-first, or AI-sounding, every locale row will inherit the failure. Rewrite the English authority row before translating.
+
+Localization is allowed to be natural. It is not required to mirror English sentence order, punctuation, clause count, or idiom. The hard requirement is source truth, not grammatical obedience.
+
+Allowed locale adaptation:
+
+- change word order for a natural local artifact voice;
+- split or merge short sentences when the surface still fits;
+- choose the local professional register for claims, custody, insurance, salvage, liability, engineering, or field notes;
+- reduce ornament when the locale would otherwise sound literary or theatrical;
+- preserve a speaker's anger, fatigue, institutional coldness, or practical pressure in local form.
+
+Forbidden locale adaptation:
+
+- adding a proverb, metaphor, slogan, moral judgment, or dramatic closer;
+- translating English AI scaffolding into a local equivalent;
+- making every row smoother than the source speaker should be;
+- turning scanner or terminal rows into elegant prose;
+- preserving a bad English metaphor because it is "in the source";
+- fixing vague English with local poetry instead of rewriting English first.
+
+AI phrase families are language-independent. A locale row fails when it performs the same rhetorical move, even if it avoids the exact banned English words.
+
+Reject local equivalents of:
+
+- essay-framing: "this article explores", "this section shows";
+- thesis contrast: "not merely X but Y", "more than X", "at once X and Y";
+- museum-label prose: "serves as", "stands as", "testament", "witness", "reminder", "symbol";
+- prestige abstraction without source object: essence, core, truth, legacy, meaning, continuity, humanity;
+- universal moral closure about ocean, colony, debt, survival, machine, or humanity;
+- concept-as-actor where system/ocean/colony/process/debt acts without a specific owner, mechanism, document, or route;
+- fake sensory verbs where there is no real sound, pressure, power, signal, or organism.
+
+Every locale may choose natural local syntax, but the repair must be factual:
+
+- source + object + action + constraint;
+- local professional register for legal/custody/insurance/salvage language;
+- local spoken rhythm for diary/audio/field note;
+- no added local poetry to hide weak English.
+
+Every locale row must be manually redlined. Automated scans, detector scores, or "it sounds fluent" are not acceptance. The reviewer must check:
+
+- same speaker/source as the English authority row;
+- same object, room, route, document, scan result, or audio source;
+- same lie, omission, uncertainty, and spoiler boundary;
+- no added metaphor, proverb, folklore, moral judgment, local joke, or explanatory flourish;
+- no English row copied into a non-English locale except stable IDs, route labels, units, product names, and intentionally untranslated in-world labels;
+- no machine-style symmetry where every sentence has the same length, rhythm, and polished closure;
+- no generic prestige vocabulary used to hide missing facts.
+
+The translator must preserve source pressure, not source grammar. Each locale may use natural local syntax, but it must keep the artifact type:
+
+- scanner rows stay short, material, confidence/hazard/limit;
+- terminal rows stay procedural, not poetic;
+- field notes stay practical and sharp, not literary;
+- public/wiki rows stay readable, sourced, and sectioned, not encyclopedic sludge;
+- audio rows stay speakable under interruption, not paragraph prose;
+- corporate/legal rows stay clean, evasive, and procedurally exact, not courtroom melodrama.
+
+Hard reject in every language:
+
+- aphorism instead of artifact;
+- abstract category collapse instead of source evidence;
+- "not just X but Y" equivalent;
+- "at its core" equivalent;
+- "serves as a reminder" equivalent;
+- "testament/witness to" equivalent;
+- "in a world where" equivalent;
+- "unique blend" / "delicate balance" equivalent;
+- unexplained organic metaphor: one body, one skin, gut, organ, living tissue, blood, wound, bloom, when the scene is not literal biology;
+- fake terminal fields with abstract values rather than operational fields;
+- scanner poetry rather than material, confidence, hazard, and limitation;
+- corporate/legal words translated into courtroom language when the source is actually claim, custody, insurance, salvage, or liability procedure.
+
+Locale-specific rejection notes:
+
+- `en_US`: reject essay scaffolding, trailer tags, "more than just", "not just X but Y", "the real horror", "without human categories", and abstract all-caps terminals.
+- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
+- `uk_UA`: reject "мова позивачів", "конверсія позивача", "слугує нагадуванням", "свідчення", "у своїй основі", "більше ніж просто", "одне тіло", "одна шкіра", and Russian-calque syntax.
+- `de_DE`: reject "mehr als nur", "im Kern", "in einer Welt, in der", "dient als Erinnerung", "Zeugnis", decorative compounds that do not map to a source object, and over-formal filler.
+- `es_ES`: reject "más que solo/simplemente", "en esencia", "en un mundo donde", "sirve como recordatorio", "testimonio", and inflated literary clauses where a field note should stay practical.
+- `fr_FR`: reject "plus que simplement", "au fond", "dans un monde où", "sert de rappel", "témoignage", and elegant abstract phrasing that removes the operational source.
+- `pl_PL`: reject "więcej niż tylko", "w swej istocie", "w świecie, w którym", "służy jako przypomnienie", "świadectwo", and moralizing nouns added for tone.
+- `pt_BR`: reject "mais do que apenas", "em sua essência", "num mundo onde", "serve como lembrete", "testemunho", and soft explanatory padding.
+- `nl_NL`: reject "meer dan alleen", "in de kern", "in een wereld waar", "dient als herinnering", "getuigenis", and abstract nominal phrases that make the source voice disappear.
+- `id_ID`: reject "lebih dari sekadar", "pada intinya", "di dunia tempat", "berfungsi sebagai pengingat", "bukti atas", and formal filler copied from English structure.
+- `ja_JP`: reject English essay logic translated into Japanese: "単なる...ではなく", "核心", "世界では", "思い出させる", "証し", abstract "一つの体/皮膚", and clean literary closure in scanner, terminal, or field-note rows.
+- `ko_KR`: reject "단순한...아니라", "핵심적으로", "세계에서", "상기시켜", "증거", abstract "하나의 몸/피부", and sentence-final polish that makes all voices sound like the same narrator.
+- `zh_CN`: reject "不仅仅是...而是", "从本质上", "在...世界", "提醒", "见证", "一个身体", "边界无效", and compact literary summaries that erase source limits.
+- `ar_SA`: reject "ليس مجرد...بل", "في جوهر", "في عالم", "تذكير", "شهادة", abstract "جسد واحد/جلد واحد", and legal "مدعين" language when the source is claim/custody/insurance rather than plaintiffs.
+- `he_IL`: reject "לא רק...אלא", "בבסיס", "בעולם שבו", "תזכורת", "עדות", abstract "גוף אחד/עור אחד", and legal plaintiff wording when the source is procedural claim/custody.
+
+Manual localization rewrite rule:
+
+If a locale row fails because the English source is metaphorical or vague, do not invent a better local metaphor. Rewrite the English source into a grounded artifact, then translate the grounded artifact. If only one locale fails because of grammar, legal register, RTL/CJK shape, or local terminology, rewrite that locale row and keep the canon facts identical.
+
+Manual locale row repair sequence:
+
+1. Read the English authority row and identify source/object/pressure/limit.
+2. Read the locale row as the intended artifact type.
+3. Mark the row `KEEP`, `REWRITE`, `CUT_SOURCE`, or `BLOCKED_TRANSLATION_DRAFT`.
+4. If the locale row preserves English AI rhythm, rewrite the locale row from meaning, not word order.
+5. If the English row itself is AI-style, mark `CUT_SOURCE` and rewrite English first.
+6. If legal/procedural terms drift into courtroom, moral, or literary language, rewrite with the local professional register.
+7. If CJK/RTL/long European expansion changes readability, shorten without changing source truth.
+
+Old localization rows must be rechecked when touched. A row marked `draft_machine_or_llm` is not acceptable merely because the status is honest. Draft means it still must be readable, source-faithful, non-generic, and free of AI boilerplate. Native review is for final language quality; it is not a cleanup stage for obvious machine prose.
+
 ## Proof Artifacts
 
 Localization work must provide:
@@ -2968,6 +3119,10 @@ Reject:
 - missing keys hidden as normal copy;
 - warning copy that does not tell the player what to do or what failed;
 - public/store text routed here instead of `textes.md`.
+- locale rows that preserve AI-style source prose because the English row was not rewritten first;
+- translated aphorisms, metaphors, or analogies that are not present as believable source voice;
+- non-English rows copied in English except stable IDs, route labels, units, product names, and intentional in-world labels;
+- claim/custody/insurance language mistranslated as courtroom plaintiff language.
 
 ## Acceptance Sentence
 
@@ -3000,6 +3155,27 @@ Every setting must have owner, range, persistence key, default, validation rule,
 Settings owns user preference state, validation, persistence, apply staging, and UI option metadata. It does not own rendering truth, audio mix truth, input semantics, accessibility features, platform support, or gameplay authority.
 
 Feature owners declare allowed ranges. Settings stores and applies validated values at approved phases. Runtime systems consume immutable settings snapshots or typed change events.
+
+## Current Runtime Source Route
+
+Current static anchors:
+
+- `Assets/_Project/Scripts/UI/SettingsManager.cs`
+- `Assets/_Project/Scripts/UI/SettingsPanel.cs`
+- `Assets/_Project/Scripts/UI/SettingsLivePreview.cs`
+- `Assets/_Project/Scripts/UI/SettingsComparisonView.cs`
+- `Assets/_Project/Scripts/Input/UserOptionsPersistence.cs`
+- `Assets/_Project/Scripts/UI/SETTINGS_SYSTEM_GUIDE.md`
+
+Current source facts:
+
+- `UserOptionsPersistence` owns `Application.persistentDataPath/options.h8cfg`; settings must not be documented as PlayerPrefs or Easy Save 3.
+- `SettingsManager.QualityLevel` is a saved user preference in the current `0..6` range and maps through `HomeostasisBrain.SetUserGlobalQualityWeightPreference`; it is not final runtime quality truth.
+- `SettingsManager.GraphicsPreset` is a `0..3` UI grouping. `SettingsComparisonView` compares persisted graphics preset intent, not raw Unity quality level.
+- FOV is applied to a resolved camera and can be deferred across scene load if the camera owner is not ready.
+- Bloom and Motion Blur have a concrete URP `VolumeProfile` route. Ambient Occlusion is persisted and exposed in UI, but Unity 6000 URP SSAO is a renderer feature in this stack; no active doc may claim AO is applied through `VolumeProfile.TryGet`.
+- `SettingsPanel` stages UI values and only commits through Apply/reset; Cancel restores the last committed state and live-preview snapshot.
+- Historical settings progress/manual-wiring notes were moved to `Docs/DEPRECATED/SettingsUiHistoricalGuides_20260609/` with their Unity `.meta` files. The active settings implementation guide is `Assets/_Project/Scripts/UI/SETTINGS_SYSTEM_GUIDE.md`.
 
 ## Setting Contract
 
@@ -3240,6 +3416,16 @@ Every terrain surface must explain how water, pressure, sediment, industry, coll
 
 Terrain owns surface shape, biome masks, scatter eligibility, geological logic, navigation affordances, and terrain validation. It does not own voxel persistence, generated asset topology, runtime streaming, physics truth, water truth, or narrative facts.
 
+Current terrain source-of-truth route:
+
+- `WorldMacroGeologyFields` owns deterministic macro-geology evaluation and the terrain artifact identity contract: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash.
+- `WorldTerrainDetailContracts` owns the macro sample to terrain material/control contract: material classes, meso detail fields, packed control masks, and proof extents.
+- `WorldProceduralTerrainSplatmapJobs` consumes macro and meso fields to produce runtime terrain/surface masks. It must not invent a separate geology truth.
+- `MapMagicBridge` and MapMagic nodes are bridge/provider/bake adapters. They may supply active height payloads, splat payloads, biome matrices, and chunk identity, but the current macro-geology contract does not come from an old hand-authored MapMagic graph.
+- `WorldProceduralFieldSampler` reads the active terrain provider first, then deterministic macro-geology fallback, then synthetic fallback. This fallback order is runtime behavior, not license to ship missing terrain payloads silently.
+- `SaveManager` stores and validates terrain identity. Saves reference seeds, macro artifact version, chunk range/hash, provider flags, and water calibration. They do not serialize the entire macro field into the player save.
+- Water truth remains in the ocean/water/terrain-provider calibration route. Macro geology may produce seafloor height; it does not own sea level.
+
 Use:
 
 - `voxels.md` for SDF caves/carving/persistence;
@@ -3299,13 +3485,21 @@ Terrain collision must be practical:
 - navigation masks align with visible terrain;
 - underwater vehicle clearance is considered.
 
-## 2026-06-05 Static Source Anchors
+## Current Static Source Anchors
 
 Evidence class: STATIC_SOURCE only. Compile, Unity import, terrain capture, profiler, GC, player traversal, and player-build proof remain PENDING VERIFICATION.
 
 | Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
 |---|---|---|---|---|
+| `Assets/_Project/Scripts/World/WorldMacroGeologyFields.cs` | `Hecton8.World`; deterministic macro-geology evaluator and terrain artifact identity source. It owns macro zone/depth/slope/deposition/roughness/cavity field math, not Unity scene objects, water truth, mesh topology, or save serialization of full fields. | `CreateDefault`, `Evaluate`, `ResolveZone`, chunk coord/key/id/range/hash helpers, `ArtifactVersion`, `DefaultAuthoringSeed`, `MinimumWorldExtentMeters`, and `DefaultChunkSizeMeters` define the current terrain macro contract. | Quality tiers must not change macro field values, seed identity, chunk identity, biome/resource IDs, route silhouettes, or save compatibility. | No Unity import, generated artifact load, player traversal, save/load mismatch capture, or profiler proof was provided by this static audit. |
+| `Assets/_Project/Scripts/World/WorldTerrainDetailContracts.cs` | `Hecton8.World`; terrain material/control contract over macro samples. It owns material-class resolution, meso detail masks, packed control RGBA meaning, tier constants, and proof extents. | `WorldTerrainSurfaceMaterialResolver`, `WorldTerrainMesoDetailFields`, and `WorldTerrainDetailContracts` map macro geology to ShellSand, LimestoneShelf, ClaySilt, HardRock, BrineSaltCrust, ManganeseNodulePlain, ReefRubble, and SeepCrust classes. | Quality tiers may alter density, render resolution, and optional detail, but not material-class semantics or packed-control channel meaning. | No material bake, terrain capture, compression/readability, or runtime mask proof was provided by this static audit. |
+| `Assets/_Project/Scripts/World/WorldProceduralTerrainSplatmapJobs.cs` | `Hecton8.World`; Burst terrain/surface mask generation jobs. They consume macro/meso fields and write weights/control masks, not persistent terrain authority. | `WorldProceduralTerrainSlopeCavitySplatmapJob` and `WorldTerrainSurfaceMaterialMaskJob` fold macro geology, meso detail, slope/cavity, and resolver weights into terrain splat/control outputs. | Quality tiers may scale resolution/cadence before scheduling; jobs must preserve geology/material identity and navigation reads. | No job schedule window, Unity terrain application, profiler, GC, or visual mask capture was provided by this static audit. |
+| `Assets/_Project/Scripts/World/WorldProceduralFieldSampler.cs` | `Hecton8.World`; runtime field sampler and seafloor read bridge. It owns cached read behavior and DataVault/hotswap listener integration, not macro authoring truth or water authority. | Reads active MapMagic/terrain provider heights first, deterministic macro-geology fallback second, and synthetic fallback last. Handles service replacement, cache invalidation, and repeated subscribe/unsubscribe lifecycle. | Quality tiers may scale sample cadence or diagnostic overlays only. They must not alter fallback order, terrain identity, or player-affecting depth truth. | No service replacement, scene unload/domain reload, save/load, stale provider, repeated subscribe/unsubscribe, or no-data runtime proof was provided by this static audit. |
+| `Assets/_Project/Scripts/MapMagic/MapMagicBridge.cs` | `Hecton8.MapMagic`; active terrain provider/bridge. It owns bridge-local active payload identity and MapMagic-adapter reads, not the canonical macro-geology contract. | Exposes `ITerrainProvider`, height/normal/AUP/biome/matrix APIs, terrain artifact identity flags, and quality/streaming apply hooks. MapMagic remains a controlled bridge/bake/provider route, not the sole source of terrain truth. | Quality tiers may influence streaming/detail application through bounded hooks, but must not rewrite macro artifact version, runtime seed, or chunk range/hash semantics. | No active payload swap, duplicate owner, stale handle, missing payload, or provider replacement proof was provided by this static audit. |
+| `Tools/BuildWorldMacroGeologyPreview.py` | Tool mirror for static preview artifacts under `Docs/GeneratedAssets/Terrain/MacroGeology`. It owns generated manifest creation, not runtime behavior. | Mirrors macro constants, writes previews/manifests, and records storage/runtime/save/load/stale-artifact policy for chunk artifacts. Generated files are evidence artifacts; source code remains authoritative. | Quality tiers must not depend on generated preview presence. Runtime may load baked chunks when present and deterministic-generate on cache miss only through the declared route. | No tool rerun, artifact diff, image validation, Addressables/sidecar load, or write-back proof was provided by this static audit. |
 | `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs` | `Hecton8.World`; static terrain/anomaly/SDF processor. It owns no persistent runtime state, no DataVault handle, no scene object, no signal lane, and no GPU resource; caller owns buffers, phase, completion, and proof. | Schedules closed-basin detection/flood-fill, terrain-to-SDF top-surface snap, ridge/fissure feature detection, mega-pillar SDF injection, deep fissure SDF injection, and lateral SDF displacement over caller-provided `NativeArray`/`NativeQueue` storage. | No direct `GlobalQualityWeight` read is visible in this source. Callers must scale operation budgets continuously before invoking it and must preserve terrain truth, biome/resource IDs, and navigation authority. | No caller route card, DataVault ownership proof, job completion window, profiler, GCMonitor, terrain visual capture, or runtime traversal proof was provided by this static audit. |
+
+Failure paths that must be modeled before runtime acceptance: no terrain data, bad dimensions, duplicate terrain owner, stale height/chunk handle, provider replacement, scene unload, domain reload, interrupted chunk bake/write-back, queue saturation, save/load terrain identity mismatch, water calibration mismatch, voxel overlay conflict, and repeated subscribe/unsubscribe.
 
 ## GlobalQualityWeight Scaling
 
@@ -5117,6 +5311,7 @@ Minimum proof by domain:
 - Networking/rollback (`networking.md`): authority class, packet layout, AUP wire proof, loopback/reconciliation proof, rollback/Merkle/desync proof before any multiplayer claim.
 - Bootstrap/startup (`bootstrap.md`): boot state list, dependency route table, data monolith readiness if touched, non-reload transition proof, native allocation/disposal proof, startup fault behavior.
 - Authoring/data bridge (`authoring.md`): source path, schema hash, validation report, h8bin output, atomic write/readback proof, explicit runtime parser absence.
+- AppliedContent production: packet/source JSON or production source, all 15 locale rows or explicit `BLOCKED_TRANSLATION_DRAFT`, generated surface pages/indexes for in-scope surfaces, refreshed `applied_lore_packets.csv`, refreshed `H8AppliedLoreHashes.cs` when runtime-bound, route cards/binding maps for gameplay unlocks, exporter/importer/audit output, and explicit runtime readiness boundary.
 - Inventory/economy (`inventory.md`): item id/schema list, recipe/source table, storage rules, save/load proof if persistent, UI snapshot, compact readability, no string/hot allocation route.
 - Streaming/persistence/data: memory/save artifact, schema/version, checksum or ledger, leak/load proof.
 - Math/determinism/AUP (`math.md`): coordinate representation, shift generation/fence proof, deterministic seed route, replay proof, CI suppression artifact if banned tokens remain.
@@ -5128,7 +5323,8 @@ Minimum proof by domain:
 - Testing/CI (`testing.md`): evidence class, command/tool, target scene or repro, artifact path, timestamp, unresolved failures, and no static-proof upgrade for runtime claims.
 - Cinematics/capture (`cinematics.md`): sequence purpose, truth label, owner state list, entry/exit/interrupt rules, compact capture, control-loss duration, public-claim review if used externally.
 - Accessibility: low-tier readability capture, remapping/subtitle/flash/motion checks.
-- In-world writing (`writing.md`): canon sources, speaker/source, surface type, unlock context, evidence object, LocID/runtime layer, English authority text, 15-locale draft rows with status or explicit English-only scope, anti-AI prose scan, forbidden facts avoided, and native-review/runtime status.
+- In-world writing (`writing.md`): canon sources, speaker/source, surface type, unlock context, evidence object, LocID/runtime layer, English authority text, 15-locale draft rows with status or explicit English-only scope, manual anti-AI redline including Creative Freedom Envelope, Risk Word And Rhythm Firewall, AI Phrase Family Quarantine, Living Prose Floor, Zero-Shot Writer Contract, Few-Shot Rewrite Pattern Bank, Paragraph Evidence Firewall, Manual Redline Protocol, Legacy Corpus Rewrite Law, `localization.md` Multilingual AI-Style Localization Firewall, `Docs/Lore/WriterScenarioAgentPrompt.md` `AI_STYLE_FIREWALL`, `CREATIVE_FREEDOM_ENVELOPE`, `RISK_WORD_AND_RHYTHM_FIREWALL`, `AI_PHRASE_FAMILY_QUARANTINE`, `LIVING_PROSE_FLOOR`, `ZERO_SHOT_CONTRACT`, and `FEW_SHOT_REWRITE LAW`, and `Docs/Lore/LoreCorpusManualRewriteAgentPrompt.md` for old corpus repair/manual rewrite waves, forbidden facts avoided, and native-review/runtime status. If the English authority row fails the firewall, rewrite it before localization instead of translating the failure. Existing files and generated pages are not grandfathered.
+- Runtime system integration (`systems.md`): producer route, consumer route, scene/prefab/asset binding or no-binding reason, dispatcher registration, config/data source, telemetry/failure path, save/load identity where persistent, quality-scaling behavior, and proof artifact for the claimed integration level.
 - Public writing: attached proof asset or explicit no-asset housekeeping reason, unsupported claims removed, channel target, owner approval state for Steam/demo/release/platform/access claims.
 
 If the domain has no matching proof artifact, it remains pending.
@@ -7690,6 +7886,8 @@ Preferred bridge order:
 
 Runtime text parsing is not an authoring bridge. It is a bug unless explicitly isolated as dev/editor diagnostics.
 
+Content bridge outputs are product data, not decoration. AppliedContent, localization, route-card, binding-map, and Data Monolith changes must travel through their importer/exporter/audit route before any runtime or publication-readiness claim. Hand-written markdown or CSV edits alone are authoring changes, not integration proof.
+
 ## Schema And Validation
 
 Every authoring source must define:
@@ -7777,6 +7975,7 @@ Authoring work must provide:
 - generated binary or asset path;
 - schema version and hash;
 - validation report;
+- exporter/importer/audit command when the bridge has one;
 - DTO layout proof;
 - import/bake command or editor menu path;
 - runtime owner and DataVault/generation behavior;
@@ -8185,6 +8384,20 @@ Performance does not own gameplay truth. It owns budgets, measurement, load-shed
 
 Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper premium approximation or be rejected.
 
+## Process Gate And Unity Slot Law
+
+Heavy proof actions are a shared workstation resource, not an agent-local right.
+
+Before launching `dotnet`, `csc`, Unity batchmode, import, profiler capture, player build, asset reimport, or any equivalent heavy proof action:
+
+- sample local CPU load and active `Unity`, `Unity Hub`, `dotnet`, `csc`, `VBCSCompiler`, `MSBuild`, `Unity.ILPP.Runner`, `UnityShaderCompiler`, `ShaderCompiler`, and `AssetImportWorker` processes;
+- if CPU is above `50%`, a compile/import/build is already active, or Unity is importing/compiling, do not start another heavy action;
+- return or report `BUILD_GATE_BLOCKED: <reason>` and continue with static/scoped work only;
+- after two blocked attempts over unchanged process state, stop that lane with the exact blocker instead of polling;
+- never convert a static scan, watchdog status, or proof-packet gate pass into Unity import, Play Mode, profiler, visual, player-build, or release readiness.
+
+`Tools/ProofGate/unity_process_proof_watchdog.py` is the current static process/proof sampler. It may summarize busy Unity/compiler/import state, raw screenshot groups, proof-packet status, and dirty log tokens. It must not launch Unity, enter Play Mode, profile, build, kill processes, accept visual quality, or take the Unity slot.
+
 ## Frame Budget Law
 
 Every runtime feature must name:
@@ -8367,6 +8580,19 @@ Survival owns physiology and survival resources:
 - faint, death, recovery, and safe-zone restoration state.
 
 Survival does not own physics forces, render glitch passes, audio playback, UI text, tool hit truth, save layout, or vehicle motion. It publishes stable survival state. Other systems present or persist it through their own routes.
+
+Current runtime source route:
+
+- `HectonSurvivalSystem` is the player survival owner for oxygen, integrity, hunger, thirst, pressure/depth exposure, death record telemetry, save/load participation, environmental resistance reads, blood-scent signal publication, and last-life black-box data.
+- `HectonSurvivalContract` owns shared survival constants and validated unit conversions for oxygen, pressure, gas, stress, hibernation, darkness, and pressure-damage formulas.
+- `SaveDataPlayerSurvivalSanitizer` owns save DTO sanitation/equality for persisted player survival telemetry. Save layout belongs to the save domain; survival only fills and restores its owned fields.
+- `SurvivalHUDController` consumes `HectonSurvivalSystem` through player context/hot-swap fallback and renders bars in late frame. It does not own survival truth.
+- `HazardZoneManager` consumes the survival read model for resistance/depth context and hazard clarity. Hazards do not directly mutate survival state outside the owner route.
+- `ShinobuPhysiologyRuntime`, `ShinobuMetabolismRuntime`, and `ShinobuSuitIntegrityRuntime` are adjacent physiology/suit/metabolism routes. They may feed or mirror survival pressure, but they must not create a second player survival source of truth without an explicit bridge contract.
+
+Lifecycle requirements: register/unregister slow tick, late-frame tick, save participant, hot-swap listener, blood-scent spatial signals, and Vault-backed database handles symmetrically across enable/disable, scene unload, domain reload, and service replacement.
+
+Failure paths that must stay visible: no player context, missing survival component, missing DataVault, missing save service, duplicate survival owner, stale player transform, bad/non-finite stat values, save DTO version gaps, repeated subscribe/unsubscribe, hazard resistance fallback, oxygen/integrity reaching zero, and black-box dump failure.
 
 ## Core Channels
 
@@ -9093,6 +9319,27 @@ Texture and material generation is an editor/offline authoring route. Runtime tr
 Runtime hot paths must not create `Texture2D` assets, fill pixels, compress textures, bake masks, repack atlases, unwrap UVs, call `renderer.material`, or instantiate per-prefab materials. Runtime may only bind approved material assets, update predeclared shader parameters, select already-imported texture/atlas variants through an owner route, and stream/release tracked handles.
 
 `GlobalQualityWeight` may scale texture max size, streaming residency, decal/material detail intensity, and optional diagnostics. It must not change material channel semantics, atlas rect identity, prefab authority, gameplay truth, save identity, or shader ABI.
+
+## 9.1 Decal Source And Binding Contract
+
+Decal atlases are not shippable merely because an image exists.
+
+Accepted decal path:
+
+- source prompt/output identifies the asset as `DECAL_ATLAS`, `UV_ATLAS`, or a specific material-source role;
+- atlas review proves no readable text, no watermark/logo, no cropped islands, enough transparent/padded border, and no baked lighting that should belong to the scene;
+- split/padded/alpha candidate tooling produces imported source textures with stable `.meta` GUIDs;
+- generated materials live under first-party material folders and keep transparent render state;
+- authoring tools bind material assets or texture arrays to prefabs/renderer features by stable asset reference;
+- runtime systems consume the imported material/array reference only. They must not extract islands, create textures, repair alpha, or build materials during gameplay.
+
+Current source routes:
+
+- world-support damage/glass/organic decals: Batch34 alpha candidates -> `WorldSupportGeneratedDecalMaterialBuilder` -> first-party generated decal materials -> deterministic quad children in support/world authoring.
+- visor trauma decals: Batch34 alpha candidates -> `Batch34VisorTraumaDecalArrayIntegrator` -> `TX_B34_VisorTrauma_DecalArray.asset` -> `DeferredDecalPass`.
+- padded needs-work atlases are handoff sources for UV/decal binding, not inventory icons and not automatic Lit materials.
+
+Failure path to check before acceptance: missing source texture, bad alpha edge, insufficient atlas padding, wrong sRGB/linear import state, missing `.meta` GUID, material cloned per prefab, stale vendor decal prefab, missing renderer feature binding, wrong atlas slice order, and runtime code attempting to generate or repair final decal assets.
 
 ## 10. Rejection Gates
 
@@ -10901,6 +11148,46 @@ Static source anchors:
 - black-box route: `OceanKinematicsTelemetryEntry[300]`; source dump target is `Docs/AgentLogs/Dump_SHINOBU_261.bin` on fault;
 - proof gap: Unity import, Play Mode, profiler/GC, Frame Debugger/RenderGraph, Crest scene binding, and visual water quality remain `PENDING VERIFICATION`.
 
+## 2.2 Current Static Source Anchor - Water-Level Calibration
+
+Evidence class: STATIC_SOURCE only. The current sea-level calibration route is first-party and split from terrain macro geology. Terrain may produce seafloor height and terrain-provider fallback values; it does not own the calibrated ocean surface.
+
+Static source anchors:
+
+- contract owner: `Assets/_Project/Scripts/World/Contracts/WorldWaterLevelCalibrationContracts.cs`;
+- scene/Crest authoring owner: `Assets/_Project/Scripts/Plugins/Crest/WorldWaterLevelCalibrationAuthoring.cs`;
+- editor install/validation route: `Assets/_Project/Scripts/Plugins/Crest/Editor/CrestWorldWaterLevelCalibrationInstaller.cs`;
+- generated source artifact: `Docs/GeneratedAssets/Terrain/MacroGeology/WorldWaterLevelCalibration_Extent30000m_Res192.json`;
+- migrated-away path: `Assets/_Project/Scripts/World/WorldWaterLevelCalibrationAuthoring.cs` is not the current authoring location.
+
+Runtime contract:
+
+- `WorldWaterLevelCalibrationDTO` publishes requested, resolved, and fallback water level Y, calibration travel meters, authoring/runtime seeds, source hash, and flags;
+- `WorldWaterLevelCalibrationMath` clamps non-finite or out-of-envelope values through `DefaultWaterLevelY = 14.02`, `MinimumCalibrationTravelMeters = 100`, and `MaximumAbsoluteWaterLevelY = 1000`;
+- `WorldWaterLevelCalibrationRuntimeRegistry` holds the active read model, resets at subsystem registration, clears on owner disable, and marks duplicate owners through `DuplicateOwner`;
+- `WorldWaterLevelCalibrationAuthoring` is `ExecuteAlways`, applies the resolved Y to the Crest root or override transform, binds a local `Crest.OceanRenderer` when present, and publishes debug flags;
+- `CrestWorldWaterLevelCalibrationInstaller` reads the generated JSON lane order `strictCandidateLevels`, then `bestLevels`, then `allLevels`, installs the authoring component on `Assets/_Project/Prefabs/Ocean_Crest.prefab`, can install the prefab into `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, and refuses to mutate assets while Play Mode, compiling, or importing/updating is active.
+
+Consumer route:
+
+- `ShinobuOceanSurfaceAtmosphereRuntime` reads `WorldWaterLevelCalibrationRuntimeRegistry` first when resolving `SeaLevel`, then falls back through weather/serialized sea level;
+- `GlobalRegistry.OceanKinematics` is the runtime sea-level read route for buoyancy, resource distribution, biome/depth matrix logic, Sargassum/flora systems, PDA map fallback, storm propagation, Atlas signal depth, bioluminescence darkness, chunk residency, and other systems that need water depth;
+- MapMagic/terrain bridges may expose water surface fallback values, but active ocean kinematics is the preferred live source when initialized;
+- save/load terrain identity may compare water calibration metadata, but saves must not serialize an entire water field or turn water presentation into save truth.
+
+Failure modeling required before acceptance:
+
+- generated calibration artifact missing, malformed, stale, or without a readable lane;
+- requested water level non-finite, outside `MaximumAbsoluteWaterLevelY`, or farther than calibration travel from fallback;
+- Crest prefab or scene has no `OceanRenderer`, missing `Crest4KinematicsAdapter`, missing calibration component, or Crest root Y does not match resolved calibration Y;
+- duplicate calibration owners register in one domain lifetime;
+- registry survives domain reload incorrectly, stale read model remains after scene unload, or owner disables without unregistering;
+- installer runs during Play Mode, compile, import/update, or without the target prefab/scene;
+- consumers read default `14.02` while assuming a calibrated value was applied;
+- terrain, atmosphere, physics, or UI code starts writing a competing sea-level truth instead of consuming ocean kinematics/calibration.
+
+Proof gap: Unity import, installer execution, prefab diff, world-scene binding, Play Mode registry replacement, save/load identity mismatch, profiler/GC, and player traversal remain `PENDING VERIFICATION`.
+
 ## 3. Cinematic Fake First
 
 Before adding any dynamic water simulation, prove that these cheaper routes are insufficient:
@@ -11250,6 +11537,41 @@ If a transitional component still contains `OnAudioFilterRead`, it is blocked fr
 - the route has an explicit waiver and a DSP profiler capture showing no underrun, no GC, no blocking, and no budget breach on compact hardware.
 
 Mock audio banks, emergency procedural profiles, missing mixer-parameter fallbacks, and runtime-added audio components are recovery paths only. Production scenes must ship authored banks, mixer bindings, listener components, audio roots, and warmed pools before gameplay begins.
+
+### 8.2 Current Runtime Source Anchors
+
+Evidence class: STATIC_SOURCE only. These anchors describe the current code route; they do not prove Unity import, mixer binding, native plugin availability, profiler/GC, or player-build audio acceptance.
+
+Current owners and routes:
+
+- `Assets/_Project/Scripts/AcousticZoneController.cs` owns acoustic-zone presentation, water/flood muffle signals, mixer snapshot transitions, queued transition cues, storm/static interference, sonar impulse response, vegetation overlays, and acoustic read-model state. It consumes soundscape, physics impact, sonar ping, atmosphere, player, physics, dispatcher, audio service, and music/director registry slots. It must not own pressure, flooding truth, player state, sonar truth, or save state.
+- `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs` owns bounded vocal warning priority/cooldown/dispatch state. It publishes current/dispatch/profiles/tuning/telemetry through DataVault buffers owned by `SystemID.AudioVocalWarning`, uses `SignalBus<VocalWarningSignal>` for producers, and reports signal rejection as a fault instead of silently accepting warning spam.
+- `Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs` owns vocal cue playback, mock-bank fallback, waveform/telemetry/csv metadata buffers, `PlayVoiceOverSignal`, `VocalCueSignal`, and `SubtitleCueSignal` consumption. It is the playback route for vocal-warning phrases and voice-over/subtitle handoff; it is not the authority for the gameplay fact behind a warning line.
+- `Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs`, `Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs`, `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`, and `Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs` are the current critical procedural/native bridge route. `AudioFrameSpscRingBuffer` uses a power-of-two frame ring with telemetry; `HectonSensoryKernelNativeBridge` validates descriptor magic, alignment, shared-state metadata, capacity, and native plugin availability before registering the shared ring.
+- `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs` owns adaptive stem mix buffers, rules, commands, mock depth/predator/tension inputs, telemetry, DataVault mutation guards, celestial-light readability binding, player/survival/damage/biome/narrative signal consumption, and `GlobalQualityWeight` cadence/quality scaling.
+- `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs` owns music cue selection and music-director registry service. It reads player, audio, acoustic-zone, biome, encounter, depth, weather, first-hour, vocal warning, and audio-log read models/signals; it must not become threat, biome, depth, or narrative truth.
+- `Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs` and sonar/audio consumers may present acoustic evidence, but sonar truth remains with sonar/spectrum owners.
+- `Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs` owns prologue transition audio state driven by atmospheric reentry, reentry acoustic stress, and prologue completion signals. It must publish neutral transition state on disable instead of leaving stale transition pressure in the mix.
+
+Lifecycle and service law:
+
+- Audio runtimes that register with `GlobalRegistry` must unregister in `OnDisable` and clear cached services/read models when registry replacement occurs.
+- DataVault-backed audio routes must acquire/release mutation guards and release owned buffers on disable/rebind. A missing DataVault is a blocked degraded route, not permission to allocate ad hoc managed state in hot paths.
+- SignalBus-backed audio producers must use bounded `TryPush`/`TryPushTracked` routes. Obsolete direct raise methods that hide drops are not acceptable for new producers.
+- Runtime-created or lazily repaired `AudioSource`, mixer group, mock bank, or fallback clip binding is recovery only. It cannot be cited as production binding proof.
+- Music, warnings, acoustic zones, vocal playback, and critical procedural audio must scale with `GlobalQualityWeight` by layer density, cadence, voice count, filtering/detail, telemetry cadence, or optional effect richness. They must not remove route-critical warnings, threat cues, sonar meaning, or machine-state cues.
+
+Failure modeling required before acceptance:
+
+- no audio service, missing dispatcher, stale registry slot, duplicate music/acoustic owner, or service replacement during playback;
+- SignalBus queue full, repeated subscribe/unsubscribe, producer using obsolete raise path, or warning/cue drop hidden as success;
+- DataVault missing, stale handle, buffer capacity mismatch, mutation guard not released, interrupted job, or telemetry ring cursor corruption;
+- native audio plugin unavailable, descriptor magic mismatch, null/unaligned pointer, invalid power-of-two capacity, bad shared-state metadata, busy native bridge, or ring overrun/underrun;
+- `OnAudioFilterRead` doing synthesis/decoding/locking/allocation beyond an approved shim;
+- missing authored mixer snapshots, exposed mixer parameters, mixer groups, banks, clips, subtitles, or listener/root binding;
+- mock bank, emergency grain bank, fallback clip, or runtime component repair used as production proof;
+- quality reduction hides a critical warning, sonar cue, route cue, machine state, or creature/threat cue;
+- scene unload/domain reload leaves a stale acoustic state, current warning, music cue, native ring, or prologue transition active.
 
 ## 9. Audio QA Gates
 
@@ -11910,6 +12232,14 @@ Geology must guide:
 
 Perlin hills and smoothed boulders are rejected. Use fracture planes, undercuts, shelves, debris fans, vent chimneys, cave ribs, and waterline/sediment cues.
 
+Current generation contract:
+
+- Macro terrain starts from deterministic `WorldMacroGeologyFields` evaluation over the authored world extent and chunk grid.
+- Terrain materials, surface masks, and biome/substrate signals are derived through `WorldTerrainDetailContracts` and runtime terrain jobs, not by hand-waving a biome tint over noise.
+- MapMagic is a bridge, bake, provider, and tile-application route. The current world source of truth is not an old MapMagic graph standing alone.
+- Generated preview manifests under `Docs/GeneratedAssets/Terrain/MacroGeology` are static artifacts for inspection and queueing. Source code and runtime provider identity remain authoritative.
+- World save/load validates terrain identity through seed, macro artifact version, chunk range/hash, provider flags, and water calibration. A route that cannot explain its terrain identity is not production-ready.
+
 ## 6. Ecology Scatter
 
 Scatter is authored density, not random decoration:
@@ -11970,6 +12300,7 @@ Evidence class: STATIC_SOURCE only. Compile, Unity import, Play Mode, profiler, 
 
 | Runtime | Owner / boundary | Static route | GlobalQualityWeight consequence | Missing proof |
 |---|---|---|---|---|
+| `Assets/_Project/Scripts/World/WorldMacroGeologyFields.cs` plus `WorldTerrainDetailContracts.cs` | `Hecton8.World`; deterministic macro geology, material class, terrain mask, and chunk identity contract. It owns terrain-world source data, not water truth, Unity scene search, runtime streaming, or voxel persistence. | Macro fields feed terrain jobs, provider identity, preview manifests, save/load terrain validation, scatter eligibility, and world route composition. MapMagic reads/bridges this route where active; it is not the standalone canonical graph. | Quality tiers may change density, resolution, cadence, HLOD, and presentation richness. They must not change route grammar, macro field identity, material semantics, save identity, biome ownership, or evidence placement. | No Unity import, terrain capture, player traversal, artifact load, save/load mismatch, provider replacement, duplicate owner, profiler, or player-build proof was provided by this static audit. |
 | `Assets/_Project/Scripts/World/SeedShipAnomalyRuntime.cs` | `Hecton8.World.SeedShipAnomaly`, `SystemID.EndgameAnomaly`; owns seed-ship anomaly field presentation/control signals, not generic world generation, save authority, AI cognition, or player UI ownership. | Registers cold, updatable, slow, and late-frame tick routes. Owns DataVault buffers `ShinobuSeedShipAnomaly*`, mock HUD/leviathan/AUP/thermo buffers, and a 300-entry telemetry ring with dump target `Docs/AgentLogs/Dump_SEED_SHIP_ANOMALY.bin`. Publishes/consumes typed lanes including `RadarJamSignal`, `CoreHackedSignal`, `MockHudSignal`, `MockAupRebaseSignal`, `AnomalyProximitySignal`, `SystemGlitchSignal`, `TelemetryAnomalySignal`, `RadiationSourceSignal`, and `RadiationDoseSignal`. | Reads borrowed graphics scalability state or fallback `global_quality_weight`; scales entity budget through anomaly math. It must not change anomaly authority, save identity, or signal DTO layout. | No scene wiring, runtime field capture, profiler, GCMonitor, telemetry dump artifact, radiation/radar gameplay proof, or save/load proof was provided by this static audit. |
 | `Assets/_Project/Scripts/World/SargassumCutManager.cs` | `Hecton8.World`, `SystemID.WorldSargassum`; owns global sargassum cut-mask service and terrain damage-volume presentation. It does not own flora mesh generation, terrain authority, inventory, or tool truth. | Registers `ITickable`, `ISlowTickable`, `ILateFrameTickable`, hot-swap listener, and `GlobalRegistry.SargassumCut`. Owns DataVault stamp command buffers `SargassumCutStampCommands` and `SargassumCutDamageVolumeStampCommands`. Uses ping-pong `RenderTexture` masks, double-buffered `GraphicsBuffer` stamp uploads, compute shaders `Hecton_SargassumCutMask.compute` and `Hecton_TerrainDamageVolume.compute`, and shader globals `_SargassumCutMaskRT` and `_HectonDamageVolumeTex`. Registers recent cut heat as transient world spatial hash events. | Reads `HomeostasisBrain.GlobalQualityWeight`; scales cut-mask resolution from 512 up to authored max and damage-volume resolution/depth with hysteresis. Cut truth, tool success, and terrain authority must not depend on high-tier texture resolution. | No compute-support matrix, visual cut-mask capture, Frame Debugger/GPU profiler, GCMonitor, Unity import, shader compatibility, or runtime cut interaction proof was provided by this static audit. |
 
@@ -12434,6 +12765,26 @@ Do not ask a writer to "make lore for this area" without a scene packet. Do not 
 
 If a task asks for an encyclopedia entry, survivor diary, scanner fact, audio log, terminal note, website article, wiki page, or technical/mineral/engine article, the output must include the actual readable artifact text through `writing.md`. Scenario notes alone are not enough. For production or AppliedContent packets, preserve the 15-locale route through `localization.md` and the lore localization docs.
 
+## 1C. Evidence-First Prose Firewall
+
+A scenario packet may not hand the writer an abstract thesis and call it lore. Reject the handoff before prose if the beat is primarily:
+
+- category collapse: infrastructure, ocean, biology, workers, debt, and Atlas described as "one body", "one skin", "one tissue", "one system", or equivalent without a specific room, machine, organism, document, and route consequence;
+- organ metaphor in place of blocking: corridor as gut, wall as valve, cable as flower, base as organism, or similar language when the scene has no literal biological/mechanical operation to inspect;
+- all-caps machine prophecy instead of a terminal record with source, timestamp, owner, field names, values, and failure state;
+- corporate/legal abstraction that hides the actual event but has no recoverable human, room, shift, queue, door, pressure state, cargo return, or custody trail;
+- "the player learns that..." or "this represents..." instead of a player action, contradiction, and consequence.
+
+The recovery is not a prettier sentence. Replace the beat with a physical operation:
+
+- where it happens;
+- what equipment or organism is involved;
+- which human procedure or automated route mislabels it;
+- what evidence the player sees first;
+- what decision, risk, route, debt, salvage value, or distrust changes afterward.
+
+If that recovery cannot be written from canon, mark the beat `BLOCKED_SOURCE_BRIEF` with the missing fact. Do not ask the writer to make it sound deep.
+
 ## 2. Evidence Stack
 
 A narrative beat should use at least two evidence channels:
@@ -12729,6 +13080,8 @@ Do not reuse the same paragraph across surfaces with only headings changed. That
 
 Reject text that sounds like a packet summary, content brief, or AI article.
 
+If a draft matches the patterns below, do not polish it. Reject the source route and rewrite from the source brief: scene, evidence object, speaker, surface, and knowledge boundary. The failure is structural, not cosmetic.
+
 Hard-ban patterns unless quoted as bad corporate copy:
 
 - "`X` defines/explains/shows why..."
@@ -12749,7 +13102,372 @@ Hard-ban patterns unless quoted as bad corporate copy:
 - audio lines that sound like trailer taglines;
 - encyclopedia pages that read like root design docs.
 
+Hard-reject HECTON-8-specific AI smell:
+
+- abstract merger thesis: "infrastructure stops separating from habitat", "the system becomes one body", "boundary labels are invalid", or any equivalent category-collapse statement without a literal machine, room, sample, or organism doing an observable action;
+- organic metaphor spam: "one skin", "one tissue", "one body", "corridor as gut", "wall as organ", "cable blooms", "membrane shares..." unless the text is literal xenobiology or a named character's believable phrase and the scene proves it;
+- proper-noun pileups that name Deep Reach, Atlas, blue debt, workers, ocean biology, membranes, and tools in one sentence without an owner action, timestamp, route, or physical consequence;
+- repeated "X can be Y" rhythm used to fake discovery instead of describing what the player can inspect;
+- fake metaphysical conclusion: "not mutation but function", "without human categories", "loss routed", "continuity protected", or similar abstract verdicts not spoken by a justified machine interface;
+- pseudo-terminal all-caps with abstract labels instead of real fields, values, warnings, owners, timestamps, and failure codes;
+- scanner lines that contain philosophy, theme, or taxonomy jokes instead of observed material, confidence, hazard, and limitation;
+- audio stingers such as "it still works" or "it uses what fell into it" unless attached to an actual damaged recording with a speaker, place, interruption, and concrete fact;
+- player-facing text that mentions what the player should learn, how the article should be used, or why the packet exists;
+- legal/corporate mistranslation where a procedural claim, custody claim, insurance claim, or salvage claim becomes a courtroom plaintiff unless the canon source is literally a lawsuit.
+
+Russian and Ukrainian rows must specifically reject "язык истцов", "мова позивачів", "конверсия истца", and similar legal mistranslations for claim/custody/insurance language. Use procedural equivalents such as "претензионный язык", "язык претензий", "мова претензій", or a more exact local phrase tied to the source context. If the English authority phrase cannot be localized without this failure, rewrite the English source first.
+
 Strong HECTON-8 prose uses concrete nouns, dates, quantities, roles, failure states, custody marks, stains, gaps, and procedural pressure.
+
+## LLM Style Suppression Law
+
+Current AI-text detection research is not reliable enough to approve prose, especially after paraphrase, translation, or mixed human/AI editing. HECTON-8 therefore controls AI smell at authoring time, not by trusting a detector after the fact.
+
+For every writer, translator, or scenario agent:
+
+- detection is triage only; manual redline is acceptance;
+- stylometric suspicion is actionable: uniform sentence length, repeated balanced clauses, over-clean paragraph closure, vague abstract subjects, low punctuation variety, and identical rhythm across surfaces require rewrite;
+- prevention beats repair: constrain the draft with speaker, object, route, surface, and forbidden facts before prose starts;
+- examples beat adjectives: the prompt must carry bad examples to reject and good source-grounded examples to imitate;
+- line editing is mandatory: final 5-10 percent of prose is hand-redline work, not another generation pass;
+- old text is not grandfathered. If it fails the current firewall, rewrite it or mark it blocked.
+
+Forbidden LLM sentence shapes:
+
+- balanced thesis: "`X` is not merely `A`; it is `B`";
+- fake escalation: "`X` becomes `Y`, `Z`, and finally `theme`";
+- abstract subject: "the system", "the colony", "the ocean", "the process", "the factory" doing a moral or metaphysical action with no owner;
+- generalized contrast: "danger is not random; it is..." unless a specific source can prove that distinction;
+- aphoristic closer: final sentence that sounds quotable but carries no new evidence;
+- noun stack without verb pressure: many proper nouns arranged as mood instead of action;
+- metaphor chain: more than one metaphor in a paragraph, or any metaphor that hides missing mechanics.
+
+Required HECTON-8 sentence shapes:
+
+- actor + operation + constraint: "Shift K-12 locked Pump 4 open because the return gauge would not settle below 31 MPa.";
+- object + trace + consequence: "The lower hinge has white salt under the paint; pry from the top or the seal tears first.";
+- source + limit: "Atlas tagged the packet as cargo loss. The terminal never saw the two suit IDs still inside the bay.";
+- human + procedure + omission: "Mara signed the return form because the loader was already flooding. She left the handwheel number in the margin.";
+
+Beauty rule: beautiful language is allowed only when it is exact. Atmosphere comes from pressure, light, salt, worn tools, bad forms, missing people, delayed signals, and local sensory truth. It does not come from slogans, soft philosophy, or polished AI cadence.
+
+## Creative Freedom Envelope
+
+Strict anti-AI rules do not ban voice, rhythm, dread, humor, anger, grief, or beauty. They ban unsupported abstraction.
+
+Creative language is allowed only when it is anchored to all four points:
+
+- source: a named person, institution, instrument, document class, archive, or machine route;
+- object: a physical thing, room, route, sample, form, sensor, body trace, tool, seal, gauge, locker, clamp, container, hull plate, pump, or signal;
+- pressure: time, debt, oxygen, pressure rating, heat, mass, custody, liability, contamination, blackout, route loss, or maintenance cost;
+- limit: what the source cannot know, cannot admit, cannot measure, or cannot safely say.
+
+The writer may use metaphor only after the literal object is already clear. One exact metaphor can survive. A chain of metaphors is usually AI cover for missing evidence.
+
+Good HECTON-8 beauty:
+
+- a practical sentence that reveals a lie;
+- a worn object that carries history without explaining it;
+- a human omission inside a clean form;
+- a machine field that is technically correct and morally useless;
+- a local sensory detail that changes how the player reads a room.
+
+Bad HECTON-8 beauty:
+
+- a quotable closer;
+- a universal statement about the ocean, colony, humanity, systems, or survival;
+- a balanced analogy;
+- a paragraph that would still work if every HECTON-8 noun were replaced by generic sci-fi nouns;
+- any sentence whose main job is to sound deep.
+
+Voice freedom by surface:
+
+| Surface/source | Allowed flavor | Must still contain |
+|---|---|---|
+| Scanner | clipped sensor language, uncertainty, material caution | material, confidence/limit, hazard/action |
+| Terminal | cold procedure, liability evasion, stale authority | owner, field names, timestamp or route, requested action |
+| Survivor diary | fatigue, wrong assumption, practical fear, named care | person/object/route, next-hour need, knowledge limit |
+| Marauder field note | sharp correction, contempt for bad data, salvage pressure | tool/route/debt/air/custody detail |
+| Public/wiki article | readable history, context, restraint | source boundary, spoiler boundary, factual sectioning |
+| Engineering article | precise explanation, dry tradeoff, hard cost | infrastructure, limit, mass/heat/time/maintenance cost |
+| Corporate/legal | polished omission, procedural cleanliness | claim/custody/liability term, physical contradiction elsewhere |
+| Audio | urgency, interruption, breath, damaged carrier | one concrete fact and a reason the line cuts off or continues |
+
+## Risk Word And Rhythm Firewall
+
+Some words are not banned as dictionary items, but they are high-risk AI perfume. They require a literal source object and a reason to exist.
+
+High-risk English words and habits:
+
+- "echo", "whisper", "haunt", "scar", "wound", "memory", "ghost", "song", "breath", "pulse", "hunger", "dream", "truth", "silence", "ritual", "liminal", "threshold", "synthesis", "convergence", "interplay", "tapestry";
+- "quietly" used to make an abstract sentence feel serious;
+- "beneath the surface" as a metaphor rather than a literal depth/surface relation;
+- "what remains", "what was left behind", "the cost of", "the weight of" when no object or procedure carries the cost;
+- paragraph openers that define a concept before naming a place, object, source, or action;
+- final sentences written to be quotable rather than informative.
+
+Use these words only when literal, sourced, and useful:
+
+- "scar" is allowed for a hull gouge, tissue sample, route mark, or repaired fracture;
+- "ghost" is allowed for a sonar return, UI artifact, stale route ID, or local slang from a named speaker;
+- "memory" is allowed for a recorder buffer, custody log, witness statement, or character voice;
+- "pulse" is allowed for pressure, signal, power, sonar, pump cadence, or biological rhythm with observed evidence.
+
+If a risky word can be removed without losing fact, remove it. If removing it breaks only the mood, the line was probably filler.
+
+Rhythm rejection:
+
+- three similar-length sentences in a row that all resolve cleanly;
+- a paragraph that starts broad, narrows, then ends with a lesson;
+- repeated "The [noun]..." openings in encyclopedia tone;
+- a scanner, terminal, field note, and public article sharing the same sentence cadence;
+- every paragraph ending with a short dramatic sentence.
+
+## AI Phrase Family Quarantine
+
+Do not treat AI smell as a fixed dictionary. Treat it as families of moves that make text sound generated. A banned phrase rewritten with synonyms is still banned if it performs the same move.
+
+Quarantine these phrase families in every language:
+
+- essay-framing: "this article explores", "this entry examines", "this section shows", or any equivalent that tells the reader what the text is doing;
+- thesis contrast: "not merely X but Y", "more than X", "at once X and Y", or any equivalent balanced reveal;
+- prestige abstraction: "essence", "core", "truth", "legacy", "continuity", "humanity", "meaning", "memory" used without a source object;
+- museum-label prose: "stands as", "serves as", "testament", "witness", "reminder", "symbol", "reflection";
+- generated transition glue: "however", "moreover", "ultimately", "in this way", "together these", when used to smooth a weak paragraph rather than connect evidence;
+- fake sensory fog: "whispers", "breathes", "echoes", "hums", "sings", "hungers", when no actual sound, pressure, power, signal, or organism supports it;
+- universal moral closure: final lines about what the ocean, colony, machine, debt, or survival "really" is;
+- concept-as-actor: "the system", "the ocean", "the colony", "the process", "the factory", "the debt" acting without a specific owner, mechanism, document, or route;
+- category soup: infrastructure, biology, labor, debt, ocean, machine, memory, and loss merged into one abstract sentence.
+
+Replacement rule:
+
+- do not replace a quarantined phrase with a prettier synonym;
+- replace it with actor + action + object + constraint;
+- if that cannot be done from canon, mark `BLOCKED_SOURCE`;
+- if the line was only mood, cut it.
+
+Examples:
+
+```text
+AI: The colony's silence stands as a testament to the cost of survival.
+Rewrite: Pump Room K-12 has three suit hooks and two tags in the drain tray. Deep Reach filed the room as cleared.
+```
+
+```text
+AI: The ocean does not merely reclaim the base; it rewrites it.
+Rewrite: The north intake has fresh carbonate over yesterday's weld bead. The patch is holding, but the panel number is gone.
+```
+
+```text
+AI: Together, these fragments reveal a delicate balance between progress and loss.
+Rewrite: The invoice lists two replacement seals. The manifest lists one. The missing seal is on the flooded side of the lock.
+```
+
+## Living Prose Floor
+
+Anti-AI editing must not flatten the text into sterile documentation. A line can be alive without becoming vague.
+
+A living HECTON-8 line usually has at least one of:
+
+- a specific verb that changes state: locked, bled, buckled, vented, billed, sealed, jammed, tagged, misrouted, flashed, pitted, stripped, fouled;
+- a handled object: gauge, form, clamp, boot, tag, locker, cassette, seal, flange, sample bag, valve wheel, cable jacket;
+- a small human pressure: hurry, shame, debt, cold hands, bad handwriting, fear of losing the route, a person choosing the cheaper lie;
+- a procedural contradiction: the field says safe while the room proves otherwise;
+- a sensory fact that a source could know: salt under paint, warm hinge, sour insulation, grit in a glove ring, delayed sonar return.
+
+Do not remove anger, fatigue, humor, grief, or dread. Move them into the source voice:
+
+- survivor: clipped, tired, wrong about one thing;
+- Marauder: practical, suspicious, debt-aware;
+- corporate: clean language hiding an ugly omission;
+- scanner: narrow, material, uncertain;
+- public article: clear and restrained, with spoiler boundary.
+
+If every sentence becomes perfectly neutral, the rewrite failed in the opposite direction. The target is specific and alive, not generic and safe.
+
+## Zero-Shot Writer Contract
+
+When asking any writer, translator, or scenario agent for lore, the prompt must not say only "write beautifully" or "make it atmospheric." It must supply constraints that force source-grounded prose.
+
+Minimum zero-shot contract:
+
+```text
+Write a HECTON-8 in-world artifact, not a summary.
+Surface:
+Speaker/source:
+Audience:
+Location/depth/route:
+Evidence object:
+Unlock moment:
+What the source knows:
+What the source cannot know:
+What the source hides or mislabels:
+Required facts/numbers/units:
+Forbidden facts:
+Forbidden style:
+- no aphorisms
+- no "not just X but Y"
+- no "at its core"
+- no category-collapse thesis
+- no organic metaphor unless literal
+- no fake terminal/scanner poetry
+Acceptance:
+- every paragraph attaches to a physical object or document
+- every surface has its own voice
+- every locale row is manually redlined
+```
+
+If the prompt lacks these fields, the output is a draft-risk item even if the prose sounds good.
+
+## Few-Shot Rewrite Pattern Bank
+
+Use examples to train the writer away from AI prose. A few-shot example must show the failure and the repair. Do not include only good prose; the agent must see what is forbidden.
+
+Bad AI lore:
+
+```text
+The Bottom Factory is where infrastructure and habitat become one body. Its corridors breathe with the logic of pressure, turning loss into continuity.
+```
+
+Why it fails:
+
+- abstract category collapse;
+- organ metaphor chain;
+- no room, route, timestamp, source, surface, or player-inspectable object;
+- "loss into continuity" is a fake thesis, not evidence.
+
+Acceptable terminal fragment:
+
+```text
+DEEP REACH MAINTENANCE PACKET 6-14
+Bay: Silt Return / East lower service throat
+Action: keep Pump 4 open until brine density reads below 1.23.
+Exception: two suit tags remain inside the return cage.
+Claim language: cargo delay, not personnel delay.
+```
+
+Acceptable field note:
+
+```text
+East lower return cage: do not cut the blue hose first. It is carrying the pressure readout for the lock above it. Cut the clamp, wait for the gauge to stop hunting, then pull the tag drawer. There were two IDs in mine.
+```
+
+Bad AI legal/corporate lore:
+
+```text
+The language of plaintiffs proves how the colony weaponized words.
+```
+
+Why it fails:
+
+- mistranslates procedural claim language into courtroom plaintiff language;
+- tells the theme instead of showing the form;
+- no document field or affected worker.
+
+Acceptable corporate/public record:
+
+```text
+Return Form KR-77 lists the failed pickup as "partial cargo fitness." The loader manifest beside it lists four crates and one suit locker. Deep Reach only billed the crates.
+```
+
+Bad scanner:
+
+```text
+The wall is no longer wall or flesh. Boundary tags are invalid.
+```
+
+Acceptable scanner:
+
+```text
+Scan: pressure-grown carbonate over service panel C-12.
+Confidence: 62 percent.
+Hazard: panel edge is still conductive.
+Limit: cannot classify the pale fiber until a sample is sealed.
+```
+
+These examples are pattern law. New examples may be added only when they name the rejected mechanism and the concrete repair.
+
+## Fine-Tune And Example Dataset Policy
+
+If HECTON-8 later uses fine-tuning, retrieval examples, style cards, or a writer memory pack, the data must come from manually redlined pairs, not raw generated output.
+
+Allowed training/example items:
+
+- bad source text marked with the exact failure class;
+- rewritten authority text;
+- source brief fields used for the rewrite;
+- surface type;
+- locale status;
+- notes on why the repair works.
+
+Forbidden training/example items:
+
+- generated prose accepted because it "sounds better";
+- detector-scored text without human redline;
+- multilingual rows with copied English or unreviewed idiom;
+- examples that only say "make it more human";
+- examples with no object, source, pressure, and limit.
+
+The target model behavior is not "more literary." The target behavior is: refuse unsupported abstraction, ask for source facts when missing, and rewrite from physical evidence.
+
+## Paragraph Evidence Firewall
+
+Before localization or packet export, every paragraph must survive this check:
+
+1. What exact object, room, route, organism, interface, document, or person does this paragraph attach to?
+2. What action happens, failed, or is being hidden?
+3. Who can know this, and why can this source know it?
+4. What can the player later see, scan, repair, steal, contradict, or route around?
+5. Which words would fail if the proper nouns were removed?
+
+If two or more answers are absent, the paragraph is rejected as AI-style filler. Rewrite from physical evidence instead of adding adjectives.
+
+## Manual Redline Protocol
+
+Every new or old lore fragment that is being accepted, repaired, localized, exported, or published must be read line by line by the writer. Automated checks can help find suspects, but they cannot accept prose.
+
+For every paragraph, surface line, terminal field, scanner line, audio line, field note, title, and locale row, mark it mentally or in the edit pass as one of:
+
+- `KEEP`: concrete source, concrete object, believable voice, useful player or reader value;
+- `REWRITE`: valid canon fact, bad wording, weak source voice, bad localization, vague sentence, wrong surface;
+- `CUT`: AI-style filler, theme explanation, unsupported metaphor, generic aphorism, repeated summary, no evidence object;
+- `BLOCKED_SOURCE`: canon fact missing, source cannot know it, or the English authority row cannot be localized without distortion.
+
+The writer must not carry a sentence forward because it sounds dramatic. A dramatic line survives only if a named source could actually write or say it under the current pressure, route, document, or playback condition.
+
+Manual redline questions:
+
+1. Would this line still mean anything if `HECTON-8`, `Deep Reach`, `Atlas`, and `blue debt` were removed? If yes, treat it as generic unless a concrete source object proves otherwise.
+2. Could the same line be said by a survivor, scanner, corporate counsel, Marauder, and public archivist? If yes, the voice is dead.
+3. Is the sentence mainly an aphorism, metaphor, analogy, or thesis? If yes, cut it unless the speaker and evidence object justify that exact phrasing.
+4. Does the line contain a physical noun the player can find, repair, scan, steal, fear, or contradict? If no, rewrite.
+5. Does a translation row preserve the same source voice, or did it become generic literary prose? If generic, rewrite the source or the locale row.
+6. Does any non-English row preserve English words only because the agent was lazy? If the terms are not stable IDs, route labels, or intentional in-world labels, rewrite the row.
+
+Manual rewrite sequence for old corpus:
+
+1. Read the current source line.
+2. Mark `KEEP`, `REWRITE`, `CUT`, or `BLOCKED_SOURCE`.
+3. If `REWRITE`, write the replacement from object/source/pressure/limit.
+4. If the English authority row changes, rewrite every locale row from the new meaning.
+5. If the old line is dramatic but sourceless, cut it. Do not preserve it as "flavor".
+6. Do not batch-accept adjacent paragraphs because one paragraph was fixed.
+
+## Legacy Corpus Rewrite Law
+
+Existing lore, generated pages, production packets, field notes, terminal fragments, scanner text, audio stubs, website articles, wiki pages, and localization rows do not get a pass because they already exist.
+
+When an agent touches an old file or release set, it must:
+
+- inspect the current file, not a stale report;
+- read every title, heading, paragraph, surface block, and locale row in scope;
+- cut or rewrite AI-style filler instead of adding a new note that says it is bad;
+- preserve canon facts, stable IDs, unlocks, source voices, and locale status honestly;
+- mark missing canon as `BLOCKED_SOURCE`, not invent connective prose;
+- rewrite the English authority row before repairing translated rows when the failure starts in English;
+- rewrite a locale row directly when the English source is good but the row contains calque, wrong legal register, copied English, or local AI boilerplate.
+
+A "reviewed" old file with unchanged AI-style prose is not reviewed. It is still dirty.
 
 ## Anti-Machine Edit
 

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "ערכת ראיות לנספח הרדוד P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Shallow Annex P-63 POI Kit
+# ערכת ראיות לנספח הרדוד P-63
 
-HE LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+הנספח הרדוד P-63 הוא המקום הראשון שבו נוהל הישרדות וראיית אחריות נמצאים על אותו שולחן. המפעיל מחזיר משאבה לעבודה, אוטם כיס מחסה, קורא תיק תאונה ומוצא הודעת מסלול שאינה מתאימה לנזק שבחוץ.
 
 ## Scanner
 
-HE LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+ערכת ראיות לנקודת עניין: P-63 מחזיק כיס מחסה פעיל, תיקון משאבה והסתירה הרשמית הראשונה.
 
 ## Terminal
 
-HE LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+ערכת P-63: משאבת שיפוליים, מגש אטמים, מגע חותך, קו פינגר, תיק תאונה, הודעת מסלול חתומה, ארון יבש, מהדק עקיפה ידני.
 
 ## Audio
 
-HE LOC HOLD: First room with air. First room with a lie.
+חדר ראשון עם אוויר. חדר ראשון עם שקר.
 
 ## Field Note
 
-HE LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+הערת מרודר: השאר את המשאבה עובדת לפני קריאת התיק. מחסה מת מייצר ראיה גרועה.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/he_IL. -->

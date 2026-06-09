@@ -80,6 +80,8 @@ namespace Hecton8.SaveSystem
         private const uint SaveManagerNotificationContextHash = 0x534E5446u; // SNTF
         private const uint GeologicalAnomalyNotificationContextHash = 0x47414E46u; // GANF
         private const uint GeologicalAnomalyNotificationMissTelemetryHash = 0x47414E4Du; // GANM
+        private const uint TerrainIdentityMismatchTelemetryHash = 0x54494D4Du; // TIMM
+        private const uint TerrainIdentityMismatchContextHash = 0x54494443u; // TIDC
         private const uint CriticalSectorCorruptionNotificationContextHash = 0x4353434Eu; // CSCN
         private const uint CriticalSectorCorruptionNotificationMissTelemetryHash = 0x43534E4Du; // CSNM
         private const int MaxChunkDehydrationSignalsPerTick = 2;
@@ -4858,6 +4860,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 StampRuntimeWorldSeed(data);
+                StampProceduralTerrainIdentity(data);
                 ModSaveStateStore.PopulateSaveData(data);
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
                 if (persistentWorldRegistry != null)
@@ -5237,6 +5240,343 @@ namespace Hecton8.SaveSystem
                 1f,
                 1f,
                 false));
+        }
+
+        private static void StampProceduralTerrainIdentity(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            int runtimeSeed = 0;
+            int worldGenerationVersionId = 0;
+            if (seedProvider != null && seedProvider.IsInitialized)
+            {
+                runtimeSeed = seedProvider.RuntimeWorldSeed;
+                worldGenerationVersionId = math.max(0, seedProvider.RuntimeWorldGenerationVersionId);
+            }
+
+            TerrainArtifactIdentityDTO terrainIdentity =
+                ResolveRuntimeTerrainArtifactIdentity(runtimeSeed, worldGenerationVersionId);
+
+            ProceduralTerrainIdentityDTO identity = default;
+            identity.authoringSeed = terrainIdentity.AuthoringSeed;
+            identity.runtimeSeed = terrainIdentity.RuntimeSeed;
+            identity.worldGenerationVersionId = terrainIdentity.WorldGenerationVersionId;
+            identity.macroArtifactVersion = terrainIdentity.MacroArtifactVersion;
+            identity.macroChunkSizeMeters = terrainIdentity.ChunkSizeMeters;
+            identity.chunkMinX = terrainIdentity.ChunkMinX;
+            identity.chunkMinZ = terrainIdentity.ChunkMinZ;
+            identity.chunkMaxX = terrainIdentity.ChunkMaxX;
+            identity.chunkMaxZ = terrainIdentity.ChunkMaxZ;
+            identity.chunkArtifactRangeHash = terrainIdentity.ChunkArtifactRangeHash;
+            identity.flags = ProceduralTerrainIdentityDTO.FlagsMacroGeologyPresent;
+            if ((terrainIdentity.Flags & TerrainArtifactIdentityDTO.FlagsDefaultChunkRange) != 0u)
+                identity.flags |= ProceduralTerrainIdentityDTO.FlagsDefaultChunkRange;
+
+            if (TryResolveActiveWaterCalibration(out WorldWaterLevelCalibrationDTO waterSnapshot))
+            {
+                identity.selectedWaterLevelY = waterSnapshot.ResolvedWaterLevelY;
+                identity.waterCalibrationTravelMeters = waterSnapshot.CalibrationTravelMeters;
+                identity.waterCalibrationSourceHash = waterSnapshot.SourceHash;
+                identity.flags |= ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent;
+            }
+
+            identity.terrainProviderFlags = terrainIdentity.Flags;
+            identity.heightCacheRevision = math.max(0, terrainIdentity.CacheRevision);
+            identity.terrainEntityHash = terrainIdentity.TerrainEntityHash;
+            identity.surfaceMaterialContractVersion = WorldTerrainSurfaceMaterialResolver.ContractVersion;
+            identity.mesoDetailContractVersion = WorldTerrainMesoDetailFields.ContractVersion;
+            identity.detailEligibilityContractVersion = WorldTerrainDetailContracts.ContractVersion;
+            identity.mesoParamsHash = BuildTerrainMesoParamsHash(
+                terrainIdentity.AuthoringSeed,
+                terrainIdentity.RuntimeSeed);
+            identity.flags |= ProceduralTerrainIdentityDTO.FlagsTerrainProviderIdentityPresent |
+                              ProceduralTerrainIdentityDTO.FlagsTerrainMaterialContractsPresent |
+                              ProceduralTerrainIdentityDTO.FlagsTerrainMesoContractsPresent;
+            if ((terrainIdentity.Flags & TerrainArtifactIdentityDTO.FlagsHeightPayloadPresent) != 0u)
+                identity.flags |= ProceduralTerrainIdentityDTO.FlagsTerrainHeightPayloadPresent;
+
+            data.proceduralTerrainIdentity = identity;
+        }
+
+        private static void ValidateProceduralTerrainIdentity(SaveData data)
+        {
+            if (data == null || !data.proceduralTerrainIdentity.HasMacroIdentity)
+                return;
+
+            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            int runtimeSeed = seedProvider != null && seedProvider.IsInitialized
+                ? seedProvider.RuntimeWorldSeed
+                : saved.runtimeSeed;
+            int worldGenerationVersionId = seedProvider != null && seedProvider.IsInitialized
+                ? math.max(0, seedProvider.RuntimeWorldGenerationVersionId)
+                : saved.worldGenerationVersionId;
+
+            TerrainArtifactIdentityDTO expected = ResolveRuntimeTerrainArtifactIdentity(
+                runtimeSeed,
+                worldGenerationVersionId);
+
+            bool macroMismatch =
+                saved.authoringSeed != expected.AuthoringSeed ||
+                saved.macroArtifactVersion != expected.MacroArtifactVersion ||
+                math.abs(saved.macroChunkSizeMeters - expected.ChunkSizeMeters) > 0.001f ||
+                saved.chunkMinX != expected.ChunkMinX ||
+                saved.chunkMinZ != expected.ChunkMinZ ||
+                saved.chunkMaxX != expected.ChunkMaxX ||
+                saved.chunkMaxZ != expected.ChunkMaxZ ||
+                saved.chunkArtifactRangeHash != expected.ChunkArtifactRangeHash;
+
+            bool seedMismatch = seedProvider != null &&
+                                seedProvider.IsInitialized &&
+                                ((saved.runtimeSeed != 0 && saved.runtimeSeed != runtimeSeed) ||
+                                 (saved.worldGenerationVersionId > 0 &&
+                                  saved.worldGenerationVersionId != worldGenerationVersionId));
+
+            bool waterMismatch = false;
+            bool hasSavedWaterCalibration =
+                (saved.flags & ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent) != 0u &&
+                saved.waterCalibrationSourceHash != 0u;
+            if (hasSavedWaterCalibration &&
+                TryResolveActiveWaterCalibration(out WorldWaterLevelCalibrationDTO waterSnapshot))
+            {
+                waterMismatch =
+                    waterSnapshot.SourceHash != 0u &&
+                    waterSnapshot.SourceHash != saved.waterCalibrationSourceHash;
+                waterMismatch |=
+                    math.abs(waterSnapshot.ResolvedWaterLevelY - saved.selectedWaterLevelY) > 0.01f;
+            }
+            else if (hasSavedWaterCalibration)
+            {
+                waterMismatch = true;
+            }
+
+            uint expectedMesoParamsHash = BuildTerrainMesoParamsHash(expected.AuthoringSeed, expected.RuntimeSeed);
+            bool materialContractMismatch =
+                saved.surfaceMaterialContractVersion != 0u &&
+                saved.surfaceMaterialContractVersion != WorldTerrainSurfaceMaterialResolver.ContractVersion;
+            bool mesoContractMismatch =
+                (saved.mesoDetailContractVersion != 0u &&
+                 saved.mesoDetailContractVersion != WorldTerrainMesoDetailFields.ContractVersion) ||
+                (saved.detailEligibilityContractVersion != 0u &&
+                 saved.detailEligibilityContractVersion != WorldTerrainDetailContracts.ContractVersion) ||
+                (saved.mesoParamsHash != 0u &&
+                 saved.mesoParamsHash != expectedMesoParamsHash);
+            bool providerIdentityMismatch =
+                saved.terrainProviderFlags != 0u &&
+                expected.Flags != 0u &&
+                (saved.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider) !=
+                (expected.Flags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider);
+            bool heightPayloadMismatch =
+                saved.heightCacheRevision > 0 &&
+                expected.CacheRevision > 0 &&
+                saved.heightCacheRevision != expected.CacheRevision;
+            bool terrainEntityMismatch =
+                saved.terrainEntityHash != 0u &&
+                expected.TerrainEntityHash != 0u &&
+                saved.terrainEntityHash != expected.TerrainEntityHash;
+
+            if (!macroMismatch &&
+                !seedMismatch &&
+                !waterMismatch &&
+                !materialContractMismatch &&
+                !mesoContractMismatch &&
+                !providerIdentityMismatch &&
+                !heightPayloadMismatch &&
+                !terrainEntityMismatch)
+            {
+                return;
+            }
+
+            float mismatchMask = 0f;
+            if (macroMismatch) mismatchMask += 1f;
+            if (seedMismatch) mismatchMask += 2f;
+            if (waterMismatch) mismatchMask += 4f;
+            if (materialContractMismatch) mismatchMask += 8f;
+            if (mesoContractMismatch) mismatchMask += 16f;
+            if (providerIdentityMismatch) mismatchMask += 32f;
+            if (heightPayloadMismatch) mismatchMask += 64f;
+            if (terrainEntityMismatch) mismatchMask += 128f;
+            PublishPerformanceWarningBestEffort(
+                TerrainIdentityMismatchTelemetryHash,
+                TerrainIdentityMismatchContextHash,
+                mismatchMask);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogWarning(
+                "[SaveManager] Procedural terrain identity mismatch: saved seed " +
+                saved.runtimeSeed +
+                " / generation " +
+                saved.worldGenerationVersionId +
+                " / macro artifact " +
+                saved.macroArtifactVersion +
+                " / chunk " +
+                saved.macroChunkSizeMeters +
+                "m / range hash " +
+                saved.chunkArtifactRangeHash +
+                " / water " +
+                saved.selectedWaterLevelY +
+                " / material contract " +
+                saved.surfaceMaterialContractVersion +
+                " / meso contract " +
+                saved.mesoDetailContractVersion +
+                " / detail contract " +
+                saved.detailEligibilityContractVersion +
+                " / meso params " +
+                saved.mesoParamsHash +
+                " / provider flags " +
+                saved.terrainProviderFlags +
+                " / height cache " +
+                saved.heightCacheRevision +
+                " / terrain entity " +
+                saved.terrainEntityHash +
+                " != runtime seed " +
+                runtimeSeed +
+                " / generation " +
+                worldGenerationVersionId +
+                " / macro artifact " +
+                expected.MacroArtifactVersion +
+                " / chunk " +
+                expected.ChunkSizeMeters +
+                "m / range hash " +
+                expected.ChunkArtifactRangeHash +
+                " / material contract " +
+                WorldTerrainSurfaceMaterialResolver.ContractVersion +
+                " / meso contract " +
+                WorldTerrainMesoDetailFields.ContractVersion +
+                " / detail contract " +
+                WorldTerrainDetailContracts.ContractVersion +
+                " / meso params " +
+                expectedMesoParamsHash +
+                " / provider flags " +
+                expected.Flags +
+                " / height cache " +
+                expected.CacheRevision +
+                " / terrain entity " +
+                expected.TerrainEntityHash +
+                ".");
+#endif
+            if (macroMismatch || seedMismatch || waterMismatch || materialContractMismatch || mesoContractMismatch)
+                TryPushGeologicalAnomalyNotification();
+        }
+
+        private static bool TryRestoreWaterCalibrationFromSave(SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
+            if ((saved.flags & ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent) == 0u ||
+                saved.waterCalibrationSourceHash == 0u)
+            {
+                return false;
+            }
+
+            if (!WorldWaterLevelCalibrationMath.TryResolveWaterLevelY(
+                    saved.selectedWaterLevelY,
+                    WorldWaterLevelCalibrationMath.DefaultWaterLevelY,
+                    saved.waterCalibrationTravelMeters,
+                    out float restoredWaterLevelY))
+            {
+                return false;
+            }
+
+            if (WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO activeSnapshot) &&
+                activeSnapshot.SourceHash != 0u &&
+                activeSnapshot.SourceHash != saved.waterCalibrationSourceHash)
+            {
+                return false;
+            }
+
+            return WorldWaterLevelCalibrationRuntimeRegistry.TryApplySavedCalibration(
+                restoredWaterLevelY,
+                saved.waterCalibrationTravelMeters,
+                saved.waterCalibrationSourceHash);
+        }
+
+        private static TerrainArtifactIdentityDTO ResolveRuntimeTerrainArtifactIdentity(
+            int fallbackRuntimeSeed,
+            int fallbackWorldGenerationVersionId)
+        {
+            ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+            if (terrainProvider != null &&
+                terrainProvider.IsAvailable &&
+                terrainProvider.TryGetTerrainArtifactIdentity(out TerrainArtifactIdentityDTO providerIdentity) &&
+                providerIdentity.HasMacroIdentity)
+            {
+                return providerIdentity;
+            }
+
+            float chunkSizeMeters = WorldMacroGeologyFields.DefaultChunkSizeMeters;
+            WorldMacroGeologyFields.ResolveMinimumChunkRange(
+                chunkSizeMeters,
+                out int chunkMinX,
+                out int chunkMinZ,
+                out int chunkMaxX,
+                out int chunkMaxZ);
+
+            uint authoringSeed = unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed);
+            return new TerrainArtifactIdentityDTO
+            {
+                AuthoringSeed = authoringSeed,
+                RuntimeSeed = fallbackRuntimeSeed,
+                WorldGenerationVersionId = fallbackWorldGenerationVersionId,
+                MacroArtifactVersion = WorldMacroGeologyFields.ArtifactVersion,
+                ChunkSizeMeters = chunkSizeMeters,
+                ChunkMinX = chunkMinX,
+                ChunkMinZ = chunkMinZ,
+                ChunkMaxX = chunkMaxX,
+                ChunkMaxZ = chunkMaxZ,
+                ChunkArtifactRangeHash = WorldMacroGeologyFields.BuildChunkArtifactRangeHash(
+                    authoringSeed,
+                    fallbackRuntimeSeed,
+                    fallbackWorldGenerationVersionId,
+                    WorldMacroGeologyFields.ArtifactVersion,
+                    chunkSizeMeters,
+                    chunkMinX,
+                    chunkMinZ,
+                    chunkMaxX,
+                    chunkMaxZ),
+                Flags = TerrainArtifactIdentityDTO.FlagsMacroGeologyPresent |
+                        TerrainArtifactIdentityDTO.FlagsDefaultChunkRange
+            };
+        }
+
+        private static uint BuildTerrainMesoParamsHash(uint authoringSeed, int runtimeSeed)
+        {
+            uint combinedSeed = WorldMacroGeologyFields.CombineWorldSeed(authoringSeed, runtimeSeed);
+            WorldTerrainMesoDetailParams meso = WorldTerrainMesoDetailFields.CreateDefaultParams(combinedSeed);
+            uint hash = 2166136261u;
+            hash = MixTerrainIdentityHash(hash, meso.Seed);
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.PreviewExtentMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.TerraceStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.SlumpStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.TributaryStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.TalusStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.RubbleStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.ReefStrengthMeters));
+            hash = MixTerrainIdentityHash(hash, math.asuint(meso.MaxMesoDeltaMeters));
+            return hash == 0u ? 1u : hash;
+        }
+
+        private static uint MixTerrainIdentityHash(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= value;
+                hash *= 16777619u;
+                return hash;
+            }
+        }
+
+        private static bool TryResolveActiveWaterCalibration(out WorldWaterLevelCalibrationDTO snapshot)
+        {
+            snapshot = default;
+            if (!Application.isPlaying)
+                return false;
+
+            return WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out snapshot);
         }
 
         private void ReportLoadPipelineStage(LoadingPipelineStage stage, float progress01)
@@ -5799,6 +6139,8 @@ namespace Hecton8.SaveSystem
                 }
 
                 ValidateRuntimeWorldSeed(data);
+                TryRestoreWaterCalibrationFromSave(data);
+                ValidateProceduralTerrainIdentity(data);
                 PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 string loadedRelativeSavePath = GetCandidateSavePath(slotName, loadedCandidate);
 

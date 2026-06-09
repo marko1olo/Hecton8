@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Great Tide Margin Trace
 
-The trace proves two things at once: the Great Tide was real, and the lethal margin was visible before the report admitted it. Deep Reach did not command water to rise. It accepted a route window where the colony pressure envelope had already lost slack, then published the cascade without the sign-off.
+This sensor does not make the Great Tide fake. It fixes the timing. Colony design slack failed before Deep Reach admitted risk in the public report. The route authority kept the window open under a commercial exception, then published a cascade chain with the exception stripped out.
 
 ## Scanner
 
-Recovered tide sensor. Peak shear exceeded colony design, but the warning-margin breach was logged before the public cascade timestamp.
+Recovered tide sensor. The shear spike is real; the margin breach appears sixteen minutes before Deep Reach's public cascade clock.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-risk threshold accepted by route authority. Operator note removed from public incident chain. Raw trace preserved in brine-buffer memory.
+TIDE ARRAY // P-63 NORTH SPINE. Tail margin below shutdown floor. Route window held under commercial exception. Public incident chain omits exception note. Brine-buffer checksum intact.
 
 ## Audio
 
-The ocean did not lie. The report did.
+The tide broke the corridor. The lie starts with the clock.
 
 ## Field Note
 
-Marauder note: do not look for a villain speech. Look for the line somebody deleted.
+Marauder note: keep the raw trace. A deleted margin line beats any speech.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/en_US. -->

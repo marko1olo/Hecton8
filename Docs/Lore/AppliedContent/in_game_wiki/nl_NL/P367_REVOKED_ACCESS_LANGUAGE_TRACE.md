@@ -19,26 +19,30 @@ localization_flags: 1
 
 # Spoor van Ingetrokken Toegangstaal
 
-Ingetrokken toegangstaal werd een van de stillere sloten van Deep Reach. Een deur kon een voormalige werker weigeren, het verzoek als routinematig onderhoud markeren en toch de exacte termen lekken die de verborgen evacuatieroute benoemden. Op HECTON-8 telt dat, omdat de speler geen nette bekentenis nodig heeft om het spoor te volgen. De oude formulering is genoeg: protocol voor gedegradeerde telling, vervangende getuige, route-veilig archief, claimbehoudrouting. Die woorden zijn gebouwd voor aansprakelijkheidscontrole, niet voor redding. De weigering bewijst twee dingen tegelijk. De credential is dood. De procedure erachter niet.
+Ingetrokken toegangstaal is een van Deep Reachs stillere sloten. Een voormalige werker kan bij de deur worden geweigerd terwijl de weigeringstekst nog de procedure achter de verzegelde route blootlegt. Het slot hoeft niet te bekennen. Het hoeft alleen de verkeerde oude woorden te gebruiken.
+
+Maintenance reclassification betekent dat een menselijke route op servicemateriaal moest lijken. Degraded-count betekent dat een werkertelling werd geaccepteerd nadat die opnieuw gecontroleerd had moeten worden. Claim-preservation routing betekent dat het bedrijf eigendom van de lijn beschermde vóór de lichamen in de lijn. Elke zin is klein genoeg om als kantoortaal door te gaan en specifiek genoeg om naar de begraven gang te wijzen.
+
+Dat maakt het dode credentiaal beperkt nuttig. Het kan het luik niet openen. Het kan het archief dwingen in zijn oude aansprakelijkheidsdialect te spreken, en dat dialect is een kaart.
 
 ## Scanner
 
-De blokkade zegt niet verboden. Ze zegt onderhoudsherclassificatie, continuïteitsstop en routemateriaal. Oude Deep Reach-taal: een weigering die nog steeds naar de begraven deur wijst.
+LOCKOUT-SPOOR // Weigeringstekst noemt maintenance reclassification, continuity hold en route materials. De deur weigert de badge maar lekt de begraven route.
 
 ## Terminal
 
-TOEGANGSANTWOORD / ROUTE-VEILIG ARCHIEF
-credential: ingetrokken
-reden: evacuatiecontinuïteitsmateriaal beperkt tot gecertificeerd Deep Reach-personeel
-zichtbare termen: gedegradeerde telling, vervangende getuige, claimbehoudroute, onderhoudsherclassificatie
-notitie: voormalig veldpersoneel mag weigeringstaal alleen zien voor incidentafstemming.
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-Ze hebben de gang niet gewist. Ze hebben hem ingepakt in woordenschat die alleen schuldig personeel nog begrijpt.
+Ze hebben de gang niet gewist. Ze wikkelden hem in woordenschat die schuldig personeel nog kon lezen.
 
 ## Field Note
 
-De badge is dood. De blokkade spreekt nog het kantoordialect dat de route heeft begraven.
+De badge is dood. De lockout spreekt nog het kantoordialect dat de route begroef.
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/nl_NL. -->

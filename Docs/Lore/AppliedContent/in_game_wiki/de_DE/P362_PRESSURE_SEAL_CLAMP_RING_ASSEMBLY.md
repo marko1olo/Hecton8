@@ -19,22 +19,26 @@ localization_flags: 1
 
 # Druckdichtungs-Klemmring-Baugruppe
 
-Druckdichtungen erklären, warum Reparaturarbeit tiefer führen muss. Materialien, die Wasser aus einem Raum halten, können die Kapsel auch an das Wrack kleben, wenn die falsche Dichtungskette akzeptiert wird.
+Der Druckdichtungs-Klemmring ist der Punkt, an dem Reparatur nicht mehr nur Überleben ist. Dasselbe Material, das Wasser aus einer safe room hält, kann die ascent capsule fangen, wenn es über die separation seam läuft. Ein shallow patch muss nur ein Abteil halten. Ein launch-rated seal muss Druck halten, crush aufnehmen und sich unter impulse sauber lösen.
+
+HECTON-8 macht das hässlich, weil Atlas-grown sealant nützlich ist. Es folgt Lecks, füllt Risse und erhält habitat volume, das sonst ertrinken würde. Das macht es nicht zu einem flight seal. Wenn die sealant map über clamp ring seat oder pressure-glass edge wächst, kann die Kapsel einen static pressure test bestehen und trotzdem beim Zünden der charge nicht trennen.
+
+Die Baugruppe braucht deep-rated metal, bekannte crush history, sauberen glass seat und eine sealant map, die vor der launch boundary endet. Die nützliche Reparatur muss vom nützlichen escape zurückgeschnitten werden. Ein Marauder, der den falschen Patch lässt, kann eine Kapsel bauen, die trocken bleibt, bis sie sich bewegen muss.
 
 ## Scanner
 
-Klemmringnarbe. Die Aufstiegsmanschette überlebte den Einschlag, indem sie die Dichtung verbrauchte, die sie nach Hause hätte bringen sollen.
+KLEMMRINGSITZ // Aufprallspuren, shallow-patch-Rest, Dichtstoff über separation seam. Abteildruck kann halten; launch impulse reißt die falsche Schicht.
 
 ## Terminal
 
-SEAL CERT: shallow patch hält nur Abteildruck. Ascent seal benötigt deep-rated clamp ring, pressure-glass seat, shell-sealant map und verifiziertes Deep-Reach-Profil. Atlas-grown sealant kann habitat erhalten und zugleich saubere Trennung blockieren.
+SEAL CERT: shallow patch nur für compartment pressure zugelassen. Ascent seal erfordert deep-rated clamp ring, pressure-glass seat, shell-sealant map und geprüften Deep Reach crush profile. Sealant growth über separation seam zurückweisen.
 
 ## Audio
 
-Die nützliche Dichtung lebt in die falsche Richtung.
+Der Patch hält den Raum. Er lässt die Kapsel nicht gehen.
 
 ## Field Note
 
-Ein Safe-Room-Flicken kann eine Stunde Luft kaufen. Er hält keinen Startimpuls.
+Ein Raumpatch kann Luft kaufen. Eine Aufstiegsdichtung muss quetschen, lösen und die Kapselhaut sauber genug für den nächsten burn lassen.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/de_DE. -->

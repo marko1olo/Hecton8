@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "تجميعة شحنة طاقة الصعود"
+title: "مجموعة شحنة طاقة الصعود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة شحنة طاقة الصعود
+# مجموعة شحنة طاقة الصعود
 
-تربط تجميعة شحنة طاقة الصعود اقتصاد الموارد بالنتيجة السردية: blue debt وvent-forged hardware يقرران موثوقية الهرب، وcustody الأدلة، والتسوية.
+مجموعة شحنة طاقة الصعود هي النقطة التي يتوقف فيها اقتصاد salvage في HECTON-8 عن كونه مجرد فكرة. المادة نفسها التي نمت تحت الضغط وتشتري انتباه carrier يمكن أن تصبح شحنة الاندفاع التي ترفع كبسولة من البحر.
 
-## Scanner
+هذه المقايضة خطرة لأن blue debt ليس وقودا سحريا. إنه مادة عملية Xenon-Omega لها تاريخ ضغط، وحالة تلوث، وسلوك احتواء، وقيمة قانونية. تستطيع heat cell مصقولة بالفتحة أن تعطي طاقة مضبوطة. عينة خام يمكن أن تتشقق، أو تفسد سجل custody، أو تحول recovery صالحا إلى حمولة متنازع عليها.
 
-حاضنة طاقة مخدوشة بضغط pulse. الشحنة الرخيصة تصنع تابوتا نظيفا.
-
-## Terminal
-
-ASCENT CHARGE: مطلوبة vent-forged heat cell، وpressure-history insulator، وcustody stamp. Raw fuel مرفوض. blue debt غير المعتمد يتشقق تحت launch impulse ويلغي recovery claim.
-
-## Audio
-
-يمكنك بيع الرفع أو ركوبه. ليس الاثنين.
-
-## Field Note
-
-كل غرام في الحاضنة هو هرب، أو دليل، أو blue-debt payout. الكبسولة لا تغفر الجشع.
+لذلك تحتوي الشحنة الكاملة على العتاد ولغة المطالبة في الحاضنة نفسها: heat cell، عازل، كم اندفاع، سجل كتلة، وcustody stamp موقعة. أبقها سليمة فتملك الكبسولة رفعا مصدقا. اكسرها من أجل الدفع وقد يسمح المحيط للمحرك بأن يشتعل، لكن لا أحد فوقه ملزم بقبول ما يصل.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ar_SA. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Łańcuch tchórzliwego wyjścia"
+title: "Awaryjny łańcuch wyjścia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Łańcuch tchórzliwego wyjścia
+# Awaryjny łańcuch wyjścia
 
-Tchórzliwe wyjście to realne częściowe zakończenie: statek działa, ale kampania emocjonalnie nie domyka się.
+Awaryjny łańcuch wyjścia opisuje pierwsze legalne wznoszenie płytką trasą. Składa się z uszczelki kadłuba, rezerwy baterii, powtórzenia przekaźnika i prognozy luki sztormu, a rejestr roszczeń oznacza go jako niepełny.
 
 ## Scanner
 
-To wyjście jest realne i puste: naprawiona kapsuła, wąska pogoda, bez prawdy i czystej wypłaty.
+Wczesny łańcuch startu jest prawdziwy, ale każde światło jest tymczasowe: uszczelka kadłuba, rezerwa B2, ping powrotu, luka sztormu, boja roszczenia.
 
 ## Terminal
 
-Wznoszenie po uszczelnieniu, rezerwie baterii, pingu przekaźnika i prognozie luki. Ledger: niepełny salvage.
+Awaryjne wznoszenie otwiera się tylko, gdy kołyska zaciska kapsułę, zawory balastu są suche, Black Keel powtarza okno P036, a szkwał powierzchniowy zostawia czysty korytarz. Rejestr kontraktu stempluje wyjście jako niepełne: brak zeznania Atlas, pakietu odpowiedzialności Deep Reach i certyfikowanej wypłaty.
 
 ## Audio
 
-Możesz uciec. Ocean za tobą nic nie wyjaśni.
+Start jest możliwy. Zamknięcia nie ma na pokładzie.
 
 ## Field Note
 
-Wczesne odejście ma być rozwiązaniem, nie satysfakcją.
+Kapsuła przyjmuje pasażera szybciej niż obiekt przyjmuje zapis.
 
 <!-- In-Game Wiki; generated from P037_COWARD_EXIT_CHAIN/pl_PL. -->

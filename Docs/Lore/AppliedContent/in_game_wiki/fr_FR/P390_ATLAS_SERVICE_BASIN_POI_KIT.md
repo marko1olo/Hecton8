@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Service Basin POI Kit"
+title: "Kit de preuves du bassin de service Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Service Basin POI Kit
+# Kit de preuves du bassin de service Atlas
 
-FR LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Le bassin de service Atlas doit ancrer la profondeur finale dans l'ingénierie. Rails de maintenance, scellant vivant et prises récepteur montrent un système qui tente de réparer l'infrastructure de pression avec la mauvaise table de catégories encore attachée.
 
 ## Scanner
 
-FR LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+Kit de preuves de POI: le bassin mêle rails industriels, scellant vivant, catégories ouvrières et prises récepteur.
 
 ## Terminal
 
-FR LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+KIT BASSIN DE SERVICE: rail de maintenance, joint tissu-fer, ancienne table de catégories colonie, prise récepteur de charge, marqueur de risque de séparation, bride de pousse, berceau d'outil.
 
 ## Audio
 
-FR LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Il n'a pas prié. Il a planifié la maintenance jusqu'à casser les catégories.
 
 ## Field Note
 
-FR LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Note de maraudeur: scanne la table de catégories avant de toucher la prise. Le bassin peut réparer la route en changeant ce que la route pense que tu es.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/fr_FR. -->

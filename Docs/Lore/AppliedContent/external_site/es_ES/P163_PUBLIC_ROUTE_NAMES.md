@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Nombres Públicos De Ruta
 
-## Names That Bill
+## Nombres que facturan
 
-Los nombres públicos de ruta no son poesía en la oscuridad. Son etiquetas de trabajo que sobreviven a contratos, placas de casco, colas de relé y pruebas judiciales. Sol-Centauri Charter Spine lleva legitimidad, Barnard Breaker Run huele a desguace y deuda. Luyten Packet Ladder es la cadena de custody que vuelve una prueba admisible o inútil, Tau Public Ledger Lane es presión pública lenta y Ran Long Claim avisa que el trabajo ya es caro antes de que cobre el océano.
+Las rutas públicas de HECTON-8 no existen para ser bellas. Existen para sobrevivir facturas, sellos, tablas de seguro y disputas de salvamento. Un nombre de ruta es la parte del mapa que aún importa cuando la imagen desaparece y solo queda el contrato.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spine es la línea respetable. Lleva legitimidad vieja, lenguaje de compatibilidad y la clase de redacción que Deep Reach cita cuando quiere que un proyecto fronterizo parezca civilizado. Barnard Breaker Run es más fea y honesta: desguace, hardware de presión, cuadrillas endeudadas, cascos pelados y la cultura práctica que hace posibles a los Marauders.
+
+Luyten Packet Ladder no es una sociedad romántica. Es infraestructura de custodia de paquetes. Explica por qué un mensaje puede volverse prueba, por qué la prueba puede retrasarse y por qué un paquete honesto no es ayuda. Tau Public Ledger Lane es donde la evidencia se convierte en presión pública después del lento trabajo de la luz.
+
+Ran Long Claim es el nombre más cercano a HECTON-8. No es una autopista, sino una ruta de reclamación a través de distancia, ley, derechos de frenado y coste de carga. Una placa de ruta debe leerse como marca de presión: qué ley viaja aquí, qué carga se mueve, qué prueba sobrevive y qué cuerpo quedó fuera del manifiesto de retorno.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/es_ES. -->

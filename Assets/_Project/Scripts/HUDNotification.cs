@@ -689,15 +689,6 @@ namespace Hecton8.UI
             return TryWriteHudSignalFallback(signal.MessageHash, _hudSignalDecodeCharacters.AsSpan(), out length);
         }
 
-        private static NotificationSeverity ResolveSignalSeverity(byte severity)
-        {
-            return severity >= 2
-                ? NotificationSeverity.Critical
-                : severity == 1
-                    ? NotificationSeverity.Warning
-                    : NotificationSeverity.Info;
-        }
-
         private static bool TryWriteHudSignalFallback(uint messageHash, Span<char> target, out int length)
         {
             length = 0;

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "储物柜道具变体矩阵"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# 储物柜道具变体矩阵
 
-CN LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+储物柜道具变体矩阵定义 HECTON-8 如何把个人储物变成可读证据。储物柜不是传记垃圾箱，而是紧凑的世界物件，连接工人、工作、航线权限、损坏和后来的篡改。玩家因此能通过仍属于房间的物件阅读殖民地生活。
 
 ## Scanner
 
-CN LOC HOLD: A locker should show work, route access and what got erased.
+储物柜应显示工作、航线权限，以及某人试图擦除的东西。纪念物只有在工作可读之后才允许存在。
 
 ## Terminal
 
-CN LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: 每个作者化储物柜需要三条可读线索：工作、路线和损坏。装饰性记忆是次要的。储物柜可以放家庭物件或私人玩笑，但必须先由工具、许可痕迹或擦除疤告诉玩家这个人如何接触过殖民地。
 
 ## Audio
 
-CN LOC HOLD: The locker is not a shrine. It is a failed work order.
+储物柜不是神龛。它是一张失败的工作单。
 
 ## Field Note
 
-CN LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+变体：工具磨损、航线许可标签、压力胶带、班次贴纸、薪资擦除疤、掠夺者保存标记。
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/zh_CN. -->

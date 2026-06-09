@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Partial Return Lien Extension"
+title: "Teilrückkehr-Pfandrechtsverlängerung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Partial Return Lien Extension
+# Teilrückkehr-Pfandrechtsverlängerung
 
-DE LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+Die Verlängerung verankert Replay-Persistenz als Wissen, nicht als Ausrüstungsmacht. Der Spieler kehrt zurück, weil Dossier und Schuld sich geändert haben, nicht weil HECTON-8 leichter wurde.
 
 ## Scanner
 
-DE LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Rückkehr unter verlängertem Pfandrecht genehmigt. Wissensflags bleiben; Ausrüstungsinventar wird quarantänisiert und entzogen.
 
 ## Terminal
 
-DE LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PARTIAL-RETURN-BEFEHL: Wiedereintritt in denselben Seed unter verlängertem Pfandrecht, revidiertem Sturmfenster und behaltenem Wissensdossier erlaubt. Physisches Inventar durch Verwahrungsquarantäne zurückgesetzt; Werkzeuge bleiben Trägereigentum bis Abschluss der Beweisprüfung.
 
 ## Audio
 
-DE LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+Die Route merkt sich, was du bewiesen hast. Der Ozean behält den Rest.
 
 ## Field Note
 
-DE LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Wiedereintrittsdatensatz: same-seed-Rückkehr trägt Wissen, Schuldendruck, Sturmänderungen und Verwahrungsreset statt geerbter Ausrüstung.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/de_DE. -->

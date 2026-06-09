@@ -36,6 +36,7 @@ using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
@@ -233,6 +234,7 @@ namespace Hecton8.Building
         private IInteractionSignalService _cachedInteractionSignalService;
         private AutonomousExtractorSystem _cachedAutonomousExtractorSystem;
         private IAudioService _cachedAudioService;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private AudioClip _pendingBuilderAudio0;
         private AudioClip _pendingBuilderAudio1;
         private AudioClip _pendingBuilderAudio2;
@@ -683,6 +685,7 @@ namespace Hecton8.Building
             _cachedHabitatDeconstructionSystem = null;
             _cachedInteractionSignalService = null;
             _cachedAutonomousExtractorSystem = null;
+            _cachedOceanKinematicsService = null;
             ClearCachedAudioService();
             _cachedQuestSystem = null;
             _shinobuSocketVault = null;
@@ -717,6 +720,11 @@ namespace Hecton8.Building
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    _integrityValidationDirty = true;
+                    RefreshActiveBuildReadiness();
                     break;
                 case GlobalRegistryServiceSlot.QuestSystem:
                     _cachedQuestSystem = currentService as IQuestSystem;
@@ -1505,6 +1513,8 @@ namespace Hecton8.Building
                 _cachedInteractionSignalService = GlobalRegistry.InteractionSignals;
             if (_cachedAutonomousExtractorSystem == null)
                 _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
+            if (_cachedOceanKinematicsService == null)
+                _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             if (!IsAudioServiceUsable(_cachedAudioService))
                 CacheAudioService(GlobalRegistry.Audio);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -3719,12 +3729,41 @@ namespace Hecton8.Building
             return mask != 0u ? mask : ConstructionPortMask.AllCardinal;
         }
 
-        private static float EstimateDepthPressure(double3 pivotAup)
+        private float EstimateDepthPressure(double3 pivotAup)
         {
             float depthMeters = math.isfinite(pivotAup.y)
-                ? (float)math.max(0d, DefaultSeaLevelAupY - pivotAup.y)
+                ? (float)math.max(0d, ResolveBuilderSeaLevelAupY() - pivotAup.y)
                 : 0f;
             return depthMeters * 0.0125f;
+        }
+
+        private double ResolveBuilderSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return DefaultSeaLevelAupY;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private static float EstimateAddedSipCost(BaseModuleTemplate template)

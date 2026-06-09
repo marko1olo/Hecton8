@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Partial Return Record"
+title: "部分返回记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Partial Return Record
+# 部分返回记录
 
-CN LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.
+部分返回记录登记的是喘息，不是逃离。Black Keel可以把操作员带上去维修潜服、补气、去污并同步账本，但同一seed返回令会把留置、隔离期限、扫描记忆、开放证据包和未解决载荷继续绑在同一片海上。
 
 ## Scanner
 
-CN LOC HOLD: Extraction granted. Claim unresolved.
+部分返回记录 // Black Keel接送已接受。同一seed返回在延长留置下授权；扫描记忆和开放证据包保留。
 
 ## Terminal
 
-CN LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+结局记录 / 部分返回
+接送：Black Keel临时撤离。
+目的：潜服维修、补气、去污、账本同步。
+托管状态：留置延长；附加隔离期限。
+返回权限：同一seed、同一海洋，路线警告保留。
+持续数据：扫描记忆、开放证据包、未解决载荷。
+已知损失：喘息在成为自由之前先被计费。
 
 ## Audio
 
-CN LOC HOLD: Out is not away.
+压力松开了。合同保留了座位。
 
 ## Field Note
 
-CN LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+干净的潜服和一个睡眠周期不会关闭合同。下方路线保留旧警告。
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/zh_CN. -->

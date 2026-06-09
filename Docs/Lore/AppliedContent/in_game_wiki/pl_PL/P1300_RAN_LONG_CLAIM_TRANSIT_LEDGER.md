@@ -19,26 +19,28 @@ localization_flags: 1
 
 # Rejestr Tranzytu Długiego Roszczenia Ran
 
-Pierwsze kłamstwo, w które chce wierzyć uwięziony Marauder, brzmi: kontakt oznacza ratunek. Wokół Ran kontakt znaczy, że pakiet znalazł okno nośnika. Może przenieść pozycję, hash świadka, żądanie prawne, wycenę albo groźbę. Nie przeniesie kadłuba ciśnieniowego, lekarza, tendera ani stosu hamowania.
+Rejestr długiego roszczenia Ran jest tym, czym staje się wezwanie pomocy, gdy cywilizacja je usłyszy i odmówi udawania, że fizyka się zmieniła. Pakiet może przejść trasę dość szybko, by brzmieć jak odpowiedź. Odpowiedź nie niesie kadłuba. Zapisuje roszczącego, pozycję, ładunek, łańcuch pieczy i powód, dla którego ktoś poza światem miałby wydać masę.
 
-Dlatego rejestry długiego roszczenia Ran brzmią jak księgowość. Żywy ocalały jest jednym polem. Obok są ufność współrzędnych, klasa ładunku, stopień pieczy, masa wznoszenia, ryzyko kwarantanny, ubezpieczenie trasy i kto dostanie zapłatę, jeśli człowiek umrze przed odbiorem. Black Keel przenosi pakiety, bo pakiety są tanie, a władza kontraktu mieszka w opóźnieniu.
+            Rejestr to stare prawo pogranicza owinięte wokół twardego tranzytu. Przekaźniki Ran przyjmują pakiety świadka z prędkością światła. Biura Luyten haszują potwierdzenie. Black Keel przepycha czysty burst przez lustra i okna nośników. Żaden z tych systemów nie ma darmowego statku ratunkowego. Tender nadal potrzebuje lane, przydziału hamowania, slotu odbioru, zgody kwarantanny i płatnika, który przeżyje audyt.
 
-Użyteczne pytanie nie brzmi, czy ktoś cię usłyszał. Prawdopodobnie tak. Pytanie brzmi, co usłyszał najpierw. Czysty status życia kupuje miejsce w kolejce. Zweryfikowane potwierdzenie trasy kupuje nacisk. Dowód odpowiedzialności Deep Reach może zmienić, kto wycenia kolejkę. Ładunek ważny poza HECTON-8 może skłonić statek do ryzyka, które dla samego ciała zostawiłby na dnie.
+            Dlatego pierwsze okno nośnika boli. Marauder chce krzyczeć, że żyje. Rejestr ma już takie pole. Lepszy pakiet mówi gdzie, z jaką pewnością, co można podnieść, kto tego dotknął, co uszkodziło Deep Reach, czy pakiet wznoszenia się uszczelnia, i jaki dowód zginie, jeśli nikt nie przyjdzie. Ciało ma znaczenie. Samo ciało jest tanie w złej kolumnie.
+
+            Okrucieństwo Black Keel to zwykle arytmetyka bez ludzkiego głosu. Żywy człowiek jest odpowiedzialnością. Żywy człowiek z dopuszczalnym dowodem jest dźwignią. Żywy człowiek przypięty do niezastąpionych danych trasy jest ładunkiem z zębami. Rejestr zmienia strach w pola, bo pola można wycenić, poświadczyć i zaskarżyć po tym, jak sygnał opuści HECTON-8.
 
 ## Scanner
 
-REJESTR TRASY // Hash świadka Luyten nienaruszony. Silne okno nośnika przeniesie jeden czysty burst: pozycję, uszkodzenia, pieczę, dowód albo prośbę. To nie jest ratunek.
+REJESTR DŁUGIEGO ROSZCZENIA // Splot świadka Luyten nienaruszony. Dostępne jedno okno nośnika. Pola: status żywy, ufność współrzędnych, masa wznoszenia, stopień pieczy, sprzeciw Deep Reach, wartość ładunku. Alarm nie jest rozkazem tendera.
 
 ## Terminal
 
-POTWIERDZENIE TRASY: DŁUGIE ROSZCZENIE RAN / SLOT ŚWIADKA LPL 7C // Sam status żywy nie wystarcza do harmonogramu odzysku. Prześlij ufność współrzędnych, stan pakietu wznoszenia, klasę pieczy i masę ładunku przed oceną priorytetu tendera.
+BLACK KEEL / POTWIERDZENIE DŁUGIEGO ROSZCZENIA RAN 7C // Pakiet przyjęty jako żywe roszczenie, nie jako autoryzacja odzysku. Przed degradacją okna wyślij dowód lokalizacji, klasę salvage, odpowiedzialność medyczną, ekspozycję kwarantanny i preferencję pierwszego powrotu. Puste pola wracają do: ładunek ujemny, ciało niski priorytet.
 
 ## Audio
 
-Przekaźnik Black Keel: okno trzyma jeden czysty burst. Wyślij pozycję, ładunek albo dowód. Wybierz, zanim sztorm zje blokadę nośnika.
+Przekaźnik Black Keel: dotarłeś do rejestru. Dobrze. To znaczy, że jesteś zapisem, nie uratowanym. Wydaj burst na dowód, pozycję albo wartość, zanim nośnik się ześlizgnie.
 
 ## Field Note
 
-Statki cię nie ratują. Trasy może tak, jeśli właściwe biuro dostało zapłatę, zanim zmokłeś. Wydawaj okno jak powietrze.
+Żywy to kratka. Współrzędne to zakład. Dowód to przynęta z podpisem. Wyślij pakiet, którego będą bali się zignorować.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/pl_PL. -->

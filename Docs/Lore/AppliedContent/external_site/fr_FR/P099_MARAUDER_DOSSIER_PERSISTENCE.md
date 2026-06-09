@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistance du dossier de maraudeur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistance du dossier de maraudeur
 
-FR LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+La persistance du dossier de maraudeur définit le contrat de rejouabilité de HECTON-8 : le joueur hérite du contexte, pas de la puissance. Le dossier permet aux tentatives suivantes de lire les anciennes erreurs plus vite, de reconnaître plus tôt les pièges contractuels et de comprendre quelles fins étaient incomplètes sans transformer la mémoire en avantage mécanique qui détruit la pression de survie.
 
 ## Scanner
 
-FR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Bobine de dossier. Tu gardes le savoir, pas des superpouvoirs.
 
 ## Terminal
 
-FR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTANCE DU DOSSIER : fins enregistrées, types de contrats découverts, familles de rumeurs, catégories de preuves, avertissements de route et conséquences du registre public conservés. Puissance d'équipement, vérité du monde et état local de pression réinitialisés par seed.
 
 ## Audio
 
-FR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+La tentative suivante commence avec des cicatrices dans le fichier, pas des muscles dans la combinaison.
 
 ## Field Note
 
-FR LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Le dossier se souvient des preuves et des avertissements ; il ne rend pas la pression clémente.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/fr_FR. -->

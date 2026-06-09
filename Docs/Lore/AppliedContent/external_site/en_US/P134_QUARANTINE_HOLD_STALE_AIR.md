@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Quarantine Hold: Stale Air
 
-Quarantine Hold is the quietest false exit. It does not need a villain in the room. The form says recovered alive, the air counter says ration active, and the next door opens only after contamination review, claimant challenge and insurance loss review.
+Quarantine Hold is the quietest false exit. It does not need threats, visible guards or a dramatic betrayal. The system only has to recover the contractor alive, seal the witness, meter the air and make the next step depend on reviews no one can finish quickly.
 
-The outcome is cruel because it is defensible. No one has killed the witness. No one has destroyed the sample. The system simply makes every statement wait longer than the bodies ever had. The player survives the ocean and enters a sealed corridor built from procedure.
+Its cruelty is defensible line by line. No one destroyed the sample. No one executed the witness. No one said the truth was false. Procedure simply made every breath conditional and every sentence wait until the dead could no longer be helped.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/en_US. -->

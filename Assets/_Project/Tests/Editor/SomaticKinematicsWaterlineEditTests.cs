@@ -19,7 +19,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("public const float DefaultSeaLevelY = 14.02f;", source);
             StringAssert.Contains("tuning.SeaLevelY = SomaticKinematicsRuntime.DefaultSeaLevelY;", source);
             StringAssert.Contains("tuning.SeaLevelY = SanitizeSeaLevelY(tuning.SeaLevelY, fallback.SeaLevelY);", source);
-            StringAssert.Contains("math.abs(value) <= 1000f", source);
+            StringAssert.Contains("math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", source);
             StringAssert.DoesNotContain("tuning.SeaLevelY = " + "0.0f;", source);
         }
 

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Varian Prop Buku Triase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Varian Prop Buku Triase
 
-ID LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Varian Prop Buku Triase mendefinisikan bukti medis sebagai bukti proses. HECTON-8 memakai buku untuk menghubungkan cedera, kegagalan tekanan, penolakan rute, kondisi peralatan, dan celah saksi. Horor tetap sistemik: pemain tidak hanya membaca bahwa orang terluka, tetapi bagaimana koloni mengubah bahaya menjadi keputusan perutean.
 
 ## Scanner
 
-ID LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Bukti medis harus membuka penundaan dan perutean, bukan menghias ruangan dengan penderitaan.
 
 ## Terminal
 
-ID LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: setiap entri buku harus mengaitkan cedera dengan tekanan, penolakan rute, kondisi peralatan, penundaan sertifikasi, atau rantai saksi yang hilang. Rasa sakit saja tidak cukup. Prop harus menunjukkan siapa yang bisa bergerak, siapa yang ditahan, dan sistem mana yang membuat penundaan tampak prosedural.
 
 ## Audio
 
-ID LOC HOLD: Pain is not proof until the route bears the mark.
+Rasa sakit bukan bukti sampai rute membawa tandanya.
 
 ## Field Note
 
-ID LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Varian: singkatan crush-status, tanda utang oksigen, coretan route hold, catatan stabilisasi Atlas, celah witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/id_ID. -->

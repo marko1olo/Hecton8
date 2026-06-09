@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "سلم النهايات الزائفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# سلم النهايات الزائفة
 
-AR LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+يمكن أن يملك HECTON-8 طرقا كثيرة للخروج من دون تحويل الحقيقة إلى ضجيج. يجب أن يفرز الملف النتائج الزائفة أو الجزئية في عائلات قليلة مقروءة: خذ material وارحل، اخرج فقط لتُسحب عائدا، اسقط في عهدة شركة أو حجر، أو سرّب ما يكفي من حقيقة ledger لجرح الآلة من دون إيقافها. كل مخرج حقيقي. ولا واحد هو القاع.
 
 ## Scanner
 
-AR LOC HOLD: Four major false families before the deep Atlas resolutions.
+سلم النهايات // دفع material، عودة جزئية، أسر شركة أو حجر، تسريب ledger عام. أربع عائلات زائفة قبل إجابات Atlas العميقة.
 
 ## Terminal
 
-AR LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+نطاق الملف: علّم مخارج كثيرة، لكن اجمعها في عائلات واضحة. دفع material، خروج/عودة جزئية، أسر/حجر شركة، وتسريب ledger عام تقع تحت حلول payload في حوض Atlas.
 
 ## Audio
 
-AR LOC HOLD: The dossier can mark many exits before it marks an answer.
+يمكن للملف أن يعلّم المخارج قبل أن يعلّم جوابا.
 
 ## Field Note
 
-AR LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+نهايات كافية لمكافأة الأساليب. لا كثيرة حتى ترخص الحقيقة.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/ar_SA. -->

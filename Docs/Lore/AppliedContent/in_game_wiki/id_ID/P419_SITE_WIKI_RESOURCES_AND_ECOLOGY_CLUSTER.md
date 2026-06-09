@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Sumber Daya dan Ekologi
 
-Hub sumber daya/ekologi: drowned crust, brine ladders, vent chemistry, living systems, dan repair logic Atlas yang rusak.
+Hub sumber daya dan ekologi: Drowned Crust, tangga brine, kimia vent, blue debt, isyarat predator, fauna bertag, dan perbaikan Atlas yang memperlakukan sistem hidup seperti hardware.
 
 ## Scanner
 
-Hub publikasi: geology, blue debt, tata bahasa fauna, dan misuse jaringan perbaikan Atlas.
+Hub publikasi: Drowned Crust, tangga brine, riwayat tekanan blue debt, isyarat fauna, dan salah pakai perbaikan Atlas.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology, dan encounter grammar sebagai satu process map.
+SITE NAV: baca sampel lewat asal, riwayat tekanan, kontak hidup, kerusakan ekstraksi, dan nilai custody.
 
 ## Audio
 
-Tidak ada yang hanya loot di sini.
+Tidak ada yang cuma loot di sini.
 
 ## Field Note
 
-Sumber daya dan ekologi menyatu ketika material, biota, dan evidence pressure berbagi rute yang sama.
+Sampel bersih jarang menjadi yang paling kaya. Tanya apa yang membentuknya, apa yang menyentuhnya, dan apa yang rusak saat diambil.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/id_ID. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Sala de bombas do anexo raso P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Sala de bombas do anexo raso P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+O P-63 só se torna útil depois que a sala de bombas é reparada. A bomba manual baixa a água, expõe armários antigos e mantém o fabricador dentro de uma janela segura de autoridade de reparo.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+ENTRADA DA BOMBA // Bloqueada, mas reparável. Rota de porão manual disponível. Drene primeiro, corte depois.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+MANUTENÇÃO P-63 // Pequena entrada de água registrada. Porão manual aceito. Fabricador de campo travado na fila de junta, grampo e cortador de contato até a entrada limpar.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Gire a bomba até o piso responder. Se cortar primeiro, você alaga o armário de ferramentas.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Um canto seco não é casa. São dez minutos para pensar. Pegue.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/pt_BR. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_service_label |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS181_FIRST_SERVICE_LABEL_ARTICLES.md |
 | Speaker | Service scanner, emergency tag note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter labels |
@@ -72,17 +72,17 @@ CHECK SHADED BACK
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| ru_RU | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| ja_JP | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| zh_CN | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| fr_FR | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| es_ES | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| de_DE | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| pl_PL | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| uk_UA | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| ar_SA | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| id_ID | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| ko_KR | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| he_IL | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| pt_BR | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
-| nl_NL | draft_machine_or_llm | PULL TAG // Exposed face faded. Read shaded back before trusting instruction. |
+| ar_SA | draft_machine_or_llm | بطاقة سحب // الوجه المكشوف باهت. اقرأ الظهر المظلل قبل الوثوق بالتعليمات. |
+| de_DE | draft_machine_or_llm | ZUGANHAENGER // Freiliegende Seite verblichen. Schattige Rueckseite lesen, bevor du Anweisung traust. |
+| es_ES | draft_machine_or_llm | ETIQUETA DE TIRAR // Cara expuesta destenida. Lee el reverso sombreado antes de fiarte de la instruccion. |
+| fr_FR | draft_machine_or_llm | ETIQUETTE A TIRER // Face exposee delavee. Lire le dos ombre avant de croire l'instruction. |
+| he_IL | draft_machine_or_llm | תג משיכה // הפנים החשופות דהו. קרא את הגב המוצל לפני שאתה סומך על ההוראה. |
+| id_ID | draft_machine_or_llm | TAG TARIK // Sisi terbuka memudar. Baca belakang yang teduh sebelum mempercayai instruksi. |
+| ja_JP | draft_machine_or_llm | プルタグ // 露出面が退色。指示を信用する前に陰側の裏を読む。 |
+| ko_KR | draft_machine_or_llm | 당김 태그 // 노출면이 바랬다. 지시를 믿기 전에 그늘진 뒷면을 읽는다. |
+| nl_NL | draft_machine_or_llm | TREKLABEL // Blootgestelde zijde verbleekt. Lees schaduwrijke achterkant voor je instructie vertrouwt. |
+| pl_PL | draft_machine_or_llm | ETYKIETA DO POCIAGNIECIA // Odkryta strona wyblakla. Przeczytaj zacieniony tyl, zanim zaufasz instrukcji. |
+| pt_BR | draft_machine_or_llm | ETIQUETA DE PUXAR // Face exposta desbotada. Leia o verso sombreado antes de confiar na instrucao. |
+| ru_RU | draft_machine_or_llm | ЯРЛЫК ТЯГИ // Открытая сторона выцвела. Прочитай затененную обратную сторону перед доверием к инструкции. |
+| uk_UA | draft_machine_or_llm | ЯРЛИК ТЯГИ // Відкрита сторона вицвіла. Прочитай затінений зворот перед довірою до інструкції. |
+| zh_CN | draft_machine_or_llm | 拉环标签 // 外露面褪色。信任说明前先读阴面的背面。 |

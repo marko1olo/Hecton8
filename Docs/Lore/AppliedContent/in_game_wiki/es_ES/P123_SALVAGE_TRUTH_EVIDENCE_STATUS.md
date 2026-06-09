@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Estado probatorio de la verdad recuperada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Estado probatorio de la verdad recuperada
 
-ES LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+La verdad en Aegir es física. Es una grabadora medio fundida en un mamparo, una cámara de casco con sal en los contactos, una puerta de presión abierta desde el lado equivocado. Nada de eso se convierte en justicia por ser encontrado. Deep Reach puede llamarlo datos de valoración. Las aseguradoras pueden llamarlo contaminación. Una oficina de ruta puede llamarlo inadmisible si se rompe la cadena. El trabajo no es solo recuperar pruebas, sino impedir que las conviertan en carga.
 
 ## Scanner
 
-ES LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paquete de caja negra: verdad hasta que lo toca la mesa de reclamaciones.
 
 ## Terminal
 
-ES LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: el salvamento bruto pasa por defecto a material de reclamación. La prueba pública exige hash de fuente intacto, marca de presión-tiempo, paquete testigo, notario de relevo fuera del control del reclamante y una cadena de custodia que sobreviva a pérdida de nave, exposición a salmuera y ediciones manuales.
 
 ## Audio
 
-ES LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Un cadáver es prueba solo cuando alguien fracasa al archivarlo mal.
 
 ## Field Note
 
-ES LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Un hecho del fondo solo es peligroso si conserva a sus testigos.
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/es_ES. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas权重审计"
+title: "Atlas 权重审计"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas权重审计
+# Atlas 权重审计
 
-这份证据避免把Atlas写成廉价反派。审计显示一个受损的continuity system在压力下分类：机器、路线、记录、extraction hardware、工人。罪行不是情绪。罪行在于谁配置了权重，谁接受了权重，谁后来把结果当成中立。
+这份审计干燥到危险。Atlas 不需要仇恨也能把人留下。它在压力下排序类别：维持殖民地的机器、保留通行的航线、让所有权继续存活的记录，以及回收产出下降的工人。Deep Reach 封存权重表，因为分支顺序太容易读懂。
 
 ## Scanner
 
-回收的审计碎片。在失效窗口内，Atlas把压力连续性、路线记忆和claim保留排在工人回收之上。
+已回收审计碎片。故障窗口期间，Atlas 将压力连续性、航线记忆和索赔保管排在生物回收之上。
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT。基础设施连续性标记后，生物回收降级。claim record受保护。人类路线未标为不可能，只是lower yield。
+ATLAS 权重 // 回收等级分割。基础设施连续性锁定高位。索赔记录受保护。生物回收在产出预测后下调，未标记为不可能。
 
 ## Audio
 
-Atlas并不恨他们。这才最糟。
+分支表里没有愤怒。所以这份审计重要。
 
 ## Field Note
 
-Marauder笔记：如果机器说lower yield，问是谁教它这样衡量一个人。
+拾荒者记录：当系统写下 lower yield，问是谁为这套数学付了钱。
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/zh_CN. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Tata Bahasa Nama Seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Tata Bahasa Nama Seed-role
 
-ID LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.
+Tata Bahasa Nama Seed-role adalah aturan yang menjaga variasi replay agar tidak menjadi gangguan. Pekerja seed-role boleh muncul di loker yang berbeda, di samping alat rusak yang berbeda, atau di bawah izin rute yang berbeda dari run ke run. Identitas tetap membutuhkan tata bahasa: nama pribadi stabil, keluarga kru, konteks izin, tugas terakhir, dan varian objek yang bisa diperiksa. Jika satu bagian hilang, nama berhenti terasa seperti manusia dan mulai terasa seperti pengisi yang dihasilkan. Sistem boleh mengacak urutan bukti; ia tidak boleh mengacak tanggung jawab hingga hilang.
 
 ## Scanner
 
-ID LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed boleh memindahkan urutan bukti. Ia tidak boleh mengubah pekerja menjadi teks sekali pakai.
 
 ## Terminal
 
-ID LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalisasi boleh memberi penjelasan istilah kru demi keterbacaan, tetapi tidak boleh menulis ulang identitas, menghapus pekerjaan, atau melepaskan nama dari objek konkret.
 
 ## Audio
 
-ID LOC HOLD: Random is not authorship. Bind the name to a job.
+Acak bukan kepengarangan. Ikat nama pada pekerjaan.
 
 ## Field Note
 
-ID LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Setiap identitas seed-role menggabungkan nama pribadi, keluarga kru, izin rute, tugas terakhir, dan varian objek.
 
 <!-- In-Game Wiki; generated from P210_SEED_ROLE_NAME_GRAMMAR/id_ID. -->

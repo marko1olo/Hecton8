@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cadena de salida cobarde"
+title: "Cadena de salida de emergencia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Cadena de salida cobarde
+# Cadena de salida de emergencia
 
-Respeta la agencia del jugador sin premiar la ignorancia limpiamente. Es ruta real, no falso game-over.
+Cadena de salida de emergencia convierte la huida temprana en procedimiento. La nave puede dejar HECTON-8 tras suficiente ingeniería, pero el registro del sitio queda sin resolver: verdad, responsabilidad y certificación material permanecen abajo.
 
 ## Scanner
 
-Esta salida es real y hueca: cápsula reparada, clima estrecho, sin verdad ni pago limpio.
+La cadena de lanzamiento temprano es real, pero cada luz es provisional: sello de casco, reserva B2, ping de retorno, hueco de tormenta, baliza de reclamación.
 
 ## Terminal
 
-Ascenso disponible tras sellado, reserva de batería, ping de relevo y predicción de hueco. Libro: salvamento incompleto.
+El ascenso de emergencia se abre solo cuando la cuna muerde, las válvulas de lastre quedan secas, Black Keel repite la ventana P036 y la borrasca deja un corredor limpio. El libro contractual marca la salida incompleta: sin testimonio de Atlas, sin paquete de responsabilidad Deep Reach, sin pago certificado.
 
 ## Audio
 
-Puedes correr. El océano detrás no se explicará.
+El lanzamiento es posible. El cierre no va a bordo.
 
 ## Field Note
 
-Irse pronto debe sentirse resuelto, no satisfactorio.
+La cápsula acepta un pasajero antes de que el sitio acepte un expediente.
 
 <!-- External Site; generated from P037_COWARD_EXIT_CHAIN/es_ES. -->

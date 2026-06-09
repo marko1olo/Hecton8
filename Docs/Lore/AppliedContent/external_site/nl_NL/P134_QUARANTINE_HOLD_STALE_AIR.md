@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Quarantaine-hold: muffe lucht
 
-Quarantaine-hold is de stilste valse uitgang. Er hoeft geen schurk in de kamer te zijn. Het formulier zegt levend geborgen, de luchtmeter zegt rantsoen actief, en de volgende deur opent pas na contaminatiereview, claimant-uitdaging en verzekeringsreview.
+Quarantaine-hold is de stilste valse exit. Er zijn geen dreigementen, zichtbare bewakers of dramatisch verraad nodig. Het systeem hoeft de contractor alleen levend te bergen, de getuige te verzegelen, de lucht te meten en de volgende stap afhankelijk te maken van reviews die niemand snel afrondt.
 
-De uitkomst is wreed omdat ze verdedigbaar is. Niemand heeft de getuige gedood. Niemand heeft het monster vernietigd. Het systeem laat alleen elke verklaring langer wachten dan de lichamen ooit konden wachten. De speler overleeft de oceaan en betreedt een verzegelde gang gebouwd uit procedure.
+De wreedheid is regel voor regel verdedigbaar. Niemand heeft de sample vernietigd. Niemand heeft de getuige geëxecuteerd. Niemand zei dat de waarheid vals was. De procedure maakte alleen elke ademhaling voorwaardelijk en elke zin wachtend tot de doden niet meer geholpen konden worden.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/nl_NL. -->

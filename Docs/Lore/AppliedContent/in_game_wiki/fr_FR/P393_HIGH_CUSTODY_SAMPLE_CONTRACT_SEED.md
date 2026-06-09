@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: High Custody Sample Contract Seed"
+title: "Graine de contrat d'échantillon haute garde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: High Custody Sample Contract Seed
+# Graine de contrat d'échantillon haute garde
 
-FR LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Échantillon Haute Garde est une famille de contrats où valeur ressource et tenue de preuve se heurtent tôt. Blue debt, résidu tissu-fer, eau scellée et packs de filtre contaminés paient plus seulement si conteneur, tag, masse et garde de route restent intacts.
 
 ## Scanner
 
-FR LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Graine de contrat: échantillon haute garde. Paiement supérieur lié au compte de masse, traîne de quarantaine et conteneurs certifiés récepteur.
 
 ## Terminal
 
-FR LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: échantillons grade garde actifs, registre de masse strict, retard de quarantaine relevé, sceau récepteur requis, pénalité d'abandon de route active.
 
 ## Audio
 
-FR LOC HOLD: A sample can weigh more after it enters the ledger.
+Un échantillon devient plus lourd après son entrée au registre.
 
 ## Field Note
 
-FR LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Note de maraudeur: pèse le sac avant de l'appeler profit. Le récepteur peut facturer les grammes manquants plus durement que l'océan.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/fr_FR. -->

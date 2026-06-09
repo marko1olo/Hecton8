@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Roster Size Rule"
+title: "قاعدة حجم سجل العمال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Roster Size Rule
+# قاعدة حجم سجل العمال
 
-AR LOC HOLD: The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.
+تحافظ قاعدة حجم سجل العمال على قابلية قراءة المستعمرة المهجورة. يجب أن تبدو HECTON-8 مكانا عملت فيه طواقم، لا جدارا من لوحات عشوائية، لذلك يبقى السجل صغيرا بما يكفي كي يصبح التكرار ذا معنى. يعود عمال المرساة في الخزائن، ووسوم المضخات، وأوراق الفرز، وتصاريح المسار، وأدوات العمل المتضررة. يمنح عمال seed-role كل جولة اتساعا، لكنهم يحملون دائما وظيفة ومكانا ومهمة أخيرة. تمنع القاعدة فشلين في وقت واحد: أطلالا بلا أسماء ولا وزن بشري، وفيض أسماء يجعل كل موت رخيصا وإجرائيا.
 
 ## Scanner
 
-AR LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.
+اثنان وسبعون اسما ليست نصا للزينة. إنها ميزانية ذاكرة المستعمرة: أيد كافية ليبدو المكان عاملا، وعدد قليل يكفي كي تشير الخزانة ووسم الإصلاح وآخر مناوبة إلى الشخص نفسه.
 
 ## Terminal
 
-AR LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: يحمل السجل الحي 72 هوية عامل. أربع وعشرون منها أسماء مرساة تعود عبر الخزائن والسجلات والأدوات المتضررة وأختام الإذن وشظايا الصوت. ثمان وأربعون منها أسماء seed-role لتغيير الإعادة. يجوز للاسم المولد أن يغير ترتيب الأدلة؛ لا يجوز له أن يصبح حشوا قابلا للرمي.
 
 ## Audio
 
-AR LOC HOLD: A name is evidence only when the room can prove the job.
+يصير الاسم دليلا عندما تستطيع الغرفة إثبات العمل.
 
 ## Field Note
 
-AR LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+إذا لم يستطع الاسم أن يعود لاحقا ومعه عمل واضح، فاحذفه من السجل.
 
 <!-- In-Game Wiki; generated from P206_WORKER_ROSTER_SIZE_RULE/ar_SA. -->

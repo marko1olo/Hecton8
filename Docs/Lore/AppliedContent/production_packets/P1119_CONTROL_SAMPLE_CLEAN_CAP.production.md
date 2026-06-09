@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sample_discipline |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS166_FIRST_SAMPLE_DISCIPLINE_ARTICLES.md |
 | Speaker | Field scanner, control-sample storage note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first sample handling |
@@ -72,17 +72,17 @@ OPEN FOR COMPARISON ONLY
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| ar_SA | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| de_DE | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| es_ES | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| fr_FR | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| he_IL | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| id_ID | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| ja_JP | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| ko_KR | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| nl_NL | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| pl_PL | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| pt_BR | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| ru_RU | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| uk_UA | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
-| zh_CN | draft_machine_or_llm | CONTROL SAMPLE // Cap clean, seal paint intact. Store dry; open only for comparison. |
+| ar_SA | draft_machine_or_llm | عينة ضبط // الغطاء نظيف وطلاء الختم سليم. خزنها جافة؛ افتحها للمقارنة فقط. |
+| de_DE | draft_machine_or_llm | KONTROLLPROBE // Kappe sauber, Siegellack intakt. Trocken lagern; nur zum Vergleich öffnen. |
+| es_ES | draft_machine_or_llm | MUESTRA DE CONTROL // Tapa limpia, pintura de sello intacta. Guarda en seco; abre solo para comparar. |
+| fr_FR | draft_machine_or_llm | ÉCHANTILLON TÉMOIN // Bouchon propre, peinture de scellé intacte. Stocker au sec; ouvrir seulement pour comparaison. |
+| he_IL | draft_machine_or_llm | דגימת ביקורת // פקק נקי וצבע חותם שלם. אחסן יבש; פתח רק להשוואה. |
+| id_ID | draft_machine_or_llm | SAMPEL KONTROL // Tutup bersih, cat segel utuh. Simpan kering; buka hanya untuk perbandingan. |
+| ja_JP | draft_machine_or_llm | 対照サンプル // キャップ清潔、封印塗料は無傷。乾燥保管し、比較時のみ開封。 |
+| ko_KR | draft_machine_or_llm | 대조 시료 // 캡이 깨끗하고 봉인 페인트가 온전하다. 건조 보관; 비교할 때만 열어라. |
+| nl_NL | draft_machine_or_llm | CONTROLEMONSTER // Dop schoon, zegelverf intact. Droog bewaren; alleen openen voor vergelijking. |
+| pl_PL | draft_machine_or_llm | PRÓBKA KONTROLNA // Czysta zakrętka, farba plomby nienaruszona. Przechowuj sucho; otwieraj tylko do porównania. |
+| pt_BR | draft_machine_or_llm | AMOSTRA DE CONTROLE // Tampa limpa, tinta do lacre intacta. Armazene seco; abra só para comparação. |
+| ru_RU | draft_machine_or_llm | КОНТРОЛЬНЫЙ ОБРАЗЕЦ // Колпачок чистый, краска пломбы цела. Храни сухим; открывай только для сравнения. |
+| uk_UA | draft_machine_or_llm | КОНТРОЛЬНИЙ ЗРАЗОК // Ковпачок чистий, фарба пломби ціла. Зберігай сухим; відкривай лише для порівняння. |
+| zh_CN | draft_machine_or_llm | 对照样本 // 盖帽干净，封漆完好。干燥存放；仅比较时打开。 |

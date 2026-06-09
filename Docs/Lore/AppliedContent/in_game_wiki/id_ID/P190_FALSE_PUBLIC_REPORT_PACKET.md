@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Paket Laporan Publik Palsu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Paket Laporan Publik Palsu
 
-ID LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Paket Laporan Publik Palsu adalah versi HECTON-8 yang bisa ditunjukkan Deep Reach dengan aman kepada dunia-dunia. Ia tidak menciptakan laut palsu. Great Tide nyata, keterlambatan relai nyata, ketidakpastian karantina nyata, dan karena itu laporan ini bertahan dari pembacaan sepintas. Kebohongan hidup dalam penghilangan. Ia menghapus margin risiko yang diterima, otoritas evakuasi yang ditunda, pembobotan kontinuitas Atlas, konversi asuransi, dan tekanan kustodi pemulihan. Pemain harus membacanya sebagai langkah korporat terakhir: menyisakan cukup fisika agar terdengar tenang, memotong cukup keputusan agar kesalahan terhapus.
 
 ## Scanner
 
-ID LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Laporan publik berhasil karena mempertahankan laut yang nyata dan menghapus pilihan manusia di dalamnya.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: kehilangan HECTON-8 dikaitkan dengan kaskade pasang luar biasa, keterlambatan relai, dan ketidakpastian karantina. Dihilangkan: margin risiko yang diterima, penahanan pelepasan evakuasi, override kontinuitas Atlas, konversi klaim, dan permintaan pemulihan yang mendahulukan muatan.
 
 ## Audio
 
-ID LOC HOLD: They did not fake the storm. They buried the choice.
+Mereka mengatakan kebenaran tentang air dan berbohong tentang tangan.
 
 ## Field Note
 
-ID LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Kebohongan terbaik tidak menyangkal pasang. Ia memakai pasang sebagai penutup.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/id_ID. -->

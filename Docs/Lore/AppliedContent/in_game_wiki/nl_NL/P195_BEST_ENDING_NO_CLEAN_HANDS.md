@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Beste einde: geen schone handen"
+title: "Beste route: residu zichtbaar houden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Beste einde: geen schone handen
+# Beste route: residu zichtbaar houden
 
-Geen Schone Handen is de regel voor de finale toon. HECTON-8 beloont begrip, voorbereiding en getuigenwerk, niet zuiverheid. Het beste einde moet de speler tegelijk bekwaam en betrokken laten voelen.
+Residu zichtbaar houden is de norm voor de sterkste route. Het einde moet iets concreets redden zonder HECTON-8 in een beloningsscherm te veranderen: een publiek record, geweigerde Deep Reach-routing, een bewaard bekken, een vrije operator, arbeidersnamen of een Atlas proof hash. Het record moet ook open velden houden voor receiverbewaring, aansprakelijkheid, ontbrekende namen, bekkenschade, Atlas-staat en schuldresidu.
 
 ## Scanner
 
-Het beste einde moet iets echts redden zonder te doen alsof onschuld de afdaling heeft overleefd.
+REGEL BESTE ROUTE // Red een concreet resultaat: operatorbewaring, publiek record, geweigerde payload, levend bekken, arbeidersnamenpakket of Atlas proof hash. Laat schadevelden open.
 
 ## Terminal
 
-GEEN-SCHONE-HANDEN-REGEL: criteria voor het best bekende einde vereisen agency, bewijs, gevolg en residu. Als elke beschadigde partij tevreden is, is het einde HECTON-8 vergeten.
+STANDAARD VOOR EINDRECORD
+Vereist gered object of staat: operatoruitgang, publiek record, geweigerde Deep Reach-payload, bewaarde bekkenecologie, arbeidersnamenpakket of Atlas proof hash.
+Vereiste open velden: receiverbewaring, aansprakelijkheidsketen, ontbrekende namen, bekkenschade, Atlas-staat, schuldresidu.
+Ongeldig record: alle kosten verborgen achter uitbetaling, redding of bedrijfssluiting.
+Gebruik: tonen wat veranderde en waar nog een indienende partij aan hangt.
 
 ## Audio
 
-Als het schoon voelt, is het vergeten waar je bent.
+Als elke rij sluit, liegt het record.
 
 ## Field Note
 
-Een sterke route kan waarheid onthullen, Deep Reach weigeren, een deel van de ecologie bewaren en de speler bevrijden, maar de kost moet zichtbaar blijven.
+Als elke rij sluit, heeft het einde de kamer verborgen.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/nl_NL. -->

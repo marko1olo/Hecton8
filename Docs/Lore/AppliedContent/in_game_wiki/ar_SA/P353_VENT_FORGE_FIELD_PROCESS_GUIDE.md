@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "دليل عملية حقل forge-vent"
+title: "دليل عملية حقلية للمطرقة الحرارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# دليل عملية حقل forge-vent
+# دليل عملية حقلية للمطرقة الحرارية
 
-Vent forges مفاعلات طبيعية-صناعية. تحول الحرارة وbrine وpressure history إلى ceramics وsealants وcharge materials نافعة مع إبقاء كل عينة مرتبطة بمسارها الحراري.
+المطارق الحرارية مفاعلات طبيعية-صناعية. تحول الحرارة والمحلول الملحي وتاريخ الضغط والتبريد البطيء إلى سيراميك ومانعات تسرب ومواد شحن. لا تنفع العينة إلا إذا نجا مسارها الحراري من الاسترداد.
 
 ## Scanner
 
-كيمياء vent-forge نشطة. تتبع الجودة pressure history وheat pulse والتبريد البطيء، لا لمعان العينة.
+كيمياء المطرقة الحرارية نشطة. الجودة تتبع تاريخ الضغط ونبضة الحرارة والتبريد البطيء، لا لمعان العينة.
 
 ## Terminal
 
-FIELD GUIDE: تطهو vent forges الـ sulfides وnoble-gas pockets وceramics وsealant precursors. مسار العينة عبر heat وbrine وpressure أهم من اسمها.
+دليل ميداني: تطبخ المطارق الحرارية الكبريتيدات وجيوب الغازات النبيلة وحبيبات السيراميك وسلائف مانع التسرب. طريق العينة عبر الحرارة والمحلول الملحي والضغط أهم من اسمها.
 
 ## Audio
 
-لم يصنع vent خاما. صنع عملية قطعتها أنت.
+الفتحة لم تصنع خاما. صنعت عملية قطعتها أنت.
 
 ## Field Note
 
-لا ترفع دفعة جديدة مباشرة إلى ماء بارد. دع vent ينهي anneal وإلا ستتشقق shell.
+لا ترفع دفعة جديدة مباشرة إلى ماء بارد. دع الفتحة تنهي التلدين وإلا تشققت القشرة.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ar_SA. -->

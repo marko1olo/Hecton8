@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Retención de cuarentena: aire viciado
 
-La retención de cuarentena es la falsa salida más silenciosa. No necesita un villano en la sala. El formulario dice recuperado vivo, el contador de aire dice ración activa y la siguiente puerta solo abre tras revisión de contaminación, desafío del claimant y revisión de seguro.
+La retención de cuarentena es la salida falsa más silenciosa. No necesita amenazas, guardias visibles ni traición dramática. El sistema solo tiene que recuperar vivo al contratista, sellar al testigo, medir el aire y hacer que el siguiente paso dependa de revisiones que nadie puede terminar rápido.
 
-El resultado es cruel porque es defendible. Nadie mató al testigo. Nadie destruyó la muestra. El sistema solo hace esperar a cada declaración más tiempo del que los cuerpos pudieron esperar. El jugador sobrevive al océano y entra en un corredor sellado construido con procedimiento.
+Su crueldad se defiende línea por línea. Nadie destruyó la muestra. Nadie ejecutó al testigo. Nadie dijo que la verdad fuera falsa. El procedimiento simplemente hizo condicional cada respiración y puso cada frase en espera hasta que ya no se pudiera ayudar a los muertos.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/es_ES. -->

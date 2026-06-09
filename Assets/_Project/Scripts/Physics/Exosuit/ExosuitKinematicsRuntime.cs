@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Scheduling;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -177,6 +178,7 @@ namespace Hecton8.Physics.Exosuit
         private float _crushDepthMeters = 4000f;
 
         private IDataVault _dataVault;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private Transform _cachedTransform;
         private VaultGenerationHandle<ExosuitStateDTO> _stateHandle;
         private VaultGenerationHandle<ExosuitFrameInputDTO> _inputHandle;
@@ -242,6 +244,8 @@ namespace Hecton8.Physics.Exosuit
 
             _pendingDisableTeardown = false;
             _droppedSignalCount = 0;
+            _cachedTransform = transform;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
             if (EnsureBuffers(true))
@@ -285,6 +289,7 @@ namespace Hecton8.Physics.Exosuit
             _coreBlackboxWarmed = false;
             _pendingDisableTeardown = false;
             _runtimeActive = false;
+            _oceanKinematicsService = null;
         }
 
         /// <inheritdoc />
@@ -1653,10 +1658,70 @@ namespace Hecton8.Physics.Exosuit
         private MockCrushDepthSignal BuildCrushDepth(uint frame, float crushDepthMeters)
         {
             MockCrushDepthSignal crush = default;
-            crush.DepthMeters = math.max(0f, math.isfinite(_mockDepthMeters) ? _mockDepthMeters : 0.0f);
+            crush.DepthMeters = ResolveExosuitDepthMeters();
             crush.ExternalPressure01 = math.saturate(crush.DepthMeters * math.rcp(math.max(1f, crushDepthMeters)));
             crush.Frame = frame;
             return crush;
+        }
+
+        private float ResolveExosuitDepthMeters()
+        {
+            return TryResolveOceanDepthMeters(out float depthMeters)
+                ? depthMeters
+                : math.max(0f, math.isfinite(_mockDepthMeters) ? _mockDepthMeters : 0.0f);
+        }
+
+        private bool TryResolveOceanDepthMeters(out float depthMeters)
+        {
+            depthMeters = 0f;
+            Transform cachedTransform = _cachedTransform;
+            if (cachedTransform == null)
+                return false;
+
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics == null ||
+                !oceanKinematics.IsAvailable ||
+                !TrySanitizeOceanRuntimeSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return false;
+            }
+
+            float resolvedDepthMeters = seaLevelY - cachedTransform.position.y;
+            if (!math.isfinite(resolvedDepthMeters))
+                return false;
+
+            depthMeters = math.max(0f, resolvedDepthMeters);
+            return true;
+        }
+
+        private static bool TrySanitizeOceanRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = 0f;
+            return false;
+        }
+
+        private static bool TrySanitizeRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = 0f;
+            return false;
         }
 
         private static bool IsStateBootstrapped(in ExosuitStateDTO state)
@@ -1850,6 +1915,12 @@ namespace Hecton8.Physics.Exosuit
                     s_activeRuntime = null;
                 }
 
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 

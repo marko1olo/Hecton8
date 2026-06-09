@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black Keel 申索池章程"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Black Keel Claim-Pool Charter
+# Black Keel 申索池章程
 
-ZH LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel 是 HECTON-8 对逃生船问题的硬科幻回答。玩家能访问一项轨道资产，但访问不是所有权，接近也不是救援。Carrier 是债务基础设施：足够有用，让逃离看起来可能；也足够受限，让每条返回路线都缠上申索、隔离和回收价值。
 
 ## Scanner
 
-ZH LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel 不是你的船。它是申索池的回收资产，你的名字写在它的债务账里。
 
 ## Terminal
 
-ZH LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+章程摘录 / BLACK KEEL：自主打捞 carrier / 保管方：Aegir Reclamation Pool / 承包人运输：允许 / 船体所有权：拒绝 / 救援优先级：从属于 insured receiver 状态、隔离 handshake 与 claim value。
 
 ## Audio
 
-ZH LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+这艘 carrier 不是为你来的。它是为一项挂着你名字的申索来的。
 
 ## Field Note
 
-ZH LOC HOLD: Use this on the first contract or carrier-status screen.
+用于第一个 carrier 状态屏：访问已授予，所有权被否认，救援优先级有条件，lien 仍有效。
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/zh_CN. -->

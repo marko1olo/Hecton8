@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_tool_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS183_FIRST_TOOL_TRACE_ARTICLES.md |
 | Speaker | Tool scanner, cable spool note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first tool inspection |
@@ -72,17 +72,17 @@ MATERIAL PROVENANCE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| ru_RU | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| ja_JP | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| zh_CN | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| fr_FR | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| es_ES | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| de_DE | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| pl_PL | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| uk_UA | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| ar_SA | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| id_ID | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| ko_KR | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| he_IL | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| pt_BR | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
-| nl_NL | draft_machine_or_llm | SPOOL TAG // Slack loop through tag. Label traveled with cable, not spool alone. |
+| ru_RU | draft_machine_or_llm | ЯРЛЫК КАТУШКИ // Свободная петля через ярлык. Метка ходила с кабелем, не только с катушкой. |
+| ja_JP | draft_machine_or_llm | スプールタグ // タグに緩い輪。ラベルはスプールだけでなくケーブルと動いた。 |
+| zh_CN | draft_machine_or_llm | 线盘标签 // 标签穿着松环。标签随电缆移动，不只随线盘。 |
+| fr_FR | draft_machine_or_llm | ETIQUETTE DE TOURET // Boucle lache dans l'etiquette. L'etiquette a suivi le cable, pas seulement le touret. |
+| es_ES | draft_machine_or_llm | ETIQUETA DE BOBINA // Bucle flojo por la etiqueta. La etiqueta viajo con el cable, no solo con la bobina. |
+| de_DE | draft_machine_or_llm | SPULENANHAENGER // Lockerer Bogen durch Tag. Label wanderte mit Kabel, nicht nur mit Spule. |
+| pl_PL | draft_machine_or_llm | ETYKIETA SZPULI // Luzna petla przez etykiete. Etykieta szla z kablem, nie tylko ze szpula. |
+| uk_UA | draft_machine_or_llm | ЯРЛИК КОТУШКИ // Вільна петля через ярлик. Мітка ходила з кабелем, не лише з котушкою. |
+| ar_SA | draft_machine_or_llm | بطاقة بكرة // حلقة مرتخية عبر البطاقة. الملصق تحرك مع الكابل، لا مع البكرة وحدها. |
+| id_ID | draft_machine_or_llm | TAG GULUNGAN // Loop longgar melalui tag. Label ikut kabel, bukan spool saja. |
+| ko_KR | draft_machine_or_llm | 스풀 태그 // 태그에 느슨한 고리. 라벨은 스풀만이 아니라 케이블과 함께 움직였다. |
+| he_IL | draft_machine_or_llm | תג סליל // לולאה רפויה דרך התג. התווית נעה עם הכבל, לא רק עם הסליל. |
+| pt_BR | draft_machine_or_llm | ETIQUETA DO CARRETEL // Laco frouxo pelo tag. Rotulo foi com o cabo, nao so com o carretel. |
+| nl_NL | draft_machine_or_llm | SPOELLABEL // Slappe lus door label. Label reisde met kabel, niet alleen spoel. |

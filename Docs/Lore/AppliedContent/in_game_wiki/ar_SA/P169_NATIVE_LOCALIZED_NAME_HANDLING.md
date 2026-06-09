@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "بروتوكول توطين الأسماء الأصلي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# بروتوكول توطين الأسماء الأصلي
 
-AR LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+يحمي توطين الأسماء الأصلي طبقة أدلة العمال من أن تصبح حادث واجهة. يجب ألا يرى اللاعب اسما مسحوقا، أو معكوسا بلا معنى، أو نصف مترجم بواسطة fallback، أو مستبدلا ببقايا debug إنجليزية.
+
+القاعدة بسيطة: الهوية الشخصية تؤلف لكل لغة، والأنظمة حولها تترجم طبيعيا. إن احتاجت لغة صيغة قصيرة للشارة، تكتب وتخبز مسبقا، لا تخترع في runtime.
 
 ## Scanner
 
-AR LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // هذا الشريط مؤلف، لا مترجم مباشرة. ينجو الشخص داخل الواجهة فقط عندما تتوقف الواجهة عن الارتجال.
 
 ## Terminal
 
-AR LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+توطين الأسماء // الأسماء الشخصية والشرائط القصيرة وأجزاء الشارة baked لكل locale. الوظائف والأقسام وتصاريح المسار وملاحظات الوردية تترجم حولها. تحتاج RTL وCJK إلى صيغ قصيرة مؤلفة، كسور أسطر آمنة، ومنع إعادة تركيب live في الماسح وواجهة الخزان وال terminals والويكي الخارجي.
 
 ## Audio
 
-AR LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+اسم يكسر الواجهة ليس احتراما. إنه حذف العامل مرة ثانية.
 
 ## Field Note
 
-AR LOC HOLD: No live name translation. Preserve identity through baked strings.
+لا تسمح لـ runtime fallback بإعادة تسمية عامل ميت. الاسم المكسور شكل آخر من المحو.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/ar_SA. -->

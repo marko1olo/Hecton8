@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 圧力ガラスとシーラントガイド
 
-pressure glass は地質が Atlas と出会う場所だ。repair network は既存の亀裂、鉱物縁、pressure memories を経路として使うため、有用なレンズは生きた境界にもなる。
+圧力ガラスは地質とAtlasが出会う場所だ。古い亀裂、鉱物の縁、バイオフィルムの継ぎ目、応力記憶が修復化学の経路になり、有用なレンズが生きた境界にもなる。
 
 ## Scanner
 
-pressure-glass の亀裂が Atlas chemistry で封じられている。seal map が無傷の場合のみ安全な lens stock。
+圧力ガラスの亀裂はAtlas化学で封止済み。シール地図が保たれる間だけ、レンズ在庫は安全だ。
 
 ## Terminal
 
-FIELD GUIDE: pressure glass は古い tide stress を記録する。Atlas sealant はそれらの亀裂を辿る。亀裂はすでにシステムの故障線を記述しているからだ。
+現地ガイド: 圧力ガラスは古い潮汐応力を記録する。Atlasシーラントはその亀裂をたどる。亀裂がすでに系の故障線を描いているからだ。
 
 ## Audio
 
-修理ネットワークは、君が地図を読むように亀裂を読む。
+修復ネットワークは、あなたが地図を読むように亀裂を読む。
 
 ## Field Note
 
-美しい縁を削るな。fracture map に従い、seal の死んだ側から切れ。
+美しい縁を削るな。亀裂地図に従い、シールの死んだ側から切れ。
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ja_JP. -->

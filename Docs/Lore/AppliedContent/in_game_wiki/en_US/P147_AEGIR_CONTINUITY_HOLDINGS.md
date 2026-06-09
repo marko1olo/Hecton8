@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir Continuity Holdings
 
-Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.
+Aegir Continuity Holdings is the shell that lets Deep Reach keep value after admitting nothing. It can hold dormant route leases, pressure-habitat options, mineral claims, damaged equipment titles, and recovery rights while the public combine speaks about service.
 
 ## Scanner
 
-The dirty project needs a clean owner with no face.
+Aegir Continuity Holdings owns survival as a balance-sheet verb.
 
 ## Terminal
 
-SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+HOLDINGS RECORD: route leases, habitat claims, failed-site options, and asset continuity rights are kept outside the public combine.
 
 ## Audio
 
-No one works there. Everyone signs through it.
+The colony failed. The holding company continued.
 
 ## Field Note
 
-Shell companies are how a crime scene learns to invoice itself.
+Continuity means liens outlive crews, habitats, and apology windows.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/en_US. -->

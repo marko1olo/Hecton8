@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Sonar Pinger Route Beacons"
+title: "声呐 Pinger 航线信标"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Sonar Pinger Route Beacons
+# 声呐 Pinger 航线信标
 
-CN LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+声呐 pinger 很便宜，但不是会被淘汰的早期工具。它能建立返航线、给证物箱打标签、区分假回波和真实墙面，也能把丢失的路线留成声音记录。与此同时，它也会告诉海洋你在哪里。因此 pinger 既是安全装置，也是债务标记，有时还是诱饵。
 
 ## Scanner
 
-CN LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+pinger 浮标标记返航几何，揭穿假回波，也会吸引救援注意和不该来的生命。
 
 ## Terminal
 
-CN LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-CN LOC HOLD: One ping is a promise. Two pings are a bill.
+一次 ping 是承诺，两次 ping 是账单。
 
 ## Field Note
 
-CN LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger 是第一件诚实工具：它用声音说出距离、债务、路线丢失和生物风险。
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/zh_CN. -->

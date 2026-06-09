@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Heavy Freight Staging Time
 
-Heavy freight timing protects the no-FTL timeline. Atlas hardware can arrive before mass settlement because corporations launch precursor cargo early, stage it forward, accept unmanned risk, and bury failure windows in program language. Rescue cannot borrow that trick after the emergency starts.
+Heavy freight turned HECTON-8 from a survey target into a debt object. Large cargo could not chase changing truth; it had to be staged, bonded, insured, parked, braked, and received by someone with authority. By the time a freight train of modules crossed the route, the contract behind it had more momentum than the colony's objections.
 
 ## Scanner
 
-Atlas-class freight is prepaid patience wrapped in armor.
+Manifest stack: cargo committed before the receiving site was proven alive.
 
 ## Terminal
 
-FREIGHT NOTE: Atlas and seed cargo use staging, pellet-fusion assist, long coasts, and braking infrastructure. Public dates can hide precursor launches and forward-domain departures.
+FREIGHT STAGING: pressure hulls, ceramic shielding, reactor mass, seed stock, crawler frames, and habitat rings require launch windows years apart. Once bonded, cargo becomes a legal argument in motion.
 
 ## Audio
 
-A ship that heavy does not simply travel. It becomes an invoice with a wake.
+The shipment was already paid for. That made stopping it harder than saving people.
 
 ## Field Note
 
-A heavy route is assembled from depots, beam windows, braking mass, and political nerve.
+Freight does not hurry. It makes hurry expensive for everyone else.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/en_US. -->

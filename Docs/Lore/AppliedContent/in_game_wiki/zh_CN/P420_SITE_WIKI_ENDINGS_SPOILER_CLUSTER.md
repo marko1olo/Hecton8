@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 结局与payload custody
 
-结局dossier枢纽：custody、evidence、Atlas的未来以及离开的代价。
+结局档案枢纽：每个出口都是custody transfer，不是道德颜色标签。
 
 ## Scanner
 
-Spoiler hub：payload receivers、false exits、custody、公共真相、Atlas continuity和after-action records。
+Spoiler hub：payload custody、receiver consequences、false exits、public proof、quarantine leverage与Atlas continuity。
 
 ## Terminal
 
-SITE NAV：final payload pages隐藏在spoiler gates之后。按receiver和proof ownership组织。
+SITE NAV：把最终页面放在spoiler gates后；按身体、坐标、samples、Atlas records和worker proof的控制者排序。
 
 ## Audio
 
-结局是上升之后谁拥有证据。
+离开不是结尾，而是custody transfer。
 
 ## Field Note
 
-结局保持spoiler-gated，并按receiver与custody consequence组织，而非道德标签。
+如果身体逃出而proof被他人拥有，海洋还没有结束这个案子。
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/zh_CN. -->

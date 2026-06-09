@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 : réclamation sous pression"
+title: "HECTON-8 : la revendication sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 : réclamation sous pression
+# HECTON-8 : la revendication sous pression
 
-Les notes de route P-63 montrent un début de récupération sous dette. Les faits utiles sont mécaniques : réserve d'ascension dépensée, avionique noyée, joints abîmés, retours de scanner et formulation officielle incapable d'expliquer les bosses.
+HECTON-8 commence avec un Marauder endetté largué par une claim window de Black Keel vers P-63, où chaque réparation, scan et porte scellée transforme la survie en preuve.
 
 ## Scanner
 
-Registre Maraudeur. Le contrat Black Keel relie P-63, un bathydrop abîmé, un privilège de 4.8 tonne-window et un dossier d'accident qui ne colle pas au métal.
+Article d'accueil public : contrat avant mythe, fenêtre Black Keel, bathydrop endommagé, plateau lumineux P-63, omissions Deep Reach, première trace Atlas.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // RÉCLAMATION H8. Fenêtre : relais Aegir ouvert. Travail : restaurer les joints, scanner P-63, récupérer la cargaison, préserver la preuve, revenir avant fermeture de la géométrie de réception.
+SITE LONGFORM : présenter la route jouable par travail sous pression, custody des preuves, pas de secours instantané, pas de crochet familial.
 
 ## Audio
 
-Relais Black Keel : "Fenêtre étroite. Répare la coque de descente, lis les marques de pression et rapporte la preuve avec la cargaison."
+Sur HECTON-8, personne ne te vend un secours. On te vend une claim et l'eau décide du reste.
 
 ## Field Note
 
-Note de Maraudeur : la lumière sur P-63 ne rend rien sûr. Compte l'air, répare les joints avant la cargaison et méfie-toi d'un dossier qui ignore les bosses.
+Si les papiers semblent calmes, lis le métal. La première vérité de HECTON-8 vit entre une ligne de contrat et un seal brisé.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/fr_FR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Registro de especialista em sistemas de campo"
+title: "Registro de Especialista de Sistemas de Campo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro de especialista em sistemas de campo
+# Registro de Especialista de Sistemas de Campo
 
-O personagem do jogador em HECTON-8 entra no oceano com uma cicatriz prática: antigo trabalho em sistemas de campo da Deep Reach, acesso à infraestrutura de evacuação, autorização revogada e memória procedural suficiente para ler máquinas afogadas como prova. Agora é Marauder, não oficial da companhia nem herói passageiro. Uma bomba quebrada, um carimbo de rota ou uma frase de responsabilidade importam porque o operador entende como esses sistemas deveriam proteger trabalhadores antes de virarem papelada.
+O Registro de Especialista de Sistemas de Campo dá ao operador central de HECTON-8 um passado útil sem limpar demais esse passado. Ele não era comando nem arquiteto secreto do desastre. Trabalhava perto dos sistemas que deveriam manter honestas as rotas de evacuação, bombas, vedações e salas de relé.
 
-## Scanner
+Isso importa porque a colônia abandonada está cheia de procedimento, não só de destroços. Um carimbo route-safe, um rating de clamp ou uma frase maintenance pode incriminar mais do que uma gravação dramática. O operador sabe como esses registros devem parecer quando protegem pessoas, e como parecem quando uma empresa quer transformar proteção em papelada.
 
-Credencial antiga de sistemas de campo. Não era comando. Trabalho de infraestrutura com acesso suficiente para reconhecer onde uma rota foi enterrada.
-
-## Terminal
-
-RASTRO DE PESSOAL: sistemas de campo, infraestrutura de evacuação, certificação route-safe. Autorização revogada após a revisão do silêncio de Aegir. O cache de procedimentos ainda combina com a sequência do operador.
-
-## Audio
-
-Você nunca assinou a mentira. Você conhecia a gramática que fazia ela passar pela inspeção.
-
-## Field Note
-
-O crachá parou de abrir portas. Não apagou a ordem das falhas.
+O acesso revogado deixa a história mais afiada. O crachá antigo não dá mais controle, mas deixa a capacidade de reconhecer o dialeto da falha. HECTON-8 transforma essa memória profissional em motivo: não culpa por causar a catástrofe, mas responsabilidade depois de ler como salas evitáveis foram arquivadas.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/pt_BR. -->

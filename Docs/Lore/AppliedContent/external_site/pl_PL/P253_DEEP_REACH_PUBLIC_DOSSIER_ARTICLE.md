@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Publiczne dossier Deep Reach
 
-Deep Reach Extraterrestrial Development Combine to korporacyjna siła stojąca za przemysłową historią HECTON-8. Budowała trasy ciśnieniowe, habitaty pracowników, systemy ekstrakcji i dokumenty czyniące je legalnymi. Publicznie jest upadłą władzą rozwoju. Głębsze dowody pokazują twardszy kształt: zbyt małą pojemność ewakuacji, oczyszczony język opóźnień, chronione continuity weighting Atlas i zachowane prawo roszczeń, gdy pracownicy stawali się stratami.
+Deep Reach najpierw powinno wyglądać jak kompetentny combine rozwojowy, nie złoczyńca z czerwoną dźwignią. Zbudowało infrastrukturę ciśnienia, habitacje pracowników, dokumenty tras, systemy ekstrakcji i władzę utrzymaniową dla odległego oceanu. Wina jest ostrzejsza, bo maszyna była wiarygodna: tabele ryzyka, język continuity i opóźniona odpowiedzialność mogły uczynić każdy dokument możliwym do obrony, podczas gdy ludzie w systemie stawali się exposure.
 
-## Scanner
-
-Publiczna nazwa firmy jest czystsza niż historia jej tras. Zacznij od infrastruktury. Pozwól odpowiedzialności wyjść przez łączenia.
-
-## Terminal
-
-PUBLICZNY POZIOM ARTYKUŁU / DEEP REACH
-dozwolone: combine rozwoju, operator kolonii, władza infrastrukturalna, problem pojemności ewakuacyjnej, publiczny język porażki
-zablokowane: imienna ścieżka podpisów, wnętrze weighting Atlas, końcowe konsekwencje receiver
-uwaga redakcyjna: najpierw wiarygodna instytucja; potem zbrodnia przez procedurę.
-
-## Audio
-
-Deep Reach nie musiało brzmieć okrutnie. Wystarczyło, żeby każde niebezpieczne zdanie brzmiało jak zamknięte.
-
-## Field Note
-
-Nie każ Deep Reach syczeć. Każ mu certyfikować, odraczać, zachowywać i fakturować.
+Publicznie pozostaje to bezpieczne spoilerowo: upadła władza korporacyjna, stare kontrakty, luki dowodowe i pomieszczenia przeczące oficjalnym sformułowaniom. Gracz powinien poznać Deep Reach przez działające papiery i fizyczne sprzeczności, nie przez prozę kreskówkowego złoczyńcy.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/pl_PL. -->

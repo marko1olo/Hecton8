@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Player Lien Contract Start Card"
+title: "プレイヤーlien契約開始カード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Player Lien Contract Start Card
+# プレイヤーlien契約開始カード
 
-JA LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+HECTON-8の主人公は、元Deep Reach専門家からsalvage operatorになった人物だ。その出自は物語を大人で実務的にする。プレイヤーは運命ではなく仕事のために来る。感情の転換は証拠、契約、記憶されたアクセスによって獲得され、家族復讐へ縮めずに謎を個人的なものにする。
 
 ## Scanner
 
-JA LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+開始カードはあなたを選ばれた被害者にしない。lien、鍵、自分に嘘をつく理由を持つ元Deep Reach専門家にする。
 
 ## Terminal
 
-JA LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+契約開始 / オペレーター: 独立salvage contractor / 旧アクセス: Deep Reach field key、非アクティブだが認識 / lien: 有効 / 表向き動機: claim value / 未申告圧力: prior exposure、経路 familiarity、beneficiary conflict。
 
 ## Audio
 
-JA LOC HOLD: You came for work. The file remembered you before you remembered it.
+あなたは仕事のために来た。ファイルは、あなたが思い出す前にあなたを覚えていた。
 
 ## Field Note
 
-JA LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+lost-relative hookは禁止。動機は仕事として始める。salvage value、古いfield access、職業的露出、隠れた個人的圧力。
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/ja_JP. -->

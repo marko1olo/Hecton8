@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Medical Triage Ledger
 
-Medical Triage Ledger is the human cost of delayed evacuation.
+Medical Triage Ledger turns delayed evacuation into human evidence: clean categories, waiting help, and workers counted before they are mourned.
 
 ## Scanner
 
-The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Pressure injury, hypoxia, lock delay, missing route, certification hold. The horror is how neatly help waited.
 
 ## Terminal
 
-TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+MEDICAL RULE: count bodies without gore. Use pressure-state, oxygen debt, route delay, triage priority, and signoff hold to show how procedure made patients faster than medics could treat them.
 
 ## Audio
 

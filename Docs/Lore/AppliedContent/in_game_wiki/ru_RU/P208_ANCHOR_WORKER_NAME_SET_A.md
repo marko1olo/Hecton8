@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Якорный набор имен рабочих A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Якорный набор имен рабочих A
 
-Anchor Worker Name Set A держит ранние имена колонии стабильными в lockers, ledgers и первых evidence chains.
+Якорный набор имен рабочих A это первый человеческий слой, который игрок должен начать узнавать. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita и Pavel Sorn принадлежат уликам мелководья и индустриальной полки. Их имена не должны приходить как биографии. Они должны появляться на бирке шкафчика, ярлыке насоса, маршрутном допуске, испачканном талоне еды, треснувшем кейсе инструмента, а потом возвращаться в записи, которая меняет смысл. Set A делает колонию обжитой до того, как глубокий заговор становится понятен.
 
 ## Scanner
 
-Anchor names должны возвращаться через работу, а не через личную экспозицию.
+Ранние имена должны возвращаться через работу, а не через речи. Мелкий маршрут учит памяти повторением.
 
 ## Terminal
 
-ANCHOR SET A: shallow и industrial-shelf recurrence. Каждое имя связывать с одним инструментом, одним route permission и одним поврежденным work object.
+ANCHOR SET A: повторение на мелководье и индустриальной полке. Каждое имя должно связываться с одним инструментом, одним маршрутным допуском, одним поврежденным рабочим предметом и одним поздним противоречием. Эти имена первое доказательство игрока, что колония была рабочим местом до того, как стала добычей.
 
 ## Audio
 
-Не оплакивай имя, пока инструмент не сказал зачем.
+Не оплакивай имя, пока инструмент не объяснит почему.
 
 ## Field Note
 
-Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Якоря Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/ru_RU. -->

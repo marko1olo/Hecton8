@@ -41,4 +41,4 @@ Unity, build, profiler, DataMonolith bake, and code edits were not run by task c
 - `Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md`
 - `Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`
 - `Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs`
-- Older stale examples under `Docs/BibleMandateAudits/1700/`, `Docs/BIBLE_MANDATE_AUDIT_1700_COMBINED.md`, `Docs/Tasks/Status_1428.md`, `Docs/AgentLogs/LOG_1428.md`, `Docs/Tasks/Status_1778.md`, and `Docs/AgentLogs/LOG_1778.md`
+- Older stale examples under `Docs/DEPRECATED/BibleMandateAudits_1700_Stale_20260609/1700/`, `Docs/BIBLE_MANDATE_AUDIT_1700_COMBINED.md`, `Docs/Tasks/Status_1428.md`, `Docs/AgentLogs/LOG_1428.md`, `Docs/Tasks/Status_1778.md`, and `Docs/AgentLogs/LOG_1778.md`

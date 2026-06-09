@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Sonar Pinger Route Beacons"
+title: "منارات route عبر pinger سونار"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Sonar Pinger Route Beacons
+# منارات route عبر pinger سونار
 
-AR LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+pinger السونار رخيص، لكنه لا يصبح عديم الفائدة. يرسم خط العودة، يوسم صناديق الأدلة، يفرق بين الأصداء الكاذبة والجدران الحقيقية، ويترك الطريق الضائع كصوت. وفي الوقت نفسه يخبر المحيط بمكانك. لذلك هو أداة أمان، وعلامة دين، وأحيانا طعم.
 
 ## Scanner
 
-AR LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+يعلم طاف pinger هندسة العودة، يكشف الأصداء الكاذبة، وقد يجذب الإنقاذ والحياة غير المرغوبة معا.
 
 ## Terminal
 
-AR LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-AR LOC HOLD: One ping is a promise. Two pings are a bill.
+نبضة واحدة وعد. نبضتان فاتورة.
 
 ## Field Note
 
-AR LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger هو أول أداة صادقة: يقول بالصوت المسافة والدين وضياع الطريق وخطر الكائنات.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/ar_SA. -->

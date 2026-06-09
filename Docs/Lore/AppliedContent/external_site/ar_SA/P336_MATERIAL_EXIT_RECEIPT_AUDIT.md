@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Material Exit Receipt Audit"
+title: "تدقيق إيصال الخروج المادي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Material Exit Receipt Audit
+# تدقيق إيصال الخروج المادي
 
-AR LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
+خروجات HECTON-8 الزائفة ليست شاشات فشل وهمية. إنها نتائج حقيقية تكشف ما اختار اللاعب تقديره: الكتلة، الدليل، الأسماء، الحرية، أو حق تقرير من يملك القصة بعد الهرب.
 
 ## Scanner
 
-AR LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+إيصال الخروج يثبت الكتلة المستعادة. حيازة الأدلة مكسورة؛ أسماء العمال لا تزال غير مقبولة.
 
 ## Terminal
 
-AR LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+إيصال AFTER-ACTION: أفرج عن دفعة الإنقاذ للكتلة القابلة للاستعادة والخطر المتعاقد عليه. حقيقة الإحداثيات غير محسومة. حالة مسؤولية Deep Reach بلا تغيير. رفض دفتر أسماء العمال كدليل خارج الحيازة. الخروج ممنوح؛ القضية تبقى ملكا للناقل.
 
 ## Audio
 
-AR LOC HOLD: You got paid. That is not the same as getting out clean.
+لقد قبضت المال. هذا لا يعني أنك خرجت نظيفا.
 
 ## Field Note
 
-AR LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+سجل ما بعد الفعل لخروج مدفوع لكنه ناقص أخلاقيا: المكافأة تصفى، سلسلة الأدلة تفشل، والأسماء تبقى خارج الحيازة الرسمية.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/ar_SA. -->

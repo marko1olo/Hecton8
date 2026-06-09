@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Retenção de liberação por quarentena
 
-O registro de retenção não torna a quarentena maligna. Ele torna o tempo visível. A Deep Reach podia nomear incerteza, atrasar liberação, preservar posição de seguro e manter o trabalhador dentro da zona até a rota morrer.
+Contaminação é real em HECTON-8. Exposição à pressão, química de salmoura e crescimento compatível com Atlas podem tornar letal um resgate descuidado. A placa de retenção mostra como esse perigo real virou cobertura. A Deep Reach invocou quarentena depois que a rota de saída travou, aceitou massa de ativos recuperável e manteve a liberação de trabalhadores abaixo da linha.
 
 ## Scanner
 
-Placa de retenção de quarentena. A linguagem de proteção aparece depois que a rota de saída já está travada.
+Placa de retenção recuperada. A revisão de contaminação começa depois que a rota de saída já está travada e a liberação de trabalhadores fica abaixo da recuperação de ativos.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
+PORTÃO DE LIBERAÇÃO // BIOPRESSÃO INCERTA. Reter até confirmação do conselho. Massa de ativos aceita na fila de recuperação antes da liberação de trabalhadores. Ping de seguro ativo.
 
 ## Audio
 
-Quarentena pode salvar um corpo. Também pode fazer um corpo esperar até virar papel.
+A quarentena comprou tempo para a empresa antes de salvar alguém.
 
 ## Field Note
 
-Nota de saqueador: proteção não é provada pela palavra proteção. Confira o relógio.
+Nota de saqueador: proteção é um relógio, não uma palavra. Confira quando começa.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/pt_BR. -->

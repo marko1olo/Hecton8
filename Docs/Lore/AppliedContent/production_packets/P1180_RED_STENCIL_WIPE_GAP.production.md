@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_service_label |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS181_FIRST_SERVICE_LABEL_ARTICLES.md |
 | Speaker | Service scanner, stencil provenance note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter labels |
@@ -72,17 +72,17 @@ READ EDGE MARKS
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| ru_RU | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| ja_JP | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| zh_CN | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| fr_FR | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| es_ES | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| de_DE | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| pl_PL | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| uk_UA | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| ar_SA | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| id_ID | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| ko_KR | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| he_IL | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| pt_BR | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
-| nl_NL | draft_machine_or_llm | RED STENCIL // Wipe gap cuts center. Read edge marks before trusting label. |
+| ar_SA | draft_machine_or_llm | قالب أحمر // فجوة مسح تقطع المركز. اقرأ علامات الحافة قبل الوثوق بالملصق. |
+| de_DE | draft_machine_or_llm | ROTE SCHABLONE // Wischluecke schneidet Mitte. Randmarken lesen, bevor du dem Label traust. |
+| es_ES | draft_machine_or_llm | PLANTILLA ROJA // Hueco limpiado corta el centro. Lee las marcas del borde antes de fiarte de la etiqueta. |
+| fr_FR | draft_machine_or_llm | POCHOIR ROUGE // Trou d'essuyage au centre. Lire les marques de bord avant de croire l'etiquette. |
+| he_IL | draft_machine_or_llm | שבלונה אדומה // פער ניגוב חותך את המרכז. קרא סימני שפה לפני שאתה סומך על התווית. |
+| id_ID | draft_machine_or_llm | STENSIL MERAH // Celah usap memotong pusat. Baca bekas tepi sebelum mempercayai label. |
+| ja_JP | draft_machine_or_llm | 赤ステンシル // 拭き取り跡が中央を切る。ラベルを信用する前に縁跡を読む。 |
+| ko_KR | draft_machine_or_llm | 빨간 스텐실 // 닦인 틈이 중앙을 가른다. 라벨을 믿기 전에 가장자리 자국을 읽는다. |
+| nl_NL | draft_machine_or_llm | ROOD SJABLOON // Veeggat snijdt midden. Lees randsporen voor je label vertrouwt. |
+| pl_PL | draft_machine_or_llm | CZERWONY SZABLON // Wytarta przerwa przecina srodek. Czytaj slady krawedzi, zanim zaufasz etykiecie. |
+| pt_BR | draft_machine_or_llm | ESTENCIL VERMELHO // Falha de limpeza corta o centro. Leia marcas da borda antes de confiar na etiqueta. |
+| ru_RU | draft_machine_or_llm | КРАСНЫЙ ТРАФАРЕТ // Протертый разрыв режет центр. Читай следы по краям, прежде чем доверять ярлыку. |
+| uk_UA | draft_machine_or_llm | ЧЕРВОНИЙ ТРАФАРЕТ // Протертий розрив ріже центр. Читай сліди по краях, перш ніж довіряти ярлику. |
+| zh_CN | draft_machine_or_llm | 红色喷码 // 擦除缺口切过中心。信任标签前先读边缘痕迹。 |

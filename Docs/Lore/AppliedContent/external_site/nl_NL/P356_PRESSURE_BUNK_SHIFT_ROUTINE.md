@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Pressure Bunk Shift Routine"
+title: "Drukkooi-shiftroutine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Pressure Bunk Shift Routine
+# Drukkooi-shiftroutine
 
-NL LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+De Pressure Bunk Shift Routine toont HECTON-8s verdronken kolonie via gewoonte in plaats van bekentenis. Een werkerrij-slate noemt wekttoon, afdichtingscheck, druknotitie, maaltijd-watertoken, gereedschapsbewaring en afdalingsopdracht. In een station zonder zonsopkomst is die lijst ochtend, rooster, medische waarschuwing en bewijs van terugkeer.
 
-## Scanner
+De emotionele kracht zit in hoe weinig de slate poseert. Hij zegt niet dat iemand dapper was. Hij zegt dat de pompsleutel voor de maaltijd terug moest. Hij zegt dat afdichtingen om 03:52 worden gecontroleerd. Hij zegt dat slaap door machines werd verdeeld omdat het de oceaan niets kon schelen of een lichaam het uur begreep.
 
-NL LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-NL LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-NL LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-NL LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Volg de slate en de kolonie wordt leesbaar. Dezelfde naam kan verschijnen als kooi, sleutel, watertoken, routestempel en gemiste terugkeer. Dat is geen rommel. Het is het zenuwstelsel van de druknederzetting, geschreven in de kleinst mogelijke tekens.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/nl_NL. -->

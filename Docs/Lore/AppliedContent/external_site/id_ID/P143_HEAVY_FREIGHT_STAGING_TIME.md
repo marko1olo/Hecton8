@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Waktu Pementasan Kargo Berat"
+title: "Waktu Staging Kargo Berat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Waktu Pementasan Kargo Berat
+# Waktu Staging Kargo Berat
 
-Kargo berat menyembunyikan waktu di dalam infrastruktur. Hardware Atlas, kargo seed, stok pelindung, dan bagian pengereman bisa tiba awal karena diluncurkan bertahun-tahun sebelum bahasa publik pemukiman menyusul. Itu tidak membuat penyelamatan darurat mudah. Rute siap bisa memindahkan massa karena depot, jendela berkas, arus pellet, dan tahap tangkap sudah menunggu. Rute bencana tidak punya kesabaran itu.
+Staging kargo berat adalah tempat logistik antarbintang menjadi kekerasan tanpa senjata. Cincin habitat, selubung reaktor, crawler pemotong, rusuk tekanan, atau stok pangan terlalu mahal untuk diperlakukan sebagai janji santai. Ia mengumpulkan penanggung, gadai, carrier, inspektur, dan klausul cadangan sebelum mencapai Aegir.
+
+Ketika kondisi berubah, Deep Reach tidak perlu menciptakan kekejaman dari nol. Ia hanya perlu terus menghormati rantai kargo. Setiap ton yang sudah distaging menuntut penerima, setiap penerima menuntut lokasi kerja, dan setiap lokasi kerja menuntut tubuh. Koloni menjadi jawaban manusia atas kargo yang sudah dibayar.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/id_ID. -->

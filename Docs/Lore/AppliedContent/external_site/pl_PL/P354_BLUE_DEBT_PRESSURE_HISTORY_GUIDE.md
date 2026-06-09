@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przewodnik historii ciśnienia blue debt"
+title: "Przewodnik historii ciśnienia niebieskiego długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik historii ciśnienia blue debt
+# Przewodnik historii ciśnienia niebieskiego długu
 
-Xenon-Omega, zwany przez salvagerów blue debt, łączy geologię HECTON-8 z computation, debt law i powodem, dla którego Deep Reach nadal chce odzyskać zatopione roszczenie.
+Niebieski dług nie jest klejnotem ani magiczną rudą. To terenowa nazwa stabilnego ciśnieniowo substratu z Xenon-Omega: struktury mineralnej, która nabiera wartości dopiero wtedy, gdy ocean ściśnie, ogrzeje, schłodzi i elektrycznie porani ją we właściwej kolejności. Jasna próbka może być bezwartościowa. Matowa, zapieczętowana bryła może zapłacić za miesiąc tlenu, jeśli jej historia ciśnienia jest czysta, a dryf sygnału pozostaje cichy.
 
-## Scanner
-
-Próbka blue debt oznaczona. Przed export sprawdź pressure history, containment stage i signal drift.
-
-## Terminal
-
-MARAUDER NOTE: blue debt to slang salvage na Xenon-Omega-bearing pressure-stable substrate. Jest cenny, bo extreme computation i energy isolation go lubią, nie dlatego, że świeci.
-
-## Audio
-
-Blue debt to nazwa, której ludzie używają po przyjściu faktury.
-
-## Field Note
-
-Kolor nie jest grade. Cichy pojemnik z czystym custody płaci; śpiewający kupuje ci drone wake.
+Dlatego każde znalezisko niebieskiego długu natychmiast staje się materiałem prawnym. Atlas chce dryfu. Deep Reach chce historii roszczenia. Ekipy salvage chcą pojemnika, który nie śpiewa dość głośno, by obudzić drony. Zasób jest niebezpieczny, bo leży na przecięciu geologii, obliczeń, pieczy i długu. Dowodzi, że HECTON-8 nigdy nie był tylko zatopioną kolonią. Był zakopaną księgą rachunkową, w której ciśnienie pisało liczby.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/pl_PL. -->

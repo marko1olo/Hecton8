@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Recovery Compliance Chain
 
-Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+The recovery compliance chain is the procedure that turns a disaster site into a controlled asset field. It can authorize entry, cutting, sampling, witness collection, data sealing, and return mass. It can also keep asking whether a living person is evidence, liability, cargo, or obstruction.
 
 ## Scanner
 
-The present threat is a compliance chain, not a villain on a screen.
+Recovery order accepted. Rescue language not present in the chain.
 
 ## Terminal
 
-2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+RECOVERY CHAIN: post-incident action routes through contractor clearance, evidence custody, salvage rights, witness handling, route insurance, and public non-admission wording. Rescue is not the controlling verb.
 
 ## Audio
 
-You are not rescued. You are classified.
+They came to comply with recovery. That is not the same as coming back for us.
 
 ## Field Note
 
-Delay does not make an order harmless.
+Compliance arrives with gloves, seals, and no promise that anyone is still a person.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/en_US. -->

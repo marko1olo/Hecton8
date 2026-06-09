@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Marauder Correction Note Sample"
+title: "عينة تصحيح من نهّاب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Marauder Correction Note Sample
+# عينة تصحيح من نهّاب
 
-AR LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+ملاحظات النهّابين من أقوى أسطح الدليل في HECTON-8 لأنها تجادل الأنظمة الرسمية من دون أن تتحول إلى معرفة كلية. هذه العينة تحفظ الشك عبر علامات عملية: أوقات، شهادات، فئة خاطئة، وتأخير طابور. لا تحل القضية بدلا من اللاعب. إنها تعلّمه قراءة كذبة قُدمت كصيانة.
 
 ## Scanner
 
-AR LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+تصحيح بقلم شحمي فوق تقرير حادث: ليس الطقس، ولا الذعر، بل تأخير تفويض مرتبط بعدد جثث.
 
 ## Terminal
 
-AR LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+ملاحظة نهّاب / السبب الرسمي: مرفوض / يلزم قبل المطالبة: شهادة المضخة، عدد الوردية، فئة الجثث، اختلاف ساعة الباب، طابور تفويض الإنقاذ.
 
 ## Audio
 
-AR LOC HOLD: Someone else smelled the paperwork rot.
+شمّ أحدهم عفن الأوراق قبل أن تجف الغرفة.
 
 ## Field Note
 
-AR LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+ليس الطقس. تأخير تفويض. افحص شهادة المضخة، وعدد الوردية، وفئة الجثث. ساعة الباب تسبق ختم المطالبة بست دقائق.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ar_SA. -->

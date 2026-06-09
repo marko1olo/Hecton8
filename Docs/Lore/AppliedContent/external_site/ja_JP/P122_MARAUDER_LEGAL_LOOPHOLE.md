@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "マローダー法の抜け穴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# マローダー法の抜け穴
 
-JP LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+マローダーという言葉には二つの真実がある。清潔な市民が封印遺跡を切る者をそう呼び、サルベージ経済は認めたくない労働をその名で隠す。HECTON-8 では、あらゆる回収が合法の仕事にも、便乗した盗みにも、数十年ぶりに植民地へ届く誠実な救助にもなり得る。
 
 ## Scanner
 
-JP LOC HOLD: License valid in one lane, criminal in the next.
+ある航路では有効な免許が、次の航路では起訴材料になる。
 
 ## Terminal
 
-JP LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: Aegir Reclamation Pool custody では認可 salvage contractor。Deep Reach の資産文言では黙認された侵入者。Sol 向けの清潔な要約では起訴可能な raider。回収記録が重要人物を困らせない場合だけ emergency responder。
 
 ## Audio
 
-JP LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+同じカッターが、道具にも犯罪にも、最後の救助装置にもなる。
 
 ## Field Note
 
-JP LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder が職名でいられるのは、正しい法廷がそこから利益を得られる間だけだ。
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pertanyaan Akhir: Menjual TKP"
+title: "Pertanyaan Akhir: Penjualan TKP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pertanyaan Akhir: Menjual TKP
+# Pertanyaan Akhir: Penjualan TKP
 
-Ending penjualan paling kuat ketika game tidak menghukum pemain secara mekanis. Marauder yang putus asa dapat memenuhi semua tuntutan kontrak: mencapai cekungan, mengambil koordinat, membuktikan nilai sampel, menjaga catatan XO tetap utuh, dan menyerahkan payload yang bisa diberi harga oleh Black Keel. Hasilnya harus terasa sah dan dingin. Utang lunas karena sistem mengakui nilai, bukan keadilan.
+Akhir penjualan harus terasa sah sampai menyakitkan. Marauder berutang dapat mengikuti kontrak: mencapai cekungan, memulihkan koordinat, membuktikan nilai sampel, menjaga catatan XO, dan mengirim payload yang bisa diberi harga oleh carrier. Ledger menjawab karena objeknya bernilai, bukan karena yang mati sudah didengar.
 
-Di situlah horornya. HECTON-8 tidak hilang karena tidak ada yang bisa membaca bukti. Ia hilang karena bukti bisa diubah menjadi kepemilikan. Jika pemain menjual TKP tanpa rantai saksi publik, Deep Reach mendapat dokumen lebih bersih, geometri pendekatan lebih baik, dan alasan kembali dengan pengacara sebelum tim penyelamat. Ending ini membayar pemain dan menunjukkan jenis peradaban yang mampu membeli salvage antarbintang.
+Tanda terima memutuskan apa yang bepergian berikutnya. Jika materi saksi tidak dinotariskan terpisah, Deep Reach menerima geometri pendekatan, penilaian sampel, dan jalur kustodi tanpa ledger nama pekerja terlampir. Keelmark dapat membayar. Operator dapat pergi. Ruang di bawah menjadi catatan aset sebelum menjadi kesaksian, dan karena itu rute pembayaran berada di poros akhir, bukan di kotak kegagalan.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/id_ID. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Протокол допиту в карантинному утриманні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Quarantine Hold Interrogation Record
+# Протокол допиту в карантинному утриманні
 
-UK LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+Протокол робить порятунок незручним. Виживання справжнє, але гравець виходить як свідок, ризик зараження, носій карти й спірний доказ, перш ніж знову стати вільною людиною.
 
 ## Scanner
 
-UK LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Вилучений заявник живий. Прапор карантину перекриває мову порятунку; доказовий payload ізольовано.
 
 ## Terminal
 
-UK LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+ЗАПИС QUARANTINE HOLD: біологічного заявника вилучено живим. Пересування обмежено до скану зараження, інтерв'ю про тиск і перевірки ланцюга доказів. Допит приймача ставить вектор доступу Atlas вище за медичний допуск.
 
 ## Audio
 
-UK LOC HOLD: They saved the body first because the body knew the route.
+Спершу вони врятували тіло, бо тіло знало маршрут.
 
 ## Field Note
 
-UK LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Post-exit досьє: біологічний порятунок до свободи стає карантином, допитом, вилученням маршруту й утриманням payload.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/uk_UA. -->

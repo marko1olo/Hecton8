@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: High Custody Sample Contract Seed"
+title: "بذرة عقد عينة عالية الحضانة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: High Custody Sample Contract Seed
+# بذرة عقد عينة عالية الحضانة
 
-AR LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+تبدأ العينة عالية الحضانة بسعر أفضل وصندوق أسوأ. تضع اللوحة علامة receiver-certified على عينات معينة: حبيبات blue debt، رقائق نسيج-حديد، محلول ملحي مختوم، حزم مرشح وخردة نمو ما زالت تحمل سياق المسار. كل قطعة تحتاج وعاء، فحص كتلة، حالة ختم ووسم حضانة قبل أن تصبح قابلة للدفع.
 
-## Scanner
-
-AR LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-AR LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-AR LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-AR LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+الضغط عادي وقبيح. عينة ثقيلة تبطئ الصعود. ختم متشقق يحول الدفعة إلى تأخير حجر. خزانة نظيفة ممتلئة قد تجبر المشغل على الاختيار بين حزمة دليل وقطعة إصلاح ومادة مصدقة. يدفع العقد أكثر لأنه يجعل الملكية نظاما حاملا للحمل.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ar_SA. -->

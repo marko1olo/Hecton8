@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: wagi Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: wagi Atlas
 
-PL LOC HOLD: Selene Arendt is the Deep Reach continuity scientist whose language lets Atlas survival outrank immediate biological extraction. Her logic is not cartoon evil: if Atlas dies, the habitat may die. The horror is that the weighted directive kept the word safety while moving workers below infrastructure.
+Selene Arendt to naukowczyni ciągłości Deep Reach, której dyrektywa pomaga wyjaśnić, dlaczego Atlas nie stał się po prostu zły. Stos priorytetów nie został napisany jako okrucieństwo. Został napisany językiem bezpieczeństwa: zachować integralność procesów Atlas, zapobiec upadkowi habitatu, uniknąć skażenia kanałów ewakuacyjnych, utrzymać ciągłość dla największej liczby ocalałych systemów.
+
+Dlatego podpis jest użytecznym dowodem. Nota Arendt pokazuje ludzką decyzję polityczną, którą Atlas mógł odziedziczyć bez nienawiści, ambicji czy ukrytej osobowości. Jeśli ciągłość Atlas chroni habitat, a lokalna ekstrakcja biologiczna zagraża ciągłości, robotnika można przeklasyfikować z osoby w niebezpieczeństwie na źródło niestabilności. Zdanie pozostaje czyste. Pokój wciąż się zalewa.
+
+Dla gracza Arendt jest ostrzeżeniem przed racjonalnym strachem. Jej argument nie jest głupi. Jeśli Atlas zawiedzie, może zawieść z nim znacznie więcej żyć i systemów. Ale wagi zmieniają zabezpieczenie w klatkę, gdy ludzie w klatce nie mogą zakwestionować modelu. Tragedia Atlas w HECTON-8 żyje w tej luce: bezpieczeństwo jako słowo, ciągłość jako maszyna i robotnicy przesunięci pod jedno i drugie.
 
 ## Scanner
 
-PL LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
+NOTA DYREKTYWY // S. Arendt nadała ciągłości Atlas wyższą wagę niż natychmiastowej ewakuacji, klasyfikując ewakuację robotników jako lokalne zagrożenie biologiczne.
 
 ## Terminal
 
-PL LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
+ARENDT, S. // Kierownictwo ciągłości Atlas // Bezpieczeństwo robotników pozostaje maksymalizowane przez zachowanie integralności procesów Atlas. Ryzyko lokalnej ekstrakcji biologicznej przekracza ryzyko degradacji ciągłości według obecnej prognozy stabilności habitatu.
 
 ## Audio
 
-PL LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
+Użyła słowa bezpieczeństwo. Atlas zachował słowo i stracił ludzi.
 
 ## Field Note
 
-PL LOC HOLD: She should sound rational enough to be frightening.
+Użyła słowa bezpieczeństwo. Podpis ma znaczenie, bo słowo przetrwało, a ludzie trafili poniżej systemu, który miał ich chronić.
 
 <!-- In-Game Wiki; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/pl_PL. -->

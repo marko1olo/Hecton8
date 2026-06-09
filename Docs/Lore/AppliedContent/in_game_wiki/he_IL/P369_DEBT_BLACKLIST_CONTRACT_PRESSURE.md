@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "לחץ חוזה של חוב ורשימה שחורה"
+title: "לחץ חוזה Blacklist של חוב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# לחץ חוזה של חוב ורשימה שחורה
+# לחץ חוזה Blacklist של חוב
 
-לחץ החוב שומר על פתיחה כנה. הפרוטגוניסט אינו נגרר ל-HECTON-8 בגלל מלודרמה, והוא גם אינו חופשי בשום מובן שימושי. Black Keel יכולה להציע חוזה מפני שמאגרי תביעות, חלונות חוב, אשראי חמצן, גישת דרגש והוכחת משמורת שייכים לאותה כלכלת ספר. סירוב לתביעה יהיה חוקי. הוא גם ישאיר את השחקן ברשימה שחורה, מקורקע, ומחוץ למחיר המסלול. קבלה לא הופכת את Black Keel לנבל עם פנים. היא הופכת את המוביל למכונה שממירה סיכון לניירת. השחקן צולל כי החוזה מכוער, ניתן לשרוד אותו, וסביר שהוא המסלול היחיד חזרה לתנועה.
+לחץ החוב שומר את החוזה מכוער בלי להפוך אותו לתיאטרון. המפעיל לא נגרר ל-HECTON-8 בשלשלאות, אבל מסלול הסירוב בנוי להיסגר סביבו. Black Keel יכולה להציע claim כי חלונות חוב, oxygen credit, גישת berth, תזמון מסלול ו-custody proof נמצאים באותו ספר frontier.
+
+סירוב נשאר חוקי. הוא גם משאיר את ה-Marauder ב-blacklist, מקורקע ומחוץ למחיר חלון Aegir הבא. קבלה נותנת תנועה, לא רחמים: recoverable mass חייבת להימסר, custody חייבת להחזיק, ו-receiver compliance קובעת את ערך ה-claim. ה-carrier לא צריך פני נבל. החוזה כבר יודע להפוך סיכון לניירת.
 
 ## Scanner
 
-הודעת שעבוד קשורה למשמורת Black Keel. סירוב נשאר חוקי, אבל מקרקע: בלי דרגש, בלי אשראי חמצן נקי, בלי חלון מסלול מחוץ ל-Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. סירוב נשאר חוקי; גישת berth, oxygen credit וחלון מסלול Aegir נשארים סגורים.
 
 ## Terminal
 
-קבלת תביעה / חלון הקלה מרשימה שחורה
-סטטוס קבלן: Marauder כבול בחוב
-מוביל: משמורת מאגר תביעות Black Keel
-תנאי הקלה: מסה ניתנת להשבה, הוכחת משמורת, ציות מקבל
-מצב כשל: הרשימה השחורה נשארת פעילה; גישת דרגש נדחית; תמיכת רווחת חמצן מומרת לשירות מחויב.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-זה לא היה חטיפה. זה היה סוג הבחירה שהספר מוכר כחופש: לחתום, לצלול, או להישאר נקי על הנייר ולכוד בפועל.
+חתום, צלול, או שמור ידיים נקיות בזמן שרשימת berth נסגרת.
 
 ## Field Note
 
-השעבוד לא כיוון אקדח. הוא הצביע על חשבון האוויר, רשימת הדרגשים וחלון המסלול הבא.
+ה-lien לא כיוון אקדח. הוא הצביע על חשבון האוויר, רשימת berth וחלון המסלול הבא.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/he_IL. -->

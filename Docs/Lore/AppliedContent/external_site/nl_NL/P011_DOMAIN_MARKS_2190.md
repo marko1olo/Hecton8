@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Domeinmarkeringen 2190
 
-In 2190 kan één kapot object meerdere eigenaren dragen: Sol-standaard, Barnard-reparatie, Luyten-bewaring, Aegir-claim. HECTON-8 is geen ruïne zonder geschiedenis; de geschiedenis staat op het metaal terwijl de kamer onderloopt.
+In 2190 kan één kapot object meerdere juridische ouders hebben. Op HECTON-8 kan een drukslot Sol-gecertificeerd zijn, Barnard-gerepareerd, Luyten-bewaard, Centauri-gerechtvaardigd en onder een Aegir-schil opgeëist. De markeringen maken de kolonie niet veilig. Ze maken haar gedocumenteerd.
+
+Dat verschil draagt de toon. HECTON-8 ligt niet buiten beschaving. Het ligt onder de koude kant ervan: de kant die een beugel kan benoemen, een lichaam kan prijzen, een pakket kan bewaren en toch geen reddingsmassa op tijd kan verplaatsen.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/nl_NL. -->

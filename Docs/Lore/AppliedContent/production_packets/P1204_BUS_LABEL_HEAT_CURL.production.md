@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_power_status |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS185_FIRST_POWER_STATUS_TRACE_ARTICLES.md |
 | Speaker | Service scanner, bus label note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first power-panel inspection |
@@ -37,7 +37,7 @@ BUS LABEL // Heat curl lifts one edge. Label age is not rail condition.
 
 ### Codex
 
-The label has curled away from the rail side and left adhesive shadow behind it. Heat, age, and moisture can all make the label move before the rail tells its own story.
+The label has curled away from the rail side and left adhesive shadow behind it. Heat, age, and moisture can all move the label without proving the rail condition.
 
 The label helps locate the rail. It does not certify it.
 
@@ -72,17 +72,17 @@ LABEL, NOT CONDITION
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| ru_RU | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| ja_JP | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| zh_CN | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| fr_FR | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| es_ES | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| de_DE | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| pl_PL | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| uk_UA | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| ar_SA | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| id_ID | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| ko_KR | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| he_IL | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| pt_BR | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
-| nl_NL | draft_machine_or_llm | BUS LABEL // Heat curl lifts one edge. Label age is not rail condition. |
+| ru_RU | draft_machine_or_llm | МЕТКА ШИНЫ // Тепловой изгиб поднял один край. Возраст метки не равен состоянию шины. |
+| ja_JP | draft_machine_or_llm | バスラベル // 熱反りで片縁が浮く。ラベルの古さはレール状態ではない。 |
+| zh_CN | draft_machine_or_llm | 母线标签 // 热卷曲抬起一边。标签老化不等于母线状态。 |
+| fr_FR | draft_machine_or_llm | ETIQUETTE DE BUS // Courbure thermique souleve un bord. Age de l'etiquette n'est pas etat du rail. |
+| es_ES | draft_machine_or_llm | ETIQUETA DE BUS // Curvatura por calor levanta un borde. Edad de etiqueta no es estado del riel. |
+| de_DE | draft_machine_or_llm | BUSLABEL // Hitzekrummung hebt eine Kante. Labelalter ist kein Schienenzustand. |
+| pl_PL | draft_machine_or_llm | ETYKIETA SZYNY // Podwiniecie od ciepla unosi jedna krawedz. Wiek etykiety nie oznacza stanu szyny. |
+| uk_UA | draft_machine_or_llm | МІТКА ШИНИ // Тепловий вигин підняв один край. Вік мітки не є станом шини. |
+| ar_SA | draft_machine_or_llm | ملصق ناقل // انحناء حراري يرفع حافة واحدة. عمر الملصق ليس حالة السكة. |
+| id_ID | draft_machine_or_llm | LABEL BUS // Lengkung panas mengangkat satu tepi. Umur label bukan kondisi rel. |
+| ko_KR | draft_machine_or_llm | 버스 라벨 // 열 말림이 한쪽 가장자리를 들어 올림. 라벨 노화는 레일 상태가 아니다. |
+| he_IL | draft_machine_or_llm | תווית פס // סלסול חום מרים קצה אחד. גיל התווית אינו מצב הפס. |
+| pt_BR | draft_machine_or_llm | ROTULO DO BARRAMENTO // Curvatura por calor levanta uma borda. Idade do rotulo nao e condicao do trilho. |
+| nl_NL | draft_machine_or_llm | BUSLABEL // Hittekrul tilt een rand op. Labelleeftijd is geen railconditie. |

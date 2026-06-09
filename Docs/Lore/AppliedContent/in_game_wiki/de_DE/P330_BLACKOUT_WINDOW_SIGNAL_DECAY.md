@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Blackout Window Signal Decay"
+title: "Signalverfall im Blackout-Fenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Blackout Window Signal Decay
+# Signalverfall im Blackout-Fenster
 
-DE LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+Signalverfall gibt Kommunikationsknappheit eine physische Form. Der Spieler erhält seltene Fenster, abgeschnittene Paketfragmente und akustische Unterwasser-Fallbacks statt ständiger Führung aus dem Orbit.
 
 ## Scanner
 
-DE LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Signalfenster bricht zusammen: nasse Relaisspine, Aegir-Schatten, veraltete Trägergeometrie, Rechtswarteschlange versucht weiter.
 
 ## Terminal
 
-DE LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: Uplink-Verlust über Toleranz. Sprachkanal ausgesetzt. Textfragmente können über reparierte akustische Spine-Knoten eintreffen. Orbitale Trägergeometrie wird nach Abzug des magnetischen Aegir-Schattens aktualisiert. Automatisierte Pfand- und Verwahrungstimer laufen ohne Operator-Kontakt weiter.
 
 ## Audio
 
-DE LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Der Himmel schweigt zuerst. Die Schuldbescheide klopfen weiter.
 
 ## Field Note
 
-DE LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Blackout-Fenster an Routenrhythmus binden: weniger Stimme, mehr Fragmentlesen, stärkerer Wert reparierter Relais und lokaler Baken.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/de_DE. -->

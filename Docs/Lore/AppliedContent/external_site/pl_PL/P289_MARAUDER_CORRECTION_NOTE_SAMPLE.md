@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Marauder Correction Note Sample"
+title: "Próbka poprawki szabrownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Marauder Correction Note Sample
+# Próbka poprawki szabrownika
 
-PL LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Noty szabrowników są mocnymi powierzchniami dowodowymi HECTON-8, bo spierają się z oficjalnymi systemami, nie stając się wszechwiedzącym lore. Ta próbka utrzymuje podejrzenie przez praktyczne znaki: czasy, certyfikaty, złą kategorię i opóźnienie kolejki. Nie rozwiązuje sprawy za gracza. Uczy czytać kłamstwo złożone jako konserwację.
 
 ## Scanner
 
-PL LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Tłusty ołówek na formularzu wypadku: nie pogoda, nie panika, tylko opóźniona autoryzacja z liczbą ciał w tle.
 
 ## Terminal
 
-PL LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+NOTA SZABROWNIKA / OFICJALNA PRZYCZYNA: ODRZUCONA / PRZED ROSZCZENIEM SPRAWDZIĆ: certyfikat pompy, skład zmiany, kategorię ciał, rozjazd zegara drzwi, kolejkę autoryzacji ratunku.
 
 ## Audio
 
-PL LOC HOLD: Someone else smelled the paperwork rot.
+Ktoś wyczuł smród papierów, zanim pomieszczenie wyschło.
 
 ## Field Note
 
-PL LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NIE POGODA. OPÓŹNIONA AUTORYZACJA. Sprawdzić certyfikat pompy, skład zmiany, kategorię ciał. Zegar drzwi wyprzedza stempel roszczenia o sześć minut.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/pl_PL. -->

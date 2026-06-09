@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Resource Yield Data Boundary"
+title: "גבול נתוני תפוקת משאב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Resource Yield Data Boundary
+# גבול נתוני תפוקת משאב
 
-HE LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+ערך משאב ב-HECTON-8 הוא שרשרת, לא תווית. הטבלה מחזיקה במספר, אבל הסיפור מחזיק בסיבה: מי לקח את הדגימה, באיזה לחץ, עם איזה חותם משמורת וכמה מן העורק המסלול עוד יכול לקלף בבטחה.
 
 ## Scanner
 
-HE LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+שורת תפוקה דוחה ערך חופשי: מחלקה, רצועת לחץ, משמורת, דלדול ו-hash חייבים להתאים.
 
 ## Terminal
 
-HE LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: שום מספר לא מתקבל בלי packet hash, מחלקת משאב, רצועת לחץ, דרגת משמורת, עקומת נדירות והתנהגות דלדול. דגימה בלי היסטוריית לחץ היא ראיה, לא ערך.
 
 ## Audio
 
-HE LOC HOLD: A sample without pressure history is not a value.
+דגימה בלי היסטוריית לחץ אינה ערך.
 
 ## Field Note
 
-HE LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+מספרי תפוקה נשארים זמניים עד שרצועת לחץ, דרגת משמורת, התנהגות דלדול ו-packet hash מסכימים.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/he_IL. -->

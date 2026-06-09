@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_repair_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS167_FIRST_REPAIR_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, bypass safety note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first repair reading |
@@ -33,7 +33,7 @@ Forbidden facts: no bypass mechanic claim, no hidden route unlock, no complete s
 
 ### Scanner
 
-BYPASS TAG // Lockout tie torn. Check lever notch against red paint line.
+BYPASS TAG // Lockout tie is torn. Match lever notch to red paint line before moving.
 
 ### Codex
 
@@ -71,18 +71,18 @@ MATCH NOTCH TO RED LINE
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| ar_SA | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| de_DE | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| es_ES | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| fr_FR | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| he_IL | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| id_ID | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| ja_JP | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| ko_KR | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| nl_NL | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| pl_PL | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| pt_BR | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| ru_RU | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| uk_UA | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
-| zh_CN | draft_machine_or_llm | BYPASS TAG // Lockout tie torn. Check lever notch against red paint line. |
+| en_US | source_authority | BYPASS TAG // Lockout tie is torn. Match lever notch to red paint line before moving. |
+| ar_SA | draft_machine_or_llm | بطاقة تجاوز // رباط القفل ممزق. طابق شق الذراع مع خط الطلاء الأحمر قبل التحريك. |
+| de_DE | draft_machine_or_llm | BYPASS-ANHÄNGER // Sperrplombe ist gerissen. Hebelkerbe vor Bewegung mit roter Farblinie abgleichen. |
+| es_ES | draft_machine_or_llm | ETIQUETA DE BYPASS // El precinto de bloqueo está roto. Alinea la muesca de la palanca con la línea roja antes de moverla. |
+| fr_FR | draft_machine_or_llm | ÉTIQUETTE DE DÉRIVATION // Le lien de consignation est rompu. Aligner l'encoche du levier sur la ligne rouge avant de le déplacer. |
+| he_IL | draft_machine_or_llm | תג מעקף // אזיק הנעילה קרוע. התאם את חריץ הידית לקו הצבע האדום לפני הזזה. |
+| id_ID | draft_machine_or_llm | TAG BYPASS // Ikatan pengunci robek. Cocokkan takik tuas dengan garis cat merah sebelum digerakkan. |
+| ja_JP | draft_machine_or_llm | バイパスタグ // ロックアウト結束が切れている。動かす前にレバーの切欠きを赤線に合わせる。 |
+| ko_KR | draft_machine_or_llm | 우회 태그 // 잠금 타이가 찢어졌다. 움직이기 전에 레버 홈을 붉은 페인트 선에 맞춰라. |
+| nl_NL | draft_machine_or_llm | BYPASSLABEL // Vergrendelband is gescheurd. Lijn de hendelkerf uit met de rode verf voordat de hendel beweegt. |
+| pl_PL | draft_machine_or_llm | ETYKIETA OBEJŚCIA // Plomba blokady jest zerwana. Przed ruchem zgraj nacięcie dźwigni z czerwoną linią. |
+| pt_BR | draft_machine_or_llm | ETIQUETA DE BYPASS // O lacre de bloqueio está rasgado. Alinhe o entalhe da alavanca com a linha vermelha antes de mover. |
+| ru_RU | draft_machine_or_llm | БИРКА ОБХОДА // Стяжка блокировки порвана. Перед движением совмести насечку рычага с красной линией. |
+| uk_UA | draft_machine_or_llm | БИРКА ОБХОДУ // Стяжка блокування розірвана. Перед рухом сумісти насічку важеля з червоною лінією. |
+| zh_CN | draft_machine_or_llm | 旁通标签 // 锁定扎带已断。移动前先让杠杆缺口对准红漆线。 |

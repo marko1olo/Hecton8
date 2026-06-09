@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Brine Canyon Liability Act"
+title: "بوابة مسؤولية وادي المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Brine Canyon Liability Act
+# بوابة مسؤولية وادي المحلول الملحي
 
-AR LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+في الوادي، يتوقف المسار عن كونه أوراق salvage ويبدأ بالتصرف كملف قضية. طبقات الكثافة تحفظ الساعات السيئة. المحلول الملحي يمسك آثارا كانت المياه العادية ستمحوها. يمكن لصفيحة إخلاء مكسورة أن تستقر قرب سجل هامش وتجعل الوثيقتين أقوى.
 
-## Scanner
-
-AR LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-AR LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-AR LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-AR LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+تهم السلسلة لأنها لا تنكر الفيزياء. ضرب المد العظيم. فشل الجدار. كذبة الشركة تقع في ترتيب القرارات حول هذه الحقائق: هامش مقبول، طابور مؤجل، مسار متضرر، مطالبة محمية. يبقى العمل المرئي ماديا: امسح الأثر، طابق الساعة، أخرج الدليل.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/ar_SA. -->

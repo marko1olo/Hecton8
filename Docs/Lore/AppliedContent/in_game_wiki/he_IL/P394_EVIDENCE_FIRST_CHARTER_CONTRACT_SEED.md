@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Evidence First Charter Contract Seed"
+title: "זרע חוזה אמנת ראיות תחילה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Evidence First Charter Contract Seed
+# זרע חוזה אמנת ראיות תחילה
 
-HE LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+אמנת ראיות תחילה היא משפחת חוזים שמשלמת פחות על salvage חופשי ושומרת יותר קיבולת מסלול לראיה. תיקי תאונה, פסי מצב צוהר, יומני pinger וקסטות נוטריון עוברים לפני חלקים כבדים כשהמסלול מתחיל להיכשל.
 
 ## Scanner
 
-HE LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+זרע חוזה: אמנת ראיות תחילה. תשלום חומר נמוך יותר, קיבולת נוטריון גדולה יותר וסכסוכי שימור הוכחה קשים יותר.
 
 ## Terminal
 
-HE LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: תשלום חומר מופחת, קיבולת קסטת נוטריון מוגדלת, עדיפות ארון ראיות פעילה, קנס פירוק salvage פעיל, דחיפת מקלט Deep Reach צפויה.
 
 ## Audio
 
-HE LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+הרשומה הנקייה ביותר משלמת מאוחר ומכעיסה מוקדם.
 
 ## Field Note
 
-HE LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+הערת מרודר: ארון ראיות לא מוחל על חוב. הוא רק מונע מהחוב לבחור איזו ראיה תמות ראשונה.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/he_IL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Vent Forge Process Steps"
+title: "Étapes de forge par évent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Vent Forge Process Steps
+# Étapes de forge par évent
 
-FR LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Les Étapes de forge par évent transforment le craft de HECTON-8 en rituel industriel qui reste physique. Le joueur ne transporte pas un four fantastique dans sa poche. La forge est un lieu où l'océan, l'évent géothermique et le matériel colonial ruiné s'accordent brièvement. On purge d'abord le blanc pour que l'ancienne saumure ne bouille pas dedans. Puis on le serre avant la montée d'impulsion, on le préchauffe sur la montée de pression, on le scelle pendant la courte accalmie et on le trempe dans le courant froid de retour. L'anneau acoustique final n'est pas décoratif ; il prouve que la pièce porte un corps propre au lieu de fissures cachées. Cela donne au craft un rythme que le monde peut soutenir par VFX, audio et interface. La chaleur compte, mais le timing compte plus. Une fenêtre ratée ne produit pas un échec mystérieux. Elle produit un rebut voilé, une floraison saline ou un composant fissuré qui dit exactement ce qui a mal tourné.
 
 ## Scanner
 
-FR LOC HOLD: Vent forging should feel like using the planet against itself.
+La forge par évent n'est pas une métallurgie magique. C'est emprunter la chaleur, la pression et le timing de la planète sans la laisser garder la pièce.
 
 ## Terminal
 
-FR LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ÉTAPES FORGE ÉVENT / 01 purger la saumure du blanc / 02 serrer avant impulsion / 03 préchauffer sur montée d'évent / 04 sceller pendant accalmie de pression / 05 tremper dans courant froid / 06 certifier par anneau acoustique / échec : rebut voilé, floraison saline ou pièce fissurée par pression.
 
 ## Audio
 
-FR LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+La lune est le four. Vous avez seulement le droit de l'emprunter.
 
 ## Field Note
 
-FR LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Le processus doit se lire comme purge, serrage, préchauffe, scellement, trempe, test d'anneau. Le risque n'est pas la flamme ; c'est manquer l'accalmie de pression.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/fr_FR. -->

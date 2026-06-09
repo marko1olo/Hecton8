@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Contract Approach Act Gate"
+title: "Вход через контракт"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Contract Approach Act Gate
+# Вход через контракт
 
-RU LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+Первый шлюз - это бумаги с давлением за спиной. Black Keel не отправляет туриста в воды Aegir. Оператор принимает передачу претензии, долговую экспозицию, слот bathydrop и счет за инструмент до первого глубокого скана. Старый профиль Deep Reach важен потому, что узнавание процедур начинается раньше, чем маршрут становится личным.
 
 ## Scanner
 
-RU LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Маршрутный шлюз: контракт принят. Долговая экспозиция, время bathydrop и старая процедура Deep Reach активны до спуска.
 
 ## Terminal
 
-RU LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+МАРШРУТ КАМПАНИИ // КОНТРАКТНЫЙ ПОДХОД. Владелец: доска претензий Black Keel. Принять передачу претензии, долговую экспозицию, слот bathydrop и долг за инструмент. В профиле оператора найден остаток учетных данных Deep Reach. Восстановление условное.
 
 ## Audio
 
-RU LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Ты пришел за работой. Контракт уже знает, где ты работал раньше.
 
 ## Field Note
 
-RU LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Заметка мародера: прочитай доску контракта дважды. На втором проходе видно, какие старые разрешения все еще ложатся в руки.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/ru_RU. -->

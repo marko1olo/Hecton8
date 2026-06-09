@@ -421,6 +421,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float _debugLightShaftMultiplier;
         [FormerlySerializedAs("_debugVolumetricDepth")]
         [SerializeField] private float _debugLightShaftDepth;
+        [SerializeField] private float _debugCelestialBeamPressure01;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -434,8 +435,8 @@ namespace Hecton8.Gameplay
         public float CooldownRemaining => _overheatCooldownTimer;
         public float EnergyPercent => _externalBatteryTool != null ? math.saturate(_externalBatteryTool.BatteryCharge) * 100f : 0f;
         internal bool IsBeamPresentationActive => _isOn && !_isOverheated && EnergyPercent > 1f;
-        internal float PresentationIntensity => _currentIntensity;
-        internal float PresentationRange => ResolveModeRange();
+        internal float PresentationIntensity => _currentIntensity * ResolveCelestialBeamIntensityMultiplier();
+        internal float PresentationRange => ResolveModeRange() * ResolveCelestialBeamRangeMultiplier();
         internal float PresentationSpotAngle => ResolveModeSpotAngle();
         internal Color PresentationColor => flashlightLight != null ? flashlightLight.color : Color.white;
         internal Transform PresentationAnchor => flashlightLight != null ? flashlightLight.transform : _cachedMainCameraTransform;
@@ -483,6 +484,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IModularEquipmentService _modularEquipmentService;
         private IAudioService _audioService;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         private AudioClip _pendingAudioClip;
         private bool _pendingAudioDirty;
         private bool _lateFrameRegistered;
@@ -508,6 +510,11 @@ namespace Hecton8.Gameplay
         private float _externalInterferenceIntensity;
         private float _externalInterferenceHoldTimer;
         private float _externalInterferenceRecoverySpeed;
+        private float _celestialBeamPressure01;
+
+        private const float CelestialBeamMaxIntensityMultiplier = 1.08f;
+        private const float CelestialBeamMaxRangeMultiplier = 1.16f;
+        private const float CelestialBeamMaxShaftMultiplier = 1.20f;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -585,12 +592,15 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrameTick();
             _externalInterferenceIntensity = 0f;
             _externalInterferenceHoldTimer = 0f;
+            _celestialBeamPressure01 = 0f;
+            _celestialLightReadModel = null;
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwap();
             TryUnregisterLateFrameTick();
+            _celestialLightReadModel = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -629,6 +639,7 @@ namespace Hecton8.Gameplay
 
             // ── Flickering ──
             UpdateExternalInterference(deltaTime);
+            _celestialBeamPressure01 = ResolveCelestialArtificialLightPressure01();
             UpdateFlickering(deltaTime);
 
             // ── Transition ──
@@ -1089,6 +1100,7 @@ namespace Hecton8.Gameplay
             RefreshPlayerRuntimeBindings(GlobalRegistry.Player);
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
             CacheAudioService(GlobalRegistry.Audio);
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
         }
 
         private void TryRegisterHotSwap()
@@ -1138,6 +1150,8 @@ namespace Hecton8.Gameplay
                 _modularEquipmentService = currentService as IModularEquipmentService;
             else if (serviceSlot == GlobalRegistryServiceSlot.Audio)
                 CacheAudioService(currentService as IAudioService);
+            else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+                CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 TryUnregisterLateFrameTick(clearPendingWork: false);
@@ -1175,6 +1189,72 @@ namespace Hecton8.Gameplay
                 return false;
 
             if (audioService is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _celestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _celestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private float ResolveCelestialArtificialLightPressure01()
+        {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            bool usable = IsCelestialLightReadModelUsable(readModel);
+            if (!usable)
+            {
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _celestialLightReadModel;
+                usable = IsCelestialLightReadModelUsable(readModel);
+            }
+
+            if (!usable)
+                return 0f;
+
+            CelestialLightReadabilitySnapshot light = readModel.LightReadabilitySnapshot;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u ||
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) == 0u)
+            {
+                return 0f;
+            }
+
+            float artificial = math.saturate(math.select(light.ArtificialLightWeight01, 0f, !math.isfinite(light.ArtificialLightWeight01)));
+            float deepDarkness = math.saturate(math.select(light.DeepDarkness01, 0f, !math.isfinite(light.DeepDarkness01)));
+            float ambient = math.saturate(math.select(light.AmbientReadability01, 0f, !math.isfinite(light.AmbientReadability01)));
+            float visibilityMeters = math.max(0f, math.select(light.UnderwaterVisibilityMeters, 0f, !math.isfinite(light.UnderwaterVisibilityMeters)));
+            float visibilityPressure = 1f - math.saturate(visibilityMeters * math.rcp(42f));
+            float criticalBoost = (light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u ? 1f : 0.72f;
+            return math.saturate(math.max(artificial, deepDarkness * 0.86f) *
+                                 math.lerp(0.48f, 1f, visibilityPressure) *
+                                 math.lerp(1f, 0.65f, ambient) *
+                                 criticalBoost);
+        }
+
+        private float ResolveCelestialBeamIntensityMultiplier()
+        {
+            return math.lerp(1f, CelestialBeamMaxIntensityMultiplier, math.saturate(_celestialBeamPressure01));
+        }
+
+        private float ResolveCelestialBeamRangeMultiplier()
+        {
+            return math.lerp(1f, CelestialBeamMaxRangeMultiplier, math.saturate(_celestialBeamPressure01));
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
                 return behaviour != null && behaviour.isActiveAndEnabled;
 
             return true;
@@ -1285,6 +1365,8 @@ namespace Hecton8.Gameplay
             if (_externalInterferenceIntensity > 0.001f)
                 multiplier *= math.lerp(1f, stormInterferenceMinIntensity, math.saturate(_externalInterferenceIntensity));
 
+            multiplier *= math.lerp(1f, CelestialBeamMaxShaftMultiplier, math.saturate(_celestialBeamPressure01));
+
             _debugLightShaftMultiplier = multiplier;
             _debugLightShaftDepth = depth;
 #endif
@@ -1371,6 +1453,7 @@ namespace Hecton8.Gameplay
             _debugIsFlickering = _isFlickering;
             _debugIsOverheated = _isOverheated;
             _debugCooldownRemaining = _overheatCooldownTimer;
+            _debugCelestialBeamPressure01 = _celestialBeamPressure01;
         }
     }
 }

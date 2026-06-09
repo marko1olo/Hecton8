@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Photic Shelf Survival Act"
+title: "بوابة الرف الضوئي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Photic Shelf Survival Act
+# بوابة الرف الضوئي
 
-AR LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+الرف الضوئي يعلم عبر الأشياء لا عبر الراحة. يعرف المشغل أي أغلفة مضخات ما زالت تحمل هواء، وأي رقع تشتري دقائق، وأي كائنات لامعة توسخ الأداة. يظهر Atlas أولا كبقايا إصلاح: مفيد، خاطئ في مواضع، وقريب بما يكفي للمس.
 
 ## Scanner
 
-AR LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+بوابة مسار: رف ضوئي. جيوب الأكسجين، غرف المضخات، القطوع الأولى وبقايا إصلاح Atlas الضحلة مقروءة في ماء النهار.
 
 ## Terminal
 
-AR LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+مسار حملة // الرف الضوئي. مطلوب: إعادة تشغيل مضخة، رقعة ختم، قطع كابل، ping ماسح. عتاد الصعود غير متاح؛ الخلايا المصروفة موجهة لأنظمة النجاة. بقايا Atlas مصنفة مفيدة مع تحذير تلوث.
 
 ## Audio
 
-AR LOC HOLD: The shallow water is not safe. It is only readable.
+الماء الضحل ليس آمنا. إنه مقروء.
 
 ## Field Note
 
-AR LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+ملاحظة نهب: ضوء النهار يساعد. لا يجعل خط أكسجين متصدعا كريما.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ar_SA. -->

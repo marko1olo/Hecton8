@@ -77,9 +77,21 @@ namespace Hecton8.Tests.Editor
             Assert.That(shader, Does.Contain("_HectonRetinaQualityWeight"));
             Assert.That(shader, Does.Contain("HectonRetinaSmoothRange01(0.45, 0.95, retinaQuality)"));
             Assert.That(feature, Does.Contain("ResolveRetinaVisualQualityWeight"));
+            Assert.That(feature, Does.Contain("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player)"));
+            Assert.That(feature, Does.Contain("CachePlayerContext(currentService as IPlayerRuntimeContext)"));
+            Assert.That(feature, Does.Contain("private IPlayerRuntimeContext ResolvePlayerContext()"));
+            Assert.That(feature, Does.Contain("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)"));
+            Assert.That(feature, Does.Contain("private static bool IsPlayerCameraUsable(Camera camera)"));
+            Assert.That(feature, Does.Contain("playerContext is Behaviour behaviour"));
+            Assert.That(feature, Does.Contain("ClearPlayerContext();"));
+            Assert.That(feature, Does.Contain("IPlayerRuntimeContext playerContext = ResolvePlayerContext();"));
+            Assert.That(feature, Does.Contain("!IsPlayerCameraUsable(playerCamera)"));
             Assert.That(feature, Does.Not.Contain("EnableKeyword"));
             Assert.That(feature, Does.Not.Contain("DisableKeyword"));
             Assert.That(feature, Does.Not.Contain("Mx350Keyword"));
+            Assert.That(feature, Does.Not.Contain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;"));
+            Assert.That(feature, Does.Not.Contain("_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;"));
+            Assert.That(feature, Does.Not.Contain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;"));
         }
 
         [Test]

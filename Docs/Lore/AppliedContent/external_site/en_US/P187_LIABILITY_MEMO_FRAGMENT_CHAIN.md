@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Liability Memo Fragment Chain
 
-Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+Liability Memo Fragment Chain defines HECTON-8 evidence as reconstruction, not exposition. The article gives players a reason to care about scraps, timestamps and damaged admin rooms: Deep Reach did not leave one confession, it left incompatible self-protections. Each fragment is small enough to be plausible and ugly enough to matter. Together they show how the company can publicly blame tide physics while privately moving liability through risk, evacuation, Atlas continuity, insurance conversion and payload custody.
 
 ## Scanner
 
-Liability memos must be fragments that match physical rooms, not lore speeches.
+The liability memo survived as fragments because every office kept the paragraph that protected itself.
 
 ## Terminal
 
-MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: risk margin table / evacuation release note / Atlas continuity override / Keelmark loss conversion / recovery custody request. Cross-check route time, room damage and worker names before accepting the public summary.
 
 ## Audio
 
-Paper is weak alone. Put it against a flooded door.
+They did not hide the truth in a vault. They filed it in pieces.
 
 ## Field Note
 
-A useful memo names one margin, one delay, one office and one visible consequence.
+A torn memo is honest in the places it did not mean to be.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/en_US. -->

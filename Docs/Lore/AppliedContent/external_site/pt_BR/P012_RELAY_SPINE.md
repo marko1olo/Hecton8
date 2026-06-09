@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Espinha de relés"
+title: "Espinha de Relés"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Espinha de relés
+# Espinha de Relés
 
-O espaço humano é ligado por relés, não milagres. Hashes provam recepção; cadeias legais mantêm reivindicações vivas.
+HECTON-8 não tem ansible, canal mágico de emergência nem tribunal de núcleo falando ao vivo sobre o oceano. O espaço humano se conecta por uma Espinha de Relés: feixes programados, custódia de pacotes, hashes de testemunha, buffers locais e cadeias de recibo. É uma máquina forte para preservar fatos. É péssima para salvar alguém que precisa de ar agora.
 
-A rede é poderosa e fria. O jogador pode enviar a verdade e morrer antes de ela ajudar.
+O jogador pode achar um arquivo verdadeiro, provar a origem, empurrá-lo para a fila e ainda ver a situação local piorar. Black Keel ouve o burst e transforma em lien. Luyten autentica depois que a janela fecha. No-FTL não é rodapé de lore; é por isso que cada escolha imediata pertence a quem ainda está debaixo d'água.
 
 <!-- External Site; generated from P012_RELAY_SPINE/pt_BR. -->

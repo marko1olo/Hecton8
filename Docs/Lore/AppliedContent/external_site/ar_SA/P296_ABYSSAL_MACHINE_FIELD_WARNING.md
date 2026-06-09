@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Abyssal Machine Field Warning"
+title: "تحذير حقل الآلات السحيق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Abyssal Machine Field Warning
+# تحذير حقل الآلات السحيق
 
-AR LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+قبل الحوض الأخير، يتوقف HECTON-8 عن الظهور كمكان مهجور ويبدأ كآلة أكبر من أن تعرض جسدها كله. يبقى التحذير هادئا لأن الرعب ليس مطاردة. الرعب هو الحجم.
 
 ## Scanner
 
-AR LOC HOLD: Machine field warning: silt motion does not match current.
+يتحرك الطمي عكس التيار. أجسام الترشيح تعيد تموضعها تحت الأضواء.
 
 ## Terminal
 
-AR LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: حركة طمي حقل الآلات السحيق تتجاوز نموذج التيار. أجسام الترشيح وأضلاع المشغلات المدفونة تسجل كبنية تحتية متحركة. حافظ على مسافة؛ لا ترس في أرض لينة.
 
 ## Audio
 
-AR LOC HOLD: The floor is not still.
+الأرضية ليست ساكنة.
 
 ## Field Note
 
-AR LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+تحذير نهاية متأخرة: رعب هادئ وموضوعي. الحقل الأخير بنية تحتية تستيقظ، لا تمهيد لرئيس.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/ar_SA. -->

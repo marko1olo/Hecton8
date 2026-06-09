@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Beweiskit Kabelriff-Relaisyard"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Cable Reef Relay Yard POI Kit
+# Beweiskit Kabelriff-Relaisyard
 
-DE LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+Der Kabelriff-Relaisyard ist ein Reparaturhof, der in seinen eigenen Fehlermodus gewachsen ist. Leitfilm, Kabelmäntel und Akustiksockel können Signal wiederherstellen, doch dieselbe Brücke kann die Route in einen alten Servicearm schicken, wenn der Operator ohne Scan schneidet.
 
 ## Scanner
 
-DE LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+POI-Beweiskit: Der Relaisyard leitet durch lebenden Brückenfilm und fehlroutet durch beschädigte Kabelerinnerung.
 
 ## Terminal
 
-DE LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+RELAISYARD-KIT: Akustikspine-Sockel, Biofilmbrücke, Schnittwarnung, Pinger-Antwort, Atlas-Servicemarke, Isolationsschälung, Relaisgabel, Totarmkarte.
 
 ## Audio
 
-DE LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Nicht alles Wachstum abziehen. Ein Teil davon trägt dein Signal.
 
 ## Field Note
 
-DE LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Marauder-Notiz: Wenn der Film unter der Sonde summt, markiere ihn vor dem Schnitt. Schönes Kabel ist oft totes Kabel.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/de_DE. -->

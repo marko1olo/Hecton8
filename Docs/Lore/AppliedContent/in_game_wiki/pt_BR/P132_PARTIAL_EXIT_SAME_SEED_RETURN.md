@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Saída parcial: retorno ao mesmo seed
 
-Saída Parcial é uma janela de recuperação, não um reset. O jogador recebe ar, tempo de reparo e distância da água, depois retorna ao mesmo HECTON-8 com as mesmas rotas, cicatrizes e provas não resolvidas. Conhecimento persiste como pressão, não como poder herdado.
+Saída parcial não é reset. A Black Keel pode erguer o operador para reparo do traje, ar, decon e sincronização de ledger, depois mandar o mesmo corpo de volta ao mesmo oceano sob um lien estendido. A estação abaixo não fica mais limpa porque alguém dormiu acima dela. A Brine Stair mantém a armadilha. O relay mantém o ângulo ruim. As evidências mantêm os dentes. Este final dá alívio sem absolvição: pulmões cheios, ferramentas remendadas, dívida viva e conhecimento voltando como pressão em vez de poder.
 
 ## Scanner
 
-Vetor de recolhimento temporário confirmado. O mesmo oceano continua sob o mesmo contrato.
+Pickup temporário confirmado. O mesmo oceano segue sob o mesmo contrato.
 
 ## Terminal
 
-AVISO DE SAÍDA PARCIAL: recolhimento temporário da Black Keel aceito; retorno ao mesmo seed autorizado sob extensão de lien; avisos de rota, registros de custody e pacotes de prova abertos persistem; geologia e verdade do mundo permanecem inalteradas.
+AVISO DE SAÍDA PARCIAL: pickup temporário Black Keel aceito; retorno ao mesmo seed autorizado sob extensão de lien; alertas de rota, registros de custody, memória de scan e pacotes de evidência abertos persistem.
 
 ## Audio
 
-Você saiu da pressão. O contrato guardou sua cadeira quente.
+A pressão solta. O contrato mantém a cadeira aquecida.
 
 ## Field Note
 
-Um respiro em órbita não é liberdade quando o slot de retorno já foi cobrado.
+Um fôlego em órbita não é liberdade quando o slot de retorno já foi faturado.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/pt_BR. -->

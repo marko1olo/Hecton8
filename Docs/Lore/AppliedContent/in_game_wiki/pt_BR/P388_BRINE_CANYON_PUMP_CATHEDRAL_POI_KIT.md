@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit de provas da catedral de bombas do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit de provas da catedral de bombas do cânion de salmoura
 
-PT LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+A catedral de bombas do cânion de salmoura é um volume industrial construído em torno de pressão, densidade e atraso. Suas máquinas não acusam ninguém sozinhas, mas o visor, o relógio de retenção, as marcas de bomba e o livro de fila formam uma cadeia de responsabilidade utilizável.
 
 ## Scanner
 
-PT LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Kit de provas de POI: a catedral alinha vidro de densidade, dano de bomba, relógios de rota e registros de fila operária.
 
 ## Terminal
 
-PT LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+KIT CATEDRAL DE BOMBAS: visor de densidade, sulco de bomba de salmoura, nota de margem aceita, relógio de retenção de rota, livro de fila operária, chave de partida de bomba, marca de passarela inundada.
 
 ## Audio
 
-PT LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+As bombas moviam água. A sala guardava registros melhores que o escritório.
 
 ## Field Note
 
-PT LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Nota de marauder: fotografe o visor antes de drenar o bolso. Quando a salmoura se move, a linha de margem fica mais plana.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/pt_BR. -->

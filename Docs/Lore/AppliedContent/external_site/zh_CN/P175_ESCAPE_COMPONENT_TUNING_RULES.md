@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "逃离组件调校规则"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# 逃离组件调校规则
 
-CN LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+逃离组件调校规则为 HECTON-8 的制作和结局提供同一套语法。玩家不是在刷任意稀有件，而是在组装一份物理、导航和法律论证，说明为什么来自深渊的某物应该被海面以上接受。
 
 ## Scanner
 
-CN LOC HOLD: Escape parts should force depth and evidence, not grind.
+逃离组件应当要求深度和证据，而不是刷材料。离开 HECTON-8 是一条证明链，不是一件昂贵制作物。
 
 ## Terminal
 
-CN LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+逃离组件 / relay spine 证明联络 / clamp rings 证明压力评级 / guidance core 证明时机 / ascent charge 证明能量 / legal handshake 决定谁回应 / evidence payload 改变后果和保管。
 
 ## Audio
 
-CN LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+离开不是一次制作，而是一条证明链。
 
 ## Field Note
 
-CN LOC HOLD: Every ascent component must have a physical and legal reason.
+每个上升组件都需要物理理由和法律理由：联络、评级、时机、能量、接收端、载荷。缺一个不该只是锁按钮，而应该改变结局。
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/zh_CN. -->

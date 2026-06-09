@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Photic Shelf Survival Act"
+title: "Porte du plateau photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Photic Shelf Survival Act
+# Porte du plateau photique
 
-FR LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+Le plateau donne à la route son vocabulaire de travail: pompe, joint, coupe, ping, patch, recharge. Chaque action est petite et physique. Une porte s'ouvre parce qu'un collier tient, pas parce que la colonie veut être explorée.
 
-## Scanner
-
-FR LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-FR LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-FR LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-FR LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Le résidu Atlas entre ici comme indice de maintenance, pas comme réponse finale. Un panneau réparé, un film conducteur ou un patch de service mal routé peuvent aider l'opérateur à survivre tout en prouvant que le système a déjà touché la route. La clarté rend le travail lisible; la dette le rend urgent.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/fr_FR. -->

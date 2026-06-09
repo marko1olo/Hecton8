@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "توقيعات مجلس صمت الأصول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# توقيعات مجلس صمت الأصول
 
-AR LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+تقف سجلات Asset Silence Board بين سجل العمال والتقرير العام. لا تصنع الخسارة؛ بل تقرر أي أجزاء من الخسارة تستطيع السفر. يمكن لتصويت redaction أن يبقي load class وlocker count وclaim value ظاهرة بينما يصمت أسماء الشهود ومرفقات المسار. لذلك تنتمي هذه التوقيعات إلى الخزائن وبطاقات redaction وpacket mute flags. توقيع Brigit Senn لا يجعلها قائدا خفيا. إنه يحدد المكتب السفلي الذي حول حقائق بشرية قابلة للاستعادة إلى فئات asset-risk بعد relay review.
 
 ## Scanner
 
-AR LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+تمت استعادة بطاقة redaction vote: حقل اسم العامل صامت، فئة asset-risk ما زالت ظاهرة، وعدد الخزائن محفوظ. رؤية الحزمة تتطلب custody approval.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: move witness-name attachment to asset-risk silence category after relay review. Retain load class, locker count and claim value. Release requires custody owner approval.
 
 ## Audio
 
-AR LOC HOLD: Erase the route and the body becomes cargo math.
+أبقى المجلس عدد الصناديق. قصوا الأسماء.
 
 ## Field Note
 
-AR LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+اختفى الاسم وبقي وسم الخزانة. صوت Asset Silence Board على رؤية الحزمة، لا على وجود العامل.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ar_SA. -->

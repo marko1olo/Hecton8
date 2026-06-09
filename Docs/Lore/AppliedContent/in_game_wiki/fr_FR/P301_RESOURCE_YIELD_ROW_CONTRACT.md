@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Resource Yield Data Boundary"
+title: "Frontière de données du rendement de ressource"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Resource Yield Data Boundary
+# Frontière de données du rendement de ressource
 
-FR LOC HOLD: Resource Yield Data Boundary keeps resource value table-owned while pressure history and custody remain visible in prose.
+Cette frontière empêche les prix des ressources de devenir du lore flottant. Sur HECTON-8, un minerai n'a pas la même valeur à chaque profondeur : historique de pression, garde de route et épuisement décident s'il s'agit de monnaie, de preuve ou de ballast contaminé.
 
 ## Scanner
 
-FR LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+La ligne de rendement rejette la valeur libre : classe, bande de pression, garde, épuisement et hash doivent concorder.
 
 ## Terminal
 
-FR LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT : aucun nombre accepté sans packet hash, classe de ressource, bande de pression, grade de garde, courbe de rareté et comportement d'épuisement. Un échantillon sans historique de pression est une preuve, pas une valeur.
 
 ## Audio
 
-FR LOC HOLD: A sample without pressure history is not a value.
+Un échantillon sans historique de pression n'est pas une valeur.
 
 ## Field Note
 
-FR LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+Les nombres de rendement restent provisoires jusqu'à accord entre bande de pression, grade de garde, comportement d'épuisement et packet hash.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/fr_FR. -->

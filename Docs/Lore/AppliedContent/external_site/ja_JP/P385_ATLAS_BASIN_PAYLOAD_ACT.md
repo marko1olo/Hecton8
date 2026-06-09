@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas盆地payloadゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Basin Payload Act
+# Atlas盆地payloadゲート
 
-JA LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Atlas盆地では、ルートは何が起きたかを問うのをやめ、使えるパケットを誰が受け取るかを問う。証拠の鎖、盆地ベクトル、salvageクラス、proof hashをすべて無傷で残すことはできない。受領者を選ぶか、拒むか、ローカル保持に置き換える必要がある。
 
-## Scanner
-
-JA LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-JA LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-JA LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-JA LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+これが最後の圧力だ。犯罪現場を清掃するルートはない。座標売却は支払い、盆地をさらす。切断は帰路を切り、有用な構造を殺す。検疫は保存し、保持する。公開台帳は地図なしで公開する。blind returnは全員を拒み、パケット喪失を賭ける。キャンペーンは慰めではなく保管で終わる。
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ja_JP. -->

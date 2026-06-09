@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Конфликт signoff и witness"
+title: "Конфликт свидетеля и подписи"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Конфликт signoff и witness
+# Конфликт свидетеля и подписи
 
-Конфликт signoff и witness определяет противоречие доказательств за public Deep Reach report.
+Конфликт свидетеля и подписи определяет противоречие за публичным отчетом Deep Reach. Компания может утверждать, что океан сделал спасение невозможным; она не может безопасно утверждать, что никто не видел конфликта до удержания полномочия на выпуск. Эта статья превращает evidence комнаты в сюжетное давление: лог двери, хеш свидетеля и поврежденные маршрутные часы заставляют официальную подпись читаться не как неопределенность, а как контролируемое умолчание. Она сохраняет катастрофу физической, но доказывает, что легенда прикрытия была человеческой.
 
 ## Scanner
 
-Signoff records должны противоречить worker witness hashes и поврежденному evacuation hardware.
+Подпись утверждает, что в обзоре эвакуации не было живого противоречия. Хеши свидетелей говорят, что противоречие стояло в комнате.
 
 ## Terminal
 
-CONFLICT: Varnek margin accepted до закрытия field alarms; Arendt weighting preserved Atlas lanes; Haldane hold задержал external evacuation; worker witness hash сообщает, что pump access все еще occupied.
+WITNESS CONFLICT: публичная подпись отмечает приливный отказ как единственную причину. Локальный хеш свидетеля помещает юриста эвакуации, Atlas Safety и route operations в комнату обзора до удержания выпуска. Сверить лог двери, штамп имени и сломанные маршрутные часы.
 
 ## Audio
 
-Подписи сходятся. Тела - нет.
+В отчете сказано, что никто не мог знать. Лог двери не согласен.
 
 ## Field Note
 
-Противоречие сильнее villain confession, потому что игрок видит, как room и stamp не сходятся.
+Подпись чиста только до тех пор, пока комната не вспоминает, кто стоял рядом.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/ru_RU. -->

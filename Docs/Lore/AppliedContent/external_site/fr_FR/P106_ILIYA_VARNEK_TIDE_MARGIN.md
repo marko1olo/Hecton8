@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek : marge de marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek : marge de marée
 
-FR LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+L'article Iliya Varnek : marge de marée est l'un des premiers points où HECTON-8 montre clairement la responsabilité Deep Reach. Il évite la version facile du mal d'entreprise. Varnek n'a pas besoin d'appuyer sur un bouton d'inondation. Il signe une interprétation du risque.
 
-## Scanner
+En 2147, le modèle de la Grande Marée passait encore en moyenne. C'est le mot dangereux. Le comportement moyen gardait le calendrier de production en vie tandis que l'empilement extrême restait dans l'exposition ouvrière : fenêtres de marée Aegir, rebond de banquise, trafic de routes pressurisées, incertitude de compensation Atlas. Une route peut être statistiquement acceptable et mortelle pour ceux qui rencontrent la queue de la courbe.
 
-FR LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-FR LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-FR LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-FR LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Pour le joueur, cette preuve transforme la catastrophe en chaîne de décisions plutôt qu'en accident. La note de Varnek n'est pas un aveu. C'est un document qui rend la faute lisible : l'incertitude était connue, dévalorisée et transmise vers le bas. L'horreur est bureaucratique sans devenir sèche. La marge a été rendue assez petite pour que des ouvriers meurent à l'intérieur.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/fr_FR. -->

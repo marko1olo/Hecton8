@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Ланцюг походження Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Ланцюг походження Deep Reach
 
-UA LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+Ланцюг походження не дає Deep Reach стати одним злим офісом. Це маршрутна економіка в багатьох юридичних шкірах, здатна виглядати місцевою в кожній юрисдикції та відсутньою в точці удару. HECTON-8 використовує цю історію, щоб корпоративна влада відчувалася старою, нудною й смертельною: машиною, що може вбити колонію і жодного разу не прозвучати як лиходій.
 
 ## Scanner
 
-UA LOC HOLD: Old company. New disaster. Same charter language.
+Сплетіння хартій: слова Centauri, гроші Sol, тіла Аегіра.
 
 ## Terminal
 
-UA LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach зібрала пункти автономії, сумісні з Centauri, страхове фінансування Sol Core, логістичний борг Barnard і пізні оболонки проєкту Aegir. Atlas був затверджений як маршрутна інфраструктура ще до того, як став свідком масової смерті.
 
 ## Audio
 
-UA LOC HOLD: They brought the empire in filing cabinets.
+Вони привезли імперію в картотечних шафах і назвали це розширенням.
 
 ## Field Note
 
-UA LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach почалася не з катастрофи. Тому вона її пережила.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/uk_UA. -->

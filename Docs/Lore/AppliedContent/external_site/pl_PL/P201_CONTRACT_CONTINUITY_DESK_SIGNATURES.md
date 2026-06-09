@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Contract Continuity Desk Signatures"
+title: "Podpisy biurka ciągłości kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Contract Continuity Desk Signatures
+# Podpisy biurka ciągłości kontraktu
 
-PL LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Podpisy biurka ciągłości kontraktu odsłaniają papierową warstwę pod początkowym kontraktem HECTON-8. Artykuł daje systemowi kontraktów nazwiska, stemple i funkcje, aby gracz zobaczył, jak wyprawa odzyskowa staje się targiem o depozyt. Biurko Eddy Malk nie musi znać całej zbrodni kolonii, by uczynić teraźniejszość niebezpieczną. Wystarczy, że połączy zastawy, dług tlenowy i klauzule odzysku we właściwej kolejności. Kiedy operator podpisuje, ocean nie jest już jedynym ciśnieniem poza kadłubem; kontrakt także zaciska.
 
 ## Scanner
 
-PL LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Początkowa pułapka kontraktu powstaje z niższych podpisów: połączenia zastawów, aneksu tlenowego, ryzyka czarnej listy i depozytu ładunku.
 
 ## Terminal
 
-PL LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Połączyć warunki zastawu Aegir Reclamation Pool z klauzulami odzysku Black Keel. Dołączyć aneks kredytu tlenowego, zawiadomienie o ryzyku czarnej listy i zatrzymanie depozytu ładunku. Eskalacja niewymagana, jeśli operator akceptuje.
 
 ## Audio
 
-PL LOC HOLD: Nobody says trap. They say continuity.
+Podpis może być drzwiami ciśnieniowymi, jeśli każda klauzula po nim się zamyka.
 
 ## Field Note
 
-PL LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Nikt nie stempluje pułapki. Stemplują ciągłość.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/pl_PL. -->

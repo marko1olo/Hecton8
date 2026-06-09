@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Tool Certification Board"
+title: "Tablero de certificación de herramientas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Tool Certification Board
+# Tablero de certificación de herramientas
 
-ES LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+El tablero de certificación de herramientas registra una cultura que confiaba más en marcas que en discursos. Cabezal de corte reindexado. Cartucho de sellante pesado. Guante de presión con doble firma. Llave de bomba tarde. Kit de descenso retenido. Cada línea es seca porque el procedimiento seco mantenía viva a la gente donde una herramienta casi correcta podía matar en silencio.
 
-## Scanner
+El tablero parece ritual porque el trabajo peligroso repite los mismos gestos hasta darle un lugar al miedo. Pesar, comprobar, firmar, devolver, volver a comprobar. La segunda firma no era decoración; hacía responsable la confianza. Si un guante fallaba bajo presión, la marca decía quién lo vio, quién lo apuró y quién intentó enviarlo abajo de todos modos.
 
-ES LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-ES LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-ES LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-ES LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Es fe obrera sin misticismo. La colonia no rezaba sobre cortadores. Hacía que otra persona cansada mirara el filo, el sello, el peso y la devolución de la llave. La supervivencia se volvió comunitaria porque cada herramienta llevaba el nombre de alguien más antes de tocar la ruta.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/es_ES. -->

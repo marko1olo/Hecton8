@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistentie van het plunderaarsdossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistentie van het plunderaarsdossier
 
-NL LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+Het plunderaarsdossier is het campagnegeheugen dat tussen salvagepogingen overleeft. Het bewaart eindes, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en de gevolgen van wat de speler al publiceerde of verborg. Het neemt geen pakkracht, veilige druk, opgeruimde kamers of vriendelijkere oceaan mee. Kennis verandert beslissingen. Het maakt de diepte niet ongevaarlijk.
 
 ## Scanner
 
-NL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Dossierspoel. Je behoudt kennis, geen superkrachten.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIERPERSISTENTIE: eindregistraties, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en gevolgen van het publieke grootboek blijven bewaard. Uitrustingskracht, wereldwaarheid en lokale drukstatus resetten per seed.
 
 ## Audio
 
-NL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+De volgende run begint met littekens in het bestand, niet met spieren in het pak.
 
 ## Field Note
 
-NL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Het dossier onthoudt bewijs en waarschuwingen; het maakt druk niet vergevingsgezind.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/nl_NL. -->

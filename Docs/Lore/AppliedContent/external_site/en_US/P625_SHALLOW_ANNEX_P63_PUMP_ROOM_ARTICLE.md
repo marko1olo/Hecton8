@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Shallow Annex P-63 Pump Room
 
-Shallow Annex P-63 is the first room that can become useful again. The pump room is not a reward chamber. It is a tired machine: manual bilge crank, stuck valve throat, cold-sealant clamp scar and a field fabricator that will only honor low-risk repair work until water drops below the intake line. The old terminal calls the task minor water intrusion. The walls say otherwise.
+Shallow Annex P-63 is the first room that can become useful again. The pump room is not a reward chamber. It is a machine with tired parts: a manual bilge crank, a stuck valve throat, a cold-sealant clamp scar and a field fabricator that will only honor low-risk repair work until water drops below the intake line.
 
-## Scanner
-
-PUMP-ROOM INTAKE // Blocked but serviceable. Manual bilge route available. Drain first, cut second.
-
-## Terminal
-
-P-63 MAINTENANCE // Minor water intrusion logged. Manual bilge accepted. Field fabricator locked to gasket, clamp and contact-cutter queue until intake clears.
-
-## Audio
-
-Crank the pump until the floor answers. If you cut first, you flood the tool locker.
-
-## Field Note
-
-A dry corner is not home. It is ten minutes of thinking time. Take it.
+The room teaches the first rule of HECTON-8 salvage: air comes from repair, not luck. A working pump clears the ankle-deep flood, exposes old tool lockers and gives the player a physical reason to trust the annex for a few more minutes. The terminal still calls the task minor water intrusion. The walls say otherwise.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/en_US. -->

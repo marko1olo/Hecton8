@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Ventana celeste de la escalera lunar de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Ventana celeste de la escalera lunar de Aegir
 
-The Aegir moon ladder is route grammar, not decoration.
+Las lunas de Aegir no son decoración de calendario. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 y Mute marcan carriles de tráfico, sombras de relé, tiempos de marea, riesgo de blackout y coste de transfer. El jugador lee el cielo como presión de ruta, no como matemática orbital exacta.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+El jugador no necesita constantes orbitales exactas para usar el cielo. Una luna detrás del clima todavía puede significar mala ruta de relé. Una ventana brillante puede significar un paquete limpio. Una conjunción puede significar carga de marea, no maravilla. La escalera vuelve legible el cielo sin convertirlo en clase.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/es_ES. -->

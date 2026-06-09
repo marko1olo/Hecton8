@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Geruchtengeheugen van het dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Geruchtengeheugen van het dossier
 
-NL LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+Het Marauder-dossier is geen opslagkast. Het is het deel van het werk dat een mislukte claim overleeft: namen half gehoord via relais, contractclausules die verkeerd roken, al blootgelegde eindfamilies, waarschuwingen betaald met iemands laatste minuten. Een nieuwe run moet beginnen met betere argwaan, niet met een betere onderzeeër.
 
 ## Scanner
 
-NL LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+DOSSIERGEHEUGEN // Geruchten, waarschuwingen, contractcontext en eindrecords blijven. Romp, zuurstof, gereedschap, lading en kaart niet.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+PERSISTENTIEREGEL: het dossier mag geruchtenfamilies, bewijscategorieën, eindmarkeringen en routewaarschuwingen tussen campagnes bewaren. Het draagt geen uitrusting, middelen, seed-geografie of eigendom van waarheid over.
 
 ## Audio
 
-NL LOC HOLD: Your file remembers what your hands cannot carry.
+Het dossier onthoudt wat je handen niet kunnen dragen.
 
 ## Field Note
 
-NL LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Laat kennis blijven. Laat druk blijven.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/nl_NL. -->

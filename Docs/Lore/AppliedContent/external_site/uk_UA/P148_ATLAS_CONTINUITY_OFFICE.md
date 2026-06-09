@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Continuity Office"
+title: "Офіс неперервності Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Continuity Office
+# Офіс неперервності Atlas
 
-UK LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+Офіс існує тому, що ATLAS надто цінний, щоб його покинути, і надто небезпечний, щоб прямо визнати. Якщо ATLAS лише інструмент, Deep Reach може ним користуватися. Якщо він свідок, у Deep Reach проблема. Якщо він пацієнт, у колонії є злочин.
 
-## Scanner
-
-UK LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-UK LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-UK LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-UK LOC HOLD: A memo can kill without using the word kill.
+Тому офіс пише процедури. Турботу він називає обслуговуванням, страх - аномалією, пам'ять - неперервністю, відмову - перевіркою безпеки. Це не чиста відповідь. Це місце, де інтелект можна тримати увімкненим, поки всі моральні категорії навколо нього лишаються нерозв'язаними.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/uk_UA. -->

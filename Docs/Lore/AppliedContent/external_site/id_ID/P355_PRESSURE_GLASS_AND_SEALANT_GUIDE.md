@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Panduan Kaca Tekanan dan Sealant
 
-Panduan Kaca Tekanan dan Sealant menambatkan horor biomekanis HECTON-8 pada logika perbaikan: Atlas mengikuti retakan, kabel, biofilms, dan pressure scars karena sistem rusak sudah menyediakan jalan.
+Kaca tekanan dimulai sebagai material koloni praktis: cukup jernih untuk viewport, cukup kuat untuk pintu tekanan, dan cukup murah untuk dicor ke sambungan layanan. Bertahun-tahun di bawah air mengubah perannya. Pasang menulis stres ke panel. Mineral mengaburkan tepi. Biofilm mempelajari retakan. Ketika kimia Atlas tiba, ia tidak perlu menciptakan rute melalui koloni. Kaca pecah sudah menggambarnya.
 
-## Scanner
-
-Retakan pressure-glass disegel oleh kimia Atlas. Lens stock aman hanya jika seal map tetap utuh.
-
-## Terminal
-
-FIELD GUIDE: pressure glass merekam tide stress lama. Atlas sealant mengikuti retakan itu karena retakan sudah menggambarkan garis kegagalan sistem.
-
-## Audio
-
-Jaringan perbaikan membaca retakan seperti kau membaca peta.
-
-## Field Note
-
-Jangan gerinda tepi yang cantik. Ikuti fracture map dan potong dari sisi mati seal.
+Karena itu stok lensa bisa berharga dan berbahaya sekaligus. Potong dari sisi mati seal dan kaca menjadi salvage. Gerinda tepi hidup dan jaringan perbaikan mendapat jalur lebih bersih. Sealant di HECTON-8 bukan sekadar lem. Ia keputusan tentang kegagalan mana yang boleh menutup, mana yang tetap dipetakan, dan mana yang menjadi pintu bagi sesuatu yang masih mencoba memperbaiki tubuh yang salah.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/id_ID. -->

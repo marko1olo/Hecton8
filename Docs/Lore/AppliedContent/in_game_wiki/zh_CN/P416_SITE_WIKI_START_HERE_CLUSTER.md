@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 从这里开始：HECTON-8
 
-起始集群：合同、玩家身份、HECTON-8生存压力，以及Deep Reach叙事中的第一个矛盾。
+从这里开始：HECTON-8以一份salvage contract开场，围绕沉没殖民地、负债Marauder和Deep Reach过分整洁的说法。
 
 ## Scanner
 
-发布导航枢纽：前提、玩家身份、最初限制，以及Deep Reach的第一处谎言。
+公开入口：salvage contract、负债Marauder、损坏capsule、Deep Reach矛盾与第一处Atlas修复痕。
 
 ## Terminal
 
-SITE NAV：合同进入、前Deep Reach专家、负债Marauder、受损舱体、无家庭钩子、第一处Atlas修复痕迹。
+SITE NAV：从合同语言、压力生存、no family hook、no instant rescue、evidence before endings开始。
 
 ## Audio
 
-你是为salvage而来。海洋会让这个动机显得太小。
+第一条记录不是求救，而是一份claim。
 
 ## Field Note
 
-轻剧透导航从这里开始：先讲前提，再讲证据，结局只在玩家赢得入口后出现。
+先读文件。在HECTON-8，谎言能活下来，是因为每句话里都有一点真相。
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/zh_CN. -->

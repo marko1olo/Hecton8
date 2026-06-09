@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ambiguitas Penerima Arsip Publik"
+title: "Konflik Penerima Arsip Publik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,33 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Ambiguitas Penerima Arsip Publik
+# Konflik Penerima Arsip Publik
 
-Dua label penerima pada satu paket HECTON-8 tidak otomatis membuktikan pemalsuan. Arsip publik memisahkan pita alamat, node relai pertama, kantor karantina, meja klaim, dan arsip hukum. Jalur itu dapat saling bertentangan tanpa menjadi aman. Kesalahan berbahaya adalah mempercayai label paling bersih. Deep Reach sering menjaga penerima publik tetap sempit sambil memindahkan kustodi berguna ke jalur lain. Fragmen Atlas dapat membalik pola: tanda terima relai tampak seperti kepemilikan padahal hanya membuktikan transit.
+Penerima dalam paket-paket ini bukan satu orang. Itu adalah kolom yang disalin pada setiap serah-terima. Satu paket arsip HECTON-8 dapat membawa pita alamat asli untuk Deep Reach Claims, cap relai Atlas, penahanan karantina dari aneks dangkal, nomor meja klaim Keelmark, dan baris pengarsipan publik. Tidak satu pun kolom itu sendiri membuktikan siapa yang memegang bukti, siapa yang mengubahnya, atau siapa yang membayar agar bukti itu terlihat. Di cermin publik, penerima yang rapi sering kali hanya kantor yang boleh menjawab surat, bukan tempat paket itu bergerak secara fisik.
+
+Baca konflik penerima sebagai masalah rute. Periksa urutan segel, waktu hash, garis air pada sarung, bekas alat pada baki, dan kantor mana yang masih punya daya saat unggahan terjadi. Jika pita alamat menyebut satu kantor dan tanda terima relai menyebut kantor lain, jangan sebut paket itu palsu sampai tanda kustodi fisik memutus urutannya. Jangan pula membebaskan siapa pun hanya karena kolom publik tampak rapi. Bukti yang berguna berada di antara nama kantor dan jejak yang ditinggalkan oleh penanganan.
 
 ## Scanner
 
-AMBIGUITAS PENERIMA // Pita alamat, tanda terima relai, tahanan karantina, ringkasan klaim, dan arsip tidak menyebut kantor yang sama. Keyakinan: parsial.
+KONFLIK PENERIMA // Terlihat: pita alamat, simpul relai, tahanan karantina, meja klaim, baris arsip. Dibutuhkan: urutan segel, waktu hash, bukti objek. Keyakinan: sebagian.
 
 ## Terminal
 
-AMBIGUITAS PENERIMA
-Jangan gabungkan alamat, relai, karantina, klaim, dan arsip menjadi satu pemilik.
-Ringkasan publik bisa menyebut kantor yang boleh menjawab. Rute kustodi bisa menunjukkan kantor yang benar-benar memegang paket.
-Tahan penerima final sampai bukti rute ada.
+KONFLIK PENERIMA ARSIP PUBLIK
+Jangan gabungkan kolom penerima.
+Pita alamat = tujuan yang dimaksud.
+Tanda terima relai = transit.
+Tahanan karantina = kendali.
+Meja klaim = pembayaran dan respons hukum.
+Baris arsip = pemilik publikasi.
+Tindakan: tahan penerima akhir sampai urutan kustodi fisik cocok dengan hash paket.
 
 ## Audio
 
-Label penerima yang bersih bukan seluruh rute. Ikuti tubuh paket, bukan nama kantor yang dipoles untuk surat publik.
+Lima kantor bisa menyentuh satu paket. Nama di indeks hanya kantor yang menjawab lebih dulu.
 
 ## Field Note
 
-Kolom penerima itu sopan. Jejak kustodi itu fisik. Jika label tersenyum dan rute berdarah, ikuti rute.
+Mulai dari bekas basah, bukan kop surat. Kantor bisa mengganti nama paket; mereka tidak bisa memindahkan garis karat di baki.
 
 <!-- In-Game Wiki; generated from P500_PUBLIC_ARCHIVE_RECEIVER_AMBIGUITY_BRIDGE/id_ID. -->

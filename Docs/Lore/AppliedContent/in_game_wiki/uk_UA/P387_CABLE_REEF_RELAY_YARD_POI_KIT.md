@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Набір доказів релейного двору кабельного рифу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Cable Reef Relay Yard POI Kit
+# Набір доказів релейного двору кабельного рифу
 
-UK LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+Релейний двір кабельного рифу - ремонтний майданчик, який доріс до власного режиму відмови. Провідна плівка, оболонки кабелів і акустичні гнізда можуть повернути сигнал, але той самий міст відправить маршрут у стару сервісну гілку, якщо оператор ріже без скану.
 
 ## Scanner
 
-UK LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+Набір доказів POI: релейний двір проводить сигнал через живу плівку-міст і збиває маршрут через пошкоджену пам'ять кабелю.
 
 ## Terminal
 
-UK LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+НАБІР РЕЛЕЙНОГО ДВОРУ: гніздо акустичного хребта, міст біоплівки, попередження про різання, відповідь пінгера, сервісна мітка Atlas, здерта ізоляція, релейна розвилка, карта мертвої гілки.
 
 ## Audio
 
-UK LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Не здирай увесь наріст. Частина несе твій сигнал.
 
 ## Field Note
 
-UK LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Нотатка мародера: якщо плівка гуде під зондом, познач її до різання. Гарний кабель часто мертвий кабель.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/uk_UA. -->

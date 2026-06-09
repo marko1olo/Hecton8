@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: P-63 Fabricator Authority Limits"
+title: "P-63-Fabrikator-Autoritätsgrenzen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: P-63 Fabricator Authority Limits
+# P-63-Fabrikator-Autoritätsgrenzen
 
-DE LOC HOLD: P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.
+P-63 ist die erste Werkbank, keine Heimkehrmaschine. Sie kann Lecks flicken, Klemmen setzen, Werkzeuge retten und billige Pinger bauen. Aufstiegshülsen, tiefenzertifizierte Dichtungen und Antriebskontakte bleiben gesperrt, bis der Spieler tiefere Materialien, Autoritätsstempel und Druckhistorie bringt. Crafting wird dadurch Beweiskette und Ingenieurarbeit, nicht nur Fortschrittsmenü.
 
 ## Scanner
 
-DE LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 akzeptiert Dichtungen, Klemmen, Pinger und Cutter-Kontakte, verweigert aber aufstiegszertifizierte Teile ohne tieferen Nachweis.
 
 ## Terminal
 
-DE LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair verlangt pressure certificate, entlüftungsbehandeltes Material oder route authority stamp.
 
 ## Audio
 
-DE LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+Die Maschine kann deinen Morgen retten. Sie kann dir den Orbit nicht vergeben.
 
 ## Field Note
 
-DE LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+Das ist keine willkürliche Crafting-Mauer. Die Maschine baut keine Fluchtteile ohne Drucknachweis.
 
 <!-- In-Game Wiki; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/de_DE. -->

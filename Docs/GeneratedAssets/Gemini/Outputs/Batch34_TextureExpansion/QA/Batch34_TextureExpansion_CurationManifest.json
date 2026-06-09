@@ -632,11 +632,11 @@
         "lossy_service_source"
       ],
       "maps": {
-        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_NormalGL.jpg",
-        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_Height.jpg",
-        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3409_limestone_cave_ceiling_mineral_drip/TX_B34_3409_limestone_cave_ceiling_mineral_drip_MRAO_Provisional.png"
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3409-R1_limestone_ceiling_jpeg_timestamp/TX_B34-3409-R1_limestone_ceiling_jpeg_timestamp_MRAO_Provisional.png"
       },
-      "downloadSource": "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606080323.jpeg",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Limestone_cave_ceiling_material_\u2026_202606082255.jpeg",
       "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3409_limestone_cave_ceiling_mineral_drip_Original.jpeg",
       "originalBytes": 1134465,
       "sourceWidth": 1024,
@@ -670,7 +670,7 @@
         "bandTB": 43.7359
       },
       "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3409_limestone_cave_ceiling_mineral_drip_Tile2x2.png",
-      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3409_limestone_cave_ceiling_mineral_drip_BaseColorCandidate.jpg",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg",
       "baseColorCandidateBytes": 417916,
       "luminance": {
         "lumMean": 142.3584,
@@ -680,10 +680,15 @@
         "whitePct": 0.0007
       },
       "verdict": "REVIEW_REQUIRED",
-      "curationStatus": "REGEN_RECOMMENDED",
+      "curationStatus": "CURATED_READY_STATIC",
       "targetRole": "Reference only for limestone drip direction.",
-      "integrationNote": "Visible block repeat and vertical landmarking; request regenerated seamless cave mineral tile if needed.",
-      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3409_limestone_cave_ceiling_mineral_drip_BaseColorCandidate.jpg"
+      "integrationNote": "Selected targeted regen candidate: SELECTED_REGEN_SEAMLESS_SOURCE. Best limestone regen result: lower landmarking than the named PNG and acceptable static 2x2 repeat for cave-ceiling material handoff.",
+      "regenTargetId": "B34-3409-R1",
+      "regenTargetVariant": "limestone_ceiling_jpeg_timestamp",
+      "regenTargetDecision": "SELECTED_REGEN_SEAMLESS_SOURCE",
+      "regenTargetManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json",
+      "regenBroadSeamlessAccepted": true,
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3409-R1_limestone_ceiling_jpeg_timestamp.jpeg"
     },
     {
       "id": "B34-3410",
@@ -1190,11 +1195,11 @@
         "lossy_service_source"
       ],
       "maps": {
-        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_NormalGL.jpg",
-        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_Height.jpg",
-        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Derived/B34_3417_amber_emergency_lens_material/TX_B34_3417_amber_emergency_lens_material_MRAO_Provisional.png"
+        "NormalGL": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_NormalGL.jpg",
+        "Height": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_Height.jpg",
+        "MRAO_Provisional_RGBA_Metal_Rough_AO_Emission": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Derived/B34-3417-R1_amber_lens_png_named/TX_B34-3417-R1_amber_lens_png_named_MRAO_Provisional.png"
       },
-      "downloadSource": "C:\\Users\\danat\\Downloads\\Amber_emergency_light_lens_material_202606080322.jpeg",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\B34-3417-R1_Amber_Emergency_Lens_Material.png",
       "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3417_amber_emergency_lens_material_Original.jpeg",
       "originalBytes": 918756,
       "sourceWidth": 1024,
@@ -1222,7 +1227,7 @@
         "bandTB": 34.6554
       },
       "tilePreviewPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/TilePreviews/B34_3417_amber_emergency_lens_material_Tile2x2.png",
-      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3417_amber_emergency_lens_material_BaseColorCandidate.jpg",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/SourceCleaned/B34-3417-R1_amber_lens_png_named_center_crop.png",
       "baseColorCandidateBytes": 313540,
       "luminance": {
         "lumMean": 90.7599,
@@ -1232,10 +1237,15 @@
         "whitePct": 0.0
       },
       "verdict": "REVIEW_REQUIRED",
-      "curationStatus": "LOCAL_ONLY_OR_CENTER_CROP",
+      "curationStatus": "CURATED_READY_STATIC",
       "targetRole": "Amber lens source after center crop or fixed lamp panel use.",
-      "integrationNote": "Hard border tiles in 2x2; crop central ribbed lens before using as repeat material.",
-      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/LocalOnly/TX_B34_3417_amber_emergency_lens_material_BaseColorCandidate.jpg"
+      "integrationNote": "Selected targeted regen candidate: SELECTED_CENTER_CROP_SOURCE. Best amber lens source after cropping away hard frame. Use as lamp/lens material source, not broad seamless terrain.",
+      "regenTargetId": "B34-3417-R1",
+      "regenTargetVariant": "amber_lens_png_named",
+      "regenTargetDecision": "SELECTED_CENTER_CROP_SOURCE",
+      "regenTargetManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json",
+      "regenBroadSeamlessAccepted": false,
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3417-R1_amber_lens_png_named_center_crop.png"
     },
     {
       "id": "B34-3418",
@@ -1260,7 +1270,7 @@
         "lossy_service_source"
       ],
       "maps": {},
-      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_viewport_glass_202606080322.jpeg",
+      "downloadSource": "C:\\Users\\danat\\Downloads\\Decal_atlas_for_viewport_glass_202606082255.jpeg",
       "originalPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Originals/B34_3418_thick_viewport_glass_edge_decal_atlas_Original.jpeg",
       "originalBytes": 819052,
       "sourceWidth": 1024,
@@ -1284,7 +1294,7 @@
         "foregroundEdgePct": 60.8852,
         "edgeIslandRisk": true
       },
-      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/SourceCompressed/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_BaseColorCandidate.jpg",
+      "baseColorCandidatePath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/Originals/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg",
       "baseColorCandidateBytes": 271127,
       "luminance": {
         "lumMean": 99.2506,
@@ -1294,10 +1304,15 @@
         "whitePct": 0.0018
       },
       "verdict": "REVIEW_REQUIRED",
-      "curationStatus": "REGEN_OR_MANUAL_MATTE",
+      "curationStatus": "CURATED_READY_ALPHA_SOURCE",
       "targetRole": "Viewport glass wear decal reference only until background is matted.",
-      "integrationNote": "Baked checkerboard/removable background risk; do not import as alpha decal directly.",
-      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/NeedsWork/TX_B34_3418_thick_viewport_glass_edge_decal_atlas_BaseColorCandidate.jpg"
+      "integrationNote": "Selected targeted regen candidate: SELECTED_REGEN_ALPHA_SOURCE. Best targeted regen result: isolated decal islands, clean neutral matte, no edge contact. Use for alpha extraction/matte cleanup route.",
+      "regenTargetId": "B34-3418-R1",
+      "regenTargetVariant": "viewport_glass_jpeg_timestamp",
+      "regenTargetDecision": "SELECTED_REGEN_ALPHA_SOURCE",
+      "regenTargetManifest": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json",
+      "regenBroadSeamlessAccepted": false,
+      "curatedBaseColorPath": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/Curated/ReadyStatic/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg"
     },
     {
       "id": "B34-3419",

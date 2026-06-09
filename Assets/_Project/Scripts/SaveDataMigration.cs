@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton.Localization;
 using Hecton8.Narrative;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -598,6 +600,7 @@ namespace Hecton8.SaveSystem
             changed |= EnsureResourceScarcity(ref data.resourceScarcity, steps);
             changed |= EnsureEnvironmentalStrain(ref data.environmentalStrain, steps);
             changed |= EnsureEcosystemState(ref data.ecosystemState, steps);
+            changed |= EnsureProceduralTerrainIdentity(ref data.proceduralTerrainIdentity, steps);
             changed |= EnsureExternalScavengerSites(ref data.externalScavengerSites, steps);
             changed |= EnsureVoxelDeltaPersistence(ref data.voxelDeltaPersistence, steps);
             changed |= EnsureLoreSystems(ref data, sourceVersion, steps);
@@ -605,6 +608,7 @@ namespace Hecton8.SaveSystem
             changed |= EnsureAtlas6Liability(data, sourceVersion, steps);
             changed |= EnsurePlayerExpression(ref data, steps);
             changed |= EnsurePerformanceSettings(ref data, sourceVersion, steps);
+            changed |= EnsureCelestialLightPhase(data, sourceVersion, steps);
 
             if (data.version != SaveData.CurrentVersion)
             {
@@ -1179,6 +1183,96 @@ namespace Hecton8.SaveSystem
                 steps.Add("ecosystem infected severity repaired");
 
             return changed;
+        }
+
+        private static bool EnsureProceduralTerrainIdentity(
+            ref ProceduralTerrainIdentityDTO dto,
+            List<string> steps)
+        {
+            ProceduralTerrainIdentityDTO safe = dto;
+            safe.worldGenerationVersionId = math.max(0, safe.worldGenerationVersionId);
+            safe.macroChunkSizeMeters = math.isfinite(safe.macroChunkSizeMeters)
+                ? math.max(0f, safe.macroChunkSizeMeters)
+                : 0f;
+            safe.selectedWaterLevelY =
+                math.isfinite(safe.selectedWaterLevelY) &&
+                math.abs(safe.selectedWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
+                    ? safe.selectedWaterLevelY
+                    : 0f;
+            safe.waterCalibrationTravelMeters =
+                math.isfinite(safe.waterCalibrationTravelMeters) &&
+                safe.waterCalibrationTravelMeters > 0f
+                    ? math.min(
+                        safe.waterCalibrationTravelMeters,
+                        WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+                    : 0f;
+
+            if (safe.chunkMinX > safe.chunkMaxX)
+            {
+                int swap = safe.chunkMinX;
+                safe.chunkMinX = safe.chunkMaxX;
+                safe.chunkMaxX = swap;
+            }
+
+            if (safe.chunkMinZ > safe.chunkMaxZ)
+            {
+                int swap = safe.chunkMinZ;
+                safe.chunkMinZ = safe.chunkMaxZ;
+                safe.chunkMaxZ = swap;
+            }
+
+            if (safe.macroArtifactVersion == 0u)
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsMacroGeologyPresent;
+            if (safe.waterCalibrationSourceHash == 0u)
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent;
+            safe.heightCacheRevision = math.max(0, safe.heightCacheRevision);
+            if (safe.terrainProviderFlags == 0u && safe.terrainEntityHash == 0u)
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainProviderIdentityPresent;
+            if (safe.heightCacheRevision == 0 &&
+                safe.terrainEntityHash == 0u &&
+                (safe.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsHeightPayloadPresent) == 0u)
+            {
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainHeightPayloadPresent;
+            }
+
+            if (safe.surfaceMaterialContractVersion == 0u)
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainMaterialContractsPresent;
+            if (safe.mesoDetailContractVersion == 0u ||
+                safe.detailEligibilityContractVersion == 0u ||
+                safe.mesoParamsHash == 0u)
+            {
+                safe.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainMesoContractsPresent;
+            }
+
+            bool changed =
+                safe.authoringSeed != dto.authoringSeed ||
+                safe.runtimeSeed != dto.runtimeSeed ||
+                safe.worldGenerationVersionId != dto.worldGenerationVersionId ||
+                safe.macroArtifactVersion != dto.macroArtifactVersion ||
+                !Approximately(safe.macroChunkSizeMeters, dto.macroChunkSizeMeters) ||
+                safe.chunkMinX != dto.chunkMinX ||
+                safe.chunkMinZ != dto.chunkMinZ ||
+                safe.chunkMaxX != dto.chunkMaxX ||
+                safe.chunkMaxZ != dto.chunkMaxZ ||
+                safe.chunkArtifactRangeHash != dto.chunkArtifactRangeHash ||
+                !Approximately(safe.selectedWaterLevelY, dto.selectedWaterLevelY) ||
+                !Approximately(safe.waterCalibrationTravelMeters, dto.waterCalibrationTravelMeters) ||
+                safe.waterCalibrationSourceHash != dto.waterCalibrationSourceHash ||
+                safe.terrainProviderFlags != dto.terrainProviderFlags ||
+                safe.heightCacheRevision != dto.heightCacheRevision ||
+                safe.terrainEntityHash != dto.terrainEntityHash ||
+                safe.surfaceMaterialContractVersion != dto.surfaceMaterialContractVersion ||
+                safe.mesoDetailContractVersion != dto.mesoDetailContractVersion ||
+                safe.detailEligibilityContractVersion != dto.detailEligibilityContractVersion ||
+                safe.mesoParamsHash != dto.mesoParamsHash ||
+                safe.flags != dto.flags;
+
+            if (!changed)
+                return false;
+
+            dto = safe;
+            steps.Add("procedural terrain identity repaired");
+            return true;
         }
 
         private static bool EnsureExternalScavengerSites(
@@ -2357,6 +2451,27 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("dynamic resolution default repaired");
             }
+
+            return changed;
+        }
+
+        private static bool EnsureCelestialLightPhase(SaveData data, int sourceVersion, List<string> steps)
+        {
+            bool hasPhase = sourceVersion >= SaveData.CelestialLightPhasePersistenceVersion &&
+                            data.celestialLightPhaseSerialized &&
+                            math.isfinite(data.celestialLightTimeOfDay01);
+            float safeTimeOfDay01 = hasPhase
+                ? math.saturate(data.celestialLightTimeOfDay01)
+                : SaveData.CelestialLightTimeOfDayDefault;
+
+            bool changed = data.celestialLightPhaseSerialized != hasPhase ||
+                           !Approximately(data.celestialLightTimeOfDay01, safeTimeOfDay01);
+
+            data.celestialLightPhaseSerialized = hasPhase;
+            data.celestialLightTimeOfDay01 = safeTimeOfDay01;
+
+            if (changed)
+                steps.Add("celestial light phase state repaired");
 
             return changed;
         }

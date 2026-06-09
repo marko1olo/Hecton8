@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Umgang mit Blauschuld-Kassette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Umgang mit Blauschuld-Kassette
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Blaue Schuld wird nicht nützlich, wenn man sie findet. Sie wird nützlich, wenn sie den Zustand behält, der sie wertvoll machte. Eine versiegelte Druckkassette ist Behälter, Warnung und Quittung zugleich; sie verhindert, dass Xenon-Omega-Rückstand, druckgewachsenes Gitter oder kontaminiertes Substrat zu Rauschen, Pulver, Beweisverlust oder einem Signal für das falsche System wird.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+Die erste sichere Entscheidung ist nicht verkaufen, herstellen oder verstecken. Sie heißt stabilisieren. Eine Kassette mit kaltem intaktem Streifen kann bewegt werden. Eine Kassette mit warmer Naht macht den Beweis verdächtig. Schlechte Handhabung verwandelt Auszahlung in Kontamination, Lärm und Routenrisiko.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/de_DE. -->

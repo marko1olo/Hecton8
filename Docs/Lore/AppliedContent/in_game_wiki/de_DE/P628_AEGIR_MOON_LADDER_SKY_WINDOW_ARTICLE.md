@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Himmelsfenster der Aegir-Mondleiter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Himmelsfenster der Aegir-Mondleiter
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Die Aegir-Mondleiter ist Routeninformation. Mondtags zeigen Signalqualität, Gezeitendruck, Relaisschatten und Transferfenster-Risiko, ohne Live-Orbitsimulation zu verlangen.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+MONDTAG // Relaisrauschen fällt. Fenster nutzbar, wenn Sturmband hält.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+EPHEMERIDENNOTIZ // HECTON-8-Fensterband günstig. Kestrel-Relaisschatten steigt. Starkes Paketfenster kurz.
 
 ## Audio
 
-Read the sky, then send.
+Starr den Himmel nicht an. Lies ihn, dann sende.
 
 ## Field Note
 
-Pretty moons are weights.
+Hübsche Monde sind trotzdem Gewichte auf der Leitung.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/de_DE. -->

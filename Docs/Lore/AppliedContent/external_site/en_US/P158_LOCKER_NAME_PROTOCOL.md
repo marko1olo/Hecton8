@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Locker Name Protocol
 
-Locker Name Protocol is personal evidence without melodrama.
+Locker Name Protocol makes personal evidence playable: names survive through objects, wear, route permission, and Marauder annotation.
 
 ## Scanner
 
-A locker is personal without needing a family plot.
+LOCKER TRACE // Name plate, tool wear, pressure tape, correction note, route sticker. Personal evidence without a family plot.
 
 ## Terminal
 
-LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+LOCKER RULE: preserve names Deep Reach removed from payroll. A locker should bind badge, role, route permission, repair habit, and the unfinished thing left inside.
 
 ## Audio
 

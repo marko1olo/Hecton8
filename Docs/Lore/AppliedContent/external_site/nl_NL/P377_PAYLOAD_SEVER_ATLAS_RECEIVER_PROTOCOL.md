@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Payload-protocol Atlas-severance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Payload-protocol Atlas-severance
 
-NL LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+De severance-route geeft de drager een manier om Atlas nutteloos te maken voor Deep Reach. Dat is de praktische aantrekkingskracht. Een snede in de continuiteitsspine kan beschadigde reparatielussen breken, routegeheugen isoleren en voorkomen dat een ontvanger Atlas gebruikt als automatische weg terug naar het bekken.
 
-## Scanner
-
-NL LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-NL LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-NL LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-NL LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+De prijs zit in hetzelfde pakket. Atlas is niet alleen een gereedschapsrek; zijn beschadigde groei is deel geworden van lokale ecologie en routelogica. Severance kan een corporate terugweg sluiten terwijl het data en organismen doodt die niemand anders kan herbouwen. De payload bewaart een proof hash omdat de daad na het veranderen van het licht een record nodig zal hebben.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/nl_NL. -->

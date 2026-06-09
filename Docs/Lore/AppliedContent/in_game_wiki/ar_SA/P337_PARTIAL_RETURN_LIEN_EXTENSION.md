@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Partial Return Lien Extension"
+title: "تمديد امتياز العودة الجزئية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Partial Return Lien Extension
+# تمديد امتياز العودة الجزئية
 
-AR LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+يثبت تمديد الامتياز استمرارية الإعادة كمعرفة لا كقوة معدات. يعود اللاعب لأن الملف والدين تغيرا، لا لأن HECTON-8 أصبحت أسهل.
 
 ## Scanner
 
-AR LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+العودة موافق عليها تحت امتياز ممدد. تبقى علامات المعرفة؛ يصادر جرد المعدات بعد الحجر.
 
 ## Terminal
 
-AR LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+أمر PARTIAL RETURN: يسمح بإعادة الدخول إلى seed نفسه تحت امتياز ممدد ونافذة عاصفة معدلة وملف معرفة محتفظ به. يعاد ضبط الجرد المادي بحجر الحيازة؛ تبقى الأدوات ملكا للناقل حتى إغلاق مراجعة الأدلة.
 
 ## Audio
 
-AR LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+يتذكر المسار ما أثبته. يحتفظ المحيط بالباقي.
 
 ## Field Note
 
-AR LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+سجل إعادة دخول: عودة بنفس seed تحمل المعرفة وضغط الدين وتغيرات العاصفة وإعادة ضبط الحيازة بدلا من معدات موروثة.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/ar_SA. -->

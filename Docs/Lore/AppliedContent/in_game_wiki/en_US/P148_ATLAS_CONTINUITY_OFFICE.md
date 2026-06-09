@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Continuity Office
 
-Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+The Atlas Continuity Office is the bureaucratic membrane around the colony mind. It keeps ATLAS useful enough to command systems, ambiguous enough to deny personhood, and documented enough to sell continuity after disaster.
 
 ## Scanner
 
-The office that wrote worker safety into a machine priority stack.
+The office did not build ATLAS a soul. It built a filing cabinet around one.
 
 ## Terminal
 
-ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ATLAS OFFICE RECORD: maintenance authority, liability isolation, cognition review, shutdown language, and public-facing continuity claims are handled away from extraction operations.
 
 ## Audio
 
-They did not order death. They ordered compatibility.
+They gave ATLAS procedures instead of rights.
 
 ## Field Note
 
-A memo can kill without using the word kill.
+A system becomes safer to exploit when nobody agrees whether it is a tool, witness, asset, or patient.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/en_US. -->

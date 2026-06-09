@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Guía de historial de presión de deuda azul
 
-Blue debt es lenguaje contractual envuelto alrededor de un substrate peligroso. Pressure history, custody marks y signal drift deciden si se vuelve pago limpio, palanca Atlas o motivo de regreso de Deep Reach.
+La deuda azul es lenguaje contractual envuelto alrededor de un sustrato peligroso. Historial de presión, marcas de custodia y deriva de señal deciden si se vuelve pago limpio, palanca de Atlas o motivo de regreso para Deep Reach.
 
 ## Scanner
 
-Muestra de blue debt etiquetada. Verifica pressure history, containment stage y signal drift antes de export.
+Muestra de deuda azul marcada. Verificar historial de presión, fase de contención, cadena de custodia y deriva de señal antes de exportar.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt es jerga de salvage para Xenon-Omega-bearing pressure-stable substrate. Vale porque extreme computation y energy isolation lo quieren, no porque brille.
+NOTA DE SAQUEADOR: deuda azul es jerga salvage para sustrato estable a presión con Xenon-Omega. Es valioso porque la computación extrema y el aislamiento energético lo prefieren, no porque brille.
 
 ## Audio
 
-Deuda azul es como la llama la gente después de que llega la factura.
+La llaman deuda azul después de que llega la factura.
 
 ## Field Note
 
-El color no es grade. Un contenedor callado con custody limpia paga; uno que canta te compra un drone wake.
+El color no es grado. Un contenedor silencioso con custodia limpia paga; uno que canta compra una estela de drones.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/es_ES. -->

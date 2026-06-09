@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "סולם ספירת סופים כוזבים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# סולם ספירת סופים כוזבים
 
-HE LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+סולם הסופים הכוזבים שומר את היקף ה-replay קריא: כמה יציאות, ארבע משפחות לא שלמות גדולות, ואגן Atlas כמרכז הכובד.
 
 ## Scanner
 
-HE LOC HOLD: Four major false families before the deep Atlas resolutions.
+סולם סופים // תשלום material, חזרה חלקית, תפיסה תאגידית או הסגר, דליפת ledger ציבורית. ארבע משפחות כוזבות לפני תשובות Atlas העמוקות.
 
 ## Terminal
 
-HE LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+היקף תיק: סמן הרבה יציאות, אבל קבץ אותן למשפחות ברורות. תשלום material, יציאה/חזרה חלקית, תפיסה/הסגר תאגידי ודליפת ledger ציבורית יושבים מתחת לפתרונות payload באגן Atlas.
 
 ## Audio
 
-HE LOC HOLD: The dossier can mark many exits before it marks an answer.
+התיק יכול לסמן יציאות לפני שהוא מסמן תשובה.
 
 ## Field Note
 
-HE LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+מספיק סופים לתגמל סגנונות. לא מספיק כדי להוזיל אמת.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/he_IL. -->

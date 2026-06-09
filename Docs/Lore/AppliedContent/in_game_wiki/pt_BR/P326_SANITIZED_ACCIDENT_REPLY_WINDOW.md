@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Sanitized Accident Reply Window"
+title: "Janela de Resposta de Acidente Sanitizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Sanitized Accident Reply Window
+# Janela de Resposta de Acidente Sanitizada
 
-PT LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+A Janela de Resposta de Acidente Sanitizada dá à Deep Reach uma voz presente sem tornar a corporação onisciente. A primeira resposta ao vivo não é ameaça. É pior de um jeito mais quieto: uma explicação pública velha empurrada por um canal novo sob pressão. A mensagem ainda diz storm surge, geological collapse e autonomous evacuation failure porque esse script protegeu a Deep Reach uma vez e o sistema o alcança de novo. O jogador deve ouvi-la só depois de encontrar contradição física: horário de porta errado, certificado de bomba ruim, nomes que sobreviveram ao apagamento de payroll, uma sala cujo dano não combina com clima. O timing importa. Se o script chega primeiro, é exposição. Se chega depois da prova molhada, é insulto. Deep Reach não está falando com a sala que o jogador ocupa. Está falando com o relatório seco em que precisava transformar aquela sala.
 
 ## Scanner
 
-PT LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Janela de resposta aberta. Deep Reach repete colapso por tempestade, falha geológica e evacuação autônoma falha como se a sala ainda estivesse seca.
 
 ## Terminal
 
-PT LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure / RESTRICTED ADVICE: não transmitir Atlas continuity não verificada, body-category disputes ou basin-coordinate claims.
 
 ## Audio
 
-PT LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Eles responderam à sala que você deveria encontrar, não à sala onde você está.
 
 ## Field Note
 
-PT LOC HOLD: Place after first physical contradiction, not before.
+Colocar após a primeira contradição física: o jogador deve ter prova molhada antes de ouvir o script público velho.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/pt_BR. -->

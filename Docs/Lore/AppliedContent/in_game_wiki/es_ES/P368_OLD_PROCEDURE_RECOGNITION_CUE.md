@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Señal de reconocimiento de antiguo procedimiento"
+title: "Señal de Reconocimiento de Procedimiento Antiguo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Señal de reconocimiento de antiguo procedimiento
+# Señal de Reconocimiento de Procedimiento Antiguo
 
-El reconocimiento de un antiguo procedimiento convierte el pasado del protagonista en una herramienta jugable. El jugador no sigue una pista mística ni una profecía personal. Lee un formulario de seguridad en el que antes tuvo que confiar. Un sello de ruta segura afirma que la línea fue certificada. La evidencia de la sala dice que el recuento de trabajadores fue cambiado. El campo de testigo manual, la parte destinada a forzar una segunda revisión humana, está sellado por una oficina de continuidad. Esa contradicción es el gancho. Deep Reach no solo ocultó una ruta. Usó el lenguaje de protección laboral para hacer que el abandono pareciera administrativamente completo. El interés del protagonista comienza como reconocimiento profesional: este formulario se diseñó para evitar exactamente este fallo.
+El reconocimiento de procedimiento antiguo empieza con un formulario de seguridad, no con una confesión. Una certificación route-safe debía unir un pasillo a un conteo, un juego de etiquetas de sala de bombas y una segunda revisión humana cuando los números no cuadran. En este registro, los ocupantes declarados fueron degradados, el conteo de etiquetas sigue discutiendo desde la sala y el campo de segunda revisión está sellado por Continuity Office.
+
+Esa contradicción basta. El operador no necesita acceso de mando para leerla. Deep Reach usó lenguaje de protección laboral para hacer que el abandono pareciera cerrado administrativamente. El formulario no falló porque alguien olvidara una línea. Falló porque la línea que debía detener el conteo fue convertida en la línea que protegía el claim.
 
 ## Scanner
 
-Sello de ruta segura presente. Recuento de trabajadores sobrescrito con dos tintas. Campo de testigo manual sellado. El formulario se creó para detectar esta clase de mentira antes de que alguien la volviera política.
+FORMULARIO ROUTE-SAFE // Ocupantes declarados degradados. Etiquetas de sala de bombas contradicen el conteo. Campo de segunda comprobación sellado por Continuity Office.
 
 ## Terminal
 
-FORMULARIO DE CONTINUIDAD DE EVACUACIÓN / CERTIFICACIÓN DE RUTA SEGURA
-ruta: línea auxiliar de salida
-ocupantes declarados: recuento degradado aceptado
-testigo manual: sellado por la oficina de continuidad
-corrección de campo: recuento de trabajadores incompatible con etiquetas de sala de bombas
-estado: preservación de reclamación, sin autorización de extracción.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-Conoces este formulario. Debía impedir que una sala se contara vacía mientras aún había personas respirando dentro.
+Conoces este formulario. Si las etiquetas no cuadran, la sala no está cleared.
 
 ## Field Note
 
-El formulario debía forzar otro recuento. Aquí forzó silencio.
+El formulario debía forzar otro conteo. Aquí hizo que el conteo equivocado pareciera completo.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/es_ES. -->

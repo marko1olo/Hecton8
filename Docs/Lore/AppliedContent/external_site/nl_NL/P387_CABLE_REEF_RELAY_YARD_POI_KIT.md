@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Bewijskit Kabelrif Relaiswerf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Cable Reef Relay Yard POI Kit
+# Bewijskit Kabelrif Relaiswerf
 
-NL LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+De relaiswerf verandert afkeer in gereedschapsdiscipline. Kabelmantels zijn gespleten, isolatie bladdert, en Atlas-servicefilm kruist sockets die nooit een oppervlak mochten delen. Een nette snede kan het enige pad dat nog signaal draagt vernietigen.
 
-## Scanner
-
-NL LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-NL LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-NL LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-NL LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+De bewijskit is fysiek: pingerantwoord, doodpootkaart, snijwaarschuwing, relaisvork en de servicemarkering waar levend materiaal een gebroken route overnam. De plek moet nuttig voelen voordat hij vreemd voelt. Het gevaar is een reparatie die de operator kan redden terwijl zij het claimrecord vervuilt.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/nl_NL. -->

@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Quarantine Legal Handshake Assembly
 
-The final escape component is legal, medical and evidentiary at once. Quarantine status, receiver identity, payload custody and evidence state decide whether ascent becomes rescue, claim capture or public proof.
+The quarantine legal handshake is the last escape component because HECTON-8 does not treat arrival as a purely mechanical event. A capsule can have a sealed ring, charged cradle, working relay and correct timing, then still arrive under the wrong authority.
+
+The handshake carries receiver identity, quarantine state, payload custody class, lien disclosure and public-ledger delay. Keelmark can accept mass and debt before it accepts a person. Recovery Compliance can accept coordinates while holding the hatch under medical lock. A public ledger can accept proof only after the packet survives delay and review.
+
+This assembly makes the final choice concrete. A fast key can open a hatch into corporate claim. A compliance key can turn survival into quarantine hold. A public route can protect evidence while leaving the body waiting. The engine lifts the capsule; the handshake decides what the word recovered means when it docks.
 
 ## Scanner
 
-Handshake socket. The capsule can be mechanically ready and still belong to the wrong receiver.
+HANDSHAKE SOCKET // Receiver key absent. Mechanics can certify launch path; custody stack still chooses who may call the arrival recovered.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key required. Keelmark accepts mass and lien. Recovery Compliance accepts coordinates and quarantine status. Public ledger accepts proof after delay. Unkeyed launch defaults to custody dispute.
+RECOVERY HANDSHAKE: load receiver key set, quarantine state, payload custody class, public-ledger delay and lien disclosure. Unkeyed launch enters dispute queue after clean ascent.
 
 ## Audio
 
-Who answers decides what rescue means.
+The engine can lift you. The socket decides who gets to open the hatch.
 
 ## Field Note
 
-The last component is not metal. It is the name of the system allowed to call you recovered.
+The last lock is a name, a quarantine state and a ledger signature. Steel cannot decide which one answers.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/en_US. -->

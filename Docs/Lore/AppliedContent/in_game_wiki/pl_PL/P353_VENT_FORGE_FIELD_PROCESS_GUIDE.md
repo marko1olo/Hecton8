@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodnik terenowy procesu vent-forge"
+title: "Przewodnik procesu terenowego kuźni wentowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik terenowy procesu vent-forge
+# Przewodnik procesu terenowego kuźni wentowej
 
-Vent forges są naturalno-przemysłowymi reaktorami. Zmieniają ciepło, brine i pressure history w użyteczne ceramics, sealants i charge materials, wiążąc każdą próbkę z jej drogą termiczną.
+Kuźnie wentowe są reaktorami naturalno-przemysłowymi. Zamieniają ciepło, solankę, historię ciśnienia i powolne chłodzenie w ceramikę, uszczelniacze i materiały ładunkowe. Próbka jest użyteczna tylko wtedy, gdy jej droga cieplna przetrwa odzysk.
 
 ## Scanner
 
-Vent-forge chemistry aktywna. Jakość zależy od pressure history, heat pulse i powolnego chłodzenia, nie od połysku próbki.
+Chemia kuźni wentowej aktywna. Jakość wynika z historii ciśnienia, impulsu ciepła i powolnego chłodzenia, nie z połysku próbki.
 
 ## Terminal
 
-FIELD GUIDE: vent forges gotują sulfides, noble-gas pockets, ceramics i sealant precursors. Droga próbki przez heat, brine i pressure ważniejsza jest niż jej nazwa.
+PRZEWODNIK TERENOWY: kuźnie wentowe gotują siarczki, kieszenie gazów szlachetnych, ziarna ceramiczne i prekursory uszczelniacza. Droga próbki przez ciepło, solankę i ciśnienie znaczy więcej niż jej nazwa.
 
 ## Audio
 
-Vent nie zrobił rudy. Zrobił proces, który przerwałeś.
+Went nie zrobił rudy. Zrobił proces, który przerwano.
 
 ## Field Note
 
-Nie wynoś świeżej partii prosto do zimnej wody. Pozwól vent dokończyć anneal, albo shell spęka.
+Nie wynoś świeżej partii prosto do zimnej wody. Daj wentowi skończyć wyżarzanie, inaczej skorupa spęka siecią.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/pl_PL. -->

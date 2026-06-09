@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "Civiel-corporatieve domeinsplitsing"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# Civiel-corporatieve domeinsplitsing
 
-NL LOC HOLD: The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue.
+De civiel-corporatieve domeinsplitsing is de wet achter HECTON-8s isolatie: geen dicht rijk, maar enkele verre autoriteiten met onverenigbare claim, vertraagde pakketten en genoeg dubbelzinnigheid voor Deep Reach om arbeiders onder de oceaan achter te laten.
 
 ## Scanner
 
-NL LOC HOLD: Legal map. Same species, different owners of truth.
+Juridische kaart: een soort, meerdere eigenaars van het dossier.
 
 ## Terminal
 
-NL LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core houdt oud financieel recht en certificering; Centauri draagt de eerste koloniale charters; Barnard Yards maakte salvage-arbeid normaal; Tau Ceti kan bewijs in publiek recht veranderen; Luyten beheert packet custody; Aegir blijft een corporate claim totdat iemand het tegendeel bewijst.
 
 ## Audio
 
-NL LOC HOLD: The farther you go, the more the law becomes a receipt.
+Hoe verder het signaal reist, hoe meer wet als boekhouding klinkt.
 
 ## Field Note
 
-NL LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+Redding wordt niet alleen door afstand tegengehouden. Het hangt af van wie de gestranden burgers mag noemen.
 
 <!-- External Site; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/nl_NL. -->

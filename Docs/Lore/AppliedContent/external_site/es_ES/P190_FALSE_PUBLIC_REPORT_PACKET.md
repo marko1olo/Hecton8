@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Paquete de falso informe público"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Paquete de falso informe público
 
-ES LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
+Paquete de falso informe público establece la versión pública de Deep Reach sobre la pérdida de la colonia y las omisiones que la vuelven falsa. No es propaganda que niega el desastre; es propaganda que edita el desastre hasta convertirlo en accidente sin manos responsables. El artículo importa porque permite a HECTON-8 conservar su catástrofe de ciencia ficción dura mientras prueba una historia de cobertura. La física del océano explica por qué la colonia era vulnerable. Los memorandos ausentes explican por qué la vulnerabilidad se convirtió en abandono.
 
 ## Scanner
 
-ES LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+El informe público funcionó porque conservó el océano real y eliminó las decisiones humanas dentro de él.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: pérdida de HECTON-8 atribuida a cascada excepcional de marea, demora de relé e incertidumbre de cuarentena. Omitido: márgenes de riesgo aceptados, retención de liberación de evacuación, override de continuidad Atlas, conversión de reclamación y solicitud de recuperación primero de carga.
 
 ## Audio
 
-ES LOC HOLD: They did not fake the storm. They buried the choice.
+Dijeron la verdad sobre el agua y mintieron sobre las manos.
 
 ## Field Note
 
-ES LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+La mejor mentira no negó la marea. Usó la marea como cobertura.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/es_ES. -->

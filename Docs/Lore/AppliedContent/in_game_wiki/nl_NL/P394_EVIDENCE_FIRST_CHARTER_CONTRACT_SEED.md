@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Evidence First Charter Contract Seed"
+title: "Evidence-First Charter Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Evidence First Charter Contract Seed
+# Evidence-First Charter Contractseed
 
-NL LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Evidence-First Charter is een contractfamilie die minder betaalt voor losse salvage en meer routecapaciteit reserveert voor bewijs. Ongevalspakketten, hatchstatusstrips, pingerlogs en notarycassettes gaan vóór zware onderdelen wanneer de route begint te falen.
 
 ## Scanner
 
-NL LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Contractseed: evidence-first charter. Lagere materiaaluitbetaling, grotere notarycapaciteit en hardere bewijsbehoudconflicten.
 
 ## Terminal
 
-NL LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: materiaaluitbetaling verlaagd, notarycassettecapaciteit verhoogd, bewijslockerprioriteit actief, salvage-strippenalty actief, Deep Reach receiverdruk waarschijnlijk.
 
 ## Audio
 
-NL LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Het schoonste record betaalt laat en maakt mensen vroeg kwaad.
 
 ## Field Note
 
-NL LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Marauder-notitie: een bewijslocker vergeeft geen schuld. Hij voorkomt alleen dat schuld kiest welk bewijs eerst sterft.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/nl_NL. -->

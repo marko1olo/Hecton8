@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Compliance 체인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Compliance 체인
 
-KO LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance라는 말은 결말을 더 차갑게 만든다. 질서 있게 들리는 것은 실제로 질서 있기 때문이다. 계약자에는 허가, 증거에는 보관, salvage에는 권원, 항로 보험에는 기록, 공개 사무소에는 자백하지 않는 문구가 필요하다.
 
-## Scanner
-
-KO LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-KO LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-KO LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-KO LOC HOLD: Delay does not make an order harmless.
+공포는 체인이 살아 있는 사람을 포함해도 구조가 되지 않을 수 있다는 점이다. 생존자는 증인 재료로, 압력복은 귀환 질량으로, 고백은 데이터 페이로드로 처리될 수 있다. 체인은 누군가를 밖으로 데리고 나오면서도 그를 아래에 둔 사무소를 계속 섬길 수 있다.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ko_KR. -->

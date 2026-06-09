@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Contract Continuity Desk Signatures"
+title: "تواقيع مكتب استمرارية العقود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Contract Continuity Desk Signatures
+# تواقيع مكتب استمرارية العقود
 
-AR LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+تكشف تواقيع مكتب استمرارية العقود طبقة الورق تحت عقد HECTON-8 الافتتاحي. تمنح المقالة نظام العقود أسماءً وأختاماً ووظائف كي يرى اللاعب كيف تتحول رحلة إنقاذ ممتلكات إلى مساومة على الحيازة. لا يحتاج مكتب Edda Malk إلى معرفة جريمة المستعمرة كلها ليجعل الحاضر خطراً. يحتاج فقط إلى دمج الرهون ودين الأكسجين وبنود الاسترداد بالترتيب الصحيح. عند توقيع المشغل، لا يكون المحيط هو الضغط الوحيد خارج البدن؛ العقد يضغط بالفعل.
 
 ## Scanner
 
-AR LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+تُبنى فخاخ العقد الافتتاحي من تواقيع أدنى: دمج رهن، ملحق أكسجين، خطر قائمة سوداء، وحجز حيازة الحمولة.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. دمج شروط رهن Aegir Reclamation Pool مع بنود استرداد Black Keel. إرفاق ملحق ائتمان أكسجين، وإشعار خطر قائمة سوداء، وحجز حيازة الحمولة. لا يلزم التصعيد إذا قبل المشغل.
 
 ## Audio
 
-AR LOC HOLD: Nobody says trap. They say continuity.
+يمكن للتوقيع أن يصبح باب ضغط عندما ينغلق كل بند بعده.
 
 ## Field Note
 
-AR LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+لا أحد يختم فخاً. يختمون الاستمرارية.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ar_SA. -->

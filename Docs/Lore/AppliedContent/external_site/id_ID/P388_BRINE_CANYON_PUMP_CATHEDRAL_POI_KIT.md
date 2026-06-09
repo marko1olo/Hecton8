@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit Bukti Katedral Pompa Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit Bukti Katedral Pompa Ngarai Brine
 
-ID LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+Katedral pompa memberi tugas pada skala kedalaman menengah. Operator harus menyeberangi gantri, menstabilkan kantong brine, membaca kaca densitas, dan membandingkan jam tahan rute dengan buku antrean pekerja. Tidak ada benda yang dekoratif; masing-masing mengubah apakah penundaan tampak seperti cuaca, kelalaian, atau perlindungan klaim.
 
-## Scanner
-
-ID LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-ID LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-ID LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-ID LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Bukti tetap lebih kuat ketika menghormati laut. Great Tide memecah dinding dan memindahkan air. Ruangan tidak menyangkal itu. Ia menunjukkan apa yang dilakukan jadwal di sekitar banjir: margin diterima, start pompa terlambat, rute ditahan, antrean penuh. POI menjadi tengara karena mesin masih mengingat urutan kerja.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/id_ID. -->

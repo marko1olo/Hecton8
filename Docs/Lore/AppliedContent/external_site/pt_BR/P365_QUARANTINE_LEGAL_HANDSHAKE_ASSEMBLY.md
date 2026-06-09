@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Conjunto de Handshake Legal de Quarentena
 
-O Conjunto de Handshake Legal de Quarentena torna extraction deliberadamente suja: um motor funcional ainda pode entregar o sobrevivente a corporate custody, verdade pública atrasada ou quarentena sem resolução.
+O Conjunto de Handshake Legal de Quarentena é o componente final porque a rota de fuga de HECTON-8 termina em autoridade, não em vácuo. A cápsula pode estar mecanicamente pronta, mas recovery ainda precisa de um receptor disposto a nomear a chegada.
 
-## Scanner
+O soquete carrega os fatos que decidem esse nome: chave receptora, estado de quarentena, custody de payload, lien de dívida e atraso do ledger público. Cada rota aceita uma versão diferente da mesma cápsula. Keelmark quer massa e lien. Recovery Compliance quer coordenadas e estado de contaminação. O ledger público quer prova capaz de sobreviver a tempo e disputa.
 
-Soquete de handshake. A cápsula pode estar mecanicamente pronta e ainda pertencer ao receiver errado.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key exigida. Keelmark aceita mass e lien. Recovery Compliance aceita coordinates e quarantine status. Public ledger aceita proof após atraso. Unkeyed launch vira custody dispute por padrão.
-
-## Audio
-
-Quem responde decide o que resgate significa.
-
-## Field Note
-
-O último componente não é metal. É o nome do sistema autorizado a chamar você de recovered.
+Isso torna a extração deliberadamente desconfortável. O lançamento mais limpo ainda pode entregar o sobrevivente a um escritório de reivindicação, a uma retenção médica trancada ou a um caso público lento. Reparar o handshake não liberta a cápsula da política. Permite ao Marauder escolher qual política põe a primeira mão na escotilha.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/pt_BR. -->

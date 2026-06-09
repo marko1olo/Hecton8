@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Deep Reach Public Combine"
+title: "اتحاد Deep Reach العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Deep Reach Public Combine
+# اتحاد Deep Reach العام
 
-AR LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+اتحاد Deep Reach العام هو القناع الأول والأطول بقاء. لا يحتاج إلى إنكار أنه لمس HECTON-8. لقد لمس النقل ولوجستيات السكن وخدمات المسار وواجهات التأمين ولغة الطوارئ والمفردات الإدارية التي جعلت المستعمرة مفهومة للبنوك قبل العائلات.
 
-## Scanner
-
-AR LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-AR LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-AR LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-AR LOC HOLD: The seal is clean. The rooms under it are not.
+هذا الاتساع هو الدفاع. عندما تظهر الكارثة، تستطيع Deep Reach الإشارة إلى تفويض عام والقول إنها حافظت على البنية التحتية. الأفعال الأقذر تدفع إلى الشركات التابعة: صنف، أجل، استعد، أعد التأمين، ارفض، تخلص. يحتفظ الاتحاد بالاسم النظيف. وتحتفظ الغرف السفلى بالأجساد.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/ar_SA. -->

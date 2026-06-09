@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Sanitized Accident Reply Window"
+title: "חלון תגובת תאונה מחוטא"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Sanitized Accident Reply Window
+# חלון תגובת תאונה מחוטא
 
-HE LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+חלון תגובת התאונה המחוטא מראה כיצד Deep Reach משקרת לפני שמישהו מתחיל לצעוק. השקר פרוצדורלי, מוכר ומיושן: שורת אובדן ציבורית מתנגשת בראיה פיזית. אימת התאגידים של HECTON-8 פועלת הכי טוב כשהתשובה הרשמית נקייה מדי למקום שיצר אותה.
 
 ## Scanner
 
-HE LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+חלון תגובה פתוח. Deep Reach חוזרת על התמוטטות סערה, כשל גיאולוגי ופינוי אוטונומי כושל כאילו החדר עדיין יבש.
 
 ## Terminal
 
-HE LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: גאות סערה, התמוטטות גיאולוגית, כשל פינוי אוטונומי / RESTRICTED ADVICE: לא לשדר Atlas continuity לא מאומתת, body-category disputes או basin-coordinate claims.
 
 ## Audio
 
-HE LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+הם ענו לחדר שהיית אמור למצוא, לא לחדר שבו אתה עומד.
 
 ## Field Note
 
-HE LOC HOLD: Place after first physical contradiction, not before.
+להציב אחרי הסתירה הפיזית הראשונה: לשחקן צריכה להיות ראיה רטובה לפני שישמע את הסקריפט הציבורי הישן.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/he_IL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Preserve Quarantine Record"
+title: "Catatan Karantina Pelestarian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Preserve Quarantine Record
+# Catatan Karantina Pelestarian
 
-ID LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+Catatan karantina ini berguna karena menyebut apa yang ditahan, dilindungi, dan masih bisa pecah nanti: kustodi payload, koordinat buta, tanda terima publik parsial, kerusakan Atlas, tahan ekologi, nama pekerja, tanggung jawab, dan klaim buta lanjutan.
 
 ## Scanner
 
-ID LOC HOLD: Payload withheld. Consequence deferred.
+CATATAN KARANTINA PELESTARIAN // Payload ditahan dari Deep Reach. Atlas tetap rusak tetapi aktif; perintah tahan ekologi memblokir transfer kepemilikan bersih.
 
 ## Terminal
 
-ID LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+CATATAN AKHIR / KARANTINA PELESTARIAN
+Payload: ditahan dari kustodi langsung Deep Reach.
+Perintah: tahan ekologi, koordinat buta, tanda terima publik parsial.
+Status Atlas: logika perbaikan rusak aktif.
+Dilindungi: ekologi tekanan dan kehidupan pemeliharaan yang bertahan.
+Belum selesai: nama pekerja, tanggung jawab cekungan, pengajuan salvage masa depan.
+Kehilangan diketahui: pelestarian tidak menjadi kepolosan.
 
 ## Audio
 
-ID LOC HOLD: Leaving something alive is not the same as saving it.
+Kamu membiarkannya hidup. Itu tidak sama dengan menyelamatkan.
 
 ## Field Note
 
-ID LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Menahan paket melindungi sebagian sistem hidup dan membiarkan otoritas rusak bernapas. Awasi antrean klaim buta.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/id_ID. -->

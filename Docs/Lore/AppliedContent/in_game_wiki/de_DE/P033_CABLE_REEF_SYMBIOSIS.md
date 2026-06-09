@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Kabelriff-Symbiose
 
-Kabelriffe warnen in mittlerer Tiefe: Leben nutzt Industrie als Knochen, Schatten, Strömungsbruch und Nährleitung.
+Kabelriffe entstehen dort, wo mitteltiefe Servicegräben lebendem Bewuchs eine feste Form geben: Stromstämme, Relaispaare, Klemmringe und alte Kabeltrassen. Manche Matten reduzieren Abrieb und beruhigen Strömung um eine Leitung. Manche Weidefauna hält Schleim von freiliegenden Leitern. Dieselbe Manschette kann aber gerissene Isolierung verstecken, Wärme stauen oder Drohnenverkehr auf eine Route ziehen, die der Taucher als ruhig markiert hatte.
+
+Kabelriff ist funktionierende Infrastruktur, bis der Scan anderes beweist. Eine grüne Manschette kann das Einzige sein, was ein Relais trocken hält; sie kann auch den Fehler abdecken, der unter Last ausfällt. Signal­kontinuität, Isolationsfarbe, Klemmreihenfolge und Drohnenbewegung prüfen, bevor geschnitten wird. Das ist die Brücke zwischen der ersten Reparaturnarbe und späterer Reparaturfauna: Lebender Bewuchs folgt Strom, bevor Atlas Reparatur durch lebende Körper routet.
 
 ## Scanner
 
-Flora wächst auf Stromstämmen und Signalleitungen. Das Riff nutzt Kolonieverkabelung als Skelett.
+Kabelwurzelmatte greift den P63-Stromstamm an drei Klemmringen. Signal läuft noch unter der grünen Manschette. Isolationsfehler am unteren Rand sichtbar. Gefahr: Drohnen- und Weiderverkehr folgt aktivem Strom.
 
 ## Terminal
 
-Wartung: Kabelwurzelmatten mindern Abrieb und halten Signal, ziehen aber Drohnen und Weidefauna an.
+SERVICEGRABEN-NOTIZ
+Leitung: P63-Stromstamm / Relaispaar C
+Zustand: biologische Manschette reduziert Abrieb
+Fehler: orange Isolierung unter unterer Matte freigelegt
+Verkehr: Weider und Wartungsdrohnen nahe aktivem Strom
+Aktion: Kontinuität scannen, bevor Bewuchs geschnitten wird
 
 ## Audio
 
-Ein lebendes Riff lernte die Form eines Servicekorridors.
+Das Riff ist keine Dekoration. Es hält dieses Relais trocken, und die Drohnen wissen, dass Strom anliegt.
 
 ## Field Note
 
-Die erste Verschmelzung ist nützlich, bevor sie entsetzlich wird.
+Grünen Bewuchs nicht entfernen, nur weil er falsch aussieht. Wenn er den Mantel trocken hält, Fehler markieren und darum herum routen.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/de_DE. -->

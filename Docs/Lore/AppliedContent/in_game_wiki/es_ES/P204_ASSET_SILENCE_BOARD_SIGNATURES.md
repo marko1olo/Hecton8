@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Firmas de la junta de silencio de activos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Firmas de la junta de silencio de activos
 
-ES LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Los registros Asset Silence Board se sientan entre un libro de trabajadores y un informe público. No crean la pérdida; deciden qué partes de la pérdida pueden viajar. Un voto de redacción puede dejar visibles load class, locker count y claim value mientras silencia nombres de testigos y anexos de ruta. Por eso estas firmas pertenecen junto a taquillas, tarjetas de redacción y packet mute flags. La firma de Brigit Senn no la convierte en comandante oculta. Identifica la oficina baja que convirtió hechos humanos recuperables en categorías asset-risk tras relay review.
 
 ## Scanner
 
-ES LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Tarjeta de voto de redacción recuperada: campo de nombre de trabajador silenciado, categoría asset-risk visible, recuento de taquillas retenido. Visibilidad del paquete requiere aprobación de custodia.
 
 ## Terminal
 
-ES LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: mover anexo witness-name a categoría asset-risk silence tras relay review. Retener load class, locker count y claim value. Liberación requiere aprobación del custodio.
 
 ## Audio
 
-ES LOC HOLD: Erase the route and the body becomes cargo math.
+La junta conservó el recuento de cajas. Cortaron los nombres.
 
 ## Field Note
 
-ES LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+El nombre desapareció; la chapa de la taquilla sigue. Asset Silence Board votó sobre visibilidad de paquete, no sobre si el trabajador existía.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/es_ES. -->

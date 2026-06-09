@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "热泉锻炉野外流程指南"
+title: "热泉锻炉现场流程指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 热泉锻炉野外流程指南
+# 热泉锻炉现场流程指南
 
-热泉锻炉野外流程指南把资源价值绑定到现场处理：重要的不只是发现了什么，还有 pressure 与 cooling 如何让它熬过 recovery。
+热泉锻炉不是海床上的宝箱。它是一台缓慢反应器，由热渗流、盐水密度、被压碎的矿物供料，以及不宽恕急躁的压力组成。有用材料往往介于自然沉积物和报废工业批次之间：陶瓷颗粒在矿物喉道里生长，密封剂前体被烤进裂缝，带电薄膜只有在按正确顺序冷却时才保持稳定。
 
-## Scanner
-
-vent-forge chemistry 活跃。质量取决于 pressure history、heat pulse 和缓慢冷却，而不是样本光泽。
-
-## Terminal
-
-FIELD GUIDE: vent forges 会烹煮 sulfides、noble-gas pockets、ceramics 和 sealant precursors。样本穿过 heat、brine 和 pressure 的路径比名称更重要。
-
-## Audio
-
-vent 没有制造矿石。它制造了一个被你打断的流程。
-
-## Field Note
-
-不要把新鲜批次直接提进冷水。让 vent 完成 anneal，否则 shell 会龟裂。
+因此，现场处理本身就是资源的一部分。把新鲜批次拉进冷水，外壳会龟裂。排热太快，干净样本会变成粉末。等得太久，热泉会把另一种化学写到你想要的层上。Salvage队伍重视热泉锻炉，是因为它让HECTON-8像一颗仍在工作的行星：海洋不只是藏着材料，它还在制造材料。
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/zh_CN. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Recovered Transit Primer
 spoiler_tier: 0
-title: "Ran Long Claim 통과 항로"
+title: "Ran Long Claim 통과"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran Long Claim 통과 항로
+# Ran Long Claim 통과
 
-낡은 중계 피막 아래에서 발견된 항로판은 대부분의 Marauder가 너무 늦게 묻는 질문에 답한다. 인류는 Aegir에 닿을 수 있다. 하지만 닿는 것과 구조는 다르다. Ran Long Claim은 심어진 화물, 패킷 사다리, 연료 창고, 검역법, 그리고 신호가 한 계절에 건너는 거리를 수년 동안 건너는 운반선의 느린 사슬 위에 있다. 생존 증명 버스트는 Sol, Luyten, Barnard를 통과할 수 있지만 그것을 보낸 몸은 여전히 현지 날씨, 질량 한계, 부채 권한 아래 묶여 있을 수 있다. Black Keel은 너를 들을 수 있다. 선취권을 기입하고, 보관 사건을 열고, tonne-window를 예약할 수 있다. 물속에서 겁먹은 잠수부 하나 때문에 운반선 선체를 진공 너머로 밀어 넣을 수는 없다.
+Ran Long Claim은 실용적 모순의 공개 이름이다. 인간 문명은 Aegir에 도달할 수 있고 probe, staged freight, packet custody, claim tender를 보낼 수 있다. 하지만 고립된 Marauder가 요청한다고 바로 올라온다는 뜻은 아니다.
+
+항로는 층으로 되어 있다. 정보는 가볍고 법적으로 유용해 패킷이 먼저 움직인다. 연료 저장소, receiver 예비, 검역 slot은 느리다. 중질량 화물은 더 느리고 제동 비용, payload 소유, 회수 위험 계약으로 싸여 있다.
 
 ## Scanner
 
-항로판 // Ran Long Claim, Aegir 교통 대역. 패킷은 창으로 통과한다. 선체는 질량, 예인 시간, 검역, 승인된 책임으로 통과한다.
+오래된 릴레이 껍질 아래 항로판. Ran Long Claim 보관 사슬: packet ladder, 연료 저장소, 검역 레인, carrier 큐, 오래된 proof-of-life 영수증.
 
 ## Terminal
 
-LUYTEN 패킷 사다리 // Aegir 영수 캐시됨. 신호 증명은 운반선보다 십일 년 앞설 수 있다. 인양 권한은 아직 beam-lane 확인, 보관 도장, tonne-window 질량을 요구한다.
+RAN LONG CLAIM // 도달 확인. 구조 포함 아님. 신호 통과 등급은 중질량 통과 등급보다 낮음. carrier 응답은 물리 회수보다 계약상 수년 앞설 수 있음. 보관 창 닫힐 때까지 로컬 생존 권한 유지.
 
 ## Audio
 
-Black Keel 항로 음성: Sol은 청구권을 인증할 수 있다. Luyten은 패킷을 증명할 수 있다. Barnard는 손을 팔 수 있다. 그러나 이번 통과에서 너를 HECTON-8 밖으로 끌어낼 수 있는 곳은 없다.
+도달은 구조가 아니다. 신호는 어둠을 건너지만 보낸 몸은 아직 물 아래 고정되어 있다.
 
 ## Field Note
 
-판 하나에 Sol, Luyten, Barnard, Aegir가 한 줄로 적혀 있으면 순서를 읽어라. Sol은 법을 가진다. Luyten은 패킷을 가진다. Barnard는 손을 가진다. Aegir은 날씨를 가진다. 네 다음 숨을 가진 곳은 없다.
+항로는 너를 싣기 전에 너를 들을 수 있다.
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/ko_KR. -->

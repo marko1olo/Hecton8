@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Paquet du faux rapport public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Paquet du faux rapport public
 
-FR LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Le paquet du faux rapport public est la version de HECTON-8 que Deep Reach pouvait montrer aux mondes sans danger. Il n'invente pas un faux océan. La Grande Marée était réelle, le délai de relais était réel, l'incertitude de quarantaine était réelle, et c'est pourquoi le rapport survit à une lecture rapide. Le mensonge vit dans les omissions. Il retire les marges de risque acceptées, l'autorité d'évacuation retardée, la pondération de continuité Atlas, la conversion assurantielle et la pression de garde de récupération. Le joueur doit le lire comme le dernier geste corporatif : garder assez de physique pour paraître sobre, couper assez de décisions pour effacer la culpabilité.
 
 ## Scanner
 
-FR LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Le rapport public a fonctionné parce qu'il gardait le vrai océan et retirait les choix humains à l'intérieur.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET : perte de HECTON-8 attribuée à cascade de marée exceptionnelle, délai de relais et incertitude de quarantaine. Omis : marges de risque acceptées, retenue de libération d'évacuation, override de continuité Atlas, conversion de réclamation et demande de récupération charge utile d'abord.
 
 ## Audio
 
-FR LOC HOLD: They did not fake the storm. They buried the choice.
+Ils ont dit la vérité sur l'eau et menti sur les mains.
 
 ## Field Note
 
-FR LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Le meilleur mensonge n'a pas nié la marée. Il s'en est servi comme couverture.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/fr_FR. -->

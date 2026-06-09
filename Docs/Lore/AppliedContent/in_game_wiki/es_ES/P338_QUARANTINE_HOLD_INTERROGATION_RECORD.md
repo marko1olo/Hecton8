@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Registro de interrogatorio en retención de cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Quarantine Hold Interrogation Record
+# Registro de interrogatorio en retención de cuarentena
 
-ES LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+El registro vuelve incómodo el rescate. La supervivencia es real, pero el jugador sale como testigo, riesgo de contaminación, portador de mapa y prueba disputada antes de volver a ser una persona libre.
 
 ## Scanner
 
-ES LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Reclamante recuperado con vida. La marca de cuarentena invalida el lenguaje de rescate; la carga de evidencia queda aislada.
 
 ## Terminal
 
-ES LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+REGISTRO QUARANTINE HOLD: reclamante biológico recuperado con vida. Movimiento restringido pendiente de escaneo de contaminación, entrevista de exposición a presión y revisión de custodia de pruebas. El interrogatorio del receptor prioriza el vector de acceso Atlas antes del alta médica.
 
 ## Audio
 
-ES LOC HOLD: They saved the body first because the body knew the route.
+Salvaron primero el cuerpo porque el cuerpo conocía la ruta.
 
 ## Field Note
 
-ES LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier posterior a la salida: el rescate biológico se convierte en cuarentena, interrogatorio, extracción de ruta y custodia de payload antes de la libertad.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/es_ES. -->

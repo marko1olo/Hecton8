@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: zh_CN
 surface: in_game_wiki
@@ -19,22 +19,30 @@ localization_flags: 1
 
 # 海底工厂
 
-海底工厂是HECTON-8停止区分基础设施与栖居环境的节点。Deep Reach机器、Atlas路由、blue debt残留、工人遗骸、压力生长膜和海洋生物学已经变成一个运行中的身体。它通过同一组织移动热量、流体、信号、样本和损伤。墙可以是阀门。走廊可以是肠道。电缆可以开花成过滤器。一次修复可以包含珊瑚、无人机壳、工具钢和骨头，而系统看不见矛盾。危险不是随机突变。危险是没有人类分类的功能。工厂维持连续性，保存路线，关闭泄漏，生长新的压力皮肤，并把损失当成可以路由到有用位置的材料。
+海底工厂位于Atlas盆地的下部回流端。Deep Reach的管路仍在那里输送盐水和热量，但碳酸盐套管和过滤生长物已经封住许多服务通道。blue debt残留物染在接缝上，旧钢材、电缆托盘和压力生长的密封层现在共用同一条维护路径。
+
+有用之处就是风险。这里会补漏，让泵留在回路里，并通过从未对人员放行的路径传递信号。门可以继续关着，不是因为原来的垫圈还在，而是压力生长物接住了载荷。电缆托盘可以继续中继数据，同时它的盖板像过滤器一样工作。潜服环、样本罐或工具，如果保管标签在读取前被埋住，就可能消失进同一条维修套管。检查流痕和标签抽屉之前，把每一道浅色接缝都当作正在工作的基础设施。
 
 ## Scanner
 
-流体导管、数据路线、压力膜和活体过滤器共享同一层皮肤。边界标签无效。
+压力生长的碳酸盐覆盖了一面服务墙，盐水管、热回流和信号电缆进入同一条套管。置信度：64%。危险：浅色硬壳下的保管标签可能在切割前已经无法读取。
 
 ## Terminal
 
-COLONY：未解决。OCEAN：兼容。PROCESS：活动。LOSS：已路由。CONTINUITY：受保护。EXIT：非本地。
+ATLAS SERVICE RECORD
+节点：Atlas盆地下部回流
+所有方：Deep Reach continuity routing / ATLAS-6
+输入：盐水、热回流、信号电缆、密封样本托盘
+故障：保管标签被碳酸盐生长覆盖，无法读取
+操作：保持 Pump Run B 开放；切割组改走上部夹具入口
+警告：未标记的潜服部件可能被记录为兼容材料
 
 ## Audio
 
-它仍在工作。它仍在使用掉进里面的东西。
+先别撬白色接缝。标签抽屉在下面。墙体要是再封一次，我们会把名字和泄漏一起丢掉。
 
 ## Field Note
 
-把这里叫基地就漏掉了规则。基地有墙。这个地方有循环。
+东侧下部回流：切白色接缝前先标出标签。墙体会围着套管里剩下的东西封住泄漏。工具也算。潜服环也算。
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/zh_CN. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63-Pumpraum-Arbeitsauftrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: P-63 Pump Room Work Order
+# P-63-Pumpraum-Arbeitsauftrag
 
-DE LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+Der P-63-Pumpraum-Arbeitsauftrag ist HECTON-8 im Kleinen: Wasser im Raum, ein Werkzeug in der Hand, eine acoustic-return-Leitung und eine Route, der man erst traut, wenn die Umgebung antwortet. Er macht Mechanik zu Koloniegewohnheit.
 
 ## Scanner
 
-DE LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Die erste Reparatur liest sich wie eine Koloniegewohnheit: pumpen, abdichten, hören, nur schneiden, wenn der Raum nicht mehr lügt.
 
 ## Terminal
 
-DE LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: sump leeren; cold seam flicken; return pinger prüfen; fused latch erst schneiden, wenn Druck hält; gasket aus lokalem Bestand drucken; route safe nach dreifachem acoustic return markieren. Supervisor-Initialen unter Wasserfleck fehlend.
 
 ## Audio
 
-DE LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Erst pumpen. Dann abdichten. Wenn es singt, hör auf zu schneiden.
 
 ## Field Note
 
-DE LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Das Clipboard ist unten durchweicht. Die Schnittzeile ist noch lesbar, weil jemand sie zweimal umkreiste und schrieb wenn es singt, aufhören.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/de_DE. -->

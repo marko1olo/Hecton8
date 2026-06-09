@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Колонія та працівники
 
-Відновлений worker index: water ledgers, relay witness trays, brine route stamps, triage repair tags і vent-forge rejects зберігають імена через роботу.
+Вузол досьє працівників: HECTON-8 пам'ятає людей через shift boards, maintenance debts, pressure calls, handoff marks і записи, які Deep Reach намагалася сплющити в категорії втрат.
 
 ## Scanner
 
-WORKER INDEX // П'ять іменних записів, пов'язаних із маршрутом. Pump, relay, brine, triage, forge. Зберігати tag chain перед зняттям hardware.
+WORKER INDEX // Pump boards, relay trays, brine stamps, triage tags і vent-forge rejects зберігають людей як route evidence.
 
 ## Terminal
 
-KEELMARK LOSS DESK: зберігати name tags, якщо вони пов'язані з route, claim, custody або pressure work.
+KEELMARK LOSS DESK: зберігати name tags, коли вони пояснюють pressure decision, delay, custody claim або repair route.
 
 ## Audio
 
-Mara Venn, pump chief: якщо насос співає чисто, запиши. Якщо перестає співати, біжи вгору.
+Ім'я на pump card не фон. Це причина, чому двері лишилися відкритими.
 
 ## Field Note
 
-Не родина. Робота. Ім'я на pump card пояснює, чому двері лишилися відкритими.
+Не сімейна наживка. Робота, тиск, підписи, помилки. Так мертві ще сперечаються.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/uk_UA. -->

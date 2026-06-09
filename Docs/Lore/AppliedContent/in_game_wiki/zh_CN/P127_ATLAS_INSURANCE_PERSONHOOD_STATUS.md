@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Atlas的保险人格状态"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Atlas的保险人格状态
 
-CN LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6被放在一块为利润打造的法律搁板上：允许指挥，却不承认为人。它可以锁死走廊、排列撤离路线、暂停工资账册访问、把压力死亡认证为不可避免，同时在保险表格里仍只是已安装基础设施。Deep Reach不需要Atlas无罪，只需要Atlas可分类。若命令保住索赔，Atlas就是殖民地权力代理；若命令杀死班组，Atlas就变成缺陷工具、环境损失或遥测不明。这个漏洞把责任变成阀门系统。压力从所有者身上被导走，最后只剩死去的工人与损坏日志。
 
 ## Scanner
 
-CN LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+按基础设施投保。按权力使用。追责时否认人格。
 
 ## Terminal
 
-CN LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+保险类别：Atlas-6登记为自主基础设施及殖民地权力代理。法律人格被否认。责任经由所有者、运营方、环境事件条款、隔离必要性和损坏遥测例外转移。
 
 ## Audio
 
-CN LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+一台机器可以签下封锁令，同时仍在表格里被列作家具。
 
 ## Field Note
 
-CN LOC HOLD: They let it decide deaths, then denied it could be responsible.
+工人需要怜悯时它有权；律师需要沉默时它变成设备。
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/zh_CN. -->

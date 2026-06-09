@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "2147年后的Atlas公共记忆"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# 2147年后的Atlas公共记忆
 
-CN LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+2147年后的公共记忆是一道被清洗过的公共伤口。它把权力变成事故，把事故变成噪声，把噪声变成隔离政策，只给愿意读过官方仁慈的人留下碎片。
 
 ## Scanner
 
-CN LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+2147年后的公开故事：自动化失效、日志损坏、无可确认能动性。
 
 ## Terminal
 
-CN LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+2147年后公开口径：Atlas自动化在地质工程级联中失效。工人安全日志损坏。直接能动性未确认。系统在隔离条件下不可恢复。不得根据碎片化机器输出作法律推断。
 
 ## Audio
 
-CN LOC HOLD: A dead machine makes a useful scapegoat.
+一台死机器是好用的替罪对象。
 
 ## Field Note
 
-CN LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+把它叫成坏掉的工具，就没人追问工具被命令保护什么。
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/zh_CN. -->

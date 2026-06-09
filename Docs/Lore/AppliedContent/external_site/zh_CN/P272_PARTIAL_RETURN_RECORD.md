@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Partial Return Record"
+title: "部分返回记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Partial Return Record
+# 部分返回记录
 
-CN LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+这条记录标记的是战役的一次呼吸，不是重置。它适用于路线有撤离硬件和有效运输窗口，但托管未关闭，接送还不能变成自由的情况。
 
 ## Scanner
 
-CN LOC HOLD: Extraction granted. Claim unresolved.
+部分返回记录 // Black Keel接送已接受。同一seed返回在延长留置下授权；扫描记忆和开放证据包保留。
 
 ## Terminal
 
-CN LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+结局记录 / 部分返回
+接送：Black Keel临时撤离。
+目的：潜服维修、补气、去污、账本同步。
+托管状态：留置延长；附加隔离期限。
+返回权限：同一seed、同一海洋，路线警告保留。
+持续数据：扫描记忆、开放证据包、未解决载荷。
+已知损失：喘息在成为自由之前先被计费。
 
 ## Audio
 
-CN LOC HOLD: Out is not away.
+压力松开了。合同保留了座位。
 
 ## Field Note
 
-CN LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+干净的潜服和一个睡眠周期不会关闭合同。下方路线保留旧警告。
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/zh_CN. -->

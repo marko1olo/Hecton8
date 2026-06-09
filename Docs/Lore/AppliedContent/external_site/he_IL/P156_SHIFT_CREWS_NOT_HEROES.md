@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "צוותי משמרת, לא גיבורים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# צוותי משמרת, לא גיבורים
 
-HE LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+צוותי משמרת, לא גיבורים הוא כלל הכתיבה האנושית של HECTON-8: עובדים נזכרים דרך עבודה, עייפות, הרגלים וכשלי הליך.
 
 ## Scanner
 
-HE LOC HOLD: The colony becomes human through schedules, not speeches.
+שכבה אנושית // המושבה נעשית אמיתית דרך לוחות זמנים, כלים שחוקים, חזרות חסרות ושמות על לוחות תורנות. לא דרך נאומים.
 
 ## Terminal
 
-HE LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+כלל כתיבה: לרשום עובדים כטכנאי משאבות, חובשים, פקידי מסלול, צוללים, טבחים, מפעילי fabricator ומפקחים עייפים. סידור עם חזרה חסרה אחת יכול לכאוב יותר מאנדרטה.
 
 ## Audio
 
-HE LOC HOLD: They were not symbols. They were late for shift.
+הם לא היו סמלים. הם איחרו למשמרת.
 
 ## Field Note
 
-HE LOC HOLD: People are more believable as workers than as memorial statues.
+אנשים אמינים יותר כעובדים מאשר כפסלי זיכרון.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/he_IL. -->

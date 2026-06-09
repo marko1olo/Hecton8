@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "ערכת שמות עובדי עוגן A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# ערכת שמות עובדי עוגן A
 
-HE LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
+ערכת שמות עובדי עוגן A היא השכבה האנושית הראשונה שהשחקן צריך להתחיל לזהות. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita ו-Pavel Sorn שייכים לראיות של הרדודים והמדף התעשייתי. השמות שלהם לא צריכים להגיע כביוגרפיות. הם צריכים להופיע על תווית לוקר, תג משאבה, הרשאת נתיב, תלוש ארוחה מוכתם, קופסת כלי סדוקה, ואז לחזור ברשומה שמשנה את המשמעות. Set A גורמת למושבה להרגיש מיושבת לפני שהקשר העמוק ברור.
 
 ## Scanner
 
-HE LOC HOLD: Anchor names should reappear through work, not personal exposition.
+שמות מוקדמים צריכים לחזור דרך עבודה, לא דרך נאומים. הנתיב הרדוד מלמד זיכרון בחזרה.
 
 ## Terminal
 
-HE LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: חזרה ברדודים ובמדף התעשייתי. כל שם צריך להיקשר לכלי אחד, הרשאת נתיב אחת, חפץ עבודה פגום אחד וסתירה מאוחרת אחת. השמות האלה הם ההוכחה הראשונה של השחקן שהמושבה הייתה מקום עבודה לפני שהפכה לשלל חילוץ.
 
 ## Audio
 
-HE LOC HOLD: Do not mourn the name until the tool tells you why.
+אל תתאבל על השם עד שהכלי יספר לך למה.
 
 ## Field Note
 
-HE LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+עוגני Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/he_IL. -->

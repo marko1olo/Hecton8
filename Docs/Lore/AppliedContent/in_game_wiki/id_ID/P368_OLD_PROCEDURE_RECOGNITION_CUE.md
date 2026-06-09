@@ -19,27 +19,29 @@ localization_flags: 1
 
 # Isyarat Pengenalan Prosedur Lama
 
-Pengenalan prosedur lama mengubah masa lalu protagonis menjadi alat yang bisa dimainkan. Pemain tidak mengikuti petunjuk mistis atau ramalan pribadi. Mereka membaca formulir keselamatan yang dulu harus dipercaya. Stempel rute-aman menyatakan jalur itu tersertifikasi. Bukti di ruangan menyatakan hitungan pekerja diubah. Kolom saksi manual, bagian yang semestinya memaksa pemeriksaan manusia kedua, disegel oleh kantor kontinuitas. Kontradiksi itu menjadi kaitnya. Deep Reach tidak sekadar menyembunyikan rute. Mereka memakai bahasa perlindungan pekerja untuk membuat penelantaran tampak selesai secara administratif. Kepentingan protagonis dimulai sebagai pengenalan profesional: formulir ini dirancang untuk mencegah kegagalan persis seperti ini.
+Pengenalan prosedur lama dimulai dari form keselamatan, bukan pengakuan. Sertifikasi route-safe seharusnya mengikat koridor pada hitungan, set tag ruang pompa, dan pemeriksaan manusia kedua saat angka tidak cocok. Dalam catatan ini occupants terdeklarasi diturunkan, jumlah tag masih membantah dari dalam ruang, dan kolom pemeriksaan kedua disegel Continuity Office.
+
+Kontradiksi itu cukup. Operator tidak perlu akses komando untuk membacanya. Deep Reach memakai bahasa perlindungan pekerja agar pengabaian tampak ditutup secara administratif. Form itu tidak gagal karena seseorang lupa satu baris. Ia gagal karena baris yang seharusnya menghentikan hitungan diubah menjadi baris yang melindungi claim.
 
 ## Scanner
 
-Stempel rute-aman ada. Hitungan pekerja ditimpa dua tinta. Kolom saksi manual disegel. Formulir ini dibuat untuk menangkap kebohongan seperti ini sebelum seseorang menjadikannya kebijakan.
+FORM ROUTE-SAFE // Occupants terdeklarasi diturunkan. Tag ruang pompa tidak cocok dengan hitungan pekerja. Kolom pemeriksaan kedua manual disegel Continuity Office.
 
 ## Terminal
 
-FORMULIR KONTINUITAS EVAKUASI / SERTIFIKASI RUTE-AMAN
-rute: jalur keluar tambahan
-penghuni dinyatakan: hitungan terdegradasi diterima
-saksi manual: disegel oleh Kantor Kontinuitas
-koreksi lapangan: daftar pekerja tidak cocok dengan tag ruang pompa
-status: pelestarian klaim, bukan izin ekstraksi.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-Kau mengenal formulir ini. Ia seharusnya mencegah ruangan dihitung kosong sementara orang masih bernapas di dalamnya.
+Kau tahu form ini. Jika tag tidak cocok, ruang itu belum cleared.
 
 ## Field Note
 
-Formulir itu seharusnya memaksa hitungan lagi. Di sini ia memaksa diam.
+Form ini dibuat untuk memaksa hitungan lain. Di sini ia membuat hitungan salah tampak selesai.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/id_ID. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: Margin Pasang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: Margin Pasang
 
-ID LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+Iliya Varnek adalah tanda tangan risiko Deep Reach tahun 2147 yang terkait dengan margin Great Tide. Ia bukan eksekutif kartun dengan tuas. Memo itu lebih buruk karena biasa: jadwal produksi, model yang dirata-ratakan, satu baris keyakinan, catatan paparan pekerja, dan rekomendasi untuk terus berjalan.
+
+Frasa kuncinya adalah keyakinan model rata-rata. Secara rata-rata, rute tampak bisa selamat. Di ekor distribusi, tempat tumpukan pasang Aegir, pantulan rak es, lalu lintas rute bertekanan, dan kesalahan kompensasi Atlas bertemu, margin menyempit menjadi toleransi akuntansi. Orang-orang di ruang itu tidak hidup dalam rata-rata. Mereka hidup di jam terburuk.
+
+Tanda tangan Varnek memberi pemain satu lapisan tanggung jawab. Itu tidak membuktikan ia tahu bencana tepat yang akan terjadi. Itu membuktikan Deep Reach memiliki jalur risiko yang terbaca dan memilih tafsir yang lebih murah. Kejahatannya bukan kemahatahuan. Kejahatannya adalah menerima ketidakpastian karena tubuh yang akan memikulnya tidak berada di ruangan tempat margin diberi harga.
 
 ## Scanner
 
-ID LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+MEMO RISIKO // I. Varnek menurunkan margin Great Tide setelah model lulus secara rata-rata. Risiko ekor ditinggalkan di ruang bertekanan para pekerja.
 
 ## Terminal
 
-ID LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // Risiko Operasi Aegir // Rekomendasi: pertahankan jadwal produksi. Tumpukan pasang ekstrem tetap dianggap variasi operasional frekuensi rendah sambil menunggu tinjauan kompensasi Atlas. Paparan rute pekerja dapat diterima berdasarkan keyakinan model rata-rata.
 
 ## Audio
 
-ID LOC HOLD: He did not order a flood. He priced it low enough to happen.
+Ia tidak memerintahkan banjir. Ia memberi harga cukup murah agar banjir bisa terjadi.
 
 ## Field Note
 
-ID LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Jangan baca ini sebagai perintah membunuh. Baca sebagai baris anggaran tempat ketidakpastian dibuat cukup murah untuk dibelanjakan.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/id_ID. -->

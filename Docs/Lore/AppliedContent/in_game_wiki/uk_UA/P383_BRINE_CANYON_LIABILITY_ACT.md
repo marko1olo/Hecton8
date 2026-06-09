@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Canyon Liability Act"
+title: "Шлюз відповідальності розсольного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Canyon Liability Act
+# Шлюз відповідальності розсольного каньйону
 
-UK LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+Розсольний каньйон перетворює час на доказ. Датчики, годинники, стани черг і зламані маршрутні плити показують, що затоплення було реальним і прийнятий ризик теж був реальним. Оператор перестає збирати чутки й починає носити ланцюг документів, здатний пережити розгляд отримувача.
 
 ## Scanner
 
-UK LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Маршрутний шлюз: розсольний каньйон. Шари щільності, пошкоджені годинники й прийняті допуски стають речовими доказами відповідальності.
 
 ## Terminal
 
-UK LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+МАРШРУТ КАМПАНІЇ // РОЗСОЛЬНИЙ КАНЬЙОН. Потрібно: порівняти слід допуску, евакуаційну чергу, розлом маршруту й годинник тиску. Подію Великого припливу підтверджено. Комерційний виняток і ваги Atlas лишаються спірними.
 
 ## Audio
 
-UK LOC HOLD: The ocean did not lie. The timetable did.
+Океан зламав стіну. Розклад зламав людей.
 
 ## Field Note
 
-UK LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Нотатка мародера: не сперечайся з припливом. Сперечайся з часовою міткою, за видалення якої хтось заплатив.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/uk_UA. -->

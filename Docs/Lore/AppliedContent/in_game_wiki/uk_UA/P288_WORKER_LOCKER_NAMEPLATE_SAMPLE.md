@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Worker Locker Nameplate Sample"
+title: "Зразок таблички робочої шафки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Worker Locker Nameplate Sample
+# Зразок таблички робочої шафки
 
-UK LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Зразок таблички робочої шафки показує, як HECTON-8 пам'ятає людей через предмети, що все ще мали роботу. Ren Okoye не вводиться біографією. Табличка шафки дає маршрут, сертифікацію інструмента, талон їжі, мітку розміру рукавички й рядок зарплати, зішліфований кимось, хто не знав, які деталі важать. Саме тому артефакт працює. Він доводить, що корпоративне стирання може бути незграбним: payline зникає, але clamp route лишається; статус перезаписано, але мітка рукавички все ще підходить справжній руці. Гравець має спершу прочитати ім'я через працю, а потім відчути насильство відсутнього облікового рядка.
 
 ## Scanner
 
-UK LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Табличка Ren Okoye зберегла ім'я, бо рядок оплати було легше стерти, ніж роботу.
 
 ## Terminal
 
-UK LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-UK LOC HOLD: Name retained. Payline erased.
+Ім'я збережено. Рядок оплати стерто. Робота все ще прикріплена.
 
 ## Field Note
 
-UK LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / талон їжі під стрічкою. Payroll stripe зішліфовано; мітка розміру рукавички ще видима.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/uk_UA. -->

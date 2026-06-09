@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Memoria de rumores del dosier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Memoria de rumores del dosier
 
-ES LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+El dosier Marauder no es un almacén. Es la parte del trabajo que sobrevive a un claim fallido: nombres oídos a medias por relé, cláusulas de contrato que olían mal, familias de finales ya expuestas, advertencias pagadas con los últimos minutos de otra persona. Una nueva partida debe empezar con mejor sospecha, no con un submarino mejor.
 
 ## Scanner
 
-ES LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MEMORIA DEL DOSIER // Persisten rumores, avisos, contexto contractual y registros de finales. No persisten casco, oxígeno, herramientas, carga ni mapa.
 
 ## Terminal
 
-ES LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+REGLA DE PERSISTENCIA: el dosier puede conservar familias de rumores, categorías de evidencia, marcas de final y avisos de ruta entre campañas. No debe llevar equipo, recursos, geografía de seed ni propiedad de la verdad.
 
 ## Audio
 
-ES LOC HOLD: Your file remembers what your hands cannot carry.
+El archivo recuerda lo que tus manos no pueden cargar.
 
 ## Field Note
 
-ES LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Que persista el conocimiento. Que permanezca la presión.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/es_ES. -->

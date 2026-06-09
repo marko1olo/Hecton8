@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quarantine Relay Fragment"
+title: "隔离中继碎片"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quarantine Relay Fragment
+# 隔离中继碎片
 
-ZH LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+隔离中继碎片定义了 HECTON-8 生存的苦涩边缘。这个设定不只是逃离水压，还要逃离洪水之后仍存在的记录、羁押链和所有权主张。这个碎片让结局更硬：有人可以从海里被捞出来，却仍然不自由。
 
 ## Scanner
 
-ZH LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+同一个中继包批准提取，又拒绝释放。海洋先放过身体，殖民地却不放过这个人。
 
 ## Terminal
 
-ZH LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+中继扣留 QRF-17 / 提取：接受 / 释放：拒绝 / 原因：样本保管未决、空气复核过期、申领人争议有效、证人状态临时。
 
 ## Audio
 
-ZH LOC HOLD: You are out of the water. You are not out of custody.
+中继扣留。提取接受。释放拒绝。你离开了水，但没有离开羁押。
 
 ## Field Note
 
-ZH LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+盖了两次章：尸体已回收，人员保留。空气复核早于救援收据；申领人争议仍未关闭。
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/zh_CN. -->

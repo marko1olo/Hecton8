@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Huidige Deep Reach-vensters"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Huidige Deep Reach-vensters
 
-NL LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+Huidige Deep Reach-vensters leggen uit hoe een afwezige corporatie in 2190 toch een actieve antagonist kan zijn. Er is geen sneller-dan-licht reddingsloket en geen levende bestuurder die HECTON-8 vanuit een kernwereldstoel bestuurt. De afstand is echt: vensters zijn zeldzaam, vertraagd en gefilterd door relaisruggengraten, lokale proxy's, automatische juridische berichten en Black Keel-claimtaal. Dat maakt Deep Reach niet onschadelijk. Tegen de tijd dat een signaal de kloof oversteekt, is de kolonie al gevormd door oude contracten, quarantainestandaarden, uitbetalingsdrempels en bewaringsregels. Wanneer de speler bewijs vasthoudt, wordt de stem van het bedrijf hoorbaar als aanbod: draag Atlas-autorisatiesleutels over, accepteer vrachtbewaring, onderwerp je aan beoordeling en misschien krijg je herstel in plaats van achterlating.
 
 ## Scanner
 
-NL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach kan HECTON-8 niet per radio besturen, maar vertraagde vensters, proxyberichten en Black Keel-clausules bepalen nog steeds wat hulp kost.
 
 ## Terminal
 
-NL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH-PROXY: herstel van operator onderhandelbaar na bewijsbeoordeling, vrachtbewaring, quarantainenaleving en overdracht van Atlas-autorisatiesleutels. Weigering behoudt claimantsstatus maar vernietigt prioriteit voor onmiddellijke extractie.
 
 ## Audio
 
-NL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Wanneer hun stem je bereikt, is die al een contract.
 
 ## Field Note
 
-NL LOC HOLD: Their voice is delayed. Their leverage is already here.
+Hun antwoord komt laat. Hun voorwaarden kwamen jaren geleden al aan.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/nl_NL. -->

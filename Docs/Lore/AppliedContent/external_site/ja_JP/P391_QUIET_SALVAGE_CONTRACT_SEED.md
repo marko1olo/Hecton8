@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Quiet Salvage Contract Seed"
+title: "静穏サルベージ契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Quiet Salvage Contract Seed
+# 静穏サルベージ契約シード
 
-JA LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+静穏サルベージはきれいなスロットから始まる。嵐活動は低く、初期接触は少なく、bathydropウィンドウは全額支払い済みに見える。この形は長いサルベージ走行に役立つ。ルートが部品を取り返し始める前に、オペレーターは工具と避難場所を安定させられる。
 
-## Scanner
-
-JA LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-JA LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-JA LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-JA LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+負債は保管にある。サンプル、事故パケット、pinger記録、ルート通知は、全額支払い前にreceiver-first監査へ結び付く。静かなのは、きれいな証拠の所有者を契約盤が先に決めているからだ。
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ja_JP. -->

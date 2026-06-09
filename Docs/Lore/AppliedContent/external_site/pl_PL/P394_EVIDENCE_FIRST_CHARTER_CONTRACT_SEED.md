@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Evidence First Charter Contract Seed"
+title: "Ziarno kontraktu czarteru dowód najpierw"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Evidence First Charter Contract Seed
+# Ziarno kontraktu czarteru dowód najpierw
 
-PL LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Czarter Dowód Najpierw zmienia tablicę kontraktu przed zejściem. Wypłata materiałowa spada, pojemność notarialna rośnie, szafki dowodów dostają priorytet, a stripping salvage ma karę. Operator wchodzi z trasą, która chroni zapisy lepiej niż części.
 
-## Scanner
-
-PL LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-PL LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-PL LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-PL LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Presja pojawia się w małych wyborach. Pasek stanu włazu może zablokować sprzedaż panelu. Mokry pakiet wypadku może zająć ostatni suchy slot. Log pinger może potrzebować żywego przekaźnika, który inaczej zasiliłby naprawę. Czarter płaci późno, bo każe utrzymać niewygodne obiekty całe wystarczająco długo, by receiver spoza Black Keel mógł je odczytać.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/pl_PL. -->

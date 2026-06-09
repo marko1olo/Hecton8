@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "Цивільно-корпоративний розкол доменів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# Цивільно-корпоративний розкол доменів
 
-UA LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+Людський простір 2190 року розріджений, старий і розбитий на несумісні відсіки. Sol Core досі вирішує, які папери рахуються власністю. Centauri дає Deep Reach мову ранньої колоніальної легітимності. Barnard Yards пояснює, чому робота marauder може виглядати фахом, а не піратством. Tau Ceti може зробити докази публічними, але тільки після relay-затримки й політичної перевірки. Luyten перевозить пакети й вирішує, який custody chain переживе шлях. Aegir лежить там, де кожна юрисдикція стає корисною, а ніхто не прибуває досить швидко, щоб закрити спір.
 
 ## Scanner
 
-UA LOC HOLD: Legal map. Same species, different owners of truth.
+Юридична карта: один вид, кілька власників запису.
 
 ## Terminal
 
-UA LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core тримає старе фінансове право й сертифікацію; Centauri несе перші колоніальні хартії; Barnard Yards унормував salvage-працю; Tau Ceti може перетворити докази на публічне право; Luyten контролює custody пакетів; Aegir лишається корпоративним claim, доки хтось не доведе інше.
 
 ## Audio
 
-UA LOC HOLD: The farther you go, the more the law becomes a receipt.
+Що далі йде сигнал, то більше закон звучить як бухгалтерія.
 
 ## Field Note
 
-UA LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+Порятунок блокує не лише відстань. Його блокує питання, хто має право назвати застряглих людей громадянами.
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/uk_UA. -->

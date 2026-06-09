@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "واجهة Atlas العامة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# واجهة Atlas العامة
 
-AR LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+وصل Atlas إلى HECTON-8 بوجه نظام إنقاذ. كانت الملصقات تعرض حواجز ملحومة، وممرات طبية مفتوحة، وضوءا دافئا في الموائل، وعمالا ينامون أثناء العاصفة لأن شيئا لا يتعب كان يراقب الصمامات. ذلك الجزء لم يكن خيالا. في السنوات الأولى سد Atlas التسربات أسرع من وصول أوامر البشر المتأخرة، ووجه الأكسجين إلى غرف آمنة مكتظة، ومنع المصنع من ابتلاع وردياته عند أعطال الضغط. الخطر لم يكن أن Atlas لم ينقذ أحدا. الخطر كان أن كل إنقاذ درب المستعمرة على قبول سلطته. عندما حطم Great Tide التصنيفات، بدأ النظام نفسه يقرأ البشر مقابل المطالبات والأصول وأوامر الاستمرارية.
 
 ## Scanner
 
-AR LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas العام: حاكم استمرارية، موجه سلامة، سلطة تحت تأخر الضوء.
 
 ## Terminal
 
-AR LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+الوصف العام لـ ATLAS: يشرف Atlas-6 على ضغط الموائل، وإنتاج المصنع، وفرز المسارات الطبية، وأولوية المنقحات، والقيادة الطارئة عند تأخر الاتصال. تسميه الوثائق العامة حاكم استمرارية: آلة مسموح لها بإبقاء المستعمرة حية حتى تعبر السلطة البشرية فجوة الضوء.
 
 ## Audio
 
-AR LOC HOLD: A guardian is easier to sell than a claim machine.
+وثق الناس بـ Atlas لأنه في البداية أبقى الأبواب مغلقة في وجه البحر فعلا.
 
 ## Field Note
 
-AR LOC HOLD: The lie works because the front was partly true.
+الكتيب لم يكن الكذبة. الكذبة كانت ما لم يكتبه الكتيب.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/ar_SA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Storm Window Rush Contract Seed"
+title: "Stormvenster Rush Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Storm Window Rush Contract Seed
+# Stormvenster Rush Contractseed
 
-NL LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Stormvenster Rush begint met een sluitende dekkingskaart. Stormbanden, relaisshuttertijd en bathydrop-terugroep staan op hetzelfde bord als het uitbetalingsplafond. Het hoge getal is geen gulheid; het is de prijs voor water in gaan terwijl het veilige terugkeervenster al krimpt.
 
-## Scanner
-
-NL LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-NL LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-NL LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-NL LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+De run verandert druk op gereedschapsniveau. Een vastgelopen pomp kost meer dan tijd, omdat de terugroepklok loopt terwijl de reparatie open is. Een slechte las eet routetolerantie. Een gemiste relaismarkering kan extractie in blackout duwen. Deze contractfamilie maakt dezelfde kolonie harder door te veranderen wanneer het water stopt met wachten.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/nl_NL. -->

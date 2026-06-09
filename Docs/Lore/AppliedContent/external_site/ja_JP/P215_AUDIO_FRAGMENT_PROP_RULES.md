@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "音声断片小道具規則"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# 音声断片小道具規則
 
-JP LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+音声断片小道具規則は、HECTON-8 が独白で世界を洪水にせず声を使う方法を定義する。すべての音声断片には、物理発信元、損傷転写状態、時刻、矛盾が必要だ。声は環境証拠の代わりになるべきではない。声はそれを鋭くし、部屋、小道具、ルート記録を一緒に語らせるべきだ。
 
 ## Scanner
 
-JP LOC HOLD: Voice is expensive. It must prove something the room also proves.
+声は高価だ。金属、水、時刻、損傷で部屋も証明できる何かを証明しなければならない。
 
 ## Terminal
 
-JP LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: 宙に浮いた独白は禁止。声はハイドロフォン片、スーツ記録器、端末キャッシュ、保守受話器、またはブラックボックス断片に属する。再生可能なすべての行には、発信元、損傷した転写状態、ルート時刻、プレイヤーが調べられる矛盾が一つ必要だ。
 
 ## Audio
 
-JP LOC HOLD: If the room cannot prove me, cut the line.
+部屋が私を証明できないなら、その行を切れ。
 
 ## Field Note
 
-JP LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+音声断片には、発信元小道具、転写損傷、ルート時刻、物理的矛盾が一つ必要だ。
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ja_JP. -->

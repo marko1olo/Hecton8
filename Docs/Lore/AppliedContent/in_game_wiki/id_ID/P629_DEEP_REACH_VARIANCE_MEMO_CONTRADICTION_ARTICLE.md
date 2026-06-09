@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Kontradiksi memo variance Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Kontradiksi memo variance Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+Memo variance bukan bukti sendirian. Ia berguna saat bekas ruang pompa, cap waktu, dan stempel accepted-margin membantah bahasa kantor yang bersih.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+TAG KONTRADIKSI // Memo menyebut variance. Bekas pompa menunjukkan intervensi manual yang terlambat.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // Intrusi air tetap dalam toleransi terkelola sampai return-action review. Antrean perbaikan lokal boleh menunda bahasa eskalasi nonkritis.
 
 ## Audio
 
-Trust the room before the clean word.
+Tak ada yang menulis variance di dinding yang masih menetes.
 
 ## Field Note
 
-Trust the wet room first.
+Saat kata kantor lebih bersih daripada ruangannya, percaya ruangan dulu.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/id_ID. -->

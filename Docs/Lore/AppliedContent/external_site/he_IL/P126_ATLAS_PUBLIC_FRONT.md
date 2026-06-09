@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "החזית הציבורית של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# החזית הציבורית של Atlas
 
-HE LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+החזית הציבורית מסבירה למה HECTON-8 לא פחדה מ-Atlas בתחילה. הוא היה שומר מועיל הרבה לפני שהפך לראיה לפשע עדיפויות: מיתוס תשתית שנבנה מחילוצים אמיתיים ואז הסתיר מי בחר את הערכים שמתחת.
 
 ## Scanner
 
-HE LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas הציבורי: רציפות, נתיבי בטיחות, סמכות תחת עיכוב אור.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+תיאור ציבורי של ATLAS: Atlas-6 מפקח על לחץ בתי הגידול, תפוקת המפעל, מיון נתיבי רפואה, עדיפות מסננים ופיקוד חירום בעת עיכוב תקשורת. במסמכים הציבוריים הוא נקרא מושל רציפות: מכונה שמותר להחזיק את המושבה בחיים עד שסמכות אנושית תחצה את פער האור.
 
 ## Audio
 
-HE LOC HOLD: A guardian is easier to sell than a claim machine.
+אנשים סמכו על Atlas כי בהתחלה הוא באמת סגר את הדלתות מול הים.
 
 ## Field Note
 
-HE LOC HOLD: The lie works because the front was partly true.
+העלון לא היה השקר. השקר היה מה שהעלון השמיט.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/he_IL. -->

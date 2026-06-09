@@ -299,6 +299,9 @@ namespace Hecton8.Visor
         private const uint RuntimeLayoutFaultFlag = 1u << 1;
         private const uint RuntimeNonFiniteFaultFlag = 1u << 2;
         private const uint RuntimeUploadStallFlag = 1u << 3;
+        private const uint RuntimeVisualCommitFaultFlag = 1u << 4;
+        private const uint RuntimeRequestConsumeFaultFlag = 1u << 5;
+        private const uint RuntimeRequestSnapshotFaultFlag = 1u << 6;
         private const uint DumpMagic = 0x4445434Cu; // DECL
         private const string DumpFilePrefix = "Dump_DynamicDecalVaultRuntime_";
         private const string DumpFileExtension = ".bin";
@@ -365,7 +368,7 @@ namespace Hecton8.Visor
         {
             ReleaseDynamicDecalVaultHandles(_vault);
             _vault = null;
-            _cachedPlayerContext = null;
+            ClearCachedPlayerContext();
             _coldRoutesCached = false;
             _instancesHandle = default;
             _uploadHandle = default;
@@ -410,7 +413,7 @@ namespace Hecton8.Visor
                 return false;
 
             _vault = vault;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
             _coldRoutesCached = true;
             return true;
         }
@@ -427,14 +430,19 @@ namespace Hecton8.Visor
 
         public static void RefreshColdPlayerContext()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
+        }
+
+        public static void RefreshColdPlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerContext = IsPlayerContextUsable(playerContext) ? playerContext : null;
         }
 
         public static void ResetColdStorageForRebind()
         {
             ReleaseDynamicDecalVaultHandles(_vault);
             _vault = null;
-            _cachedPlayerContext = null;
+            ClearCachedPlayerContext();
             _coldRoutesCached = false;
             _instancesHandle = default;
             _uploadHandle = default;
@@ -549,13 +557,22 @@ namespace Hecton8.Visor
             using (_enqueueMarker.Auto())
             {
                 if (!IsInitializedForRead())
+                {
+                    AccumulateDroppedIngress(1);
                     return false;
+                }
 
                 if (!IsFinite(runtimePosition))
+                {
+                    AccumulateDroppedIngress(1);
                     return false;
+                }
 
                 if (!TryResolveRuntimeAup(runtimePosition, out double3 aup))
+                {
+                    AccumulateDroppedIngress(1);
                     return false;
+                }
 
                 DecalTuningDTO tuning = ResolveLiveTuning();
                 float3 normal = MakeFloat3(surfaceNormal.x, surfaceNormal.y, surfaceNormal.z);
@@ -587,10 +604,16 @@ namespace Hecton8.Visor
             using (_enqueueMarker.Auto())
             {
                 if (!IsInitializedForRead())
+                {
+                    AccumulateDroppedIngress(1);
                     return false;
+                }
 
                 if (!math.all(math.isfinite(impactAup)))
+                {
+                    AccumulateDroppedIngress(1);
                     return false;
+                }
 
                 DecalTuningDTO defaults = ResolveLiveTuning();
                 DecalRequestSignal request = default;
@@ -734,8 +757,7 @@ namespace Hecton8.Visor
 
                 TryIngestGlobalImpactSignals();
                 TryIngestWaterTransitionSignals();
-                int ingressDroppedBeforeJob = math.max(0, _droppedIngressThisFrame);
-                _droppedIngressThisFrame = 0;
+                int ingressDroppedBeforeJob = SnapshotDroppedIngress();
 
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 uint faultFlags = 0u;
@@ -750,7 +772,14 @@ namespace Hecton8.Visor
                         startTicks,
                         out stats,
                         ref faultFlags))
+                {
+                    if (faultFlags != 0u)
+                        DumpBlackBox(faultFlags);
+
                     return false;
+                }
+
+                ConsumeDroppedIngress(ingressDroppedBeforeJob);
 
                 if (faultFlags != 0u)
                     DumpBlackBox(faultFlags);
@@ -794,7 +823,11 @@ namespace Hecton8.Visor
 
             float quality = ResolveEffectiveQualityWeight(targetQuality, state.GlobalQualityWeight, deltaTime, thermalPressure, hadRuntimeState);
             int maxActive = ResolveMaxActiveDecals(quality, tuning);
-            int requestCount = TryDrainVisualSyncRequests(maxActive, out int drainedRequests) ? drainedRequests : 0;
+            int requestCount = 0;
+            if (TrySnapshotVisualSyncRequests(maxActive, out int stagedRequests))
+                requestCount = stagedRequests;
+            else
+                faultFlags |= RuntimeRequestSnapshotFaultFlag;
             PrepareVisualRequestState(requestCount);
             _managedVisualStateStage[0] = state;
 
@@ -859,8 +892,12 @@ namespace Hecton8.Visor
             if (!TryCommitVisualSyncVault(in tuning, in finalizedState, in telemetryEntry))
             {
                 stats = default;
+                faultFlags |= RuntimeVisualCommitFaultFlag;
                 return false;
             }
+
+            if (!TryConsumeCommittedVisualSyncRequests(requestCount))
+                faultFlags |= RuntimeRequestConsumeFaultFlag;
 
             _lastTuningSnapshot = tuning;
             _hasTuningSnapshot = true;
@@ -944,7 +981,7 @@ namespace Hecton8.Visor
             }
         }
 
-        private static bool TryDrainVisualSyncRequests(int maxRequests, out int requestCount)
+        private static bool TrySnapshotVisualSyncRequests(int maxRequests, out int requestCount)
         {
             requestCount = 0;
             int requestLimit = math.min(math.max(0, maxRequests), MaxCapacity);
@@ -962,22 +999,61 @@ namespace Hecton8.Visor
                 requestQueueLocked = true;
                 DecalRequestQueueStateDTO queueState = SanitizeRequestQueueState(requestStateArray[0], requestRing.Length);
                 int capacity = math.max(1, queueState.Capacity);
-                int drainCount = math.min(requestLimit, queueState.PendingCount);
-                for (int i = 0; i < drainCount; i++)
+                int snapshotCount = math.min(requestLimit, queueState.PendingCount);
+                int readIndex = queueState.ReadIndex;
+                for (int i = 0; i < snapshotCount; i++)
+                {
+                    int requestIndex = readIndex;
+                    DecalRequestSignal request = requestRing[requestIndex];
+                    _managedVisualRequestStage[i] = request;
+                    readIndex = WrapRequestIndex(requestIndex + 1, capacity);
+                }
+
+                requestCount = snapshotCount;
+                return true;
+            }
+            finally
+            {
+                if (requestQueueLocked)
+                    ReleaseDynamicDecalRequestQueueBuffers();
+            }
+        }
+
+        private static bool TryConsumeCommittedVisualSyncRequests(int committedRequestCount)
+        {
+            int safeCount = math.clamp(committedRequestCount, 0, MaxCapacity);
+            if (safeCount <= 0)
+                return true;
+
+            bool requestQueueLocked = false;
+            try
+            {
+                if (!TryAcquireDynamicDecalRequestQueueBuffers(
+                        out NativeArray<DecalRequestSignal> requestRing,
+                        out NativeArray<DecalRequestQueueStateDTO> requestStateArray))
+                {
+                    return false;
+                }
+
+                requestQueueLocked = true;
+                DecalRequestQueueStateDTO queueState = SanitizeRequestQueueState(requestStateArray[0], requestRing.Length);
+                int capacity = math.max(1, queueState.Capacity);
+                int consumeCount = math.min(safeCount, queueState.PendingCount);
+                uint lastFrame = queueState.LastFrame;
+                for (int i = 0; i < consumeCount; i++)
                 {
                     int requestIndex = queueState.ReadIndex;
                     DecalRequestSignal request = requestRing[requestIndex];
-                    _managedVisualRequestStage[i] = request;
                     requestRing[requestIndex] = default;
                     queueState.ReadIndex = WrapRequestIndex(requestIndex + 1, capacity);
                     queueState.PendingCount--;
                     queueState.DrainedTotal++;
-                    queueState.LastFrame = request.SourceFrame;
+                    lastFrame = request.SourceFrame;
                 }
 
+                queueState.LastFrame = lastFrame;
                 requestStateArray[0] = queueState;
-                requestCount = drainCount;
-                return true;
+                return consumeCount == safeCount;
             }
             finally
             {
@@ -2903,6 +2979,20 @@ namespace Hecton8.Visor
             _droppedIngressThisFrame = current + math.min(dropped, remaining);
         }
 
+        private static int SnapshotDroppedIngress()
+        {
+            return math.max(0, _droppedIngressThisFrame);
+        }
+
+        private static void ConsumeDroppedIngress(int consumed)
+        {
+            if (consumed <= 0)
+                return;
+
+            int current = math.max(0, _droppedIngressThisFrame);
+            _droppedIngressThisFrame = math.max(0, current - math.min(current, consumed));
+        }
+
         private static double3 ToDouble3(
             long gridX,
             long gridY,
@@ -2988,7 +3078,7 @@ namespace Hecton8.Visor
 
         private static double3 ResolveCameraAup(Camera camera)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();
             if (playerContext != null)
             {
                 if (playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
@@ -3008,7 +3098,7 @@ namespace Hecton8.Visor
                 return double3.zero;
             }
 
-            if (camera != null)
+            if (IsCameraUsable(camera))
             {
                 Vector3 position = camera.transform.position;
                 if (IsFinite(position))
@@ -3028,6 +3118,47 @@ namespace Hecton8.Visor
             }
 
             return ResolveCurrentRuntimeOriginAup();
+        }
+
+        private static IPlayerRuntimeContext ResolveCachedPlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private static void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private static void ClearCachedPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsCameraUsable(Camera camera)
+        {
+            return camera != null && (!Application.isPlaying || camera.isActiveAndEnabled);
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out double3 absolutePosition)

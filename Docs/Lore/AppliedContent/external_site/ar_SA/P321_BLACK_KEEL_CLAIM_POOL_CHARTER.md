@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Claim-Pool Charter"
+title: "ميثاق حوض مطالبات Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Claim-Pool Charter
+# ميثاق حوض مطالبات Black Keel
 
-AR LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel هي إجابة HECTON-8 الصلبة على مشكلة سفينة الهروب. لدى اللاعب وصول إلى أصل مداري، لكن الوصول ليس ملكية والقرب ليس إنقاذا. carrier بنية دين: مفيدة بما يكفي ليصبح الهروب قابلا للتخيل، ومقيدة بما يكفي لربط كل طريق عودة بالمطالبات والحجر وقيمة الاسترداد.
 
 ## Scanner
 
-AR LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel ليست سفينتك. إنها أصل استرداد في حوض مطالبات، واسمك موجود في دفتر دينها.
 
 ## Terminal
 
-AR LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+مقتطف ميثاق / BLACK KEEL: carrier salvage ذاتي / الحيازة: Aegir Reclamation Pool / نقل المتعاقد: مسموح / ملكية الهيكل: مرفوضة / أولوية الإنقاذ: تابعة لحالة insured receiver وhandshake الحجر وclaim value.
 
 ## Audio
 
-AR LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+لم يأت carrier من أجلك. جاء من أجل مطالبة عُلّق بها اسمك.
 
 ## Field Note
 
-AR LOC HOLD: Use this on the first contract or carrier-status screen.
+يُستخدم على شاشة حالة carrier الأولى: الوصول ممنوح، الملكية مرفوضة، أولوية الإنقاذ مشروطة، lien نشط.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ar_SA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Vent Forge Process Steps"
+title: "Processtappen voor schachtsmeden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Vent Forge Process Steps
+# Processtappen voor schachtsmeden
 
-NL LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Processtappen voor schachtsmeden maken crafting in HECTON-8 tot een industrieel ritueel dat fysiek blijft voelen. De speler draagt geen fantasieoven in een zak. De smidse is een plek waar oceaan, geothermische schacht en kapotte koloniehardware kort overeenkomen. Eerst wordt de blank gepurged zodat oude pekel niet vanbinnen kookt. Daarna wordt hij geklemd voor de puls stijgt, voorverhit op de drukklim, afgedicht tijdens de korte luwte en afgeschrikt in de koude retourstroom. De laatste akoestische ring is geen versiering; hij bewijst dat het onderdeel één schoon lichaam draagt in plaats van verborgen scheuren. Dat geeft crafting een ritme dat de wereld kan ondersteunen via VFX, audio en UI. Hitte telt, maar timing telt meer. Een gemist venster produceert geen mysterieuze fail state. Het produceert krom scrap, zoutbloei of een drukgebarsten component die precies zegt wat er misging.
 
 ## Scanner
 
-NL LOC HOLD: Vent forging should feel like using the planet against itself.
+Schachtsmeden is geen magisch metaalwerk. Het leent hitte, druk en timing van de planeet zonder de planeet het onderdeel te laten houden.
 
 ## Terminal
 
-NL LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+SCHACHTSMEDEN / 01 pekel uit blank purgen / 02 klemmen voor puls / 03 voorverhitten op schachtstijging / 04 afdichten tijdens drukluwte / 05 afschrikken in koude stroom / 06 certificeren via akoestische ring / falen: krom scrap, zoutbloei of drukgebarsten onderdeel.
 
 ## Audio
 
-NL LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+De maan is de oven. Je mag hem alleen lenen.
 
 ## Field Note
 
-NL LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Het proces moet lezen als purge, klem, voorverhitten, afdichten, afschrikken, ringtest. Het risico is niet vlam; het risico is de drukluwte missen.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/nl_NL. -->

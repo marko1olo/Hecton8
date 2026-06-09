@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Медицинский triage ledger
 
-Medical triage evidence делает колонию человеческой и связывает вину Deep Reach с procedure, не cartoon violence.
+Медицинский ledger не должен превращать HECTON-8 в зрелищный gore. Его сила холоднее. Пациент становится pressure-state, затем кислородным долгом, затем задержкой шлюза, затем hold сертификации. Медики могут знать правильное лечение и всё равно терять пациента, потому что люк, маршрутные часы или signoff Deep Reach задерживают помощь. Ledger человеческий потому, что показывает людей, пытающихся быть точными, пока система делает точность бесполезной.
 
 ## Scanner
 
-Медики знали, что система производит пациентов быстрее, чем их можно лечить.
+TRIAGE LEDGER // Травма давления, гипоксия, задержка шлюза, пропавший маршрут, hold сертификации. Ужас в том, как аккуратно помощь ждала.
 
 ## Terminal
 
-TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. Horror is not blood; it is how neatly the ledger explains why help waited.
+МЕДИЦИНСКОЕ ПРАВИЛО: считать тела без gore. Использовать pressure-state, кислородный долг, задержку маршрута, приоритет triage и signoff hold, чтобы показать, как процедура делала пациентов быстрее, чем медики могли лечить.
 
 ## Audio
 
-Самый чистый почерк - на худшей странице.
+Самый чистый почерк стоит на худшей странице.
 
 ## Field Note
 
-Медицинский текст должен считать bodies без gore.
+Медицинский текст должен считать тела, не становясь gore.
 
 <!-- In-Game Wiki; generated from P159_MEDICAL_TRIAGE_LEDGER/ru_RU. -->

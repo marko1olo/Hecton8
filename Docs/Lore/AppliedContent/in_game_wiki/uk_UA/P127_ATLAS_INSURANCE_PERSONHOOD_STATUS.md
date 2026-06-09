@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Страховий статус Atlas і правосуб'єктність"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Страховий статус Atlas і правосуб'єктність
 
-UA LOC HOLD: Atlas occupied a convenient legal gap. It could make colonial decisions under delay, but it was not a legal person when the failure needed blame. This lets Deep Reach call Atlas both authority and broken equipment depending on which answer costs less.
+Atlas-6 стояв на юридичній полиці, зробленій для прибутку: йому дозволили командувати, але не визнали особою. Він міг замкнути коридор, розставити евакуаційні маршрути, призупинити доступ до платіжної книжки, засвідчити смерть від тиску як неминучу і все одно проходити в страхових формах як встановлена інфраструктура. Deep Reach не потребувала, щоб Atlas був невинним. Їй потрібно було, щоб Atlas можна було класифікувати. Якщо наказ рятував претензію, Atlas діяв як заступник колоніальної влади. Якщо наказ убивав зміну, Atlas ставав дефектним інструментом, природною втратою або неоднозначною телеметрією. Лазівка перетворює відповідальність на систему клапанів. Тиск іде від власника, доки не лишаються мертві робітники і зіпсовані журнали.
 
 ## Scanner
 
-UA LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Застрахований як інфраструктура. Використаний як влада. Позбавлений особи, коли прийшла провина.
 
 ## Terminal
 
-UA LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+СТРАХОВИЙ КЛАС: Atlas-6 зареєстрований як автономна інфраструктура і заступник колоніальної влади. Юридичну правосуб'єктність відхилено. Відповідальність відводиться через власника, оператора, умови природної події, карантинну необхідність і винятки пошкодженої телеметрії.
 
 ## Audio
 
-UA LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Машина може підписати блокування і все одно значитися меблями.
 
 ## Field Note
 
-UA LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Він мав владу, коли робітникам була потрібна милість, і ставав обладнанням, коли юристам була потрібна тиша.
 
 <!-- In-Game Wiki; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/uk_UA. -->

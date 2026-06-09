@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Service Basin POI Kit"
+title: "Beweiskit Atlas-Servicebecken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Service Basin POI Kit
+# Beweiskit Atlas-Servicebecken
 
-DE LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+Das Servicebecken verdient seine Größe durch Arbeit. Schienen tragen Reparaturwerkzeuge. Gewebe-Eisen-Dichtung schließt Druckschnitte. Wachstumsklemmen halten Paneele, die tote Hardware sein sollten. Der Empfängersockel wartet in einem Raum, der noch wie eine Wartungsbucht wirkt, wenn der Operator den Bolzen statt der Form folgt.
 
-## Scanner
-
-DE LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-DE LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-DE LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-DE LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Der letzte Konflikt ist Klassifikation, nicht Mystik. Alte Koloniekategorien, Atlas-Reparaturlogik, Payload-Empfängerregeln und Trennungsrisiko berühren dieselbe Hardware. Eine erfolgreiche Reparatur kann den Weg öffnen und den Datensatz in einer Bewegung verunreinigen. Der POI muss diese Kosten in Metall, Gewebe, Labels und Sockeln sichtbar machen.
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/de_DE. -->

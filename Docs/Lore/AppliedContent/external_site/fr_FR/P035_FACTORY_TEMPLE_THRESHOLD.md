@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Seuil usine-temple
 
-Il décrit la zone finale: non une salle de boss, mais le corps commun de l'industrie, de l'océan et de l'IA abîmée.
+Le seuil usine-temple est le dernier relais de porte basse de HECTON-8 : un seuil d'installation à charge partagée où treillis, retour de saumure, scellement de pression et routage Atlas gardent la colonie défaillante atteignable.
 
 ## Scanner
 
-La structure du fond n'est pas une base. Coque d'usine, logique de sanctuaire et tissu vivant partagent la charge.
+Lecture de porte basse : treillis d'usine, conduite de retour, scellement de pression et bus de routage Atlas portent la même charge. Il ne reste pas de frontière nette entre mur et porte.
 
 ## Terminal
 
-Alerte seuil: treillis industriel, joint biogène, chaleur xenon lattice et routage Atlas partagent l'autorité structurelle.
+THRESHOLD LOAD NOTICE
+Treillis : sous contrainte
+Conduite de retour : active
+Scellement de pression : surcroissance carbonatée
+Bus de routage : canal de continuité ATLAS-6
+Accès humain : non vérifié
+Action : relever l'ordre des colliers avant toute ouverture de joint
 
 ## Audio
 
-L'océan n'a pas enterré l'usine. Il en a fait un corps.
+N'appelle pas ça une porte. Trouve quelle ligne tient la pression avant de lui demander de s'ouvrir.
 
 ## Field Note
 
-Ici, la carte cesse de prétendre aux ruines de colonie.
+La carte dit seuil. Vérifie les colliers, pas le mot. La porte tient parce que quatre systèmes prennent la même charge.
 
 <!-- External Site; generated from P035_FACTORY_TEMPLE_THRESHOLD/fr_FR. -->

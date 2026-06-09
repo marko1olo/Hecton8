@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Penangkapan Korporat: Penyelamatan Bersih
 
-Penangkapan korporat bekerja karena dimulai seperti bantuan. Sinyalnya bersih, penjemputannya profesional, dan ruangan punya udara. Lalu urutan operasi menjadi jelas: koordinat dulu, XO custody kedua, akses Atlas ketiga, kesejahteraan kontraktor setelah review.
+Penangkapan korporat menakutkan karena kompeten. Tim penyelamat tidak terlihat seperti perampok. Mereka punya prosedur, permukaan bersih, bahasa medis, dan hak yang masuk akal untuk meminta custody. Karena itu perangkap bisa menutup tanpa tembakan.
 
-Laut berhenti menghancurkan pemain, tetapi Deep Reach mulai mengawetkan cerita. Kesaksian disegel dengan bahasa kontaminasi, custody payload bergerak sebelum debrief medis, dan setiap nama yang dibawa pemain menjadi layar tanggung jawab. Ini bukan kematian. Ini bertahan hidup di dalam mesin yang membutuhkan keheningan.
+Urutannya mengatakan kebenaran. Koordinat diminta sebelum cek nadi. Custody XO dan akses Atlas bergerak sebelum kesaksian. Kontraktor hidup, tetapi cerita disegel di bawah tinjauan kontaminasi, dan setiap nama yang dibawa menjadi layar tanggung jawab. Ini bukan kematian. Ini bertahan hidup di dalam institusi yang membutuhkan kesunyian.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/id_ID. -->

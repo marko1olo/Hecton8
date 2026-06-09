@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Black Keel 账本
 
-Black Keel 不是友好的回家船。它是索赔池勤务船，把身体、载荷、检疫、上升质量和保险风险都读成同一本账的条目。
-
-它不需要恨玩家。它可以礼貌回应，接受求救哈希，然后在数字改变前拒绝接走。
+Black Keel 不是 HECTON-8 上方友好的回家船。它是 claim-pool tender：工作兽、账本、检疫门和保险机器。它能听见玩家，路由数据包，计算窗口，提升质量。它也可能把证据核心、样本或已保险船壳看得比求救者更重要。它不是反派，而是在合同内可靠、在被误认为仁慈时危险的机器。
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/zh_CN. -->

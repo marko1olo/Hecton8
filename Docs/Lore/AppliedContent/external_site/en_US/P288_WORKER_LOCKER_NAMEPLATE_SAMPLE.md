@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Worker Locker Nameplate Sample
 
-HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+Worker Locker Nameplate Sample turns a single locker into a compact human record. Ren Okoye survives through route access, tool certification, a meal token, and an erasure scar. The object shows HECTON-8's core evidence style: identity preserved by work after payroll memory fails.
 
 ## Scanner
 
-Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoye's plate keeps the name because the payline was easier to erase than the work.
 
 ## Terminal
 
-LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-Name retained. Payline erased.
+Name retained. Payline erased. Work still attached.
 
 ## Field Note
 
-REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Payroll stripe sanded off; glove-size mark still visible.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/en_US. -->

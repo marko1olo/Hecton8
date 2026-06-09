@@ -21,24 +21,42 @@ localization_flags: 1
 
 ## Небо не порожнє
 
-Aegir - машина над океаном: гравітація, радіація, геометрія реле, погода уламків, час контрактів і право відновлення.
+Aegir не є фоновою astronomy. Це машина над океаном: gravity, radiation, moon occlusion, relay geometry, debris weather, braking windows, custody queues і холодний факт, що допомога не перетинає distance лише тому, що гравець цього хоче. HECTON-8 сидить у цій машині як восьмий названий moon, світлий біля surface, коли дозволяє weather, і смертельний у depth, де pressure та зламана infrastructure забирають варіанти.
 
-Немає ansible і FTL. Маршрут Ran/Aegir належить до масштабу світлових років, а локальні вікна залежать від орбіт, штормів, тіней місяців і custody черг. Правдивий пакет може запізнитись. Чистий пакет може бути юридично мертвим.
+Немає ansible. Немає FTL courier, який повертається з чистим rescue order, поки Marauder чекає під протікаючим hatch. Ran до Aegir - light-year-scale problem у публічній мові, а навіть локальний рух Aegir залежить від orbit, storm phase, moon shadow, carrier heat, packet routing і того, хто юридично може відповісти. Справжній distress packet може спізнитися. Чистий packet може бути марним. Корисний packet може лишатися надто дорогим для service.
 
-Лунна драбина називає Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON і Mute. Точні сталі належать майбутнім таблицям. Польова мова використовує класи: тінь, сплеск, розсіювання, шлейф, затримка й приймач.
+Перше правило астрономії HECTON-8: небо не надія. Небо - timing. Гравець, що дивиться вгору, має відчути: за кожним message, drop і pickup стоїть geometry, а спокійний голос з orbit може читати той самий schedule, який його вбиває.
 
-Black Keel тримається високо, бо спуск коштує тепла, пального, експозиції, графіка й відповідальності. Повернення потребує реле, підйому, таймінгу, погоди, карантину, hash вантажу й масового вікна. Спокій носія - це автоматика з ledger.
+## Moon ladder - це погода
 
-## Небо як машина
+Публічна ladder називає Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON і Mute. Точна ephemeris належить celestial tables, не обіцяючій статті, але player-facing правда проста: moons не декор. Це moving hazards, relay shutters і legal landmarks. Вони змінюють, коли packet може піднятися, коли signal можна довіряти і коли claim можна notarized.
 
-Aegir не має читатися як намальований фон. Це найбільша машина історії: зоря, драбина місяців, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume і guidance lag, складені у ворожий розклад. Гравцю не треба бачити все одразу. Він має відчувати, що кожне повідомлення, скидання і підйом мають геометрію.
+Skarn приносить charged-particle surge. Vela кидає ice scatter і lens-dirty navigation. Claw і Lumen зберігають old route logic, бо стара infrastructure досі їх очікує. Thorne і Anvil несуть dead-claim paperwork і погані debris lanes. Kestrel важливий, бо стискає eclipse timing достатньо, щоб змінити pickup. Mute доводить, що Aegir має інші dead claims; HECTON-8 просто той claim, що ще платить.
 
-Тому порятунок не може просто прилетіти. Немає FTL-корекції, прихованого ansible, героїчного carrier без маси. Route window спершу є дозволом фізики, а вже потім права. Black Keel може спустити tender, бо це вузька локальна робота, а не диво.
+Гра має дозволити читати цю ladder у дрібницях. relay delay після Kestrel має відрізнятися від storm delay під водою P-63. ice scatter має робити navigation менш певною на слух. moon shadow має перетворювати terminal queue на physics, а не plot convenience.
 
-## Що означає дивитися вгору
+## Чому Black Keel лишається високо
 
-На HECTON-8 дивитися вгору має бути практично і гірко. Небо - не надія. Це timing. Aegir вирішує, коли пакет підніметься, коли receiver відповість, коли claim буде завірено і коли гравець лишиться сам зі старими інструкціями.
+Black Keel - claim tender, не вірний rescue ship. Він тримається на дорогій orbit, бо спуск у цій system не героїзм; це cost event, що палить fuel, heat margin, debris clearance і наступне contract window. carrier, який пірнає щоразу, коли worker кричить, не переживе достатньо contracts, щоб стати Black Keel.
 
-Правильна астрономічна стаття має змусити читати місячне світло як ризик. Рухається Kestrel - змінюється relay shadow. Зростає ice scatter - навігація стає чуткою. Silent Orbit мовчить, але старий метал все ще може вирішувати теперішнє.
+Тому Black Keel лякає без cartoon evil. Платформа може бути правою щодо risk і водночас жорстокою до людей. Може зберігати pickup window і дозволити worker втонути нижче. Може надсилати спокійні instructions, бо calm - це automation with a ledger, не mercy.
+
+Повернення з HECTON-8 потребує більше за сміливість. Потрібні acoustic relay, pressure-rated ascent hardware, guidance timing, storm permission, quarantine handshake, payload hash і tonne-window allocation. Зламай один link, і orbital answer лишиться ввічливою, поки route закрита.
+
+## Фізика перед законом
+
+law приходить після geometry. court може сперечатися про custody лише якщо packet вийшов із води. contract може назвати salvage лише якщо claim можна timed, weighed і received. rescue order може бути noble і все одно промахнутися повз єдине viable route window. Hard-scifi rule HECTON-8 не в тому, що bureaucracy б'є heroism; він у тому, що physics дає bureaucracy зуби.
+
+Це важливо для тону. Гравець сам не тому, що всі дорослі на орбіті дурні. Він сам тому, що distance, pressure, bad weather, damaged ascent hardware, quarantine, mass economics і legal custody накладаються в найгірший момент. Таке накладання страшніше за лиходія, що тисне червону кнопку.
+
+Воно також зберігає красу moon. Aegir може висіти величезним над water, moons можуть різати shadows по cloud і ocean, і scene все одно буде hard. Небо може бути cinematic, не стаючи magic, якщо кожне visible wonder змінює risk, timing або route readability.
+
+## Що значить дивитися вгору
+
+Дивитися вгору на HECTON-8 має бути практично і гірко. clear sky може означати relay opening. bright moon може означати shadow, що зараз відріже route. carrier light може означати custody, не rescue. silent orbit може означати, що packet late, filtered, too expensive або already owned кимось іншим.
+
+Тому astronomy article має бути близько до початку public wiki. Вона вчить гравця, що HECTON-8 покинута не тому, що автори забули spaceships. Вона покинута тому, що ships реальні, distances реальні, claim law реальний, і жоден із цих фактів не хвилює oxygen worker.
+
+Читай Aegir як hostile schedule. Читай moon ladder як weather. Читай Black Keel як receiver with a ledger. Тоді океан унизу зрозуміліший: кожні sealed door, broken ascent frame і delayed packet - маленька частина неба, що відмовляє в rescue, доки proof, mass і timing не збіжаться.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/uk_UA. -->

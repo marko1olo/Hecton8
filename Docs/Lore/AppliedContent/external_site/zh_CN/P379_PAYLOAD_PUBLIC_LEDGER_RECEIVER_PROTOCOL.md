@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "payload 公共总账接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Public Ledger Receiver Protocol
+# payload 公共总账接收协议
 
-ZH LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+公共总账通道是最不私人、也最不服从的接收方。它拒绝坐标出售、直接回收索赔和干净付款收据。它接收的是没有路线地图的事故包：attestation hashes、责任链、Atlas 权重摘要和接收方时间戳。
 
-## Scanner
-
-ZH LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-ZH LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-ZH LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-ZH LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+延迟很重要。包不会召来即时救援或即时审判。它会沿着一条缓慢通道移动，这条通道被设计成能承受禁令、接收方争端和保管压力。接收后，携带者无法拉回它。失去控制，就是让证据更难被购买的代价。
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/zh_CN. -->

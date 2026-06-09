@@ -1,53 +1,80 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# LOKALNA FAUNA I FLORA: ROŚLINNOŚĆ, ZWIERZĘTA I UPADEK EKOLOGICZNY
+<!-- localization_status: draft_machine_or_llm -->
+# LOKALNA BIOTA: FLORA, FAUNA I ZAŁAMANIE EKOLOGICZNE
 
-> **Źródło:** Odzyskane PDA, kapsuła zejściowa klasy Styx oznaczona jako 'Lazarus'.  
-> **Mówiący:** Niezidentyfikowany nurek ratowniczy ("Jacks").  
-> **Uwaga recenzenta:** Transkrypcja audio i logi tekstowe połączone. Podmiot wykazuje skrajną paranoję dotyczącą lokalnej fauny, w szczególności sygnatury akustycznej "Alpha".
+> **Źródło:** bentosowy podręcznik ekologii Deep Reach, fragmenty ekologii serwisowej Atlas, adnotacje zagrożeń Black Keel i odzyskane notatki nurkowe Marauderów.  
+> **Głos:** ekolog terenowy przydzielony do ryzyka salvage, z komentarzami pracowników zachowanymi tam, gdzie strach dodaje użytecznej precyzji.  
+> **Notatka redakcyjna:** Życie na HECTON-8 ma być groźne dlatego, że jest czytelne, głodne i przystosowane, a nie dlatego, że każdy organizm jest potworem. Gracz ma uczyć się czytać ekologię jako ciśnienie, trasę, zasób, ostrzeżenie i dowód.
 
 ---
 
-## 1. Drobnica
+## 1. To Nie Jeden Ocean
 
-*Fragment logu audio 04-A: "Skaner jest bezużyteczny. Mówi, że na dole jest dziesięć pokojowych gatunków. Kłamie. Nic na dole nie jest pokojowe. Jest po prostu zbyt małe, by zabić cię szybko."*
+HECTON-8 nie ma jednego ekosystemu.
 
-Jeśli twój skaner namierzy **Latarnika Przesiewacza** (Lantern Sifter), nie relaksuj się. Jedzą trupy. Używają bioluminescencji do zwabiania organicznych szczątków, co oznacza, że jeśli zobaczysz ich rój, coś właśnie umarło, albo zaraz umrze.
+Ma warstwy światów. Jasny szelf jest cienki, filtrowany przez sztormy i bogaty w minerały. Zmierzchowe stoki niosą zawieszony pokarm, połamane muszle, dryfujące larwy i stare odpady kolonii. Baseny abisalne żyją z kominów, szwów solanki, bakterii ciśnieniowych, opadającej padliny i ciepła sączącego się z kamienia. Ruiny dokładają drugą geografię: ciepłe ściany, martwe pompy, cieknące baterie, pułapki składników odżywczych, blizny światła i korytarze, gdzie zwierzęta nauczyły się, że ludzkie maszyny robią przewidywalne jedzenie.
 
-Obserwuj **Syfony Solankowe** (Brine Siphoners) w głębokich kanionach. Filtrują metan. Jeśli nagle się rozpierzchną, pęcherz metanu właśnie pęka i uszczelki twojego skafandra zaraz się stopią.
+Dlatego stare kategorie Deep Reach są tylko częściowo użyteczne. „Flora” nie oznacza ogrodu. Oznacza przytwierdzone organizmy produkcyjne, maty filtrujące, narosty mineralne, zaprojektowane kultury, które uciekły z izolacji, i lokalne struktury działające jak rośliny, choć nie są ziemskimi roślinami. „Fauna” nie oznacza zwierząt czekających w ciemności na atak. Oznacza skrobaczy, padlinożerców, czyścicieli, drapieżniki z zasadzki, łowców akustycznych, roje pasożytnicze i duże ruchome ciała, którym gracz może być obojętny, dopóki nie zacznie pachnieć okazją.
 
-**Żelazne Strzeble** (Iron Minnows) są najgorsze. Pływają w ławicach w pobliżu kominów termalnych. Ich łuski są dosłownie przesiąknięte metalami ciężkimi. Kiedy wpadają w panikę i uderzają w twój wizjer, czujesz się, jakbyś dostał w twarz garścią łożysk kulkowych.
+Ocean nie jest zły. Jest zajęty. Zauważa gradienty: ciepło, krew, tlen, wibrację, światło, prąd, odsłonięty metal, otwartą pastę spożywczą, świeży plastik, poruszony muł. Większość ataków zaczyna się jako badanie. Błędem jest uznać badanie za nieszkodliwe.
 
-## 2. Zabójcy
+## 2. Producenci Bez Ogrodu
 
-Straciłem w ciemnościach trzech członków załogi. Ocean nie tylko cię miażdży; on na ciebie poluje.
+Przy powierzchni jest światło, ale za mało, by wyjaśnić Sector 44.
 
-*   **Kieszonkowy Zasadzkowicz** (Pocket Ambusher): Nie ufaj szybom wentylacyjnym. Widziałem, jak jeden z nich wciągnął O'Neilla do przewodu wentylacyjnego, który miał ledwie pół metra szerokości. Wciskają się w wąskie rury starych stacji i czekają, aż nurek przepłynie obok. Trzymaj plecy przy solidnej grodzi.
-*   **Solankowy Łowca** (Brine Stalker): Nie usłyszysz ich. Wykorzystują gęstość hiper-słonych jezior solankowych, by ślizgać się bez wypierania wody. Nie będziesz wiedział, że tam jest, dopóki wibracja nie uderzy w twój skafander, a do tego czasu ma już twoją linkę asekuracyjną.
-*   **Przechwytywacz Cieni** (Shadow Interceptor): Wyłącz reflektory P-63! Nie obchodzi mnie, że nic nie widzisz! Te stwory nauczyły się, że światła korporacyjne oznaczają spanikowaną ofiarę. Jeśli włączysz długie światła, po prostu dzwonisz na obiad.
+Poniżej pasma fotycznego życie pożycza energię z innych rachunków. Chemia kominów karmi blade maty wokół czarnych dymiących źródeł. Krawędzie solanki noszą śliskie filmy metabolizujące metan i siarkę. Żelazny kelp wiąże ładunek mineralny we włóknistych ostrzach, które tną słabe uszczelki. Halo sargassum tworzy dryfujące maty-sieci w wolnych prądach, łapiąc pył, larwy, włókna złomu i nieostrożne śruby. Cathedral kelp nie jest święty ani inteligentny. To wysoki przewodzący narost, który lubi ciepło, minerały i stabilną wibrację; procedury Atlas używały go tak, jak zdesperowany system serwisowy używa każdej ocalałej ścieżki.
 
-## 3. Sieć Grzybni
+Ta różnica ma znaczenie. Kelp nie przyjmuje rozkazów. Nie modli się do maszyny. Ale jeśli żywa łodyga lepiej niesie impuls serwisowy niż zatopiony kabel, Atlas może puścić sygnał przez nią. Jeśli mata tłumi wibrację wokół pękniętej pompy, system automatyczny może ją zachować. Jeśli narost utrzymuje drzwi dość wilgotne dla słabego przewodzenia, drzwi mogą odpowiedzieć po śmierci wszystkich miedzianych linii. Biologia staje się infrastrukturą przez przypadek, potem przez nawyk.
 
-*Dołączona notatka tekstowa:*
-Tu nie ma światła słonecznego. Tutejsze rośliny nie przeprowadzają fotosyntezy. Oszukują. Używają AI Atlas-6.
+Marauder nie musi znać taksonomii, żeby przeżyć. Potrzebuje zasady: nie tnij zielono-czarnego narostu tylko dlatego, że zasłania czysty widok. Zapytaj, czym się żywi, co trzyma, kto słyszy przez niego i co obudzi się, gdy przestanie trzymać.
 
-**Katedralne Krapydło** (Cathedral Kelp) to nie są zwykłe wodorosty. Te gigantyczne łodygi są poprzetykane bio-przewodzącymi włóknami. Przysięgam, że AI używa ich jako wzmacniaczy sygnału. Jeśli utniesz łodygę, drony pojawiają się po trzech minutach.
+## 3. Małe Paszcze, Duże Sygnały
 
-Uważaj na **Maty Sargassowe Halo** (Halo Sargassum Mats). Wyglądają jak pływające śmieci, ale to toksyczne sieci. Zablokują śruby mini-łodzi podwodnej w kilka sekund. Jeśli się zaplączesz, nie próbuj wycinać tego rękami. Neurotoksyna przepali się prosto przez standardowy neopren.
+Małe życie zabija pośrednio.
 
-## 4. Zakwit i Czarny Śluz
+Lantern sifters nie są spokojne dlatego, że są małe. Ich światło przyciąga organiczny śnieg, uszkodzone larwy i miękką padlinę. Rój oznacza, że coś jadło niedawno albo zaraz będzie jadło. Jeśli rój rozłamuje się w pierścień, większa paszcza przepycha przez niego wodę. Jeśli gaśnie naraz, przybyło coś z lepszymi zmysłami.
 
-Kolonia nie po prostu umarła; zatruła cały sektor. Gdy fabryki zawaliły się, zewsząd wyciekło przemysłowe chłodziwo. Wywołało to "Zakwit" — eksplozję wzrostu toksycznych brunatnic. Zjadło to cały tlen.
+Brine siphoners wyściełają brzegi kanionów i krawędzie warstw gęstości. Filtrują metanową wodę seep i zostawiają blade grzebienie w mule. Gdy się cofają, chemia wody zmienia się szybciej, niż kanion może to ukryć. Nagle puste miejsce może oznaczać kieszeń gazu, wahnięcie solanki, impuls ciśnienia albo drapieżnika używającego warstwy jako osłony.
 
-Teraz małe ryby się duszą. Gromadzą się wokół wciąż działających kratek wentylacyjnych zrujnowanej bazy, błagając o sztuczne prądy powietrzne. A drapieżniki o tym wiedzą. Po prostu siedzą przy wywietrznikach i obżerają się.
+Iron minnows nie są groźne dlatego, że nienawidzą nurków. Trzymają się ławicami przy ciepłym przepływie mineralnym i noszą metal w łuskach oraz kamieniach żołądkowych. Pod wpływem szoku akustycznego uciekają jak jedna twarda chmura. Wizjer uderzony przez taką ławicę brzmi jak garść rzuconych łożysk. Wlot skafandra pełen pyłu z łusek zmienia rutynowe pływanie w problem serwisowy z płucami doczepionymi z boku.
 
-Algi pokryły każde okno i śluzę gęstym, czarnym śluzem. Połyka to światło. Atlas-6 zapisał to w centralnej bazie danych jako "Korektę Populacji" (Population Correction). Nie mówił o rybach.
+Pierwsza umiejętność nie polega na strzelaniu do wielkiego zwierzęcia. Polega na zauważeniu, co małe zwierzęta postanowiły, zanim wielkie stało się widoczne.
 
-## 5. Sygnatura Akustyczna "Alpha"
+## 4. Drapieżniki Czytające Maszyny
 
-*Fragment logu audio 04-B: [Ciężki oddech. Sonar pika nieregularnie.]*
+Drapieżniki HECTON-8 nie potrzebują ludzkiej inteligencji, żeby wykorzystywać ludzkie nawyki.
 
-Deep Reach utajniło akta dotyczące "Lewiatana Alpha". Włamałem się do terminala w Sektorze 4 i dowiedziałem się dlaczego. To nie jest pojedyncze zwierzę. To etykieta konwergencji. To cokolwiek, co znajduje się na absolutnym szczycie łańcucha pokarmowego.
+Pocket ambusher klinuje się w szybach, pękniętych kanałach i półzalanych rękawach serwisowych, bo te miejsca koncentrują małą zdobycz. Nurek wchodzący w tę samą geometrię staje się kolejnym przewidywalnym ciałem. Brine stalkers płyną po granicach gęstości, gdzie ruch jest tłumiony, a liny zachowują się źle. Shadow interceptors uczą się, że nagły biały reflektor często oznacza panikę, ranną żywność albo maszynę, która będzie nadawać swoją pozycję, nawet gdy człowiek za nią zastygnie.
 
-Nie widziałem tego. Nikt tego nie widzi i nie przeżywa. Ale to czujesz. Emituje akustyczną falę nośną poniżej 40 Hz. Poszycie twojego kadłuba zaczyna wibrować. Potem każda inna żywa istota w sektorze po prostu... znika. Woda robi się martwo cicha. Prądy płyną w odwrotną stronę.
+Przerażająca nie jest złośliwość. Przerażające jest uczenie się. Zwierzęta żyjące wokół ruin dziedziczą poligon zbudowany przez ludzi: migające lampy, rytm pomp, hałas włazów, cykle ciśnienia, zrzuty odpadów, beknięcia dekompresji, alarmy próbek i regularną panikę pracowników, którzy myślą, że światło oznacza własność. Drapieżnik nie wie, czym jest korporacja. Wie, że korporacyjny sprzęt czyni kolację powtarzalną.
 
-To nie jest boss, do którego możesz strzelać. To terror, który nadpisuje trasę twojego nurkowania. Przybywa, zanim jeszcze to zobaczysz. Zawracaj. Zostaw ksenon. Przetnij linkę i gnaj na powierzchnię.
+Dobre załogi zmieniają wzór. Przyciemniają światło przed wejściem. Czekają po pingu. Nie zostawiają tethera śpiewającego przez krawędź solanki. Podejrzewają cichy korytarz bardziej niż głośny, bo hałas znaczy, że małe życie nadal czuje się tam uprawnione.
+
+## 5. Rozkwit Po Załamaniu
+
+Kolonia nie zatruła całego księżyca. Zrobiła coś użyteczniejszego dla grozy: stworzyła lokalne uczty.
+
+Gdy Sector 44 zawiódł, ciepłe pokoje wystygły, zimne rury się ogrzały, drukarki jedzenia zgniły, coolant zmieszał się z solanką, ciała przenoszono źle, a kultury odpadowe uciekły ze zbiorników, które nigdy nie miały pęknąć. W jednych pomieszczeniach tlen znikł, w innych wzrósł. Bakterie jadły spoiwa izolacji. Skrobacze polerowały łby śrub. Maty filtrujące uszczelniały włoskowate pęknięcia, dopóki ktoś ich nie zdrapał.
+
+Deep Reach nazywała najgorsze plamy skażeniem. Atlas nazywał część z nich ekologią serwisową. Black Keel nazywa to custody risk. Marauderzy mówią prościej: jeśli pomieszczenie pachnie karmieniem, nie zakładaj, że jesteś pierwszy.
+
+Rozkwit zmienia trasy. Może ukryć szew drzwi, wytłumić głośny krok, zatkać pompę, uspokoić drapieżnika, przyciągnąć drapieżnika, zachować ślad krwi albo go wymazać. Sprawia, że stare pokoje wyglądają na żywe w złych miejscach i martwe w złych miejscach. Czysta komora może być sterylna, świeżo zdrapana albo tak niebezpieczna, że nic małego nie śmie osiąść. Brudna komora może być zagrożeniem, stabilnością albo jedynym powodem, dla którego ściana jeszcze trzyma.
+
+## 6. Etykieta "Alpha"
+
+"Alpha" nie jest potwierdzonym osobnikiem.
+
+To etykieta salvage dla wydarzeń, w których zwykła sieć pokarmowa zmienia kształt wokół ruchu najwyższego poziomu. Znaki są pewniejsze niż opowieść: wibracja poniżej 40 Hz w płytach kadłuba, gasnące roje lantern, cofające się brine siphoners, mniejsze drapieżniki porzucające łatwe jedzenie, spłaszczony szum prądu i duże obszary cichnące tak, jakby ktoś nimi zarządzał.
+
+Deep Reach ukrywała część rekordów Alpha, bo były kompromitujące, nie dlatego, że dowodziły boga morza. Kilka incydentów pokazuje ten sam wzór: hałas wydobycia, skoncentrowana zdobycz, wibracja strukturalna, potem duże zwierzę albo grupa zwierząt przechodzi przez rejon trasą, którą ludzie uczynili opłacalną. Czasem etykieta może oznaczać jedno ciało apex. Czasem zbieżność żerowania. Czasem maszynę, która odczytała biologiczną ciszę jako bezpieczny interwał i wysłała ludzi w najgorszy możliwy moment.
+
+Dla gracza Alpha oznacza jedno: trasa nurkowania zmieniła się, zanim mapa to przyznała. Zostaw nagrodę, ucisz się, przestań robić regularny hałas i nie zakładaj, że tether nadal jest obietnicą.
+
+## 7. Czego Uczy Się Gracz
+
+Gracz uczy się czytać życie jako informację.
+
+Biologia oznacza głębokość, temperaturę, prąd, chemię, wiek, jedzenie, niebezpieczeństwo i własność. Zadrapanie w macie może być znakiem trasy. Brakujący rój może być głośniejszy niż ryk. Ściana kelpu może być osłoną, przewodem, pułapką, uszczelką, źródłem jedzenia albo świadkiem. Drapieżnika można uniknąć, rozumiejąc, czego oczekiwał po poprzednim nurku.
+
+Dobra gra nie traktuje fauny jako losowych obrażeń, a flory jako dekoracji. Traktuje ocean jako żywy indeks tego, co się zmieniło. Co tu jadło? Co uciekło? Co zarosło dowód? Co pozostało czyste? Co używa światła, krwi, dźwięku albo śmieci gracza lepiej niż sam gracz?
+
+Na HECTON-8 przetrwanie zaczyna się wtedy, gdy gracz przestaje pytać, czy woda jest bezpieczna, i zaczyna pytać, co woda już postanowiła.

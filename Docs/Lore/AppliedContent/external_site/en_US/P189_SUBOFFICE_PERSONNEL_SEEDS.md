@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Suboffice Personnel Seeds
 
-Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+Suboffice Personnel Seeds defines how lower Deep Reach names should appear across HECTON-8 lore. The point is not to invent another villain roster; it is to make the bureaucracy legible and human. Players should encounter initials on damaged memos, repeated desk stamps, witness hashes and contradictory signoffs until Deep Reach stops feeling like a logo and starts feeling like a building full of people trained to protect the wrong thing. These seeds also keep future articles consistent: names attach to functions, functions attach to evidence, and evidence attaches to rooms the player can understand.
 
 ## Scanner
 
-Lower Deep Reach personnel names should be seeded signatures tied to office function.
+The lower Deep Reach names matter because the disaster was carried by hands, initials and inboxes, not by an abstract company logo.
 
 ## Terminal
 
-PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: Risk Margin Intake / Evacuation Queue Counsel / Atlas Continuity Analyst / Packet Notary / Recovery Custody Clerk. Use names as signature anchors, witness conflicts and room evidence, not as a simple command ladder.
 
 ## Audio
 
-A clerk can damage a life without owning the whole disaster.
+The desks had names. That is why the paper hurts.
 
 ## Field Note
 
-Use names only when they make a memo, stamp, badge or order more playable.
+A corporation becomes real when a stamp has a tired person behind it.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/en_US. -->

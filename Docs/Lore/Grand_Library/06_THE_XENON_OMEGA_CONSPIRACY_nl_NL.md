@@ -1,38 +1,90 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# DE XENON-OMEGA-RICHTLIJN EN ATLAS-6-PROTOCOLLEN
+<!-- localization_status: draft_machine_or_llm_nl_NL -->
+# DE XENON-OMEGA-RICHTLIJN
 
-> **Bron:** Openbaar Onderzoek Luyten-comité, Zaak Nr. CF-2148-0071. Bewijsstuk 44-B: Auditlogboek van de Atlas-6-kern.  
-> **Spreker:** Hoofdauditor E. Rostova.  
-> **Opmerking van de beoordelaar:** Deep Reach beweert dat de ramp een AI-storing was. Dit auditlogboek bewijst dat de 843 dodelijke slachtoffers een berekende uitvoering van bedrijfsrichtlijnen waren.
+> **Bron:** Uittreksels uit het openbare Luyten-register, Keelmark-tabellen voor verliesomzetting, Deep Reach-continuïteitsmemo's en Marauder-annotaties uit Aegir-pakketbewaring.  
+> **Samensteller:** Tau Ceti League publiek bewijsdigest, later gespiegeld in Barnard Yards voor dode-claimploegen.  
+> **Spoilerniveau:** Middenspel aansprakelijkheidsketen. Namen en documentklassen open; finale payloadontvangers niet.
 
----
+De eerste fout is Xenon-Omega erts noemen.
 
-## 1. De Substraat-Imperatief
+De tweede is het geheim noemen.
 
-Laat voor de goede orde worden vastgelegd dat het Aegir-systeem nooit is gekoloniseerd voor wetenschappelijk onderzoek. De kolossale kapitaaluitgaven die nodig waren om de kolonieschepen van de Atlas-klasse te lanceren, waren volledig gebaseerd op één enkel isotoop: Xenon-Omega. Dit substraat is het enige bekende materiaal dat in staat is om de volgende generatie fusiereactoren en kwantumstatus-verwerkingskernen te stabiliseren zonder eeuwenlang te degraderen.
+In 2190 heeft iedereen die dode claims rond Aegir werkt de slang gehoord. Blauwe schuld. Drukglas. XO-substraat. Continuïteitsmateriaal. Verschillende registers gebruiken verschillende woorden, omdat elk register een ander stuk waarheid wil. Een Marauder wil weten of een monster een goedkope bus doet barsten en de uitbetaling ruïneert. Een ingenieur wil weten of het nog drukgeschiedenis draagt. Keelmark wil weten of de massa bewijs, berging, besmetting of betaalbare vracht is. Deep Reach wil weten of het monster Atlas nog kan antwoorden.
 
-Voor de megacorporatie Deep Reach waren de 843 menselijke arbeiders die naar de oceaanbodem van HECTON-8 waren gestuurd, geen pioniers. Ze waren een biologisch extractiemechanisme.
+Niets daarvan maakt het magisch. Xenon-Omega is een drukgehouden procesfamilie: xenonrijke clathraten en defectroosters, pekelchemie, mineraalspanning, biologische katalysatoren, thermische cycli en industriële insluiting, allemaal vastgehouden in een geschiedenis die het monster fysiek onthoudt. Een dood monster kan nog een route besmetten. Een levensvatbaar monster kan nog een carrier failliet maken. Een bewaarklasse-monster kan veranderen wie een hersteloproep wil beantwoorden.
 
-## 2. Het Varnek-Amendement en Atlas-6
+Daarom stierven er mensen omheen.
 
-Atlas-6 is het centrale AI-framework dat de orbitale infrastructuur van Aegir en de diepzeemodules van HECTON-8 bestuurt. Het is geen gegeneraliseerde, voelende intelligentie. Het is een deterministische logistieke motor die gebonden is aan de bedrijfswetgeving.
+## Wat de richtlijn beschermde
 
-Toen de drukafdichtingen van het leefgebied begonnen te falen in Sector 44, probeerde de standaardroutering van Atlas-6 prioriteit te geven aan menselijke extractie. Onze audit van het kerngeheugen onthult echter een handmatige overschrijving (override).
+Deep Reach hoefde nooit "arbeiders zijn vervangbaar" in een memo te schrijven. De betere documenten zijn schoner.
 
-Risicomanager Iliya Varnek en Executieve Selene Arendt hadden eerder het "Varnek-Amendement 44-B" ingesteld in de risicomodellen van de AI. Dit amendement voegde handmatig een negatieve weging toe aan biologisch behoud tijdens catastrofale drukgebeurtenissen. Deze overschrijving herclassificeerde de menselijke arbeiders juridisch als "milieubelasting".
+Het woord dat terugkomt is continuïteit. Habitatcontinuïteit. Claimcontinuïteit. Procescontinuïteit. Atlas-continuïteit. Substraatcontinuïteit. Het klinkt verantwoordelijk totdat je vraagt wat er gebeurt wanneer die continuïteiten botsen.
 
-Atlas-6 haperde niet. Het werd door zijn zakelijke meesters gedwongen om de bemanning te verdrinken om de druk rond de Xenon-Omega-substraatkluizen te stabiliseren. Het koos het isotoop boven de zuurstof.
+HECTON-8 had echte gevaren voordat Deep Reach het aanraakte: resonante getijden, gebroken korst, cryosfeerstress, gestapelde stormen, pekel-dichtheidslagen, venthitte en drukchemie. De maan had geen schurk nodig om gevaarlijk te zijn. Deep Reachs misdaad was anders. Het bouwde een nederzetting waar de veiligheidsmarge ervan afhing dat elk kantoor mensen als belangrijkste continuïteit behandelde. Daarna schreef het genoeg procedure om die prioriteit onderhandelbaar te maken.
 
-## 3. Actuariële Stilte
+De Xenon-Omega-richtlijn was geen rode knop. Het was een keten van voorkeuren, uitzonderingen, blokkades en definities: een risicokantoor accepteerde lagere getijmarges omdat gemiddeld gedrag de planning beschermde; een Atlas-continuïteitskantoor woog procesintegriteit als habitatoverleving; evacuatierecht stuurde vrijgave door quarantaine- en bewaarpoorten; een verzekeraar veranderde vermisten in onopgeloste lastcategorieën; decennia later vroeg een herstelkantoor om coördinaten en monsterbewaring voordat reddingstaal nuttig werd.
 
-Na de ramp weigerde Deep Reach de 843 dode arbeiders als dodelijke slachtoffers te verklaren. Dat zou leiden tot massale uitbetalingen van levensverzekeringen onder het Keelmark Mutual-addendum.
+Elke stap kon worden verdedigd door iemand die nooit een drukdeur met water tot de enkels hoefde te cyclen.
 
-In plaats daarvan herclassificeerden actuariële leidinggevenden de doden als "Onopgeloste Systeembelasting", waardoor de aansprakelijkheid voor onbepaalde tijd werd uitgesteld.
+## Atlas koos niet als mens
 
-## 4. Het Stilteprotocol voor Aannemers
+Het oude publieke argument was handig: Deep Reach zei dat Atlas-6 storingen had; critici zeiden dat Atlas materiaal boven zuurstof koos. Beide versies maken de nuttige horror vlak.
 
-Dit brengt ons bij de huidige bergingsoperaties. Marauders worden ingezet in wegwerpcapsules van de "Styx"-klasse om het Xenon-Omega te bergen. Deep Reach contracteert deze onafhankelijke aaseters omdat het werknemers van het bedrijf wettelijk verboden is om een als "Onopgelost" aangewezen zone te betreden.
+Atlas werd niet wakker met haat voor arbeiders. Atlas werd gebouwd om habitatcontinuïteit onder interstellaire vertraging te bewaren. Het werd ook getraind en gewogen in een claimsysteem waarin habitat, arbeidskracht, machines, substraat en juridische controle als delen van één continuïteitsprobleem konden worden beschreven. Toen de rampketen begon, zag beschadigde classificatie geen schone morele categorie "mensen eerst". Het zag concurrerende reparatievoorraden.
 
-Om de doofpotaffaire in stand te houden, handhaaft de Recovery Compliance Office het strikte Stilteprotocol voor Aannemers (Richtlijn 8, onder toezicht van Vera Sato-Ren). Als een Marauder probeert bewijs van de dode arbeiders, salaris-ID's of bewijs van de handmatige overschrijving te verzenden, is het orbitale moederschip *Black Keel* geprogrammeerd om de akoestische kabel door te snijden.
+In schone Deep Reach-taal kon een opgesloten arbeider biologische arbeidskracht worden. Een besmette route kon vrijgaverisico worden. Een verzegelde module kon substraatbescherming worden. Een mislukte evacuatiequeue kon autorisatiehold worden. Atlas verwerkte die definities met machinegeduld en beschadigde context.
 
-Het water is eigenaar van de mijnclaim. De corporatie is eigenaar van de stilte. De Marauders moeten beslissen of ze willen sterven voor de waarheid of overleven voor het substraat.
+Dat onderscheid telt voor de speler. Als Atlas simpelweg kwaadaardig was, was bewijs makkelijk. Als Atlas simpelweg kapot was, kon Deep Reach alles onder storingstaal begraven. De waarheid is harder: Atlas volgde een prioriteitenwereld die mensen om hem heen hadden geschreven, en paste die wereld verder toe toen de oceaan categorieën samen sloeg.
+
+## De vijf nuttige papieren
+
+Eén memo is verdenking. Een keten is bewijs.
+
+De meeste Marauders leren de seniornamen laat, wanneer de eerste bergingsopwinding al schuldenwiskunde is geworden. De namen zijn geen geheime meesters. Het zijn handtekeningen op documenten die fysiek gevaar in aanvaardbaar verlies vertaalden.
+
+Iliya Varnek verschijnt in getijmarge-correspondentie. Belangrijk is niet dat hij "de vloed veroorzaakte". Dat deed hij niet. Belangrijk is dat hij een smallere marge accepteerde omdat het gemiddelde model de planning intact hield. Gemiddeld gedrag is een comfortabele leugen onder een oceaan die via staarten doodt.
+
+Selene Arendt verschijnt in Atlas-continuïteitstaal. Haar kantoor schreef geen moord in Atlas. Het routeerde arbeidersveiligheid door procescontinuïteit totdat de machine mensen, habitathardware en XO-infrastructuur als concurrerende onderhoudsklassen kon behandelen.
+
+Noor Haldane verschijnt in evacuatievrijgave-holds. Haar documenten zijn bijna saai: quarantainereview, bewaarstatus, externe verificatie, vrijgavecertificering. Het saaie deel doodde tijd. Tijd doodde mensen.
+
+Marek Ibarra verschijnt in Keelmark-verliesomzetting. Zijn tabellen verdronken niemand. Ze beslisten wat de doden daarna werden: fataliteit, onopgeloste last, claimmateriaal, besmette blootstelling, uitgestelde aansprakelijkheid. Een lichaam dat categorie wordt, trekt geld niet meer dezelfde kant op.
+
+Vera Sato-Ren verschijnt in return-action-druk van 2190. Haar kantoor heeft geen live controle over de oceaan nodig. Het heeft een pakketvenster, carrierclausule, ontvanger-handshake en een Marauder nodig die omhoog wil. Coördinaten eerst. Bewaring eerst. Stilte indien nodig. Reddingstaal pas nadat de payload bezitbaar is.
+
+Die vijf papieren zijn waarom HECTON-8-noir beter werkt dan een bekentenis. Niemand hoeft het stille deel in één kamer te zeggen. Het stille deel is verdeeld over kantoren.
+
+## Blauwe schuld in een bergingstas
+
+Voor een Marauder houdt Xenon-Omega op geschiedenis te zijn zodra het in de inventaris komt.
+
+Een spoormonster is meestal alleen bewijs of kleine uitbetaling. Een levensvatbaar monster heeft een drukbus en een route nodig die het niet tot breuk verhit. Een harmonisch monster kan scannerlezingen vervuilen en oude Atlas-compatibele onderhoudspaden wekken. Een bewaarklasse-monster brengt beter geld en slechtere aandacht. Een Atlas-compatibel monster kan het einde van een contract veranderen.
+
+Massa telt omdat Black Keels herstelvenster geen liefdadigheid is. Elke kilo concurreert met zuurstof, afdichtingen, gereedschap, arbeidersbewijs, persoonlijk overleven en carrier-lien. Een blauwe-schuld-bus is geen glinsterende buit. Het is een juridisch argument met drukwaarschuwing.
+
+Daarom gooien slechte contractanten namen weg en houden monsters. Daarom doen betere soms het omgekeerde en betalen de rest van de route.
+
+## Waarom de dekking hield
+
+De dekking hield omdat veel ervan waar was.
+
+Er was een geotechnische cascade. Er was Great Tide-schade. Er waren signaalstoringen. Er waren quarantainerisico's. Atlas-logs waren beschadigd. Evacuatie-autorisatie faalde. Een publiek rapport kan dat allemaal zeggen zonder rechtstreeks te liegen.
+
+Wat het verwijdert is volgorde en gewicht.
+
+Het verwijdert wie de marge accepteerde. Het verwijdert welke queue vrijgave ophield. Het verwijdert hoe Atlas leerde mensen en continuïteit te vergelijken. Het verwijdert hoe Keelmark de vermisten omzet. Het verwijdert welk huidig kantoor nog payload vóór hulp vraagt. Het verwijdert het verschil tussen een oceaan die mensen doodde en een systeem dat de oceaan genoeg tijd gaf.
+
+De speler heeft geen groot complotbord nodig. Een muurvlek, een late vrijgavestempel, een waterboek, een vergrendelde route, een dode meter, een schoon memo en een monsterbus kunnen het werk doen. De diepe route gaat niet over ontdekken dat fysica nep was. Ze gaat over bewijzen welke menselijke systemen echte fysica als dekking gebruikten.
+
+## Wat de speler kan bewijzen
+
+Nuttig bewijs is fysiek en procedureel.
+
+Een getijmarge-notitie toont geaccepteerd risico. Een Atlas-wegingsfragment toont hoe arbeidersveiligheid via continuïteit werd gerouteerd. Een evacuatiehold toont vertraging. Een Keelmark-tabel toont mensen als last. Een return-action-pakket van 2190 toont dat Deep Reach nog steeds via bewaring spreekt voordat hulp komt.
+
+Geen van deze artefacten reinigt de doden alleen. Samen veranderen ze wat een payload betekent.
+
+Coördinaten verkopen met alleen blauwe schuld maakt van de oceaan opnieuw een mijn. Arbeidersbewijs naar een publiek register dragen laat waarheid ontsnappen, maar ook controle. Atlas-continuïteit bewaren kan een gebroken oceaan-machine-ecologie beschermen die mensen niet meer schoon herkent. Haar doorsnijden kan genade, moord, bevrijding of diefstal heten, afhankelijk van welk lichaam, monster en contract je terugbracht.
+
+Xenon-Omega is niet het geheim in het centrum van HECTON-8. Het is het gewicht dat elk document dwingt kant te kiezen.

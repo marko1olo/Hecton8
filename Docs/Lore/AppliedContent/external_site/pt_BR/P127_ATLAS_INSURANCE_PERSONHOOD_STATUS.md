@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Status de personalidade segurada do Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Status de personalidade segurada do Atlas
 
-PT LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Esse status é a rachadura legal que permite a um sistema governar trabalhadores enquanto permanece propriedade descartável. A tragédia de HECTON-8 não é só uma máquina ter autoridade, mas cada contrato estar pronto para negar essa autoridade no instante em que ela custa dinheiro.
 
 ## Scanner
 
-PT LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Segurado como infraestrutura. Usado como autoridade. Sem personalidade quando veio a culpa.
 
 ## Terminal
 
-PT LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+CLASSE DE SEGURO: Atlas-6 é registrado como infraestrutura autônoma e procurador de autoridade colonial. Personalidade jurídica negada. A responsabilidade é roteada por proprietário, operador, cláusulas de ato ambiental, necessidade de quarentena e exceções de telemetria corrompida.
 
 ## Audio
 
-PT LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Uma máquina pode assinar um bloqueio e ainda constar como mobília.
 
 ## Field Note
 
-PT LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Teve poder quando os trabalhadores precisavam de misericórdia e virou equipamento quando os advogados precisavam de silêncio.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/pt_BR. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_flora_contact |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS170_FIRST_FLORA_CONTACT_ARTICLES.md |
 | Speaker | Field scanner, brittle algae note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first flora contact |
@@ -39,7 +39,7 @@ GLASS ALGAE // Clean cut edge. Record shard line before moving sample.
 
 The algae looks fragile because it is. The clean edge and shard line show how it broke and which face took flow. Once moved, the brittle sheet will shed pieces and blur the record.
 
-Direction can live in an edge.
+The shard line is the direction record.
 
 ### PDA Log
 
@@ -64,7 +64,7 @@ RECORD SHARD LINE
 
 - Use as early brittle-flora, sharp-edge, or sample article.
 - Can support future flora/resource routes without claiming runtime implementation.
-- Keep edge value as evidence, not item crafting truth.
+- Keep edge value as evidence, not item-crafting behavior.
 - Importer/publication readiness remains false until localization, packet bundle, and Unity content proof exist.
 
 ## Locale Rows
@@ -72,17 +72,17 @@ RECORD SHARD LINE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| ar_SA | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| de_DE | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| es_ES | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| fr_FR | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| he_IL | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| id_ID | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| ja_JP | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| ko_KR | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| nl_NL | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| pl_PL | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| pt_BR | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| ru_RU | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| uk_UA | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
-| zh_CN | draft_machine_or_llm | GLASS ALGAE // Clean cut edge. Record shard line before moving sample. |
+| ar_SA | draft_machine_or_llm | طحلب زجاجي // حافة قطع نظيفة. سجل خط الشظايا قبل تحريك العينة. |
+| de_DE | draft_machine_or_llm | GLASALGE // Saubere Schnittkante. Splitterlinie vor dem Bewegen der Probe aufzeichnen. |
+| es_ES | draft_machine_or_llm | ALGA DE VIDRIO // Corte limpio. Registra la linea de astillas antes de mover la muestra. |
+| fr_FR | draft_machine_or_llm | ALGUE DE VERRE // Bord coupe net. Relever la ligne d'eclats avant de deplacer l'echantillon. |
+| he_IL | draft_machine_or_llm | אצת זכוכית // שפת חיתוך נקייה. רשום את קו הרסיסים לפני הזזת הדגימה. |
+| id_ID | draft_machine_or_llm | ALGA KACA // Tepi potong bersih. Catat garis serpihan sebelum sampel dipindah. |
+| ja_JP | draft_machine_or_llm | ガラス藻 // 切断縁は清潔。試料を動かす前に破片線を記録。 |
+| ko_KR | draft_machine_or_llm | 유리 조류 // 절단면이 깨끗하다. 표본을 옮기기 전에 파편선을 기록한다. |
+| nl_NL | draft_machine_or_llm | GLASALG // Snijrand schoon. Leg de scherflijn vast voordat je het monster verplaatst. |
+| pl_PL | draft_machine_or_llm | SZKLANY GLON // Czysta krawedz ciecia. Przed ruszeniem probki zapisz linie odlamkow. |
+| pt_BR | draft_machine_or_llm | ALGA DE VIDRO // Borda de corte limpa. Registre a linha de lascas antes de mover a amostra. |
+| ru_RU | draft_machine_or_llm | СТЕКЛЯННАЯ ВОДОРОСЛЬ // Срез чистый. Линию осколков запиши до перемещения образца. |
+| uk_UA | draft_machine_or_llm | СКЛЯНА ВОДОРОСТЬ // Зріз чистий. Лінію уламків запиши до переміщення зразка. |
+| zh_CN | draft_machine_or_llm | 玻璃藻 // 切边干净。移动样本前先记录碎片线。 |

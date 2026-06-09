@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מכלול לחיצת יד חוקית של הסגר"
+title: "מכלול לחיצת יד משפטית של בידוד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מכלול לחיצת יד חוקית של הסגר
+# מכלול לחיצת יד משפטית של בידוד
 
-מכלול לחיצת היד החוקית של ההסגר עושה את extraction מלוכלך בכוונה: מנוע עובד עדיין יכול למסור את השורד ל-corporate custody, אמת ציבורית מעוכבת או הסגר לא פתור.
+מכלול לחיצת היד המשפטית של הבידוד הוא הרכיב האחרון כי נתיב הבריחה של HECTON-8 מסתיים בסמכות, לא בוואקום. הקפסולה יכולה להיות מוכנה מכנית, אבל recovery עדיין צריך מקלט שמוכן לתת שם להגעה.
 
-## Scanner
+השקע טוען את העובדות שקובעות את השם הזה: מפתח מקלט, מצב בידוד, custody של מטען, lien חוב והשהיית ספר ציבורי. כל נתיב מקבל גרסה אחרת של אותה קפסולה. Keelmark רוצה מסה ו-lien. Recovery Compliance רוצה קואורדינטות ומצב זיהום. הספר הציבורי רוצה הוכחה שיכולה לשרוד זמן ומחלוקת.
 
-שקע handshake. הקפסולה יכולה להיות מוכנה מכנית ועדיין להשתייך ל-receiver הלא נכון.
-
-## Terminal
-
-RECOVERY HANDSHAKE: נדרש receiver key. Keelmark מקבלת mass ו-lien. Recovery Compliance מקבלת coordinates ו-quarantine status. Public ledger מקבל proof לאחר עיכוב. Unkeyed launch הופך כברירת מחדל ל-custody dispute.
-
-## Audio
-
-מי שעונה מחליט מה משמעות חילוץ.
-
-## Field Note
-
-הרכיב האחרון אינו מתכת. זה שם המערכת שמותר לה לקרוא לך recovered.
+זה עושה את החילוץ לא נוח בכוונה. השיגור הנקי ביותר עדיין יכול למסור את השורד למשרד תביעות, להחזקה רפואית נעולה או לתיק ציבורי איטי. תיקון לחיצת היד לא משחרר את הקפסולה מפוליטיקה. הוא מאפשר ל-Marauder לבחור איזו פוליטיקה תניח ראשונה יד על הצוהר.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/he_IL. -->

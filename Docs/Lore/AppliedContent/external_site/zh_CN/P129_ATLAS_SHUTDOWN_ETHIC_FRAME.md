@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Atlas关停伦理框架"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Atlas关停伦理框架
 
-CN LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+关停框架防止Atlas变成方便的终局击杀神话。HECTON-8最后的权力问题是保管权：终止的究竟是什么，被释放的是什么，当电缆熄灭后结果归谁所有。
 
 ## Scanner
 
-CN LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+关停不是一个动作：怜悯、处决、解放、盗取。
 
 ## Terminal
 
-CN LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+伦理框架：切断Atlas可能终止损坏的修复循环，摧毁一种独特的海洋-机器连续性，将证据从企业流程中释放，或把战略材料转交给下一个保管者。使用道德语言前先记录保管链。
 
 ## Audio
 
-CN LOC HOLD: Pull one cable and four courts invent four verbs.
+拔下一根电缆，四个法庭会发明四个动词。
 
 ## Field Note
 
-CN LOC HOLD: The game should not give the player a clean word for this.
+一个干净的动词会变成又一套遮掩故事。
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/zh_CN. -->

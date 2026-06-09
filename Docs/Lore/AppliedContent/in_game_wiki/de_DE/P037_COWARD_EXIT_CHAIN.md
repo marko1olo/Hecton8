@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Feiger Ausstiegspfad"
+title: "Notausstiegskette"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feiger Ausstiegspfad
+# Notausstiegskette
 
-Der feige Ausstieg ist ein echter Teilabschluss: Das Fluchtgerät funktioniert, die Kampagne bleibt offen.
+Die Notausstiegskette beschreibt den ersten rechtmäßigen Flachrouten-Aufstieg. Sie besteht aus Rumpfsiegel, Batteriereserve, Relaiswiederholung und Sturmlochprognose und wird danach vom Anspruchsbuch als unvollständig markiert.
 
 ## Scanner
 
-Dieser Ausstieg ist echt und dünn: reparierte Kapsel, enges Wetter, keine Wahrheit, kein sauberer Lohn.
+Die frühe Startkette ist echt, aber jedes Licht bleibt vorläufig: Rumpfsiegel, B2-Reserve, Rückkehr-Ping, Sturmloch, Anspruchsbake.
 
 ## Terminal
 
-Aufstieg nach Rumpfsiegel, Batteriereserve, Relais-Ping und Sturmlochprognose möglich. Ledger: unvollständige Bergung.
+Notaufstieg öffnet nur, wenn die Wiege klemmt, Ballastventile trocken sind, Black Keel das P036-Rückkehrfenster wiederholt und die Oberflächenböe einen sauberen Korridor lässt. Das Vertragsbuch stempelt die Abreise unvollständig: keine Atlas-Aussage, kein Deep-Reach-Haftungspaket, keine zertifizierte Auszahlung.
 
 ## Audio
 
-Du kannst laufen. Der Ozean hinter dir erklärt sich nicht.
+Start ist möglich. Abschluss ist nicht an Bord.
 
 ## Field Note
 
-Frühes Gehen soll gelöst wirken, nicht erfüllend.
+Die Kapsel nimmt einen Passagier an, bevor die Anlage einen Datensatz akzeptiert.
 
 <!-- In-Game Wiki; generated from P037_COWARD_EXIT_CHAIN/de_DE. -->

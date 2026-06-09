@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Blue Debt Sample Quality"
+title: "Jakość próbki Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Blue Debt Sample Quality
+# Jakość próbki Blue Debt
 
-PL LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+Jakość próbki Blue Debt definiuje moralność zasobów HECTON-8. Najlepsze próbki nie są po prostu warte więcej waluty. Niosą łańcuchy pieczy, historię ciśnienia i wartość dowodową. Dzięki temu salvage, crafting, handel i zakończenia mogą mówić jednym językiem: to, co wyciągniesz z oceanu, może ci zapłacić, oskarżyć kogoś albo utrudnić twoje zwolnienie.
 
 ## Scanner
 
-PL LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Jakość Blue Debt to wartość, ryzyko i dowód w jednej liczbie. Im bogatsza próbka, tym mniej zachowuje się jak łup.
 
 ## Terminal
 
-PL LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+KLASY JAKOŚCI / shard: niska piecza, bezpieczny handel / casketed bloom: wartość z klasą ciśnienia / harmonic glass: dowód akustyczny i wysokie zainteresowanie Deep Reach / live-contaminated sample: priorytet dowodu, niestabilna obsługa / dead contaminated glass: niska wypłata, silny zapach prawny.
 
 ## Audio
 
-PL LOC HOLD: The more it is worth, the less it is only loot.
+Im więcej jest warte, tym mniej jest tylko łupem.
 
 ## Field Note
 
-PL LOC HOLD: Quality should affect payout, containment and ending pressure.
+Jakość zmienia wypłatę, koszt izolacji, presję trasy i siłę zakończenia. Czysty odłamek płaci; żywo skażona próbka zmusza kogoś do odpowiedzi.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/pl_PL. -->

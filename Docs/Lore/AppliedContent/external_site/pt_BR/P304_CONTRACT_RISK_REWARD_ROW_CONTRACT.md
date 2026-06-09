@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Contract Risk Reward Boundary"
+title: "Limite de Risco e Recompensa do Contrato"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Contract Risk Reward Boundary
+# Limite de Risco e Recompensa do Contrato
 
-PT LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+Replayability em HECTON-8 não é poder herdado. É um contrato pior, uma janela mais apertada, uma cobrança de prova mais cedo e um carrier que lembra quais partes de você ainda são garantia.
 
 ## Scanner
 
-PT LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+A linha de contrato liga gravame, janela de tempestade, ordem de custódia, teto de pagamento e peso de cláusula.
 
 ## Terminal
 
-PT LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: linhas exigem severidade de gravame, teto de pagamento, janela de tempestade, custódia de amostra, ordem de provas e peso de cláusula Deep Reach. O contrato é o primeiro predador.
 
 ## Audio
 
-PT LOC HOLD: The contract is the first predator.
+O contrato é o primeiro predador.
 
 ## Field Note
 
-PT LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Mudanças de recompensa pertencem à linha de contrato, não a texto de lore improvisado.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pt_BR. -->

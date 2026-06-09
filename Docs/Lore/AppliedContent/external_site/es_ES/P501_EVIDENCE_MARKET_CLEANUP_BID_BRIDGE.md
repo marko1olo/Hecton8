@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Oferta de limpieza del mercado de pruebas"
+title: "Oferta de limpieza de evidencia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,25 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Oferta de limpieza del mercado de pruebas
+# Oferta de limpieza de evidencia
 
-## Qué demuestra
+## Qué prueba el registro
 
-Una oferta de limpieza intenta cambiar como viaja un fragmento: limpiarlo, renombrarlo, suprimirlo, unirlo a un lote o moverlo a categoria segura. Demuestra que alguien valoraba el rastro documental lo suficiente para interferir. No prueba verdad, falsedad ni culpa del comprador. En HECTON-8, siga ruta de pago, etiqueta original, etiqueta limpia, reescritura de reclamante y transferencia de custodia.
+Una oferta de limpieza no es un veredicto. Es una orden de compra contra una ruta de evidencia. La solicitud puede pedir a un intermediario que seque una etiqueta, normalice un rótulo, mueva un fragmento a un lote de salvamento, retrase la publicación, convierta el nombre de un trabajador en una categoría de pago o entierre el objeto bruto detrás de un resumen seguro para reclamantes. Importa porque el dinero aparece antes de que el registro cambie. Quien paga puede ser culpable, estar asustado, ser negligente o estar comprando tiempo; la oferta en sí prueba presión sobre el rastro, no la verdad del fragmento.
+
+Lee la oferta por secuencia. Rótulo original, origen de la oferta, retención en depósito, cuenta del gestor, rótulo limpio, transferencia de custodia y ruta del objeto deben quedarse juntos. Si aparece un rótulo limpio antes del pago, puede ser gestión normal del archivo. Si el pago llega antes del cambio de rótulo, alguien compró el cambio de ruta. Conserva el rótulo sucio junto al limpio, o el archivo se convierte en parte de la limpieza.
 
 ## Cómo leerlo
 
-OFERTA DE LIMPIEZA DE PRUEBA
-No lea la linea de pago como veredicto.
-Prueba siguiente: origen de oferta, retencion de pago, transferencia de custodia, reescritura de reclamante y ruta del objeto.
-Conserve etiqueta original junto a la limpiada.
+OFERTA DE LIMPIEZA DE EVIDENCIA
+No trates el pago como veredicto.
+Pago antes del cambio de rótulo = cambio de ruta comprado.
+Cambio de rótulo antes del pago = posible gestión de archivo.
+Siguiente prueba requerida: depósito, cuenta del gestor, transferencia de custodia, rótulo viejo, rótulo limpio, ruta del objeto.
+Acción: conservar ambos rótulos hasta resolver la ruta del objeto.
 
 ## Nota de campo
 
-Una oferta huele, no sentencia. Deje la etiqueta sucia junto a la limpia.
+Nunca archives solo el rótulo limpio. El rótulo viejo y el reloj del pago son la evidencia.
 
 <!-- External Site; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/es_ES. -->

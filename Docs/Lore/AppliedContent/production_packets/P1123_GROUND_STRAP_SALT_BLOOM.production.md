@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_repair_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS167_FIRST_REPAIR_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, low-voltage safety note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first repair reading |
@@ -33,7 +33,7 @@ Forbidden facts: no power-system claim, no shock event claim, no complete circui
 
 ### Scanner
 
-GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power.
+GROUND STRAP // Salt bloom at lug. Clean the contact patch before trusting power.
 
 ### Codex
 
@@ -71,18 +71,18 @@ CLEAN CONTACT PATCH
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| ar_SA | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| de_DE | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| es_ES | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| fr_FR | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| he_IL | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| id_ID | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| ja_JP | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| ko_KR | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| nl_NL | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| pl_PL | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| pt_BR | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| ru_RU | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| uk_UA | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
-| zh_CN | draft_machine_or_llm | GROUND STRAP // Salt bloom at lug. Clean contact patch before trusting power. |
+| en_US | source_authority | GROUND STRAP // Salt bloom at lug. Clean the contact patch before trusting power. |
+| ar_SA | draft_machine_or_llm | شريط التأريض // ترسب ملحي عند عروة التثبيت. نظف موضع التلامس قبل الوثوق بالطاقة. |
+| de_DE | draft_machine_or_llm | MASSEBAND // Salzablagerung am Kabelschuh. Kontaktfläche reinigen, bevor die Versorgung als sicher gilt. |
+| es_ES | draft_machine_or_llm | TIRA DE TIERRA // Salitre en el terminal. Limpia la zona de contacto antes de confiar en la alimentación. |
+| fr_FR | draft_machine_or_llm | TRESSE DE MASSE // Dépôt de sel sur la cosse. Nettoyer la zone de contact avant de faire confiance à l'alimentation. |
+| he_IL | draft_machine_or_llm | רצועת הארקה // פריחת מלח ליד נעל הכבל. נקה את משטח המגע לפני שמסתמכים על חשמל. |
+| id_ID | draft_machine_or_llm | STRAP ARDE // Endapan garam di lug. Bersihkan bidang kontak sebelum percaya daya. |
+| ja_JP | draft_machine_or_llm | 接地ストラップ // ラグに塩の析出。電源を頼る前に接触面を清掃。 |
+| ko_KR | draft_machine_or_llm | 접지 스트랩 // 러그에 염분 결정이 생겼다. 전원을 신뢰하기 전에 접촉면을 닦아라. |
+| nl_NL | draft_machine_or_llm | AARDBAND // Zoutbloei bij het oog. Maak het contactvlak schoon voor je de voeding vertrouwt. |
+| pl_PL | draft_machine_or_llm | TAŚMA UZIEMIENIA // Wykwit soli przy uchu. Oczyść pole styku, zanim zaufasz zasilaniu. |
+| pt_BR | draft_machine_or_llm | TIRA DE ATERRAMENTO // Sal cristalizado no terminal. Limpe o contato antes de confiar na energia. |
+| ru_RU | draft_machine_or_llm | ЗАЗЕМЛЯЮЩАЯ ЛЕНТА // Солевой налет у клеммы. Перед подачей питания очисти контактную площадку. |
+| uk_UA | draft_machine_or_llm | СТРІЧКА ЗАЗЕМЛЕННЯ // Сольовий наліт біля клеми. Перед подачею живлення очисти контактну площадку. |
+| zh_CN | draft_machine_or_llm | 接地带 // 接线耳有盐霜。确认供电可靠前先清洁接触面。 |

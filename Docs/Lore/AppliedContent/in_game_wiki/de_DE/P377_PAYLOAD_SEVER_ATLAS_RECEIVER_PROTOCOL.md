@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Payload-Protokoll Atlas-Severance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Payload-Protokoll Atlas-Severance
 
-DE LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Das Severance-Protokoll ist eine zerstörende Empfängerroute, keine saubere Freigabe. Es kann beschädigte Reparaturlogik stoppen und Deep Reach einen Recovery-Vektor verweigern. Es kann auch Maschinenökologie zerstören, nützlichen Routenspeicher löschen und eine Beweisspur erzeugen, die je nach Empfängerrecht als Eindämmung, Sabotage, Diebstahl oder Gnade gilt.
 
 ## Scanner
 
-DE LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Severance-Route scharf. Payload trägt Schnittschlüssel für Atlas-Kontinuität, Routenspeicherisolation und Beweishash-Erhalt.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+PAYLOAD-EMPFÄNGER // ATLAS-SEVERANCE. Ziel: Atlas-Kontinuitätsrücken. Reparaturschleife trennen, Routenspeicher isolieren, Beweishash erhalten, Corporate-Recovery-Vektor verweigern. Ökologischer Kaskadeneffekt ungeklärt. Rechtliche Klassifizierung umstritten.
 
 ## Audio
 
-DE LOC HOLD: If this is mercy, it still leaves a body.
+Atlas lässt sich schneiden. Der Schnitt hinterlässt trotzdem Verwahrungsspuren.
 
 ## Field Note
 
-DE LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Plünderernotiz: Ein sauberer Schnitt ist trotzdem ein Schnitt. Fotografiere die Verwahrungsmarken, bevor du ziehst.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/de_DE. -->

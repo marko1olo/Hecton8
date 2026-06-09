@@ -19,22 +19,10 @@ localization_flags: 1
 
 # 유도 타이밍 코어 조립체
 
-유도 타이밍 코어 조립체는 HECTON-8의 우주비행을 단단하게 유지한다. extraction은 시계, 그림자, 손상된 신뢰로 된 항로 문제다.
+유도 타이밍 코어 조립체는 탈출을 단순한 위쪽 밀어 올림이 아니라 궤도 공학으로 바꾼다. HECTON-8의 상승 캡슐은 물, 날씨, 달 기하, 기업 수신 규칙을 지나야 그 연소를 회수 가능하다고 부를 수 있다.
 
-## Scanner
+이 부품은 시간 지도를 들고 있다. Aegir 천체력, Black Keel 수신 레인, 달 릴레이 셔터 캐시, 폭풍 플룸 드리프트, custody 시계 허용치다. 어느 것도 장식이 아니다. 캡슐은 밀폐되고 충전되고 기계적으로 정상이어도, 패킷이 잘못된 레인에 잘못된 시간에 닿으면 회수를 놓친다.
 
-빈 timing core. Aegir 기하가 상승이 recovery, capture, 침묵 중 무엇이 될지 결정한다.
-
-## Terminal
-
-GUIDANCE CORE: 캡슐 시계를 Aegir window, Black Keel receiver lane, moon relay shutter, storm-plume drift에 정렬. 늦은 packets는 증거 손실이 되고, 이른 packets는 capture noise가 된다.
-
-## Audio
-
-위쪽은 방향이 아니다. 증인이 있는 창이다.
-
-## Field Note
-
-HECTON-8에서 단순한 위쪽은 없다. 수신기, 그림자, 폭풍 표류, 그리고 네 공포보다 이미 오래된 packet queue가 있다.
+여기에 HECTON-8 탈출 환상의 쓴맛이 있다. 생존자는 깊이에서 자유로 빠져나가는 것이 아니다. 캡슐은 모든 신호를 계속 왜곡하는 바다 위의 좁은 회계 창에 들어간다. 타이밍 코어 수리는 발사에 그 창 안의 자리를 준다. 창을 친절하게 만들지는 않는다.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ko_KR. -->

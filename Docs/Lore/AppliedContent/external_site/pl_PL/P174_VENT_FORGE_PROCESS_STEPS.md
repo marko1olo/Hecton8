@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Vent Forge Process Steps"
+title: "Etapy kucia wentowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Vent Forge Process Steps
+# Etapy kucia wentowego
 
-PL LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+Etapy kucia wentowego opisują hard-sci-fi fantazję produkcji HECTON-8. Planeta dostarcza ciepło i ciśnienie, kolonia połamane klamry i pamięć procesu, a gracz osąd. Taki czytelny łańcuch może wspierać przyszłe crafting beats, storytelling środowiskowy i feedback audio.
 
 ## Scanner
 
-PL LOC HOLD: Vent forging should feel like using the planet against itself.
+Kucie wentowe nie jest magiczną metalurgią. To pożyczanie ciepła, ciśnienia i rytmu planety bez pozwolenia, by planeta zatrzymała część.
 
 ## Terminal
 
-PL LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ETAPY KUCIA WENTOWEGO / 01 wypłukać solankę z półfabrykatu / 02 zacisnąć przed pulsem / 03 podgrzać na wzroście wentu / 04 uszczelnić w luce ciśnienia / 05 hartować w zimnym prądzie / 06 certyfikować akustycznym dzwonem / awaria: wygięty złom, solny nalot lub część pęknięta ciśnieniem.
 
 ## Audio
 
-PL LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Księżyc jest piecem. Wolno ci go tylko pożyczyć.
 
 ## Field Note
 
-PL LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Proces ma czytać się jako purge, klamra, podgrzanie, uszczelnienie, hartowanie, test dźwięku. Ryzykiem nie jest płomień; ryzykiem jest przegapienie ciszy ciśnienia.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/pl_PL. -->

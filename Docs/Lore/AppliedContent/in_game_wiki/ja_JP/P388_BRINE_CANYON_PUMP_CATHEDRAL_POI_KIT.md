@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "ブライン峡谷ポンプカテドラル証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# ブライン峡谷ポンプカテドラル証拠キット
 
-JA LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+ブライン峡谷ポンプカテドラルは、圧力、密度、遅延を中心に作られた工業空間である。機械だけでは誰も告発しないが、サイトグラス、保留時計、ポンプ痕、待機台帳は使える責任連鎖に並ぶ。
 
 ## Scanner
 
-JA LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+POI証拠キット: ポンプカテドラルは密度ガラス、ポンプ損傷、ルート時計、作業員待機記録を照合する。
 
 ## Terminal
 
-JA LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+ポンプカテドラルキット: 密度サイトグラス、ブラインポンプ傷、承認済みマージンメモ、ルート保留時計、作業員待機台帳、ポンプ始動キー、浸水ガントリー痕。
 
 ## Audio
 
-JA LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+ポンプは水を動かした。部屋は事務所より正確に記録した。
 
 ## Field Note
 
-JA LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+マローダーメモ: ポケットを排水する前にサイトグラスを撮影しろ。ブラインが動くとマージン線は平らに見える。
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/ja_JP. -->

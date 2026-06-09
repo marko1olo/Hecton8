@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Zacznij tutaj: HECTON-8
 
-Pierwszy klaster nawigacji powinien wprowadzać przez archiwa, a nie przez reklamowy skrót. Black Keel zapisuje HECTON-8 jako recoverable ocean claim. Deep Reach opisuje stratę jako storm-and-collapse event. Stare pomieszczenia odpowiadają inaczej: pump boards, quarantine doors, maintenance routes i ślady napraw Atlas pokazują, że kolonia nie zniknęła w jednej chwili. Ten start zbiera podstawowe pytania: kim jest Marauder, czemu dług ma znaczenie, dlaczego pomoc nie przychodzi od razu, co ukrywa oficjalny język i czemu pierwsze dowody leżą w pracy z ciśnieniem, a nie w heroicznym przeznaczeniu.
+Pierwszy publiczny zapis HECTON-8 nie jest distress call. Jest kontraktem. Black Keel zapisuje księżyc jako recoverable ocean claim. Deep Reach nazywa stratę storm-and-collapse event. W papierach stara kolonia pojawia się jako damaged assets, sealed compartments, uncertain data i recovery cost, który powinien zapłacić ktoś inny.
+
+Ten język jest pierwszą pressure door. Nie jest całkiem fałszywy. Burza się wydarzyła. Zawalenie się wydarzyło. Atlas naprawdę próbował naprawić niemożliwe. Ale oficjalne brzmienie ukrywa kolejność, opóźnienie, custody i tych, którzy zarobili, gdy rescue stało się salvage.
+
+Gracz wchodzi jako Marauder, nie wybrany dziedzic. Ciało schodzące w dół niesie historię z Deep Reach, łańcuch długu, uszkodzoną bathydrop capsule i brak czystej drogi w górę. Gra nie potrzebuje tajnego rodzica ani zaginionego brata, żeby powrót był osobisty. Wystarczy zawodowa wina, kiedy stare systemy wciąż odpowiadają procedurom, którym protagonista kiedyś ufał.
+
+Pierwsza zasada to evidence before myth. Pump board może powiedzieć więcej niż monolog. Quarantine door może wyjaśnić, dlaczego pomoc przyszła późno. Worker tag może uczynić pokój ludzkim. Atlas growth może być naprawą, świadkiem i zagrożeniem jednocześnie.
+
+Zacznij tutaj, jeśli chcesz mapę spoiler-light. Dowiedz się, kto prawnie może nazwać to rescue, dlaczego pomoc podróżuje wolniej niż dokumenty, dlaczego ocean pamięta pracę lepiej niż raporty publiczne i dlaczego opuszczenie HECTON-8 zawsze oznacza decyzję, kto posiada proof.
 
 <!-- External Site; generated from P416_SITE_WIKI_START_HERE_CLUSTER/pl_PL. -->

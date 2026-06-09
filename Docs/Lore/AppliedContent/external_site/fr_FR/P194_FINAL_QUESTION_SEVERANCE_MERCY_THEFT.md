@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Question finale : section, pitié, vol"
+title: "Question finale : coupure, miséricorde, vol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Question finale : section, pitié, vol
+# Question finale : coupure, miséricorde, vol
 
-La section doit être tactile et effrayante, pas abstraite. Le joueur n'appuie pas sur un bouton rouge nommé bien ou mal. Il coupe une continuité à travers portes de pression, film conducteur vivant, anciens dossiers d'ouvriers, routes animales et chemins de payload. Chaque paquet de preuve apporté avant la salle finale change le sens de la coupe.
+La coupure doit ressembler à un travail fait avec un outil, pas à un bouton moral. Elle traverse des portes de pression, un film conducteur vivant, des tampons de dossiers travailleurs, des routes de faune taguée, des vent micronodes, des pulsations shell sealant et des chemins de charge. Chaque paquet de preuve apporté dans la salle finale change qui pourra nommer l'acte ensuite.
 
-Si Atlas est d'abord geôlier, la section est pitié. S'il est la seule chose qui tienne le bassin, c'est sabotage. Si Atlas est un organisme océan-machine émergent, c'est meurtre. S'il reste propriété de Deep Reach, c'est vol. Le bon design ne choisit pas une lecture pour le joueur. Il fait comprendre pourquoi aucun témoin dans la pièce ne peut honnêtement simplifier l'acte.
+Si Atlas agit en geôlier, la coupure peut libérer des dossiers piégés de la logique qui les enterrait encore. Si Atlas tient le bassin ensemble, la même coupure peut transformer des routes de réparation en matériel mort. Si la couche de réparation est devenue une forme de vie locale, la coupure blesse plus qu'une machine. Si Deep Reach peut encore emprunter le rail de continuité, la coupure peut lui fermer le retour. La fin tient quand le dossier montre d'abord les dégâts physiques et laisse le droit des récepteurs se battre ensuite pour l'étiquette.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/fr_FR. -->

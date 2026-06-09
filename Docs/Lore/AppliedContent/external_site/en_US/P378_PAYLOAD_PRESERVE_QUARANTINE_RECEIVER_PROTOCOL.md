@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Payload Preserve Quarantine Receiver Protocol
 
-The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Preserve quarantine is the careful route, and careful does not mean harmless. The payload blocks direct Deep Reach transfer and keeps the coordinate vector sealed. Atlas-linked ecology remains intact enough for review, and the basin is not handed to a recovery buyer on receipt.
 
-## Scanner
-
-Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+The danger is institutional. Quarantine escrow can outlive the emergency that justified it. A protected basin can become a held basin, then an assigned basin, then a claim with better language. This route saves time and living structure, but it leaves custody marks all over the future.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/en_US. -->

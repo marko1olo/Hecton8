@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Falsches öffentliches Berichtspaket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Falsches öffentliches Berichtspaket
 
-DE LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Das falsche öffentliche Berichtspaket ist die Version von HECTON-8, die Deep Reach den Welten sicher zeigen konnte. Es erfindet keinen falschen Ozean. Die Große Flut war real, der Relaisverzug war real, die Quarantäneunsicherheit war real, und deshalb übersteht der Bericht ein flüchtiges Lesen. Die Lüge lebt in den Auslassungen. Sie entfernt akzeptierte Risikomargen, verzögerte Evakuierungsautorität, Atlas-Kontinuitätsgewichtung, Versicherungsumwandlung und Recovery-Verwahrungsdruck. Der Spieler sollte es als letzten Unternehmenszug lesen: genug Physik behalten, um nüchtern zu klingen, genug Entscheidungen schneiden, um Schuld zu löschen.
 
 ## Scanner
 
-DE LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Der öffentliche Bericht funktionierte, weil er den echten Ozean behielt und die menschlichen Entscheidungen darin entfernte.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: HECTON-8-Verlust zugeschrieben außergewöhnlicher Gezeitenkaskade, Relaisverzug und Quarantäneunsicherheit. Ausgelassen: akzeptierte Risikomargen, Evakuierungsfreigabe-Hold, Atlas-Kontinuitäts-Override, Anspruchsumwandlung und Nutzlast-zuerst-Recovery-Antrag.
 
 ## Audio
 
-DE LOC HOLD: They did not fake the storm. They buried the choice.
+Sie sagten die Wahrheit über das Wasser und logen über die Hände.
 
 ## Field Note
 
-DE LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Die beste Lüge leugnete die Flut nicht. Sie benutzte die Flut als Deckung.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/de_DE. -->

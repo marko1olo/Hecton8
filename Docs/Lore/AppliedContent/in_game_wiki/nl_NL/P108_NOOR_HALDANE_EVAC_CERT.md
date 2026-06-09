@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: evacuatiecertificaat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: evacuatiecertificaat
 
-NL LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+Noor Haldane is de juridische en certificerende Deep Reach-stem achter evacuatieblokkades. Haar handtekening is niet als paniek geschreven. Ze is als controle geschreven. De route moet certificeerbaar blijven. De vervoerder moet bewaring accepteren. De biologische staat moet reviewbaar blijven. De juridische keten moet de ramp overleven, zelfs als de mensen in de route dat niet doen.
+
+Daarom doet Haldanes dossier pijn. De taal kan zichzelf verdedigen. Een quarantainebreuk kan besmetting verspreiden. Ongecertificeerde extractie kan vervoerders laten stranden. Havenweigering kan redding in een nieuwe ramp veranderen. In een schone vergaderruimte klinkt elke clausule als verantwoordelijke insluiting. In een drukcorridor met stijgend water worden dezelfde clausules een slot.
+
+Voor de speler verbindt dit artikel kolonierouteblokkades, medische vertragingen en Deep Reach-aansprakelijkheid. Haldane hoeft niemand te haten. Ze hoeft evacuatie alleen te laten wachten op de voorwaarden die bewijzen dat evacuatie veilig is. Druk wacht niet. Zuurstof wacht niet. Het certificaat wachtte.
 
 ## Scanner
 
-NL LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+CERTIFICERINGSBLOKKADE // N. Haldane hield de route juridisch schoon terwijl de route fysiek faalde.
 
 ## Terminal
 
-NL LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // Juridisch advies evacuatiecertificering // Vrijgave geweigerd tot druk-biologische quarantaine, vervoerdersbewaring en externe routereview zijn afgerond. Ongeautoriseerde extractie kan claimketen, habitataansprakelijkheid en acceptatie door downstreamhaven schaden.
 
 ## Audio
 
-NL LOC HOLD: The door was not locked by fear. It was locked by compliance.
+De deur was niet door angst gesloten. Ze was door compliance gesloten.
 
 ## Field Note
 
-NL LOC HOLD: This is the paper signature players should hate.
+Dit is de papieren handtekening die spelers moeten haten: geen paniek, geen kwaadaardigheid, alleen een deur die op externe review wacht terwijl zuurstof blijft aftellen.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/nl_NL. -->

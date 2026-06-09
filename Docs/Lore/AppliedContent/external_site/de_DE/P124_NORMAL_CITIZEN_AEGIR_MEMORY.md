@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Normale Bürgererinnerung an Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Normale Bürgererinnerung an Aegir
 
-DE LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+Die öffentliche Erinnerung von HECTON-8 ist absichtlich dünn. Der menschliche Raum muss nicht unwissend sein; müde, fern und an Verlustzusammenfassungen gewöhnt reicht aus. Aegir ist bekannt genug, um Preise und Politik zu beeinflussen, aber nicht lebendig genug, um Rettung zu erzwingen. Die Rückkehr in den Ozean öffnet die Lücke zwischen öffentlicher Erinnerung und privatem Beweis.
 
 ## Scanner
 
-DE LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Öffentlicher Archivstummel: Alle haben von Aegir gehört, fast niemand erinnert sich an einen Namen.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: HECTON-8-Verlustereignis, 2147. Offizielle Ursachen: Sturm-Kaskade, Evakuierungsversagen, Automationskorruption, biologische Quarantäne, unzuverlässige Telemetrie. Aktueller Status: ruhender Anspruch, Versicherungsindex aktiv, ziviler Verkehr nicht empfohlen.
 
 ## Audio
 
-DE LOC HOLD: Most people know the place as a line under insurance rates.
+Die meisten Menschen kennen Aegir als Zeile unter ihrem Versicherungssatz.
 
 ## Field Note
 
-DE LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Eine Katastrophe wird gewöhnlich, wenn sie in die Rechnung eingepreist ist.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/de_DE. -->

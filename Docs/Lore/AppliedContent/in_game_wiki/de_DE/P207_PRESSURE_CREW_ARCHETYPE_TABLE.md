@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Tabelle der Druckcrew-Archetypen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Tabelle der Druckcrew-Archetypen
 
-DE LOC HOLD: Pressure crew archetypes keep worker evidence tied to systems the player can understand and repair.
+Die Tabelle der Druckcrew-Archetypen macht Koloniebeweise funktional, bevor sie sentimental werden. Ein Pump-Arbeiter soll den Spieler zu Wasser, Ventilen, Druckspitzen und Wartungslügen führen. Ein Seal-Arbeiter gehört zu Türen, Rumpfflicken, Schleusenritualen und Räumen, die zu lange trocken blieben. Relay, Brine Map, Vent Forge, Triage, Pressure Botany und Payload Witness leisten dasselbe für Signale, Routen, Fertigung, medizinische Verzögerung, Nahrungserhalt und das Ding, das Deep Reach nicht benennen wollte. Die Tabelle hält Trauer an Systeme gebunden, die der Spieler berühren kann.
 
 ## Scanner
 
-DE LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Crews sind Verben, bevor sie Hintergrundgeschichte sind: pumpen, versiegeln, weiterleiten, kartieren, schmieden, triagieren, kultivieren, bezeugen.
 
 ## Terminal
 
-DE LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany und Payload Witness. Jede Arbeiteridentität bindet sich vor persönlichen Details an eine Crew-Familie. So bleiben Beweise an Maschinen, Routen, Druckausfälle, Esskultur, Bergungsrecht und die finale Payload-Kette gebunden.
 
 ## Audio
 
-DE LOC HOLD: Job first. Memory second. That is how the colony survives.
+Erst die Arbeit. Dann die Erinnerung. So überlebt die Kolonie auf Papier.
 
 ## Field Note
 
-DE LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Ein toter Arbeiter liest sich klarer, wenn der Raum die Arbeit, die er kannte, noch braucht.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/de_DE. -->

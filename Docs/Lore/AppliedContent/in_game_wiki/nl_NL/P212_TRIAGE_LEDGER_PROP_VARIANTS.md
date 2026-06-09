@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Propvarianten voor triagelogboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Propvarianten voor triagelogboek
 
-NL LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+Propvarianten voor triagelogboeken houden schade leesbaar zonder kamers in tentoonstellingen van lijden te veranderen. Een triagelogboek moet tonen hoe letsel door bureaucratie bewoog: crush-status-shorthand, zuurstofschuld, doorgestreepte route hold, apparatuurstaat, Atlas-stabilisatienotitie en witness-hash-gat. Het doel is niet de kolonie met pijn decoreren. Het doel is bewijzen dat vertraging een pad had en dat dat pad eigenaars had. Goede triageprops laten de speler vragen waarom één arbeider werd geteld, een andere werd vastgehouden en een derde in certificeringstaal verdween.
 
 ## Scanner
 
-NL LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Medisch bewijs moet vertraging en routing blootleggen, niet de kamer met lijden decoreren.
 
 ## Terminal
 
-NL LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: elke logboekregel moet letsel verbinden aan druk, routeweigering, apparatuurstaat, certificeringsvertraging of ontbrekende getuigenketen. Pijn alleen is niet genoeg. De prop moet tonen wie kon bewegen, wie werd vastgehouden en welk systeem vertraging procedureel liet lijken.
 
 ## Audio
 
-NL LOC HOLD: Pain is not proof until the route bears the mark.
+Pijn is geen bewijs tot de route het merkteken draagt.
 
 ## Field Note
 
-NL LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Varianten: crush-status-shorthand, zuurstofschuldmarkering, doorgestreepte route hold, Atlas-stabilisatienotitie, witness-hash-gat.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/nl_NL. -->

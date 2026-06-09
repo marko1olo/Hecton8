@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Salvage Carrier Autonomy Limits"
+title: "Batas Otonomi Carrier Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Salvage Carrier Autonomy Limits
+# Batas Otonomi Carrier Salvage
 
-ID LOC HOLD: The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+Batas Otonomi Carrier Salvage menjaga HECTON-8 tetap membumi. Black Keel berbahaya karena berguna dan terbatas sekaligus. Ia dapat melakukan pekerjaan akuntansi dan recovery yang membuat kabur mungkin, tetapi aturannya melarang penyelamatan mustahil yang diharapkan pemain dari kapal pribadi. Hasilnya adalah infrastruktur berdenyut, bukan pendamping.
 
 ## Scanner
 
-ID LOC HOLD: Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel dapat memindahkan utang, telemetri, dan drop suplai rendah risiko tanpa bertanya. Ia tidak bisa mengotorisasi deep rescue.
 
 ## Terminal
 
-ID LOC HOLD: AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+BATAS OTONOMI / diizinkan: claim processing, penjualan telemetri, recovery-window scheduling, ballast atau supply drop rendah risiko, contaminated-mass rejection / dilarang: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
-ID LOC HOLD: Autonomous does not mean free. It means the debt can move without asking you.
+Otonom bukan berarti bebas. Artinya utang bisa bergerak tanpa bertanya padamu.
 
 ## Field Note
 
-ID LOC HOLD: Keep this out of combat barks; it belongs in carrier status and contract UI.
+Simpan di status carrier dan UI kontrak, bukan combat bark. Otonomi mencakup akuntansi, jadwal recovery, dan logika penolakan.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/id_ID. -->

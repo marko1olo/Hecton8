@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Ressourcen und Ökologie
 
-Der Ressourcencluster soll Prozessketten zeigen, keine Beuteliste. Ein Mineral kann aus drowned crust stammen, aus einem brine-trap-Sediment, aus vent heat, aus alter Maschine oder aus Gewebe, das nach Atlas-Eingriff um Metall gewachsen ist. Blue debt verbindet Wirtschaft mit Geologie: Was nach oben gebracht werden kann, wurde oben bereits bepreist. Ökologie ist weder Hintergrund noch Zoo. Fauna reagiert auf Klang, Druck, Licht, Salzspur und beschädigte repair paths. Ressourcen, Biota und Beweise müssen gemeinsam gelesen werden: Eine Probe kann ein Werkzeug speisen, einen Unfall zeigen und markieren, wo Atlas Reparatur mit Nutzung von Lebendem verwechselte.
+Der erste Fehler ist, HECTON-8s Ressourcen roh zu nennen. Dort unten kommt fast nichts Nützliches unberührt an. Ein Splitter vom Drowned Crust trägt Druckgeschichte. Eine blue debt-Ader behält die Erinnerung an Hitze, Brine und Entnahmemethode. Eine Schalenplatte kann Riffpanzer, gescheiterter Dichtstoff, von Atlas gezüchtete Kabelhaut und Rechtsbeweis sein, bevor ein Marauder sie überhaupt in eine Kiste legt.
+
+Darum stehen Ressourcenseiten neben Ökologieseiten. Die alte Kolonie baute keinen toten Boden ab. Deep Reach schnitt in Brine-Leitern, ventgefütterte Mineralbänke, verschlammte Maschinen und lebende Filtersysteme, die den Mondrhythmus bereits kannten. Nach der Katastrophe drückte Atlas sein Reparaturmodell in alles, was ein Leck schließen oder ein Signal tragen konnte. Biofilm wurde Leiter. Wurzelmatte wurde Dichtung. Markierte Fauna wurde bewegliche Rückmeldung.
+
+Die Tiere sind keine loot-Kisten mit Flossen. Sie lesen Vibration, Wärme, Lichtabfall, Blutchemie, Salzspuren und aufgewirbelten Schlamm. Ein Weider kann sichere Schabzonen freilegen, indem er einfach seine alte Arbeit tut. Ein Räuberschatten kann zeigen, welcher Korridor den falschen akustischen Puls trägt. Ein markiertes Tier kann Reparaturroute, Zeuge und Gefahr im selben Durchgang sein.
+
+Blue debt macht die moralische Rechnung schmutziger. Die beste Probe kann stumpf, versiegelt und hässlich sein, weil sie den Druckzustand bewahrt hat, der ihren Entstehungsort beweist. Ein heller Splitter kann wertlos sein, wenn ein Vent seine Erinnerung ausgewaschen hat. Beides zu nehmen kann einen Fluss ändern, einen Jäger wecken, einen Atlas-Flicken beschädigen oder eine Unfallspur aus der Arbeiterzeit löschen, die wichtiger war als die Auszahlung.
+
+Die nützliche Frage ist nie nur, was geerntet werden kann. Sie fragt, was der Ozean mit diesem Material tat, bevor eine menschliche Hand in die Kette griff. HECTON-8 wird lesbar, wenn Geologie, Leben, Maschinen und custody als ein System gelesen werden, das Schaden erinnert.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/de_DE. -->

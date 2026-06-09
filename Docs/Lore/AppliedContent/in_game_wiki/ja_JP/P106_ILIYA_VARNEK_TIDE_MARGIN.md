@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "イリヤ・ヴァルネクの潮汐マージン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# イリヤ・ヴァルネクの潮汐マージン
 
-JP LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+イリヤ・ヴァルネクは、2147年のDeep Reachリスク署名者であり、グレート・タイドのマージンに結びついている。彼はレバーを握る漫画的な経営者ではない。このメモがより悪質なのは、その普通さだ。生産スケジュール、平均化されたモデル、信頼度の一行、作業員曝露の注記、そして続行の推奨。
+
+重要なのは、平均化されたモデル信頼度という言葉である。平均ではルートは生き残れるように見えた。だが分布の裾野では、Aegirの潮汐スタック、氷棚の反動、圧力ルートの交通、Atlas補償の誤差が重なり、生きたルートは会計上の許容差にまで縮んだ。加圧室の人々は平均値の中で生きていたのではない。最悪の一時間の中で生きていた。
+
+ヴァルネクの署名は、責任の一層をプレイヤーに示す。彼が後の災害を正確に知っていた証拠ではない。Deep Reachには読めるリスクの経路があり、より安い解釈を選んだ証拠だ。罪は全知ではない。罪は、その不確実性を背負う身体がマージンの値付けをする部屋にいなかったから、受け入れたことにある。
 
 ## Scanner
 
-JP LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+リスクメモ // I. ヴァルネクは、モデルが平均値で合格した後、グレート・タイドのマージンを引き下げた。裾野のリスクは作業員の加圧区画に残された。
 
 ## Terminal
 
-JP LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // Aegir Operations Risk // 推奨: 生産スケジュールを維持。極端な潮汐スタックは、Atlas補償レビュー待ちの低頻度運用変動として扱う。平均化されたモデル信頼度の下で、作業員ルート曝露は許容範囲。
 
 ## Audio
 
-JP LOC HOLD: He did not order a flood. He priced it low enough to happen.
+彼は洪水を命じなかった。起きてもよいほど安く値付けした。
 
 ## Field Note
 
-JP LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+これは殺害命令として読むな。不確実性が使い捨てられるほど安く見積もられた、予算上の一行として読め。
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/ja_JP. -->

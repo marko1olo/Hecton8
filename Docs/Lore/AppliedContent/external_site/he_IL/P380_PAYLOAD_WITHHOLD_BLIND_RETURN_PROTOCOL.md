@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "פרוטוקול blind return עם החזקת payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Withhold Blind Return Protocol
+# פרוטוקול blind return עם החזקת payload
 
-HE LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return הוא מסלול הסירוב. הוא מחזיק את ה-payload מחוץ לכל מקבל רשמי ומשאיר את וקטור האגן מקומי. Deep Reach לא מקבלת מפת גישה. הספר הציבורי לא מקבל חבילת אירוע. ההסגר לא מקבל הקצאת escrow. Atlas לא מקבל מפתח חיתוך.
 
-## Scanner
-
-HE LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-HE LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-HE LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+לסירוב יש שיניים ועלויות. הוא יכול להרחיק טורפים מן האגן לעוד פרק זמן, אבל משאיר את הראיות במכל שביר אצל אדם שביר. החוב נשאר פתוח. המשמורת נשארת לא רשמית. אם החבילה תוצף או הנושא ימות במסדרון, השרשרת יכולה להיעלם בלי שאיש ידכא אותה.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/he_IL. -->

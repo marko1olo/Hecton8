@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "벤트 포지 현장 공정 안내서"
+title: "벤트 포지 현장 공정 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 벤트 포지 현장 공정 안내서
+# 벤트 포지 현장 공정 가이드
 
-vent forges는 자연-산업 반응로다. 열, brine, pressure history를 유용한 ceramics, sealants, charge materials로 바꾸며, 각 표본을 자신의 열 경로에 묶어 둔다.
+벤트 포지는 자연-산업 반응로다. 열, 염수, 압력 이력, 느린 냉각을 세라믹, 실란트, 전하 재료로 바꾼다. 샘플은 열 경로가 회수를 견딜 때만 쓸모 있다.
 
 ## Scanner
 
-vent-forge chemistry 활성. 품질은 표본의 광택이 아니라 pressure history, heat pulse, slow cooling을 따른다.
+벤트 포지 화학 활성. 품질은 샘플의 광택이 아니라 압력 이력, 열 펄스, 느린 냉각을 따른다.
 
 ## Terminal
 
-FIELD GUIDE: vent forges는 sulfides, noble-gas pockets, ceramics, sealant precursors를 익힌다. 표본이 heat, brine, pressure를 지난 경로가 이름보다 중요하다.
+현장 가이드: 벤트 포지는 황화물, 희가스 주머니, 세라믹 입자, 실란트 전구체를 익힌다. 샘플의 이름보다 열, 염수, 압력을 통과한 경로가 중요하다.
 
 ## Audio
 
-vent는 광석을 만든 것이 아니다. 네가 중단한 공정을 만들었다.
+벤트는 광석을 만든 것이 아니다. 네가 끊은 공정을 만들었다.
 
 ## Field Note
 
-새 lot를 곧장 찬물로 올리지 마라. vent가 anneal을 끝내게 둬라. 그러지 않으면 shell이 잔금 간다.
+신선한 로트를 바로 찬물로 올리지 마라. 벤트가 어닐링을 끝내게 두지 않으면 껍질이 거미줄처럼 갈라진다.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ko_KR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Symbiose du récif-câble"
+title: "Symbiose de récif-câble"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Symbiose du récif-câble
+# Symbiose de récif-câble
 
-Les récifs-câbles avertissent au milieu des profondeurs: la vie utilise l'industrie comme os, ombre, brise-courant et ligne nutritive.
+Les récifs-câbles se forment lorsque des tranchées de service de mi-profondeur donnent une forme stable à la croissance vivante : troncs d'alimentation, paires relais, anneaux de bridage et anciens chemins de câbles. Certaines nattes réduisent l'abrasion et calment le courant autour d'une ligne. Certains brouteurs gardent les conducteurs exposés sans dépôt. Le même manchon peut aussi cacher un isolant fissuré, piéger la chaleur ou attirer des drones sur une route que le plongeur avait marquée calme.
+
+Traiter le récif-câble comme une infrastructure active jusqu'à preuve contraire au scan. Un manchon vert peut être la seule chose qui garde un relais au sec ; il peut aussi couvrir le défaut qui lâchera sous charge. Vérifier la continuité du signal, la couleur de l'isolant, l'ordre des brides et le mouvement des drones avant de couper. C'est le lien entre la première cicatrice de réparation et la faune réparée plus bas : la croissance vivante suit le courant avant qu'Atlas ne route la réparation par des corps vivants.
 
 ## Scanner
 
-La flore pousse sur les troncs de puissance et les lignes de signal. Le récif emploie le câblage comme squelette.
+La natte câble-racine serre le tronc d'alimentation P63 sur trois anneaux de bridage. Le signal passe encore sous le manchon vert. Défaut d'isolant visible au bord inférieur. Danger : trafic de drones et de brouteurs suivant le courant actif.
 
 ## Terminal
 
-Maintenance: les tapis racine-câble réduisent l'abrasion et gardent le signal, mais attirent drones et faune brouteuse.
+NOTE DE TRANCHÉE DE SERVICE
+Ligne : tronc d'alimentation P63 / paire relais C
+État : manchon biologique réduisant l'abrasion
+Défaut : isolant orange exposé sous la natte inférieure
+Trafic : brouteurs et drones de maintenance près du courant actif
+Action : scanner la continuité avant de couper la pousse
 
 ## Audio
 
-Un récif vivant a appris la forme d'un couloir de service.
+Le récif n'est pas décoratif. Il garde ce relais au sec, et les drones savent que le courant est actif.
 
 ## Field Note
 
-La première fusion est utile avant d'être horrible.
+Ne retire pas la pousse verte seulement parce qu'elle paraît fausse. Si elle garde la gaine au sec, marque le défaut et contourne.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/fr_FR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: High Custody Sample Contract Seed"
+title: "Ziarno kontraktu próbki wysokiej custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: High Custody Sample Contract Seed
+# Ziarno kontraktu próbki wysokiej custody
 
-PL LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Próbka wysokiej custody zaczyna się lepszą ceną i gorszym pudełkiem. Tablica oznacza wybrane próbki jako receiver-certified: żwir blue debt, płatki tkanka-żelazo, zapieczętowaną solankę, pakiety filtrów i złom wzrostu, który nadal niesie kontekst trasy. Każda część potrzebuje pojemnika, kontroli masy, stanu pieczęci i taga custody, zanim stanie się płatna.
 
-## Scanner
-
-PL LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-PL LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-PL LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-PL LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Presja jest zwykła i brzydka. Ciężka próbka spowalnia wynurzenie. Pęknięta pieczęć może zmienić wypłatę w opóźnienie kwarantanny. Pełna czysta szafka może zmusić operatora do wyboru między pakietem dowodu, częścią naprawczą i certyfikowanym materiałem. Kontrakt płaci więcej, bo robi z własności system nośny.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/pl_PL. -->

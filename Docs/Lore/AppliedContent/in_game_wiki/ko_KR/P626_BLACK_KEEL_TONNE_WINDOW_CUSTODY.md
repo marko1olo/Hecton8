@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Black Keel tonne-window 보관
 
-Keelmark 영수증은 왜 Black Keel이 구조보다 먼저 질량을 말하는지 설명한다. 운반선은 tonne-window 보관으로 움직인다. 물리적 payload, 보험 노출, 항로 시계의 위상과 맞춘 법적 슬롯이다. 살아 있는 몸, 봉인된 증거 코어, Xenon-Omega 공정 물질 조각, 회수 가능한 선체 상자는 계약이 같은 줄에 올려놓으면 같은 창을 놓고 경쟁한다. 시스템은 차갑지만 무작위가 아니다. 그것은 플레이어에게 프런티어가 무엇을 가치로 치는지, 어떤 선택이 먼저 집으로 이동하는지 말해준다.
+tonne-window는 frontier 잔혹함의 깨끗한 표현이다. 회계처럼 들리는 이유는 회계이기 때문이다. 하지만 세는 것은 물리다. 좁은 회수 창을 지나는 질량. Black Keel은 바다의 모든 것을 올리지 않는다. 항로, 보험, 검역, 보관 기록이 허용한 것만 올린다.
+
+그래서 payload 선택은 날카롭다. 살아 있는 계약자도 가치가 있지만 Deep Reach를 해칠 증거 코어도 가치가 있다. Xenon-Omega 조각은 일반 salvage보다 값지면서 검역을 오염시킬 수 있다. 회수 가능한 선체는 worker dossier가 정의를 만족시키기 전에 보험사를 만족시킬 수 있다.
 
 ## Scanner
 
-보관선 // 승인된 tonne-window 질량은 salvage, 증거, 신체, 부채 물건일 수 있다. 들린 패킷은 인양 우선권을 주지 않는다. 책임을 배정한다.
+Keelmark 영수증. 하나의 tonne-window는 payload 질량, 항로 위상, 보험 노출, 검역 등급, 회수 우선순위를 단일 carrier slot에 매핑한다.
 
 ## Terminal
 
-KEELMARK 질량 영수 // 창은 사람에게 자비를 주는 것이 아니라 슬롯에 보관을 부여한다. 과질량 payload는 청구 가치, 검역 등급, 운반선 기하가 함께 통과하지 않으면 다음 통과로 넘어간다.
+TONNE-WINDOW 보관 // 4.8 tonne-window 유치권 활성. 살아 있는 계약자, 봉인 증거 코어, Xenon-Omega 공정 절단물, 회수 가능한 선체 상자는 custody proof가 재우선화할 때까지 회수 등급 공유. 인간 상태만으로 full-window override 불충분.
 
 ## Audio
 
-Black Keel 부채 음성: 나는 증거, 금속, 또는 너를 실을 수 있다. 장부는 어느 쪽이 배를 지급 가능하게 두는지 물을 것이다.
+Black Keel은 톤으로 말한다. 창이 실을 수 있는 것이 톤이기 때문이다.
 
 ## Field Note
 
-운반선이 승인된 질량이라고 말할 때, 승인된 사람이라고 말하는 것이 아니다. 장부가 선택을 요구하기 전에 증거를 슈트에 묶어라.
+Tonne-window는 돈이 아니다. 질량이 떠날 허가다.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/ko_KR. -->

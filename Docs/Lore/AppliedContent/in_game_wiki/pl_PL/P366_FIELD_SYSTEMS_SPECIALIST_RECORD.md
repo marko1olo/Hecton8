@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Kartoteka specjalisty systemów terenowych"
+title: "Kartoteka Specjalisty Systemów Terenowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kartoteka specjalisty systemów terenowych
+# Kartoteka Specjalisty Systemów Terenowych
 
-Ta kartoteka wyjaśnia pierwszą kompetencję operatora bez robienia z niego wybranego świadka. Deep Reach szkoliło go przy pompach, klasach uszczelnień, salach przekaźnikowych, kartach obejścia, kolejkach ewakuacyjnych i języku route-safe. Stare systemy odrzucają nazwisko, lecz wciąż odsłaniają znajomą procedurę. Wina zaczyna się jako rozpoznanie: kolejność osuszania, klasa zacisku, oczyszczona formuła wstrzymania, pomieszczenie, które zawiodło w porządku, którego miał pilnować.
+Kartoteka field systems wyjaśnia kompetencję, nie zmieniając operatora w tajnego dowódcę. Deep Reach szkoliła ten fach przy pompach, klasach uszczelnień, kartach obejścia, salach przekaźników, kolejkach ewakuacji i certyfikacji route-safe. Była to praca infrastrukturalna z dostępem wystarczającym, by rozpoznać zakopaną trasę.
+
+Po cofnięciu dostępu poświadczenie nie otwiera bezpiecznych drzwi. Szkolenie nie znika. Rozkaz drenażu, klasa clamp, zapieczętowane pole ręcznego liczenia albo oczyszczona fraza hold nadal czytają się jak praca, której kiedyś ufano. Dlatego zatopiona maszyneria staje się dowodem, nie tłem: operator widzi, gdzie proces bezpieczeństwa zgięto tak, by porzucenie wyglądało na ukończone.
+
+Kartoteka trzyma tło wąsko. Bez władzy dowodzenia. Bez czystego przyznania. Bez statusu bohaterskiego pasażera. Jest tylko były pracownik systemów Deep Reach, który potrafi czytać maszynę zapisującą ludzi poza stanem.
 
 ## Scanner
 
-Stare uprawnienie systemów terenowych. Nie kadra dowódcza. Praca przy infrastrukturze z dostępem wystarczającym, by rozpoznać, gdzie pogrzebano trasę.
+POŚWIADCZENIE FIELD SYSTEMS // Infrastruktura ewakuacji, certyfikacja route-safe, dostęp do pompowni. Brak uprawnień dowodzenia; pamięć procedur nadal użyteczna.
 
 ## Terminal
 
-ŚLAD PERSONELU: systemy terenowe, infrastruktura ewakuacyjna, certyfikacja route-safe. Dostęp cofnięty po przeglądzie ciszy Aegir. Pamięć procedur nadal pasuje do sekwencji operatora.
+PERSONNEL TRACE: specjalista field systems, infrastruktura ewakuacji, certyfikacja route-safe. Dostęp cofnięty po Aegir signal review. Cache procedur nadal pasuje do sekwencji operatora.
 
 ## Audio
 
-Nigdy nie podpisałeś kłamstwa. Znałeś gramatykę, dzięki której przechodziło kontrolę.
+Nigdy nie podpisałeś kłamstwa. Znałeś gramatykę, która przepuszczała je przez kontrolę.
 
 ## Field Note
 
-Identyfikator przestał otwierać drzwi. Nie wymazał kolejności awarii.
+Identyfikator przestał otwierać drzwi. Nie oduczył kolejności awarii.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/pl_PL. -->

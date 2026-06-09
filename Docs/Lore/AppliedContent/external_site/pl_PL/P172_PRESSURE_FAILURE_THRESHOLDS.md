@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Progi awarii pod ciśnieniem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Progi awarii pod ciśnieniem
 
-PL LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Progi awarii pod ciśnieniem definiują czytelną krawędź między zasobem a zagrożeniem. Pozwalają HECTON-8 zamienić głębokość w gramatykę widoczną dla gracza: stres wizualny, tyknięcia audio, ostrzeżenia skanera, ryzyko salvage i skutki craftingu wskazują tę samą fizyczną zasadę. Próbka zawodzi, bo świat na nią naciska, nie dlatego, że numer w ekwipunku cicho wygasł.
 
 ## Scanner
 
-PL LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Dobra próbka staje się zagrożeniem, gdy przekroczy złą linię ciśnienia. Oceanu nie obchodzi, że etykieta była prawie dobra.
 
 ## Terminal
 
-PL LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+AWARIA CIŚNIENIA / shallow-rated: tyk uszczelki i pełzanie wody / industrial-rated: dryf gasketu i klekot klamry / brine-rated: włosowata rysa i solny nalot / abyssal-rated: akustyczne widmo, mgła martwej próbki / Atlas-rated: blokada pieczy przed stratą strukturalną.
 
 ## Audio
 
-PL LOC HOLD: Pressure does not care that the label was almost right.
+Ciśnienia nie obchodzi, że etykieta była prawie właściwa.
 
 ## Field Note
 
-PL LOC HOLD: Failure thresholds should be readable before they punish.
+Progi awarii muszą być czytelne przed karą: tyknięcie, dryf, włosowata rysa, solny nalot, mgła martwej próbki. Jeśli gracz uczy się dopiero po stracie, świat oszukuje.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/pl_PL. -->

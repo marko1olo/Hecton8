@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Worker Community Notice"
+title: "Papan Kontak Kerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Worker Community Notice
+# Papan Kontak Kerja
 
-ID LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Papan Kontak Kerja adalah dokumen sosial kecil dengan tepi keras. Isinya baris ranjang, pemimpin rute, saksi medlock, kontak gudang alat, dan jendela relai. Terlihat administratif sampai logika tekanan muncul: kontak di luar dunia bisa berduka, membantah, dan mengingat, tetapi tidak mencapai palka lebih cepat daripada air.
 
-## Scanner
+Di HECTON-8, kontak darurat berarti berada di stasiun, terlatih, bisa dijangkau lewat nada, dan diizinkan untuk rute pekerja. Definisinya keras, bukan tanpa kasih. Saat kepulangan yang terlewat bisa menjadi jalur banjir, kepedulian mengambil bentuk itu.
 
-ID LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-ID LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-ID LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-ID LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Papan itu juga mengikat bukti harian menjadi jaringan komunitas. Kunci pompa di satu artefak, koreksi air di artefak lain, tanda tangan alat di yang ketiga: tiap tanda menghubungkan pekerja lelah dengan pekerja lain. Hasilnya bukan melodrama, melainkan permukiman tekanan yang masuk akal, tempat tanggung jawab menjadi bentuk kedekatan.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/id_ID. -->

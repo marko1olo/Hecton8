@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fauna_traces |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS171_FIRST_FAUNA_TRACE_ARTICLES.md |
 | Speaker | Field scanner, sediment disturbance note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first fauna trace reading |
@@ -39,7 +39,7 @@ BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mout
 
 The burrow mouth is small, and the silt plume is still lifting from it. That proves disturbance, not ownership. The useful clue is direction: the plume shows how the local current pulls fresh sediment away.
 
-Unidentified does not mean useless.
+Current direction is the useful field, not the animal's name.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD CURRENT DIRECTION
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| ar_SA | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| de_DE | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| es_ES | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| fr_FR | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| he_IL | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| id_ID | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| ja_JP | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| ko_KR | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| nl_NL | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| pl_PL | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| pt_BR | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| ru_RU | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| uk_UA | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
-| zh_CN | draft_machine_or_llm | BURROW TRACE // Silt plume fresh. Record current direction; do not collapse mouth. |
+| ar_SA | draft_machine_or_llm | أثر جحر // عمود الطمي حديث. سجل اتجاه التيار ولا تسقط الفتحة. |
+| de_DE | draft_machine_or_llm | BAUSPUR // Siltfahne frisch. Stroemungsrichtung erfassen; Muendung nicht eindruecken. |
+| es_ES | draft_machine_or_llm | RASTRO DE MADRIGUERA // Penacho de limo fresco. Registra la corriente; no hundas la boca. |
+| fr_FR | draft_machine_or_llm | TRACE DE TERRIER // Panache de limon frais. Relever le courant; ne pas effondrer l'ouverture. |
+| he_IL | draft_machine_or_llm | עקבת מחילה // פלומת הטין טרייה. רשום את כיוון הזרם; אל תמוטט את הפתח. |
+| id_ID | draft_machine_or_llm | JEJAK LIANG // Kepulan lumpur masih baru. Catat arah arus; jangan runtuhkan mulut liang. |
+| ja_JP | draft_machine_or_llm | 巣穴痕 // シルト plume は新しい。流向を記録し、口を崩さない。 |
+| ko_KR | draft_machine_or_llm | 굴 흔적 // 실트 기둥이 신선하다. 해류 방향을 기록하고 입구를 무너뜨리지 않는다. |
+| nl_NL | draft_machine_or_llm | HOLENSPOOR // Verse slibpluim. Leg stroomrichting vast; laat de opening niet instorten. |
+| pl_PL | draft_machine_or_llm | SLAD NORY // Swieza smuga pylu. Zapisz kierunek pradu; nie zapadaj otworu. |
+| pt_BR | draft_machine_or_llm | RASTRO DE TOCA // Pluma de silte fresca. Registre a corrente; nao desabe a abertura. |
+| ru_RU | draft_machine_or_llm | СЛЕД НОРЫ // Свежий шлейф ила. Запиши направление течения; не обрушь вход. |
+| uk_UA | draft_machine_or_llm | СЛІД НОРИ // Свіжий шлейф мулу. Запиши напрям течії; не обвали вхід. |
+| zh_CN | draft_machine_or_llm | 洞穴痕迹 // 粉泥羽流新鲜。记录水流方向；不要压塌洞口。 |

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Pressure Bunk Shift Routine"
+title: "שגרת משמרת של דרגש לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Pressure Bunk Shift Routine
+# שגרת משמרת של דרגש לחץ
 
-HE LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+Routine דרגש הלחץ מציג את המושבה הטבועה של HECTON-8 דרך הרגל ולא דרך וידוי. לוח שורת עובדים מונה טון יקיצה, בדיקת אטם, פתק לחץ, אסימון מים-ארוחה, משמורת כלי ושיבוץ ירידה. בתחנה בלי זריחה, הרשימה הזאת היא בוקר, שכר, אזהרה רפואית והוכחת חזרה.
 
-## Scanner
+הכוח הרגשי נמצא בכך שהלוח אינו מציג את עצמו. הוא לא אומר שמישהו היה אמיץ. הוא אומר שמפתח המשאבה היה אמור לחזור לפני הארוחה. הוא אומר שאטמים נבדקים ב-03:52. הוא אומר שהשינה חולקה בידי מכונות כי לאוקיינוס לא היה אכפת אם הגוף מבין את השעה.
 
-HE LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-HE LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-HE LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-HE LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+עקוב אחרי הלוח והמושבה נעשית קריאה. אותו שם יכול להופיע כדרגש, כמפתח, כאסימון מים, כחותמת נתיב וכחזרה שהוחמצה. זה אינו בלגן. זו מערכת העצבים של יישוב לחץ, כתובה בסימנים הקטנים ביותר.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/he_IL. -->

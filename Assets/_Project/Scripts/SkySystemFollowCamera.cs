@@ -2,6 +2,7 @@ using UnityEngine;
 using Hecton8.Bootstrap;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 
@@ -50,6 +51,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     private bool _hasPendingFollowPosition;
     private IAtmosphereReadModel _cachedAtmosphereReadModel;
     private IPlayerRuntimeContext _cachedPlayerContext;
+    private IHectonOceanKinematicsService _cachedOceanKinematicsService;
 
     private void OnEnable()
     {
@@ -83,6 +85,10 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
         TryUnregisterFromTick();
         TryUnregisterHotSwapListener();
         _runtimeActive = false;
+        _cachedAtmosphereReadModel = null;
+        _cachedPlayerContext = null;
+        _cachedOceanKinematicsService = null;
+        playerMovement = null;
 #if UNITY_EDITOR
         EditorApplication.update -= EditorTick;
 #endif
@@ -95,12 +101,18 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     {
         if (serviceSlot == GlobalRegistryServiceSlot.AtmosphereRuntime)
         {
-            _cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;
+            CacheAtmosphereReadModel(currentService as IAtmosphereReadModel);
+            return;
+        }
+
+        if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+        {
+            _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
             return;
         }
 
         if (serviceSlot == GlobalRegistryServiceSlot.Player)
-            _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            CachePlayerContext(currentService as IPlayerRuntimeContext);
     }
 
     /// <inheritdoc />
@@ -260,7 +272,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
 
     private Camera ResolveTargetCamera()
     {
-        if (runtimeCamera != null)
+        if (IsExplicitFollowCameraUsable(runtimeCamera))
         {
             return runtimeCamera;
         }
@@ -307,21 +319,29 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
                camera.CompareTag("MainCamera");
     }
 
+    private static bool IsExplicitFollowCameraUsable(Camera camera)
+    {
+        return camera != null &&
+               camera.enabled &&
+               camera.gameObject.activeInHierarchy;
+    }
+
     private void ResolveSeaLevelOwners()
     {
         ResolveAtmosphereReadModel();
 
-        if (playerMovement != null)
+        if (IsPlayerMovementUsable(playerMovement))
             return;
+        playerMovement = null;
 
-        IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-        if (playerContext != null && playerContext.PlayerMovement != null)
+        IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+        if (playerContext != null && IsPlayerMovementUsable(playerContext.PlayerMovement))
         {
             playerMovement = playerContext.PlayerMovement;
             return;
         }
 
-        if (runtimeCamera != null)
+        if (IsExplicitFollowCameraUsable(runtimeCamera))
         {
             CachePlayerMovementFromCamera(runtimeCamera);
             if (playerMovement != null)
@@ -341,16 +361,60 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
 
     private IAtmosphereReadModel ResolveAtmosphereReadModel()
     {
-        if (atmosphereManager != null)
+        if (IsAtmosphereReadModelUsable(atmosphereManager))
             return atmosphereManager;
+
+        if (!IsAtmosphereReadModelUsable(_cachedAtmosphereReadModel))
+            _cachedAtmosphereReadModel = null;
 
         return _cachedAtmosphereReadModel;
     }
 
     private void CacheRegistryServicesCold()
     {
-        _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
-        _cachedPlayerContext = GlobalRegistry.Player;
+        CacheAtmosphereReadModel(GlobalRegistry.AtmosphereReadModel);
+        CachePlayerContext(GlobalRegistry.Player);
+        _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
+    }
+
+    private void CacheAtmosphereReadModel(IAtmosphereReadModel readModel)
+    {
+        _cachedAtmosphereReadModel = IsAtmosphereReadModelUsable(readModel) ? readModel : null;
+    }
+
+    private static bool IsAtmosphereReadModelUsable(IAtmosphereReadModel readModel)
+    {
+        if (readModel == null)
+            return false;
+
+        if (readModel is Behaviour behaviour)
+            return behaviour != null && behaviour.isActiveAndEnabled;
+
+        return true;
+    }
+
+    private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+    {
+        _cachedPlayerContext = IsPlayerContextUsable(playerContext) ? playerContext : null;
+    }
+
+    private IPlayerRuntimeContext ResolvePlayerContext()
+    {
+        if (!IsPlayerContextUsable(_cachedPlayerContext))
+            _cachedPlayerContext = null;
+
+        return _cachedPlayerContext;
+    }
+
+    private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+    {
+        if (playerContext == null)
+            return false;
+
+        if (playerContext is Behaviour behaviour)
+            return behaviour != null && behaviour.isActiveAndEnabled;
+
+        return true;
     }
 
     private void TryRegisterHotSwapListener()
@@ -372,12 +436,19 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
 
     private float ResolveSeaLevelY()
     {
-        if (playerMovement != null)
+        if (IsPlayerMovementUsable(playerMovement))
         {
             float movementSurfaceY = playerMovement.CurrentWaterSurfaceY;
             if (TryResolveSeaLevelY(movementSurfaceY, out float movementSeaLevelY))
                 return movementSeaLevelY;
         }
+        else
+        {
+            playerMovement = null;
+        }
+
+        if (TryResolveOceanSeaLevelY(out float oceanSeaLevelY))
+            return oceanSeaLevelY;
 
         IAtmosphereReadModel resolvedAtmosphere = ResolveAtmosphereReadModel();
         if (resolvedAtmosphere != null)
@@ -388,6 +459,23 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
         }
 
         return ResolveFallbackSeaLevelY();
+    }
+
+    private bool TryResolveOceanSeaLevelY(out float seaLevelY)
+    {
+        IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+        IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+            ? oceanKinematicsService.ActiveProvider
+            : null;
+        if (oceanKinematics != null &&
+            oceanKinematics.IsAvailable &&
+            TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY))
+        {
+            return true;
+        }
+
+        seaLevelY = DefaultSeaLevelY;
+        return false;
     }
 
     private float ResolveFallbackSeaLevelY()
@@ -401,7 +489,20 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     {
         if (math.isfinite(candidateSeaLevelY) &&
             math.abs(candidateSeaLevelY) > 0.0001f &&
-            math.abs(candidateSeaLevelY) <= 1000f)
+            math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+        {
+            seaLevelY = candidateSeaLevelY;
+            return true;
+        }
+
+        seaLevelY = DefaultSeaLevelY;
+        return false;
+    }
+
+    private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+    {
+        if (math.isfinite(candidateSeaLevelY) &&
+            math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
         {
             seaLevelY = candidateSeaLevelY;
             return true;
@@ -417,7 +518,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
             return;
 
         HectonPlayerMovement movement = ResolveComponentInParents<HectonPlayerMovement>(targetCamera.transform);
-        if (movement != null)
+        if (IsPlayerMovementUsable(movement))
             playerMovement = movement;
     }
 
@@ -426,12 +527,13 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
         if (playerTransform == null)
             return;
 
-        playerTransform.TryGetComponent(out playerMovement);
+        playerTransform.TryGetComponent(out HectonPlayerMovement movement);
+        playerMovement = IsPlayerMovementUsable(movement) ? movement : null;
     }
 
     private Camera TryResolveCachedPlayerCamera()
     {
-        IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+        IPlayerRuntimeContext playerContext = ResolvePlayerContext();
         if (playerContext == null)
             return null;
 
@@ -440,9 +542,14 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
             return null;
 
         HectonPlayerMovement movement = playerContext.PlayerMovement;
-        if (movement != null)
+        if (IsPlayerMovementUsable(movement))
             playerMovement = movement;
         return playerCamera;
+    }
+
+    private static bool IsPlayerMovementUsable(HectonPlayerMovement movement)
+    {
+        return movement != null && movement.isActiveAndEnabled;
     }
 
     private static T ResolveComponentInParents<T>(Transform start) where T : Component

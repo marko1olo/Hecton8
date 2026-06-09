@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pompkamer van Ondiep Annex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pompkamer van Ondiep Annex P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 wordt pas bruikbaar nadat de pompkamer is gerepareerd. Handmatig pompen verlaagt het water, legt oude gereedschapskasten bloot en houdt de veldfabricator binnen een veilig reparatiebevoegdheidsvenster.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+POMPKAMER-INLAAT // Geblokkeerd maar onderhoudbaar. Handmatige bilgeroute beschikbaar. Eerst draineren, dan snijden.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+P-63 ONDERHOUD // Kleine waterindringing gelogd. Handmatige bilge geaccepteerd. Veldfabricator blijft op pakking, klem en contactsnijder tot de inlaat vrij is.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Draai de pomp tot de vloer antwoordt. Als je eerst snijdt, zet je de gereedschapskast onder water.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Een droge hoek is geen thuis. Het zijn tien minuten denktijd. Neem ze.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/nl_NL. -->

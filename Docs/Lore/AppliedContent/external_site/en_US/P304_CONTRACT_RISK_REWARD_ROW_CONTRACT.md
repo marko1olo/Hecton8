@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Contract Risk Reward Boundary
 
-Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+Replayability in HECTON-8 is not inherited power. It is a worse contract, a tighter window, an earlier demand for proof, and a carrier that remembers which parts of you are still collateral.
 
 ## Scanner
 
-Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Contract row binds lien, storm window, custody order, payout ceiling, and clause weight.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight. The contract is the first predator.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The contract is the first predator.
 
 ## Field Note
 
-Reward changes belong to the contract row, not to improvised lore text.
+Reward changes belong to the contract row, not improvised lore text.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/en_US. -->

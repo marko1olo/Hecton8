@@ -137,6 +137,41 @@ If a transitional component still contains `OnAudioFilterRead`, it is blocked fr
 
 Mock audio banks, emergency procedural profiles, missing mixer-parameter fallbacks, and runtime-added audio components are recovery paths only. Production scenes must ship authored banks, mixer bindings, listener components, audio roots, and warmed pools before gameplay begins.
 
+### 8.2 Current Runtime Source Anchors
+
+Evidence class: STATIC_SOURCE only. These anchors describe the current code route; they do not prove Unity import, mixer binding, native plugin availability, profiler/GC, or player-build audio acceptance.
+
+Current owners and routes:
+
+- `Assets/_Project/Scripts/AcousticZoneController.cs` owns acoustic-zone presentation, water/flood muffle signals, mixer snapshot transitions, queued transition cues, storm/static interference, sonar impulse response, vegetation overlays, and acoustic read-model state. It consumes soundscape, physics impact, sonar ping, atmosphere, player, physics, dispatcher, audio service, and music/director registry slots. It must not own pressure, flooding truth, player state, sonar truth, or save state.
+- `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs` owns bounded vocal warning priority/cooldown/dispatch state. It publishes current/dispatch/profiles/tuning/telemetry through DataVault buffers owned by `SystemID.AudioVocalWarning`, uses `SignalBus<VocalWarningSignal>` for producers, and reports signal rejection as a fault instead of silently accepting warning spam.
+- `Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs` owns vocal cue playback, mock-bank fallback, waveform/telemetry/csv metadata buffers, `PlayVoiceOverSignal`, `VocalCueSignal`, and `SubtitleCueSignal` consumption. It is the playback route for vocal-warning phrases and voice-over/subtitle handoff; it is not the authority for the gameplay fact behind a warning line.
+- `Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs`, `Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs`, `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`, and `Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs` are the current critical procedural/native bridge route. `AudioFrameSpscRingBuffer` uses a power-of-two frame ring with telemetry; `HectonSensoryKernelNativeBridge` validates descriptor magic, alignment, shared-state metadata, capacity, and native plugin availability before registering the shared ring.
+- `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs` owns adaptive stem mix buffers, rules, commands, mock depth/predator/tension inputs, telemetry, DataVault mutation guards, celestial-light readability binding, player/survival/damage/biome/narrative signal consumption, and `GlobalQualityWeight` cadence/quality scaling.
+- `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs` owns music cue selection and music-director registry service. It reads player, audio, acoustic-zone, biome, encounter, depth, weather, first-hour, vocal warning, and audio-log read models/signals; it must not become threat, biome, depth, or narrative truth.
+- `Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs` and sonar/audio consumers may present acoustic evidence, but sonar truth remains with sonar/spectrum owners.
+- `Assets/_Project/Scripts/Audio/Prologue/PrologueAcousticOrchestrator.cs` owns prologue transition audio state driven by atmospheric reentry, reentry acoustic stress, and prologue completion signals. It must publish neutral transition state on disable instead of leaving stale transition pressure in the mix.
+
+Lifecycle and service law:
+
+- Audio runtimes that register with `GlobalRegistry` must unregister in `OnDisable` and clear cached services/read models when registry replacement occurs.
+- DataVault-backed audio routes must acquire/release mutation guards and release owned buffers on disable/rebind. A missing DataVault is a blocked degraded route, not permission to allocate ad hoc managed state in hot paths.
+- SignalBus-backed audio producers must use bounded `TryPush`/`TryPushTracked` routes. Obsolete direct raise methods that hide drops are not acceptable for new producers.
+- Runtime-created or lazily repaired `AudioSource`, mixer group, mock bank, or fallback clip binding is recovery only. It cannot be cited as production binding proof.
+- Music, warnings, acoustic zones, vocal playback, and critical procedural audio must scale with `GlobalQualityWeight` by layer density, cadence, voice count, filtering/detail, telemetry cadence, or optional effect richness. They must not remove route-critical warnings, threat cues, sonar meaning, or machine-state cues.
+
+Failure modeling required before acceptance:
+
+- no audio service, missing dispatcher, stale registry slot, duplicate music/acoustic owner, or service replacement during playback;
+- SignalBus queue full, repeated subscribe/unsubscribe, producer using obsolete raise path, or warning/cue drop hidden as success;
+- DataVault missing, stale handle, buffer capacity mismatch, mutation guard not released, interrupted job, or telemetry ring cursor corruption;
+- native audio plugin unavailable, descriptor magic mismatch, null/unaligned pointer, invalid power-of-two capacity, bad shared-state metadata, busy native bridge, or ring overrun/underrun;
+- `OnAudioFilterRead` doing synthesis/decoding/locking/allocation beyond an approved shim;
+- missing authored mixer snapshots, exposed mixer parameters, mixer groups, banks, clips, subtitles, or listener/root binding;
+- mock bank, emergency grain bank, fallback clip, or runtime component repair used as production proof;
+- quality reduction hides a critical warning, sonar cue, route cue, machine state, or creature/threat cue;
+- scene unload/domain reload leaves a stale acoustic state, current warning, music cue, native ring, or prologue transition active.
+
 ## 9. Audio QA Gates
 
 Reject if:

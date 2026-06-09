@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Sanitized Accident Reply Window"
+title: "Fenêtre de réponse d'accident aseptisée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Sanitized Accident Reply Window
+# Fenêtre de réponse d'accident aseptisée
 
-FR LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+La Fenêtre de réponse d'accident aseptisée montre comment Deep Reach ment avant que quelqu'un crie. Le mensonge est procédural, familier et périmé : une ligne publique de perte heurtant une preuve physique. L'horreur corporative de HECTON-8 fonctionne mieux quand la réponse officielle est trop propre pour le lieu qui l'a produite.
 
 ## Scanner
 
-FR LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Fenêtre de réponse ouverte. Deep Reach répète effondrement de tempête, échec géologique et évacuation autonome comme si la pièce était encore sèche.
 
 ## Terminal
 
-FR LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE : onde de tempête, effondrement géologique, échec d'évacuation autonome / RESTRICTED ADVICE : ne pas transmettre Atlas continuity non vérifiée, body-category disputes ou basin-coordinate claims.
 
 ## Audio
 
-FR LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Ils ont répondu à la pièce que vous deviez trouver, pas à celle où vous vous tenez.
 
 ## Field Note
 
-FR LOC HOLD: Place after first physical contradiction, not before.
+À placer après la première contradiction physique : le joueur doit avoir une preuve mouillée avant d'entendre le vieux script public.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/fr_FR. -->

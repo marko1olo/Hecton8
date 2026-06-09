@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_ration_checks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS173_FIRST_RATION_CHECK_ARTICLES.md |
 | Speaker | Survival scanner, ration inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first ration checking |
@@ -72,17 +72,17 @@ QUARANTINE FROM CLEAN STOCK
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| ar_SA | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| de_DE | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| es_ES | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| fr_FR | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| he_IL | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| id_ID | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| ja_JP | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| ko_KR | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| nl_NL | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| pl_PL | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| pt_BR | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| ru_RU | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| uk_UA | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
-| zh_CN | draft_machine_or_llm | RATION POUCH // Foil pinhole detected. Quarantine from clean stock until inspected. |
+| ar_SA | draft_machine_or_llm | كيس حصة // ثقب دقيق في الرقاقة. اعزله عن المخزون النظيف حتى يتم فحصه. |
+| de_DE | draft_machine_or_llm | RATIONENBEUTEL // Nadelstich in der Folie erkannt. Bis zur Prüfung vom sauberen Vorrat trennen. |
+| es_ES | draft_machine_or_llm | BOLSA DE RACIÓN // Detectado microagujero en la lámina. Aísla del material limpio hasta inspección. |
+| fr_FR | draft_machine_or_llm | SACHET DE RATION // Microperforation détectée dans le film. Isoler du stock propre jusqu'à inspection. |
+| he_IL | draft_machine_or_llm | שקית מנה // זוהה חור סיכה ביריעת האלומיניום. לבודד מהמלאי הנקי עד בדיקה. |
+| id_ID | draft_machine_or_llm | KANTONG RANSUM // Lubang jarum di foil terdeteksi. Karantina dari stok bersih sampai diperiksa. |
+| ja_JP | draft_machine_or_llm | レーション袋 // 箔にピンホール検出。検査まで清潔在庫から隔離。 |
+| ko_KR | draft_machine_or_llm | 배급 파우치 // 포일에 핀홀 감지. 검사 전까지 깨끗한 재고에서 격리하라. |
+| nl_NL | draft_machine_or_llm | RANTSOENZAK // Speldenprik in folie gevonden. Apart houden van schone voorraad tot inspectie. |
+| pl_PL | draft_machine_or_llm | SASZETKA RACJI // Wykryto mikrootwór w folii. Odizoluj od czystego zapasu do kontroli. |
+| pt_BR | draft_machine_or_llm | BOLSA DE RAÇÃO // Microfuro detectado na lâmina. Isole do estoque limpo até inspeção. |
+| ru_RU | draft_machine_or_llm | ПАКЕТ ПАЙКА // В фольге найден прокол. Держи отдельно от чистого запаса до осмотра. |
+| uk_UA | draft_machine_or_llm | ПАКЕТ ПАЙКА // У фользі знайдено прокол. Тримай окремо від чистого запасу до огляду. |
+| zh_CN | draft_machine_or_llm | 口粮袋 // 箔层发现针孔。检查前与干净物资隔离。 |

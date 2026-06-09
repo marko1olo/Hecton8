@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Юридична лазівка marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Юридична лазівка marauder
 
-UA LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+Слово «мародер» несе дві правди. Так чисті громадяни називають людей, що ріжуть запечатані руїни, і так економіка утилізації ховає працю, без якої не може обійтися. На HECTON-8 кожне вилучення може бути законною роботою, зручною крадіжкою або першим чесним порятунком, який колонія отримала за десятиліття.
 
 ## Scanner
 
-UA LOC HOLD: License valid in one lane, criminal in the next.
+Ліцензія чинна в одному коридорі й стає обвинуваченням у наступному.
 
 ## Terminal
 
-UA LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor під custody Aegir Reclamation Pool; терпимий trespasser у мові активів Deep Reach; переслідуваний raider у чистих зведеннях Sol; emergency responder лише якщо відновлений запис не ганьбить нікого важливого.
 
 ## Audio
 
-UA LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Один і той самий різак може бути інструментом, злочином або єдиним рятувальним засобом, що лишився.
 
 ## Field Note
 
-UA LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder є посадою лише тоді, коли потрібний суд може на цьому заробити.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/uk_UA. -->

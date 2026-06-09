@@ -149,7 +149,8 @@ def validate_static(errors: list[str], warnings: list[str]) -> dict | None:
         runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
         if "Hecton8.EditorTools.ConstructionInsulationBackingIntegrator.Apply" in runner_text:
             errors.append("Unity apply-all runner must not launch ConstructionInsulationBackingIntegrator separately; central applier owns this stage")
-        if "ValidateConstructionInsulationBackingRoute.py" not in runner_text:
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $constructionInsulationValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
             errors.append("Unity apply-all runner must post-apply validate construction insulation backing")
 
     if not STATIC_PREFLIGHT.exists():

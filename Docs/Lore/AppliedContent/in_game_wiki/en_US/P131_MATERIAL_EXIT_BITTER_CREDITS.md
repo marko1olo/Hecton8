@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Material Exit: Bitter Credits
 
-Material Exit is a real ending for a Marauder who treats HECTON-8 as paid work. The player can leave with debt reduced and the carrier ledger satisfied. The cost is visible: the colony remains a crime scene converted into claim value, and Deep Reach receives a stronger route back than the workers ever received out.
+This is the coldest legitimate exit from HECTON-8. A Marauder returns with pressure material Black Keel can weigh, invoice and move through an ascent window; the debt drops, the carrier ledger settles, and the job file can close without anyone forging the numbers. Nothing in the receipt is false. The sample is real. The custody chain is clean enough. The failure lives in the omitted column: unreconciled worker names, an evidence chain too thin to indict, a drowned colony converted into claim value, and route data that gives Deep Reach a cleaner reason to come back. Professional success survives here, but it tastes like metal and old air.
 
 ## Scanner
 
-Pressure material accepted. Exit window purchasable. Worker names still unreconciled.
+Pressure material accepted. Exit window sold. Names remain unpaid.
 
 ## Terminal
 
-MATERIAL EXIT RECEIPT: custody-grade pressure material accepted; lien reduced; evidence payload incomplete; missing-worker ledger remains under claimant dispute; Recovery Compliance priority raised.
+MATERIAL EXIT RECEIPT: custody-grade pressure material accepted; lien reduced; ascent mass authorized; evidence payload incomplete; missing-worker ledger unresolved; Deep Reach recovery interest elevated.
 
 ## Audio
 
-The invoice clears before the names do.
+The invoice reaches air before the names do.
 
 ## Field Note
 
-Black Keel will price the sample before it prices the dead. That is not a bug in the contract.
+Black Keel clears mass before memory; the contract calls that success.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/en_US. -->

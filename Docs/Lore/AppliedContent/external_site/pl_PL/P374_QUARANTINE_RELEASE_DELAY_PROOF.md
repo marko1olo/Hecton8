@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Wstrzymanie zwolnienia kwarantanny
 
-Kwarantanna jest wiarygodna na HECTON-8, bo skażenie nie jest fikcją. Ekspozycja ciśnieniowa, chemia solanki i wzrost zgodny z Atlas mogą uczynić nieostrożny ratunek śmiertelnym. Ta prawda daje Deep Reach osłonę. Release hold pokazuje, jak język ochrony płynął przez system po tym, jak praktyczne wyjście już się zwęziło. Brama nie mówiła zabić kogokolwiek. Mówiła hold until review, zachować niepewność biologiczną, przyjąć asset mass, utrzymać insurance ping. Każda fraza osobno się broni. Razem, w tonącej kolonii, stają się custody. Ten packet ma niepokoić, bo narzędzie jest prawdziwe: kwarantanna może być konieczna, a jednak może opóźniać ludzi, aż zostanie tylko ich claim.
+Rejestry kwarantanny należą do dokumentów, których Deep Reach najłatwiej broni. Na HECTON-8 skażenie nie jest dekoracyjną polityką. Wzrost reagujący z solanką, uszkodzenia ciśnieniowe i biofilmy powiązane z Atlas mogą zmienić korytarz ratunkowy w drugą strefę strat. Prawdziwy system zwolnień potrzebuje wstrzymań.
 
-## Scanner
-
-Płyta wstrzymania kwarantanny. Język ochrony pojawia się po tym, jak droga wyjścia jest już zamknięta.
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
-
-## Audio
-
-Kwarantanna może ocalić ciało. Może też kazać ciału czekać, aż stanie się papierem.
-
-## Field Note
-
-Notatka Maraudera: ochrony nie dowodzi słowo ochrona. Sprawdź zegar.
+Odzyskana płyta pokazuje wstrzymanie użyte po zamknięciu trasy. Zwolnienie pracowników czeka na potwierdzenie rady. Masa aktywów trafia do kolejki odzysku jako pierwsza. Ping ubezpieczenia pozostaje aktywny. Firma nie musiała fałszować zagrożenia; musiała umieścić je na zegarze tam, gdzie opóźnienie służyło roszczeniu.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/pl_PL. -->

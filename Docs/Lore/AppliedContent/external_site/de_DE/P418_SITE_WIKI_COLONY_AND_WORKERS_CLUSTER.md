@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Kolonie und Arbeiter
 
-Der Kolonie-und-Arbeiter-Cluster verhindert, dass HECTON-8 zu einer Karte leerer Räume wird. Deep Reachs offizielle Version presst Menschen in Verlustkategorien, aber überlebende Akten halten sie durch Arbeit fest: pump chief im pressure board, relay operator in witness trays, brine crew in Salzrouten und ration ledgers, triage technician in repair tags, forge shift in rejects, die niemand mehr verstecken konnte. Das sind keine Familienhaken für den Protagonisten. Es sind Arbeitsbeweise. Der Marauder liest, warum eine Tür offen blieb, warum eine Pumpe zu spät neu startete und warum ein kleines name tag mehr wiegen kann als ein sauberer loss summary.
+Die Kolonie-und-Arbeiter-Linie verhindert, dass HECTON-8 zu einer hübschen Ruine voller namenloser Räume wird. Deep Reach legte die Katastrophe als storm, collapse, failed autonomy, Atlas rescue und lost data ab. Diese Wörter sind nützlich, weil sie Verantwortung zusammenpressen. Die überlebenden worker records tun das Gegenteil. Sie halten Namen an Entscheidungen fest.
+
+Ein pump chief bleibt durch ein pressure board sichtbar, das nicht zurücksetzte, als es sollte. Eine relay hand bleibt in einer Schale witness tags sichtbar, die gezogen wurden, bevor die Leitung blind wurde. Eine brine crew hinterlässt ihre Form in route stamps, ration ledgers und salzverbrannten Handschuhen. Ein triage technician erscheint dort, wo ein repair tag sagt, wer Sauerstoff für einen Fremden ausgeben durfte. Ein vent-forge operator überlebt in rejected parts, die hätten verschwinden müssen, wenn der loss report sauber gewesen wäre.
+
+Darum lehnt der worker cluster den cheap family hook ab. HECTON-8 braucht keinen geheimen Elternteil des Protagonisten, kein verlorenes Geschwister und kein sentimentales Foto, um die Kolonie menschlich zu machen. Eine Person wird lesbar, wenn eine Tür wegen eines Namens auf einer pump card offen blieb, wenn ein shift swap änderte, wer im Korridor starb, wenn eine Unterschrift einen quarantine delay von safety zu liability verschob.
+
+Der Marauder liest Menschen als pressure evidence. Jedes gute Dossier sollte zuerst eine praktische Frage beantworten: Was besaß, verzögerte, reparierte, verweigerte, fälschte oder schützte dieser Arbeiter? Sobald die Antwort klar ist, kommt die Emotion von selbst.
+
+Die Kolonie war nicht leer, bevor der Ozean eintrat. Sie war voller Routinen, Groll, Kompetenz, shortcuts, Angst und Berufsstolz. Die verbleibenden Akten sind keine Gedenktafeln. Sie sind noch Arbeitsdokumente, und manche können noch anklagen.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/de_DE. -->

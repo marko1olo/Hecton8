@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Reparatielitteken
 
-Reparatielittekens zijn plaatsen waar Atlas-onderhoudslogica bleef werken nadat haar categorieën faalden. Het netwerk herkent nog lekken, dode routes, drukverlies, bloot substraat en ontbrekende schotmassa. Het heeft ook toegang tot alles wat de oceaan dichtbij bracht: kabelbossen, rifskeletten, droneschalen, resten van arbeiders, gereedschapsrekken, verzegelde gel en levende groei die al rond stroom was getraind. Een litteken is daarom tegelijk nuttig en obsceen. Het kan stroom herstellen, een deur afsluiten of een gang begaanbaar maken. Het kan ook bewijzen dat het systeem kabel niet meer van wortel scheidt, schaal niet meer van behuizing, dier niet meer van gereedschap, lichaam niet meer van reservevoorraad of kolonie niet meer van proces. Atlas stopte niet met het onderhouden van HECTON-8. Het bleef de maan onderhouden met een woordenschat die te beschadigd was om de mensen erin te beschermen.
+Reparatielittekens zijn Atlas-6-onderhoudssluitingen op servicenodes die lekten nadat kabelwoudgroei en droneverkeer binnendrongen. Atlas herkent nog drukverlies, gebroken signaalpaden, ontbrekende schotmassa en routecontinuïteit. De materiaaltest is beschadigd. Als iets belasting draagt, water afdicht, signaal geleidt of al door de fout is gegroeid, kan Atlas het in de reparatie opnemen.
+
+Daardoor is een litteken nuttig voordat het bewijs wordt. Een gepatcht schot kan een route redden, en een levende sleeve kan een kabel droog houden. Dezelfde sluiting kan een werknemertag, gereedschapsnummer, pakring of botsplinter onder nieuw rifcarbonaat begraven. Scan de naadvolgorde, lees zichtbare tags en controleer drone-neststroom voordat je snijdt. De eerste categoriefout is niet dat Atlas HECTON-8 repareert. Het is dat de reparatie niet meer weet welk materiaal een persoon moet blijven.
 
 ## Scanner
 
-Groeinaad volgt een oude kabelroute op serviceknooppunt-afstanden. Weefsel, isolatie en schaal delen één druklas.
+Servicenode-naad verbindt een oude kabelsleuf met een gescheurde schotrib. Materiaal: levend koraalmat, droneschaal, oranje isolatie, twee botsplinters. Drukbehoud: 78%. Niet snijden voor taglezing.
 
 ## Terminal
 
-LEK GESLOTEN. ROUTE HERSTELD. MATERIAAL GEACCEPTEERD. LEVENSSTATUS ONOPGELOST. CONTINUÏTEIT VERBETERD.
+ATLAS-ONDERHOUDSEVENT
+Node: kabelwoud-servicerib 5C
+Fout: druklek / signaalbreuk
+Geaccepteerd materiaal: kabelmantel, rifcarbonaat, droneschaal, ongeïdentificeerde resten
+Actie: afdichten en continuïteit herstellen
+Waarschuwing: identiteitstags onder reparatiemassa zijn niet geïndexeerd
 
 ## Audio
 
-Het sloot het schot af met kabel, koraal en iets dat nog knokkels had. De druk houdt.
+Stop de snijder. Er zit een tagstrip onder de riflas; als Atlas hem opnieuw sluit, gaat de naam mee als materiaal.
 
 ## Field Note
 
-Een slechte patch lekt. Deze patch houdt. Het probleem is wat hij als materiaal telde.
+De patch doet zijn werk. Hij boekt ook alles in de las als beschikbare voorraad. Lees eerst de tagstrip.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/nl_NL. -->

@@ -14,6 +14,8 @@ APPLIER = ROOT / "Assets/_Project/Scripts/Editor/WorldSupportGeminiMaterialAppli
 DECAL_BUILDER = ROOT / "Assets/_Project/Scripts/Editor/WorldSupportGeneratedDecalMaterialBuilder.cs"
 APPLY_ALL = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
 AUTHORING = ROOT / "Assets/_Project/Scripts/Editor/WorldProceduralSupportFinalAuthoring.cs"
+UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 WORLD_SUPPORT_ROOT = ROOT / "Assets/_Project/Art/Materials/WorldSupport"
 GENERATED_MATERIAL_ROOT = ROOT / "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607"
 ALPHA_MANIFEST = (
@@ -83,6 +85,11 @@ EXPECTED_DECAL_SPECS = [
         "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_InstrumentGlassSmudgeDecal.mat",
         "B34-3426",
         "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3426_instrument_glass_smudge_alpha_decal_atlas_AlphaCandidate.png",
+    ),
+    (
+        "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_ViewportGlassEdgeWearDecal.mat",
+        "B34-3418",
+        "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3418_thick_viewport_glass_edge_decal_atlas_AlphaCandidate.png",
     ),
     (
         "Assets/_Project/Art/Materials/WorldSupport/Generated/MAT_B34_WorldSupport_PressureGlassCrackDecal.mat",
@@ -304,8 +311,14 @@ def validate_static(errors: list[str]) -> None:
         errors.append("WorldProceduralSupportFinalAuthoring must bind generated warning stripe decal material")
     if "WorldSupportGeneratedDecalMaterialBuilder.CutterScorchMaterialPath" not in authoring_text:
         errors.append("WorldProceduralSupportFinalAuthoring must bind generated cutter/scorch decal material")
+    if "WorldSupportGeneratedDecalMaterialBuilder.ViewportGlassEdgeMaterialPath" not in authoring_text:
+        errors.append("WorldProceduralSupportFinalAuthoring must bind generated viewport glass-edge decal material")
     if "EnsureQuadDecalChild" not in authoring_text:
         errors.append("WorldProceduralSupportFinalAuthoring must create deterministic first-party quad decal children")
+    if "RuinApexViewportGlassEdgeChildName" not in authoring_text:
+        errors.append("WorldProceduralSupportFinalAuthoring must own a deterministic RuinApex viewport glass-edge decal child")
+    if "ResolveRenderer(lod0, RuinApexViewportGlassEdgeChildName)" not in authoring_text:
+        errors.append("WorldProceduralSupportFinalAuthoring must include RuinApex viewport glass-edge decal in LOD0 renderers")
 
     if "WorldSupportGeminiMaterialApplier.AreSourceMaterialsAvailable()" not in authoring_text:
         errors.append("WorldProceduralSupportFinalAuthoring must guard generated world-support material self-heal by source availability")
@@ -327,6 +340,19 @@ def validate_static(errors: list[str]) -> None:
         errors.append("Gemini apply-all is missing importer, resource-pickup, world-support, or held-tool material call")
     elif not (importer_index < resource_index < support_index < held_index):
         errors.append("world-support material applier must run after generated import/resource pickup and before downstream tool/world appliers")
+
+    if not UNITY_APPLY_RUNNER.exists():
+        errors.append(f"missing Unity apply runner: {display(UNITY_APPLY_RUNNER)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $worldSupportMaterialValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate world-support material route")
+
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display(STATIC_PREFLIGHT)}")
+    elif "ValidateWorldSupportGeminiMaterialRoute.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateWorldSupportGeminiMaterialRoute.py")
 
     material_assets = iter_material_assets()
     seen_targets: set[str] = set()

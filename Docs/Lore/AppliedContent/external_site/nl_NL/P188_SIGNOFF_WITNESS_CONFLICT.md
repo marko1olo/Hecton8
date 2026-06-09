@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Conflict tussen Aftekening en Getuige"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Conflict tussen Aftekening en Getuige
 
-NL LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Conflict tussen Aftekening en Getuige definieert de tegenspraak achter het publieke Deep Reach-rapport. Het bedrijf kan beweren dat de oceaan redding onmogelijk maakte; het kan niet veilig beweren dat niemand het conflict zag voordat de vrijgavebevoegdheid werd vastgehouden. Dit artikel verandert kamerbewijs in narratieve druk: een deurlog, een getuigenhash en een beschadigde routeklok laten de officiële aftekening minder als onzekerheid lezen en meer als gecontroleerde weglating. Het houdt de ramp fysiek en bewijst tegelijk dat het dekkingsverhaal menselijk was.
 
 ## Scanner
 
-NL LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+De aftekening zegt dat de evacuatiebeoordeling geen levende tegenspraak had. De getuigenhashes zeggen dat de tegenspraak in de kamer stond.
 
 ## Terminal
 
-NL LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: publieke aftekening markeert getijdenfalen als enige oorzaak. Lokale getuigenhash plaatst evacuatiejurist, Atlas Safety en routeoperaties in de beoordelingskamer vóór de vrijgavehold. Vergelijk deurlog, naamstempel en kapotte routeklok.
 
 ## Audio
 
-NL LOC HOLD: The signatures line up. The bodies do not.
+Het rapport zegt dat niemand het kon weten. Het deurlog is het daar niet mee eens.
 
 ## Field Note
 
-NL LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Een handtekening is alleen schoon tot de kamer zich herinnert wie ernaast stond.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/nl_NL. -->

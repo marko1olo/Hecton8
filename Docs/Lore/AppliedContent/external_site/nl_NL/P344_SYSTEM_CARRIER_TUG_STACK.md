@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Systeemcarrier-tugstack
 
-Black Keel moet dichtbij genoeg voelen om schuld te krijgen en ver genoeg om onbereikbaar te blijven. Het is niet het schip uit een heroïsche reddingsfantasie. Het is een gehuurde industriële stack van carrierromp, tugligplaatsen, vrachtracks, bewaarsoftware, capsule-rails en een grootboek dat nooit slaapt. Dat maakt het nuttig: monsters ontvangen, pakketten beantwoorden, orbit houden en hardware in een venster werpen. Het maakt het ook wreed: elke nuttige functie hangt aan eigendom, timing en schuld. De speler is gestrand onder een echte, aanwezige machine die structureel weigert ouder te worden.
+Black Keel moet dichtbij genoeg voelen om schuld te dragen en ver genoeg om onbereikbaar te blijven. Het is niet het schip uit een heroïsche reddingsfantasie. Het is een gehuurde industriële stapel van carrierromp, tug-ligplaatsen, vrachtrekken, custodysoftware, capsule-rails en een grootboek dat nooit slaapt.
+
+Dat maakt het nuttig: het kan monsters ontvangen, pakketten beantwoorden, orbit houden, capsules uitzetten en hardware in een smal venster duwen. Het maakt het ook wreed: elke nuttige functie hangt aan eigendom, timing, quarantainetaal, hittemarge en schuld. Een lichaam kan stranden onder een machine die echt is, aanwezig is, luistert en structureel niet bereid is een schuilplaats te worden.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/nl_NL. -->

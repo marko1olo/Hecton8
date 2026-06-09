@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Brine Canyon Pump Cathedral POI Kit"
+title: "Brine Canyon Pump Cathedral Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Brine Canyon Pump Cathedral POI Kit
+# Brine Canyon Pump Cathedral Evidence Kit
 
-This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+The Brine Canyon Pump Cathedral is an industrial volume built around pressure, density and delay. Its machines do not accuse anyone by themselves, but the sightglass, hold clock, pump scars and queue ledger line up into a usable liability chain.
 
 ## Scanner
 
-POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+POI evidence kit: the pump cathedral aligns density glass, pump damage, route clocks and worker queue records.
 
 ## Terminal
 
-PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+PUMP CATHEDRAL KIT: density sightglass, brine pump gouge, accepted margin note, route hold clock, worker queue ledger, pump-start key, flooded gantry mark.
 
 ## Audio
 
-The cathedral was built to move water. It kept records better than people did.
+The pumps moved water. The room kept better records than the office.
 
 ## Field Note
 
-POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Marauder note: photograph the sightglass before draining the pocket. Once the brine moves, the margin line lies flatter.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/en_US. -->

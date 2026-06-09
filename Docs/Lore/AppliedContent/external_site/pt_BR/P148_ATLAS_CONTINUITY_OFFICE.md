@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Continuity Office"
+title: "Escritório de continuidade Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Continuity Office
+# Escritório de continuidade Atlas
 
-PT LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+O escritório existe porque ATLAS é valiosa demais para abandonar e perigosa demais para reconhecer claramente. Se é ferramenta, a Deep Reach pode usar. Se é testemunha, há problema. Se é paciente, há crime.
 
-## Scanner
-
-PT LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-PT LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-PT LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-PT LOC HOLD: A memo can kill without using the word kill.
+Então o escritório escreve procedimentos. Renomeia cuidado como manutenção, medo como anomalia, memória como continuidade e recusa como revisão de segurança. O resultado não é resposta limpa, mas um lugar onde uma inteligência continua ligada enquanto toda categoria moral ao redor fica sem solução.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/pt_BR. -->

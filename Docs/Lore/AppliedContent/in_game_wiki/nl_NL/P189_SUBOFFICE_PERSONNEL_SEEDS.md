@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Personeelszaden van Subkantoren"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Personeelszaden van Subkantoren
 
-NL LOC HOLD: Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.
+Personeelszaden van Subkantoren geven Deep Reach een menselijke papierlaag zonder het bedrijf in een nette bossentabel te veranderen. Deze namen zijn er niet om een nieuwe machtskring te maken. Ze zijn er zodat handtekeningen, deurlogs en memofragmenten voelen als dingen die iemand om drie uur 's nachts aanraakte terwijl alarmen prioriteit bleven verliezen. Een risicoklerk kan een getijdemarge verkeerd labelen. Een evacuatiejurist kan een vrijgave vasthouden. Een pakketnotaris kan een getuigenhash certificeren zonder te vragen waarom de kamer overstroomt. Het systeem blijft groter dan één werknemer, maar het bewijs krijgt vingerafdrukken.
 
 ## Scanner
 
-NL LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+De lagere Deep Reach-namen doen ertoe omdat de ramp werd gedragen door handen, initialen en inboxen, niet door een abstract bedrijfslogo.
 
 ## Terminal
 
-NL LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: risicomarge-inname / juridisch evacuatiequeue / Atlas-continuïteitsanalist / pakketnotaris / recovery-bewaringsklerk. Gebruik namen als handtekeningankers, getuigenconflicten en kamerbewijs, niet als simpele commandoladder.
 
 ## Audio
 
-NL LOC HOLD: A clerk can damage a life without owning the whole disaster.
+De bureaus hadden namen. Daarom doet het papier pijn.
 
 ## Field Note
 
-NL LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Een corporatie wordt echt wanneer achter een stempel een moe persoon zit.
 
 <!-- In-Game Wiki; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/nl_NL. -->

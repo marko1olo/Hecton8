@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "معرفة الملف لا قوته"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# معرفة الملف لا قوته
 
-AR LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+معرفة الملف لا قوته هي قاعدة replayability التي تبقي HECTON-8 طويلا وخطرا وصادقا سرديا.
 
 ## Scanner
 
-AR LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // لا أكسجين موروث، لا تصنيف هيكل، لا أسلحة، لا مخزون، لا سلطة مسار، ولا اختصار سحري. الملف يحفظ التحذيرات لا العضلات.
 
 ## Terminal
 
-AR LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+حد صلب: بيانات الملف المستمرة قد تفتح تحذيرات، عائلات شائعات، تنويعات claim وسياق نهايات. لا تحفظ قوة معدات أو مخزون موارد أو ملكية حقيقة العالم أو إذن المسار.
 
 ## Audio
 
-AR LOC HOLD: Memory does not reinforce a cracked hull.
+الذاكرة لا تقوي هيكلا متشققا.
 
 ## Field Note
 
-AR LOC HOLD: The player can become wiser. The ocean should not become smaller.
+يمكن للاعب أن يصبح أحكم. لا يجب أن يصغر المحيط.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/ar_SA. -->

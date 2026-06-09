@@ -19,26 +19,28 @@ localization_flags: 1
 
 # Livro de Trânsito da Reivindicação Longa de Ran
 
-A primeira mentira que um Marauder encalhado quer acreditar é que contato significa resgate. Ao redor de Ran, contato significa que um pacote achou uma janela de transportador. Ele pode mover uma posição, um hash de testemunha, uma demanda legal, uma cotação ou uma ameaça. Não move casco pressurizado, médico, tender de carga nem pilha de frenagem.
+O livro de reivindicação longa de Ran é aquilo em que um chamado de socorro se transforma depois que a civilização escuta e se recusa a fingir que a física mudou. O pacote cruza a rota rápido o bastante para parecer resposta. A resposta não traz casco. Ela registra reclamante, posição, payload, cadeia de custódia e um motivo para alguém fora do mundo gastar massa.
 
-Por isso os livros de reivindicação longa de Ran parecem contabilidade. Um sobrevivente vivo é só um campo. Também entram confiança de coordenada, classe da carga, grau de custódia, massa de subida, risco de quarentena, seguro de rota e quem recebe se a pessoa morrer antes da coleta. A Black Keel move pacotes porque pacotes são baratos e porque autoridade contratual vive no atraso.
+            O livro é lei velha de fronteira dobrada em cima de trânsito duro. Relés de Ran aceitam pacotes de testemunha à velocidade da luz. Escritórios Luyten aplicam hash no recibo. A Black Keel empurra um disparo limpo por espelhos e janelas de transportador. Nenhum desses sistemas possui nave de resgate grátis. Um tender ainda precisa de lane, alocação de frenagem, slot de recepção, liberação de quarentena e pagador que sobreviva à auditoria.
 
-A pergunta útil não é se alguém ouviu você. Provavelmente ouviu. A pergunta é o que ouviu primeiro. Um estado vivo limpo compra fila. Um recibo de rota verificado compra alavanca. Prova de responsabilidade da Deep Reach pode mudar quem pode precificar a fila. Uma carga que importe fora de HECTON-8 pode fazer uma nave aceitar risco que deixaria no fundo se fosse só um corpo.
+            Por isso a primeira janela dói. Um Marauder quer gritar estou vivo. O livro já tem uma caixa para isso. O pacote melhor diz onde, com que certeza, o que pode subir, quem tocou, o que a Deep Reach danificou, se o pacote de subida sela, e que prova será perdida se ninguém vier. O corpo importa. O corpo sozinho é barato na coluna errada.
+
+            A crueldade da Black Keel costuma ser aritmética sem voz humana. Uma pessoa viva é responsabilidade. Uma pessoa viva com prova admissível é alavanca. Uma pessoa viva presa a dados de rota insubstituíveis é carga com dentes. O livro transforma medo em campos porque campos podem ser precificados, testemunhados e disputados depois que o sinal deixou HECTON-8.
 
 ## Scanner
 
-LIVRO DE ROTA // Hash de testemunha Luyten intacto. Uma janela de transportador forte leva um disparo limpo: posição, dano, custódia, prova ou súplica. Não é resgate.
+LIVRO DE REIVINDICAÇÃO LONGA // Trança de testemunha Luyten intacta. Uma janela de transportador disponível. Campos: estado vivo, confiança de coordenada, massa de subida, grau de custódia, objeção Deep Reach, valor de payload. Pedido de socorro não é ordem de tender.
 
 ## Terminal
 
-RECIBO DE ROTA: REIVINDICAÇÃO LONGA DE RAN / SLOT LPL-TESTEMUNHA 7C // Estado vivo sozinho não basta para agendar recuperação. Envie confiança de coordenada, estado do pacote de subida, grau de custódia e massa da carga antes da revisão de prioridade do tender.
+BLACK KEEL / RECIBO DE REIVINDICAÇÃO LONGA RAN 7C // Pacote aceito como reivindicação viva, não como autorização de recuperação. Envie prova de localização, classe de salvage, responsabilidade médica, exposição de quarentena e preferência de primeiro retorno antes da janela degradar. Campos vazios viram carga negativa, corpo baixa prioridade.
 
 ## Audio
 
-Retransmissor Black Keel: a janela segura um disparo limpo. Envie posição, carga ou prova. Escolha antes que a tempestade coma a trava do transportador.
+Retransmissor Black Keel: você chegou ao livro. Bom. Isso faz de você um registro, não alguém salvo. Gaste o disparo em prova, posição ou valor antes que o transportador escorregue.
 
 ## Field Note
 
-Naves não salvam você. Rotas talvez, se o escritório certo foi pago antes de você molhar. Gaste a janela como ar.
+Vivo é uma caixa. Coordenada é aposta. Prova é isca assinada. Envie o pacote que faça eles terem medo de ignorar.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/pt_BR. -->

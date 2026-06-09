@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Partial Return Record"
+title: "Record gedeeltelijke terugkeer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Partial Return Record
+# Record gedeeltelijke terugkeer
 
-NL LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+Dit record markeert een adempauze in de campagne, geen reset. Het is bruikbaar wanneer de route extractiehardware en een levend carrier-venster heeft, maar niet genoeg afgesloten bewaring om ophaling in vrijheid te veranderen.
 
 ## Scanner
 
-NL LOC HOLD: Extraction granted. Claim unresolved.
+RECORD GEDEELTELIJKE TERUGKEER // Black Keel-ophaling geaccepteerd. Terugkeer naar dezelfde seed toegestaan onder verlengd pand; scangeheugen en open bewijspakketten blijven.
 
 ## Terminal
 
-NL LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+EINDRECORD / GEDEELTELIJKE TERUGKEER
+Ophaling: tijdelijke Black Keel-extractie.
+Doel: pakreparatie, luchtvulling, decon, registersync.
+Bewaringsstaat: pand verlengd; quarantainetermijn gekoppeld.
+Terugkeerbevoegdheid: dezelfde seed, dezelfde oceaan, routewaarschuwingen behouden.
+Blijvende data: scangeheugen, open bewijspakketten, onopgeloste payload.
+Bekend verlies: verlichting wordt gefactureerd voordat het vrijheid wordt.
 
 ## Audio
 
-NL LOC HOLD: Out is not away.
+De druk liet los. Het contract hield de stoel warm.
 
 ## Field Note
 
-NL LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Een schoon pak en één slaapcyclus sluiten geen contract. De route beneden houdt zijn oude waarschuwingen.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/nl_NL. -->

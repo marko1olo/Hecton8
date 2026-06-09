@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Storm Window Rush Contract Seed"
+title: "Семя контракта штормового рывка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Storm Window Rush Contract Seed
+# Семя контракта штормового рывка
 
-RU LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Штормовой рывок - семейство контрактов, где погода и орбита становятся первыми системами давления. Маршрут не добавляет унаследованной силы; он сокращает безопасное рабочее время, сужает геометрию возврата и раньше наказывает грязный ремонт.
 
 ## Scanner
 
-RU LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Семя контракта: рывок по окну. Повышенная выплата привязана к закрывающемуся штормовому покрытию, орбитальной шторке и уменьшенному запасу ремонта.
 
 ## Terminal
 
-RU LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: штормовое окно сжато, орбитальная шторка ретранслятора враждебна, потолок выплаты поднят, отзыв bathydrop раньше, допуск ремонта снижен.
 
 ## Audio
 
-RU LOC HOLD: This contract pays because it hates waiting.
+Этот контракт платит потому, что окно закрывается.
 
 ## Field Note
 
-RU LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Заметка мародера: выплата за рывок кажется больше, потому что контракт считает каждую минуту дважды.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ru_RU. -->

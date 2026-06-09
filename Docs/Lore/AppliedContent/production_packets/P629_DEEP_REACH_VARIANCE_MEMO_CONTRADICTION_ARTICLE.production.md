@@ -123,56 +123,56 @@ Text: The variance memo is not proof by itself. It becomes useful when pump-room
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: Draft ar_SA: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: مذكرة variance ليست دليلا وحدها. تصبح مفيدة عندما تعارض آثار غرفة المضخة والطوابع الزمنية وأختام accepted-margin لغة المكتب النظيفة.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Draft de_DE: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Das Variance-Memo ist allein kein Beweis. Es wird nützlich, wenn Pumpenspuren, Zeitstempel und accepted-margin-Stempel der sauberen Bürosprache widersprechen.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Draft es_ES: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: El memo de variance no es prueba por sí solo. Sirve cuando las marcas de la sala de bombas, las marcas de tiempo y los sellos accepted-margin contradicen el lenguaje limpio de oficina.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Draft fr_FR: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Le mémo variance n'est pas une preuve seul. Il devient utile quand les marques de pompe, les horodatages et les tampons accepted-margin contredisent la langue propre du bureau.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: Draft he_IL: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: מזכר variance אינו ראיה לבדו. הוא נעשה שימושי כשסימני חדר המשאבות, חותמות הזמן וחותמות accepted-margin סותרים את לשון המשרד הנקייה.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Draft id_ID: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Memo variance bukan bukti sendirian. Ia berguna saat bekas ruang pompa, cap waktu, dan stempel accepted-margin membantah bahasa kantor yang bersih.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: Draft ja_JP: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: varianceメモ単体は証拠ではない。ポンプ室の痕跡、時刻印、accepted-margin印が清潔な事務文を裏切ったとき、初めて使える。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: Draft ko_KR: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: variance 메모만으로는 증거가 아니다. 펌프실 흔적, 타임스탬프, accepted-margin 도장이 깨끗한 사무실 문장을 반박할 때 쓸모가 생긴다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Draft nl_NL: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: De variance-memo is op zichzelf geen bewijs. Hij wordt bruikbaar wanneer pompkamersporen, tijdstempels en accepted-margin-stempels de schone kantoortaal tegenspreken.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Draft pl_PL: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Notatka variance sama nie jest dowodem. Staje się użyteczna, gdy ślady pompowni, znaczniki czasu i stemple accepted-margin przeczą czystemu językowi biura.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Draft pt_BR: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: O memorando variance não é prova sozinho. Ele fica útil quando marcas da sala de bombas, carimbos de tempo e selos accepted-margin contradizem a linguagem limpa do escritório.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Draft ru_RU: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Variance-мемо само по себе не доказательство. Оно становится полезным, когда следы насосной, метки времени и штампы accepted-margin противоречат чистому офисному языку.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Draft uk_UA: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: Variance-мемо саме по собі не доказ. Воно стає корисним, коли сліди насосної, часові мітки й штампи accepted-margin суперечать чистій офісній мові.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: Draft zh_CN: The variance memo becomes useful only when physical room evidence contradicts the clean office language.
+Text: variance 备忘录本身不是证据。当泵房痕迹、时间戳和 accepted-margin 戳记反驳干净的办公室语言时，它才有用。

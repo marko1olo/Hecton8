@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Trace de langage d’accès révoqué"
+title: "Trace de Langage d'Accès Révoqué"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Trace de langage d’accès révoqué
+# Trace de Langage d'Accès Révoqué
 
-Le protagoniste lit les verrouillages Deep Reach comme des preuves. Les identifiants révoqués bloquent l’accès, mais la formulation expose encore la route enterrée: comptages dégradés, témoins substituts, reclassification de maintenance et langage de préservation de réclamation.
+La Trace de Langage d'Accès Révoqué repose sur une règle simple de HECTON-8: une porte verrouillée peut encore se trahir. Les systèmes Deep Reach étaient conçus pour refuser, classifier et protéger les revendications avec un langage prudent. Quand l'ancien credential échoue, ce langage reste.
 
-## Scanner
+Les indices utiles ne sont pas des mots de passe. Ce sont des phrases d'entreprise avec conséquences physiques: maintenance reclassification, degraded counts, substitute checks et claim-preservation routes. Un visiteur ordinaire voit un refus. Un ancien field systems worker voit le dossier de ce que la porte devait cacher.
 
-Le verrouillage ne dit pas interdit. Il dit reclassification de maintenance, gel de continuité et matériaux de route. Ancienne formulation Deep Reach: un refus qui pointe encore vers la porte enterrée.
-
-## Terminal
-
-RÉPONSE D’ACCÈS / ARCHIVE ROUTE-SÛRE
-identifiant: révoqué
-raison: matériaux de continuité d’évacuation réservés au personnel Deep Reach certifié
-termes visibles: comptage dégradé, témoin substitut, route de préservation de réclamation, reclassification de maintenance
-note: les anciens personnels de terrain peuvent voir le langage de refus uniquement pour rapprochement d’incident.
-
-## Audio
-
-Ils n’ont pas effacé le couloir. Ils l’ont enveloppé dans un vocabulaire que seuls les employés coupables comprennent encore.
-
-## Field Note
-
-Le badge est mort. Le verrouillage parle encore le dialecte de bureau qui a enterré la route.
+Cela garde l'enquête ancrée dans le travail et la responsabilité. L'opérateur n'a pas besoin d'une clé magique ni d'un aveu de coupable. Un badge mort, un écran de refus et les mauvais termes maintenance suffisent pour commencer à suivre la route que Deep Reach a tenté d'enterrer sous la procédure.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/fr_FR. -->

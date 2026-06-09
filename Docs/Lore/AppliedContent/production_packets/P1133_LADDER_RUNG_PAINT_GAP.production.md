@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_navigation_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS169_FIRST_NAVIGATION_MARK_ARTICLES.md |
 | Speaker | Field scanner, ladder route note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first navigation marks |
@@ -39,7 +39,7 @@ LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side.
 
 The rung has lost its painted band where hands kept finding the same place. That gap is useful, but it does not inspect the whole ladder. Wear shows a used side, not a safe one.
 
-The route mark was erased by the route.
+The clean gap marks hand traffic, not structural clearance.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CONFIRM CLIMB SIDE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| ar_SA | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| de_DE | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| es_ES | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| fr_FR | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| he_IL | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| id_ID | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| ja_JP | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| ko_KR | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| nl_NL | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| pl_PL | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| pt_BR | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| ru_RU | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| uk_UA | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
-| zh_CN | draft_machine_or_llm | LADDER RUNG // Route paint worn through. Use glove marks to confirm climb side. |
+| ar_SA | draft_machine_or_llm | درجة سلم // طلاء المسار ممسوح حتى المعدن. استخدم آثار القفازات لتأكيد جهة الصعود. |
+| de_DE | draft_machine_or_llm | LEITERSPROSSE // Routenfarbe durchgerieben. Handschuhspuren bestaetigen die Kletterseite. |
+| es_ES | draft_machine_or_llm | PELDANO DE ESCALA // Pintura de ruta gastada. Usa marcas de guante para confirmar el lado de subida. |
+| fr_FR | draft_machine_or_llm | BARREAU D'ECHELLE // Peinture de route usee a nu. Confirmer le cote de montee par les traces de gants. |
+| he_IL | draft_machine_or_llm | שלב סולם // צבע המסלול נשחק עד הסוף. אשר את צד הטיפוס לפי סימני הכפפות. |
+| id_ID | draft_machine_or_llm | ANAK TANGGA // Cat rute aus. Pastikan sisi panjat dari bekas sarung tangan. |
+| ja_JP | draft_machine_or_llm | はしご横桟 // 経路塗装が摩耗。登る側は手袋跡で確認。 |
+| ko_KR | draft_machine_or_llm | 사다리 가로대 // 경로 도색이 닳아 벗겨졌다. 장갑 자국으로 오를 쪽을 확인한다. |
+| nl_NL | draft_machine_or_llm | LADDERTREDE // Routeverf doorgesleten. Gebruik handschoensporen om de klimzijde te bevestigen. |
+| pl_PL | draft_machine_or_llm | SZCZEBEL DRABINY // Farba trasy starta. Strone wspinania potwierdz sladami rekawic. |
+| pt_BR | draft_machine_or_llm | DEGRAU DA ESCADA // Tinta de rota gasta. Use marcas de luva para confirmar o lado de subida. |
+| ru_RU | draft_machine_or_llm | ПЕРЕКЛАДИНА // Маршрутная краска стерта. Сторону подъема проверяй по следам перчаток. |
+| uk_UA | draft_machine_or_llm | ЩАБЕЛЬ ДРАБИНИ // Маршрутна фарба стерта. Бік підйому перевіряй за слідами рукавичок. |
+| zh_CN | draft_machine_or_llm | 梯级 // 路线漆已磨穿。用手套痕确认攀爬侧。 |

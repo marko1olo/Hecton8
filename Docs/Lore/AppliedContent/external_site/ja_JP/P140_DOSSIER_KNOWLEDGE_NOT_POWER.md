@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "ドシエは知識であり、力ではない"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# ドシエは知識であり、力ではない
 
-JP LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+ドシエは知識であり、力ではない。この規則がHECTON-8を長く、危険で、物語に正直なリプレイに保つ。
 
 ## Scanner
 
-JP LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // 継承酸素、船体等級、武器、所持品、航路権限、魔法の近道なし。ドシエが持つのは警告であって筋肉ではない。
 
 ## Terminal
 
-JP LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+厳格制限: 永続ドシエデータは警告、噂系統、claimバリアント、エンディング文脈を解放できる。装備性能、資源所持、世界真実の所有権、航路許可を保持してはならない。
 
 ## Audio
 
-JP LOC HOLD: Memory does not reinforce a cracked hull.
+記憶は割れた船体を補強しない。
 
 ## Field Note
 
-JP LOC HOLD: The player can become wiser. The ocean should not become smaller.
+プレイヤーは賢くなってよい。海は小さくなってはいけない。
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/ja_JP. -->

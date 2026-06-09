@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "טיפול בקופסת לחץ של חוב כחול"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# טיפול בקופסת לחץ של חוב כחול
 
-Blue debt value depends on pressure, temperature, custody and silence.
+חוב כחול אינו נעשה שימושי כשהוא נמצא. הוא שימושי אם הוא נשאר במצב שהפך אותו לבעל ערך. קופסת לחץ אטומה היא מכולה, אזהרה וקבלה יחד; היא מונעת משארית Xenon-Omega, מסבכה שגדלה בלחץ או ממצע מזוהם להפוך לרעש, אבקה, אובדן ראיה או אות שמערכת לא נכונה יכולה לשמוע.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+הבחירה הבטוחה הראשונה אינה למכור, לייצר או להחביא. היא לייצב. casket עם רצועה קרה ושלמה יכול לזוז. casket עם אטם חם הופך את הראיה לחשודה. טיפול רע הופך תשלום לזיהום, רעש וסיכון מסלול.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/he_IL. -->

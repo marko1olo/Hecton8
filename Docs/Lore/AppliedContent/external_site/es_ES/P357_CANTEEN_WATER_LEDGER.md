@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Registro de agua de comedor
 
-El Registro de agua de comedor es uno de los artefactos humanos mas simples de HECTON-8: una pizarra de comedor que anota agua potable, devoluciones de fichas, acceso a bombas y excepciones medicas. No explica el desastre. Muestra la colonia justo antes de que el desastre se convirtiera en historia.
+El Libro de agua de cantina es una pizarra hinchada de comedor, de una colonia que medía el agua potable con la misma seriedad que la custodia de herramientas. Seis fichas perdidas, dos excepciones médicas y una corrección de sala de bombas bastan para que la sala parezca viva: no heroica, no ordenada, aún discutiendo por vasos mientras el sistema de presión ya empezaba a fallar.
 
-Su valor es textura y prueba. Seis fichas faltantes suenan menores hasta que el jugador entiende lo que significaba el agua en una colonia de presión. El agua potable pasaba por filtros, contabilidad de turno, excepciones médicas y custodia de bombas. Un vaso perdido podia ser un trabajador cansado. Tambien podia ser un equipo enfermo, una línea contaminada, una orden de racion sorteada o un supervisor ocultando un fallo local a los informes de Deep Reach.
+En HECTON-8, el agua nunca era solo agua. Pasaba por filtros, jefes de turno, excepciones médicas, llaves de bomba y confianza de cantina. Una ficha perdida podía ser olvido, robo, enfermedad, contaminación o un supervisor manteniendo una falla local fuera del papeleo de Deep Reach durante un turno más.
 
-La intencion no es melodrama. El registro hace legible la colonia como trabajo: la gente volvia de turno, discutia, corregia registros, tomaba herramientas, protegia a los suyos y trataba de mantener normal la sala mientras el oceano entraba en el sistema. En HECTON-8, esa huella ordinaria puede convertirse en prueba.
+No limpies el margen de lápiz graso. Allí la sala se vuelve humana. Muestra a trabajadores protegiendo amigos, ocultando síntomas, disputando el orden de ración e intentando que un filtro agrio no se convierta en pánico de colonia antes del próximo tono de descenso.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/es_ES. -->

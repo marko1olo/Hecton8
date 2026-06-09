@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-Aegir Continuity Holdings - shell, делающий HECTON-8 legally reachable и morally distant.
+Aegir Continuity Holdings заставляет непрерывность звучать как забота. На деле это значит, что маршрутная аренда переживает рабочего, поврежденное жилье остается активом, а утонувшая площадка все еще производит опционы.
 
-## Scanner
-
-Грязному проекту нужен чистый владелец без лица.
-
-## Terminal
-
-SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
-
-## Audio
-
-Там никто не работает. Через него все подписывают.
-
-## Field Note
-
-Shell companies - способ, которым crime scene учится выставлять счет самому себе.
+Эта оболочка важна, потому что дает Deep Reach ждать. Публичная злость остывает, доказательства стареют, контракты перекатываются, а холдинг остается готовым принять все, что следующая экспедиция сможет легально вынести.
 
 <!-- External Site; generated from P147_AEGIR_CONTINUITY_HOLDINGS/ru_RU. -->

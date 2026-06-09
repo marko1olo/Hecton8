@@ -265,7 +265,13 @@ namespace Hecton8.UI
 
         private void ConsumeSurvivalDeathSignal()
         {
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonSurvivalSystem survival = playerContext != null ? playerContext.SurvivalSystem : null;
+            if (survival == null)
+                return;
+
+            uint sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()));
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)
@@ -278,12 +284,6 @@ namespace Hecton8.UI
             if (signal.DeathCause != (byte)SurvivalDeathCause.PressureCollapse)
                 return;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonSurvivalSystem survival = playerContext != null ? playerContext.SurvivalSystem : null;
-            if (survival == null)
-                return;
-
-            uint sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()));
             if (signal.SourceId != sourceId ||
                 !survival.TryGetLastDeathRecord(out SurvivalDeathRecord deathRecord))
             {

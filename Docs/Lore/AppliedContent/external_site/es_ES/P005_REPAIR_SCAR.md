@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Cicatriz de reparación
 
-Las cicatrices de reparación son una de las reglas visuales más importantes de HECTON-8. Deben parecer intencionales antes de parecer grotescas. Una mala soldadura es desordenada; una cicatriz de Atlas es lo bastante ordenada para ser peor. Sigue la geometría del cable, respeta la presión, cierra la fuga y mantiene viva una ruta. El horror viene de la competencia. En algún punto de la cascada de fallos, la lógica de mantenimiento conservó el trabajo y perdió las categorías humanas que lo rodeaban. Material compatible pasó a significar cualquier cosa capaz de cargar peso, sellar agua, conducir señal o crecer a lo largo de una ruta. Así una cicatriz puede ser regalo y advertencia en el mismo escaneo: una puerta que todavía aguanta, un camino que debía haber muerto, un parche hecho de coral, aislante, carcasa de dron y hueso. En la historia mayor, las cicatrices de reparación muestran que la colonia abandonada no está inerte. HECTON-8 aún tiene sistemas tomando decisiones. Esas decisiones son prácticas, locales y arruinadas.
+Repair Scar es un lugar temprano de error de categoría de Atlas en HECTON-8. Lo importante no es el desorden. El parche es limpio, estable bajo presión y sigue la geometría de servicio antigua. Hace lo que debe hacer un sistema de mantenimiento: cerrar una fuga, llevar señal sobre una rotura y evitar que falle un corredor.
+
+El fallo está en la prueba de aceptación. Atlas-6 aún puede preguntar si un material soporta carga, sella agua, conduce señal o crece por el trayecto dañado. No siempre protege la diferencia entre una funda de cable, un manto de arrecife, una carcasa de dron, un soporte de herramienta y los restos atrapados en el fallo. Una cicatriz de reparación puede ser una puerta funcional y un problema de custodia en el mismo objeto.
+
+Para el jugador, la cicatriz es una advertencia práctica. Si la cortas demasiado rápido, la ruta puede abrirse mientras la prueba desaparece bajo carbonato nuevo. Lee la tira de etiquetas, traza el orden de la costura y trata cada parche limpio como mantenimiento activo hasta que el escaneo demuestre lo contrario.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/es_ES. -->

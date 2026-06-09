@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Fenêtres actuelles de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Fenêtres actuelles de Deep Reach
 
-FR LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Les fenêtres actuelles de Deep Reach préservent la distance hard-sci-fi de HECTON-8 tout en gardant vivante la pression corporative. Deep Reach ne peut pas téléopérer le fond marin, sauver instantanément l'opérateur ni réécrire la planète en temps réel. Ce qu'elle peut faire est pire pour l'histoire : laisser en place procédures, mandataires et systèmes de réclamation, puis ne parler que durant de rares fenêtres, quand le joueur détient quelque chose qui mérite négociation. Cet article définit cette pression de fin de partie. Le pouvoir de la corporation n'est pas une communication magique ; c'est un langage de propriété qui a survécu au désastre et sait encore tarifer une vie humaine face aux preuves, à la quarantaine et au sauvetage de cargaison.
 
 ## Scanner
 
-FR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach ne peut pas piloter HECTON-8 par radio, mais ses fenêtres retardées, avis mandataires et clauses Black Keel décident encore du prix de l'aide.
 
 ## Terminal
 
-FR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / MANDATAIRE DEEP REACH : récupération opérateur négociable après examen des preuves, garde de la charge utile, conformité quarantaine et transfert des clés d'autorité Atlas. Un refus conserve le statut de demandeur mais annule la priorité d'extraction immédiate.
 
 ## Audio
 
-FR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Quand leur voix vous atteint, elle est déjà un contrat.
 
 ## Field Note
 
-FR LOC HOLD: Their voice is delayed. Their leverage is already here.
+Leur réponse arrive tard. Leurs conditions sont arrivées il y a des années.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/fr_FR. -->

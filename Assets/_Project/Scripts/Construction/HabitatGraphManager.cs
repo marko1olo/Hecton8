@@ -451,6 +451,7 @@ namespace Hecton8.Construction
         private float _pendingModuleStressQualityWeight;
         private bool _pendingHatchMeshVisualSyncDirty;
         private IAtmosphereReadModel _atmosphereReadModel;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private IAudioService _audioService;
         private IFluidDecalPresentationSink _fluidDecals;
@@ -656,6 +657,7 @@ namespace Hecton8.Construction
             ClearVisualLinks();
             DisposeNativeBuffers();
             _atmosphereReadModel = null;
+            _oceanKinematicsService = null;
             _ambientCurrentReadModel = null;
             ClearCachedAudioService();
             _fluidDecals = null;
@@ -669,11 +671,13 @@ namespace Hecton8.Construction
         }
 
         internal void SetRuntimeServices(
+            IHectonOceanKinematicsService oceanKinematicsService,
             IAtmosphereReadModel atmosphereReadModel,
             IAmbientCurrentReadModel ambientCurrentReadModel,
             IAudioService audioService,
             IFluidDecalPresentationSink fluidDecals)
         {
+            _oceanKinematicsService = oceanKinematicsService;
             _atmosphereReadModel = atmosphereReadModel;
             _ambientCurrentReadModel = ambientCurrentReadModel;
             CacheAudioService(audioService);
@@ -683,6 +687,11 @@ namespace Hecton8.Construction
         internal void SetAtmosphereReadModel(IAtmosphereReadModel atmosphereReadModel)
         {
             _atmosphereReadModel = atmosphereReadModel;
+        }
+
+        internal void SetOceanKinematicsService(IHectonOceanKinematicsService oceanKinematicsService)
+        {
+            _oceanKinematicsService = oceanKinematicsService;
         }
 
         internal void SetAmbientCurrentReadModel(IAmbientCurrentReadModel ambientCurrentReadModel)
@@ -1090,17 +1099,41 @@ namespace Hecton8.Construction
 
         private float ResolveRuntimeSeaLevelY()
         {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out float oceanSeaLevelY))
+            {
+                return oceanSeaLevelY;
+            }
+
             IAtmosphereReadModel atmosphereReadModel = GetCachedAtmosphereReadModel();
             return atmosphereReadModel != null && TryResolveSeaLevelY(atmosphereReadModel.SeaLevelY, out float seaLevelY)
                 ? seaLevelY
                 : DefaultSeaLevelY;
         }
 
+        private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
         private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
         {
             if (math.isfinite(candidateSeaLevelY) &&
                 math.abs(candidateSeaLevelY) > 0.0001f &&
-                math.abs(candidateSeaLevelY) <= 1000f)
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 seaLevelY = candidateSeaLevelY;
                 return true;

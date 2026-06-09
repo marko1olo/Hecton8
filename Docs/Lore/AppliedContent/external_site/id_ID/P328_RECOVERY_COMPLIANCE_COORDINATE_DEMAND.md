@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Tuntutan Koordinat Kepatuhan Pemulihan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Recovery Compliance Coordinate Demand
+# Tuntutan Koordinat Kepatuhan Pemulihan
 
-ID LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Setelah koloni lenyap, Deep Reach tidak kembali dengan tangan terulur. Kanal bersih pertamanya menanyakan lokasi aset, siapa yang bisa membuktikan kepemilikan, dan apakah saksi hidup akan tunduk pada karantina serta peninjauan hak gadai. Di HECTON-8, penyelamatan tidak ditolak; ia ditunda sampai menjadi alat tekan.
 
 ## Scanner
 
-ID LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paket terautentikasi sebagai Deep Reach Recovery Compliance: bahasa penyelamatan membungkus tuntutan koordinat, bukti penguasaan, dan status kontaminasi.
 
 ## Terminal
 
-ID LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+PEMBERITAHUAN RECOVERY COMPLIANCE DR-RC-8: kirim vektor akses Atlas, bukti penguasaan Xenon-Omega, status kontaminasi biologis, dan koordinat cekungan saat ini. Evakuasi medis tetap tertunda sampai rantai aset, hak gadai salvage, dan hak kendali lokasi direkonsiliasi. Siaran tanpa izin dapat menurunkan prioritas penyintas menjadi penahanan bukti.
 
 ## Audio
 
-ID LOC HOLD: They can say rescue without meaning rescue.
+Mereka menemukan cara membuat penyelamatan terdengar seperti surat perintah.
 
 ## Field Note
 
-ID LOC HOLD: Use near payload authority decisions and receiver selection.
+Tempatkan di titik ketika pemain bisa memilih apa yang dikirim. Ancaman harus terasa prosedural, bukan teatrikal: bukan pidato penjahat, hanya antrean yang bisa mengubur tubuh.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/id_ID. -->

@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Tool Certification Board
 
-The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+The Tool Certification Board records a culture that trusted marks more than speeches. Cutter head indexed. Sealant cartridge weighed. Pressure glove dual-signed. Pump key late. Descent kit held. Each line is blunt because blunt procedure kept people alive where a nearly correct tool could kill quietly.
 
-## Scanner
+The board looks ritualistic because dangerous labor repeats the same movements until fear has somewhere to go. Weigh, check, sign, return, recheck. The second signature was not decoration; it made trust accountable. If a glove failed below pressure, the mark on the board said who saw it, who rushed it, and who tried to send it down anyway.
 
-Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+This is worker faith without mysticism. The colony did not pray over cutters. It made another tired person look at the edge, the seal, the weight and the key return. Survival became communal because every tool carried somebody else's name before it touched the route.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/en_US. -->

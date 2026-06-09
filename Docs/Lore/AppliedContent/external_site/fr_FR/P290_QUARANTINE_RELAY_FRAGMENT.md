@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Relay Fragment"
+title: "Fragment de relais de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Relay Fragment
+# Fragment de relais de quarantaine
 
-FR LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Le Fragment de relais de quarantaine définit le bord amer de la survie dans HECTON-8. Le cadre ne parle pas seulement d'échapper à la pression de l'eau ; il parle aussi d'échapper aux dossiers, chaînes de garde et revendications de propriété qui survivent à l'inondation. Le fragment donne aux fins une forme plus dure : quelqu'un peut être récupéré de l'océan sans être libre.
 
 ## Scanner
 
-FR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Le même paquet de relais approuve l'extraction et refuse la libération. L'océan rend le corps avant que la colonie ne rende la personne.
 
 ## Terminal
 
-FR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+MAINTIEN RELAIS QRF-17 / EXTRACTION : ACCEPTÉE / LIBÉRATION : REFUSÉE / MOTIFS : garde d'échantillon non résolue, revue d'air périmée, litige de demandeur actif, statut de témoin provisoire.
 
 ## Audio
 
-FR LOC HOLD: You are out of the water. You are not out of custody.
+Maintien relais. Extraction acceptée. Libération refusée. Tu es hors de l'eau, pas hors de garde.
 
 ## Field Note
 
-FR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Deux tampons : CORPS RÉCUPÉRÉ, PERSONNE RETENUE. La revue d'air précède le reçu de sauvetage ; litige de demandeur encore ouvert.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/fr_FR. -->

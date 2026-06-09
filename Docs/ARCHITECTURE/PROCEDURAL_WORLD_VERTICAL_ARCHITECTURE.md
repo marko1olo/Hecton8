@@ -21,6 +21,10 @@ Full pre-distillation snapshot: `Docs/DEPRECATED/Root_Generated_Snapshots_2026-0
 - Vertical world state is data-owned, not scene-search owned.
 - Streaming systems publish from owner phases; consumers read immutable snapshots or cached interfaces.
 - Terrain, flora, scatter, lighting, audio, and water presentation consume world facts; they do not invent gameplay truth.
+- Macro terrain facts are rooted in `WorldMacroGeologyFields` plus `WorldTerrainDetailContracts`: authored seed, macro artifact version, chunk size/range/hash, material classes, meso detail fields, and packed control masks.
+- MapMagic is a controlled bridge, bake, provider, or tile-application route over those facts. It is not the standalone source of terrain/world truth.
+- Generated macro-geology previews and manifests under `Docs/GeneratedAssets/Terrain/MacroGeology` are static evidence artifacts. Source code and runtime provider identity remain authoritative for gameplay behavior.
+- Save/load references terrain identity and water calibration; it must not serialize full macro fields or accept mismatched macro artifact versions silently.
 - Depth, pressure, visibility, and biome transitions must use deterministic scalar bands/data curves where possible; expensive simulation needs profiler proof.
 - Far or weak-device presentation uses cheap masks, impostors, batched meshes, and cadence reduction.
 - Strong-device presentation adds density, blend layers, particles, decals, and lighting richness without changing authority routes.

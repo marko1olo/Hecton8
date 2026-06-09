@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Worker Locker Nameplate Sample"
+title: "Образец таблички рабочего шкафчика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Worker Locker Nameplate Sample
+# Образец таблички рабочего шкафчика
 
-RU LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Образец таблички рабочего шкафчика показывает, как HECTON-8 помнит людей через предметы, у которых все еще была работа. Ren Okoye не вводится биографией. Табличка шкафчика дает маршрут, сертификат инструмента, талон еды, метку размера перчатки и строку зарплаты, сошлифованную кем-то, кто не знал, какие детали важны. Поэтому артефакт работает. Он доказывает, что корпоративное стирание может быть неуклюжим: payline исчезает, но clamp route остается; статус перезаписан, но метка перчатки все еще подходит настоящей руке. Игрок должен сначала прочитать имя через труд, а потом почувствовать насилие отсутствующей учетной строки.
 
 ## Scanner
 
-RU LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Табличка Ren Okoye сохранила имя, потому что строку оплаты было легче стереть, чем работу.
 
 ## Terminal
 
-RU LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-RU LOC HOLD: Name retained. Payline erased.
+Имя сохранено. Строка оплаты стерта. Работа все еще прикреплена.
 
 ## Field Note
 
-RU LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / талон еды под лентой. Payroll stripe сошлифована; метка размера перчатки все еще видна.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/ru_RU. -->

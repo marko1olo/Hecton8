@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder-Korrekturschicht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder-Korrekturschicht
 
-DE LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+Die Marauder-Korrekturschicht ist der Ort, an dem alte Konzernsprache Autorität verliert. Deep Reach schreibt variance, custody, hold, asset, exposure. Marauder schreiben, was ein Taucher vor dem nächsten Atemzug braucht: CO2 macht Hände langsam, brine verbirgt die Stufe, seal tape versagt an der Biegung, trau der sauberen Luke nicht. Diese Notizen sollen wie eine Kultur wirken, die sich aus Menschen neu aufbaut, die vom System geschult wurden und dann lernten, seinen Wortschatz zu hassen.
 
 ## Scanner
 
-DE LOC HOLD: Marauders turn corporate language back into survival facts.
+KORREKTURSCHICHT // Konzernlabel: temporary atmospheric variance. Marauder-Notiz: CO2 frisst zuerst das Urteilsvermögen.
 
 ## Terminal
 
-DE LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ANNOTATIONSREGEL: Deep-Reach-Sprache in Überlebensfakten zurückübersetzen. Notizen kurz, praktisch, wütend und unter Druck nützlich halten.
 
 ## Audio
 
-DE LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Eine gute Notiz klingt nicht klug. Sie hält jemanden am Leben.
 
 ## Field Note
 
-DE LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Der Spieler soll spüren, wie alte Deep-Reach-Sprache in Körperzahlen übersetzt wird.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/de_DE. -->

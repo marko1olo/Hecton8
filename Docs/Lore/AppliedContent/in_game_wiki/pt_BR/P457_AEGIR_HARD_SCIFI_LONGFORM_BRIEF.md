@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir: o céu que recusa resgate"
+title: "Aegir: O Céu Que Recusa Resgate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: o céu que recusa resgate
+# Aegir: O Céu Que Recusa Resgate
 
-Aegir é céu operacional. A escada de luas pode atrasar ou corromper pacote sem escurecer a superfície para sempre. Resgate falha por distância, geometria, lei e custo.
+Aegir é a máquina orbital acima de HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window e a razão pela qual rescue viaja mais devagar que papelada.
 
 ## Scanner
 
-Guia de rota celeste. Não há FTL nem ansible. Janelas Aegir passam por luas, detritos, custódia de relé, tempestade e contabilidade de massa da Black Keel.
+Astronomia pública: sem FTL, sem ansible, Aegir relay geometry, hazards da moon ladder, Black Keel orbital custody, route windows antes da lei.
 
 ## Terminal
 
-GUIA DE NAVEGAÇÃO AEGIR // FAIXA PÚBLICA. Usar classes de risco: sombra de rota, surto carregado, dispersão de gelo, pluma de tempestade, atraso de guiagem, custódia do receptor.
+SITE LONGFORM: tornar o céu prático e hostil; cada packet, drop, pickup e claim precisa de physics, timing, mass e custody.
 
 ## Audio
 
-Agenda Black Keel: "Sinal verdadeiro não é sinal útil. A janela segura massa, clima, custódia e trava de receptor."
+O céu sobre HECTON-8 não está vazio. É um schedule com dentes.
 
 ## Field Note
 
-Regra de saqueador: não pergunte se o sinal foi enviado. Pergunte qual lua bloqueou, qual ledger pegou e se o receptor ouviu pessoa ou classe de massa.
+Olhe para cima por timing, não por conforto. Em HECTON-8, moonlight pode ser relay opening, storm warning ou claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/pt_BR. -->

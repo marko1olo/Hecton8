@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Contract Continuity Desk Signatures
 
-Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Contract Continuity Desk Signatures exposes the paperwork under HECTON-8's opening contract. The article gives the contract system names, stamps and functions so the player can see how a salvage run becomes a custody bargain. Edda Malk's desk does not need to know the whole colony crime to make the present dangerous. It only needs to merge liens, oxygen debt and recovery clauses in the right order. By the time the operator signs, the ocean is not the only pressure outside the hull; the contract is already squeezing.
 
 ## Scanner
 
-The contract trap is assembled from clause fragments, not one villain order.
+The opening contract trap is built from lower signatures: lien merge, oxygen addendum, blacklist risk and payload custody hold.
 
 ## Terminal
 
-SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Merge Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Attach oxygen-credit addendum, blacklist-risk notice and payload custody hold. Escalation not required if operator accepts.
 
 ## Audio
 
-Nobody says trap. They say continuity.
+A signature can be a pressure door when every clause locks after it.
 
 ## Field Note
 
-Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Nobody stamps a trap. They stamp continuity.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/en_US. -->

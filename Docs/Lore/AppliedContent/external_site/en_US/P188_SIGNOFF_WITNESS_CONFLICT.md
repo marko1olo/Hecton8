@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Signoff Witness Conflict
 
-Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Signoff Witness Conflict defines the contradiction behind the public Deep Reach report. The company can claim that the ocean made rescue impossible; it cannot safely claim that no one saw the conflict before release authority was held. This article turns room evidence into narrative pressure: a door log, a witness hash and a damaged route clock make the official signoff read less like uncertainty and more like a controlled omission. It keeps the disaster physical, while proving the cover story was human.
 
 ## Scanner
 
-Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+The signoff says evacuation review had no live contradiction. The witness hashes say the contradiction was in the room.
 
 ## Terminal
 
-CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: public signoff marks tide failure as sole cause. Local witness hash places evacuation counsel, Atlas Safety and route operations in the review room before release hold. Compare door log, name stamp and broken route clock.
 
 ## Audio
 
-The signatures line up. The bodies do not.
+The report says nobody could know. The door log disagrees.
 
 ## Field Note
 
-The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+A signature is clean only until the room remembers who stood beside it.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/en_US. -->

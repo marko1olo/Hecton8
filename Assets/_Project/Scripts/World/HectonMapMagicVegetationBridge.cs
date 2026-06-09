@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -166,7 +167,16 @@ namespace Hecton8.World
         private const string SandLayerName = "L_Sand";
         private const string GreenSandLayerName = "L_sandGreen";
         private const string RockLayerName = "L_Rocks";
+        private const string Batch34ClaySiltLayerName = "L_B34_3408_ClaySiltTurbiditySlope";
+        private const string Batch34ShellSandLayerName = "L_B34_3401_PhoticLimestoneRubbleShelf";
+        private const string Batch34RootMatLayerName = "L_B34_3402_ShallowSeagrassRootMat";
+        private const string Batch34SerpentiniteLayerName = "L_B34_3406_SerpentiniteFaultRock";
+        private const string Batch34BrineSaltLayerName = "L_B34_3403_BrineCanyonSaltCrustSilt";
+        private const string Batch34ManganeseLayerName = "L_B34_3404_AbyssalManganeseNodulePlain";
+        private const string Batch34MethaneHydrateLayerName = "L_B34_3405_MethaneHydrateCrackVein";
+        private const string Batch34LimestoneCaveLayerName = "L_B34_3409_LimestoneCaveCeilingMineralDrip";
         private const float DefaultWaterLevel = 14.02f;
+        private const float WaterLevelResyncEpsilonMeters = 0.05f;
         private const float OrganicKelpMaxDepthBelowSurfaceMeters = 200f;
         private const float OrganicKelpMaxSlopeNormalY = 0.8660254f;
         private const float DefaultKelpMinHeight = DefaultWaterLevel - OrganicKelpMaxDepthBelowSurfaceMeters;
@@ -1060,9 +1070,16 @@ namespace Hecton8.World
 
         private struct LayerIndices
         {
-            public int Sand;
-            public int GreenSand;
-            public int Rock;
+            public int Sand0;
+            public int Sand1;
+            public int Sand2;
+            public int Sand3;
+            public int Rock0;
+            public int Rock1;
+            public int Rock2;
+            public int Rock3;
+            public int Rock4;
+            public int Rock5;
         }
 
         private readonly ref struct TerrainLayerMaskSampler
@@ -2275,6 +2292,12 @@ namespace Hecton8.World
         private byte _rockMaskThresholdByte;
         private Vector2 _floatingFlowDirectionNormalized;
         private IWeatherService _weatherService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
+        private WorldMacroGeologyParams _vegetationMacroGeologyParamsCache;
+        private WorldTerrainMesoDetailParams _vegetationMesoDetailParamsCache;
+        private int _vegetationMacroGeologyRuntimeSeedCache = int.MinValue;
+        private float _vegetationMacroGeologyWaterLevelCache = float.NaN;
+        private bool _vegetationMacroGeologyParamsCached;
         private Vector3 _playerVelocity;
         private Vector3 _lastPlayerPosition;
         private bool _hasLastPlayerPosition;
@@ -2577,7 +2600,8 @@ namespace Hecton8.World
             if (_underwaterNativeBufferSource == null)
                 _underwaterNativeBufferSource = new IndirectVegetationNativeBufferSource(this, true); // COLD ALLOC: IndirectVegetationNativeBufferSource[1] - underwater native vegetation renderer seam - owner: HectonMapMagicVegetationBridge
 
-            SyncWaterSurfaceLevelFromTerrainBridge();
+            CacheOceanKinematicsService(Application.isPlaying ? GlobalRegistry.OceanKinematics : null);
+            SyncWaterSurfaceLevelFromRuntime();
             residentRadius = math.clamp(residentRadius, 150f, 200f);
             residentHysteresisScale = math.clamp(residentHysteresisScale, 1f, 1.5f);
             maxChunkBuildsPerSlowTick = math.max(1, maxChunkBuildsPerSlowTick);
@@ -2813,6 +2837,7 @@ namespace Hecton8.World
             PreallocateAbyssalNavigationBuffers();
             BindRendererSources();
             CacheWeatherService(GlobalRegistry.Weather);
+            CacheOceanKinematicsService(GlobalRegistry.OceanKinematics);
             RefreshColdRuntimeDependencies();
             TryRegisterHotSwapListener();
             TrySubscribeEvents();
@@ -2873,6 +2898,8 @@ namespace Hecton8.World
             _tileStates.Clear();
             ClearArtificialInteriorState();
             ClearVegetationAudioHandoff();
+            ClearVegetationMacroGeologyParamsCache();
+            CacheOceanKinematicsService(null);
             _totalUniverseOffset = Vector3.zero;
             _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
@@ -2925,6 +2952,8 @@ namespace Hecton8.World
             _tileStates.Clear();
             ClearArtificialInteriorState();
             ClearVegetationAudioHandoff();
+            ClearVegetationMacroGeologyParamsCache();
+            CacheOceanKinematicsService(null);
             _totalUniverseOffset = Vector3.zero;
             _totalUniverseOffsetDouble = double3.zero;
             GlobalTotalUniverseOffset = Vector3.zero;
@@ -2940,6 +2969,7 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             QueueDeferredTileCacheDisposal();
+            SyncWaterSurfaceLevelFromRuntime();
             float clampedDt = math.isfinite(dt) ? math.max(0f, dt) : 0f;
             AdvanceVegetationRuntimeClock(clampedDt);
             _predatorFearSimulationTime += clampedDt;
@@ -4321,6 +4351,9 @@ namespace Hecton8.World
             if (IsInsideRegisteredTerrainHole(position.x, position.z))
                 return false;
 
+            if (TrySampleMacroGeologyFloraSubstrate(position, out substrate))
+                return true;
+
             if (!TryFindTileStateAtPosition(position, out TileRuntimeState state) ||
                 state == null ||
                 !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out _))
@@ -4361,6 +4394,80 @@ namespace Hecton8.World
                     : WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
 
             return true;
+        }
+
+        private bool TrySampleMacroGeologyFloraSubstrate(Vector3 position, out WorldProceduralPlacementRule.FloraSubstrateMask substrate)
+        {
+            substrate = WorldProceduralPlacementRule.FloraSubstrateMask.None;
+            if (!TryGetVegetationMacroGeologyParams(out WorldMacroGeologyParams macroParams, out WorldTerrainMesoDetailParams mesoParams))
+                return false;
+
+            WorldMacroGeologySample macro = WorldMacroGeologyFields.Evaluate(position.x, position.z, in macroParams);
+            if (!math.isfinite(macro.HeightMeters))
+                return false;
+
+            WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(
+                in macro,
+                position.x,
+                position.z,
+                macroParams.Seed);
+            WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(
+                in macro,
+                position.x,
+                position.z,
+                in mesoParams);
+            weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
+            WorldTerrainDetailEligibilityFlags eligibility =
+                WorldTerrainMesoDetailFields.ResolveEligibilityFlags(in macro, in meso, in weights);
+            WorldTerrainSurfaceMaterialClass dominantMaterial =
+                WorldTerrainSurfaceMaterialResolver.ResolveDominant(in weights);
+
+            substrate = ScatterCandidateEvaluator.ResolveFloraSubstrateFromTerrainDetail(
+                eligibility,
+                dominantMaterial,
+                in weights);
+            return substrate != WorldProceduralPlacementRule.FloraSubstrateMask.None;
+        }
+
+        private bool TryGetVegetationMacroGeologyParams(
+            out WorldMacroGeologyParams macroParams,
+            out WorldTerrainMesoDetailParams mesoParams)
+        {
+            int runtimeWorldSeed = 0;
+            if (global::HectonWorldGenerator.TryGetActiveRuntimeWorldSeed(out int activeRuntimeWorldSeed))
+                runtimeWorldSeed = activeRuntimeWorldSeed;
+
+            float resolvedWaterLevel = math.isfinite(waterLevel) ? waterLevel : DefaultWaterLevel;
+            if (_vegetationMacroGeologyParamsCached &&
+                _vegetationMacroGeologyRuntimeSeedCache == runtimeWorldSeed &&
+                math.abs(_vegetationMacroGeologyWaterLevelCache - resolvedWaterLevel) <= WaterLevelResyncEpsilonMeters)
+            {
+                macroParams = _vegetationMacroGeologyParamsCache;
+                mesoParams = _vegetationMesoDetailParamsCache;
+                return true;
+            }
+
+            macroParams = WorldMacroGeologyParams.CreateDefault(
+                WorldMacroGeologyFields.CombineWorldSeed(
+                    unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed),
+                    runtimeWorldSeed));
+            macroParams.WaterSurfaceY = resolvedWaterLevel;
+            mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(macroParams.Seed);
+            mesoParams.PreviewExtentMeters = WorldTerrainDetailContracts.MesoProofExtentMeters;
+
+            _vegetationMacroGeologyParamsCache = macroParams;
+            _vegetationMesoDetailParamsCache = mesoParams;
+            _vegetationMacroGeologyRuntimeSeedCache = runtimeWorldSeed;
+            _vegetationMacroGeologyWaterLevelCache = resolvedWaterLevel;
+            _vegetationMacroGeologyParamsCached = true;
+            return true;
+        }
+
+        private void ClearVegetationMacroGeologyParamsCache()
+        {
+            _vegetationMacroGeologyParamsCached = false;
+            _vegetationMacroGeologyRuntimeSeedCache = int.MinValue;
+            _vegetationMacroGeologyWaterLevelCache = float.NaN;
         }
 
         private static byte PackFloraSubstrateBits(byte sandValue, byte rockValue, byte sandThreshold, byte rockThreshold)
@@ -6651,9 +6758,7 @@ namespace Hecton8.World
         private bool TryResolveLayerIndices(UnityEngine.TerrainData terrainData, out LayerIndices indices)
         {
             indices = default;
-            indices.Sand = -1;
-            indices.GreenSand = -1;
-            indices.Rock = -1;
+            ResetLayerIndices(ref indices);
 
             if (terrainData == null)
                 return false;
@@ -6669,23 +6774,94 @@ namespace Hecton8.World
                     continue;
 
                 string layerName = layer.name;
-                if (string.Equals(layerName, SandLayerName, StringComparison.Ordinal))
+                if (IsSandLikeTerrainLayerName(layerName))
                 {
-                    indices.Sand = i;
+                    AssignNextSandLayerIndex(ref indices, i);
                     continue;
                 }
 
-                if (string.Equals(layerName, GreenSandLayerName, StringComparison.Ordinal))
+                if (IsRockLikeTerrainLayerName(layerName))
                 {
-                    indices.GreenSand = i;
-                    continue;
+                    AssignNextRockLayerIndex(ref indices, i);
                 }
-
-                if (string.Equals(layerName, RockLayerName, StringComparison.Ordinal))
-                    indices.Rock = i;
             }
 
-            return indices.Sand >= 0 || indices.GreenSand >= 0;
+            return HasAnyTerrainLayerIndex(in indices);
+        }
+
+        private static void ResetLayerIndices(ref LayerIndices indices)
+        {
+            indices.Sand0 = -1;
+            indices.Sand1 = -1;
+            indices.Sand2 = -1;
+            indices.Sand3 = -1;
+            indices.Rock0 = -1;
+            indices.Rock1 = -1;
+            indices.Rock2 = -1;
+            indices.Rock3 = -1;
+            indices.Rock4 = -1;
+            indices.Rock5 = -1;
+        }
+
+        private static bool HasAnyTerrainLayerIndex(in LayerIndices indices)
+        {
+            return indices.Sand0 >= 0 ||
+                   indices.Sand1 >= 0 ||
+                   indices.Sand2 >= 0 ||
+                   indices.Sand3 >= 0 ||
+                   indices.Rock0 >= 0 ||
+                   indices.Rock1 >= 0 ||
+                   indices.Rock2 >= 0 ||
+                   indices.Rock3 >= 0 ||
+                   indices.Rock4 >= 0 ||
+                   indices.Rock5 >= 0;
+        }
+
+        private static void AssignNextSandLayerIndex(ref LayerIndices indices, int layerIndex)
+        {
+            if (indices.Sand0 < 0)
+                indices.Sand0 = layerIndex;
+            else if (indices.Sand1 < 0)
+                indices.Sand1 = layerIndex;
+            else if (indices.Sand2 < 0)
+                indices.Sand2 = layerIndex;
+            else if (indices.Sand3 < 0)
+                indices.Sand3 = layerIndex;
+        }
+
+        private static void AssignNextRockLayerIndex(ref LayerIndices indices, int layerIndex)
+        {
+            if (indices.Rock0 < 0)
+                indices.Rock0 = layerIndex;
+            else if (indices.Rock1 < 0)
+                indices.Rock1 = layerIndex;
+            else if (indices.Rock2 < 0)
+                indices.Rock2 = layerIndex;
+            else if (indices.Rock3 < 0)
+                indices.Rock3 = layerIndex;
+            else if (indices.Rock4 < 0)
+                indices.Rock4 = layerIndex;
+            else if (indices.Rock5 < 0)
+                indices.Rock5 = layerIndex;
+        }
+
+        private static bool IsSandLikeTerrainLayerName(string layerName)
+        {
+            return string.Equals(layerName, SandLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, GreenSandLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34ClaySiltLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34ShellSandLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34RootMatLayerName, StringComparison.Ordinal);
+        }
+
+        private static bool IsRockLikeTerrainLayerName(string layerName)
+        {
+            return string.Equals(layerName, RockLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34SerpentiniteLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34BrineSaltLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34ManganeseLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34MethaneHydrateLayerName, StringComparison.Ordinal) ||
+                   string.Equals(layerName, Batch34LimestoneCaveLayerName, StringComparison.Ordinal);
         }
 
         private Camera RefreshActiveViewCameraCache()
@@ -8245,7 +8421,8 @@ namespace Hecton8.World
                 mapMagicBridge = null;
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             }
-            SyncWaterSurfaceLevelFromTerrainBridge();
+            CacheOceanKinematicsService(GlobalRegistry.OceanKinematics);
+            SyncWaterSurfaceLevelFromRuntime();
 
             if (_cachedLocalCamera == null)
                 TryGetComponent(out _cachedLocalCamera);
@@ -8382,6 +8559,39 @@ namespace Hecton8.World
             _weatherService = weatherService;
         }
 
+        private void CacheOceanKinematicsService(IHectonOceanKinematicsService oceanKinematicsService)
+        {
+            _oceanKinematicsService = oceanKinematicsService;
+        }
+
+        private void SyncWaterSurfaceLevelFromRuntime()
+        {
+            if (TryResolveOceanWaterLevel(out float oceanWaterLevel))
+            {
+                ApplyResolvedWaterLevel(oceanWaterLevel);
+                return;
+            }
+
+            SyncWaterSurfaceLevelFromTerrainBridge();
+        }
+
+        private bool TryResolveOceanWaterLevel(out float resolvedWaterLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out resolvedWaterLevel))
+            {
+                return true;
+            }
+
+            resolvedWaterLevel = DefaultWaterLevel;
+            return false;
+        }
+
         private void SyncWaterSurfaceLevelFromTerrainBridge()
         {
             MapMagicBridge bridge = mapMagicBridge;
@@ -8393,19 +8603,53 @@ namespace Hecton8.World
             if (!TryResolveWaterLevel(bridgedWaterLevel, out float resolvedWaterLevel))
                 return;
 
+            ApplyResolvedWaterLevel(resolvedWaterLevel);
+        }
+
+        private void ApplyResolvedWaterLevel(float resolvedWaterLevel)
+        {
+            bool waterLevelChanged =
+                !math.isfinite(waterLevel) ||
+                math.abs(waterLevel - resolvedWaterLevel) > WaterLevelResyncEpsilonMeters;
+
             waterLevel = resolvedWaterLevel;
             float kelpDepthFloor = waterLevel - OrganicKelpMaxDepthBelowSurfaceMeters;
             if (!math.isfinite(kelpMinHeight) || kelpMinHeight > waterLevel)
                 kelpMinHeight = kelpDepthFloor;
             else
                 kelpMinHeight = math.clamp(kelpMinHeight, kelpDepthFloor, waterLevel);
+
+            if (waterLevelChanged)
+                ClearVegetationMacroGeologyParamsCache();
+
+            if (!waterLevelChanged || !_runtimeLifecycleActive)
+                return;
+
+            CancelAllChunkBuildJobs();
+            ClearChunkPayloadCache();
+            _activeSetDirty = true;
+            _activeBufferRebuildRequested = true;
+            _startupResidencyPending = true;
+        }
+
+        private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
         }
 
         private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
         {
             if (math.isfinite(candidateWaterLevel) &&
                 math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;
@@ -8442,13 +8686,17 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Weather:
                     CacheWeatherService(currentService as IWeatherService);
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    CacheOceanKinematicsService(currentService as IHectonOceanKinematicsService);
+                    SyncWaterSurfaceLevelFromRuntime();
+                    break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     if (ReferenceEquals(mapMagicBridge, previousService))
                         mapMagicBridge = null;
                     mapMagicBridge = currentService as MapMagicBridge;
                     WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-                    SyncWaterSurfaceLevelFromTerrainBridge();
+                    SyncWaterSurfaceLevelFromRuntime();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     ClearPlayerRuntimeContext(previousService as IPlayerRuntimeContext);
@@ -8766,9 +9014,16 @@ namespace Hecton8.World
                 out state.HeightmapUpdateCount);
 
             Texture2D[] alphamapTextures = state.AlphamapTextureCache;
-            TerrainLayerMaskSampler sandSampler = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Sand);
-            TerrainLayerMaskSampler greenSandSampler = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.GreenSand);
-            TerrainLayerMaskSampler rockSampler = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock);
+            TerrainLayerMaskSampler sandSampler0 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Sand0);
+            TerrainLayerMaskSampler sandSampler1 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Sand1);
+            TerrainLayerMaskSampler sandSampler2 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Sand2);
+            TerrainLayerMaskSampler sandSampler3 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Sand3);
+            TerrainLayerMaskSampler rockSampler0 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock0);
+            TerrainLayerMaskSampler rockSampler1 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock1);
+            TerrainLayerMaskSampler rockSampler2 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock2);
+            TerrainLayerMaskSampler rockSampler3 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock3);
+            TerrainLayerMaskSampler rockSampler4 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock4);
+            TerrainLayerMaskSampler rockSampler5 = CreateTerrainLayerMaskSampler(alphamapTextures, state.LayerIndices.Rock5);
             TileNativeCacheBuffer writeBuffer = writeBufferIndex == 0
                 ? state.PrimaryCacheBuffer
                 : state.SecondaryCacheBuffer;
@@ -8779,8 +9034,10 @@ namespace Hecton8.World
                     sandBufferId,
                     sampleCount,
                     alphamapResolution,
-                    in sandSampler,
-                    in greenSandSampler))
+                    in sandSampler0,
+                    in sandSampler1,
+                    in sandSampler2,
+                    in sandSampler3))
                 return false;
 
             if (!WriteTileRockMask(
@@ -8788,7 +9045,12 @@ namespace Hecton8.World
                     rockBufferId,
                     sampleCount,
                     alphamapResolution,
-                    in rockSampler))
+                    in rockSampler0,
+                    in rockSampler1,
+                    in rockSampler2,
+                    in rockSampler3,
+                    in rockSampler4,
+                    in rockSampler5))
                 return false;
 
             Texture heightTexture = state.HeightTextureCache;
@@ -8937,8 +9199,10 @@ namespace Hecton8.World
             BufferID sandBufferId,
             int sampleCount,
             int alphamapResolution,
-            in TerrainLayerMaskSampler sandSampler,
-            in TerrainLayerMaskSampler greenSandSampler)
+            in TerrainLayerMaskSampler sandSampler0,
+            in TerrainLayerMaskSampler sandSampler1,
+            in TerrainLayerMaskSampler sandSampler2,
+            in TerrainLayerMaskSampler sandSampler3)
         {
             if (!TryAcquireVegetationMemoryBuffer(
                     ref sandMaskHandle,
@@ -8959,8 +9223,10 @@ namespace Hecton8.World
                     for (int x = 0; x < alphamapResolution; x++)
                     {
                         float sandMask =
-                            SampleTerrainLayerMask(in sandSampler, writeIndex) +
-                            SampleTerrainLayerMask(in greenSandSampler, writeIndex);
+                            SampleTerrainLayerMask(in sandSampler0, writeIndex) +
+                            SampleTerrainLayerMask(in sandSampler1, writeIndex) +
+                            SampleTerrainLayerMask(in sandSampler2, writeIndex) +
+                            SampleTerrainLayerMask(in sandSampler3, writeIndex);
                         sandMaskWrite[writeIndex] = PackMask01(sandMask);
                         writeIndex++;
                     }
@@ -8981,7 +9247,12 @@ namespace Hecton8.World
             BufferID rockBufferId,
             int sampleCount,
             int alphamapResolution,
-            in TerrainLayerMaskSampler rockSampler)
+            in TerrainLayerMaskSampler rockSampler0,
+            in TerrainLayerMaskSampler rockSampler1,
+            in TerrainLayerMaskSampler rockSampler2,
+            in TerrainLayerMaskSampler rockSampler3,
+            in TerrainLayerMaskSampler rockSampler4,
+            in TerrainLayerMaskSampler rockSampler5)
         {
             if (!TryAcquireVegetationMemoryBuffer(
                     ref rockMaskHandle,
@@ -9001,7 +9272,13 @@ namespace Hecton8.World
                 {
                     for (int x = 0; x < alphamapResolution; x++)
                     {
-                        float rockMask = SampleTerrainLayerMask(in rockSampler, writeIndex);
+                        float rockMask =
+                            SampleTerrainLayerMask(in rockSampler0, writeIndex) +
+                            SampleTerrainLayerMask(in rockSampler1, writeIndex) +
+                            SampleTerrainLayerMask(in rockSampler2, writeIndex) +
+                            SampleTerrainLayerMask(in rockSampler3, writeIndex) +
+                            SampleTerrainLayerMask(in rockSampler4, writeIndex) +
+                            SampleTerrainLayerMask(in rockSampler5, writeIndex);
                         rockMaskWrite[writeIndex] = PackMask01(rockMask);
                         writeIndex++;
                     }

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Public Archive Carrier Primer
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel ウィンドウ価格"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel ウィンドウ価格
 
-The carrier contact is real, priced and limited by orbit, weather and claim priority.
+Black Keelは助ける前に返事ができる。tenderはAegir系内にいるが、有効な行動はまだ天候、月の幾何、中継整列、交通優先度、隔離枠、慈悲のために書かれていない請求台帳に縛られる。
 
-## Scanner
-
-Relay mast aligned to a weak orbital window.
-
-## Terminal
-
-Black Keel confirms survival but keeps recovery pending window and claim state.
-
-## Audio
-
-One clean burst; choose what to send.
-
-## Field Note
-
-A priced packet is not mercy.
+強い窓があれば、プレイヤーは一つだけ良いパケットを送れる。医療状態、損傷状態、標本状態、座標が同じバーストを奪い合う。carrier の最初の有用な問いは失敗音より冷たい。誰が苦しんでいるかではなく、契約上何を回収できるかを聞くからだ。
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/ja_JP. -->

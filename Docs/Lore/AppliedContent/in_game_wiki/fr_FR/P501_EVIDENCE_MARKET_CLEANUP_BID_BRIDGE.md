@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Offre de nettoyage du marche des preuves"
+title: "Offre de nettoyage de preuve"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Offre de nettoyage du marche des preuves
+# Offre de nettoyage de preuve
 
-Une offre de nettoyage est une tentative payee de changer le trajet d'un fragment: le nettoyer, le renommer, le supprimer, l'attacher a un lot de recuperation ou le placer dans une categorie plus sure. Elle prouve que quelqu'un jugeait la trace papier assez utile pour intervenir, pas que le fragment est vrai, faux ou que l'acheteur est coupable. Dans HECTON-8, suivez paiement, etiquette d'origine, etiquette nettoyee, reecriture et garde.
+Une offre de nettoyage n'est pas un verdict. C'est un ordre d'achat contre une route de preuve. La demande peut charger un intermédiaire de sécher une étiquette, normaliser un libellé, déplacer un fragment dans un lot de récupération, retarder la publication, traduire un nom d'ouvrier en catégorie de paiement ou enterrer l'objet brut derrière un résumé sûr pour les réclamants. Elle compte parce que l'argent apparaît avant que le dossier change. Le payeur peut être coupable, effrayé, négligent ou simplement gagner du temps ; l'offre prouve une pression sur la trace, pas la vérité du fragment.
+
+Lis l'offre par séquence. Libellé d'origine, origine de l'offre, blocage de dépôt, compte du gestionnaire, libellé nettoyé, transfert de garde et route de l'objet doivent rester ensemble. Si un libellé nettoyé apparaît avant le paiement, cela peut être un traitement normal d'archive. Si le paiement arrive avant le changement de libellé, quelqu'un a acheté le changement de route. Garde le libellé sale à côté du propre, sinon l'archive devient une partie du nettoyage.
 
 ## Scanner
 
-OFFRE DE NETTOYAGE // Demande payee pour nettoyer, reclasser, supprimer ou re-router un fragment. Signal de pression seulement.
+OFFRE DE NETTOYAGE // Demande payée contre une route de preuve. Requis : libellé d'origine, origine de l'offre, blocage de dépôt, compte du gestionnaire, libellé nettoyé, transfert de garde, route de l'objet.
 
 ## Terminal
 
 OFFRE DE NETTOYAGE DE PREUVE
-Ne lisez pas la ligne de paiement comme un verdict.
-Preuves suivantes: origine de l'offre, retenue de paiement, transfert de garde, reecriture reclamant, route objet.
-Garder l'etiquette originale pres de l'etiquette nettoyee.
+Ne traitez pas le paiement comme un verdict.
+Paiement avant changement de libellé = changement de route acheté.
+Changement de libellé avant paiement = traitement d'archive possible.
+Preuve suivante requise : dépôt, compte du gestionnaire, transfert de garde, ancien libellé, libellé nettoyé, route de l'objet.
+Action : garder les deux libellés jusqu'à résolution de la route de l'objet.
 
 ## Audio
 
-Une offre est une odeur, pas une sentence. Gardez l'etiquette sale pres de la propre.
+Le paiement est arrivé avant le changement de libellé. Garde l'ancien nom à l'écran.
 
 ## Field Note
 
-Une offre est une odeur, pas une sentence. Gardez l'etiquette sale pres de la propre.
+N'archive jamais le libellé propre seul. L'ancien libellé et l'heure du paiement sont la preuve.
 
 <!-- In-Game Wiki; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/fr_FR. -->

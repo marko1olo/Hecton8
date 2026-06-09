@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Material Payout Record"
+title: "سجل الدفع المادي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Material Payout Record
+# سجل الدفع المادي
 
-AR LOC HOLD: Material Payout Record defines the bitter successful salvage ending.
+سجل الدفع المادي هو إيصال النهاية المدفوعة. تقبل Keelmark/Recovery Compliance إحداثيات الحوض وعينة دين أزرق وهاش عهدة الناقل، ثم تخفض رهن المشغل أو تغلقه. الإيصال نفسه يترك مواد الشهادة وأسماء العمال وتدقيق كتلة الإنقاذ خارج العهدة الموثقة، ويمنح Deep Reach طريق عودة أنظف إلى HECTON-8 من الطريق الذي ناله الطاقم المدفون.
 
 ## Scanner
 
-AR LOC HOLD: Paid. Not cleared.
+سجل الدفع المادي // قبلت Keelmark/Recovery Compliance إحداثيات الحوض وعينة الدين الأزرق. خُفض رهن المشغل؛ بقيت أدلة العمال خارج العهدة الموثقة.
 
 ## Terminal
 
-AR LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+سجل النهاية / دفع مادي
+المستلم: Keelmark/Recovery Compliance.
+المقبول: إحداثيات حوض Atlas، عينة دين أزرق، هاش عهدة الناقل.
+غير مرفق: حزمة شاهد موثقة، دفتر أسماء العمال، تدقيق كتلة الإنقاذ.
+أثر الرهن: خفض أو إغلاق حسب جدول العقد.
+أثر Deep Reach: طريق عودة أنظف إلى HECTON-8.
+الخسارة المعروفة: يمكن تسعير الدليل من دون سماعه.
 
 ## Audio
 
-AR LOC HOLD: The receipt is clean because it ignores the room.
+دفع الدفتر ثمن خريطة القبر. لم يفتح الغرفة.
 
 ## Field Note
 
-AR LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+الإيصال ينظف خانة الرهن، لا الغرفة. الأسماء التي لم تدخل العهدة تبقى غائبة بعد الدفع.
 
 <!-- In-Game Wiki; generated from P271_MATERIAL_PAYOUT_RECORD/ar_SA. -->

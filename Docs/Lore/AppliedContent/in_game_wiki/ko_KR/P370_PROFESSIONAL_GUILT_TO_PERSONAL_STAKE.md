@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "전문적 죄책감에서 개인적 이해관계로"
+title: "직업적 죄책에서 개인적 이해로"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 전문적 죄책감에서 개인적 이해관계로
+# 직업적 죄책에서 개인적 이해로
 
-전문적 죄책감은 주인공을 재앙의 원인으로 만들지 않고 개인적 이해관계로 변한다. 플레이어에게는 잃어버린 형제자매, 복수의 혈통, 비밀스러운 선택받은 역할이 필요 없다. 압력은 더 차갑고 더 성숙하다. 그는 절차를 알아본다. 증인 칸이 왜 중요한지, 경로-안전 도장이 왜 거짓말할 수 있는지, 운송체가 그를 들을 수 있으면서도 왜 끌어올리지 않는지 안다. HECTON-8은 오래된 Deep Reach 언어가 그에게 추상이 아니기 때문에 개인적인 것이 된다. 그것은 한때 신뢰해야 했던 일이고, 가까이서 수행했던 일이며, 이제 물에 잠긴 방에서 회수된 이름들과 연결된 일이다. 이 흐름은 고백이 아니다. 거부다. 플레이어가 유기의 기계를 읽을 수 있게 된 순간, 그것을 묻힌 채 두는 것도 또 하나의 참여가 된다.
+직업적 죄책은 오퍼레이터를 재앙의 원인으로 만들지 않고 개인적 이해로 바뀐다. 압력은 더 좁고 떨쳐 내기 어렵다. 그들은 양식, route-safe omission, 봉인된 확인 칸, 방을 완료된 claim으로 바꾸는 수신자 언어를 알아본다.
+
+가족 복수는 필요 없다. 숨겨진 지휘 역할도 필요 없다. 회수된 태그는 오퍼레이터가 한때 일로 신뢰했던 절차에 이름을 붙인다. 그 패턴을 읽을 수 있게 되면, 묻힌 채 두는 것은 같은 기계에 또 하나의 omission을 제출하는 일이 된다. 이해는 혈통이 아니다. 물에 잠긴 방의 증거와 만난 직업 지식이다.
 
 ## Scanner
 
-서명 패턴이 오래된 절차 캐시와 일치한다. 이름은 바뀌었다. 방은 같은 방식으로 실패했다. 전문성은 더 이상 거리감이 아니다.
+PROCEDURE MATCH // 옛 순서가 새 실패 기록에 나타남. 이름은 바뀌었지만 route-safe omission은 같음. 전문성은 더 이상 거리가 아니다.
 
 ## Terminal
 
-서류 결론 / 전문적 이해관계
-촉발 증거: 절차 인식, 회수된 작업자 태그, 청구 수령자 충돌
-제외 동기: 가족 관계, 복수 혈통, 선택된 증인 지위
-활성 동기: 전직 시스템 작업자가 막을 수 있었던 유기를 인식하고 그것을 접수한 기계를 아직 읽을 수 있음.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-너는 청구를 위해 왔다. 서류가 네 손을 알고 있었기 때문에 남았다.
+너는 claim을 얻으러 왔다. 그 양식은 네 오래된 손을 썼다.
 
 ## Field Note
 
-네 서명은 아니다. 그래도 네 업종이다. 그래서 방은 조용해지지 않는다.
+네 서명은 아니다. 그래도 네 일이었다. 그래서 그 방은 묻힌 채 남지 않는다.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ko_KR. -->

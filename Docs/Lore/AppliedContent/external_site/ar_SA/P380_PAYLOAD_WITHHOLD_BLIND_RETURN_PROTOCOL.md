@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "بروتوكول blind return مع حجز payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Withhold Blind Return Protocol
+# بروتوكول blind return مع حجز payload
 
-AR LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return هو مسار الرفض. يبقي payload خارج كل مستقبل رسمي ويترك متجه الحوض محليا. Deep Reach لا تحصل على خريطة وصول. السجل العام لا يحصل على حزمة حادث. الحجر لا يحصل على تعيين escrow. Atlas لا يحصل على مفتاح قطع.
 
-## Scanner
-
-AR LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-AR LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-AR LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-AR LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+للرفض أسنان وكلفة. يمكنه إبقاء المفترسين بعيدا عن الحوض لفاصل آخر، لكنه يترك الأدلة في حاوية هشة مع شخص هش. الدين يبقى مفتوحا. الحيازة تبقى غير رسمية. إذا غرقت الحزمة أو مات الحامل في ممر، قد تختفي السلسلة دون أن يضطر أحد إلى قمعها.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ar_SA. -->

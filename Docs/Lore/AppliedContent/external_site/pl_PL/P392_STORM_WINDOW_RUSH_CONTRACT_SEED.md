@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Storm Window Rush Contract Seed"
+title: "Ziarno kontraktu pośpiechu okna burzowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Storm Window Rush Contract Seed
+# Ziarno kontraktu pośpiechu okna burzowego
 
-PL LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Pośpiech Okna Burzowego zaczyna się mapą zamykającej się osłony. Pasma burzy, czas przesłony przekaźnika i odwołanie bathydrop leżą na tej samej tablicy co pułap wypłaty. Wysoka liczba nie jest hojnością; to cena wejścia do wody, gdy bezpieczne okno powrotu już się kurczy.
 
-## Scanner
-
-PL LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-PL LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-PL LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-PL LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Przebieg zmienia presję na poziomie narzędzi. Zacięta pompa kosztuje więcej niż czas, bo zegar odwołania rusza, gdy naprawa jest otwarta. Zły spaw zjada tolerancję trasy. Pominięty znak przekaźnika może wypchnąć ekstrakcję w blackout. Ta rodzina kontraktów czyni tę samą kolonię trudniejszą, zmieniając moment, w którym woda przestaje czekać.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/pl_PL. -->

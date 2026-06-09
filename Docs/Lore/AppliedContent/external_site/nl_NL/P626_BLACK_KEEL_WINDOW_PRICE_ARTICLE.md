@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Archive Carrier Primer
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel-vensterprijs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel-vensterprijs
 
-The carrier contact is real, priced and limited by orbit, weather and claim priority.
+Black Keel kan antwoorden voordat het kan helpen. De tender is in het Aegir-systeem, maar nuttige actie hangt nog steeds af van weer, maangeometrie, relaisuitlijning, verkeersprioriteit, quarantaineslots en een claimledger dat niet voor genade is geschreven.
 
-## Scanner
-
-Relay mast aligned to a weak orbital window.
-
-## Terminal
-
-Black Keel confirms survival but keeps recovery pending window and claim state.
-
-## Audio
-
-One clean burst; choose what to send.
-
-## Field Note
-
-A priced packet is not mercy.
+Een sterk venster laat één goed pakket versturen. Medische toestand, schadestatus, monsterstatus en coördinaten vechten om dezelfde burst. De eerste nuttige vraag van de carrier kan kouder zijn dan een fouttoon, omdat ze vraagt wat contractueel geborgen kan worden, niet wie lijdt.
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/nl_NL. -->

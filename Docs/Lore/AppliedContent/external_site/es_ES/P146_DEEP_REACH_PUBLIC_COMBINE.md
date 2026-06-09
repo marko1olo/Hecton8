@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Public Combine"
+title: "Combinado público Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Public Combine
+# Combinado público Deep Reach
 
-ES LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+El combinado público Deep Reach es la primera máscara y la más duradera. No necesita negar que tocó HECTON-8. Tocó transporte, logística de hábitat, servicios de ruta, interfaces de seguro, lenguaje de emergencia y el vocabulario administrativo que hizo legible la colonia para bancos antes que para familias.
 
-## Scanner
-
-ES LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-ES LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-ES LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-ES LOC HOLD: The seal is clean. The rooms under it are not.
+Esa amplitud es la defensa. Cuando el desastre llega a la superficie, Deep Reach puede señalar un mandato público y decir que mantuvo infraestructura. Los verbos más sucios se empujan a subsidiarias: clasificar, aplazar, recuperar, reasegurar, negar y disponer. El combinado conserva el sustantivo limpio. Las salas inferiores conservan los cuerpos.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/es_ES. -->

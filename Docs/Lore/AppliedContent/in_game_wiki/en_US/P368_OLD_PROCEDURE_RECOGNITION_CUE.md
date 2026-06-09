@@ -19,27 +19,29 @@ localization_flags: 0
 
 # Old Procedure Recognition Cue
 
-Old procedure recognition turns the protagonist's past into a playable tool. The player is not following a mystical clue or a personal prophecy. They are reading a safety form they once had to trust. A route-safe stamp says the line was certified. The room evidence says the worker count was changed. The manual witness field, the part meant to force a second human check, has been sealed by a continuity office. That contradiction is the hook. Deep Reach did not merely hide a route. It used worker-protection language to make abandonment look administratively complete. The protagonist's stake begins as professional recognition: this form was designed to prevent exactly this failure.
+Old procedure recognition starts with a safety form, not a confession. A route-safe certification should tie a corridor to a count, a pump-room tag set, and a second human check when the numbers disagree. In this record, the declared occupants were degraded, the tag count still argues from the room, and the second-check field is sealed by the Continuity Office.
+
+That contradiction is enough. The operator does not need command access to read it. Deep Reach used worker-protection language to make abandonment look administratively closed. The form did not fail because someone forgot a line. It failed because the line that should have stopped the count was turned into the line that protected the claim.
 
 ## Scanner
 
-Route-safe stamp present. Worker count overwritten in two inks. Manual witness field sealed. The form was built to catch this kind of lie before someone made it policy.
+ROUTE-SAFE FORM // Declared occupants degraded. Pump-room tags disagree with worker count. Manual second-check field sealed by Continuity Office.
 
 ## Terminal
 
 EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
 route: auxiliary egress line
 declared occupants: degraded-count accepted
-manual witness: sealed by Continuity Office
-field correction: worker tally inconsistent with pump-room tags
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
 status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-You know this form. It was supposed to stop the room from being counted empty while people were still breathing in it.
+You know this form. If the tags disagree, the room is not cleared.
 
 ## Field Note
 
-The form was supposed to force another count. Here it forced silence.
+The form was built to force another count. Here it made the wrong count look complete.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/en_US. -->

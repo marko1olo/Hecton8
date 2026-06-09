@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Cable Reef Relay Yard POI Kit"
+title: "Cable Reef Relay Yard Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Cable Reef Relay Yard POI Kit
+# Cable Reef Relay Yard Evidence Kit
 
-The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+The Cable Reef Relay Yard is a repair yard that has grown into its own failure mode. Conductive film, cable jackets and acoustic sockets can restore signal, but the same bridge can send the route into an old service leg if the operator cuts without scanning.
 
 ## Scanner
 
-POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+POI evidence kit: the relay yard conducts through living bridge film and misroutes through damaged cable memory.
 
 ## Terminal
 
-RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response, Atlas service mark, insulation peel, relay fork, dead-leg map.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Do not strip all growth. Some of it is carrying your signal.
 
 ## Field Note
 
-POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Marauder note: if the film hums under the probe, mark it before cutting. Pretty cable is often dead cable.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/en_US. -->

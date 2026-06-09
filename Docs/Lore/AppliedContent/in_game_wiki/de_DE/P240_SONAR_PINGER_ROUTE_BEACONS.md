@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Sonar Pinger Route Beacons"
+title: "Sonar-Pinger-Routenbaken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Sonar Pinger Route Beacons
+# Sonar-Pinger-Routenbaken
 
-DE LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+Der Sonar-Pinger ist billig, bleibt aber nützlich. Er legt eine Rückkehrlinie, markiert Beweiskisten, trennt falsche Echos von echten Wänden und macht verlorene Routen hörbar. Gleichzeitig sagt er dem Ozean, wo du bist. Er ist Sicherheitsgerät, Schuldmarker und manchmal Köder.
 
 ## Scanner
 
-DE LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Ein Pinger-Schwimmer markiert Rückkehrgeometrie, entlarvt falsche Echos und zieht Rettung wie unerwünschtes Leben an.
 
 ## Terminal
 
-DE LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-DE LOC HOLD: One ping is a promise. Two pings are a bill.
+Ein Ping ist ein Versprechen. Zwei Pings sind eine Rechnung.
 
 ## Field Note
 
-DE LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+Der Pinger ist das erste ehrliche Werkzeug: Er spricht Entfernung, Schuld, Routenverlust und Lebensgefahr in Klang.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/de_DE. -->

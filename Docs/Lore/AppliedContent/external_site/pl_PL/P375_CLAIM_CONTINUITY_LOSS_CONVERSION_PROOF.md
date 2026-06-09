@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Konwersja straty dla ciągłości claim"
+title: "Konwersja strat przy ciągłości roszczenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Konwersja straty dla ciągłości claim
+# Konwersja strat przy ciągłości roszczenia
 
-Ostatnie ogniwo kłamstwa Deep Reach nie jest dramatycznym plikiem tuszowania. To konwersja księgowa, która wie, jak przetrwać. Ledger akceptuje, że ludzie zniknęli, moduły są uszkodzone, a trasy naruszone, po czym przesuwa każdy fakt do kategorii przetwarzalnej przez claim system. Nieobecność pracowników staje się unrecoverable loss. Dowód staje się materiałem pod custody. Ocalały ładunek staje się recoverable value. Sam claim pozostaje continuous, więc własność może przeżyć kolonię. W tym momencie HECTON-8 zmienia się z raportu wypadku w maszynę moralną. Gracz, który wynosi ledger, może ujawnić zmarłych, sprzedać dowód, pogrzebać go albo przekierować. Dokument ma wartość, bo korporacja już nauczyła rynek go wyceniać.
+Konwersja strat jest najcichszym dokumentem łańcucha i najtrudniejszym do wybaczenia. Nie spiera się o Wielki Pływ, kolejkę ewakuacji, wagi Atlas ani kwarantannę. Przyjmuje powstałe szkody i sortuje je w kolumny, które mogą przechodzić przez odbiorców, ubezpieczycieli i rady dozoru.
 
-## Scanner
-
-Odzyskano stempel biura strat. Ledger przetrwał lepiej niż pracownicy, którym zmienił nazwę.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-Tutaj ludzie stali się czystą kolumną.
-
-## Field Note
-
-Notatka Maraudera: ledger może pamiętać zmarłych i nadal ich wydawać.
+To sortowanie jest drogą ucieczki Deep Reach. Biologiczna siła robocza staje się stratą nieodzyskiwalną. Materiał pozostaje odzyskiwalny. Dozór dowodów zostaje aktywny, bo roszczenie nadal ma wartość. Osoba niosąca pakiet jest niebezpieczna, bo pakiet wiąże każdą wcześniejszą decyzję z tą samą linią księgi. Firma nie tylko przetrwała katastrofę; zbudowała czystą ścieżkę własności przez zmarłych.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pl_PL. -->

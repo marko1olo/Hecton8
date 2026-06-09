@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Route Physics And Claim Primer
 spoiler_tier: 1
-title: "Libro de Tránsito de Reclamación Larga de Ran"
+title: "Registro de Tránsito de Reclamación Larga de Ran"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Libro de Tránsito de Reclamación Larga de Ran
+# Registro de Tránsito de Reclamación Larga de Ran
 
-La primera mentira que quiere creer un Marauder varado es que contacto significa rescate. En Ran, contacto significa que un paquete encontró una ventana de portador. Puede mover una posición, un hash de testigo, una demanda legal, una tarifa o una amenaza. No puede mover un casco presurizado, un médico, un tender de carga ni una pila de frenado.
+Un registro de reclamación larga de Ran es lo que una llamada de socorro se vuelve cuando la civilización la oye y se niega a fingir que la física cambió. El paquete cruza la ruta lo bastante rápido para parecer una respuesta. La respuesta no trae casco. Registra reclamante, posición, carga, cadena de custodia y una razón para que alguien fuera del mundo gaste masa.
 
-Por eso los libros de reclamación larga de Ran parecen contabilidad. Estar vivo es solo una casilla. También cuentan la confianza de coordenadas, clase de carga, grado de custodia, masa de ascenso, riesgo de cuarentena, seguro de ruta y quién cobra si la persona muere antes de la recogida. Black Keel mueve paquetes porque son baratos y porque la autoridad contractual vive en el retraso.
+            El registro es vieja ley de frontera envuelta en tránsito duro. Los relés de Ran aceptan paquetes testigo a velocidad de luz. Las oficinas Luyten hashean el recibo. Black Keel mueve una ráfaga limpia por espejos y ventanas de portador. Nada de eso posee una nave de rescate libre. Un tender aún necesita carril, asignación de frenado, ranura de recepción, cuarentena y un pagador que sobreviva a auditoría.
 
-La pregunta útil no es si alguien te oyó. Probablemente sí. La pregunta es qué oyó primero. Un estado con vida compra cola. Un recibo de ruta verificado compra influencia. Una prueba de responsabilidad de Deep Reach cambia quién puede poner precio a esa cola. Una carga que importe fuera de HECTON-8 puede hacer que una nave acepte un riesgo que dejaría en el fondo si solo fuera por un cuerpo.
+            Por eso duele la primera ventana. Un Marauder quiere gritar estoy vivo. El registro ya tiene esa casilla. El paquete mejor dice dónde, con qué certeza, qué puede subirse, quién lo tocó, qué dañó Deep Reach, si el paquete de ascenso sella y qué prueba se perderá si nadie viene. El cuerpo importa. El cuerpo solo es barato en la columna equivocada.
+
+            La crueldad de Black Keel suele ser aritmética sin voz humana. Una persona viva es responsabilidad. Una persona viva con prueba admisible es palanca. Una persona viva atada a datos de ruta irreemplazables es carga con dientes. El registro convierte miedo en campos porque los campos se tasan, se atestiguan y se disputan cuando la señal ya salió de HECTON-8.
 
 ## Scanner
 
-LIBRO DE RUTA // Hash de testigo Luyten intacto. Una ventana de portador fuerte puede llevar una ráfaga limpia: posición, daños, custodia, prueba o súplica. No es rescate.
+REGISTRO DE RECLAMACIÓN LARGA // Trenza de testigo Luyten intacta. Una ventana de portador disponible. Campos: estado con vida, confianza de coordenadas, masa de ascenso, grado de custodia, objeción Deep Reach, valor de carga. Socorro no es orden de tender.
 
 ## Terminal
 
-RECIBO DE RUTA: RECLAMACIÓN LARGA DE RAN / RANURA LPL-TESTIGO 7C // El estado con vida no basta para programar recuperación. Envía confianza de coordenadas, estado del paquete de ascenso, grado de custodia y masa de carga antes de la revisión de prioridad del tender.
+BLACK KEEL / RECIBO DE RECLAMACIÓN LARGA RAN 7C // Paquete aceptado como reclamación viva, no como autorización de recuperación. Envía prueba de ubicación, clase de salvamento, responsabilidad médica, exposición de cuarentena y preferencia de primer retorno antes de que degrade la ventana. Campos vacíos pasan a carga negativa, cuerpo baja prioridad.
 
 ## Audio
 
-Relé Black Keel: La ventana aguanta una ráfaga limpia. Envía posición, carga o prueba. Elige antes de que la tormenta se coma el bloqueo del portador.
+Relé Black Keel: Has llegado al registro. Bien. Eso te convierte en expediente, no en rescatado. Gasta la ráfaga en prueba, posición o valor antes de que resbale el portador.
 
 ## Field Note
 
-Las naves no te salvan. Las rutas quizá, si la oficina correcta cobró antes de que te mojaras. Gasta la ventana como aire.
+Vivo es una casilla. Coordenadas es una apuesta. Prueba es cebo con firma. Envía el paquete que les dé miedo ignorar.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/es_ES. -->

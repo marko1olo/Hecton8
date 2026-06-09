@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Buku Transit Klaim Panjang Ran
 
-HECTON-8 memakai aturan keras: komunikasi murah dibanding massa. Relay Black Keel bisa menjawab karena paket menumpang cahaya, cermin, dan antrean carrier. Tender tidak bisa begitu. Kapal pada rute Ran tetap patuh pada akselerasi, panas pengereman, jadwal pellet lane, cuaca Aegir, dan ekonomi siapa membayar jendela risiko.
+HECTON-8 memperlakukan kontak pertama sebagai dokumen di bawah tekanan, karena begitulah rescue antarbintang tanpa FTL. Relay Black Keel bisa mengakui Marauder terdampar dalam batas waktu carrier. Relay itu tidak bisa memunculkan kapal. Buku klaim panjang berada di antara dua fakta itu.
 
-Buku klaim panjang adalah bentuk administratif fisika itu. Ia tidak bertanya apakah survivor takut. Ia bertanya apakah koordinat dapat dipercaya, apakah paket naik bisa bertahan saat transfer, apakah ada hash saksi Luyten, apakah Deep Reach bisa mengklaim kendali karantina, dan apakah payload berupa tubuh, bukti, kargo, atau ketiganya.
+            Di dalam dunia, buku itu bukan formalitas. Ia adalah objek tahan lama pertama yang dimiliki survivor di luar samudra. Ia menyatakan manusia masih hidup, tetapi juga seberapa tepercaya koordinatnya, berapa massa yang harus diangkat, apakah paket naik tersegel, apakah Deep Reach punya argumen karantina, apakah payload berupa peralatan pribadi atau bukti pengubah klaim, dan siapa bertanggung jawab jika pickup terbakar, meleset, atau pulang terkontaminasi.
 
-Inilah jembatan antara survival dan lore. Samudra tidak terisolasi karena peradaban hilang. Samudra terisolasi karena peradaban lambat, dimiliki, dan prosedural. Pemain tidak menunggu rescue; pemain membangun paket, payload, dan daya tawar yang membuat rescue lebih bernilai daripada diam.
+            Struktur ini membuat peradaban tetap hadir tanpa menjadi jalan keluar mudah. Orang mendengarmu. Kantor memberi stempel. Relay menyimpan paketmu. Penanggung dan pemilik rute menempelkan angka pada tubuhmu. Horornya bukan ruang kosong. Horornya adalah sistem yang tahu tepat di mana kau berada dan masih bertanya berapa nilai recovery-mu.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/id_ID. -->

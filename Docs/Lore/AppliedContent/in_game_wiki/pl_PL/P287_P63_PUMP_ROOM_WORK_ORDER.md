@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: P-63 Pump Room Work Order"
+title: "Zlecenie pracy pompowni P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: P-63 Pump Room Work Order
+# Zlecenie pracy pompowni P-63
 
-PL LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+Zlecenie pracy pompowni P-63 sprawia, że pierwsza naprawa brzmi jak odziedziczona procedura kolonii, nie tekst samouczka. Jest przemoczone, praktyczne i drobno przestraszone. Nakazuje oczyścić sump, załatać cold seam, poczekać na return pinger i ciąć fused latch dopiero po utrzymaniu ciśnienia. Ta kolejność uczy, jak myśleli pracownicy HECTON-8: najpierw woda, potem uszczelnienie, dźwięk przed siłą, zaufanie do trasy na końcu. Brakujące inicjały nadzorcy i podwójne kółko wokół linii cięcia sprawiają, że papier wygląda na używany, nie napisany dla gracza. To mały artefakt, ale niesie całą pętlę gry w miniaturze: czytaj pomieszczenie, przywróć system, nie ufaj łatwemu cięciu.
 
 ## Scanner
 
-PL LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Pierwsza naprawa czyta się jak nawyk kolonii: pompuj, uszczelnij, słuchaj, tnij dopiero, gdy pomieszczenie przestanie kłamać.
 
 ## Terminal
 
-PL LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: oczyścić sump; załatać cold seam; sprawdzić return pinger; ciąć fused latch dopiero po utrzymaniu ciśnienia; wydrukować gasket z lokalnego zapasu; oznaczyć route safe po trzech powtórzeniach acoustic return. Inicjały nadzorcy zniknęły pod plamą wody.
 
 ## Audio
 
-PL LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Najpierw pompa. Potem uszczelnienie. Jeśli śpiewa, przestań ciąć.
 
 ## Field Note
 
-PL LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Dolna połowa clipboardu przemokła. Linia cięcia nadal jest czytelna, bo ktoś zakreślił ją dwa razy i napisał jeśli śpiewa, przestań.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/pl_PL. -->

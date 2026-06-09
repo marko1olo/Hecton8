@@ -259,7 +259,7 @@ namespace Hecton8.Environment
         private IFluidCurrentWriteSink _fluidCurrentSink;
         private BiomeMatrixDirector _cachedBiomeMatrix;
         private IPlayerRuntimeContext _cachedPlayerContext;
-        private HectonCelestialEngine _cachedCelestialEngine;
+        private ICelestialRuntimeSnapshotReadModel _cachedCelestialSnapshotReadModel;
         private bool _atmosphericShaderDirty;
         private bool _noirFogLutDirty;
         private bool _noirFogLutRepairRequested;
@@ -390,6 +390,7 @@ namespace Hecton8.Environment
             _noirFogLutDirty = false;
             _noirFogLutRepairRequested = false;
             _hasPublishedWeatherEvent = false;
+            _cachedPlayerContext = null;
         }
 
         private void OnDestroy()
@@ -404,6 +405,7 @@ namespace Hecton8.Environment
             TryUnregisterTickManager();
             if (ReferenceEquals(GlobalRegistry.Weather, this))
                 GlobalRegistry.UnregisterWeatherService(this);
+            _cachedPlayerContext = null;
             ReleaseNoirFogLutResources();
         }
 
@@ -424,7 +426,7 @@ namespace Hecton8.Environment
             _hasPublishedWeatherEvent = false;
             _cachedBiomeMatrix = null;
             _cachedPlayerContext = null;
-            _cachedCelestialEngine = null;
+            _cachedCelestialSnapshotReadModel = null;
             ReleaseNoirFogLutResources();
         }
 
@@ -453,13 +455,12 @@ namespace Hecton8.Environment
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
-                _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
-                _cachedCelestialEngine = currentService as HectonCelestialEngine;
+                CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel);
         }
 
         /// <summary>
@@ -638,9 +639,8 @@ namespace Hecton8.Environment
                 WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref _cachedBiomeMatrix);
             }
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
-            _cachedCelestialEngine = GlobalRegistry.CelestialEngine;
+            CachePlayerContext(GlobalRegistry.Player);
+            CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel);
         }
 
         private void InitializeRuntimeStateIfNeeded()
@@ -939,7 +939,7 @@ namespace Hecton8.Environment
 
         private float ResolveCurrentBiomeDepthMeters()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             if (playerContext != null &&
                 playerContext.IsInitialized &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
@@ -965,6 +965,37 @@ namespace Hecton8.Environment
             }
 
             return 0f;
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || !playerContext.IsInitialized)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void ResolveWeatherLutProfiles(out WeatherProfile sourceProfile, out WeatherProfile targetProfile, out float influence)
@@ -1115,8 +1146,33 @@ namespace Hecton8.Environment
 
         private CelestialRuntimeSnapshot ReadCachedCelestialRuntimeSnapshot()
         {
-            HectonCelestialEngine celestialEngine = _cachedCelestialEngine;
-            return celestialEngine != null ? celestialEngine.RuntimeSnapshot : default;
+            ICelestialRuntimeSnapshotReadModel readModel = _cachedCelestialSnapshotReadModel;
+            if (!IsCelestialRuntimeSnapshotReadModelUsable(readModel))
+            {
+                readModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+                _cachedCelestialSnapshotReadModel = IsCelestialRuntimeSnapshotReadModelUsable(readModel) ? readModel : null;
+                readModel = _cachedCelestialSnapshotReadModel;
+            }
+
+            return readModel != null ? readModel.RuntimeSnapshot : default;
+        }
+
+        private void CacheCelestialRuntimeSnapshotReadModel(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            _cachedCelestialSnapshotReadModel = IsCelestialRuntimeSnapshotReadModelUsable(readModel)
+                ? readModel
+                : null;
+        }
+
+        private static bool IsCelestialRuntimeSnapshotReadModelUsable(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private static void ClearAtmosphericBridgeShaderState()

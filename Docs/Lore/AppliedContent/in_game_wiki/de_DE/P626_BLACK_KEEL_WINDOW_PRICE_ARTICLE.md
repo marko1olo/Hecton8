@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black-Keel-Fensterpreis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black-Keel-Fensterpreis
 
-Black Keel can answer without granting immediate rescue.
+Black Keel kann Überleben bestätigen, ohne sofortige Rettung zu gewähren. Ein starkes Orbitalfenster trägt ein nützliches Paket, und das Claim-Ledger entscheidet, was es wert ist.
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+RELAISMAST // Auf schwaches Orbitalfenster ausgerichtet. Wähle ein Paket, bevor Wetterrauschen steigt.
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+KONTAKTPUFFER // Operator lebt; Claim offen; Bergung wartet auf Fenster. Probenzustand und Koordinatenvertrauen vor Extraktionsplanung angefordert.
 
 ## Audio
 
-One clean burst; choose what to send.
+Das Fenster ist für einen Burst sauber. Sag, wo du bist, oder sag, was du gefunden hast.
 
 ## Field Note
 
-A priced packet is not mercy.
+Wenn ein carrier deinen Atem nach Paketen bepreist, verschwende kein Paket mit der Frage, ob es ihn kümmert.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/de_DE. -->

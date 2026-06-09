@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "浅層別棟P-63証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Shallow Annex P-63 POI Kit
+# 浅層別棟P-63証拠キット
 
-JA LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63が効くのは、避難と証拠を切り離さないからだ。部屋はオペレーターに空気、ビルジポンプ、ガスケット在庫、ピンガー線、カッター接触痕を渡す。これらはまず役に立つ。契約は待てるが、水は待たない。
 
-## Scanner
-
-JA LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-JA LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-JA LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-JA LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+部屋が安定すると、同じ物品の重みが変わる。封印済みルート通知は管理条件下での閉鎖を示すが、壊れたポンプ、継ぎ当てされたガスケットトレイ、濡れた事故パケットはもっと荒い退避を示す。最初の矛盾は演説の中にない。オペレーターを生かした場所にボルトで留まっている。
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black Keel請求プール憲章"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Black Keel Claim-Pool Charter
+# Black Keel請求プール憲章
 
-JA LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keelは、脱出船問題に対するHECTON-8のハードSF的回答である。プレイヤーは軌道資産にアクセスできるが、アクセスは所有ではなく、近さは救助ではない。キャリアは債務インフラであり、脱出を想像できるほど有用で、請求、隔離、回収価値から帰還経路を切り離せないほど制限されている。
 
 ## Scanner
 
-JA LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keelはあなたの船ではない。あなたの名前が債務台帳にある、請求プールの回収資産だ。
 
 ## Terminal
 
-JA LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+憲章抜粋 / BLACK KEEL: 自律サルベージキャリア / 保管: Aegir Reclamation Pool / 契約者輸送: 許可 / 船体所有: 否認 / 救助優先度: insured receiver状態、隔離handshake、claim valueに従属。
 
 ## Audio
 
-JA LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+キャリアはあなたのために来たのではない。あなたの名が付いた請求のために来た。
 
 ## Field Note
 
-JA LOC HOLD: Use this on the first contract or carrier-status screen.
+最初のキャリア状態画面で使用。アクセス許可、所有否認、救助優先度は条件付き、lien有効。
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ja_JP. -->

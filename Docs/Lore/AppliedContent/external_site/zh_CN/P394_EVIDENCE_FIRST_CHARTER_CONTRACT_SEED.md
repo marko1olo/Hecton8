@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Evidence First Charter Contract Seed"
+title: "证据优先宪章合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Evidence First Charter Contract Seed
+# 证据优先宪章合同种子
 
-ZH LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+证据优先宪章在下潜前改变合同板。材料付款下降，公证容量上升，证据柜获得优先级，salvage拆取带有惩罚。操作员进入的是一条更保护记录、而不是更保护零件的航路。
 
-## Scanner
-
-ZH LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-ZH LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-ZH LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-ZH LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+压力出现在小选择里。舱门状态条可能挡住面板出售。湿事故包可能占用最后一个干燥槽。pinger日志可能需要一个本可供修理使用的活中继。宪章付款晚，是因为它要求操作员把不方便的物件保持完整，直到Black Keel之外的receiver能够读取。
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/zh_CN. -->

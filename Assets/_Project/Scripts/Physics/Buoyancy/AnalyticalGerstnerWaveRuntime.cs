@@ -3,7 +3,9 @@ using System;
 using System.IO;
 #endif
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -47,6 +49,7 @@ namespace Hecton8.Physics
 #endif
 
         private IDataVault _dataVault;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private VaultGenerationHandle<GerstnerWaveParamsDTO> _spectrumHandle;
         private VaultGenerationHandle<GerstnerWaveTuningDTO> _tuningHandle;
         private VaultGenerationHandle<OceanSampleRequestDTO> _requestsHandle;
@@ -156,6 +159,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             TryUnregister();
             CompletePendingForTeardown();
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -169,6 +173,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             TryUnregister();
             CompletePendingForTeardown();
+            _oceanKinematicsService = null;
             ReleaseVaultHandles(_dataVault);
         }
 
@@ -318,6 +323,12 @@ namespace Hecton8.Physics
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -337,7 +348,7 @@ namespace Hecton8.Physics
                 tuning = GerstnerWaveTuningDTO.Default();
 
             float quality = ResolveGlobalQualityWeight();
-            tuning.SeaLevelY = AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(tuning.SeaLevelY);
+            tuning.SeaLevelY = ResolveRuntimeSeaLevelY(tuning.SeaLevelY);
             tuning.GlobalQualityWeight = quality;
             tuning.ActiveRequestCount = math.clamp(tuning.ActiveRequestCount <= 0 ? math.min(_sampleCapacity, requestCapacity) : tuning.ActiveRequestCount, 0, requestCapacity);
             tuning.MaxOctaveLimit = math.clamp(tuning.MaxOctaveLimit <= 0 ? AnalyticalGerstnerWaveConstants.MaxOctaves : tuning.MaxOctaveLimit, 1, AnalyticalGerstnerWaveConstants.MaxOctaves);
@@ -360,6 +371,57 @@ namespace Hecton8.Physics
             tuning.OriginShiftFlags = _cachedOriginShiftFlags;
             tuning.Flags |= AnalyticalGerstnerWaveConstants.FlagActive | AnalyticalGerstnerWaveConstants.FlagDearLie;
             return tuning;
+        }
+
+        private float ResolveRuntimeSeaLevelY(float fallbackSeaLevelY)
+        {
+            return TryResolveOceanSeaLevelY(out float seaLevelY)
+                ? seaLevelY
+                : AnalyticalGerstnerWaveConstants.ResolveSeaLevelY(fallbackSeaLevelY);
+        }
+
+        private bool TryResolveOceanSeaLevelY(out float seaLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TrySanitizeOceanRuntimeSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY))
+            {
+                return true;
+            }
+
+            seaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return false;
+        }
+
+        private static bool TrySanitizeOceanRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return false;
+        }
+
+        private static bool TrySanitizeRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return false;
         }
 
         private void EnsureColdBooted()
@@ -514,6 +576,7 @@ namespace Hecton8.Physics
 
         private void RefreshColdDependencies()
         {
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             IDataVault vault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, vault))
             {

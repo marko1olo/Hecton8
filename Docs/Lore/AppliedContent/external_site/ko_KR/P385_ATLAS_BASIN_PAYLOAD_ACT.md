@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas 분지 payload 게이트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Atlas Basin Payload Act
+# Atlas 분지 payload 게이트
 
-KO LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Atlas 분지는 경로가 무엇이 일어났는지 묻는 것을 멈추고 누가 사용 가능한 패킷을 받는지 묻기 시작하는 곳이다. 증거 사슬, 분지 벡터, salvage 등급, proof hash를 모두 손대지 않고 남길 수는 없다. 수신자를 고르거나 거부하거나 로컬 보류로 대체해야 한다.
 
-## Scanner
-
-KO LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-KO LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-KO LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-KO LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+그것이 마지막 압력이다. 범죄 현장을 깨끗하게 만드는 경로는 없다. 좌표 판매는 돈을 주고 분지를 노출한다. 절단은 귀환 경로를 자르고 유용한 구조를 죽인다. 격리는 보존하고 보류한다. 공개 원장은 지도 없이 공개한다. blind return은 모두를 거부하고 패킷 손실을 건다. 캠페인은 위안이 아니라 보관으로 끝난다.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ko_KR. -->

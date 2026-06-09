@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Transit Primer
 spoiler_tier: 0
-title: "Ran长期索赔航渡"
+title: "Ran 长索赔航渡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran长期索赔航渡
+# Ran 长索赔航渡
 
-旧中继外皮下找到的航路铭牌，回答了多数Marauders问得太晚的问题：人类可以抵达Aegir，但抵达不是救援。Ran Long Claim依靠一条缓慢链条：播种货运、数据包梯、燃料库、检疫法，以及用多年跨越信号一季即可跨越距离的承运船。一次生命证明脉冲可以通过Sol、Luyten和Barnard，而发出它的身体仍被本地天气、质量限制和债务权限压在原地。Black Keel能听见你。它能登记留置权，开启托管案，预留tonne-window。它不能因为水里有个害怕的潜水员，就把一艘承运船体推过真空。
+Ran Long Claim 是一个现实矛盾的公开名称。人类文明能抵达 Aegir，能把 probes、staged freight、packet custody 和 claim tenders 送进系统。但这并不意味着被困的 Marauder 一请求就会被吊起。
+
+航路由层组成。数据包先移动，因为信息轻，而且有法律用途。燃料库、receiver 储备和检疫槽更慢。重质量货物最慢，被制动费用、payload 所有权和 recovery 风险合同包住。
 
 ## Scanner
 
-航路铭牌 // Ran Long Claim，Aegir交通带。数据包按窗口放行；船体按质量、拖曳时间、检疫和已承认责任放行。
+旧中继外皮下的航路铭牌。Ran Long Claim 托管链：packet ladder、燃料库、检疫线、carrier 队列和陈旧 proof-of-life 回执。
 
 ## Terminal
 
-LUYTEN数据包梯 // 已缓存Aegir回执。信号证明可能比承运船早十一年抵达。升离授权仍需beam-lane确认、托管印章和tonne-window质量。
+RAN LONG CLAIM // 可达性已确认。不暗示救援。信号运输等级低于重质量运输等级。carrier 回答可能比物理回收提前合同年。托管窗口关闭前保留本地生存权限。
 
 ## Audio
 
-Black Keel航路音频：Sol可以认证索赔。Luyten可以证明数据包。Barnard可以出售人手。它们没有一个能在这一趟把你从HECTON-8拉出去。
+可达不是救援。信号可以穿过黑暗，而发出它的身体仍被水压住。
 
 ## Field Note
 
-如果一块铭牌把Sol、Luyten、Barnard和Aegir写在同一行，就读顺序。Sol拥有法律。Luyten拥有数据包。Barnard拥有人手。Aegir拥有天气。它们没有一个拥有你的下一口气。
+航路能先听见你，之后才可能承载你。
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/zh_CN. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Sanitized Accident Reply Window"
+title: "浄化済み事故返信ウィンドウ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Sanitized Accident Reply Window
+# 浄化済み事故返信ウィンドウ
 
-JA LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+浄化済み事故返信ウィンドウは、Deep Reachに現在の声を与えながら、企業を全知にはしない。最初の生きた返信は脅迫ではない。もっと静かで悪いものだ。圧力下の新しいチャンネルに、古い公開説明が押し込まれている。メッセージはいまだに嵐の高潮、地質崩壊、自律避難失敗を語る。そのスクリプトが一度Deep Reachを守り、システムがまたそれに手を伸ばすからだ。プレイヤーがそれを聞くのは、物理的な矛盾を見つけた後でなければならない。ずれた扉時刻、悪いポンプ証明、給与抹消を生き延びた名前、天候と一致しない損傷を持つ部屋。タイミングが重要だ。スクリプトが先に来れば説明になる。濡れた証拠の後に来れば侮辱になる。Deep Reachはプレイヤーがいる部屋に話していない。彼らがその部屋になってほしかった乾いた報告書に話している。
 
 ## Scanner
 
-JA LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+返信ウィンドウが開く。Deep Reachは、部屋がまだ乾いているかのように嵐崩壊、地質破壊、自律避難失敗を繰り返す。
 
 ## Terminal
 
-JA LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: 嵐の高潮、地質崩壊、自律避難失敗 / RESTRICTED ADVICE: 未検証Atlas continuity、body-category disputes、basin-coordinate claimsを送信しないこと。
 
 ## Audio
 
-JA LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+彼らは、あなたが見つけるはずだった部屋に答えた。あなたが立っている部屋ではない。
 
 ## Field Note
 
-JA LOC HOLD: Place after first physical contradiction, not before.
+最初の物理的矛盾の後に置くこと。古い公開スクリプトを聞く前に、プレイヤーは濡れた証拠を持つべきだ。
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/ja_JP. -->

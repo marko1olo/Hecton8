@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Набір доказів мілководного відсіку P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Shallow Annex P-63 POI Kit
+# Набір доказів мілководного відсіку P-63
 
-UK LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Мілководний відсік P-63 - перше місце, де процедура виживання і доказ відповідальності лежать на одному столі. Оператор відновлює помпу, герметизує кишеню, читає пакет аварії і знаходить повідомлення маршруту, яке не збігається з пошкодженнями зовні.
 
 ## Scanner
 
-UK LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Набір доказів POI: P-63 тримає робочу кишеню-сховище, ремонт помпи й першу офіційну суперечність.
 
 ## Terminal
 
-UK LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+НАБІР P-63: трюмна помпа, лоток прокладок, слід різака, лінія пінгера, пакет аварії, запечатане повідомлення маршруту, суха шафа, ручний затискач обходу.
 
 ## Audio
 
-UK LOC HOLD: First room with air. First room with a lie.
+Перша кімната з повітрям. Перша кімната з брехнею.
 
 ## Field Note
 
-UK LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Нотатка мародера: тримай помпу робочою перед читанням пакета. Мертве сховище дає поганий доказ.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/uk_UA. -->

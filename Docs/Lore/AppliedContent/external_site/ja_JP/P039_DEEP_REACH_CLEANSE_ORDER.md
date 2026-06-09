@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach浄化命令"
+title: "Deep Reach現行清掃命令"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach浄化命令
+# Deep Reach現行清掃命令
 
-浄化命令は企業の隠蔽と現在のゲーム圧力をつなぐ。欲しいのは資源 custody、Atlas接続、証拠削除。
+Deep Reach現行清掃命令は企業圧力を手順にする。稼働中の代理は試料を買い、Atlas経路を開き、公開記録がHECTON-8を喪失施設と呼ぶ間に責任証拠を消せる。
 
 ## Scanner
 
-命令スタック回収: 資源、Atlas接続、証拠削除。生存者回収は資産管理より下。
+現行命令を回収: 認証試料を押収、Atlas回線を開く、生存者を隔離、責任証拠を削除。
 
 ## Terminal
 
-代理指令: 契約者は否認可能。試料保全。局所リスク許容ならAtlas回線開放。責任 corpus 削除。
+代理作業命令DR-CLEANSE-19は稼働中。否認可能な請負は試料保管を第一、Atlas接続を第二、証人回収を最後に処理する。Black Keelまたは現場台帳が責任を露出すると、パージ待ち列は証拠アーカイブをcold deleteへ送り、現場死を気象損失に再タグ付けする。
 
 ## Audio
 
-Deep Reachは君を追っていない。安い探針として使っている。
+その声は救助通信ではない。清掃入札だ。
 
 ## Field Note
 
-彼らは謝るために戻ったのではない。
+謝罪欄は空白。
 
 <!-- External Site; generated from P039_DEEP_REACH_CLEANSE_ORDER/ja_JP. -->

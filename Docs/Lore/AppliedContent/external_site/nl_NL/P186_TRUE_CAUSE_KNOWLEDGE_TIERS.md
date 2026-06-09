@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Kennislagen van de Ware Oorzaak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Kennislagen van de Ware Oorzaak
 
-NL LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+Kennislagen van de Ware Oorzaak is de kaart van bedrijfskennis achter HECTON-8. Het artikel scheidt bewijs per kantoor, niet om Deep Reach te verontschuldigen, maar om de misdaad geloofwaardiger te maken: oceaandata, AI-weging, evacuatierecht, verzekeringsconversie en recovery-compliance hielden verschillende stukken van dezelfde fatale keten vast. De horror is geen verborgen bevel met “dood de kolonie”. De horror is een bedrijf dat zo is gebouwd dat elk bureau een gedeeltelijke waarheid ziet, zijn metriek beschermt en de morele rest stroomafwaarts doorgeeft tot redding een aansprakelijkheidsgebeurtenis wordt.
 
 ## Scanner
 
-NL LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach kende de waarheid in schijven: getijdemarges in één kantoor, Atlas-weging in een ander, evacuatievertraging en claimconversie ergens anders.
 
 ## Terminal
 
-NL LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: getijdenteams noteren margeverlies; Risk accepteert staartblootstelling; Atlas Safety weegt continuïteit boven evacuatie; juridisch houdt vrijgaven vast; Keelmark zet doden om in terugwinbaar verlies; Recovery Compliance vraagt vracht vóór openbaarmaking.
 
 ## Audio
 
-NL LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Niemand hoefde “laat ze sterven” te schrijven. De tabel wist al hoe.
 
 ## Field Note
 
-NL LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Verdeelde onwetendheid was geen onschuld. Het was architectuur.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/nl_NL. -->

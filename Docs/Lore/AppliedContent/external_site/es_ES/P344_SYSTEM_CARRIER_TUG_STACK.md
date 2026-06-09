@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Pila de portador y remolcadores de sistema
 
-Black Keel debe sentirse bastante cerca para culparlo y bastante lejos para seguir fuera de alcance. No es la nave de una fantasía de rescate heroico. Es una pila industrial alquilada hecha de casco portador, atraques de remolque, racks de carga, software de custodia, raíles de cápsulas y un libro contable que no duerme. Eso la hace útil: recibe muestras, responde paquetes, sostiene órbita y lanza hardware en una ventana. También la hace cruel: cada función útil está atada a propiedad, sincronía y deuda. El jugador queda varado bajo una máquina real, presente y estructuralmente incapaz de volverse madre.
+Black Keel debe sentirse lo bastante cerca para cargar con la culpa y lo bastante lejos para seguir fuera de alcance. No es la nave de una fantasía de rescate heroico. Es una pila industrial alquilada hecha de casco portador, amarres de remolcador, estanterías de carga, software de custodia, raíles de despliegue de cápsulas y un libro contable que nunca duerme.
+
+Eso la hace útil: puede recibir muestras, responder paquetes, mantener órbita, desplegar cápsulas y empujar hardware dentro de una ventana estrecha. También la hace cruel: cada función útil está atada a propiedad, sincronía, lenguaje de cuarentena, margen térmico y deuda. Un cuerpo puede quedar varado bajo una máquina real, presente, escuchando y estructuralmente poco dispuesta a convertirse en refugio.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/es_ES. -->

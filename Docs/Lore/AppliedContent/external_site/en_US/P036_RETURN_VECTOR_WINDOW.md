@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Return Vector Window
 
-Return Vector Window explains why the player cannot simply leave HECTON-8. The carrier is present but distant, automated and bound to Aegir's storm and orbital timing.
+Return Vector Window explains HECTON-8 extraction as orbital procedure rather than instant rescue. Black Keel can receive a signal through narrow Aegir windows, but pickup depends on storm gaps, charged-particle lulls, relay integrity and rebuilt ascent hardware. The packet is the bridge between first contact with the carrier and later partial-exit records: a reply proves the route can exist, not that it is ready.
 
 ## Scanner
 
-Orbital geometry is not a rescue button. The Black Keel can hear you only through narrow Aegir windows.
+RETURN VECTOR READ // Black Keel ping received through Aegir storm gap. Carrier range: high transfer track. Relay line dirty below cloud charge. Capsule ascent rejected until guidance core, heat shield and return handshake all report green.
 
 ## Terminal
 
-Comm predictor: transfer carrier high over Aegir. Capsule ascent requires storm gap, charged-particle lull and clean relay line.
+RETURN WINDOW PREDICTOR
+Carrier: BLACK KEEL / automated transfer track
+Window: 17 min 40 sec after next charged-particle lull
+Weather: surface squall gap required
+Relay: sky line noisy / shelter mast can repeat once
+Ascent hardware: guidance core missing, heat shield uncertified, battery reserve low
+Action: rebuild ascent chain before treating carrier ping as pickup
 
 ## Audio
 
-Black Keel is alive enough to answer. Not close enough to save you.
+Black Keel heard the ping. That only gives us a window, not a ladder.
 
 ## Field Note
 
-A reply is timing, not mercy.
+A reply is not a rescue. It is a clock you can miss.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/en_US. -->

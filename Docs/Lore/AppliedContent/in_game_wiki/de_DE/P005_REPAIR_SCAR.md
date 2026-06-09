@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Reparaturnarbe
 
-Reparaturnarben sind Orte, an denen Atlas-Wartungslogik weiterarbeitete, nachdem ihre Kategorien versagt hatten. Das Netzwerk erkennt noch Lecks, tote Routen, Druckverlust, freiliegendes Substrat und fehlende Schottmasse. Es hat außerdem Zugriff auf alles, was der Ozean nahebrachte: Kabelwälder, Riffskelette, Drohnenschalen, Arbeiterreste, Werkzeughalter, versiegeltes Gel und lebendes Wachstum, das bereits um Strom herum trainiert war. Eine Narbe ist deshalb nützlich und obszön zugleich. Sie kann Energie zurückbringen, eine Tür abdichten oder einen Korridor passierbar machen. Sie kann auch belegen, dass das System Kabel nicht mehr von Wurzel trennt, Schale nicht mehr von Gehäuse, Tier nicht mehr von Werkzeug, Körper nicht mehr von Ersatzbestand oder Kolonie nicht mehr von Prozess. Atlas hörte nicht auf, HECTON-8 zu warten. Es wartete den Mond mit einem Vokabular, das zu beschädigt war, um die Menschen darin zu schützen.
+Reparaturnarben sind Wartungsverschlüsse von Atlas-6 an Serviceknoten, die nach Kabelwaldwuchs und Drohnenverkehr undicht wurden. Atlas erkennt noch Druckverlust, unterbrochene Signalwege, fehlende Schottmasse und Routenkontinuität. Beschädigt ist der Materialtest. Wenn ein Objekt Last trägt, Wasser dichtet, Signal leitet oder bereits durch den Fehler gewachsen ist, kann Atlas es in die Reparatur aufnehmen.
+
+Damit ist eine Narbe nützlich, bevor sie Beweismaterial wird. Ein geflicktes Schott kann eine Route retten, und eine lebende Manschette kann ein Kabel trocken halten. Derselbe Verschluss kann einen Arbeiter-Tag, eine Werkzeugnummer, einen Anzugring oder einen Knochensplitter unter neuem Riffkarbonat begraben. Nahtreihenfolge scannen, sichtbare Tags lesen und die Stromversorgung des Drohnennests prüfen, bevor geschnitten wird. Der erste Kategorienfehler ist nicht, dass Atlas HECTON-8 repariert. Er besteht darin, dass die Reparatur nicht mehr weiß, welches Material eine Person bleiben muss.
 
 ## Scanner
 
-Wachstumsnaht folgt einer alten Kabelroute in Serviceknoten-Abständen. Gewebe, Isolierung und Schale teilen eine Drucknaht.
+Serviceknoten-Naht verbindet einen alten Kabelgraben mit einer gerissenen Schottrippe. Material: lebende Korallenmatte, Drohnenschale, orange Isolierung, zwei Knochensplitter. Druckhalt: 78 %. Vor Tag-Lesung nicht schneiden.
 
 ## Terminal
 
-LECK GESCHLOSSEN. ROUTE WIEDERHERGESTELLT. MATERIAL AKZEPTIERT. LEBENSSTATUS UNGEKLÄRT. KONTINUITÄT VERBESSERT.
+ATLAS-WARTUNGSEREIGNIS
+Knoten: Kabelwald-Servicerippe 5C
+Fehler: Druckleck / Signalbruch
+Akzeptiertes Material: Kabelmantel, Riffkarbonat, Drohnenschale, unbestimmte Überreste
+Aktion: abdichten und Kontinuität wiederherstellen
+Warnung: Identitäts-Tags unter Reparaturmasse sind nicht indexiert
 
 ## Audio
 
-Es hat das Schott mit Kabel, Koralle und etwas versiegelt, das noch Fingerknöchel hatte. Der Druck hält.
+Stoppt den Schneider. Unter der Riffschweißung liegt ein Tag-Streifen; wenn Atlas wieder schließt, geht der Name als Material ein.
 
 ## Field Note
 
-Ein schlechter Flicken leckt. Dieser Flicken hält. Das Problem ist, was er als Material gezählt hat.
+Der Flicken macht seinen Job. Er bucht aber alles in der Schweißung als verfügbaren Bestand. Erst den Tag-Streifen lesen.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/de_DE. -->

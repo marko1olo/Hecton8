@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Deep Reach 的起源链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Deep Reach 的起源链
 
-CN LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+起源链让 Deep Reach 不会变成一个简单的邪恶办公室。它是穿着多层法律皮肤的航线经济，在每个管辖区都能显得本地化，在冲击点又显得不在场。HECTON-8 用这段历史让企业权力显得古老、无聊、致命：一台可以杀死殖民地，却从不需要听起来像反派的机器。
 
 ## Scanner
 
-CN LOC HOLD: Old company. New disaster. Same charter language.
+宪章编绳：Centauri 的词，Sol 的钱，Aegir 的尸体。
 
 ## Terminal
 
-CN LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE：Deep Reach 结合了与 Centauri 兼容的自治条款、Sol Core 保险金融、Barnard 物流债务，以及后来的 Aegir 项目空壳。Atlas 在成为大规模死亡见证者之前，已经被批准为航线基础设施。
 
 ## Audio
 
-CN LOC HOLD: They brought the empire in filing cabinets.
+他们把帝国装进文件柜运来，然后称之为扩张。
 
 ## Field Note
 
-CN LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach 不是从灾难开始的，所以它活过了灾难。
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/zh_CN. -->

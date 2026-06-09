@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra: verliesconversie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra: verliesconversie
 
-NL LOC HOLD: Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+Marek Ibarra: verliesconversie gaat over de tweede verdwijning van de kolonie. De eerste was fysiek: drukdeuren, overstroomde routes, niet teruggevonden lichamen. De tweede was administratief: een arbeider werd een onopgeloste lastklasse.
 
-## Scanner
+Ibarra's tabel gebruikt technische verzekeringstaal als wapen. Drukstaat, besmettingsstaat, loonstatus en bewaringsbewijs bepalen of een persoon claim, vertraging of eindeloos open categorie wordt. De wreedheid is geen toespraak. Ze zit in de tabel die open blijft omdat open goedkoper is.
 
-NL LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
-
-## Terminal
-
-NL LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
-
-## Audio
-
-NL LOC HOLD: A missing person became a pending category. That was cheaper.
-
-## Field Note
-
-NL LOC HOLD: Insurance language should feel colder than gunfire.
+Het artikel ondersteunt de bewijslus: namen, labels en bunkrecords tellen omdat ze het systeem kunnen dwingen een dode arbeider niet langer als onopgeloste vracht te behandelen.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/nl_NL. -->

@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Public Ledger Record
 
-Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.
+Public Ledger Record is a custody break, not a verdict. The payload reaches a Tau/Luyten route with witness hash, redacted coordinates, proof tier, and receipt timestamp before Deep Reach can close the archive. That makes erasure harder, but it also gives later clerks, creditors, charter courts, survivor networks, and opportunists a live file.
 
 ## Scanner
 
-Witness hash escaped claimant custody.
+PUBLIC LEDGER RECORD // Witness hash left private custody through Tau/Luyten packet route. Public proof tier set; Deep Reach response delay attached.
 
 ## Terminal
 
-ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ENDING RECORD / PUBLIC LEDGER
+Route: Tau/Luyten delayed packet.
+Payload: witness hash, custody strip, coordinate-redacted proof tier, receiver timestamp.
+Control after relay: forfeited.
+Deep Reach response: counter-packet delayed by public receipt.
+Known loss: sender cannot choose first reader or later filing chain.
 
 ## Audio
 
-Truth can leave your hands and still matter.
+Ledger stamped it. You do not get to pick the first reader.
 
 ## Field Note
 
-Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+If the receipt is public, the file survives by leaving your hands. Check coordinate redaction before celebrating the stamp.
 
 <!-- In-Game Wiki; generated from P273_PUBLIC_LEDGER_RECORD/en_US. -->

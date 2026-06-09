@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rakitan Muatan Energi Pendakian"
+title: "Rangkaian Muatan Energi Pendakian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rakitan Muatan Energi Pendakian
+# Rangkaian Muatan Energi Pendakian
 
-Rakitan Muatan Energi Pendakian mengikat ekonomi sumber daya ke konsekuensi naratif: blue debt dan vent-forged hardware menentukan keandalan pelarian, custody bukti, dan kompromi.
+Rangkaian Muatan Energi Pendakian adalah tempat ekonomi salvage HECTON-8 berhenti menjadi abstrak. Material yang tumbuh oleh tekanan dan membeli perhatian carrier juga bisa menjadi muatan impuls yang mengangkat kapsul dari laut.
 
-## Scanner
+Pertukaran itu berbahaya karena blue debt bukan bahan bakar ajaib. Ia adalah material proses Xenon-Omega dengan riwayat tekanan, keadaan kontaminasi, perilaku penahanan, dan nilai hukum. Vent-forged heat cell bisa memberi energi terkendali. Sampel mentah bisa pecah, meracuni catatan custody, atau mengubah recovery sah menjadi kargo yang disengketakan.
 
-Dudukan energi tergores pressure pulse. Muatan murah membuat peti mati rapi.
-
-## Terminal
-
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, dan custody stamp wajib. Raw fuel ditolak. Blue debt tanpa sertifikasi retak di bawah launch impulse dan membatalkan recovery claim.
-
-## Audio
-
-Kau bisa menjual daya angkat atau menungganginya. Tidak keduanya.
-
-## Field Note
-
-Setiap gram di dudukan adalah pelarian, bukti, atau blue-debt payout. Kapsul tidak memaafkan keserakahan.
+Muatan lengkap karena itu memuat perangkat keras dan bahasa klaim dalam dudukan yang sama: heat cell, insulator, selongsong impuls, catatan massa, dan custody stamp bertanda tangan. Jaga tetap utuh dan kapsul punya angkat tersertifikasi. Pecahkan demi bayaran dan laut mungkin masih membiarkan mesin menyala, tetapi tidak ada seorang pun di atas yang wajib menerima apa yang datang.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/id_ID. -->

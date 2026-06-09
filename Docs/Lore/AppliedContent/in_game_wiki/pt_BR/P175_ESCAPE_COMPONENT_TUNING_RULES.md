@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "Regras de Ajuste de Componentes de Fuga"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# Regras de Ajuste de Componentes de Fuga
 
-PT LOC HOLD: Escape component rules keep the partial ending path technical, moral and replayable.
+Regras de Ajuste de Componentes de Fuga impedem que o final de HECTON-8 vire uma lista de compras com botão de lançamento. Uma rota de fuga crível precisa de peças, mas cada peça deve provar algo além do custo material. O relay spine prova que o jogador consegue falar através da água e do ruído magnético. Clamp rings provam que a cápsula ou objeto de ascensão mantém forma sob pressão. O guidance core prova timing, não fantasia de destino: precisa acertar uma janela, não desejar órbita. A ascent charge prova energia e risco. O legal handshake decide quem responde, quem possui o canal de recuperação e se a quarentena aceita o payload. O evidence payload muda consequência: o jogador pode sair com moeda, acusação, custódia de amostra ou poder de negociação. Se faltar uma prova, o resultado não deve parecer um botão desativado. Deve parecer outro final: recuperação parcial, retenção de custódia, receptor ruim, reivindicação falha ou fuga comprada com silêncio.
 
 ## Scanner
 
-PT LOC HOLD: Escape parts should force depth and evidence, not grind.
+Peças de fuga devem forçar profundidade e evidência, não grind. Sair de HECTON-8 é uma cadeia de provas, não um craft caro.
 
 ## Terminal
 
-PT LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+COMPONENTES DE FUGA / relay spine prova contato / clamp rings provam classificação de pressão / guidance core prova timing / ascent charge prova energia / legal handshake decide quem responde / evidence payload muda consequência e custódia.
 
 ## Audio
 
-PT LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+Partir não é um craft. É uma cadeia de provas.
 
 ## Field Note
 
-PT LOC HOLD: Every ascent component must have a physical and legal reason.
+Todo componente de ascensão precisa de uma razão física e uma legal: contato, classificação, timing, energia, receptor, payload. Faltar uma deve mudar o final, não só bloquear um botão.
 
 <!-- In-Game Wiki; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/pt_BR. -->

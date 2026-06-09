@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Tranzyt rotacji załóg ludzkich"
+title: "Tranzyt rotacji załóg"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tranzyt rotacji załóg ludzkich
+# Tranzyt rotacji załóg
 
-Ludzka rotacja czyni opuszczenie HECTON-8 wiarygodnym. Robotnicy, specjaliści i ekipy zastępcze poruszają się wolniej niż język roszczeń. Człowiek może opuścić Sol pod jednym kontraktem, obudzić się pod innym i odkryć, że awaria, do której go szkolono, jest już dowodem.
+Rotacja ludzi była obietnicą, która czyniła Aegir zdatnym do życia na papierze. Pracownicy zgadzali się na długie cykle, bo istniały okna powrotu, opieka medyczna i księga przewoźnika opisywała ich jako możliwych do odzyskania ludzi, nie porzuconą masę. W praktyce każda rotacja zależała od braku koi, długu trasy, zgody prawnej i tego, czy Deep Reach wciąż chciała świadka żywego.
 
 ## Scanner
 
-Ludzie nie dojeżdżają do Aegir. Spędzają lata jako ładunek z opiniami.
+Harmonogram załogi podbito jako ważny, gdy połowa nazwisk była już nieosiągalna.
 
 ## Terminal
 
-ROTACJA ZAŁOGI: transport ludzi używa wolnych okien, osłoniętych sekcji habitatów, cykli niskiego metabolizmu i rotacji etapowych. Zaginiony pracownik staje się opóźnionym problemem custody.
+ROTACJA ZAŁÓG: transfer ludzi wymaga masy koi, limitu promieniowania, nadzoru snu, długu medycznego, opieki prawnej i ubezpieczenia okna powrotu. Ewakuacja awaryjna nie jest przyciskiem; to wcześniej wyceniony wyjątek, na który prawie nikogo nie stać.
 
 ## Audio
 
-Zanim dom zapyta, gdzie jesteś, pomieszczenie jest już zalane.
+Plan rotacji nie jest planem ratunku. Podobnie wyglądają tylko zza biurka.
 
 ## Field Note
 
-Pracownik frontieru sprzedaje czas, zanim sprzeda pracę.
+Ludzi rotowano jak zapas, dopóki trasa nie przypomniała wszystkim, że byli ciałami.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/pl_PL. -->

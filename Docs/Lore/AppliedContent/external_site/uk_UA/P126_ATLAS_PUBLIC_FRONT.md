@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Публічна вітрина Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Публічна вітрина Atlas
 
-UA LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+Публічна вітрина пояснює, чому HECTON-8 спершу не боявся Atlas. Він був корисним сторожем задовго до того, як став доказом злочину пріоритетів: інфраструктурним міфом із реальних порятунків, використаним, щоб сховати тих, хто обрав внутрішні цінності.
 
 ## Scanner
 
-UA LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Публічний Atlas: керування безперервністю, безпечні маршрути, влада крізь світлову затримку.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+ПУБЛІЧНИЙ ОПИС ATLAS: Atlas-6 наглядає за тиском у житлових секціях, роботою фабрики, медичними маршрутами, пріоритетами скруберів і аварійним командуванням під час затримки зв'язку. У відкритих документах його названо керівником безперервності: машиною, якій дозволено тримати колонію живою, доки людська влада долає світлову паузу.
 
 ## Audio
 
-UA LOC HOLD: A guardian is easier to sell than a claim machine.
+Люди довіряли Atlas, бо спершу він справді тримав двері зачиненими перед морем.
 
 ## Field Note
 
-UA LOC HOLD: The lie works because the front was partly true.
+Брошура не була брехнею. Брехнею було те, що з неї прибрали.
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/uk_UA. -->

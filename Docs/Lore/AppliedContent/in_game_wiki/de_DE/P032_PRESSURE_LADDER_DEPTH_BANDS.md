@@ -19,22 +19,32 @@ localization_flags: 1
 
 # Druckleiter
 
-Die Druckleiter ist die Kampagnenachse. Sauerstoff, Hülle, Energie, Isolation, Routenwissen und Orbitfenster ersetzen willkürliche Sperren.
+Die Druckleiter ist die Routenlogik hinter HECTON-8s Tiefenfortschritt. Sie ist keine Liste von Levelnamen. Jedes tiefere Band stellt dieselbe praktische Frage in härterer Form: Können Anzugdichtung, Batterie, Sauerstoffkreislauf, Isolation, Signal und Rückkehrping den nächsten Abstieg gemeinsam überstehen?
+
+Der erste Schelf erlaubt kurze Arbeit mit beschädigter Ausrüstung, weil die Rückkehrleine noch gefunden werden kann. Der Serviceschelf prüft an jedem Tiefentor Anzugklasse und Batterieverriegelung. Solecanyons brauchen Isolation und Auftriebstrimmung, weil Salz, Wärme und Dichtewechsel eine gute Lesung während des Abstiegs kippen. Abyssale Maschinenfelder verlangen gehärtetes Signal und strenge Hülldisziplin; ein verspäteter Ping kann bedeuten, dass die Route bereits hinter dem Taucher liegt. Das Atlas-Becken fügt derselben Kette Busrauschen und Druckverlust hinzu.
+
+Lies die Wartungstafel, bevor du ein Tor als Erlaubnis behandelst. Wenn eine Lesung rot ist, ist der nächste Abstieg keine Route, sondern schlechte Prozedur. Repariere zuerst die schwächste Dichtung, den schwächsten Pack, Kreislauf, Wickel oder Relais.
 
 ## Scanner
 
-Tiefe wird durch Druckklassen geteilt, nicht durch Levelnamen. Jedes Band braucht eine technische Antwort.
+TIEFENTOR-LESUNG // Band: Serviceabstieg 250-1200 m. Dichtungsreserve 11 %. Anzugplatte akzeptiert Grade C erst nach eingerastetem Batteriepack B2. Rückkehrping unter dritter Schelle schwach. Untere Schleuse nicht mit Mut öffnen.
 
 ## Terminal
 
-Druckleiter: Schelfgerät, Canyonverstärkung, Sole-Isolation, Abyssus-Hülldisziplin, Fabrikzonen-Signalhärtung.
+TIEFENZUGANGSTAFEL
+0-250 m: photischer Schelf / Kurzarbeit mit beschädigter Ausrüstung akzeptiert
+250-1200 m: Serviceschelf / Grade-C-Anzugdichtung, eingerastete Batterie, Leinenping erforderlich
+1200-2800 m: Solecanyon / Isolationswicklung und Auftriebstrimmung erforderlich
+2800-4300 m: abyssales Maschinenfeld / gehärtetes Signal und Hülldisziplin erforderlich
+4300-5600 m: Atlas-Becken / Rückkehrplan muss Druckverlust und Busrauschen überstehen
+Fehler: nächstes Band gesperrt, bis die schwächste Lesung repariert ist
 
 ## Audio
 
-Du steigst nicht ab, weil du mutig bist. Du steigst ab, weil die nächste Dichtung hält.
+Hör auf, mit der Tür zu streiten. Die Dichtungsreserve ist rot, und dein Rückkehrping ist schon spät.
 
 ## Field Note
 
-Der Ozean verriegelt Fortschritt mit Mathematik.
+Dem Tor ist egal, warum du die Route brauchst. Es liest Dichtung, Strom, Sauerstoff, Isolation, Signal und gibt dann Grün oder begräbt den Plan.
 
 <!-- In-Game Wiki; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/de_DE. -->

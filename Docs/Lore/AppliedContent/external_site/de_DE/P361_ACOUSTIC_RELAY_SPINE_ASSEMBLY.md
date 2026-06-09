@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Akustische Relaisspinen-Baugruppe"
+title: "Akustische Relaisspine-Baugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akustische Relaisspinen-Baugruppe
+# Akustische Relaisspine-Baugruppe
 
-Die Akustische Relaisspinen-Baugruppe erdet HECTON-8s Escape-Loop in Salvage-Ingenieurwesen: Schall muss Druck, Routengeometrie und custody überleben, bevor der Orbit ihm glaubt.
+Die akustische Relaisspine-Baugruppe ist das erste Glied in HECTON-8s Fluchtkette, das Überleben in ein messbares Signal verwandelt. Sie ist kein Funkmast und kein Notgebet. Sie ist eine pressure-code spine aus Keramikrippen, Kabelmantel, Ballast-floats und pinger timing.
 
-## Scanner
+Das Problem ist Vertrauen. HECTON-8s Wasser trägt Aufpralllärm, Pumpenschläge, brine scatter und Routenechos. Black Keel empfängt mehr Schall, als sicher akzeptiert werden kann. Eine Kapsel, die recovery will, muss beweisen, dass ihr tap zu Route, Uhr und custody chain gehört, nicht zu einer losen Platte an einem gefluteten Rahmen.
 
-Gebrochene akustische Spine. Sie kann pressure-code durch Wasser klopfen; der Orbit hört es trotzdem als beschädigtes custody noise.
-
-## Terminal
-
-ASCENT RELAY: niederbandige Akustikspine vor recovery window wiederherstellen. High-gain mast verloren. Emergency buoy unzuverlässig. Black-Keel-Empfänger akzeptiert pressure-code erst nach route proof.
-
-## Audio
-
-Wenn der Keel uns hört, hört er eine Wunde, die an ein Rohr klopft.
-
-## Field Note
-
-Der erste Ruf der Kapsel ist keine Stimme. Es sind Keramikrippen, Kabelhaut, pinger floats und genug Timingdisziplin, damit der Ozean dich korrekt wiederholt.
+Die Reparatur gibt der Aufstiegskapsel eine schmale Stimme: Koordinaten, survival state, clock match, checksum. Das reicht, um ein recovery-Gespräch zu beginnen, nicht um Rettung zu garantieren. Der Ozean kann das Signal weiter biegen. Der carrier kann das Paket weiter als damaged claim noise behandeln. Die Komponente verdient die erste Anhörung; sie gewinnt den Fall nicht.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/de_DE. -->

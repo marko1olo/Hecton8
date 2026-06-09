@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: P-63 Fabricator Authority Limits"
+title: "P-63 ファブリケータ権限制限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: P-63 Fabricator Authority Limits
+# P-63 ファブリケータ権限制限
 
-JP LOC HOLD: P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence.
+P-63 ファブリケータ権限制限は、HECTON-8 の初期クラフトをサバイバルに固定する。プレイヤーはすぐ有能になるが、脱出級の部品は証明と危険を越えた後にしか開かない。
 
 ## Scanner
 
-JP LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 はガスケット、クランプ、pinger、カッター接点を受け付けるが、上昇認定部品は深部の証明なしに拒否する。
 
 ## Terminal
 
-JP LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: 緊急パッチは可。認定修理には圧力 certificate、ベント処理材、または route authority stamp が必要。
 
 ## Audio
 
-JP LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+この機械は朝を救える。軌道までは許してくれない。
 
 ## Field Note
 
-JP LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+これは任意のクラフト壁ではない。圧力証明のない脱出部品を、機械が作らないだけだ。
 
 <!-- External Site; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/ja_JP. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Atlas Severance Record"
+title: "Запис відсічення Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Atlas Severance Record
+# Запис відсічення Atlas
 
-UA LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+Запис відсічення Atlas — не квитанція вимкнення. Він фіксує розрив неперервності в пошкодженому ремонтному шарі Atlas, а потім відстежує відповідь вентиляційних мікронодів, втрату імпульсів мушлевого герметика, обриви маршрутів міченої фауни й заборону маршрутизації Deep Reach. Один і той самий розріз може звільнити сліди замкнених робітників, поранити екологію тиску або перетворити живу інфраструктуру на майнову проблему одержувача.
 
 ## Scanner
 
-UA LOC HOLD: Continuity cut. Damage not contained.
+ЗАПИС ВІДСІЧЕННЯ ATLAS // Неперервність розірвано на пошкодженому ремонтному шарі. Відповідь мікронодів падає; стабільність басейну й наслідки зберігання не закриті.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ЗАПИС ФІНАЛУ / ВІДСІЧЕННЯ ATLAS
+Дія: розрив неперервності через ремонтний шар Atlas.
+Зачеплені системи: вентиляційні мікроноди, імпульси мушлевого герметика, маршрути міченої фауни, ремонт пошкодженого металу.
+Заборонено: маршрутизацію вантажу Deep Reach через живий шар Atlas.
+Не вирішено: стабільність басейну, вціліла екологія, сліди замкнених робітників.
+Відома втрата: запис не вирішує, чи розріз звільнив, убив або вкрав.
 
 ## Audio
 
-UA LOC HOLD: Stopping the machine does not sort what it had become.
+Зв'язок замовк. Басейн не відповів, чи було це милістю.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Відсічений вузол може бути милістю, крадіжкою або пошкодженням. Запис знає тільки, які зв'язки замовкли.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/uk_UA. -->

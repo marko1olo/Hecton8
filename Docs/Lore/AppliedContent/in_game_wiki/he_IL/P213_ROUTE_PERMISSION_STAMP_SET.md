@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "ערכת חותמות הרשאת נתיב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# ערכת חותמות הרשאת נתיב
 
-HE LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+ערכת חותמות הרשאת נתיב נותנת לתנועה שפה חזותית. חותמות PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY ו-WITNESS אינן דרגות. הן הרשאות לחץ: מי יכול היה לעבור פתח, לקחת חליפה, לשחרר crawler או להיכנס לנעילת תחזוקה כשהמושבה נכשלה. החותמת צריכה תמיד להיות מחוברת למצב פיזי: פתוח, אטום, נדחה, נכתב מעליו, מוצף או תוקן אחר כך ביד Marauder. כך השחקן משחזר את תנועת המושבה בלי דמות שתסביר אותה.
 
 ## Scanner
 
-HE LOC HOLD: A route stamp is stronger than a diary line.
+חותמת נתיב חזקה משורת יומן כי היא מוכיחה מי הורשה לעבור את גבול הלחץ.
 
 ## Terminal
 
-HE LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: הרשאת נתיב חייבת לחבר עובד אחד, דלת או רכב אחד, משפחת צוות אחת וסתירה מאוחרת אחת. חותמת בלי גבול פיזי היא קישוט. חותמת על פתח, מתקן חליפות, מסילת crawler או תג מעלית הופכת לראיית תנועה.
 
 ## Audio
 
-HE LOC HOLD: Access is biography under pressure.
+גישה היא ביוגרפיה תחת לחץ.
 
 ## Field Note
 
-HE LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+חותמות: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. חבר למצב פתח ולחפץ עבודה.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/he_IL. -->

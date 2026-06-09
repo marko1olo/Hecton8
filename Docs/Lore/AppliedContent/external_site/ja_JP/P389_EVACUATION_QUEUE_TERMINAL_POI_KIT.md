@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "避難待機端末証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Evacuation Queue Terminal POI Kit
+# 避難待機端末証拠キット
 
-JA LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+待機端末は、苦痛を行政上きれいに整えるために作られた部屋のように感じられるべきだ。端末はルート保留、隔離解除遅延、Atlas重み付け、作業員数を並べる。しかし壁にはもっと汚い記録がある。ハッチ状態ストリップ、バッジ残留物、欠落した容量マーク、まだ誰かが売りたがるパネルのサルベージタグ。
 
-## Scanner
-
-JA LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-JA LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-JA LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-JA LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+このPOIは対立で重くなる。部品を抜けばルートが開くか借金を払えるかもしれないが、遅延を証明する表面も壊れるかもしれない。正しい読みは自白ではない。噛み合わない物の集まりが、潜水から何を残すかをオペレーターに選ばせる。
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ja_JP. -->

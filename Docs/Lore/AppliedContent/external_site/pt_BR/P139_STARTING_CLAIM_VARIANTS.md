@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Variantes de claim inicial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Variantes de claim inicial
 
-PT LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+Variantes de claim inicial permitem replay de HECTON-8 com ganchos econômicos diferentes enquanto preservam um protagonista forte.
 
 ## Scanner
 
-PT LOC HOLD: Same protagonist. Different claim pressure.
+VARIANTE CLAIM // Mesmo Marauder ex-Deep-Reach. Primeira dívida, bounty, hardware de rota, custódia de amostra ou alívio de blacklist diferentes.
 
 ## Terminal
 
-PT LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+REGRA DE INÍCIO: variantes alteram pressão inicial, acesso a rumores, peso das evidências e lógica de pagamento. Não criam heróis alternativos nem apagam a espinha dorsal ex-Deep Reach.
 
 ## Audio
 
-PT LOC HOLD: You can change the job without changing who took it.
+Você pode mudar o trabalho sem mudar quem aceitou.
 
 ## Field Note
 
-PT LOC HOLD: Variants should color motive, not erase the canon character.
+Mude o claim. Preserve a cicatriz.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/pt_BR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: certificado de evacuação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: certificado de evacuação
 
-PT LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+Noor Haldane: certificado de evacuação é um artigo de evidência da Deep Reach sobre conformidade como objeto letal. Haldane não é uma vilã gritando. Ela é a assinatura de consultoria que mantém a evacuação legalmente defensável enquanto a rota física falha.
 
-## Scanner
+A retenção dela é construída com requisitos plausíveis: quarentena pressão-biológica, custódia do transportador, revisão externa de rota, aceitação portuária posterior, cadeia de responsabilidade. Nenhuma dessas palavras é absurda. Esse é o ponto. O sistema pode estar certo dentro do próprio quadro e ainda matar esperando.
 
-PT LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-PT LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-PT LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-PT LOC HOLD: This is the paper signature players should hate.
+O artigo dá aos jogadores uma forma de ler portas velhas da colônia e painéis de rota. Um caminho de evacuação trancado não é só uma máquina quebrada. Pode ser uma decisão legal ainda esperando revisão. O noir de HECTON-8 nasce desse atraso: ninguém precisa dizer 'deixem morrer' se o certificado puder dizer 'ainda não' por tempo suficiente.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/pt_BR. -->

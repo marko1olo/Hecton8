@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Leven op het lichtplateau"
+title: "Leven op het fotische plateau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Leven op het lichtplateau
+# Leven op het fotische plateau
 
-Het lichtplateau is de eerste levende basislijn na de beschadigde drop. Licht van Ran-Aegir bereikt het bovenwater, en het plateau antwoordt met mineraalgevoede matten, transparante grazers, pressureweed en routealgen. De matten verlichten steen en houden kleine zuurstofzakken vast; glasgrazers scheren algen tot leesbare banen; pressureweed buigt voordat golfslag of roofdierbeweging de speler bereikt; routealgen markeren stroom die een zwemmer terug naar de lijn kan dragen of ervan weg. Deze zone moet mooi voelen omdat HECTON-8 het waard was om begeerd te worden. Ze moet ook gevaarlijk blijven: stormen, slecht zicht, ondiepe roofdieren en een gebroken teruglijn kunnen helder water in een val veranderen voordat diepere kabelriffen of Atlas-reparatieweefsel verschijnen.
+Het fotische plateau is de eerste levende basislijn na de beschadigde drop. Licht van Ran-Aegir bereikt de bovenste 0-250 m, en het plateau antwoordt met objecten die een duiker kan lezen: zuurstofmatten op basalt, glass-grazer-banen door algen, pressureweed dat buigt voor de deining, en routealgen die een stroom terug naar de schuilerlijn markeren.
+
+Geen van die tekens is toestemming. Een heldere zuurstofmat kan een besmette naad verbergen. Een verse grazerbaan kan veilige doorgang betekenen, of tonen dat de school uiteenging voor een ondiepe rover. Pressureweed kan waarschuwen voor weer, roofdierverplaatsing of een drukpuls uit service-infrastructuur beneden. Routealgen wijzen naar huis totdat stormslib of een losse lijn de stroom verschuift. Dit is het inheemse vergelijkingspunt vóór kabelriffen en Atlas-reparatieweefsel: de maan was al levend, leesbaar en gevaarlijk voordat machines leven als onderhoudsmateriaal gingen gebruiken.
 
 ## Scanner
 
-BIOTA VAN HET LICHTPLATEAU // Levende matten, glasgrazers, pressureweed en routealgen bevestigd. Helder water geeft zuurstof en route-aanwijzingen; het vergeeft geen slecht weer, roofdieren of verloren teruglijn.
+SCAN FOTISCH PLATEAU // Zuurstofmat op basaltrand. Verse glass-grazer-baan snijdt door groene groei. Pressureweed naar westen gebogen voor de deining. Routealgen markeren stroom terug naar schuilerlijn. Gevaren: ondiepe roverpassage, stormslib, losse terugkeerlijn.
 
 ## Terminal
 
-PLATEAU-ONDERZOEK: natieve fotische ecologie buiten Atlas-reparatiedominantie. Basismonsters: zuurstofmat, spoor van transparante grazer, buiglijn van pressureweed, kielwater van routealgen. Vergelijk met kabelrifgroei en reparatielittekenweefsel voordat je oogst.
+BASISMETING PLATEAU
+Diepte: 0-250 m
+Monster A: zuurstofmat / mineraal gevoed / ademzak laag volume
+Monster B: glass-grazer-baan / verse snede / predatorverspreiding onbekend
+Monster C: pressureweed-flex / westbuiging voor deining
+Monster D: routealgen / stroom keert terug naar schuilerlijn
+Vergelijk met: kabelwortelmat, reparatielittekenweefsel, drukpoortbiofilm
 
 ## Audio
 
-Het eerste levende water is geen genade. Het is een basislijn waar je doorheen kunt zwemmen.
+Ik zie de terugstroom. Bind vast voordat je de kleur volgt.
 
 ## Field Note
 
-De eerste kleur is geen genade. Het is de maan die toont hoe normaal eruitzag voordat machines het leerden.
+Helder water is nuttig voordat het veilig is. Tel matkleur, grazerbanen, weed-buiging en lijnspanning voordat je het vertrouwt.
 
 <!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/nl_NL. -->

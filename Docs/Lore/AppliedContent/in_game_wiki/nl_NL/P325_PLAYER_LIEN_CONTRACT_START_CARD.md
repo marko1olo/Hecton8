@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Player Lien Contract Start Card"
+title: "Startkaart van spelers-liencontract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Player Lien Contract Start Card
+# Startkaart van spelers-liencontract
 
-NL LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+De Startkaart van spelers-liencontract verankert de protagonist van HECTON-8 als gecompromitteerde professional, niet als onschuldige toerist. De speler begint met een praktisch motief: salvage contract, schulden-lien, oude toegangskennis en genoeg vertrouwen om te geloven dat dit werk is. Dat telt omdat de game geen lost-relative hook nodig heeft om de afdaling persoonlijk te maken. De persoonlijke druk komt uit bewijs. Dat een voormalige Deep Reach field key nog door Black Keel wordt herkend, is geen gemak; het is een waarschuwing dat het oude systeem de operator nooit volledig vergat. Het contract geeft de speler een reden om de oceaan in te gaan en een reden om het eerste gevaar verkeerd te begrijpen. Hij denkt een job file te lezen. Het bestand leest hem ook: eerdere clearance, routevertrouwdheid, liability history en beneficiary conflict. Tegen de tijd dat de speler begrijpt dat de oude werkgever niet alleen achtergrond is, heeft de lien professionele nieuwsgierigheid al in bewaring veranderd.
 
 ## Scanner
 
-NL LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+De startkaart maakt je geen uitverkoren slachtoffer. Hij maakt je een voormalige Deep Reach-professional met een lien, een sleutel en een reden om tegen jezelf te liegen.
 
 ## Terminal
 
-NL LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACTSTART / operator: onafhankelijke salvage contractor / voormalige toegang: Deep Reach field key, inactief maar herkend / lien: actief / verklaard motief: claim value / onverklaarde druk: prior exposure, routevertrouwdheid, beneficiary conflict.
 
 ## Audio
 
-NL LOC HOLD: You came for work. The file remembered you before you remembered it.
+Je kwam voor werk. Het bestand herinnerde zich jou voordat jij het herinnerde.
 
 ## Field Note
 
-NL LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Geen lost-relative hook. Motief begint als werk: salvage value, oude field access, professionele blootstelling, gemaskeerde persoonlijke druk.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/nl_NL. -->

@@ -35,6 +35,6 @@ Nie straciłeś całego statku. Straciłeś jedyny łańcuch, który sprawia, ż
 
 ## Field Note
 
-Zapis ucieczki pierwszej godziny: przewoźnik jest obecny, ale łańcuch między graczem, morzem, powierzchnią i orbitą jest zerwany w nazwanych częściach.
+Zapis ucieczki pierwszej godziny: przewoźnik jest obecny, ale łańcuch między skafandrem, morzem, powierzchnią i orbitą jest zerwany w nazwanych częściach.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Ризикованіші seed контрактів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Ризикованіші seed контрактів
 
-UA LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+Ризикованіші seed контрактів роблять replay економічним і процедурним: змінюються вимоги океану, не те, що гравець може нести.
 
 ## Scanner
 
-UA LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED КОНТРАКТУ // Гірше вікно, глибша перша ціль, суворіше зберігання, рідкісніший зразок, більше списання lien. Успадкованої сили немає.
 
 ## Terminal
 
-UA LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+ОПЦІЯ SEED: збільшити виплату, прийнявши гірший орбітальний час, глибші стартові цілі, жорсткіше зберігання доказів, рідкісний ресурсний доказ або тісніший облік повернення. Сила обладнання й інвентар скидаються.
 
 ## Audio
 
-UA LOC HOLD: The board pays more when it expects less of you to return.
+Дошка платить більше, коли менше чекає тебе назад.
 
 ## Field Note
 
-UA LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Replay має питати жадібність, сміливість або дурість. Не grind.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/uk_UA. -->

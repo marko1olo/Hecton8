@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Player Lien Contract Start Card"
+title: "Kartu Awal Kontrak Lien Pemain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Player Lien Contract Start Card
+# Kartu Awal Kontrak Lien Pemain
 
-ID LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+Protagonis HECTON-8 adalah mantan profesional Deep Reach yang menjadi salvage operator. Asal ini menjaga cerita tetap dewasa dan praktis: pemain datang untuk kerja, bukan takdir. Belokan emosional diperoleh lewat bukti, kontrak, dan akses yang masih dikenali, membuat misteri menjadi personal tanpa mereduksinya menjadi balas dendam keluarga.
 
 ## Scanner
 
-ID LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+Kartu awal tidak menjadikanmu korban terpilih. Ia menjadikanmu mantan profesional Deep Reach dengan lien, kunci, dan alasan untuk membohongi diri sendiri.
 
 ## Terminal
 
-ID LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+AWAL KONTRAK / operator: salvage contractor independen / akses lama: Deep Reach field key, tidak aktif tetapi dikenali / lien: aktif / motif dinyatakan: claim value / tekanan tak dinyatakan: prior exposure, familiaritas rute, beneficiary conflict.
 
 ## Audio
 
-ID LOC HOLD: You came for work. The file remembered you before you remembered it.
+Kau datang untuk kerja. File itu mengingatmu sebelum kau mengingatnya.
 
 ## Field Note
 
-ID LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Tanpa lost-relative hook. Motif dimulai sebagai pekerjaan: salvage value, field access lama, paparan profesional, tekanan pribadi tersamar.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/id_ID. -->

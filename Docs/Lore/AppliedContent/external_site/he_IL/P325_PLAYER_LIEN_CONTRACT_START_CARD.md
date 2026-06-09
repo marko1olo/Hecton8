@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Player Lien Contract Start Card"
+title: "כרטיס פתיחת חוזה lien של השחקן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Player Lien Contract Start Card
+# כרטיס פתיחת חוזה lien של השחקן
 
-HE LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+גיבור HECTON-8 הוא איש מקצוע לשעבר של Deep Reach שהפך ל-salvage operator. המקור הזה שומר את הסיפור בוגר ומעשי: השחקן בא בשביל עבודה, לא בשביל גורל. המפנה הרגשי נרכש דרך ראיות, חוזים וגישה שנזכרה, ומאפשר לתעלומה להיות אישית בלי לצמצם אותה לנקמת משפחה.
 
 ## Scanner
 
-HE LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+כרטיס הפתיחה לא הופך אותך לקורבן נבחר. הוא הופך אותך לאיש מקצוע לשעבר של Deep Reach עם lien, מפתח וסיבה לשקר לעצמך.
 
 ## Terminal
 
-HE LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+תחילת חוזה / מפעיל: salvage contractor עצמאי / גישה לשעבר: Deep Reach field key, לא פעילה אך מזוהה / lien: פעיל / מניע מוצהר: claim value / לחץ לא מוצהר: prior exposure, היכרות נתיב, beneficiary conflict.
 
 ## Audio
 
-HE LOC HOLD: You came for work. The file remembered you before you remembered it.
+באת בשביל עבודה. הקובץ זכר אותך לפני שזכרת אותו.
 
 ## Field Note
 
-HE LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+בלי lost-relative hook. המניע מתחיל כעבודה: salvage value, field access ישן, חשיפה מקצועית, לחץ אישי מוסווה.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/he_IL. -->

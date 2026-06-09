@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Abyssal Machine Field Warning"
+title: "Alerte du champ-machine abyssal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Abyssal Machine Field Warning
+# Alerte du champ-machine abyssal
 
-FR LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+Avant le bassin final, HECTON-8 cesse de ressembler à un lieu abandonné et commence à ressembler à une machine trop grande pour montrer tout son corps. L'alerte reste calme parce que la terreur n'est pas la poursuite. C'est l'échelle.
 
 ## Scanner
 
-FR LOC HOLD: Machine field warning: silt motion does not match current.
+Le limon avance contre le courant. Des corps filtrants se repositionnent sous les lumières.
 
 ## Terminal
 
-FR LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING : mouvement du limon du champ-machine abyssal au-delà du modèle de courant. Corps filtrants et côtes d'actionneurs enfouies enregistrés comme infrastructure mobile. Garder l'écart ; ne pas ancrer dans le sol mou.
 
 ## Audio
 
-FR LOC HOLD: The floor is not still.
+Le sol n'est pas immobile.
 
 ## Field Note
 
-FR LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Avertissement de fin de partie : peur calme et objective. Le champ final est une infrastructure qui s'éveille, pas une montée vers boss.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/fr_FR. -->

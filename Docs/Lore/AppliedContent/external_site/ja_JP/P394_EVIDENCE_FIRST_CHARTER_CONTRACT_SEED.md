@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Evidence First Charter Contract Seed"
+title: "証拠優先チャーター契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Evidence First Charter Contract Seed
+# 証拠優先チャーター契約シード
 
-JA LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+証拠優先チャーターは降下前に契約盤を変える。素材支払いは下がり、ノタリー容量は上がり、証拠ロッカーが優先され、サルベージ剥ぎ取りにはペナルティが付く。オペレーターは部品より記録を守るルートで入水する。
 
-## Scanner
-
-JA LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-JA LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-JA LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-JA LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+圧力は小さな選択に現れる。ハッチ状態ストリップはパネル売却を止めることがある。濡れた事故パケットは最後の乾燥スロットを占有することがある。pingerログは、本来なら修理に回せる生きたリレーを必要とするかもしれない。チャーターが遅く払うのは、Black Keel外のreceiverが読めるまで、厄介な物を intact に保てと要求するからだ。
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ja_JP. -->

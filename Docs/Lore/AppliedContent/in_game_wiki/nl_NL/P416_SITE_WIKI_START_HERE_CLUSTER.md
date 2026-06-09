@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Begin Hier: HECTON-8
 
-Startcluster: contract, spelersrol, HECTON-8-overlevingsdruk en de eerste tegenspraak in het Deep Reach-verhaal.
+Begin hier: HECTON-8 begint als salvage contract rond een verdronken kolonie, een Marauder met schuld en een Deep Reach-verhaal dat te netjes is.
 
 ## Scanner
 
-Publicatiehub: uitgangspunt, spelersrol, eerste beperkingen en de eerste Deep Reach-leugen.
+Publieke ingang: salvage contract, Marauder met schuld, beschadigde capsule, Deep Reach-tegenspraak en eerste Atlas-reparatiespoor.
 
 ## Terminal
 
-SITE NAV: contracttoegang, voormalig Deep Reach-specialist, Marauder met schuld, beschadigde capsule, geen familiehaak, eerste Atlas-reparatiespoor.
+SITE NAV: beginnen met contracttaal, drukoverleving, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-Je kwam voor salvage. De oceaan maakt dat motief te klein.
+Het eerste record roept niet om hulp. Het legt een claim.
 
 ## Field Note
 
-Spoiler-light navigatie begint hier: eerst premise, daarna evidence, eindes pas na verdiende toegang.
+Lees eerst het papierwerk. Op HECTON-8 overleeft de leugen omdat elke zin iets waars bevat.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/nl_NL. -->

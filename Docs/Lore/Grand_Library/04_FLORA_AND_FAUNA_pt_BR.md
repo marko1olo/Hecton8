@@ -1,53 +1,80 @@
-<!-- localization_status: source_draft_pending_native_review -->
+<!-- localization_status: draft_machine_or_llm -->
 # BIOTA LOCAL: FLORA, FAUNA E COLAPSO ECOLÓGICO
 
-> **Fonte:** PDA recuperado, cápsula de descida classe Styx designada 'Lazarus'.  
-> **Falante:** Mergulhador de resgate não identificado ("Jacks").  
-> **Nota do revisor:** Transcrição de áudio e registros de texto mesclados. O sujeito demonstra extrema paranoia em relação à fauna local, especificamente quanto à assinatura acústica "Alpha".
+> **Fonte:** cartilha bentônica da Deep Reach, fragmentos de ecologia de manutenção do Atlas, anotações de perigo da Black Keel e notas de mergulho recuperadas de Marauders.  
+> **Voz:** ecólogo de campo designado para risco de salvamento, com comentários de trabalhadores preservados quando o medo acrescenta precisão útil.  
+> **Nota de revisão:** A vida em HECTON-8 deve parecer perigosa porque é legível, faminta e adaptada, não porque todo organismo é um monstro. O jogador deve aprender a ler ecologia como pressão, rota, recurso, aviso e prova.
 
 ---
 
-## 1. As Coisas Pequenas
+## 1. Não Há Um Só Oceano
 
-*Fragmento de registro de áudio 04-A: "O scanner é inútil. Ele diz que existem dez espécies pacíficas aqui embaixo. É mentira. Nada aqui embaixo é pacífico. Só é muito pequeno para te matar rápido."*
+HECTON-8 não tem um único ecossistema.
 
-Se o seu scanner detectar um **Peneirador Lanterna** (Lantern Sifter), não relaxe. Eles comem cadáveres. Eles usam bioluminescência para atrair detritos orgânicos, o que significa que, se você vir um enxame deles, algo acabou de morrer, ou está prestes a morrer.
+Tem mundos empilhados. A plataforma clara é fina, filtrada por tempestades e rica em minerais. As encostas de penumbra carregam alimento suspenso, conchas quebradas, larvas à deriva e resíduos antigos da colônia. As bacias abissais vivem de respiradouros, costuras de salmoura, bactérias de pressão, carcaça que cai e calor vazando da pedra. A infraestrutura em ruínas acrescenta uma segunda geografia: paredes mornas, bombas mortas, baterias vazando, armadilhas de nutrientes, cicatrizes de luz e corredores onde animais aprenderam que máquinas humanas produzem comida previsível.
 
-Observe os **Sifonadores de Salmoura** (Brine Siphoners) nos cânions profundos. Eles filtram metano. Se eles se dispersarem de repente, um bolsão de metano está vazando e as vedações do seu traje estão prestes a derreter.
+Por isso as velhas categorias da Deep Reach só ajudam em parte. "Flora" não significa jardim. Significa produtores fixos, mantos filtrantes, crescimentos minerais, culturas de engenharia que escaparam da contenção e estruturas nativas que funcionam como plantas sem serem plantas terrestres. "Fauna" não significa animais esperando no escuro para atacar. Significa raspadores, carniceiros, limpadores, predadores de emboscada, caçadores acústicos, enxames parasitas e grandes corpos em movimento que talvez ignorem o jogador até ele cheirar a oportunidade.
 
-Os **Peixes-Minuto de Ferro** (Iron Minnows) são os piores. Eles formam cardumes perto das fontes termais. Suas escamas são literalmente entrelaçadas com metais pesados. Quando eles entram em pânico e batem no visor do seu capacete, parece que você foi atingido por um punhado de rolamentos de esferas.
+O oceano não é mau. Está ocupado. Percebe gradientes: calor, sangue, oxigênio, vibração, luz, corrente, metal exposto, pasta alimentar aberta, plástico novo, silte perturbado. A maioria dos ataques começa como investigação. O erro é achar que investigação é inofensiva.
 
-## 2. Os Assassinos
+## 2. Produtores Sem Jardim
 
-Perdi três membros da tripulação para a escuridão. O oceano não apenas te esmaga; ele te caça.
+Há luz perto da superfície, mas não o bastante para explicar Sector 44.
 
-*   **Embosqueiro de Bolso** (Pocket Ambusher): Não confie nos dutos de manutenção. Vi um deles arrastar O'Neill para um duto de ventilação que tinha apenas meio metro de largura. Eles se entalam nos canos estreitos das velhas estações e esperam um mergulhador passar. Mantenha as costas contra uma antepara sólida.
-*   **Perseguidor de Salmoura** (Brine Stalker): Você não consegue ouvi-los. Eles usam a densidade dos lagos de salmoura hipersalinos para deslizar sem deslocar a água. Você não saberá que ele está lá até que a vibração atinja o seu traje e, a essa altura, ele já pegou o seu cabo de segurança.
-*   **Interceptador das Sombras** (Shadow Interceptor): Apague os holofotes P-63! Não me importo se você não consegue ver! Essas coisas aprenderam que as luzes padrão da corporação significam presa em pânico. Se você ligar o farol alto, estará apenas tocando o sino para o jantar.
+Abaixo da faixa fótica, a vida pega energia de outras contas. A química dos respiradouros alimenta mantos pálidos em torno de fumantes negros. Margens de salmoura sustentam filmes escorregadios que metabolizam metano e enxofre. Kelp de ferro fixa carga mineral em lâminas fibrosas que cortam vedações fracas. Halo sargassum forma mantos-rede em deriva em correntes lentas, pegando poeira, larvas, fibras de sucata e hélices descuidadas. Cathedral kelp não é sagrado nem inteligente. É um crescimento alto e condutivo que gosta de calor, minerais e vibração estável; rotinas do Atlas o usaram como qualquer sistema de manutenção desesperado usa qualquer caminho sobrevivente.
 
-## 3. A Rede Fúngica
+A distinção importa. O kelp não recebe ordens. Não reza para uma máquina. Mas se um caule vivo conduz um pulso de manutenção melhor que um cabo afogado, Atlas pode rotear por ele. Se um manto amortece vibração em torno de uma bomba rachada, um sistema automático pode preservar o manto. Se um crescimento mantém uma porta úmida o bastante para conduzir um sinal fraco, a porta pode responder depois que todas as linhas de cobre morreram. Biologia vira infraestrutura por acidente, depois por hábito.
 
-*Nota de texto anexada:*
-Não há luz solar. As plantas aqui não fazem fotossíntese. Elas trapaceiam. Elas usam a IA Atlas-6.
+Marauders não precisam da taxonomia para sobreviver. Precisam da regra: não corte crescimento verde-negro só porque ele atrapalha a vista limpa. Pergunte do que ele se alimenta, o que segura, quem ouve através dele e o que vai acordar quando ele parar de segurar.
 
-O **Kelp Catedral** não é apenas alga marinha. Aquelas hastes gigantes são atravessadas por fibras biocondutoras. Juro que a IA está usando-as como repetidores de sinal. Se você cortar uma haste, os drones aparecem três minutos depois.
+## 3. Bocas Pequenas, Grandes Sinais
 
-Cuidado com os **Tapetes de Sargassum Halo**. Eles parecem lixo flutuante, mas são redes tóxicas. Eles vão travar as hélices de um minissubmarino em segundos. Se você ficar emaranhado, não tente cortar com as mãos. A neurotoxina queimará direto através do neoprene padrão.
+Vida pequena mata indiretamente.
 
-## 4. A Floração e o Lodo Negro
+Lantern sifters não são pacíficos por serem pequenos. Sua luz atrai neve orgânica, larvas feridas e carcaça macia. Um enxame significa que algo se alimentou recentemente ou está prestes a se alimentar. Se o enxame abre em anel, uma boca maior está empurrando água por ele. Se apaga de uma vez, algo com sentidos melhores acabou de chegar.
 
-A colônia não apenas morreu; ela envenenou todo o setor. Quando as fábricas desabaram, vazaram fluido de resfriamento industrial por toda parte. Isso desencadeou uma "Floração" — um crescimento explosivo de algas marrons tóxicas. Ela consumiu todo o oxigênio.
+Brine siphoners revestem margens de cânions e bordas de camadas de densidade. Filtram água de seep rica em metano e deixam marcas pálidas de pente no silte. Quando se retraem, a química da água está mudando mais rápido do que o cânion consegue esconder. Uma mancha vazia repentina pode significar bolsa de gás, oscilação de salmoura, pulso de pressão ou predador usando a camada como cobertura.
 
-Agora, os peixes pequenos estão sufocando. Eles se aglomeram ao redor das grades de ventilação ativas da base em ruínas, implorando pelas correntes de ar artificiais. E os predadores sabem disso. Eles simplesmente sentam nas aberturas e se empanturram.
+Iron minnows não são perigosos porque odeiam mergulhadores. Formam cardumes perto de fluxo mineral morno e carregam metal nas escamas e pedras gástricas. Sob choque acústico fogem como uma nuvem dura. Uma viseira atingida por esse cardume soa como rolamentos arremessados. Uma entrada de traje cheia de pó de escama transforma um nado rotineiro em problema de manutenção com pulmões anexados.
 
-As algas cobriram todas as janelas e eclusas de ar com um lodo negro e espesso. Ele engole a luz. A Atlas-6 registrou isso no banco de dados central como uma "Correção de População". Ela não estava falando dos peixes.
+A primeira habilidade não é atirar no animal grande. É perceber o que os animais pequenos decidiram antes que o grande fique visível.
 
-## 5. A Assinatura Acústica "Alpha"
+## 4. Predadores Que Leem Máquinas
 
-*Fragmento de registro de áudio 04-B: [Respiração ofegante. Sonar apita erraticamente.]*
+Predadores de HECTON-8 não precisam de inteligência humana para explorar hábitos humanos.
 
-A Deep Reach censurou o arquivo sobre o "Leviatã Alpha". Eu invadi o terminal no Setor 4 e descobri o porquê. Não é um único animal. É um rótulo de convergência. É seja lá o que for que esteja no topo absoluto da cadeia alimentar.
+Um pocket ambusher se encaixa em poços, dutos quebrados e mangas de manutenção meio alagadas porque esses lugares concentram presa pequena. Um mergulhador entrando na mesma geometria vira outro corpo previsível. Brine stalkers cavalgam fronteiras de densidade onde o movimento fica abafado e os cabos se comportam mal. Shadow interceptors aprendem que holofotes brancos repentinos muitas vezes significam pânico, comida ferida ou uma máquina que continuará transmitindo sua posição mesmo quando a pessoa atrás dela congela.
 
-Eu não o vi. Ninguém o vê e vive. Mas você o sente. Ele transmite uma onda portadora acústica abaixo de 40 Hz. O revestimento do seu casco começa a vibrar. Então, todos os outros seres vivos do setor simplesmente... desaparecem. A água fica num silêncio mortal. As correntes mudam de direção.
+O assustador não é malícia. É aprendizado. Animais que sobrevivem perto de ruínas herdam um campo de treino feito por pessoas: lâmpadas piscando, ritmo de bombas, ruído de escotilhas, ciclos de pressão, respiros de lixo, arrotos de descompressão, alarmes de amostra e o pânico regular de trabalhadores que acham que luz significa posse. Um predador não sabe o que é uma corporação. Sabe que equipamento corporativo torna o jantar repetível.
 
-Não é um chefe em que você possa atirar. É um terror que reescreve a sua rota de mergulho. Ele chega antes mesmo de você vê-lo. Dê meia-volta. Deixe o xenônio. Corte o cabo de segurança e suba o mais rápido que puder para a superfície.
+Boas equipes mudam o padrão. Diminuem a luz antes de entrar. Pausam depois de um ping. Não deixam um cabo cantar sobre uma borda de salmoura. Desconfiam mais de um corredor silencioso do que de um barulhento, porque barulho significa que a vida pequena ainda se sente autorizada a estar ali.
+
+## 5. A Floração Depois Do Colapso
+
+A colônia não envenenou a lua inteira. Fez algo mais útil para o horror: criou banquetes locais.
+
+Quando Sector 44 falhou, salas quentes esfriaram, canos frios aqueceram, impressoras de comida estragaram, coolant se misturou à salmoura, corpos foram movidos de modo ruim e culturas de resíduos escaparam de tanques que nunca deveriam quebrar. O oxigênio sumiu em algumas salas e subiu em outras. Bactérias comeram ligantes de isolamento. Raspadores poliram cabeças de parafuso. Mantos filtrantes selaram fissuras finas até alguém raspá-los fora.
+
+Deep Reach chamou as piores manchas de contaminação. Atlas chamou algumas de ecologia de manutenção. Black Keel chama isso de custody risk. Marauders usam linguagem mais simples: se uma sala cheira alimentada, não presuma que você chegou primeiro.
+
+A floração muda rotas. Pode esconder uma emenda de porta, amortecer um passo barulhento, entupir uma bomba, acalmar um predador, atrair um predador, preservar uma mancha de sangue ou apagá-la. Faz salas antigas parecerem vivas nos lugares errados e mortas nos lugares errados. Uma câmara limpa pode ser estéril, recém-raspada ou perigosa demais para qualquer coisa pequena se fixar. Uma câmara suja pode ser perigo, estabilidade ou a única razão pela qual a parede ainda segura.
+
+## 6. O Rótulo "Alpha"
+
+"Alpha" não é um indivíduo confirmado.
+
+É um rótulo de salvamento para eventos em que a rede alimentar normal muda de forma em torno de um movimento de nível superior. Os sinais são mais confiáveis que a história: vibração sub-40 Hz nas placas do casco, enxames lantern apagando, Brine siphoners retraídos, predadores menores abandonando comida fácil, ruído de corrente achatando e grandes áreas ficando quietas de um jeito que parece administrado.
+
+Deep Reach escondeu alguns registros marcados Alpha porque eram vergonhosos, não porque provavam um deus marinho. Vários incidentes mostram o mesmo padrão: ruído de extração, presa concentrada, vibração estrutural, depois um animal grande ou grupo de animais passando pela área numa rota que humanos tornaram lucrativa. Às vezes o rótulo pode significar um único corpo apex. Às vezes uma convergência de alimentação. Às vezes uma máquina lendo silêncio biológico como intervalo seguro e mandando trabalhadores para o pior momento possível.
+
+Para o jogador, Alpha significa uma coisa: a rota de mergulho mudou antes de o mapa admitir. Deixe o prêmio, fique quieto, pare de fazer ruído regular e não presuma que o cabo ainda é uma promessa.
+
+## 7. O Que O Jogador Aprende
+
+O jogador aprende a ler vida como informação.
+
+Biologia marca profundidade, temperatura, corrente, química, idade, alimento, perigo e posse. Um arranhão em um manto pode ser sinal de rota. Um enxame ausente pode soar mais alto que um rugido. Uma parede de kelp pode ser cobertura, fio, armadilha, vedação, fonte de comida ou testemunha. Um predador pode ser evitado se você entender o que ele esperava que o último mergulhador fizesse.
+
+Bom jogo não trata fauna como dano aleatório nem flora como decoração. Trata o oceano como um índice vivo do que mudou. O que se alimentou aqui? O que fugiu? O que cresceu sobre uma prova? O que ficou limpo? O que usa a luz, o sangue, o som ou o lixo do jogador melhor que o jogador?
+
+Em HECTON-8, sobreviver começa quando o jogador para de perguntar se a água é segura e começa a perguntar o que a água já decidiu.

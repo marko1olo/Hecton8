@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Photic Shelf Survival Act"
+title: "Tor des photischen Schelfs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Photic Shelf Survival Act
+# Tor des photischen Schelfs
 
-DE LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Der photische Schelf lehrt durch Objekte, nicht durch Komfort. Der Operator findet heraus, welche Pumpengehäuse noch Luft halten, welche Flicken Minuten kaufen und welche hellen Organismen ein Werkzeug zusetzen. Atlas erscheint zuerst als Reparaturrest: nützlich, stellenweise falsch und nah genug zum Anfassen.
 
 ## Scanner
 
-DE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Routentor: photischer Schelf. Sauerstofftaschen, Pumpenräume, erste Schnitte und flacher Atlas-Reparaturrest sind im Tageswasser lesbar.
 
 ## Terminal
 
-DE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+KAMPAGNENROUTE // PHOTISCHER SCHELF. Erforderlich: Pumpe neu starten, Dichtung flicken, Kabel schneiden, Scanner-Ping. Aufstiegshardware nicht verfügbar; verbrauchte Zellen an Überlebenssysteme geroutet. Atlas-Rest als nützlich mit Kontaminationshinweis klassifiziert.
 
 ## Audio
 
-DE LOC HOLD: The shallow water is not safe. It is only readable.
+Das flache Wasser ist nicht sicher. Es ist lesbar.
 
 ## Field Note
 
-DE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Plünderernotiz: Tageslicht hilft. Es macht eine gerissene Sauerstoffleitung nicht großzügig.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/de_DE. -->

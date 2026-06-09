@@ -1,58 +1,78 @@
 <!-- localization_status: draft_machine_or_llm -->
-# LUZ EMPRESTADA, QUEDAS PARCIAIS E PARTIDAS A FRIO
+# LUZ EMPRESTADA, QUEDAS DE TENSÃO E PARTIDAS A FRIO
 
-> **Fonte:** Curso de energia de emergência da Deep Reach, notas de avaliação de salvamento da Black Keel, gravações de sala de disjuntores de Marauders.  
-> **Voz:** Instrutor de energia de infraestrutura, com anotações posteriores de equipes endividadas.  
-> **Nota do revisor:** Em HECTON-8, luz não prova vida. Prova que algo, em algum lugar, ainda está disposto a gastar ordem armazenada contra o escuro.
+> **Fonte:** curso de energia de emergência da Deep Reach, cartões de serviço de salas de disjuntores, notas de avaliação de salvamento da Black Keel e gravações de saqueadores em anexos restaurados.  
+> **Escopo:** prioridade de cargas, comportamento em brownout, partidas a frio, reservas emprestadas e registros de energia usados em rotas, reivindicações e decisões de sobrevivência.  
+> **Uso em campo:** ler antes de confiar em uma sala iluminada, fazer ponte em um disjuntor, acordar um painel morto, abrir um armário energizado ou mover uma célula que talvez alimente outra coisa.
 
 ---
 
-## 1. Luz É Negociação
+## 1. Uma sala iluminada é uma carga
 
-Pessoas confiam em luz rápido demais.
+Em HECTON-8, luz não prova que uma sala está saudável. Prova que um circuito ainda está gastando energia.
 
-Em HECTON-8, uma sala iluminada pode estar viva, morrendo, mentindo ou gastando os últimos segundos educados de um banco de capacitores. Uma lâmpada pode funcionar da reserva de emergência enquanto o controlador da porta ao lado já não tem autoridade para destravar. Um corredor pode brilhar porque o habitat ainda prioriza ótica de moral depois que toda bomba útil silenciou. Uma estação pode acordar tempo suficiente para pedir login e morrer antes que a resposta importe.
+Uma lâmpada pode rodar com reserva de emergência enquanto o controlador da porta ao lado já não tem autoridade para destravar. Um corredor pode brilhar porque o habitat ainda protege iluminação de moral depois que as bombas úteis pararam de reportar. Uma estação pode acordar tempo bastante para pedir login e morrer antes de a resposta chegar ao buffer. Uma conta verde de status pode continuar viva porque está no lado protegido de um disjuntor, não porque o sistema atrás dela vive.
 
-A Deep Reach construiu sistemas de energia em torno de prioridade, não conforto. Ar primeiro. Pressão depois. Calor onde calor mantém vedações flexíveis. Dados onde dados impedem perda legal e médica. Luz vinha depois, a menos que a própria escuridão se tornasse perigo. A velha colônia podia parecer humana porque a hierarquia funcionava. Depois do abandono, essa hierarquia virou um campo de promessas meio cumpridas.
+A Deep Reach construiu hierarquia de energia em torno de sobrevivência, responsabilidade e hábito. Ar primeiro. Controle de pressão depois. Calor onde calor mantinha vedações flexíveis. Refrigeração onde amostras, remédios ou corpos criavam exposição legal. Dados onde logs evitavam perdas médicas ou contratuais. Luz vinha depois, a menos que a própria escuridão criasse risco de tropeço, corte ou pânico.
 
-Marauders aprendem a perguntar quem está pagando pela luz. Uma sala que não consegue responder não está necessariamente vazia. Talvez esteja pegando emprestado de algo que o jogador ainda não encontrou.
+Depois do abandono, essa hierarquia ficou mais difícil de ler. Uma sala pode parecer ocupada porque um circuito barato ainda funciona. Pode parecer morta porque uma carga mais prioritária pegou cada célula que conseguiu alcançar. A pergunta útil não é se a luz está acesa. A pergunta útil é qual carga está pagando por ela.
 
-## 2. Lógica De Queda Parcial
+## 2. Ordem de brownout
 
-Uma queda parcial é uma máquina escolhendo o que merece continuar existindo.
+Um brownout não é um apagão. É uma sequência.
 
-Quando a energia cai, sistemas antigos descartam cargas em ordem. Painéis decorativos morrem antes de bombas. Arquivos não críticos dormem antes do controle atmosférico. Motores de porta desaceleram antes de travas de pressão liberarem. Armários médicos podem preservar refrigeração enquanto se recusam a abrir. A hierarquia era racional quando mantida, cruel quando abandonada e perigosa quando parcialmente reparada por pessoas que não entendiam os pressupostos originais.
+Quando a tensão cai, sistemas mantidos derrubam cargas numa ordem projetada. Fitas de luz de parede caem antes das bombas de circulação. Terminais não críticos dormem antes da lógica de pressão. Motores de porta desaceleram antes que travas duras liberem. Armários médicos podem preservar refrigeração enquanto se recusam a abrir. Uma sala segura pode preservar troca de ar matando cada tomada que uma equipe de reparo esperava usar.
 
-Quedas parciais criam salas estranhas. Uma bancada pode ter calor mas não logs. Uma bomba pode funcionar e não reportar mais. Uma luz de aviso pode piscar de um circuito protegido enquanto o sensor sobre o qual avisa está morto. Uma sala segura pode manter o ar se movendo matando cada tomada que o jogador esperava usar.
+Sistemas abandonados nem sempre seguem o gráfico antigo. Contatores salgados grudam. Corredores remendados retroalimentam painéis que deveriam morrer. Um sensor morto pode manter uma luz de aviso viva porque o circuito de aviso é mais fácil de alimentar do que a verdade que ele reportava. Uma bomba pode rodar sem reportar porque seu trilho de telemetria morreu primeiro.
 
-A Black Keel valoriza históricos de queda porque revelam a ordem da falha. Quais circuitos morreram primeiro pode provar quando o habitat perdeu equipe, quando uma reivindicação foi adulterada, se uma geladeira de amostras permaneceu fria e se uma sala trancada foi selada por procedimento ou por fome.
+A ordem do brownout importa porque diz quando a sala deixou de ser mantida. Quais cargas morreram primeiro pode mostrar se uma amostra ficou fria, se uma porta foi selada por procedimento ou por fome de energia, se uma baliza de socorro tinha energia quando a Black Keel a marcou inativa, e se alguém mexeu num disjuntor depois que o log oficial da rota fechou.
 
-## 3. Partidas A Frio
+## 3. Partidas a frio
 
-Dar partida a frio em um lugar morto não é o mesmo que ligá-lo.
+Dar partida a frio em uma sala morta não é o mesmo que ligá-la.
 
-Uma partida a frio pede a máquinas velhas que lembrem sua forma depois que pressão, sal, tempo e negligência a editaram. Rolamentos acordam secos. Contatores faiscam através de filme mineral. Baterias aceitam carga de forma desigual. Sistemas de segurança comparam hoje a limiares escritos para uma colônia tripulada e acham o mundo inteiro suspeito. Às vezes essa suspeita está correta.
+Uma partida a frio pede que máquinas velhas se movam depois que pressão, sal e tempo mudaram suas tolerâncias. Rolamentos acordam secos. Contatores fazem arco através de filme mineral. Pilhas de baterias aceitam carga de forma desigual. Ventiladores jogam poeira assentada, mofo ou vapor químico no ar que parecia respirável. A lógica de segurança compara uma sala danificada com limites escritos para uma colônia ocupada e declara metade do lugar suspeita.
 
-Bons Marauders não jogam energia numa sala morta se não estiverem prontos para a sala responder mal. Um ventilador pode jogar veneno em ar respirável. Uma porta pode travar para proteger um estado de pressão que já não existe. Um servidor pode sobrescrever o último crash log útil com uma falha limpa de boot. Um aquecedor pode amolecer uma vedação que só sobrevivia porque estava fria.
+Às vezes a máquina está certa em suspeitar. Uma porta pode travar para proteger um estado de pressão que não existe mais. Um aquecedor pode amolecer uma vedação que só sobrevivia porque ficou fria. Um servidor pode sobrescrever o último crash record útil com uma falha nova de boot. Uma bomba pode limpar água de uma sala e empurrá-la por uma bandeja rachada para outra.
 
-Partida a frio é escolha de sequência. Acorde a coisa errada primeiro e a sala conta uma história. Acorde com cuidado e talvez conte outra.
+Boas equipes não acordam uma sala de uma vez. Acordam primeiro medição, depois contenção, depois movimento, depois conforto. Se a ordem precisa mudar, escrevem por quê. Uma partida a frio é aposta em sequência, e HECTON-8 cobra de quem adivinha por hábito.
 
-## 4. Energia Emprestada
+## 4. Energia emprestada
 
-Nada constrange um profissional como descobrir que estava usando a reserva de outra pessoa.
+Energia emprestada faz um trabalho que seu rótulo não admite.
 
-HECTON-8 é cheio de energia emprestada. Células de emergência cruzadas por corredores remendados. Carregadores de drone alimentando luzes de salas seguras. Um laboratório morto roubando corrente mínima de um conjunto de antenas natimorto. Um freezer médico esquecido mantendo uma amostra viva ao matar de fome a autoridade motora de seis portas. A colônia nem sempre falhou em ilhas limpas. Falhou em negociações que ninguém vivo fechou.
+HECTON-8 está cheio disso: células de emergência cruzadas por corredores remendados, carregadores de drones mantendo luzes de sala segura, um laboratório morto roubando corrente de gotejo de uma matriz de antenas, um freezer médico preservando uma amostra ao privar seis portas de autoridade de motor. A colônia raramente falhou em ilhas limpas. Cargas continuaram negociando depois que as pessoas que entendiam o acordo desapareceram.
 
-Marauders exploram isso e temem isso. Uma linha de ponte pode restaurar um console tempo suficiente para precificar um lote de salvamento. Também pode drenar a última reserva que mantém vivo um beacon testemunha. Uma célula portátil pode abrir uma porta, acordar um circuito parasita ou fazer a Black Keel perguntar por que o registro de energia não combina mais com a rota alegada.
+Saqueadores usam energia emprestada porque ela pode transformar uma rota morta em rota paga. Uma linha ponte pode acordar um console tempo suficiente para avaliar um lote de salvamento. Uma célula portátil pode abrir um armário antes que a vedação seque. Um carregador pode rodar uma bomba pelos minutos necessários para atravessar um sump.
 
-Energia é evidência. Cada cabo movido é uma frase nessa evidência.
+A mesma ponte pode drenar a última reserva que alimenta uma baliza de prova, apagar o intervalo de tempo em um power log ou fazer a porta de uma sala segura falhar fechada com remédio dentro. Auditores da Black Keel gostam de energia emprestada quando ela aumenta valor recuperável. Não gostam quando o novo caminho de energia explica por que a antiga negativa deles era falsa.
 
-## 5. O Que O Jogador Aprende
+## 5. Salas de disjuntores
 
-O jogador aprende que energia não é estado binário. É uma ordem social entre máquinas.
+Uma sala de disjuntores é um mapa com marcas de queimadura.
 
-Um painel vivo pode ser confiado, taxado, contornado, faminto, restaurado ou deixado em paz. Cada ação muda o que o lugar consegue lembrar. Alimentar um arquivo pode matar uma bomba. Salvar uma bomba pode deixar uma mensagem sem ler. Restaurar luz pode tornar a sala mais segura para o jogador e mais visível para todo o resto que usa a escuridão.
+Rótulos da Deep Reach são úteis até deixarem de ser. Um disjuntor marcado `Hab Lighting B` pode alimentar uma bomba depois de três remendos de emergência. Uma alavanca coberta de fita pode esconder uma alimentação cruzada improvisada de suporte de vida. Um disjuntor limpo em uma sala suja geralmente significa que alguém tocou nele depois do alagamento. Um disjuntor quente em anexo frio merece atenção antes da porta ao lado.
 
-Bom trabalho de energia não é deixar tudo claro. É decidir qual verdade merece energia primeiro. O melhor Marauder não é quem carrega a maior célula, mas quem entende o que a sala vinha sacrificando para manter uma luz verde viva.
+Gravações de saqueadores preferem fatos rápidos de verificar: posição da alavanca, temperatura do barramento, sal na dobradiça, cheiro no contator, quais cargas piscam quando as garras da célula mordem. Explicações longas matam gente em salas de disjuntores. Rótulos curtos mantêm mãos mais honestas.
 
-Em HECTON-8, escuridão não é vazio e luz não é misericórdia. Ambas são contabilidade. O jogador sobrevive aprendendo a ler a conta antes de pagá-la.
+A melhor nota não é `safe`. A melhor nota é `alimenta trava da clínica, desarma a 11 A, não fazer ponte durante ciclo da bomba`.
+
+## 6. Energia como prova
+
+Registros de energia podem provar sequência quando salas mentem.
+
+Um disparo de disjuntor pode mostrar que uma porta foi aberta depois de uma evacuação declarada. Uma curva de carga pode mostrar que uma célula portátil foi conectada no lado errado de um lacre de custódia. Um log de brownout pode mostrar que a refrigeração sobreviveu tempo bastante para a amostra manter valor. Uma falta de queda pode mostrar que alguém editou o arquivo ou o alimentou por uma linha não listada.
+
+Energia também cria responsabilidade. Uma equipe que restaura luz pode se revelar em um log de receptor. Uma equipe que mantém uma bomba viva pode destruir um registro de terminal. Uma equipe que rouba uma célula pode transformar uma sala segura silenciosa em uma morta e deixar a fatura no rastro de tensão.
+
+Cada cabo movido muda a história que a sala pode provar.
+
+## 7. Regra de campo
+
+Antes de confiar na luz, encontre a carga dela.
+
+Antes de fazer ponte de energia, diga o que perderá energia.
+
+Antes de dar partida a frio em uma sala, acorde os instrumentos que podem dizer quando parar.
+
+Em HECTON-8, escuridão não prova vazio e luz não prova segurança. Ambas são estados de energia com donos, custos e registros. Não sobrevivem as equipes que carregam as maiores células. Sobrevivem as que sabem qual disjuntor fará a sala contar a mentira menos cara.

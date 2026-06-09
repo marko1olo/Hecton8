@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Quarantine Release Hold
 
-The hold record does not make quarantine evil. It makes timing visible. Deep Reach could name uncertainty, delay release, preserve insurance position and keep the worker inside the zone long enough for the route to die.
+Contamination is real on HECTON-8. Pressure exposure, brine chemistry and Atlas-compatible growth can make a careless rescue lethal. The hold plate shows how that real danger became cover. Deep Reach invoked quarantine after the exit route locked, accepted recoverable asset mass, and kept the worker release below the line.
 
 ## Scanner
 
-Quarantine hold plate. Protection language appears after the exit route is already locked.
+Hold plate recovered. Contamination review starts after the exit route is already locked and worker release remains below asset recovery.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
+RELEASE GATE // BIO-PRESSURE UNCERTAIN. Hold until board confirmation. Asset mass accepted into recovery queue before worker release. Insurance ping active.
 
 ## Audio
 
-Quarantine can save a body. It can also make a body wait until it becomes paperwork.
+Quarantine bought the company time before it saved anyone.
 
 ## Field Note
 
-Marauder note: protection is not proven by the word protection. Check the clock.
+Marauder note: protection is a clock, not a word. Check when it starts.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/en_US. -->

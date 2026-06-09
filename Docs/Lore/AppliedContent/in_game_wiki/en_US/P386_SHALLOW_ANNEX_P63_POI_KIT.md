@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shallow Annex P-63 POI Kit"
+title: "Shallow Annex P-63 Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Shallow Annex P-63 POI Kit
+# Shallow Annex P-63 Evidence Kit
 
-Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Shallow Annex P-63 is the first place where survival procedure and liability evidence share the same table. The operator restores a pump, seals a pocket, reads an accident packet, and finds a route notice that does not match the damage outside.
 
 ## Scanner
 
-POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+POI evidence kit: P-63 holds a working shelter pocket, a pump repair, and the first official contradiction.
 
 ## Terminal
 
-P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet, sealed route notice, dry locker, manual override clamp.
 
 ## Audio
 
@@ -35,6 +35,6 @@ First room with air. First room with a lie.
 
 ## Field Note
 
-POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Marauder note: keep the pump running before reading the packet. A dead shelter makes bad evidence.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/en_US. -->

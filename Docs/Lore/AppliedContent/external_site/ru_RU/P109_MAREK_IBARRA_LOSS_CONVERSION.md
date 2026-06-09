@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marek Ibarra: loss conversion"
+title: "Марек Ибарра: конверсия убытков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra: loss conversion
+# Марек Ибарра: конверсия убытков
 
-Marek Ibarra: loss conversion показывает путь посткатастрофной отмывки Deep Reach: insurance language, unresolved status и body-ledger ambiguity вместо публичной ответственности.
+«Марек Ибарра: конверсия убытков» — о втором исчезновении колонии. Первое было физическим: двери давления, затопленные маршруты, невосстановленные тела. Второе было административным: рабочий становился нерешенным классом нагрузки.
 
-## Scanner
+Таблица Ибарры использует технический страховой язык как оружие. Состояние давления, состояние загрязнения, payroll-статус и доказательство опеки решают, станет человек претензией, задержкой или категорией, которую можно держать открытой бесконечно. Жестокость не в речи. Она в таблице, которая остается открытой, потому что открытое дешевле.
 
-Adjuster table. M. Ibarra превратил пропавших работников в unresolved load classes.
-
-## Terminal
-
-IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
-
-## Audio
-
-Пропавший человек стал pending category. Так было дешевле.
-
-## Field Note
-
-Язык страховки должен быть холоднее выстрелов.
+Статья поддерживает evidence loop: имена, метки и записи спальных отсеков важны, потому что могут заставить систему перестать считать мертвого рабочего нерешенным грузом.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/ru_RU. -->

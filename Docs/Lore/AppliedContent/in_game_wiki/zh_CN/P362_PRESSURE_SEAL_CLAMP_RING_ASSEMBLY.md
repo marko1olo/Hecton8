@@ -19,22 +19,26 @@ localization_flags: 1
 
 # 压力密封夹环组件
 
-压力密封解释了为什么维修必须继续向更深处推进。把水挡在舱室外的材料，在接受错误密封链时，也会把胶囊粘死在沉船结构上。
+压力密封夹环是修理不再只是求生的地方。同一种把水挡在 safe room 外的材料，如果跨过 separation seam，就会困住 ascent capsule。浅层补片只需要保住舱室。Launch-rated seal 必须保压、吸收 crush，然后在 impulse 下干净释放。
+
+HECTON-8 让这件事变得麻烦，因为 Atlas-grown sealant 确实有用。它追随泄漏、填补裂缝，保住本该进水的 habitat volume。但它不是 flight seal。如果 sealant map 长过 clamp ring seat 或 pressure-glass 边缘，胶囊可以通过 static pressure test，却在 charge 点火时无法分离。
+
+组件需要 deep-rated metal、已知 crush history、干净 glass seat，以及在 launch boundary 前结束的 sealant map。有用的修理必须从有用的 escape 上切回来。留下错误补片的 Marauder，可能造出一只保持干燥直到必须移动那一刻的胶囊。
 
 ## Scanner
 
-夹环伤痕。升空套筒靠耗掉本该带它回家的密封件，才活过撞击。
+夹环座 // 撞击划痕、浅层补片残留、密封剂跨过 separation seam。舱室压力可能保持；launch impulse 会撕开错误层。
 
 ## Terminal
 
-SEAL CERT: shallow patch 只保持舱室压力。Ascent seal 需要 deep-rated clamp ring、pressure-glass seat、shell-sealant map 和已验证 Deep Reach profile。Atlas-grown sealant 可能保住 habitat，同时阻断干净分离。
+SEAL CERT：shallow patch 仅限 compartment pressure。Ascent seal 需要 deep-rated clamp ring、pressure-glass seat、shell-sealant map 和已验证 Deep Reach crush profile。拒绝跨 separation seam 的 sealant growth。
 
 ## Audio
 
-有用的密封件活在错误方向。
+补片保住房间。它不会放走胶囊。
 
 ## Field Note
 
-安全室补丁能买来一小时空气。它撑不住发射冲量。
+房间补片可以买到一段空气。上升密封必须受压、释放，并让胶囊外皮干净到足以承受下一次 burn。
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/zh_CN. -->

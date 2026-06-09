@@ -124,12 +124,14 @@ namespace Hecton8.UI
         {
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            ClearRuntimeBindings();
         }
 
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            ClearRuntimeBindings();
         }
 
         // ----------------------------------------------------------
@@ -279,7 +281,7 @@ namespace Hecton8.UI
             _nextSurvivalResolveFrame = frame + SurvivalResolveRetryFrames;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null && playerContext.SurvivalSystem != null)
+            if (playerContext != null && playerContext.IsInitialized && playerContext.SurvivalSystem != null)
             {
                 _survivalSystem = playerContext.SurvivalSystem;
                 return;
@@ -339,7 +341,14 @@ namespace Hecton8.UI
         private void ApplyCachedPlayerContext()
         {
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            _survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            _survivalSystem = playerContext != null && playerContext.IsInitialized ? playerContext.SurvivalSystem : null;
+            _nextSurvivalResolveFrame = 0;
+        }
+
+        private void ClearRuntimeBindings()
+        {
+            _cachedPlayerContext = null;
+            _survivalSystem = null;
             _nextSurvivalResolveFrame = 0;
         }
 

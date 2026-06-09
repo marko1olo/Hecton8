@@ -19,6 +19,14 @@ localization_flags: 1
 
 # 殖民地与工人
 
-殖民地与工人集群防止HECTON-8变成空房间地图。Deep Reach的官方版本把人塞进损失类别，幸存记录却通过工作保留他们：pump chief留在pressure board里，relay operator留在witness trays里，brine crew留在盐路与ration ledgers里，triage technician留在repair tags里，forge shift留在没人来得及隐藏的rejects里。这些不是主角的家庭钩子，而是劳动证据。Marauder要读懂门为什么保持开启，泵为什么重启太晚，以及为什么一个小name tag会比干净的loss summary更有力。
+殖民地与工人这一线索，是为了不让HECTON-8变成一片漂亮却无名的空房间。Deep Reach把灾难写成storm、collapse、failed autonomy、Atlas rescue和lost data。这些词有用，因为它们压缩责任。幸存的worker records做相反的事。它们把名字继续钉在决定上。
+
+一名pump chief通过一块本该复位却没有复位的pressure board仍然可见。一名relay hand留在一盘witness tags里，那些标签在线路失明前被拔下。brine crew在route stamps、ration ledgers和被盐烧过的手套里留下形状。triage technician出现在repair tag上，那张标签说明谁被允许为陌生人花掉氧气。vent-forge operator活在rejected parts里；如果loss report真的干净，那些零件本该被藏起来。
+
+所以工人集群拒绝廉价的family hook。HECTON-8不需要给主角安排秘密父母、失踪兄弟或煽情照片，殖民地也可以有人味。门因为pump card上的名字而一直开着，换班改变了死在走廊里的人，签名把quarantine delay从safety推成liability，这些时候，人就变得可读。
+
+Marauder把人读成pressure evidence。好的dossier首先要回答实用问题：这个工人拥有、延迟、修理、拒绝、伪造或保护了什么？答案清楚之后，情绪会自己到来，不需要乞求玩家同情。
+
+在海水进入前，殖民地并不是空的。它充满日常、怨气、能力、shortcut、恐惧和职业骄傲。留下的记录不是纪念牌。它们仍是工作文件，其中一些仍然能够指控。
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/zh_CN. -->

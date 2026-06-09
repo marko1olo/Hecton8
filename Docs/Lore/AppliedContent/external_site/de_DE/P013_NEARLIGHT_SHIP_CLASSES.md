@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Schiffsklassen nahe Lichtgeschwindigkeit"
+title: "Nearlight-Schiffsklassen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Schiffsklassen nahe Lichtgeschwindigkeit
+# Nearlight-Schiffsklassen
 
-HECTON-8 braucht kein FTL, um groß zu wirken. Proben sind billig genug zum Verlieren, Seed-Schiffe tragen Anweisungen, Atlas-Träger tragen teure Masse.
+Ein Nearlight-Schiff in HECTON-8 ist kein Wundertriebwerk im Rumpf. Es ist das sichtbare Ende einer Routenökonomie. Beamarrays geben Energie aus, bevor das Fahrzeug geht. Pellet-Lanes füttern Reaktionsmasse mit brutaler Timingdisziplin. Fusion-elektrische Kehlen, Schildeis, Radiatoren und Kryosysteme verhindern, dass die Nutzlast ein heller Fehler wird. Magsails, Aerobrake-Häute und Receiverfenster entscheiden, ob das Schiff stoppen darf.
 
-Ankunft ist so schwer wie Abflug. Geschwindigkeit muss durch Magsails, Gasriesen-Geometrie und Sicherheitsmargen wieder verschwinden. Darum kann der Claim interstellar sein, während der Spieler allein im Wasser bleibt.
+Darum ist die Klassentabelle nützlich. Needleprobes erklären, warum Aegir bekannt war, bevor es sicher war. Seed Ships erklären, warum Maschinen vor der Gemeinde ankamen. Atlas-Frachter erklären Schulden und Wartungskompromisse der Kolonie. Systemtender erklären Black Keels Grenzen: Es kann den Aegir-Claim bedienen, nicht die interstellare Entfernung umschreiben.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/de_DE. -->

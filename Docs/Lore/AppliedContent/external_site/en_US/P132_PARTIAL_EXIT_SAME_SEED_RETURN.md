@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Partial Exit: Same-Seed Return
 
-Partial Exit protects the long-form campaign from false closure. Black Keel can lift the operator for a limited window, patch the suit, log recovered packets and sell the pause as welfare. The world below does not roll over into a cleaner version.
+Partial Exit is a pressure valve for a long-form survival story. The contractor earns a pickup window, gets wounds sealed and equipment patched, and hears the rare sound of air not filtered through a failing suit. That relief is real, which is why the return hurts.
 
-When the player returns, the same seed is still there. The brine stair has the same trap, the same relay has the same bad angle, and the same evidence remains dangerous. This ending gives relief without absolution: air in the lungs, more debt in the contract, and no erasure of what was found.
+Black Keel logs the pause as welfare and lien maintenance. The same world seed remains active, the same evidence is unresolved, and the same ocean waits with all discovered routes intact. Partial Exit is not mercy from the system. It is maintenance of an asset still expected to descend.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/en_US. -->

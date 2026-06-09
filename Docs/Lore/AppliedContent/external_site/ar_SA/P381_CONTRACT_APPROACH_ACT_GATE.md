@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Contract Approach Act Gate"
+title: "بوابة الاقتراب التعاقدي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Contract Approach Act Gate
+# بوابة الاقتراب التعاقدي
 
-AR LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+تحدد مرحلة الاقتراب التعاقدي ضغط الحملة دون أن تتظاهر بأن المحيط شرح نفسه. لوحة Black Keel تعين نقل المطالبة، توقيت bathydrop، تعرض الرهن ودين الأدوات قبل أن يصل المشغل إلى الماء المفتوح. يبدأ المسار كعمل مدفوع بشروط سيئة.
 
-## Scanner
-
-AR LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-AR LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-AR LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-AR LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+التفصيل المهم هو بقايا Deep Reach في ملف المشغل. ليس رابط عائلة ولا لقبا بطوليا. إنه تطابق إجرائي: لغة وصول، اختصارات صيانة، وعادات بنية إخلاء ما زالت تناسب أنظمة مستعمرة مهجورة. البوابة الأولى تقول إن الهبوط عمل؛ السطر الثاني يقول إن لهذا العمل ملفا بالفعل.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/ar_SA. -->

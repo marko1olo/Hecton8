@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Feldführer zur Dichteleiter der Soleschluchten"
+title: "Führer zur Dichteleiter der Solecanyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feldführer zur Dichteleiter der Soleschluchten
+# Führer zur Dichteleiter der Solecanyons
 
-Der Feldführer zur Dichteleiter der Soleschluchten behandelt HECTON-8s Gräben als Ingenieurgeografie: Der Weg nach unten besteht aus Dichte, nicht aus Kulisse.
+Ein Solecanyon sieht wie leeres Wasser aus, bis der Rand einer Lampe knickt, ein Messgerät zögert oder ein fallengelassenes Werkzeug dort stoppt, wo es nicht stoppen sollte. HECTON-8s dichte Schichten machen Tiefe zu Architektur. Frischwasser, Salzlast, kalter Sickerrest, Tonschlamm und chemischer Film stapeln sich zu unsichtbaren Böden, die eine Wolke von Mineralflocken tragen oder ein Drohnensignal ganz verschlucken können.
 
-## Scanner
-
-Brine ladder erkannt: geschichtete Dichte, falscher Boden, Sonarbiegung. Folge den Kanten; offenes Wasser lügt hier.
-
-## Terminal
-
-FIELD GUIDE: brine-Schluchten verbergen pressure shelves, current ledges, resource pockets und scanner false positives. Hull rating und density transition entscheiden, welche Leiste Route ist und welche Sturz.
-
-## Audio
-
-Eine Schlucht ist eine Treppe, wenn dein Rumpf jede Stufe bezahlen kann.
-
-## Field Note
-
-Nutze vane-Schatten wie Stufen. Ein leerer Messwert in brine ist kein leerer Raum; es ist das Instrument, das den Streit verliert.
+Der Canyon lehrt Überleben, bevor er Profit lehrt. Folge den Schatten der Leitschaufeln. Achte auf die Schlammlinie. In Sole verdient ein stilles Instrument weniger Vertrauen als außerhalb. Ressourcenblasen sammeln sich, wo Dichte den Fall nützlicher Materie bremst, doch dieselben Taschen verbergen stehendes Gas, tote Sensoren und Drucksprünge, die billigem Rumpf wehtun. Hinabsteigen heißt nie nur tiefer gehen. Es heißt, Abkommen zwischen Flüssigkeiten zu durchqueren.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/de_DE. -->

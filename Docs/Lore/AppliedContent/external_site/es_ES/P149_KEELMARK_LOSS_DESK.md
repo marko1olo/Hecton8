@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Mesa de pérdidas Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Mesa de pérdidas Keelmark
 
-ES LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+La Mesa de pérdidas Keelmark no es la mano que inunda un pasillo. Es la mano que decide cómo entra ese pasillo en los libros. Por eso importa. Una aseguradora puede hacer que un asesinato parezca clima si las categorías están listas a tiempo.
 
-## Scanner
-
-ES LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-ES LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-ES LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-ES LOC HOLD: A loss category is a grave with better stationery.
+Las tablas Keelmark enseñan a Deep Reach qué lenguaje sobrevivirá la investigación. El equipo se deprecia. El hábitat se deteriora. El trabajo se suspende. Los testigos quedan expuestos, comprometidos o irrecuperables. Los nombres pesan más, así que la mesa los evita hasta que la obligan.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/es_ES. -->

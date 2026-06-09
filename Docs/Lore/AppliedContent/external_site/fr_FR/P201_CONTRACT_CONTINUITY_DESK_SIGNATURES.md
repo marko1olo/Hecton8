@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Contract Continuity Desk Signatures"
+title: "Signatures du bureau de continuité contractuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Contract Continuity Desk Signatures
+# Signatures du bureau de continuité contractuelle
 
-FR LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Les signatures du bureau de continuité contractuelle exposent la couche de paperasse sous le contrat d'ouverture de HECTON-8. L'article donne au système contractuel des noms, des tampons et des fonctions pour que le joueur voie comment une mission de sauvetage matériel devient une négociation de garde. Le bureau d'Edda Malk n'a pas besoin de connaître tout le crime de la colonie pour rendre le présent dangereux. Il lui suffit de fusionner privilèges, dette d'oxygène et clauses de récupération dans le bon ordre. Quand l'opérateur signe, l'océan n'est plus la seule pression hors de la coque ; le contrat serre déjà.
 
 ## Scanner
 
-FR LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Le piège du contrat d'ouverture est bâti par signatures basses : fusion de privilèges, avenant oxygène, risque de liste noire et retenue de charge utile.
 
 ## Terminal
 
-FR LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED : Edda Malk, Contract Continuity Desk. Fusionner les privilèges Aegir Reclamation Pool avec les clauses de récupération Black Keel. Joindre avenant crédit oxygène, avis de risque liste noire et retenue de garde de charge utile. Escalade inutile si l'opérateur accepte.
 
 ## Audio
 
-FR LOC HOLD: Nobody says trap. They say continuity.
+Une signature peut devenir une porte de pression quand chaque clause se verrouille après elle.
 
 ## Field Note
 
-FR LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Personne ne tamponne un piège. On tamponne la continuité.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/fr_FR. -->

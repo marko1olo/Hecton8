@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Brine Canyon Liability Act"
+title: "Portão de responsabilidade do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Brine Canyon Liability Act
+# Portão de responsabilidade do cânion de salmoura
 
-PT LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+O cânion de salmoura transforma tempo em prova. Sensores, relógios, estados de fila e placas de rota quebradas mostram que a inundação foi real e o risco aceito também foi real. O operador para de coletar rumores e começa a carregar uma cadeia de documentos capaz de sobreviver à revisão de receptor.
 
 ## Scanner
 
-PT LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Portão de rota: cânion de salmoura. Camadas de densidade, relógios danificados e margens aceitas viram prova física de responsabilidade.
 
 ## Terminal
 
-PT LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+ROTA DE CAMPANHA // CÂNION DE SALMOURA. Exige: comparar rastro de margem, fila de evacuação, fratura de rota e relógio de pressão. Evento Grande Maré confirmado. Exceção comercial e ponderação Atlas seguem disputadas.
 
 ## Audio
 
-PT LOC HOLD: The ocean did not lie. The timetable did.
+O oceano quebrou a parede. O cronograma quebrou as pessoas.
 
 ## Field Note
 
-PT LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Nota de saqueador: não discuta com a maré. Discuta com o timestamp que alguém pagou para remover.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/pt_BR. -->

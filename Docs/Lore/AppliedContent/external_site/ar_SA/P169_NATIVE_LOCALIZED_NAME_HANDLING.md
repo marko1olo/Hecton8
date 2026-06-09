@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "بروتوكول توطين الأسماء الأصلي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# بروتوكول توطين الأسماء الأصلي
 
-AR LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+يعرف البروتوكول كيف تحفظ HECTON-8 هوية العمال عبر 15 لغة. الأسماء وشرائط الشارة والنسخ القصيرة تؤلف لكل locale؛ الوظائف والأقسام والورديات والمسارات والملصقات تترجم منفصلة. الاسم كائن دليل، لا سلسلة live يعاد تركيبها.
 
 ## Scanner
 
-AR LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // هذا الشريط مؤلف، لا مترجم مباشرة. ينجو الشخص داخل الواجهة فقط عندما تتوقف الواجهة عن الارتجال.
 
 ## Terminal
 
-AR LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+توطين الأسماء // الأسماء الشخصية والشرائط القصيرة وأجزاء الشارة baked لكل locale. الوظائف والأقسام وتصاريح المسار وملاحظات الوردية تترجم حولها. تحتاج RTL وCJK إلى صيغ قصيرة مؤلفة، كسور أسطر آمنة، ومنع إعادة تركيب live في الماسح وواجهة الخزان وال terminals والويكي الخارجي.
 
 ## Audio
 
-AR LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+اسم يكسر الواجهة ليس احتراما. إنه حذف العامل مرة ثانية.
 
 ## Field Note
 
-AR LOC HOLD: No live name translation. Preserve identity through baked strings.
+لا تسمح لـ runtime fallback بإعادة تسمية عامل ميت. الاسم المكسور شكل آخر من المحو.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/ar_SA. -->

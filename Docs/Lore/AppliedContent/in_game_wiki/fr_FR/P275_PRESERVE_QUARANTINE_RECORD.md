@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Preserve Quarantine Record"
+title: "Enregistrement de préservation-quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Preserve Quarantine Record
+# Enregistrement de préservation-quarantaine
 
-FR LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+L'Enregistrement de préservation-quarantaine est l'ordre de maintien du meilleur final endommagé possible. La charge reste hors garde directe Deep Reach, les coordonnées restent aveugles et un reçu partiel maintient une pression extérieure. Atlas continue de respirer par logique de réparation endommagée, protégeant écologie de pression et vie de maintenance survivante tout en laissant noms ouvriers, responsabilité du bassin et dépôts salvage futurs non résolus.
 
 ## Scanner
 
-FR LOC HOLD: Payload withheld. Consequence deferred.
+ENREGISTREMENT DE PRÉSERVATION-QUARANTAINE // Charge retenue hors Deep Reach. Atlas reste endommagé mais actif ; ordre de maintien écologique bloque transfert de propriété net.
 
 ## Terminal
 
-FR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+ENREGISTREMENT DE FIN / PRÉSERVATION-QUARANTAINE
+Charge : retenue hors garde directe Deep Reach.
+Ordre : maintien écologique, coordonnées aveugles, reçu public partiel.
+État Atlas : logique de réparation endommagée active.
+Protégé : écologie de pression et vie de maintenance survivante.
+Non résolu : noms ouvriers, responsabilité du bassin, dépôts salvage futurs.
+Perte connue : préserver ne devient pas innocence.
 
 ## Audio
 
-FR LOC HOLD: Leaving something alive is not the same as saving it.
+Tu l'as laissé vivant. Ce n'est pas le sauver.
 
 ## Field Note
 
-FR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Garder le paquet protège certains systèmes vivants et laisse respirer l'autorité brisée. Surveille la file des demandes aveugles.
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/fr_FR. -->

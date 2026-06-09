@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Drabina fałszywych zakończeń"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Drabina fałszywych zakończeń
 
-PL LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+Drabina fałszywych zakończeń utrzymuje zakres replayu czytelny: kilka wyjść, cztery duże niepełne rodziny i basen Atlas jako środek ciężkości.
 
 ## Scanner
 
-PL LOC HOLD: Four major false families before the deep Atlas resolutions.
+DRABINA ZAKOŃCZEŃ // Wypłata materialna, częściowy powrót, korporacyjne przejęcie lub kwarantanna, wyciek publicznego ledger. Cztery fałszywe rodziny przed głębokimi odpowiedziami Atlas.
 
 ## Terminal
 
-PL LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+ZAKRES DOSSIER: oznacz wiele wyjść, ale grupuj je w czytelne rodziny. Wypłata materialna, częściowe wyjście/powrót, przejęcie/kwarantanna korpo i wyciek publicznego ledger leżą poniżej rozwiązań payload w basenie Atlas.
 
 ## Audio
 
-PL LOC HOLD: The dossier can mark many exits before it marks an answer.
+Dossier może oznaczyć wyjścia, zanim oznaczy odpowiedź.
 
 ## Field Note
 
-PL LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Dość zakończeń, by nagrodzić style. Nie dość, by prawda była tania.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/pl_PL. -->

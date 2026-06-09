@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de Espinha de Relé Acústico"
+title: "Conjunto de espinha de relé acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de Espinha de Relé Acústico
+# Conjunto de espinha de relé acústico
 
-O Conjunto de Espinha de Relé Acústico ancora o escape loop de HECTON-8 em engenharia de salvage: o som precisa sobreviver à pressão, geometria de rota e custody antes que a órbita acredite nele.
+O conjunto de espinha de relé acústico é a primeira peça da cadeia de fuga de HECTON-8 que transforma sobrevivência em sinal mensurável. Não é mastro de rádio nem oração de socorro. É uma pressure-code spine feita de nervuras cerâmicas, cable jacket, ballast floats e pinger timing.
 
-## Scanner
+O problema é confiança. A água de HECTON-8 carrega ruído de impacto, batida de bomba, brine scatter e ecos de rota. Black Keel recebe mais som do que pode aceitar com segurança. Uma cápsula que quer recovery precisa provar que seu tap pertence a uma rota, um relógio e uma custody chain, não a um painel solto batendo em uma moldura inundada.
 
-Espinha acústica quebrada. Ela consegue bater pressure-code pela água; a órbita ainda ouve isso como custody noise danificado.
-
-## Terminal
-
-ASCENT RELAY: restaurar espinha acústica de baixa banda antes da recovery window. High-gain mast perdida. Emergency buoy pouco confiável. Receptor Black Keel aceita pressure-code só após route proof.
-
-## Audio
-
-Se o Keel nos ouvir, vai ouvir uma ferida batendo num cano.
-
-## Field Note
-
-O primeiro chamado da cápsula não é voz. São nervuras cerâmicas, pele de cabo, pinger floats e disciplina de timing suficiente para o oceano repetir você direito.
+Reparar a espinha dá à cápsula de ascensão uma voz estreita: coordenadas, survival state, clock match, checksum. Isso basta para iniciar uma conversa de recovery, mas não garante resgate. O oceano ainda pode dobrar o sinal. O carrier ainda pode tratar o packet como damaged claim noise. O componente consegue a primeira escuta; não vence o caso.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/pt_BR. -->

@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Livro Black Keel
 
-Black Keel não é uma nave amiga. É um tender claim-pool que lê corpos, payloads, quarentena, massa de subida e risco de seguro como entradas do mesmo livro.
-
-Ela não precisa odiar o jogador. Pode responder com educação, aceitar um hash de socorro e negar coleta até os números mudarem.
+Black Keel não é uma nave amiga acima de HECTON-8. É um tender claim-pool: ferramenta, livro, portão de quarentena e máquina de seguro. Pode ouvir o jogador, rotear pacotes, calcular janelas e erguer massa. Também pode valorizar núcleo de evidência, amostra ou casco segurado acima da pessoa pedindo ajuda. Não é vilã; é confiável dentro do contrato e perigosa quando contrato é confundido com misericórdia.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/pt_BR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Équipes de quart, pas héros"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Équipes de quart, pas héros
 
-FR LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+Équipes de quart, pas héros est la règle d'écriture humaine de HECTON-8 : les travailleurs restent en mémoire par le métier, la fatigue, les habitudes et les échecs procéduraux.
 
 ## Scanner
 
-FR LOC HOLD: The colony becomes human through schedules, not speeches.
+COUCHE HUMAINE // La colonie devient réelle par les horaires, les outils usés, les retours manqués et les noms sur les tableaux. Pas par les discours.
 
 ## Terminal
 
-FR LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+RÈGLE D'ÉCRITURE : noter les travailleurs comme techniciens de pompe, médecins, commis de route, plongeurs, cuisiniers, opérateurs de fabricateur et superviseurs épuisés. Un planning avec un retour manquant blesse plus qu'un monument.
 
 ## Audio
 
-FR LOC HOLD: They were not symbols. They were late for shift.
+Ils n'étaient pas des symboles. Ils étaient en retard pour le quart.
 
 ## Field Note
 
-FR LOC HOLD: People are more believable as workers than as memorial statues.
+Les gens sont plus crédibles comme travailleurs que comme statues mémorielles.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/fr_FR. -->

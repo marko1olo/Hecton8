@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Gids voor verdronken korstlagen
 
-De Gids voor verdronken korstlagen laat HECTON-8's zeebodem gebouwd en gebroken voelen: terrain, salvage routes en mineraalmonsters komen allemaal uit dezelfde gelaagde drukgeschiedenis.
+HECTON-8s korst gedraagt zich niet als onaangeroerde zeebodem. De kolonie sneed haar, verhitte haar, verzegelde haar, belastte haar met drukglas en liet haar daarna achter aan een oceaan die bleef werken nadat de loonlijst stopte. Eén wand kan gereedschapssporen van een serviceboring tonen, een bleke plank van ijsinstorting, een groen-zwarte mineraalband uit seep-stroom en een haarfijne naad waar Atlas later een pad vond.
 
-## Scanner
-
-Overstroomde lagen tonen oude snijsporen, pressure-glass-naden en mineraalbanden die niet twee keer dezelfde kant op falen.
-
-## Terminal
-
-FIELD GUIDE: HECTON-8's verdronken korst is gestapelde nederzettingssteen, ingestort ijsgeheugen, pressure glass en extraction scars onder bewegende brine. Breuklijnen gaan boven schone oppervlakken.
-
-## Audio
-
-De kaart is geen terrein. Het is een stapel verdrinkingen.
-
-## Field Note
-
-Als een band hol klinkt, vertrouw het vlakke gezicht niet. Markeer de breuk, neem het monster, laat de wand dragen.
+Voor een salvageploeg zijn lagen navigatie. Een vlak oppervlak kan hol klinken. Een mooie mineraalrand kan het enige zijn dat een servicecanyon nog vasthoudt. Goed routelezen betekent het monster nemen zonder de wand te leren vallen. Daarom telt de verdronken korst in het veld: de bodem is geen achtergrond. Hij is archief, weg en soms val.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/nl_NL. -->

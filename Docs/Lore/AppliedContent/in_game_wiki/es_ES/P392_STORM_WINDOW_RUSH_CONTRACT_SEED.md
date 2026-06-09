@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Storm Window Rush Contract Seed"
+title: "Semilla de contrato de prisa por ventana de tormenta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Storm Window Rush Contract Seed
+# Semilla de contrato de prisa por ventana de tormenta
 
-ES LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Prisa por Ventana de Tormenta es una familia de contratos donde clima y órbita son los primeros sistemas de presión. La ruta no añade poder heredado; acorta tiempo de trabajo seguro, estrecha geometría de recuperación y castiga antes las reparaciones sucias.
 
 ## Scanner
 
-ES LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Semilla de contrato: ventana de prisa. Pago mayor ligado a cobertura de tormenta que cierra, horario de obturador orbital y menor margen de reparación.
 
 ## Terminal
 
-ES LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: ventana de tormenta comprimida, obturador de relé orbital hostil, techo de pago elevado, llamada bathydrop adelantada, tolerancia de reparación reducida.
 
 ## Audio
 
-ES LOC HOLD: This contract pays because it hates waiting.
+Este contrato paga porque la ventana se cierra.
 
 ## Field Note
 
-ES LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Nota de merodeador: la paga de prisa parece mayor porque el contrato cobra cada minuto dos veces.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/es_ES. -->

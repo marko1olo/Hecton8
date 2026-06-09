@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Konversi Kerugian untuk Kontinuitas Claim"
+title: "Konversi Kerugian Kontinuitas Klaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Konversi Kerugian untuk Kontinuitas Claim
+# Konversi Kerugian Kontinuitas Klaim
 
-Tautan terakhir dalam kebohongan Deep Reach bukan file penutupan dramatis. Ia adalah konversi akuntansi yang tahu cara bertahan. Ledger menerima bahwa orang hilang, modul rusak, dan rute kompromi, lalu memindahkan setiap fakta ke kategori yang dapat diproses sistem claim. Ketiadaan pekerja menjadi unrecoverable loss. Bukti menjadi material di bawah custody. Kargo yang tersisa menjadi recoverable value. Claim itu sendiri tetap continuous, artinya kepemilikan bisa hidup lebih lama dari koloni. Di sini HECTON-8 berubah dari catatan kecelakaan menjadi mesin moral. Pemain yang membawa ledger ke atas bisa membuka kematian, menjual bukti, menguburnya, atau mengarahkannya ulang. Dokumen itu berharga karena korporasi sudah melatih pasar untuk menilainya.
+Konversi kerugian adalah dokumen paling sunyi dalam rantai dan paling sulit dimaafkan. Ia tidak berdebat tentang Pasang Besar, antrean evakuasi, pembobotan Atlas, atau karantina. Ia menerima kerusakan yang terjadi dan menyortirnya ke kolom yang dapat bergerak melalui penerima, asuransi, dan dewan kustodi.
 
-## Scanner
-
-Stempel meja kerugian dipulihkan. Ledger bertahan lebih baik daripada pekerja yang ia beri nama baru.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-Di sinilah manusia menjadi kolom bersih.
-
-## Field Note
-
-Catatan Marauder: ledger bisa mengingat orang mati dan tetap membelanjakan mereka.
+Penyortiran itu adalah jalan keluar Deep Reach. Tenaga kerja biologis menjadi kerugian tidak dapat dipulihkan. Material tetap dapat dipulihkan. Kustodi bukti tetap aktif karena klaim masih bernilai. Orang yang membawa paket ini berbahaya karena paket itu mengikat setiap keputusan sebelumnya ke baris buku besar yang sama. Perusahaan tidak hanya bertahan dari bencana; ia membangun jalur kepemilikan bersih melewati orang mati.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/id_ID. -->

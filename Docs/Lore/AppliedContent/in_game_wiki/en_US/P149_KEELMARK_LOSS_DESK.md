@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Keelmark Loss Desk
 
-Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark is the arithmetic room. It translates disaster into loss classes that can be insured, contested, sold, or ignored. Its danger is not theatrical cruelty; it is the calm ability to make a person disappear inside a category called unrecoverable exposure.
 
 ## Scanner
 
-Insurance did not hide the dead. It renamed them until nobody had to recover them.
+Loss table found: one column for equipment, one for labor, one for inconvenient testimony.
 
 ## Terminal
 
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+KEELMARK LOSS DESK: insurer-side triage assigns cargo loss, habitat loss, labor impairment, witness exposure, and recoverable material class before any public statement names the dead.
 
 ## Audio
 
-The ledger is dry because the room was not.
+They counted the missing before they counted the names.
 
 ## Field Note
 
-A loss category is a grave with better stationery.
+A loss desk does not mourn. It decides which absence can be invoiced.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/en_US. -->

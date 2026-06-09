@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Marauder Correction Note Sample"
+title: "דגימת תיקון של בוזז"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Marauder Correction Note Sample
+# דגימת תיקון של בוזז
 
-HE LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+פתקי בוזזים הם משטחי ראיה חזקים ב-HECTON-8 מפני שהם מתווכחים עם המערכות הרשמיות בלי להפוך ללור יודע כל. הדגימה הזו מחזיקה את החשד דרך סימנים מעשיים: זמנים, אישורים, קטגוריה שגויה ועיכוב בתור. היא לא פותרת את התיק בשביל השחקן. היא מלמדת לקרוא שקר שהוגש כתחזוקה.
 
 ## Scanner
 
-HE LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+תיקון בעיפרון שמנוני על טופס תאונה: לא מזג אוויר, לא בהלה, אלא עיכוב אישור עם ספירת גופות.
 
 ## Terminal
 
-HE LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+פתק בוזז / סיבה רשמית: נדחתה / לפני תביעה לבדוק: תעודת משאבה, ספירת משמרת, קטגוריית גופות, סטיית שעון דלת, תור אישור חילוץ.
 
 ## Audio
 
-HE LOC HOLD: Someone else smelled the paperwork rot.
+מישהו הריח את הריקבון בניירת לפני שהחדר התייבש.
 
 ## Field Note
 
-HE LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+לא מזג אוויר. עיכוב אישור. לבדוק תעודת משאבה, ספירת משמרת, קטגוריית גופות. שעון הדלת מקדים את חותמת התביעה בשש דקות.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/he_IL. -->

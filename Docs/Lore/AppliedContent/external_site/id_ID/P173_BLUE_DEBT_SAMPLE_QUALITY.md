@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Blue Debt Sample Quality"
+title: "Kualitas Sampel Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Blue Debt Sample Quality
+# Kualitas Sampel Blue Debt
 
-ID LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+Kualitas Sampel Blue Debt mendefinisikan moral sumber daya HECTON-8. Sampel terbaik bukan sekadar lebih mahal. Mereka membawa rantai kustodi, sejarah tekanan, dan nilai bukti. Itu membuat salvage, crafting, perdagangan, dan ending berbicara dalam bahasa yang sama: apa yang kau angkat dari laut bisa membayar, menuduh seseorang, atau membuatmu lebih sulit dilepaskan.
 
 ## Scanner
 
-ID LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Kualitas Blue Debt adalah nilai, risiko, dan bukti dalam satu angka. Makin kaya sampelnya, makin sedikit ia berperilaku seperti loot.
 
 ## Terminal
 
-ID LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+KELAS KUALITAS / shard: kustodi rendah, dagang aman / casketed bloom: nilai berating tekanan / harmonic glass: bukti akustik dan minat tinggi Deep Reach / live-contaminated sample: prioritas bukti, penanganan tidak stabil / dead contaminated glass: bayaran rendah, bau legal kuat.
 
 ## Audio
 
-ID LOC HOLD: The more it is worth, the less it is only loot.
+Makin bernilai, makin bukan sekadar loot.
 
 ## Field Note
 
-ID LOC HOLD: Quality should affect payout, containment and ending pressure.
+Kualitas mengubah bayaran, biaya kontainmen, tekanan rute, dan daya tawar akhir. Shard bersih membayar; sampel hidup terkontaminasi membuat seseorang harus menjawab.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/id_ID. -->

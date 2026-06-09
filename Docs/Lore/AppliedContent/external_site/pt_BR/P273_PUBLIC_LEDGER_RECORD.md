@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Public Ledger Record"
+title: "Registro de livro público"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Public Ledger Record
+# Registro de livro público
 
-PT-BR LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Este registro de final acompanha o momento em que a prova sai da custódia privada. Os detalhes úteis são os campos do recibo: quem carimbou o pacote, quais coordenadas foram ocultas, qual nível de prova foi aceito e quanto tempo a Deep Reach tem antes do contrapacote.
 
 ## Scanner
 
-PT-BR LOC HOLD: Witness hash escaped claimant custody.
+REGISTRO DE LIVRO PÚBLICO // Hash de testemunha saiu da custódia privada pela rota de pacote Tau/Luyten. Nível de prova pública definido; atraso de resposta da Deep Reach anexado.
 
 ## Terminal
 
-PT-BR LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+REGISTRO DE FINAL / LIVRO PÚBLICO
+Rota: pacote Tau/Luyten atrasado.
+Carga: hash de testemunha, faixa de custódia, nível de prova com coordenadas ocultas, carimbo de tempo do receptor.
+Controle após retransmissor: cedido.
+Resposta da Deep Reach: contrapacote atrasado pelo recibo público.
+Perda conhecida: o remetente não escolhe o primeiro leitor nem a cadeia posterior de envio.
 
 ## Audio
 
-PT-BR LOC HOLD: Truth can leave your hands and still matter.
+O livro carimbou. Você não escolhe mais o primeiro leitor.
 
 ## Field Note
 
-PT-BR LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Se o recibo é público, o arquivo sobrevive porque sai das suas mãos. Confira a ocultação das coordenadas antes de comemorar o carimbo.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/pt_BR. -->

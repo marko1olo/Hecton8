@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistência do dossiê de saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistência do dossiê de saqueador
 
-PT LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+O dossiê de saqueador é a memória de campanha que sobrevive entre tentativas de salvamento. Ele mantém finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do que o jogador já publicou ou escondeu. Ele não carrega força do traje, pressão segura, salas limpas nem um oceano mais gentil. Conhecimento muda decisões. Não torna a profundidade inofensiva.
 
 ## Scanner
 
-PT-BR LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Carretel de dossiê. Você mantém conhecimento, não superpoderes.
 
 ## Terminal
 
-PT-BR LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+PERSISTÊNCIA DO DOSSIÊ: registros de finais, tipos de contrato descobertos, famílias de rumores, categorias de prova, avisos de rota e consequências do livro público retidos. Poder do equipamento, verdade do mundo e estado local de pressão reiniciam por seed.
 
 ## Audio
 
-PT-BR LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+A próxima tentativa começa com cicatrizes no arquivo, não músculos no traje.
 
 ## Field Note
 
-PT LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+O dossiê lembra provas e avisos; ele não torna a pressão indulgente.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/pt_BR. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Basin Payload Act"
+title: "Atlas Basin Payload Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Basin Payload Act
+# Atlas Basin Payload Gate
 
-The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+The basin gate is a receiver decision under pressure. The payload can sell coordinates, cut Atlas, preserve quarantine, publish a redacted ledger packet or stay local with no receipt. Every route changes custody, debt, ecology and proof access. None returns the basin to an untouched state.
 
 ## Scanner
 
-Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Route gate: Atlas basin. Final payload requires route, receiver, proof hash, ecology state, lien status and survival window.
 
 ## Terminal
 
-PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+CAMPAIGN ROUTE // ATLAS BASIN PAYLOAD. Resolve or refuse: coordinate sale, Atlas severance, quarantine escrow, public ledger, blind return. Receiver stamp changes custody. No clean claim state available.
 
 ## Audio
 
-The last question is not what happened. It is who you send it to.
+The last route question is who receives the packet.
 
 ## Field Note
 
-Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Marauder note: choose the receiver before the pack takes water. A perfect answer does not fit in this bag.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/en_US. -->

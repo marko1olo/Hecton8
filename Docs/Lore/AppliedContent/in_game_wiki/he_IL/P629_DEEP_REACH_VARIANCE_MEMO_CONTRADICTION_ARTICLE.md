@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "סתירת מזכר ה-variance של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# סתירת מזכר ה-variance של Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+מזכר variance אינו ראיה לבדו. הוא נעשה שימושי כשסימני חדר המשאבות, חותמות הזמן וחותמות accepted-margin סותרים את לשון המשרד הנקייה.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+תג סתירה // המזכר אומר variance. סימן המשאבה מראה התערבות ידנית מאוחרת.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // חדירת המים נשארת בתוך סבולת מנוהלת עד בדיקת return-action. תור תיקון מקומי רשאי לדחות לשון הסלמה לא קריטית.
 
 ## Audio
 
-Trust the room before the clean word.
+אף אחד לא כותב variance על קיר שעדיין מטפטף.
 
 ## Field Note
 
-Trust the wet room first.
+כשמילת משרד נקייה יותר מהחדר, האמן קודם לחדר.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/he_IL. -->

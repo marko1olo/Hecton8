@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Bewijskit Ondiep Annex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Shallow Annex P-63 POI Kit
+# Bewijskit Ondiep Annex P-63
 
-NL LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 werkt omdat het schuilplek en bewijs niet scheidt. De kamer geeft de operator lucht, een lenspomp, pakkingen, een pingerlijn en een snijcontact. Die onderdelen zijn eerst nuttig; het contract kan wachten, het water niet.
 
-## Scanner
-
-NL LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-NL LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-NL LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-NL LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Als de kamer stabiel is, krijgen dezelfde objecten ander gewicht. De verzegelde routemelding noemt sluiting onder gecontroleerde voorwaarden, terwijl de beschadigde pomp, opgelapte pakkingbak en nat ongevalspakket een hardere uitgang tonen. De eerste tegenspraak zit niet verstopt in een toespraak. Zij is vastgebout aan de plaats die de operator in leven hield.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/nl_NL. -->

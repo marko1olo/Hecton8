@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "圧力シールクランプリングアセンブリ"
+title: "圧力シールクランプリング組立"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 圧力シールクランプリングアセンブリ
+# 圧力シールクランプリング組立
 
-圧力シールクランプリングアセンブリは、カプセル修理をチェックリストではなく決断にする。deep-rated 金属、ガラス座面、Atlas bio-sealant は上昇路を救いも閉ざしもする。
+圧力シールクランプリング組立は、HECTON-8 の上昇鎖にある二つ目の硬い制限だ。音響スパインは軌道に聞かせることができる。だがクランプリングは、カプセルが沈んだ構造から物理的に離れられるかを決める。
 
-## Scanner
+失敗が信じられるのは、間違った修理が成功に見えるからだ。浅いシールは空気を保ち、漏れを止め、部屋を使えるままにする。同時にカプセルの separation seam を渡り、pressure-glass seat を汚し、launch impulse で離れるべき面に Atlas shell-sealant を残す。静圧試験は上昇試験ではない。
 
-クランプリングの傷跡。上昇スリーブは、本来帰還に使うはずのシールを使い切って衝撃を生き延びた。
-
-## Terminal
-
-SEAL CERT: shallow patch は区画圧のみ保持。Ascent seal には deep-rated clamp ring、pressure-glass seat、shell-sealant map、検証済み Deep Reach profile が必要。Atlas-grown sealant は habitat を保護しつつ、清潔な分離を妨げる可能性がある。
-
-## Audio
-
-役に立つシールは、間違った向きに生きている。
-
-## Field Note
-
-安全室のパッチは一時間の空気を買える。発射衝撃は保持できない。
+この部品には deep-rated metal、検証済み crush profile、清潔な seat geometry、意図的な端を持つ sealant map がいる。カプセルの漏れを止めるだけでは足りない。修理は、いつ放すかを知らなければならない。
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ja_JP. -->

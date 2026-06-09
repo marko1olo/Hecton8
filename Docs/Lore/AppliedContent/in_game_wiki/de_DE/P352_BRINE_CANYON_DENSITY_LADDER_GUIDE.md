@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Feldführer zur Dichteleiter der Soleschluchten"
+title: "Führer zur Dichteleiter der Solecanyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feldführer zur Dichteleiter der Soleschluchten
+# Führer zur Dichteleiter der Solecanyons
 
-Brine-Schluchten machen Tiefe physisch. Sie lehren Dichteschichten, Rumpfgrenzen, Druckversagen und resource pockets, bevor tiefere Routen öffnen.
+Solecanyons machen Tiefe physisch. Dichteschichten, schwebender Schlamm, kalte Sickerblasen und blinde Instrumentenzonen lehren Rumpfgrenzen, bevor die unteren Routen öffnen. Der Weg nach unten ist keine Treppe im Fels. Er ist eine Leiter aus Flüssigkeiten, die sich nicht einigen, wo ein Körper hingehört.
 
 ## Scanner
 

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -172,6 +173,7 @@ namespace Hecton8.Physiology
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
+        private IHectonOceanKinematicsService _oceanKinematics;
         private IGasDynamicsSolver _gasDynamics;
         private JobHandle _activeJobHandle;
 #if UNITY_EDITOR
@@ -294,6 +296,8 @@ namespace Hecton8.Physiology
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 _playerContext = currentService as IPlayerRuntimeContext;
+            else if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+                _oceanKinematics = currentService as IHectonOceanKinematicsService;
             else if (serviceSlot == GlobalRegistryServiceSlot.GasDynamicsRuntime)
                 _gasDynamics = currentService as IGasDynamicsSolver;
         }
@@ -922,6 +926,7 @@ namespace Hecton8.Physiology
         {
             _dataVault = GlobalRegistry.DataVault;
             _playerContext = GlobalRegistry.Player;
+            _oceanKinematics = GlobalRegistry.OceanKinematics;
             _gasDynamics = GlobalRegistry.GasDynamics;
         }
 
@@ -1361,7 +1366,7 @@ namespace Hecton8.Physiology
                     double3 playerAup = snapshotAup.ToAbsoluteDouble3();
                     if (math.all(math.isfinite(playerAup)))
                     {
-                        double resolvedSeaLevelAupY = ResolveSeaLevelAupY(seaLevelAupY);
+                        double resolvedSeaLevelAupY = ResolveRuntimeSeaLevelAupY();
                         double3 seaLevelAup = default;
                         seaLevelAup.x = playerAup.x;
                         seaLevelAup.y = resolvedSeaLevelAupY;
@@ -1566,6 +1571,35 @@ namespace Hecton8.Physiology
         {
             double3 delta = seaLevelAup - playerAup;
             return delta.y;
+        }
+
+        private double ResolveRuntimeSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematics;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return ResolveSeaLevelAupY(this.seaLevelAupY);
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private static double ResolveSeaLevelAupY(double candidateSeaLevelAupY)

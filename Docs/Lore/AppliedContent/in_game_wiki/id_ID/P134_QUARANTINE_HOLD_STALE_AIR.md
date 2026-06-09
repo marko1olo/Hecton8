@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Penahanan Karantina: Udara Apak"
+title: "Tahan Karantina: Udara Pengap"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Penahanan Karantina: Udara Apak
+# Tahan Karantina: Udara Pengap
 
-Penahanan Karantina menyelamatkan tubuh dan menangguhkan agency. Pemain lolos dari tekanan, tetapi tidak dari custody. Setiap napas diukur sementara bukti menunggu di balik bahasa review.
+Tahan karantina menyelamatkan tubuh dan menangguhkan agensi. Tidak perlu ada penjahat di ruangan. Formulir berkata dipulihkan hidup, penghitung udara berkata ransum aktif, dan pintu berikutnya hanya terbuka setelah tinjauan kontaminasi, tantangan claimant, dan audit rugi. Bukti menunggu di balik bahasa yang dirancang terdengar masuk akal. Setiap pernyataan ditunda lebih lama daripada waktu hidup yang diberikan kepada pekerja. Laut sudah hilang, tetapi tekanan belajar memakai dokumen.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Tubuh dipulihkan. Saksi disegel. Ransum udara aktif.
 
 ## Terminal
 
-PENAHANAN KARANTINA: kontraktor dipulihkan hidup; ransum udara aktif; sample custody belum selesai; kesaksian eksternal ditunda menunggu review kontaminasi, tantangan claimant, dan review kerugian Keelmark.
+TAHAN KARANTINA: kontraktor dipulihkan hidup; ransum udara aktif; custody sampel belum selesai; kesaksian eksternal ditunda menunggu tinjauan kontaminasi, tantangan claimant, dan audit rugi Keelmark.
 
 ## Audio
 
-Palka terbuka ke palka tertutup lain.
+Palka terbuka ke palka tertutup lainnya.
 
 ## Field Note
 
-Ini adalah bentuk administratif dari tenggelam.
+Ini bentuk administratif dari tenggelam.
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/id_ID. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Quarantine Relay Fragment"
+title: "Fragment przekaźnika kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Quarantine Relay Fragment
+# Fragment przekaźnika kwarantanny
 
-PL LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Fragment przekaźnika kwarantanny określa gorzką krawędź przetrwania w HECTON-8. Setting nie dotyczy tylko ucieczki przed ciśnieniem wody; dotyczy ucieczki przed aktami, łańcuchami nadzoru i roszczeniami własności, które przetrwały zalanie. Fragment nadaje zakończeniom twardszy kształt: kogoś można odzyskać z oceanu i nadal go nie uwolnić.
 
 ## Scanner
 
-PL LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Ten sam pakiet przekaźnika zatwierdza wydobycie i odmawia zwolnienia. Ocean puszcza ciało wcześniej niż kolonia puszcza osobę.
 
 ## Terminal
 
-PL LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+WSTRZYMANIE PRZEKAŹNIKA QRF-17 / WYDOBYCIE: PRZYJĘTE / ZWOLNIENIE: ODMOWA / POWODY: sporna piecza nad próbką, przestarzały przegląd powietrza, aktywny spór roszczącego, status świadka tymczasowy.
 
 ## Audio
 
-PL LOC HOLD: You are out of the water. You are not out of custody.
+Wstrzymanie przekaźnika. Wydobycie przyjęte. Zwolnienie odmówione. Jesteś poza wodą, nie poza nadzorem.
 
 ## Field Note
 
-PL LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Dwa stemple: CIAŁO ODZYSKANE, OSOBA ZATRZYMANA. Przegląd powietrza starszy niż potwierdzenie ratunku; spór roszczącego otwarty.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/pl_PL. -->

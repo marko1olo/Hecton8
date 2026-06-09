@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "職能上の罪悪感から個人的な賭けへ"
+title: "職業上の罪責から個人的な利害へ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 職能上の罪悪感から個人的な賭けへ
+# 職業上の罪責から個人的な利害へ
 
-職能上の罪悪感は、主人公を災害の原因にすることなく個人的な賭けへ変わる。プレイヤーには失われた兄弟姉妹も、復讐の血筋も、秘密の選ばれた役割も必要ない。圧力はもっと冷たく、大人びている。主人公は手順を認識する。証人欄がなぜ重要か、ルート安全印がなぜ嘘をつけるか、運搬船が声を聞けてもなぜ引き上げないかを知っている。HECTON-8が個人的になるのは、古いDeep Reachの言葉が抽象ではないからだ。それはかつて信じた仕事であり、近くで行った仕事であり、今は水没した部屋から回収された名前に結びついている。これは自白の弧ではない。拒否の弧だ。置き去りの機械を読めるなら、それを埋めたままにすることも参加の一つになる。
+職業上の罪責は、オペレーターを災害の原因にせず個人的な利害へ変わる。圧力は狭く、無視しにくい。彼らはフォーム、route-safe omission、封じられた確認欄、部屋を決済済みclaimへ変える受信者言語を認識する。
+
+家族の復讐は要らない。隠れた指揮役も要らない。回収されたタグが、かつて仕事として信じた手順に名前を結びつける。そのパターンを読めるようになった後で埋めたままにすることは、同じ機械へもう一つomissionを提出することになる。利害は血筋ではない。沈んだ部屋の証拠に職能知識がぶつかった結果だ。
 
 ## Scanner
 
-署名パターンが古い手順キャッシュと一致する。名前は変わった。部屋は同じ失敗をした。専門知識はもう距離にならない。
+PROCEDURE MATCH // 古い順序が新しい失敗記録に現れる。名前は変わったが、route-safe omissionは同じ。専門知識はもう距離ではない。
 
 ## Terminal
 
-ドシエ結論 / 職能上の賭け
-発火証拠: 手順認識、回収された作業員タグ、請求受領者の衝突
-除外動機: 家族関係、復讐の血筋、選ばれた証人の地位
-有効動機: 元システム作業員が防げた置き去りを認識し、それを記録した機械を今も読める。
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-君は請求のために来た。残ったのは、書類が君の手を知っていたからだ。
+君はclaimを取りに来た。フォームは君の古い手を使った。
 
 ## Field Note
 
-君の署名ではない。それでも君の職能だ。だから部屋は黙らない。
+君の署名ではない。それでも君の職能だ。だから部屋は埋められたままにならない。
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/ja_JP. -->

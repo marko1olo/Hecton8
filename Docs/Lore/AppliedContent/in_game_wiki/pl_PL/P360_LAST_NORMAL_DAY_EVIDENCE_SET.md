@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Last Normal Day Evidence Set"
+title: "Zestaw dowodów ostatniego normalnego dnia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Last Normal Day Evidence Set
+# Zestaw dowodów ostatniego normalnego dnia
 
-PL LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+Ostatni normalny dzień nie jest datą. To kształt, jaki zachowuje pokój, gdy praca zostaje przerwana. Plakietka szafki czeka na rękę, która nie wróciła. Korekta nie ma podpisu, bo ktoś zamierzał podpisać po zejściu. Zadanie pompy pozostaje otwarte. Żeton obiadu tkwi pod taśmą. Zegar trasy nadal czeka na stempel powrotu, bo zegar nie ma kategorii ciszy.
+
+Te przedmioty są pewniejsze niż przemowy. Nikt nie układał ich dla pamięci. Tablica wciąż próbowała prowadzić zmianę, nakarmić załogę, opróżnić studzienkę, policzyć narzędzie i utrzymać trasę uczciwą. Dlatego dowód boli. Kolonia nie skończyła jeszcze stawać się katastrofą. Była nadal dość normalna, by kłócić się o kubki, klucze i spóźnione podpisy, gdy awaria była już w ścianach.
+
+Dla Maraudera zestaw jest też ostrzeżeniem przed leniwym salvage. Cenną plakietkę da się zdjąć w kilka sekund, ale niepodpisana korekta może wyjaśnić, czemu oficjalne pole przyczyny zostało puste. Przypięty żeton posiłku może dowieść, że pracownik spodziewał się wrócić przed zatrzymaniem zegara drzwi. Kategoria ciała może wyglądać czysto, dopóki certyfikat pompy i licznik zmiany nie zaczną się wykluczać.
+
+Przeczytaj przerwanie, zanim zabierzesz przedmiot. Zatopione pokoje HECTON-8 nie potrzebują idealnych ostatnich wiadomości. Ich najmocniejsze świadectwo jest mniejsze: otwarta praca, nieprzekazany obowiązek, zegar czekający na osobę, którą ocean już zabrał.
 
 ## Scanner
 
-PL LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+ZESTAW OSTATNIEGO NORMALNEGO DNIA // Nieodebrana plakietka szafki, niepodpisana korekta, otwarte zadanie pompy, żeton obiadu wciąż przypięty, zegar trasy czeka na powrót. Najsilniejszym dowodem jest niedokończona praca.
 
 ## Terminal
 
-PL LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+ZESTAW DOWODÓW: plakietka szafki nieodebrana; korekta bez podpisu; zadanie pompy otwarte; żeton obiadu przypięty; zegar trasy czeka. Oficjalna przyczyna pusta. Korekta Marauder: porównać certyfikat pompy, licznik zmiany, kategorię ciała i rozjazd zegar-drzwi przed zdjęciem salvage.
 
 ## Audio
 
-PL LOC HOLD: The last day did not know it was last.
+Ostatni dzień nie wiedział, że jest ostatni.
 
 ## Field Note
 
-PL LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Nikt nie przygotował pokoju dla historii. Zostaw sprzeczność: otwarte zadanie, przypięty żeton posiłku, puste pole przyczyny, zegar trasy nadal oczekuje człowieka.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/pl_PL. -->

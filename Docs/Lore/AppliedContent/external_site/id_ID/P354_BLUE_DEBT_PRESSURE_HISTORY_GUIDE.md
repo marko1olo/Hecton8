@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Panduan Riwayat Tekanan Blue Debt"
+title: "Panduan Riwayat Tekanan Utang Biru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Panduan Riwayat Tekanan Blue Debt
+# Panduan Riwayat Tekanan Utang Biru
 
-Xenon-Omega, disebut blue debt oleh salvager, mengikat geologi HECTON-8 dengan computation, debt law, dan alasan Deep Reach masih menginginkan klaim tenggelam itu kembali.
+Utang biru bukan batu permata dan bukan bijih ajaib. Itu nama lapangan untuk substrat stabil tekanan yang membawa Xenon-Omega: struktur mineral yang baru bernilai setelah samudra menekan, memanaskan, mendinginkan, dan melukainya secara elektrik dalam urutan yang benar. Sampel terang bisa tidak bernilai. Bongkah kusam tersegel bisa membayar oksigen sebulan jika riwayat tekanannya bersih dan drift sinyalnya tetap sunyi.
 
-## Scanner
-
-Sampel blue debt ditandai. Verifikasi pressure history, containment stage, dan signal drift sebelum export.
-
-## Terminal
-
-MARAUDER NOTE: blue debt adalah slang salvage untuk Xenon-Omega-bearing pressure-stable substrate. Ia berharga karena extreme computation dan energy isolation menyukainya, bukan karena ia bersinar.
-
-## Audio
-
-Blue debt adalah sebutan orang setelah faktur datang.
-
-## Field Note
-
-Warna bukan grade. Kontainer tenang dengan custody bersih membayar; yang bernyanyi membeli drone wake.
+Itulah sebabnya setiap temuan utang biru langsung menjadi bahan hukum. Atlas menginginkan drift. Deep Reach menginginkan riwayat klaim. Tim salvage menginginkan kontainer yang tidak bernyanyi cukup keras untuk membangunkan drone. Sumber daya ini berbahaya karena berada di persimpangan geologi, komputasi, kustodi, dan utang. Ia membuktikan HECTON-8 tidak pernah sekadar koloni tenggelam. Ia adalah buku rekening terkubur, dengan tekanan menulis angkanya.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/id_ID. -->

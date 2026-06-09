@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Справочник pressure glass и sealant"
+title: "Полевой справочник давленого стекла и герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Справочник pressure glass и sealant
+# Полевой справочник давленого стекла и герметика
 
-Pressure glass - место, где геология встречает Atlas. Repair network использует существующие трещины, минеральные края и pressure memories как маршруты, поэтому полезная линза может быть живой границей.
+Давленое стекло - место, где геология встречает Atlas. Старые трещины, минеральные края, швы биопленки и память напряжения становятся маршрутами для ремонтной химии, поэтому полезная линза может быть живой границей.
 
 ## Scanner
 
-Трещина pressure-glass запечатана химией Atlas. Безопасный lens stock возможен только если seal map осталась целой.
+Трещина давленого стекла запечатана химией Atlas. Запас линз безопасен только пока карта герметика остается целой.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass хранит старое tide stress. Atlas sealant идет по этим трещинам, потому что трещины уже описывают линии отказа системы.
+ПОЛЕВОЙ СПРАВОЧНИК: давленое стекло хранит старый приливный стресс. Герметик Atlas идет по этим трещинам, потому что трещины уже описывают линии отказа системы.
 
 ## Audio
 
@@ -35,6 +35,6 @@ FIELD GUIDE: pressure glass хранит старое tide stress. Atlas sealant
 
 ## Field Note
 
-Не шлифуй красивый край. Следуй fracture map и режь с мертвой стороны seal.
+Не шлифуй красивый край. Следуй карте трещин и режь с мертвой стороны герметика.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/ru_RU. -->

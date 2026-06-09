@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Vent Forge Process Steps"
+title: "Etapas do Processo de Forja em Respiro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Vent Forge Process Steps
+# Etapas do Processo de Forja em Respiro
 
-PT LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Etapas do Processo de Forja em Respiro transformam o crafting de HECTON-8 em um ritual industrial que ainda parece físico. O jogador não carrega uma fornalha fantástica no bolso. A forja é um lugar onde oceano, respiro geotérmico e hardware colonial arruinado concordam por alguns instantes. Primeiro o blank é purgado para que a salmoura antiga não ferva dentro dele. Depois é preso antes do pulso subir, preaquecido na subida de pressão, selado durante a breve calmaria e temperado na corrente fria de retorno. O anel acústico final não é decoração; ele prova que a peça carrega um corpo limpo em vez de rachaduras ocultas. Isso dá ao crafting um ritmo que o mundo pode apoiar com VFX, áudio e UI. Calor importa, mas timing importa mais. Uma janela perdida não produz um estado de falha misterioso. Produz sucata empenada, bloom de sal ou um componente rachado por pressão que diz exatamente o que deu errado.
 
 ## Scanner
 
-PT LOC HOLD: Vent forging should feel like using the planet against itself.
+Forja em respiro não é metalurgia mágica. É pegar emprestados calor, pressão e timing do planeta sem deixar o planeta ficar com a peça.
 
 ## Terminal
 
-PT LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ETAPAS DA FORJA / 01 purgar salmoura do blank / 02 prender antes do pulso / 03 preaquecer na subida do respiro / 04 selar durante calmaria de pressão / 05 temperar na corrente fria / 06 certificar por anel acústico / falha: sucata empenada, bloom de sal ou peça rachada por pressão.
 
 ## Audio
 
-PT LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+A lua é a fornalha. Você só tem permissão para tomá-la emprestada.
 
 ## Field Note
 
-PT LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+O processo deve ser lido como purge, clamp, preheat, seal, quench e ring-test. O risco não é a chama; é perder a calmaria de pressão.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/pt_BR. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Evidence First Charter Contract Seed"
+title: "Семя контракта Хартии доказательств"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Evidence First Charter Contract Seed
+# Семя контракта Хартии доказательств
 
-RU LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Хартия доказательств меняет контрактную доску до спуска. Выплата за материал падает, нотариальная емкость растет, шкафы доказательств получают приоритет, а salvage-разбор получает штраф. Оператор входит с маршрутом, который защищает записи лучше, чем детали.
 
-## Scanner
-
-RU LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-RU LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-RU LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-RU LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Давление появляется в мелких выборах. Полоса состояния люка может заблокировать продажу панели. Мокрый пакет аварии может занять последний сухой слот. Журнал pinger может требовать живой ретранслятор, который иначе питал бы ремонт. Хартия платит поздно, потому что требует сохранить неудобные предметы целыми достаточно долго, чтобы их прочитал receiver вне Black Keel.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ru_RU. -->

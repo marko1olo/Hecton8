@@ -7,7 +7,7 @@ namespace Hecton8.Tests.Editor
     public sealed class WristHudHazardSignalEditTests
     {
         [Test]
-        public void WristHud_DecaysTransientHazardsAndReadsToxicityExposureSignals()
+        public void WristHud_DecaysTransientHazardsAndFiltersPlayerScopedSignals()
         {
             string source = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
@@ -20,6 +20,7 @@ namespace Hecton8.Tests.Editor
             string registrySwapBody = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
             string refreshBody = ExtractMethodBody(source, "private void RefreshCachedRegistryServices()");
             string targetRefreshBody = ExtractMethodBody(source, "private void RefreshPlayerToxicityTargetHash(");
+            string survivalSourceRefreshBody = ExtractMethodBody(source, "private void RefreshPlayerSurvivalVitalsSourceId(");
 
             StringAssert.Contains("using ToxicityExposureSignal = Hecton8.Atmosphere.ToxicityExposureSignal;", source);
             StringAssert.Contains("private const float TransientHazardVitalsDecayPerSecond = 2.75f;", source);
@@ -27,15 +28,18 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;", source);
             StringAssert.Contains("private GameObject _playerToxicityTargetObject;", source);
             StringAssert.Contains("private uint _playerToxicityTargetHash = PlayerToxicityFallbackEntityHash;", source);
+            StringAssert.Contains("private uint _playerSurvivalVitalsSourceId;", source);
             StringAssert.Contains("private int _lastToxicityExposureSnapshotGeneration;", source);
             StringAssert.Contains("_lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;", onEnableBody);
 
             int decayIndex = drainQueuesBody.IndexOf("DecayTransientHazardVitals(deltaTime);", StringComparison.Ordinal);
             int playerTargetRefreshIndex = drainQueuesBody.IndexOf("RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);", StringComparison.Ordinal);
+            int survivalSourceRefreshIndex = drainQueuesBody.IndexOf("RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", StringComparison.Ordinal);
             int drainIndex = drainQueuesBody.IndexOf("DrainGlobalSignalSnapshots();", StringComparison.Ordinal);
             Assert.GreaterOrEqual(decayIndex, 0, drainQueuesBody);
             Assert.Greater(playerTargetRefreshIndex, decayIndex, drainQueuesBody);
-            Assert.Greater(drainIndex, playerTargetRefreshIndex, drainQueuesBody);
+            Assert.Greater(survivalSourceRefreshIndex, playerTargetRefreshIndex, drainQueuesBody);
+            Assert.Greater(drainIndex, survivalSourceRefreshIndex, drainQueuesBody);
 
             StringAssert.Contains("math.isfinite(deltaTime) ? deltaTime : 0f", decayBody);
             StringAssert.Contains("1f - safeDelta * TransientHazardVitalsDecayPerSecond", decayBody);
@@ -45,6 +49,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TransientHazardVitalsClearThreshold ? 0f : next", decayValueBody);
 
             StringAssert.Contains("SignalBus<RadiationDoseSignal>.GetFrameSnapshot()", drainSnapshotsBody);
+            StringAssert.Contains("uint survivalVitalsSourceId = _playerSurvivalVitalsSourceId;", drainSnapshotsBody);
+            StringAssert.Contains("if (survivalVitalsSourceId != 0u)", drainSnapshotsBody);
+            StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", drainSnapshotsBody);
+            StringAssert.Contains("if (signal.SourceId != survivalVitalsSourceId)", drainSnapshotsBody);
+            StringAssert.Contains("continue;", drainSnapshotsBody);
+            StringAssert.Contains("_latestVitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);", drainSnapshotsBody);
+            StringAssert.Contains("_latestVitals.Power01 = FiniteSaturate(signal.Energy01);", drainSnapshotsBody);
+            StringAssert.Contains("_latestVitals.Health01 = FiniteSaturate(signal.Integrity01);", drainSnapshotsBody);
             StringAssert.Contains("float radiationIntensity01 = FiniteSaturate(signal.Intensity01);", drainSnapshotsBody);
             StringAssert.Contains("float radiationDoseToxemia01 = RadiationDoseSignal.DoseToUnit01(signal.Dose);", drainSnapshotsBody);
             StringAssert.Contains("_latestVitals.Radiation01 = math.max(_latestVitals.Radiation01, radiationIntensity01);", drainSnapshotsBody);
@@ -64,10 +76,18 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("FlagHasSourceAup", drainSnapshotsBody);
             int entityGuardIndex = drainSnapshotsBody.IndexOf("if (signal.EntityId == 0u)", StringComparison.Ordinal);
             int playerGuardIndex = drainSnapshotsBody.IndexOf("if (signal.EntityId != playerToxicityTargetHash && signal.EntityId != PlayerToxicityFallbackEntityHash)", StringComparison.Ordinal);
+            int survivalSourceIdIndex = drainSnapshotsBody.IndexOf("uint survivalVitalsSourceId = _playerSurvivalVitalsSourceId;", StringComparison.Ordinal);
+            int survivalSnapshotIndex = drainSnapshotsBody.IndexOf("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", StringComparison.Ordinal);
+            int survivalSourceGuardIndex = drainSnapshotsBody.IndexOf("if (signal.SourceId != survivalVitalsSourceId)", StringComparison.Ordinal);
+            int survivalReadIndex = drainSnapshotsBody.IndexOf("_latestVitals.Oxygen01 = FiniteSaturate(signal.Oxygen01);", StringComparison.Ordinal);
             int toxicityGenerationIndex = drainSnapshotsBody.IndexOf("int toxicitySnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;", StringComparison.Ordinal);
             int toxicityGenerationGateIndex = drainSnapshotsBody.IndexOf("if (toxicitySnapshotGeneration != _lastToxicityExposureSnapshotGeneration)", StringComparison.Ordinal);
             int toxicityReadIndex = drainSnapshotsBody.IndexOf("float exposure01 = FiniteSaturate(signal.Exposure01);", StringComparison.Ordinal);
             Assert.GreaterOrEqual(entityGuardIndex, 0, drainSnapshotsBody);
+            Assert.GreaterOrEqual(survivalSourceIdIndex, 0, drainSnapshotsBody);
+            Assert.Greater(survivalSnapshotIndex, survivalSourceIdIndex, drainSnapshotsBody);
+            Assert.Greater(survivalSourceGuardIndex, survivalSnapshotIndex, drainSnapshotsBody);
+            Assert.Greater(survivalReadIndex, survivalSourceGuardIndex, drainSnapshotsBody);
             Assert.GreaterOrEqual(toxicityGenerationIndex, 0, drainSnapshotsBody);
             Assert.Greater(toxicityGenerationGateIndex, toxicityGenerationIndex, drainSnapshotsBody);
             Assert.Greater(entityGuardIndex, toxicityGenerationGateIndex, drainSnapshotsBody);
@@ -76,14 +96,22 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(toxicityReadIndex, playerGuardIndex, drainSnapshotsBody);
 
             StringAssert.Contains("if (serviceSlot == GlobalRegistryServiceSlot.Player)", registrySwapBody);
-            StringAssert.Contains("RefreshPlayerToxicityTargetHash(currentService as IPlayerRuntimeContext);", registrySwapBody);
+            StringAssert.Contains("IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;", registrySwapBody);
+            StringAssert.Contains("RefreshPlayerToxicityTargetHash(playerContext);", registrySwapBody);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(playerContext);", registrySwapBody);
             StringAssert.Contains("_lastToxicityExposureSnapshotGeneration = SignalBus<ToxicityExposureSignal>.SnapshotGeneration;", registrySwapBody);
+            StringAssert.Contains("PdaProjectorRebindPlayerRuntimeContext(playerContext);", registrySwapBody);
             StringAssert.Contains("RefreshPlayerToxicityTargetHash(GlobalRegistry.Player);", refreshBody);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", refreshBody);
             StringAssert.Contains("playerObject = BootstrapState.CurrentPlayerObject;", targetRefreshBody);
             StringAssert.Contains("ReferenceEquals(playerObject, _playerToxicityTargetObject)", targetRefreshBody);
             StringAssert.Contains("_playerToxicityTargetObject = playerObject;", targetRefreshBody);
             StringAssert.Contains("EntityId.ToULong(playerObject.GetEntityId())", targetRefreshBody);
             StringAssert.Contains("_playerToxicityTargetHash = targetHash != 0u ? targetHash : PlayerToxicityFallbackEntityHash;", targetRefreshBody);
+            StringAssert.Contains("playerContext != null && playerContext.IsInitialized", survivalSourceRefreshBody);
+            StringAssert.Contains("playerContext.SurvivalSystem", survivalSourceRefreshBody);
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))", survivalSourceRefreshBody);
+            StringAssert.Contains(": 0u", survivalSourceRefreshBody);
         }
 
         private static string ExtractMethodBody(string source, string signature)

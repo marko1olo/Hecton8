@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protocolo de localização nativa de nomes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protocolo de localização nativa de nomes
 
-PT LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+O protocolo preserva identidade de trabalhadores em 15 idiomas. Nomes, tiras de crachá e variantes compactas são autorados por locale; cargos, departamentos, turnos, rotas e labels traduzem separados. Nome é objeto de evidência, não string live.
 
 ## Scanner
 
-PT LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Esta tira é autorada, não traduzida ao vivo. A pessoa sobrevive à interface só quando a interface para de improvisar.
 
 ## Terminal
 
-PT LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+LOCALIZAÇÃO DE NOMES // Nomes pessoais, tiras curtas e fragmentos de crachá são baked por locale. Cargos, departamentos, permissões de rota e notas de turno se localizam ao redor. RTL e CJK exigem formas curtas autoradas, quebras seguras e nenhuma recomposição live em scanner, UI de armário, terminais ou wiki externo.
 
 ## Audio
 
-PT LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Um nome que quebra a UI não é respeito. É a colônia apagando o trabalhador duas vezes.
 
 ## Field Note
 
-PT LOC HOLD: No live name translation. Preserve identity through baked strings.
+Nunca deixe um runtime fallback renomear um trabalhador morto. Nome quebrado é outro apagamento.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/pt_BR. -->

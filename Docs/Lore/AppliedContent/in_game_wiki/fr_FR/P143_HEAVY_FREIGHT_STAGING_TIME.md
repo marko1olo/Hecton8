@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Temps de staging du fret lourd"
+title: "Temps de mise en scène du fret lourd"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Temps de staging du fret lourd
+# Temps de mise en scène du fret lourd
 
-Le timing du fret lourd protège la chronologie sans FTL. Le matériel Atlas peut arriver avant la colonisation de masse parce que les corporations lancent tôt des cargaisons précurseurs, les stagient en avant, acceptent le risque non habité et enterrent les fenêtres d'échec dans le langage de programme. Le secours ne peut pas emprunter cette astuce après le début de l'urgence.
+Le fret lourd a transformé HECTON-8 de cible d'étude en objet de dette. Une grosse cargaison ne pouvait pas suivre une vérité changeante ; elle devait être mise en scène, cautionnée, assurée, parquée, freinée et reçue par une autorité. Quand un train de modules a traversé la route, le contrat derrière lui avait plus d'inertie que les objections de la colonie.
 
 ## Scanner
 
-Le fret de classe Atlas est une patience prépayée enveloppée d'armure.
+Pile de manifestes : cargaison engagée avant que le site receveur soit prouvé vivant.
 
 ## Terminal
 
-NOTE FRET : Atlas et cargaison seed utilisent staging, assistance fusion-pellets, longues dérives et infrastructure de freinage. Les dates publiques peuvent cacher lancements précurseurs et départs forward-domain.
+MISE EN SCÈNE DU FRET : coques de pression, blindage céramique, masse de réacteur, stock seed, châssis de crawlers et anneaux d'habitat exigent des fenêtres de lancement espacées d'années. Une fois cautionnée, la cargaison devient un argument juridique en mouvement.
 
 ## Audio
 
-Un vaisseau aussi lourd ne voyage pas simplement. Il devient une facture avec sillage.
+L'expédition était déjà payée. Cela rendait son arrêt plus dur que sauver des gens.
 
 ## Field Note
 
-Une route lourde s'assemble avec dépôts, fenêtres faisceau, masse de freinage et nerf politique.
+Le fret ne se presse pas. Il rend la hâte chère pour tous les autres.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/fr_FR. -->

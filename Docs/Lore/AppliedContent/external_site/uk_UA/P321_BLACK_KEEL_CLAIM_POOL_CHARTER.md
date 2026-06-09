@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Хартія claim-pool корабля Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Claim-Pool Charter
+# Хартія claim-pool корабля Black Keel
 
-UK LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel - hard-sci-fi відповідь HECTON-8 на проблему корабля для втечі. Гравець має доступ до орбітального активу, але доступ не є власністю, а близькість не є порятунком. Carrier є інфраструктурою боргу: достатньо корисною, щоб втеча здавалася можливою, і достатньо обмеженою, щоб кожен маршрут повернення був пов'язаний із претензіями, карантином і recovery value.
 
 ## Scanner
 
-UK LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel - не твій корабель. Це recovery asset claim-pool, де твоє ім'я стоїть у борговій книзі.
 
 ## Terminal
 
-UK LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+ВИТЯГ ІЗ ХАРТІЇ / BLACK KEEL: автономний salvage carrier / опіка: Aegir Reclamation Pool / транспорт підрядника: дозволено / власність корпусу: відмовлено / пріоритет порятунку: нижче insured receiver state, карантинного handshake і claim value.
 
 ## Audio
 
-UK LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Carrier прийшов не по тебе. Він прийшов по претензію, до якої прикріплене твоє ім'я.
 
 ## Field Note
 
-UK LOC HOLD: Use this on the first contract or carrier-status screen.
+Для першого екрана статусу carrier: доступ надано, власність відмовлено, пріоритет порятунку умовний, lien активний.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/uk_UA. -->

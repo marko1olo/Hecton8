@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rakitan Handshake Legal Karantina"
+title: "Rangkaian Jabat Tangan Legal Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rakitan Handshake Legal Karantina
+# Rangkaian Jabat Tangan Legal Karantina
 
-Rakitan Handshake Legal Karantina membuat extraction sengaja kotor: mesin yang bekerja masih bisa mengirim penyintas ke corporate custody, kebenaran publik tertunda, atau karantina tak terselesaikan.
+Rangkaian Jabat Tangan Legal Karantina adalah komponen terakhir karena rute pelarian HECTON-8 berakhir pada otoritas, bukan vakum. Kapsul mungkin siap secara mekanis, tetapi recovery masih membutuhkan penerima yang mau memberi nama pada kedatangan.
 
-## Scanner
+Soket memuat fakta yang menentukan nama itu: kunci penerima, keadaan karantina, custody payload, lien utang, dan jeda ledger publik. Setiap rute menerima versi berbeda dari kapsul yang sama. Keelmark menginginkan massa dan lien. Recovery Compliance menginginkan koordinat dan keadaan kontaminasi. Ledger publik menginginkan bukti yang sanggup melewati waktu dan sengketa.
 
-Soket handshake. Kapsul bisa siap secara mekanis dan tetap menjadi milik receiver yang salah.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key diperlukan. Keelmark menerima mass dan lien. Recovery Compliance menerima coordinates dan quarantine status. Public ledger menerima proof setelah jeda. Unkeyed launch default menjadi custody dispute.
-
-## Audio
-
-Siapa yang menjawab menentukan arti penyelamatan.
-
-## Field Note
-
-Komponen terakhir bukan logam. Itu nama sistem yang diizinkan menyebutmu recovered.
+Itu membuat ekstraksi sengaja tidak nyaman. Peluncuran paling bersih masih bisa mengirim penyintas ke kantor klaim, tahanan medis terkunci, atau perkara publik lambat. Memperbaiki handshake tidak membebaskan kapsul dari politik. Itu membiarkan Marauder memilih politik mana yang pertama menyentuh palka.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/id_ID. -->

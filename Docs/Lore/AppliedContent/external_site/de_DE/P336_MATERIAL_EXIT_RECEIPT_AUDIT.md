@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Material Exit Receipt Audit"
+title: "Audit der Materialausgangsquittung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Material Exit Receipt Audit
+# Audit der Materialausgangsquittung
 
-DE LOC HOLD: HECTON-8's false endings are not fake fail screens. They are real outcomes that expose what the player chose to value.
+HECTON-8s falsche Ausgänge sind keine falschen Fail-Screens. Es sind echte Ergebnisse, die zeigen, was der Spieler wertgeschätzt hat: Masse, Beweis, Namen, Freiheit oder das Recht zu entscheiden, wem die Geschichte nach der Flucht gehört.
 
 ## Scanner
 
-DE LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Ausgangsquittung bestätigt geborgene Masse. Beweisverwahrung ist gebrochen; Arbeiternamen bleiben unangenommen.
 
 ## Terminal
 
-DE LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+AFTER-ACTION-QUITTUNG: Bergungszahlung für rückholbare Masse und Vertragsgefahr freigegeben. Koordinatenwahrheit ungelöst. Haftungsstatus von Deep Reach unverändert. Arbeiternamen-Ledger als nicht verwahrter Beweis zurückgewiesen. Ausgang gewährt; der Fall bleibt Eigentum des Trägers.
 
 ## Audio
 
-DE LOC HOLD: You got paid. That is not the same as getting out clean.
+Du wurdest bezahlt. Das heißt nicht, dass du sauber raus bist.
 
 ## Field Note
 
-DE LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Nachaktionsdatensatz für einen bezahlten, aber moralisch unvollständigen Ausgang: Belohnung wird freigegeben, Beweiskette scheitert, Namen bleiben außerhalb offizieller Verwahrung.
 
 <!-- External Site; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/de_DE. -->

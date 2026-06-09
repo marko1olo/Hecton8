@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "淹没地壳层野外指南"
+title: "淹没地壳层指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 淹没地壳层野外指南
+# 淹没地壳层指南
 
-淹没地壳是 HECTON-8 可阅读的历史：旧殖民切口、冰塌架、pressure-glass 接缝和矿物带会显示哪条路能撑住、会剪切，或会在触碰下失败。
+淹没地壳是HECTON-8可阅读的历史。旧殖民切口、冰塌架、压力玻璃接缝和矿物带显示哪条路线能支撑、会剪切，或会在触碰下失败。Salvage队伍把它读成一本损坏账本：建过什么，塌过什么，海洋又从那以后磨掉了什么。
 
 ## Scanner
 

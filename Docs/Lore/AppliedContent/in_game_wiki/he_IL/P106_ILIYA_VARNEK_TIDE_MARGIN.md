@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "איליה ורנק: מרווח הגאות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# איליה ורנק: מרווח הגאות
 
-HE LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+איליה ורנק הוא חתימת הסיכון של Deep Reach משנת 2147 הקשורה למרווח הגאות הגדולה. הוא לא מנהל מצויר עם ידית. המזכר חמור יותר מפני שהוא רגיל: לוח ייצור, מודל ממוצע, שורת ביטחון, הערה על חשיפת עובדים והמלצה להמשיך.
+
+הביטוי המרכזי הוא ביטחון מודל ממוצע. בממוצע, הנתיב נראה שריד. בזנב ההתפלגות, במקום שבו ערימת גאות Aegir, החזר מדף הקרח, תנועת נתיבי הלחץ ושגיאות פיצוי Atlas נפגשו, המרווח הצטמצם לסבילות חשבונאית. האנשים בחדרים האלה לא חיו בממוצע. הם חיו בתוך השעה הגרועה ביותר.
+
+החתימה של ורנק נותנת לשחקן שכבת אחריות אחת. היא לא מוכיחה שהוא ידע את האסון המדויק שיבוא. היא מוכיחה של-Deep Reach היה נתיב סיכון קריא, והיא בחרה בפרשנות הזולה יותר. הפשע אינו ידיעת-כול. הפשע הוא קבלת אי-הוודאות מפני שהגופים שיישאו אותה לא היו בחדר שבו תומחר המרווח.
 
 ## Scanner
 
-HE LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+מזכר סיכון // I. ורנק הוריד את מרווח הגאות הגדולה אחרי שהמודל עבר בממוצע. סיכון הזנב נשאר בתוך חדרי הלחץ של העובדים.
 
 ## Terminal
 
-HE LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // סיכוני תפעול Aegir // המלצה: לשמור על לוח הייצור. ערימת גאות קיצונית תיחשב שונות תפעולית נדירה עד בדיקת פיצוי Atlas. חשיפת נתיבי עובדים קבילה לפי ביטחון מודל ממוצע.
 
 ## Audio
 
-HE LOC HOLD: He did not order a flood. He priced it low enough to happen.
+הוא לא הורה על הצפה. הוא תמחר אותה נמוך מספיק כדי שתקרה.
 
 ## Field Note
 
-HE LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+אל תקרא את זה כפקודת רצח. קרא את זה כשורת תקציב שבה אי-הוודאות נעשתה זולה מספיק כדי לבזבז אותה.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/he_IL. -->

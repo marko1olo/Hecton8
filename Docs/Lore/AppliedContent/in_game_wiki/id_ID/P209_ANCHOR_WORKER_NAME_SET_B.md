@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Set Nama Pekerja Jangkar B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Set Nama Pekerja Jangkar B
 
-ID LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+Set Nama Pekerja Jangkar B membawa roster ke lapisan bukti yang lebih gelap. Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, dan Bram Kessel harus muncul setelah pemain memahami bahwa kegagalan berulang karena desain. Catatan mereka milik kerja ngarai brine, medan mesin abisal, pengecualian triase, kontradiksi perbaikan Atlas, dan utang salvage. Set B harus terasa seperti saat kisah tempat kerja yang akrab berubah menjadi tuduhan dengan nama yang masih menempel.
 
 ## Scanner
 
-ID LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Nama yang lebih dalam harus datang setelah pemain sudah memahami pola kerusakan. Harganya lebih mahal karena air mulai membuktikan kejahatan.
 
 ## Terminal
 
-ID LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: kemunculan ulang di ngarai brine dan medan mesin abisal. Ikat nama-nama ini pada witness hashes, penahanan rute, pengecualian triase, kontradiksi perbaikan Atlas, dan jejak utang salvage. Set B adalah tempat bukti pekerja berhenti menjadi tragedi lokal dan menjadi sebab korporat.
 
 ## Audio
 
-ID LOC HOLD: A deep name costs more because the water has already proved what happened.
+Nama yang dalam lebih mahal karena air sudah membuktikan apa yang terjadi.
 
 ## Field Note
 
-ID LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Jangkar Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/id_ID. -->

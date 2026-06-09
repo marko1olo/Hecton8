@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Public Ledger Aftershock Record"
+title: "Запис афтершоку публічного реєстру"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Public Ledger Aftershock Record
+# Запис афтершоку публічного реєстру
 
-UK LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+Правдива кінцівка HECTON-8 не про чистоту. Це рішення ускладнити приховування й прийняти неконтрольовані наслідки: горе, ринки, позови, культові прочитання, рятувальні зусилля і помсту, що користуються тими самими оприлюдненими фактами.
 
 ## Scanner
 
-UK LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Дзеркала реєстру прийнято. Доказ більше не можна прибрати; наслідок більше не можна спрямувати.
 
 ## Terminal
 
-UK LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: докази випущено поза зберігання Deep Reach. Імена працівників, фрагменти вектора Atlas і теги відповідальності віддзеркалено на публічних приймачах. Повноваження гравця на тлумачення припинено.
 
 ## Audio
 
-UK LOC HOLD: Truth left the room. It did not ask where to go next.
+Правда вийшла з кімнати. Вона не спитала, куди йти далі.
 
 ## Field Note
 
-UK LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Запис публічної правди: дзеркальні докази заважають стиранню, але завершують контроль гравця над тлумаченням і помстою.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/uk_UA. -->

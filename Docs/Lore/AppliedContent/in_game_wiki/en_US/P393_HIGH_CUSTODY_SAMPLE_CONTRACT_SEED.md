@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "High Custody Sample Contract Seed"
+title: "High-Custody Sample Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# High Custody Sample Contract Seed
+# High-Custody Sample Contract Seed
 
-High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+High-Custody Sample is a contract family where resource value and evidence handling collide early. Blue debt, tissue-iron residue, sealed water and contaminated filter packs pay more only while their container, tag, mass and route custody remain intact.
 
 ## Scanner
 
-Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Contract seed: high-custody sample. Larger payout attached to mass accounting, quarantine drag and receiver-certified containers.
 
 ## Terminal
 
-SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: custody-grade samples active, sample mass ledger strict, quarantine delay raised, receiver seal required, route discard penalty active.
 
 ## Audio
 
-A sample can weigh more after it enters the ledger.
+A sample gets heavier after the ledger accepts it.
 
 ## Field Note
 
-Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Marauder note: weigh the bag before calling it profit. The receiver can bill the missing grams harder than the ocean can hit you.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/en_US. -->

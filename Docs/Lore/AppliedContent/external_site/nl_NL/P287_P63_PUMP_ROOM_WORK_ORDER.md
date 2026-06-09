@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63-pompkamerwerkorder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: P-63 Pump Room Work Order
+# P-63-pompkamerwerkorder
 
-NL LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+De P-63-pompkamerwerkorder is HECTON-8 op kleine schaal: water in de kamer, één gereedschap in de hand, een acoustic-return-lijn en een route die pas te vertrouwen is wanneer de omgeving antwoordt. Hij maakt mechaniek tot koloniegewoonte.
 
 ## Scanner
 
-NL LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+De eerste reparatie leest als koloniegewoonte: pompen, afdichten, luisteren, alleen snijden als de kamer ophoudt te liegen.
 
 ## Terminal
 
-NL LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: sump leegmaken; cold seam patchen; return pinger verifiëren; fused latch pas snijden nadat druk houdt; gasket printen uit lokale voorraad; route safe markeren na drie acoustic return-herhalingen. Initialen supervisor ontbreken onder watervlek.
 
 ## Audio
 
-NL LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Eerst pompen. Dan afdichten. Als het zingt, stop met snijden.
 
 ## Field Note
 
-NL LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Het klembord is onderaan doorweekt. De snijlijn is nog leesbaar omdat iemand hem tweemaal omcirkelde en schreef als het zingt, stop.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/nl_NL. -->

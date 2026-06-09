@@ -19,28 +19,30 @@ localization_flags: 0
 
 # Ran Long Claim Transit Ledger
 
-The first lie a stranded Marauder wants to believe is that contact means rescue. Around Ran, contact means a packet has found a carrier window. It can move a position, a witness hash, a legal demand, a price quote or a threat. It cannot move a pressure hull, a medic, a cargo tender or a braking stack. No FTL ship is waiting behind the next message. Every body that comes toward HECTON-8 still has to cross scheduled pellet lanes, coast through silent mass windows, brake without burning the cargo, then survive Aegir's weather and moon geometry.
+A Ran long claim ledger is what a distress call becomes after civilization hears it and refuses to pretend physics has changed. The packet can cross the route fast enough to feel like an answer. The answer cannot bring a hull. It records a claimant, a position, a payload, a custody chain and a reason for somebody off-world to spend mass.
 
-That is why the Ran long claim ledgers read less like a distress beacon and more like accounting. A living claimant is one field. So are coordinate confidence, payload class, custody grade, ascent mass, quarantine risk, route insurance and who gets paid if the person dies before pickup. Black Keel will move a packet because packets are cheap and because delay is where contract authority lives. A rescue tender is different. It needs fuel, clearance, a cargo reason and a receiving office willing to carry liability across a moon that Deep Reach still names as property.
+            The ledger is old frontier law folded around hard transit. Ran's relays can accept light-speed witness packets. Luyten offices can hash the receipt. Black Keel can move a clean burst through mirrors and carrier windows. None of those systems owns a free rescue ship. A tender still needs a lane, a braking allocation, a receiving slot, quarantine clearance and a payer who will survive audit.
 
-The useful question is not whether anyone heard you. Someone probably did. The useful question is what they heard first. A clean alive-state buys a line in a queue. A verified route receipt buys leverage. Proof of Deep Reach liability can change who is allowed to price the queue. A payload that matters outside HECTON-8 can make a ship accept risk it would leave on the ocean floor for a body alone.
+            That is why the first carrier window hurts. A Marauder wants to shout alive. The ledger already has a box for alive. The better packet says where, how sure, what can be lifted, who touched it, what Deep Reach damaged, whether the ascent package can seal, and what proof will be lost if no one comes. The body matters. The body alone is cheap in the wrong column.
 
-A good Marauder spends the first carrier window like oxygen. Send enough position to be found, enough damage to be believed, enough custody to keep the packet admissible and enough value to make the slow ship move. Anything else is prayer with a timestamp.
+            Black Keel's cruelty is mostly arithmetic with a human voice removed. A living person is liability. A living person holding admissible evidence is leverage. A living person strapped to irreplaceable route data is cargo with teeth. The long claim ledger turns fear into fields because fields can be priced, witnessed and fought over after the signal has already left HECTON-8.
+
+            For the player, the ledger is the first lesson in being heard without being saved. Repairing a relay is not enough. The signal must be clean, the claim must be admissible, and the chosen payload must make silence more expensive than approach.
 
 ## Scanner
 
-ROUTE LEDGER // Luyten witness hash intact. Strong carrier window can carry one clean burst: position, damage, custody, proof or plea. It is not rescue.
+LONG CLAIM LEDGER // Luyten witness braid intact. One carrier window available. Ledger fields: alive-state, coordinate confidence, ascent mass, custody grade, Deep Reach objection, payload value. Distress is not a tender order.
 
 ## Terminal
 
-ROUTE RECEIPT: RAN LONG CLAIM / LPL-WITNESS SLOT 7C // Alive-state alone is insufficient for recovery scheduling. Submit coordinate confidence, ascent-package status, custody grade and payload mass before tender priority review.
+BLACK KEEL / RAN LONG CLAIM RECEIPT 7C // Packet accepted as a live claim, not as recovery authorization. Submit location proof, salvage class, medical liability, quarantine exposure and first-return preference before the window degrades. Blank fields default to cargo-negative, body-low priority.
 
 ## Audio
 
-Black Keel relay: Window holds for one clean burst. Send position, payload or proof. Choose before the storm eats carrier lock.
+Black Keel relay: You reached the ledger. Good. That means you are record, not rescued. Spend the burst on proof, position or value before the carrier slips.
 
 ## Field Note
 
-Ships do not save you. Routes might, if the right office was paid before you got wet. Spend the window like air.
+Alive is a checkbox. Coordinates are a wager. Evidence is bait with a signature. Send the packet that makes them afraid to ignore you.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/en_US. -->

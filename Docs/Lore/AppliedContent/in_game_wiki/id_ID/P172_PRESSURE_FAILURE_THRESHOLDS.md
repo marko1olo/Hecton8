@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Ambang Kegagalan Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Ambang Kegagalan Tekanan
 
-ID LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+Ambang Kegagalan Tekanan membuat salvage HECTON-8 terasa fisik, bukan abstrak. Kontainer tidak aman karena namanya hijau di daftar inventaris. Ia aman karena shell, gasket, clamp, tanda bukti, dan riwayat rute masih sepakat dengan kedalaman di sekitarnya. Ambang ini juga aturan keadilan untuk pemain. Sebelum kegagalan menjadi kehilangan, dunia harus berbicara: segel berbunyi tik, gasket bergeser, clamp bergetar, retak rambut berkilau, bloom garam tumbuh, pantulan akustik menjadi hantu, atau kabut sampel mati mulai mengeruhkan kaca. Setiap sinyal berarti hal yang sama di tier berbeda: material telah berubah dari objek berguna menjadi bahaya lokal. Itu membuat crafting, UI, dan audio lingkungan berbagi bahasa peringatan yang sama. Pemain dihukum karena mengabaikan tekanan, bukan karena gagal membaca matematika tersembunyi.
 
 ## Scanner
 
-ID LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Sampel bagus menjadi bahaya ketika melewati garis tekanan yang salah. Laut tidak peduli bahwa labelnya hampir benar.
 
 ## Terminal
 
-ID LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+KEGAGALAN TEKANAN / shallow-rated: tik segel dan rambatan air / industrial-rated: drift gasket dan gemetar clamp / brine-rated: retak rambut dan bloom garam / abyssal-rated: ghosting akustik, kabut sampel mati / Atlas-rated: lockout kustodi sebelum rugi struktur.
 
 ## Audio
 
-ID LOC HOLD: Pressure does not care that the label was almost right.
+Tekanan tidak peduli labelnya hampir benar.
 
 ## Field Note
 
-ID LOC HOLD: Failure thresholds should be readable before they punish.
+Ambang kegagalan harus terbaca sebelum hukuman: tik, drift, retak rambut, bloom garam, kabut sampel mati. Jika pemain baru belajar setelah kehilangan, dunia sedang curang.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/id_ID. -->

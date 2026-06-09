@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Konflik Tanda Tangan dan Saksi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Konflik Tanda Tangan dan Saksi
 
-ID LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Konflik Tanda Tangan dan Saksi adalah saat cerita resmi Deep Reach berhenti sekadar tidak lengkap dan mulai menjadi palsu. Tanda tangan publik menyajikan HECTON-8 sebagai bencana pasang tanpa kontradiksi yang dapat ditindaklanjuti sebelum penundaan evakuasi. Hash saksi lokal berkata lain: penasihat evakuasi, Atlas Safety, dan operasi rute berada di ruang tinjauan yang sama saat hilangnya margin, kesulitan pekerja, dan waktu rute sudah terlihat. Konflik ini memberi pemain bentuk bukti yang kuat. Tidak cukup menemukan tanda tangan buruk; tanda tangan itu harus diletakkan di samping log pintu, jam rusak, dan stempel nama sampai alibinya pecah.
 
 ## Scanner
 
-ID LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Tanda tangan menyatakan tinjauan evakuasi tidak memiliki kontradiksi hidup. Hash saksi mengatakan kontradiksi itu ada di ruangan.
 
 ## Terminal
 
-ID LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: tanda tangan publik menandai kegagalan pasang sebagai satu-satunya penyebab. Hash saksi lokal menempatkan penasihat evakuasi, Atlas Safety, dan operasi rute di ruang tinjauan sebelum penahanan pelepasan. Bandingkan log pintu, stempel nama, dan jam rute yang rusak.
 
 ## Audio
 
-ID LOC HOLD: The signatures line up. The bodies do not.
+Laporan bilang tidak ada yang bisa tahu. Log pintu tidak setuju.
 
 ## Field Note
 
-ID LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Tanda tangan bersih hanya sampai ruangan mengingat siapa yang berdiri di sebelahnya.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/id_ID. -->

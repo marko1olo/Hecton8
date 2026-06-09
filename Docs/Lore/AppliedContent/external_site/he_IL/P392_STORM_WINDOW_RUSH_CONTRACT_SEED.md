@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Storm Window Rush Contract Seed"
+title: "זרע חוזה בהלת חלון סערה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Storm Window Rush Contract Seed
+# זרע חוזה בהלת חלון סערה
 
-HE LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+בהלת חלון סערה מתחילה במפת כיסוי נסגרת. רצועות סערה, תזמון תריס ממסר וקריאת bathydrop יושבים על אותו לוח כמו תקרת התשלום. המספר הגבוה אינו נדיבות; הוא מחיר הכניסה למים כאשר חלון החזרה הבטוחה כבר מתכווץ.
 
-## Scanner
-
-HE LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-HE LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-HE LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-HE LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+הריצה משנה לחץ ברמת הכלי. משאבה תקועה עולה יותר מזמן, כי שעון הקריאה זז בזמן שהתיקון פתוח. ריתוך גרוע אוכל סבולת מסלול. סימן ממסר שהוחמץ יכול לדחוף חילוץ להאפלה. משפחת החוזים מקשה את אותה מושבה על ידי שינוי הרגע שבו המים מפסיקים לחכות.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/he_IL. -->

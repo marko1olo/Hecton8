@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "ידע תיק, לא כוח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# ידע תיק, לא כוח
 
-HE LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+ידע תיק, לא כוח הוא כלל replayability ששומר את HECTON-8 ארוך, מסוכן וישר נרטיבית.
 
 ## Scanner
 
-HE LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // אין חמצן, דירוג גוף, נשק, מלאי, סמכות מסלול או קיצור קסם בירושה. התיק שומר אזהרות, לא שריר.
 
 ## Terminal
 
-HE LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+גבול קשיח: נתוני תיק מתמידים רשאים לפתוח אזהרות, משפחות שמועות, וריאציות claim והקשר סיום. אסור לשמר כוח ציוד, מלאי משאבים, בעלות על אמת העולם או הרשאת מסלול.
 
 ## Audio
 
-HE LOC HOLD: Memory does not reinforce a cracked hull.
+זיכרון לא מחזק גוף סדוק.
 
 ## Field Note
 
-HE LOC HOLD: The player can become wiser. The ocean should not become smaller.
+השחקן יכול להחכים. האוקיינוס לא צריך לקטון.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/he_IL. -->

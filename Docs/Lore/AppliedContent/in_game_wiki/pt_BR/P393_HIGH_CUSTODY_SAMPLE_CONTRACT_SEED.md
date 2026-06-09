@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: High Custody Sample Contract Seed"
+title: "Semente de contrato de amostra de alta custódia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: High Custody Sample Contract Seed
+# Semente de contrato de amostra de alta custódia
 
-PT LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Amostra de Alta Custódia é uma família de contratos onde valor de recurso e manejo de prova colidem cedo. Blue debt, resíduo tecido-ferro, água selada e pacotes de filtro contaminados pagam mais apenas enquanto contêiner, etiqueta, massa e custódia de rota permanecem intactos.
 
 ## Scanner
 
-PT LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Semente de contrato: amostra de alta custódia. Pagamento maior preso a contabilidade de massa, atraso de quarentena e contêineres certificados por receiver.
 
 ## Terminal
 
-PT LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: amostras de grau custódia ativas, ledger de massa estrito, atraso de quarentena elevado, selo receiver exigido, penalidade de descarte de rota ativa.
 
 ## Audio
 
-PT LOC HOLD: A sample can weigh more after it enters the ledger.
+Uma amostra fica mais pesada depois que o ledger a aceita.
 
 ## Field Note
 
-PT LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Nota de marauder: pese a bolsa antes de chamar de lucro. O receiver pode cobrar os gramas faltantes com mais força que o oceano.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/pt_BR. -->

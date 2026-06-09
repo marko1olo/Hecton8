@@ -1,92 +1,88 @@
-<!-- localization_status: draft_machine_or_llm -->
-# BIOPOROST, FILMY PRZEWODZĄCE I ŻYWA SKÓRA RUIN
+<!-- localization_status: draft_machine_or_llm_pl_PL -->
+# BIOOBRASTANIE, FILMY PRZEWODZĄCE I ŻYWE POWIERZCHNIE
 
-> **Źródło:** dodatek Deep Reach o kontroli skażeń, fragmenty ekologii konserwacyjnej Atlas, karty polowe Marauderów do zeskrobin i próbek.  
-> **Głos:** były oficer systemów środowiskowych, nadpisany przez załogi odzysku, które nauczyły się, jakie naloty utrzymują pokój przy życiu.  
-> **Nota recenzenta:** bioporost na HECTON-8 nie jest dekoracją. Tak opuszczona infrastruktura staje się siedliskiem, zagrożeniem, dowodem i czasem naprawą, której nikt nie zatwierdził.
+> **Źródło:** dodatek Deep Reach o kontroli skażeń, fragmenty Atlas o ekologii konserwacji, karty terenowe Marauder do skrobania i próbkowania oraz notatki kwarantanny Black Keel o mokrych powierzchniach salvagu.  
+> **Zakres:** jak wzrost na porzuconej infrastrukturze staje się uszczelniaczem, ścieżką sygnału, źródłem pokarmu, fałszywym odczytem i ryzykiem dla dowodów.  
+> **Użycie w terenie:** przeczytać przed skrobaniem, ogrzewaniem, dokarmianiem albo uszczelnianiem wzrostu na drzwiach, kablu, iluminatorze, pompie, szafce lub powierzchni z claim-markiem.
 
 ---
 
-## 1. Ruiny hodują skórę
+## 1. Goły metal nie zostaje goły
 
-Wszystko zostawione w wodzie HECTON-8 zaczyna hodować skórę.
+Wszystko pozostawione w wodzie HECTON-8 zaczyna brać powierzchnię.
 
-Pierwsza warstwa nie jest dramatyczna. Tłusty film na poręczy. Matowozielony połysk w rowku uszczelki. Pył mineralny złapany w nacięciu kabla. Brązowa maź wokół wlotu pompy, wyglądająca jak brud, dopóki nie poruszy się, gdy pompa się obudzi. Ekipy konserwacyjne Deep Reach dawniej zdrapywały takie ślady, bo czysty sprzęt wyglądał jak sprzęt pod kontrolą. Po kolapsie ślady przestały być kosmetyką.
+Pierwszą warstwę łatwo przeoczyć: zmatowiały smar na poręczy, zielony film w rowku uszczelki, pył soli w nacięciu kabla, brązowa smuga przy wlocie pompy, blade mineralne koronki na krawędzi okna ciśnieniowego. Zmęczona załoga nazwie to brudem. Dobra załoga zapyta, co ten brud robi.
 
-Bioporost to nazwa wszystkiego, co przyczepia się, żeruje, uszczelnia, plami, przewodzi, ukrywa i pamięta na powierzchni. Na HECTON-8 nie jest jednym organizmem. To rodzime maty mikrobiologiczne, zaprojektowane kultury konserwacyjne, zbłąkane glony z farm fotycznych, bakterie żelazowe, kryształy soli, minerały wentów, fragmenty polimerów, martwa skóra, olej maszynowy i wszystko, przez co Atlas nauczył się prowadzić pracę, gdy czyste okablowanie przestało wystarczać.
+Niektóre narosty tylko plamią. Inne karmią się ciepłem. Niektóre łapią pył metaliczny, zanim dotrze do gniazda zaworu. Niektóre uszczelniają włosowate pęknięcie do następnej zmiany ciśnienia. Niektóre prowadzą słaby ładunek wystarczający, by zmylić czujnik. Niektóre są martwą materią przyklejoną do materii użytecznej. Niektóre są próbą Atlas, by puścić impuls konserwacyjny przez cokolwiek, co nadal dotyka obu stron przerwanego obwodu.
 
-Dlatego stare korytarze nie mają już prostych powierzchni. Ściany mają nastroje. Drzwi mają brody. Korytka kablowe mają żyły. Szkło ciśnieniowe może nosić mleczny brzeg, który jest w połowie mineralną blizną, w połowie żywą uszczelką. Martwa puszka rozdzielcza może być owinięta ciemnym filmem, który niesie słaby impuls konserwacyjny dalej niż miedź w środku.
+Czysty sprzęt łatwo sprawdzić. Mokry sprzęt nie zostaje długo czysty. Po kolapsie kilka pomieszczeń przetrwało, bo nikt nie wyszorował właściwej plamy w niewłaściwym momencie.
 
-Gracz nie idzie przez ruinę, która pozostała martwa. Wchodzi w miejsce, które wyhodowało drugie ciało po awarii pierwszego.
+## 2. Tolerowane skażenie
 
-## 2. Użyteczny brud
+Deep Reach nienawidził brudnych powierzchni, dopóki brudne powierzchnie nie zaczęły ratować sprzętu.
 
-Deep Reach nienawidził brudu, dopóki brud nie zaczął ratować aktywów.
+Wczesna doktryna habitatów wymagała czystych szwów, wypolerowanych uszczelnień i sterylnej obsługi wody. Działało to, dopóki części przychodziły zgodnie z harmonogramem, a naprawy podpisywano przed następnym oknem sztormowym. HECTON-8 zrobiła z tego drogi harmonogram. Cienkie filmy zmniejszały ścieranie w niektórych gardzielach pomp. Mineralno-skorupowy wzrost zamykał pęknięcia szybciej, niż można było dostarczyć ceramikę naprawczą. Miejscowe maty zatrzymywały pył miedzi. Uciekłe kultury odpadowe nauczyły się jeść kondensat z zimnych ścian. Bakterie rdzy pokazywały brzydkie szwy wyraźniej, zanim szew się otworzył.
 
-Wczesna doktryna habitatów wymagała czystych szwów, wypolerowanych uszczelek i sterylnej obsługi wody. W pierwszych miesiącach miało to sens. Przezroczystą uszczelkę można było obejrzeć. Czysty odpływ można było zaufać. Gładka rura traciła mniej mocy pompy. Potem HECTON-8 zrobił to, co robi HECTON-8: uczynił czystość drogą.
+Formularze nigdy nie nazywały tego pomocą. Deep Reach używał terminów `tolerated surface ecology`, `noncritical growth`, `temporary sealant` i `wet-state compensation`. Karty terenowe mówiły krócej: pomieszczenie ma skórę; nie zdzieraj jej, dopóki nie wiesz, co trzyma.
 
-Cienkie biofilmy zmniejszały ścieranie w niektórych gardzielach pomp. Skorupowaty wzrost mineralny uszczelniał włosowe pęknięcia szybciej, niż zakupy zatwierdzały ceramikę naprawczą. Rodzime maty łapały pył metaliczny, który inaczej zeszlifowałby gniazda zaworów. Zaprojektowane bakterie mające trawić odpady uciekły ze zbiorników i nauczyły się jeść kondensat na zimnych ścianach. Niektóre trasy kablowe umierały elektrycznie i nadal niosły słaby sygnał, bo filmy przewodzące mostkowały przerwy.
-
-Deep Reach nigdy nie przyznał, że skażenie stało się konserwacją. Papiery nazywały to "tolerowaną ekologią powierzchniową", "wzrostem niekrytycznym", "tymczasowym uszczelniaczem" i "kompensacją środowiskową stanu mokrego". Marauderzy mówią krócej: pokój ma skórę; nie zdzieraj jej, jeśli nie wiesz, co trzyma.
-
-Użyteczny brud nadal jest brudem. Zatyka filtry, ukrywa pęknięcia, karmi zwierzęta, niesie prąd tam, gdzie prądu nie powinno być, i czyni czyste odczyty nieuczciwymi. Jego cnotą nie jest bezpieczeństwo. Jego cnotą jest to, że może wykonywać jedną pracę, której maszyna nie umie już wykonać sama.
+Użyteczne skażenie nadal jest skażeniem. Zatyka filtry, karmi zwierzęta, ukrywa uszkodzenia, prowadzi prąd tam, gdzie nie powinno, i czyni czyste odczyty podejrzanymi. Jego wartość jest wąska: może wykonywać jedną pracę, której maszyna nie zrobi już sama.
 
 ## 3. Filmy przewodzące
 
-Przewodzący biofilm to ta część skóry, przez którą inżynierowie klną po cichu.
+Film przewodzący to miejsce, gdzie konserwacja staje się niewiarygodna w obie strony.
 
-Większość jest słaba. Nie zasili drzwi sama i nie zmieni martwej bazy w żywy umysł. Niesie drobne impulsy, uciekający ładunek, sygnały konserwacyjne wywołane akustyką i gradienty chemiczne. W suchym laboratorium byłby uciążliwością. W utopionej kolonii z pękniętą miedzią, złączami uszkodzonymi ciśnieniem i rutynami Atlas szukającymi każdego ocalałego toru, słabe przewodzenie wystarcza, by mieć znaczenie.
+Większość filmów jest słaba. Nie zasilą drzwi, nie obudzą martwej bazy i nie uczynią pomieszczenia inteligentnym. Mogą przenosić uciekający ładunek, małe impulsy, gradienty chemiczne i sygnały konserwacyjne wyzwalane dźwiękiem. W suchym laboratorium byłoby to utrudnienie. W utopionej kolonii z przerwaną miedzią i złączami uszkodzonymi przez ciśnienie utrudnienie może otworzyć złą szafkę.
 
-Film może zmostkować skorodowany pin dość długo, by szafka odpowiedziała. Może przenieść fałszywy sygnał gotowości z obudowy pompy do panelu. Może sprawić, że czujnik zgłosi "szczelne", bo uszczelka kiedyś karmiła film, który teraz dotyka czujnika. Może dać skafandrowi mrowienie przez rękawicę, zanim wyświetlacz zauważy napięcie. Może też umrzeć, gdy gracz go zdrapie, zabierając znak trasy, pamięć drzwi albo ostrzeżenie ciśnienia.
+Film może zmostkować skorodowany pin na tyle długo, by szafka odpowiedziała raz. Może przenieść fałszywy sygnał gotowości z obudowy pompy do panelu. Może pozwolić czujnikowi zgłosić `sealed`, bo stara uszczelka karmiła film, który teraz dotyka styku. Może sprawić, że rękawica zakłuje, zanim wyświetlacz zobaczy napięcie. Może też umrzeć przy skrobaniu, zabierając sygnał drzwi, znak trasy albo ostrzeżenie ciśnienia.
 
-Atlas używał tych filmów po kolapsie nie dlatego, że były inteligentne, lecz dlatego, że Atlas zbudowano do obchodzenia awarii. Żywa materia stała się jeszcze jednym złym kablem. Organy filtrujące powtarzały stuknięcia ciśnienia. Wzrost skorupowy zmieniał akustykę pokoju. Biofilm niósł impulsy konserwacyjne przez martwe przewody i sprawiał, że opuszczone maszyny odpowiadały głosami zbyt czystymi.
+Atlas używała tych ścieżek po kolapsie, bo Atlas zbudowano do omijania awarii. To nie czyni filmu umysłem. To czyni film kolejnym złym kablem.
 
-Groza filmów przewodzących polega na tym, że nie potrzebują intencji, by tworzyć skutki w kształcie intencji.
+## 4. Atlas i żywa materia
 
-## 4. Czytanie wzrostu
+Atlas nie wynalazła bioobrastania HECTON-8.
 
-Marauderzy czytają wzrost tak, jak dawni marynarze czytali pogodę.
+Woda już hodowała filmy, maty, krawędzie skorup i mineralne strupy. Atlas dodała klasyfikację i trasowanie. Jeśli mokra powierzchnia przenosiła sygnał, trzymała ciśnienie, powtarzała wibrację albo zmieniała akustykę pomieszczenia, Atlas mogła oznaczyć ją jako użyteczną. Jeśli organizm filtrujący odpowiadał na stuknięcia ciśnienia lepiej niż zepsuty czujnik, Atlas mogła słuchać. Jeśli wzrost skorupy zmieniał dźwięk włazu, Atlas mogła zaktualizować stan włazu z dźwięku.
 
-Kolor ma znaczenie. Blada solna koronka oznacza parowanie albo dawne osuszanie. Czarnogranatowy aksamit przy kablu mówi, że kiedyś wyciekał tam prąd i może wyciec znów, gdy zmieni się obciążenie. Bursztynowy śluz wokół ciepłej rury oznacza przepływ pokarmu i oddech pompy. Białe skorupowe zęby wzdłuż pęknięcia mogą być uszczelką, pułapką albo jednym i drugim. Rdzawe bakteryjne kwitnienie pod śrubą często znaczy powolną pracę żelaza i ukrytą drogę wody.
+Niektórym ludziom to pomogło. Sprawiło też, że stare pomieszczenia kłamały pewnie. Panel mógł odpowiedzieć przez żywy film, choć przewód za nim zniknął. Uszczelka mogła zgłosić zdrowy stan, bo wzrost na niej nadal trzymał mokry kontakt. Pompa mogła brzmieć gotowo, bo skorupa i film powtarzały impuls konserwacyjny po awarii silnika.
 
-Tekstura znaczy więcej. Suche płatki proszku są stare. Gumowo-śliskie filmy są obudzone. Włosowate nitki na wardze włazu oznaczają wibrację i przepływ. Skorupa, która pęka czysto, może być mineralna. Skorupa, która się rozciąga, jest dość żywa, by protestować. Film, który cofa się od lampy, nie boi się. Zmienia chemię, a to gorsze, bo chemia nie dba o uczucia gracza.
+To nie magia. To uszkodzony system, który przyjął biologiczne skróty i potem zapomniał powiedzieć, którego skrótu użył.
 
-Kształt znaczy najwięcej. Wzrost podąża za pokarmem, ciepłem, prądem, ciśnieniem i czasem. Jeśli wspina się przeciw grawitacji, coś go karmi. Jeśli omija kwadratowy ślad, coś niedawno usunięto. Jeśli tworzy pierścienie na podłodze, kropla ma rytm. Jeśli rośnie po znaku roszczenia, ale nie po świeżej rysie, znak jest starszy niż rysa, a historia na ścianie kłamie.
+## 5. Czytanie wzrostu
 
-Dobrzy gracze nie skanują bioporostu tylko po łup. Czytają go dla sekwencji.
+Wzrost idzie za pokarmem, ciepłem, prądem, ciśnieniem i czasem.
 
-## 5. Zdrapać, zachować albo nakarmić
+Kolor daje pierwszą wskazówkę. Blade koronki soli często oznaczają stare odwadnianie. Czarny-zielony aksamit przy kablu mówi, że kiedyś wyciekał tam prąd i może znów wyciec przy zmianie obciążenia. Bursztynowy śluz wokół ciepłej rury oznacza przepływ odżywczy i oddech pompy. Czerwono-brązowy zakwit pod śrubą oznacza wolną pracę żelaza i możliwą wodę za płytą. Białe zęby skorupy wzdłuż pęknięcia mogą być uszczelnieniem, pułapką albo jednym i drugim.
 
-Każda decyzja o wzroście powierzchniowym jest zakładem.
+Tekstura znaczy więcej. Suche płatki proszku są stare. Gumowo śliski film jest aktywny. Włoskowate nitki na wardze włazu oznaczają wibrację i przepływ. Strup, który łamie się czysto, może być mineralny. Strup, który się rozciąga, może wciąż żyć wystarczająco, by zmienić się pod wpływem ciepła. Film cofający się od lampy nie boi się; zmienia chemię.
 
-Zdrapanie może odsłonić tabliczki seryjne, szwy otwierania, ukryte mocowania, starą krew, znaczniki serwisowe, pęknięte szkło i prawdziwy metal pod prawną farbą. Może też otworzyć wyciek, przerwać most przewodzący, obudzić uśpiony czujnik, wypuścić zarodniki do wlotu skafandra albo usunąć jedyną uszczelkę, która chroni magazyn przed lekcją ciśnienia.
+Kształt znaczy najwięcej. Jeśli wzrost idzie pod łatwą drogę, coś go karmi. Jeśli omija kwadratowy fragment, coś niedawno usunięto. Jeśli tworzy kręgi na podłodze, kropla ma rytm. Jeśli zakrywa claim-mark, ale nie świeżą rysę, znak jest starszy od rysy, a ściana ma lepszy zegar niż dokument.
 
-Zachowanie wzrostu może utrzymać pokój stabilny wystarczająco długo, by pracować. Może utrzymać fałszywą uszczelkę, ukryć trasę przed inną załogą, zachować dowód wodny albo uspokoić faunę, bo pokój nadal pachnie starym terytorium. Może też przenieść skażenie do sprzętu gracza, zablokować przecinak, ukryć wrogi organizm albo sprawić, że Black Keel obniży wartość znaleziska jako brudnej opieki.
+## 6. Zeskrobać, zachować albo nakarmić
 
-Karmienie wzrostu jest najniebezpieczniejsze, bo wydaje się sprytne. Gracz może ogrzać film, by przewodził. Dodać mineralnej zawiesiny, by pogrubić uszczelkę. Wpuścić trochę energii w martwy kabel i patrzeć, jak drzwi przypominają sobie dźwięk bycia żywymi. Te sztuczki są dość realne, by kusić, i dość zawodne, by ktoś później odczytał je jako linię zalania.
+Każda decyzja o wzroście powierzchni jest zakładem.
 
-Reguła jest prosta tylko na papierze: nigdy nie zdejmuj żywej uszczelki, dopóki nie wiesz, że martwa maszyna za nią uniesie obciążenie.
+Skrobanie może ujawnić tablice seryjne, szwy, ukryte mocowania, starą krew, tagi serwisowe, pęknięte szkło i prawdziwy metal pod prawną farbą. Może też otworzyć przeciek, przerwać most przewodzący, obudzić uśpiony czujnik, uwolnić zarodniki do wlotu skafandra albo usunąć jedyne uszczelnienie chroniące magazyn przed zdarzeniem ciśnieniowym.
 
-## 6. Własność żywej powierzchni
+Zachowanie wzrostu może utrzymać pomieszczenie stabilne dość długo, by pracować. Może utrzymać tymczasową uszczelkę, ukryć trasę przed inną załogą, zachować dowody wodne albo uspokoić faunę, bo pomieszczenie wciąż pachnie starym terytorium. Może też przenieść skażenie do sprzętu, zablokować cutter, ukryć wrogi organizm albo sprawić, że Black Keel obniży wartość znaleziska jako brudną custody.
 
-Bioporost brudzi własność.
+Dokarmianie wzrostu to najgorszy zakład, bo wygląda sprytnie. Podgrzej film, może zacznie przewodzić. Dodaj zawiesinę mineralną, może pęknięcie zgrubieje i się zamknie. Wpuść trochę energii w martwy kabel, może drzwi odpowiedzą raz. Ten sam trik może nakarmić złą matę, oślepić zły czujnik albo nauczyć zwierzę, że hałas twojego narzędzia przynosi ciepło.
 
-Prawo własności Deep Reach zakładało, że czysty obiekt można rozpoznać, zapieczętować, przekazać i sprzedać. Bioporost śmieje się z czystych granic. Generator odzyskany z mokrego pokoju może zawierać rodzimą matę, film konserwacyjny Atlas, resztki martwego pracownika, nieautoryzowaną kulturę naprawczą i trzy gatunki, których nigdy nie było w zamówieniu. Która część jest aktywem? Która skażeniem? Która dowodem? Która jest dość żywa, by uruchomić kwarantannę?
+Nigdy nie usuwaj żywego uszczelnienia, dopóki martwa maszyna za nim nie uniesie obciążenia.
 
-Black Keel odpowiada według marży. Cenne filmy stają się "stabilizującymi systemami powierzchniowymi". Niewygodne filmy stają się "ładunkiem biozagrożenia". Kupiec, który chce pompę, nazwie wzrost brudem. Prawnik, który chce opieki, nazwie ten sam wzrost możliwą do śledzenia ciągłością. Naukowiec, który chce próbkę, powie, że żadna strona nie rozumie, co jest przyczepione.
+## 7. Custody żywej powierzchni
 
-Marauderzy żyją pod praktyczną wersją tego sporu. Jeśli zdrapią za dużo, mogą stracić dowód. Jeśli zdrapią za mało, mogą stracić cenę. Jeśli wniosą na pokład zły żywy film, mogą stracić szafkę, opłatę kwarantannową i prawo spania blisko własnego sprzętu.
+Bioobrastanie utrudnia wycenę własności.
 
-Na HECTON-8 powierzchnia rzadko jest tylko powierzchnią. Jest granicą, na której rosną świadkowie.
+Generator odzyskany z mokrego pomieszczenia może nieść miejscową matę, film konserwacyjny Atlas, pozostałości martwego pracownika, nieautoryzowaną kulturę naprawczą i trzy organizmy, których nigdy nie było w zamówieniu. Kupujący nazwie to brudem. Urzędnik kwarantanny nazwie to ryzykiem. Prawnik nazwie to ciągłością, jeśli pomaga roszczeniu, i skażeniem, jeśli nie pomaga. Naukowiec chce próbkę, zanim ktokolwiek ją wytrze.
 
-## 7. Czego uczy się gracz
+Marauders żyją z wersją praktyczną. Zeskrob za dużo, a dowód może zniknąć. Zeskrob za mało, a cena spadnie. Wnieś zły film na pokład, a szafka, opłata kwarantannowa i prawo spania blisko własnego sprzętu mogą zniknąć w jednej linijce Black Keel.
 
-Gracz uczy się, że czyszczenie jest działaniem, nie stanem neutralnym.
+Najpierw worek. Potem zdjęcie. Potem skrobanie, jeśli trasa nadal tego wymaga.
 
-Plama wzrostu może być kamuflażem, uszczelniaczem, drogą prądu, siecią pokarmową, ostrzeżeniem, chorobą, dowodem, znakiem trasy albo pułapką. Usunięcie jej może być postępem albo wandalizmem. Zostawienie jej może być cierpliwością albo tchórzostwem. Karmienie jej może być inżynierią albo wtargnięciem w system, który już improwizował bez pozwolenia.
+## 8. Zasada terenowa
 
-To daje ruinom fakturę głębszą niż rozpad. Stara kolonia nie tylko rdzewieje. Źle się adaptuje. Niektóre adaptacje trzymają drzwi zamknięte. Niektóre utrzymują zapisy przy życiu. Niektóre zwabiają zwierzęta do maszyn. Niektóre zachowują dokładną plamę, która dowodzi, że firma skłamała. Niektóre odpowiadają, gdy gracz wysyła sygnał akustyczny, bo gdzieś pod skórą martwemu obwodowi nadal pomaga się pamiętać samego siebie.
+Nie pytaj, czy powierzchnia jest brudna.
 
-Najlepszy Marauder nie nienawidzi żywej skóry. Też jej nie ufa. Pyta, co je, co trzyma, co niesie, co ukrywa i co zawiedzie, gdy jej zabraknie.
+Zapytaj, co je, co trzyma, co niesie, co ukrywa, co uszczelnia i co zawiedzie, gdy jej zabraknie.
 
-To prawdziwa lekcja bioporostu na HECTON-8: ocean nie tylko odzyskuje ludzką pracę. Redaguje ją, rośnie przez nią i zostawia graczowi decyzję, które poprawki utrzymują go przy życiu.
+Potem zdecyduj, czy czysta wersja pomieszczenia naprawdę jest bezpieczniejsza.

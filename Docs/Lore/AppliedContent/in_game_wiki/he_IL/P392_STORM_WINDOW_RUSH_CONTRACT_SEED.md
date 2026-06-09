@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Storm Window Rush Contract Seed"
+title: "זרע חוזה בהלת חלון סערה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Storm Window Rush Contract Seed
+# זרע חוזה בהלת חלון סערה
 
-HE LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+בהלת חלון סערה היא משפחת חוזים שבה מזג האוויר והמסלול הופכים למערכות הלחץ הראשונות. המסלול לא מוסיף כוח מורש; הוא מקצר זמן עבודה בטוח, מצמצם גאומטריית חילוץ ומעניש תיקונים מרושלים מוקדם יותר.
 
 ## Scanner
 
-HE LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+זרע חוזה: חלון בהלה. תשלום גבוה יותר קשור לכיסוי סערה נסגר, תזמון תריס מסלולי וסבולת תיקון מופחתת.
 
 ## Terminal
 
-HE LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: חלון סערה דחוס, תריס ממסר מסלולי עוין, תקרת תשלום מוגבהת, קריאת bathydrop מוקדמת, סבולת תיקון מופחתת.
 
 ## Audio
 
-HE LOC HOLD: This contract pays because it hates waiting.
+החוזה הזה משלם כי החלון נסגר.
 
 ## Field Note
 
-HE LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+הערת מרודר: שכר בהלה נראה גדול יותר כי החוזה מחייב כל דקה פעמיים.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/he_IL. -->

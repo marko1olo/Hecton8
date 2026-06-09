@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Handtekeningen van de Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Handtekeningen van de Packet Notary Interface
 
-NL LOC HOLD: Packet Notary Interface signatures explain why some logs matter only after the player proves route, time and witness hash.
+De geborgen Packet Notary-strip is het eerste lagere-kantoorrecord dat een bericht bruikbaar maakt als bewijs in plaats van gerucht. Het bindt drie dingen: packet hash, relaisvenstertijd en de custody owner die het record aanraakte. Deep Reach kon een schoon log begraven als ongeverifieerd draaggolfruis; de notary interface maakt dat alleen moeilijker wanneer een tweede witness hash overleeft. Het zegel is een keten-van-bewaringstool, geen bekentenis. Som Varela's handtekening certificeert routetijd en custodystatus. Ze bewijst niet waarom het pakket vertraagd werd en noemt niet wie de vertraging beval.
 
 ## Scanner
 
-NL LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Pakketzegel geborgen: hashstrip intact, relaisvenster 17-A, custody owner onopgelost. Pas als bewijs behandelen na match van de witness chain.
 
 ## Terminal
 
-NL LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Route: Relay Spine / witness hash strip. Actie: packet hash, lokale relaisvertraging en custody owner verzegelen. Uitzondering: ontbrekende arbeidersnaam houdt pakket in claim-material queue. Escalatie: public ledger pas na tweede witness hash.
 
 ## Audio
 
-NL LOC HOLD: A seal is not mercy. It is a clock with a price.
+Het zegel is heel. Het tijdstempel is twee vensters te laat. Als de witness hash klopt, kunnen ze het geen ruis meer noemen.
 
 ## Field Note
 
-NL LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Verkoop dit niet als log. Verkoop het als klok met getuige: relaistijd, packet hash, custody owner. Zonder alle drie velden noemt Deep Reach het losse draaggolfruis.
 
 <!-- In-Game Wiki; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/nl_NL. -->

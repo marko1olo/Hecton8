@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "케이블 리프 중계 야드 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Cable Reef Relay Yard POI Kit
+# 케이블 리프 중계 야드 증거 키트
 
-KO LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+중계 야드는 혐오감을 도구 규율로 바꾼다. 케이블 재킷은 갈라졌고, 절연은 벗겨졌으며, Atlas 서비스 막은 같은 표면을 공유하도록 설계되지 않은 소켓을 가로질렀다. 깔끔한 절단 한 번이 아직 신호를 운반하는 유일한 길을 망칠 수 있다.
 
-## Scanner
-
-KO LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-KO LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-KO LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-KO LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+증거 키트는 물리적이다. 핑거 응답, 사지 맵, 절단 경고, 릴레이 포크, 살아 있는 물질이 부러진 경로를 이어받은 서비스 표식. 장소는 낯설기 전에 유용해야 한다. 위험은 수리 자체에 있다. 오퍼레이터를 살리면서 청구 기록을 오염시킬 수 있는 수리다.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ko_KR. -->

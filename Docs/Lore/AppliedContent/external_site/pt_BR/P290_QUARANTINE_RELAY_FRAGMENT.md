@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Quarantine Relay Fragment"
+title: "Fragmento de Relé de Quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Quarantine Relay Fragment
+# Fragmento de Relé de Quarentena
 
-PT-BR LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+O Fragmento de Relé de Quarentena define a borda amarga da sobrevivência em HECTON-8. O cenário não trata apenas de escapar da pressão da água; trata de escapar de registros, cadeias de custódia e reivindicações de propriedade que sobrevivem ao alagamento. O fragmento dá aos finais uma forma mais dura: alguém pode ser recuperado do oceano e ainda assim não estar livre.
 
 ## Scanner
 
-PT-BR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+O mesmo pacote de relé aprova a extração e nega a liberação. O oceano solta o corpo antes de a colônia soltar a pessoa.
 
 ## Terminal
 
-PT-BR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+RETENÇÃO DE RELÉ QRF-17 / EXTRAÇÃO: ACEITA / LIBERAÇÃO: NEGADA / MOTIVOS: custódia de amostra sem solução, revisão de ar obsoleta, disputa de requerente ativa, status de testemunha provisório.
 
 ## Audio
 
-PT-BR LOC HOLD: You are out of the water. You are not out of custody.
+Retenção de relé. Extração aceita. Liberação negada. Você saiu da água, não da custódia.
 
 ## Field Note
 
-PT-BR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Carimbado duas vezes: CORPO RECUPERADO, PESSOA RETIDA. A revisão de ar é anterior ao recibo de resgate; disputa do requerente segue aberta.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/pt_BR. -->

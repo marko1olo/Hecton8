@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Field Archive Longform
 spoiler_tier: 0
-title: "Garde tonne-window de Black Keel"
+title: "Garde tonne-window Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Garde tonne-window de Black Keel
+# Garde tonne-window Black Keel
 
-L'expression tonne-window ressemble à du calcul de fret jusqu'au moment où un Marauder la lit en comptant ses respirations. Black Keel ne demande pas la masse parce que son équipage a oublié la peur. Il la demande parce que chaque kilogramme quittant HECTON-8 devient une garde. Un corps devient garde de quarantaine. Un disque scellé devient garde de preuve. Une caisse d'alliage devient garde de sauvetage. Un sac de matériau de procédé Xenon-Omega devient garde de dette, garde de revendication et parfois garde de danger en même temps. Keelmark écrit ces catégories avant que le porteur bouge, parce que le porteur appartient à une chaîne de propriétaires qui peut survivre à l'embarras, mais pas à une charge sans prix. Voilà pourquoi la première réponse depuis l'orbite peut paraître cruelle. Le navire peut reconnaître un signal et refuser tout de même le levage. La fenêtre peut tenir la preuve mais pas le plongeur. Elle peut tenir le plongeur si la preuve reste derrière. Elle peut accepter du sauvetage qui paie le privilège pendant que le corps attend une ligne de quarantaine plus propre. Personne n'a besoin de rire pour que cela fasse mal. La douleur vient d'une frontière mûre qui fait exactement ce pour quoi elle a été bâtie : préserver le porteur, préserver la revendication, préserver la piste papier, et laisser la personne prendre une décision de masse dans l'eau.
+La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.
 
-## Scanner
+Chaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.
 
-LIGNE DE GARDE // La masse tonne-window acceptée peut être sauvetage, preuve, corps ou objet de dette. Un paquet entendu ne donne pas priorité de levage ; il attribue la responsabilité.
-
-## Terminal
-
-REÇU DE MASSE KEELMARK // La fenêtre accorde la garde à un slot, pas la pitié à une personne. Les charges en surmasse passent au prochain passage sauf si valeur de revendication, classe de quarantaine et géométrie du porteur s'alignent.
-
-## Audio
-
-Audio de dette Black Keel : je peux porter la preuve, le métal ou toi. Le registre demandera lequel garde le navire solvable.
-
-## Field Note
-
-Quand le porteur dit masse acceptée, il ne dit pas personne acceptée. Attache ta preuve à ta combinaison avant que le registre te fasse choisir.
+Pour le joueur, la pression de fin devient concrète : qu'est-ce qui rentre d'abord, corps, preuve, échantillon, outil, coordonnées ou histoire ? Black Keel calcule. La pitié ne dépasse le contrat que si le joueur force un meilleur dossier de garde.
 
 <!-- External Site; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/fr_FR. -->

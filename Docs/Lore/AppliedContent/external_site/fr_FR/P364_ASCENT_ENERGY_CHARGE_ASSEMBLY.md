@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Assemblage de charge énergétique d'ascension"
+title: "Assemblage de Charge Énergétique d'Ascension"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Assemblage de charge énergétique d'ascension
+# Assemblage de Charge Énergétique d'Ascension
 
-L'Assemblage de charge énergétique d'ascension lie l'économie de ressources aux conséquences narratives : blue debt et vent-forged hardware décident fiabilité d'évasion, custody des preuves et compromis.
+L'Assemblage de Charge Énergétique d'Ascension est l'endroit où l'économie de salvage de HECTON-8 cesse d'être abstraite. Le même matériau grandi sous pression qui achète l'attention d'un carrier peut aussi devenir la charge d'impulsion qui soulève une capsule hors de la mer.
 
-## Scanner
+Cet échange est dangereux parce que le blue debt n'est pas un carburant magique. C'est une matière de procédé Xenon-Omega avec historique de pression, état de contamination, comportement de confinement et valeur juridique. Une heat cell vent-forged peut fournir une énergie contrôlée. Un échantillon brut peut éclater, empoisonner le dossier de custody ou transformer une récupération valable en cargaison contestée.
 
-Berceau énergétique marqué par une pressure pulse. Une charge bon marché fait un cercueil propre.
-
-## Terminal
-
-ASCENT CHARGE : vent-forged heat cell, pressure-history insulator et custody stamp requis. Raw fuel rejeté. Blue debt non certifiée se fracture sous launch impulse et annule la recovery claim.
-
-## Audio
-
-Tu peux vendre la portance ou monter dessus. Pas les deux.
-
-## Field Note
-
-Chaque gramme dans le berceau est fuite, preuve ou blue-debt payout. La capsule ne pardonne pas l'avidité.
+Une charge complète contient donc matériel et langage de revendication dans le même berceau: heat cell, isolant, manchon d'impulsion, relevé de masse et custody stamp signé. Garde-la intacte et la capsule possède une portance certifiée. Casse-la pour la prime et l'océan peut encore laisser le moteur tirer, mais personne au-dessus n'est obligé d'accepter ce qui arrive.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/fr_FR. -->

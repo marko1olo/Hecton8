@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Abyssal Machine Field Repair Act"
+title: "심연 기계장 수리 게이트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Abyssal Machine Field Repair Act
+# 심연 기계장 수리 게이트
 
-KO LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+심연 기계장은 두려움을 절차로 바꾼다. 전도성 막, 음향 기관, 서비스 분지는 장식이 아니다. 압력, 전력 손실, 오염된 소유권 표 속에서 오퍼레이터가 라우팅해야 하는 부품이다.
 
-## Scanner
-
-KO LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-KO LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-KO LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-KO LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+이 단계가 작동하는 이유는 모든 수리가 유용하고 법적으로 더럽기 때문이다. 살아 있는 다리는 문을 복구할 수 있다. 같은 다리가 문을 생물학적으로 만들고, 수리를 Atlas 사건으로 만들며, 청구 분류를 어렵게 한다. 앞으로 가는 길은 문서를 더 나쁘게 만드는 것으로 지어진다.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ko_KR. -->

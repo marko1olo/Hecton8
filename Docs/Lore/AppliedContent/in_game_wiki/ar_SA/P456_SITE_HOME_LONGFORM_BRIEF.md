@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: مطالبة تحت الضغط"
+title: "HECTON-8: المطالبة تحت الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: مطالبة تحت الضغط
+# HECTON-8: المطالبة تحت الضغط
 
-تظهر ملاحظات P-63 البداية كعمل إنقاذ بعقد دين. الحقائق المفيدة ميكانيكية: قدرة صعود مستهلكة، إلكترونيات مغمورة، أختام متضررة، قراءات ماسح، ولغة رسمية لا تفسر الانبعاجات.
+تبدأ HECTON-8 بـMarauder مدين تسقطه Black Keel عبر claim window إلى P-63، حيث يحول كل إصلاح وscan وباب مختوم النجاة إلى دليل.
 
 ## Scanner
 
-سجل دخول Marauder. يربط عقد Black Keel بين P-63 وbathydrop متضرر ورهن 4.8 tonne-window وملف حادث لا يطابق آثار المعدن.
+مقالة الصفحة العامة: العقد قبل الأسطورة، نافذة Black Keel، bathydrop تالف، رف P-63 المضيء، إغفالات Deep Reach، وأول أثر Atlas.
 
 ## Terminal
 
-عقدة أرشيف عام // مطالبة H8. نافذة Aegir مفتوحة. العمل: إصلاح أختام الضغط، مسح P-63، استرجاع الحمولة، حفظ الدليل، والعودة قبل إغلاق هندسة الاستقبال.
+SITE LONGFORM: يعرض المسار القابل للعب عبر العمل تحت الضغط، custody الأدلة، لا إنقاذ فوري، ولا خطاف عائلي.
 
 ## Audio
 
-مقتطف من مرحل Black Keel: "النافذة ضيقة. أصلح غلاف الهبوط، اقرأ آثار الضغط، وأعد الدليل مع الحمولة."
+في HECTON-8 لا يبيعون لك إنقاذا. يبيعون لك claim ويتركون الماء يقرر الباقي.
 
 ## Field Note
 
-ملاحظة Marauder: الضوء على P-63 ليس أمانا. عد الهواء، أصلح الأختام قبل الحمولة، ولا تثق بملف لا يفسر الانبعاجات.
+إذا بدت الأوراق هادئة، فاقرأ المعدن. أول حقيقة في HECTON-8 تعيش بين سطر عقد وseal مكسور.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/ar_SA. -->

@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
@@ -38,7 +40,7 @@ namespace Hecton8.Gameplay
         private const int PacketAlignmentBytes = 8;
         private const int CanonicalDamagePacketAlignmentBytes = 8;
         private const byte IntegrityDamageChannel = (byte)Hecton8.Core.DamageChannel.Integrity;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 #if UNITY_EDITOR
         private const string PacketLayoutError = "Damage packet layout violation. Expected DamageRouterPacket=64 bytes and DamagePacket=48 bytes, both 8-byte aligned.";
 #endif
@@ -226,7 +228,50 @@ namespace Hecton8.Gameplay
 
         private static float ResolveDepthMeters(Vector3 impactPointWorld)
         {
-            return IsFinite(impactPointWorld.y) ? Mathf.Max(0f, DefaultSeaLevelY - impactPointWorld.y) : 0f;
+            return IsFinite(impactPointWorld.y) ? Mathf.Max(0f, ResolveSeaLevelY() - impactPointWorld.y) : 0f;
+        }
+
+        private static float ResolveSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out float seaLevelY))
+            {
+                return seaLevelY;
+            }
+
+            return DefaultSeaLevelY;
+        }
+
+        private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (IsFinite(candidateSeaLevelY) &&
+                Mathf.Abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
+        private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (IsFinite(candidateSeaLevelY) &&
+                Mathf.Abs(candidateSeaLevelY) > 0.0001f &&
+                Mathf.Abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private static float3 SanitizeFloat3(float3 value)

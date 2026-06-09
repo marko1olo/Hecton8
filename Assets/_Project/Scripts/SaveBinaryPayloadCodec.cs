@@ -51,6 +51,10 @@ namespace Hecton8.SaveSystem
         private const int StorageCrateModuleSaveVersion = SaveData.StorageCrateModulePersistenceVersion;
         private const int FabricatorPendingOutputSaveVersion = SaveData.FabricatorPendingOutputPersistenceVersion;
         private const int CultivationSeedHashSaveVersion = SaveData.CultivationSeedHashPersistenceVersion;
+        private const int ProceduralTerrainIdentitySaveVersion = SaveData.ProceduralTerrainIdentityPersistenceVersion;
+        private const int CelestialLightPhaseSaveVersion = SaveData.CelestialLightPhasePersistenceVersion;
+        private const int ProceduralTerrainIdentityContractSaveVersion =
+            SaveData.ProceduralTerrainIdentityContractPersistenceVersion;
         private const int MaxVoxelDeltaChunks = 65536;
         private const int MaxVoxelDeltaCarvingOperations = 65536;
         private const float VoxelDeltaDefaultVoxelSize = 0.25f;
@@ -613,7 +617,9 @@ namespace Hecton8.SaveSystem
                 && WriteRtgDecay(ref writer, data)
                 && WriteStringStringDictionary(ref writer, data.CustomModData, SaveData.MaxCustomModDataEntries)
                 && WriteFirstHourLockedDtos(ref writer, data)
-                && WriteVoxelDeltaPersistence(ref writer, data.voxelDeltaPersistence);
+                && WriteVoxelDeltaPersistence(ref writer, data.voxelDeltaPersistence)
+                && WriteCelestialLightPhase(ref writer, data)
+                && WriteProceduralTerrainIdentity(ref writer, data.proceduralTerrainIdentity);
         }
 
         private static bool ReadSaveData(
@@ -786,7 +792,12 @@ namespace Hecton8.SaveSystem
                     ref reader,
                     data.version,
                     preV77CellFlagsReadMode,
-                    out data.voxelDeltaPersistence))
+                    out data.voxelDeltaPersistence)
+                || !ReadCelestialLightPhase(ref reader, data.version, data)
+                || !ReadProceduralTerrainIdentity(
+                    ref reader,
+                    data.version,
+                    out data.proceduralTerrainIdentity))
             {
                 return false;
             }
@@ -807,6 +818,7 @@ namespace Hecton8.SaveSystem
             data.suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
             data.narrativeDepthTier = Math.Max(0, data.narrativeDepthTier);
             data.LODQualityPreset = SanitizeLodQualityPreset(data.LODQualityPreset);
+            SanitizeCelestialLightPhase(data);
             SanitizeRootCollectionsAfterRead(data);
             data.lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
                 data.lastDiscoveredBiomeId,
@@ -1139,6 +1151,185 @@ namespace Hecton8.SaveSystem
                 saveDataVersion,
                 VoxelDeltaCellFlagsReadMode.CurrentRequired,
                 out value);
+        }
+
+        private static bool WriteProceduralTerrainIdentity(
+            ref BufferWriter writer,
+            ProceduralTerrainIdentityDTO value)
+        {
+            value = SanitizeProceduralTerrainIdentity(value);
+            return writer.WriteUInt(value.authoringSeed)
+                && writer.WriteInt(value.runtimeSeed)
+                && writer.WriteInt(value.worldGenerationVersionId)
+                && writer.WriteUInt(value.macroArtifactVersion)
+                && writer.WriteFloat(value.macroChunkSizeMeters)
+                && writer.WriteInt(value.chunkMinX)
+                && writer.WriteInt(value.chunkMinZ)
+                && writer.WriteInt(value.chunkMaxX)
+                && writer.WriteInt(value.chunkMaxZ)
+                && writer.WriteUInt(value.chunkArtifactRangeHash)
+                && writer.WriteFloat(value.selectedWaterLevelY)
+                && writer.WriteFloat(value.waterCalibrationTravelMeters)
+                && writer.WriteUInt(value.waterCalibrationSourceHash)
+                && writer.WriteUInt(value.flags)
+                && writer.WriteUInt(value.terrainProviderFlags)
+                && writer.WriteInt(value.heightCacheRevision)
+                && writer.WriteUInt(value.terrainEntityHash)
+                && writer.WriteUInt(value.surfaceMaterialContractVersion)
+                && writer.WriteUInt(value.mesoDetailContractVersion)
+                && writer.WriteUInt(value.detailEligibilityContractVersion)
+                && writer.WriteUInt(value.mesoParamsHash);
+        }
+
+        private static bool WriteCelestialLightPhase(ref BufferWriter writer, SaveData data)
+        {
+            bool hasPhase = data != null &&
+                            data.celestialLightPhaseSerialized &&
+                            math.isfinite(data.celestialLightTimeOfDay01);
+            float timeOfDay01 = hasPhase
+                ? math.saturate(data.celestialLightTimeOfDay01)
+                : SaveData.CelestialLightTimeOfDayDefault;
+
+            return writer.WriteBool(hasPhase)
+                && writer.WriteFloat(timeOfDay01);
+        }
+
+        private static bool ReadCelestialLightPhase(ref BufferReader reader, int saveDataVersion, SaveData data)
+        {
+            if (data == null)
+                return true;
+
+            if (saveDataVersion < CelestialLightPhaseSaveVersion)
+            {
+                data.celestialLightPhaseSerialized = false;
+                data.celestialLightTimeOfDay01 = SaveData.CelestialLightTimeOfDayDefault;
+                return true;
+            }
+
+            if (!reader.ReadBool(out data.celestialLightPhaseSerialized) ||
+                !reader.ReadFloat(out data.celestialLightTimeOfDay01))
+            {
+                return false;
+            }
+
+            SanitizeCelestialLightPhase(data);
+            return true;
+        }
+
+        private static void SanitizeCelestialLightPhase(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            bool hasPhase = data.celestialLightPhaseSerialized &&
+                            math.isfinite(data.celestialLightTimeOfDay01);
+            data.celestialLightPhaseSerialized = hasPhase;
+            data.celestialLightTimeOfDay01 = hasPhase
+                ? math.saturate(data.celestialLightTimeOfDay01)
+                : SaveData.CelestialLightTimeOfDayDefault;
+        }
+
+        private static bool ReadProceduralTerrainIdentity(
+            ref BufferReader reader,
+            int saveDataVersion,
+            out ProceduralTerrainIdentityDTO value)
+        {
+            value = default;
+            if (saveDataVersion < ProceduralTerrainIdentitySaveVersion)
+                return true;
+
+            if (!reader.ReadUInt(out value.authoringSeed)
+                || !reader.ReadInt(out value.runtimeSeed)
+                || !reader.ReadInt(out value.worldGenerationVersionId)
+                || !reader.ReadUInt(out value.macroArtifactVersion)
+                || !reader.ReadFloat(out value.macroChunkSizeMeters)
+                || !reader.ReadInt(out value.chunkMinX)
+                || !reader.ReadInt(out value.chunkMinZ)
+                || !reader.ReadInt(out value.chunkMaxX)
+                || !reader.ReadInt(out value.chunkMaxZ)
+                || !reader.ReadUInt(out value.chunkArtifactRangeHash)
+                || !reader.ReadFloat(out value.selectedWaterLevelY)
+                || !reader.ReadFloat(out value.waterCalibrationTravelMeters)
+                || !reader.ReadUInt(out value.waterCalibrationSourceHash)
+                || !reader.ReadUInt(out value.flags))
+            {
+                return false;
+            }
+
+            if (saveDataVersion >= ProceduralTerrainIdentityContractSaveVersion &&
+                (!reader.ReadUInt(out value.terrainProviderFlags)
+                 || !reader.ReadInt(out value.heightCacheRevision)
+                 || !reader.ReadUInt(out value.terrainEntityHash)
+                 || !reader.ReadUInt(out value.surfaceMaterialContractVersion)
+                 || !reader.ReadUInt(out value.mesoDetailContractVersion)
+                 || !reader.ReadUInt(out value.detailEligibilityContractVersion)
+                 || !reader.ReadUInt(out value.mesoParamsHash)))
+            {
+                return false;
+            }
+
+            value = SanitizeProceduralTerrainIdentity(value);
+            return true;
+        }
+
+        private static ProceduralTerrainIdentityDTO SanitizeProceduralTerrainIdentity(
+            ProceduralTerrainIdentityDTO value)
+        {
+            value.worldGenerationVersionId = math.max(0, value.worldGenerationVersionId);
+            value.macroChunkSizeMeters = math.isfinite(value.macroChunkSizeMeters)
+                ? math.max(0f, value.macroChunkSizeMeters)
+                : 0f;
+            value.selectedWaterLevelY =
+                math.isfinite(value.selectedWaterLevelY) &&
+                math.abs(value.selectedWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
+                    ? value.selectedWaterLevelY
+                    : 0f;
+            value.waterCalibrationTravelMeters =
+                math.isfinite(value.waterCalibrationTravelMeters) &&
+                value.waterCalibrationTravelMeters > 0f
+                    ? math.min(
+                        value.waterCalibrationTravelMeters,
+                        WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+                    : 0f;
+
+            if (value.chunkMinX > value.chunkMaxX)
+            {
+                int swap = value.chunkMinX;
+                value.chunkMinX = value.chunkMaxX;
+                value.chunkMaxX = swap;
+            }
+
+            if (value.chunkMinZ > value.chunkMaxZ)
+            {
+                int swap = value.chunkMinZ;
+                value.chunkMinZ = value.chunkMaxZ;
+                value.chunkMaxZ = swap;
+            }
+
+            if (value.macroArtifactVersion == 0u)
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsMacroGeologyPresent;
+            if (value.waterCalibrationSourceHash == 0u)
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent;
+            value.heightCacheRevision = math.max(0, value.heightCacheRevision);
+            if (value.terrainProviderFlags == 0u && value.terrainEntityHash == 0u)
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainProviderIdentityPresent;
+            if (value.heightCacheRevision == 0 &&
+                value.terrainEntityHash == 0u &&
+                (value.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsHeightPayloadPresent) == 0u)
+            {
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainHeightPayloadPresent;
+            }
+
+            if (value.surfaceMaterialContractVersion == 0u)
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainMaterialContractsPresent;
+            if (value.mesoDetailContractVersion == 0u ||
+                value.detailEligibilityContractVersion == 0u ||
+                value.mesoParamsHash == 0u)
+            {
+                value.flags &= ~ProceduralTerrainIdentityDTO.FlagsTerrainMesoContractsPresent;
+            }
+
+            return value;
         }
 
         private static bool ReadVoxelDeltaPersistenceBody(

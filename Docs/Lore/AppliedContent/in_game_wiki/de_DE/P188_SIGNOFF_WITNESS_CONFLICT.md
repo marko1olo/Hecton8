@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Konflikt zwischen Freigabe und Zeuge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Konflikt zwischen Freigabe und Zeuge
 
-DE LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Der Konflikt zwischen Freigabe und Zeuge ist der Moment, in dem die offizielle Deep-Reach-Geschichte nicht mehr nur unvollständig ist, sondern falsch wird. Die öffentliche Freigabe stellt HECTON-8 als Gezeitenkatastrophe ohne handlungsfähigen Widerspruch vor der Evakuierungsverzögerung dar. Lokale Zeugenhashes sagen anderes: Evakuierungsjuristen, Atlas Safety und Routenbetrieb waren im selben Prüfungsraum, während Margenverlust, Arbeiternot und Routentiming bereits sichtbar waren. Der Konflikt gibt dem Spieler eine starke Beweisform. Eine schlechte Unterschrift reicht nicht; sie muss neben Türlogs, beschädigte Uhren und Namensstempel gelegt werden, bis das Alibi bricht.
 
 ## Scanner
 
-DE LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Die Freigabe sagt, die Evakuierungsprüfung habe keinen lebenden Widerspruch gehabt. Die Zeugenhashes sagen, der Widerspruch stand im Raum.
 
 ## Terminal
 
-DE LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: öffentliche Freigabe markiert Gezeitenversagen als alleinige Ursache. Lokaler Zeugenhash platziert Evakuierungsjuristen, Atlas Safety und Routenbetrieb vor der Freigabesperre im Prüfungsraum. Türlog, Namensstempel und defekte Routenuhr vergleichen.
 
 ## Audio
 
-DE LOC HOLD: The signatures line up. The bodies do not.
+Der Bericht sagt, niemand konnte es wissen. Das Türlog widerspricht.
 
 ## Field Note
 
-DE LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Eine Unterschrift ist nur sauber, bis der Raum sich erinnert, wer daneben stand.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/de_DE. -->

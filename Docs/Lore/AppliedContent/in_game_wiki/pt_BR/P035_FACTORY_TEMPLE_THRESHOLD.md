@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Limiar fábrica-templo
 
-O limiar marca a gramática final: Deep Reach, colônia, máquinas Atlas-6 e oceano HECTON-8 viram um sistema físico.
+O Limiar fábrica-templo é o conjunto final da comporta inferior além da Fábrica do fundo. Não é uma fusão mítica. É uma divisão de carga em funcionamento: treliças da Deep Reach seguram tensão antiga do casco, tubos de retorno ainda movem salmoura e calor, crescimento de carbonato sela juntas falhas, e Atlas-6 roteia continuidade pelos contatos que ainda respondem. A leitura vem da ordem das abraçadeiras, marcas de fluxo, ruído do barramento de cabo e posição das etiquetas.
 
 ## Scanner
 
-A estrutura do fundo não é uma base. Casco de fábrica, lógica de santuário e tecido vivo de pressão compartilham carga.
+Leitura da comporta inferior: treliça de fábrica, tubo de retorno, vedação de pressão e barramento de roteamento Atlas carregam a mesma carga. Não resta fronteira limpa entre parede e porta.
 
 ## Terminal
 
-Aviso: treliça industrial, vedação biogênica, calor xenon lattice e roteamento Atlas dividem autoridade estrutural.
+THRESHOLD LOAD NOTICE
+Treliça: sob esforço
+Tubo de retorno: ativo
+Vedação de pressão: sobrecrescimento de carbonato
+Barramento de roteamento: canal de continuidade ATLAS-6
+Acesso humano: não verificado
+Ação: marcar ordem das abraçadeiras antes de abrir qualquer junta
 
 ## Audio
 
-O oceano não enterrou a fábrica. Fez dela um corpo.
+Não chame isso de porta. Descubra qual linha segura a pressão antes de pedir que ela abra.
 
 ## Field Note
 
-Aqui o mapa para de fingir ruínas coloniais.
+O rótulo do mapa diz limiar. Confira as abraçadeiras, não a palavra. A comporta segura porque quatro sistemas assumem a mesma carga.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/pt_BR. -->

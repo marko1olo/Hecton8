@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "וריאציות ראיות בארונית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# וריאציות ראיות בארונית
 
-HE LOC HOLD: Locker Prop Variants defines reusable art and wiki hooks for colony evidence.
+HECTON-8 משתמשת בארוניות כמשטחי ראיה, לא כקופסאות נוסטלגיה. ארונית יכולה להכיל סרט לחץ, שברי אטם, אסימוני מחסן כלים, קרדיטי ארוחה, גיר מסלול, מדבקות משמרת, סירובי medlock והערות תיקון של Marauder. אף פריט בודד אינו צריך להסביר את האסון. יחד הם מראים שהמושבה הטבועה הייתה קודם מקום עבודה עם הרגלים.
+
+הכוח נמצא באיפוק. הארונית לא צריכה לדרוש עצב. היא צריכה להראות מה אדם עשה בידיים רטובות ובאוויר מוגבל: סתם דליפה, לווה אטם, סימן דרך, שמר סירוב רפואי, חסך ארוחה או השאיר כלי מלוכלך כי המשמרת הבאה הייתה אמורה לסיים. כך חדרים פרוצדורליים מקבלים מרקם אנושי בלי סצנה ייחודית לכל מת.
+
+salvage הוא בחירה. לחפצים קטנים יש ערך, אבל לסידור שלהם יש משמעות. Marauder טוב מתעד את הסט לפני שהוא לוקח. מרושל הופך אדם לחלקים רופפים.
 
 ## Scanner
 
-HE LOC HOLD: A locker should say what a worker touched before the flood.
+ארונית // סרט לחץ, אטם שחוק, רצועת קרדיט ארוחה, אסימון מחסן כלים, גיר מסלול וסירוב medlock על אותו מדף. זה מלאי שימושי אחרון של עובד, לא קישוט.
 
 ## Terminal
 
-HE LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+וריאציות ארונית // קרא סדר לפני salvage: סרט ליד כפפות פירושו עבודת דליפה; אטם שחוק - פתחים חוזרים; קרדיט ארוחה - חוב משמרת; גיר - ניווט מאולתר; סירוב medlock - עבודה בזמן מחלה; הערת Marauder - מחלוקת ראיה מאוחרת.
 
 ## Audio
 
-HE LOC HOLD: The best memorial is a tool still dirty from the last shift.
+האנדרטה הטובה ביותר אינה לוחית. היא כלי שעוד יודע איזו יד הייתה עייפה.
 
 ## Field Note
 
-HE LOC HOLD: Avoid sentimental clutter. Use work marks.
+אל תקשט ארוניות. בנה אותן מדברים שליד עייפה הייתה סיבה אמיתית לגעת בהם.
 
 <!-- External Site; generated from P168_LOCKER_PROP_VARIANTS/he_IL. -->

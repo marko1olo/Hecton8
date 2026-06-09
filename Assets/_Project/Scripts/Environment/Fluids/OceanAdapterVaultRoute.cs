@@ -1,4 +1,5 @@
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -27,7 +28,7 @@ namespace Hecton8.Environment.Fluids
         public const int TelemetryCapacity = 300;
         public const int ProfileCapacity = 16;
         public const int CsvScratchBytes = 65536;
-        public const float DefaultWaterLevel = 14.02f;
+        public const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         public const BufferID RequestBufferID = (BufferID)72960;
         public const BufferID ResultBufferID = (BufferID)72961;
         public const BufferID TelemetryRingBufferID = (BufferID)72962;
@@ -113,8 +114,7 @@ namespace Hecton8.Environment.Fluids
         private static float ResolveWaterLevel(float candidateWaterLevel)
         {
             return math.isfinite(candidateWaterLevel) &&
-                math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? candidateWaterLevel
                 : DefaultWaterLevel;
         }

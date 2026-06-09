@@ -19,6 +19,14 @@ localization_flags: 1
 
 # المستعمرة والعمال
 
-عنقود المستعمرة والعمال يمنع HECTON-8 من أن يصبح خريطة غرف فارغة. النسخة الرسمية من Deep Reach تضغط الناس في فئات خسارة، لكن السجلات الباقية تحفظهم عبر العمل: pump chief في pressure board، وrelay operator في witness trays، وbrine crew في طرق الملح وration ledgers، وtriage technician في repair tags، وforge shift في rejects لم يجد أحد وقتا لإخفائها. هذه ليست خطافات عائلية للبطل. إنها أدلة عمل. يقرأ Marauder لماذا بقي باب مفتوحا، ولماذا أعيد تشغيل مضخة متأخرا، ولماذا قد يكون name tag صغير أقوى من loss summary نظيف.
+تمنع مسار المستعمرة والعمال HECTON-8 من أن تصبح خرابا جميلا مليئا بغرف بلا أسماء. سجلت Deep Reach الكارثة كـstorm وcollapse وfailed autonomy وAtlas rescue وlost data. هذه الكلمات مفيدة لأنها تضغط المسؤولية. أما worker records التي بقيت فتفعل العكس. إنها تبقي الأسماء ملتصقة بالقرارات.
+
+يبقى pump chief مرئيا من خلال pressure board لم تعد إلى الصفر حين كان يجب أن تفعل. يبقى relay hand مرئيا في صينية witness tags سحبت قبل أن تعمى الخطوط. تترك brine crew شكلها في route stamps وration ledgers وقفازات أكلها الملح. يظهر triage technician حيث يقول repair tag من سُمح له بإنفاق الأكسجين على غريب. ينجو vent-forge operator داخل rejected parts كان يجب أن تختفي لو كان loss report نظيفا.
+
+لذلك يرفض worker cluster الـcheap family hook. لا تحتاج HECTON-8 إلى والد سري للبطل أو أخ مفقود أو صورة عاطفية كي تجعل المستعمرة بشرية. يصبح الشخص مقروءا عندما يبقى باب مفتوحا بسبب اسم على pump card، وعندما يغير shift swap من مات في الممر، وعندما ينقل توقيع quarantine delay من safety إلى liability.
+
+يقرأ Marauder الناس كـpressure evidence. يجب أن يجيب كل dossier جيد أولا عن سؤال عملي: ماذا امتلك هذا العامل، ماذا أخّر، ماذا أصلح، ماذا رفض، ماذا زوّر أو ماذا حمى؟ عندما تصبح الإجابة واضحة تأتي العاطفة من دون استجداء.
+
+لم تكن المستعمرة فارغة قبل دخول المحيط. كانت مليئة بالروتين والضغائن والكفاءة وshortcuts والخوف والفخر المهني. السجلات الباقية ليست لوحات تذكارية. إنها وثائق عمل ما زالت تعمل، وبعضها ما زال قادرا على الاتهام.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ar_SA. -->

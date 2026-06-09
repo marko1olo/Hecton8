@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Quarantine Relay Fragment"
+title: "Quarantäne-Relaisfragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Quarantine Relay Fragment
+# Quarantäne-Relaisfragment
 
-DE LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Das Quarantäne-Relaisfragment definiert die bittere Kante des Überlebens in HECTON-8. Das Setting handelt nicht nur davon, Wasserdruck zu entkommen, sondern auch Akten, Verwahrungsketten und Eigentumsansprüchen, die die Flut überstehen. Das Fragment gibt Enden eine härtere Form: Jemand kann aus dem Ozean geborgen werden und trotzdem nicht frei sein.
 
 ## Scanner
 
-DE LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Dasselbe Relaispaket genehmigt die Bergung und verweigert die Freigabe. Der Ozean lässt den Körper eher gehen als die Kolonie die Person.
 
 ## Terminal
 
-DE LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+RELAISHALT QRF-17 / BERGUNG: AKZEPTIERT / FREIGABE: VERWEIGERT / GRÜNDE: Probenverwahrung ungeklärt, Luftprüfung veraltet, Anspruchsstreit aktiv, Zeugenstatus vorläufig.
 
 ## Audio
 
-DE LOC HOLD: You are out of the water. You are not out of custody.
+Relaishalt. Bergung akzeptiert. Freigabe verweigert. Du bist aus dem Wasser, nicht aus der Verwahrung.
 
 ## Field Note
 
-DE LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Zweifach gestempelt: KÖRPER GEBORGEN, PERSON ZURÜCKGEHALTEN. Luftprüfung älter als Rettungsbeleg; Anspruchsstreit offen.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/de_DE. -->

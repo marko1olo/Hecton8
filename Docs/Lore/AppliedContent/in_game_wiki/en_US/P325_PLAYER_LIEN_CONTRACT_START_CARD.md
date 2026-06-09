@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Player Lien Contract Start Card
 
-Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+Player Lien Contract Start Card locks the protagonist into HECTON-8 as a compromised professional, not an innocent tourist. The player begins with a practical motive: a salvage contract, a debt lien, old access knowledge and enough confidence to believe this is work. That matters because the game should not need a lost-relative hook to make the descent personal. The personal pressure comes from evidence. A former Deep Reach field key still being recognized by Black Keel is not a convenience; it is a warning that the old system never fully forgot the operator. The contract gives the player a reason to enter the ocean and a reason to misunderstand the first danger. They think they are reading a job file. The file is also reading them: prior clearance, route familiarity, liability history and beneficiary conflict. By the time the player understands that the old employer is not merely background, the lien has already turned professional curiosity into custody.
 
 ## Scanner
 
-Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+The start card does not make you a chosen victim. It makes you a former Deep Reach professional with a lien, a key and a reason to lie to yourself.
 
 ## Terminal
 
-CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACT START / operator: independent salvage contractor / former access: Deep Reach field key, inactive but recognized / lien: active / declared motive: claim value / undeclared pressure: prior exposure, route familiarity, beneficiary conflict.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You came for work. The file remembered you before you remembered it.
 
 ## Field Note
 
-No lost-relative hook. Keep motive professional-to-personal.
+No lost-relative hook. Motive begins as work: salvage value, old field access, professional exposure, masked personal pressure.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/en_US. -->

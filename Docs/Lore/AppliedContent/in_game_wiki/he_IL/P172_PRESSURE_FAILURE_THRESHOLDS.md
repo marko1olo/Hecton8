@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "ספי כשל תחת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# ספי כשל תחת לחץ
 
-HE LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+ספי כשל תחת לחץ הופכים את ה-salvage ב-HECTON-8 לפיזי במקום מופשט. מיכל אינו בטוח כי שמו ירוק ברשימת המלאי. הוא בטוח כי הקליפה, האטם, המהדק, סימן ההוכחה והיסטוריית הנתיב עדיין מסכימים עם העומק סביבו. הספים האלה הם גם כלל הוגנות לשחקן. לפני שכשל הופך לאובדן, העולם צריך לדבר: אטם נוקש, gasket נסחף, מהדק מרעיש, סדק שיער נוצץ, פריחת מלח גדלה, החזר אקוסטי מרפה, או ערפל דגימה מתה מתחיל להעכיר את הזכוכית. כל אות אומר אותו דבר בדרגות שונות: החומר עבר מאובייקט שימושי לסכנה מקומית. כך יצירה, UI ואודיו סביבתי יכולים לחלוק אותה שפת אזהרה. השחקן נענש על התעלמות מלחץ, לא על אי קריאת מתמטיקה נסתרת.
 
 ## Scanner
 
-HE LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+דגימה טובה הופכת לסכנה כשהיא חוצה את קו הלחץ הלא נכון. לאוקיינוס לא אכפת שהתווית כמעט צדקה.
 
 ## Terminal
 
-HE LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+כשל לחץ / shallow-rated: נקישת אטם וזחילת מים / industrial-rated: סחיפת gasket ופטפוט מהדק / brine-rated: סדק שיער ופריחת מלח / abyssal-rated: רפאות אקוסטית, ערפל דגימה מתה / Atlas-rated: נעילת משמורת לפני אובדן מבני.
 
 ## Audio
 
-HE LOC HOLD: Pressure does not care that the label was almost right.
+ללחץ לא אכפת שהתווית כמעט הייתה נכונה.
 
 ## Field Note
 
-HE LOC HOLD: Failure thresholds should be readable before they punish.
+ספי כשל חייבים להיות קריאים לפני העונש: נקישה, סחיפה, סדק שיער, פריחת מלח, ערפל דגימה מתה. אם השחקן לומד רק אחרי אובדן, העולם מרמה.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/he_IL. -->

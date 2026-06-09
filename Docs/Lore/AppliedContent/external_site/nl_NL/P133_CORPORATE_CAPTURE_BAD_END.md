@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Corporate gevangenneming: schone redding"
+title: "Corporate capture: schone redding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Corporate gevangenneming: schone redding
+# Corporate capture: schone redding
 
-Corporate gevangenneming werkt omdat het als hulp begint. Het signaal is schoon, het ophalen professioneel, en de kamer heeft lucht. Dan wordt de volgorde duidelijk: coördinaten eerst, XO custody daarna, Atlas-toegang als derde, welzijn van de contractant na review.
+Corporate capture is eng omdat het competent is. Het reddingsteam lijkt niet op plunderaars. Het heeft procedure, schone oppervlakken, medische taal en een plausibel recht om custody te vragen. Daardoor kan de val sluiten zonder schot.
 
-De oceaan stopt met de speler verpletteren, maar Deep Reach begint het verhaal te conserveren. Getuigenis wordt verzegeld in contaminatietaal, payload-custody beweegt vóór medische debriefing, en elke naam die de speler droeg wordt een aansprakelijkheidsscherm. Dit is geen dood. Het is overleven in de machine die stilte nodig had.
+De volgorde vertelt de waarheid. Coördinaten worden gevraagd vóór de polscontrole. XO-custody en Atlas-toegang bewegen vóór getuigenis. De contractor leeft, maar het verhaal wordt onder contaminatiereview verzegeld, en elke gedragen naam wordt een aansprakelijkheidsscherm. Dit is geen dood. Het is overleven binnen de instelling die stilte nodig had.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/nl_NL. -->

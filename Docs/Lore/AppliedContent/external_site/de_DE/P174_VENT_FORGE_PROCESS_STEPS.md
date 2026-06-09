@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Vent Forge Process Steps"
+title: "Schlotschmiede-Prozessschritte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Vent Forge Process Steps
+# Schlotschmiede-Prozessschritte
 
-DE LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+Schlotschmiede-Prozessschritte beschreiben die Hard-Sci-Fi-Fantasie hinter HECTON-8-Fabrikation. Der Planet liefert Hitze und Druck, die Kolonie kaputte Klemmen und Prozesserinnerung, der Spieler Urteilskraft. Dieselbe lesbare Kette kann künftige Crafting-Beats, Environmental Storytelling und Audiofeedback tragen.
 
 ## Scanner
 
-DE LOC HOLD: Vent forging should feel like using the planet against itself.
+Schlotschmieden ist keine magische Metallarbeit. Es leiht Hitze, Druck und Timing des Planeten, ohne dem Planeten das Teil zu überlassen.
 
 ## Terminal
 
-DE LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+SCHLOTSCHMIEDE / 01 Salzlake aus Rohling spülen / 02 vor Puls klemmen / 03 bei Schlotanstieg vorheizen / 04 im Drucktief versiegeln / 05 in Kaltstrom abschrecken / 06 per akustischem Ring zertifizieren / Fehler: verzogener Schrott, Salzblüte oder druckgerissenes Teil.
 
 ## Audio
 
-DE LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Der Mond ist der Ofen. Du darfst ihn nur ausleihen.
 
 ## Field Note
 
-DE LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Der Prozess muss als Spülen, Klemmen, Vorheizen, Versiegeln, Abschrecken, Ringtest lesbar sein. Das Risiko ist nicht Flamme, sondern das verpasste Drucktief.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/de_DE. -->

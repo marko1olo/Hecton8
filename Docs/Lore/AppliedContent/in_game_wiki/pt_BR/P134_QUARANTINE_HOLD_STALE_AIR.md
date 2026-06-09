@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Retenção de quarentena: ar viciado"
+title: "Retenção de quarentena: ar velho"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retenção de quarentena: ar viciado
+# Retenção de quarentena: ar velho
 
-Retenção de Quarentena salva o corpo e suspende a agency. O jogador escapou da pressão, mas não da custody. Cada respiração é medida enquanto a prova espera atrás da linguagem de revisão.
+Retenção de quarentena salva o corpo e suspende a agência. Não precisa haver vilão na sala. O formulário diz recuperado vivo, o contador de ar diz ração ativa, e a próxima porta só abre depois de revisão de contaminação, desafio do claimant e auditoria de perda. A prova espera atrás de uma linguagem feita para soar razoável. Cada declaração é atrasada por mais tempo do que os trabalhadores tiveram para viver. O oceano desapareceu, mas a pressão aprendeu a vestir papelada.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Corpo recuperado. Testemunha selada. Ração de ar ativa.
 
 ## Terminal
 
-RETENÇÃO DE QUARENTENA: contratante recuperado vivo; ração de ar ativa; sample custody não resolvida; testemunho externo adiado até revisão de contaminação, desafio do claimant e revisão de perda da Keelmark.
+RETENÇÃO DE QUARENTENA: contratado recuperado vivo; ração de ar ativa; custody de amostra sem solução; testemunho externo atrasado até revisão de contaminação, desafio do claimant e auditoria de perda Keelmark.
 
 ## Audio
 

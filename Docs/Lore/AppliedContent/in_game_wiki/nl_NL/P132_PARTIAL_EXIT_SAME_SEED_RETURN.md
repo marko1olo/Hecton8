@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Gedeeltelijke uitgang: terugkeer naar dezelfde seed"
+title: "Gedeeltelijke exit: terugkeer naar dezelfde seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gedeeltelijke uitgang: terugkeer naar dezelfde seed
+# Gedeeltelijke exit: terugkeer naar dezelfde seed
 
-Gedeeltelijke Uitgang is een herstelvenster, geen reset. De speler krijgt lucht, reparatietijd en afstand van het water, en keert daarna terug naar dezelfde HECTON-8 met dezelfde routes, littekens en onopgeloste bewijzen. Kennis blijft als druk bestaan, niet als geërfde kracht.
+Gedeeltelijke exit is geen reset. Black Keel kan de operator optillen voor pakreparatie, lucht, decon en ledger-synchronisatie, en daarna hetzelfde lichaam onder verlengde lien terugsturen naar dezelfde oceaan. Het station beneden wordt niet schoner omdat iemand erboven heeft geslapen. De Brine Stair behoudt zijn val. Het relay behoudt zijn slechte hoek. Het bewijs houdt zijn tanden. Dit einde geeft verlichting zonder absolutie: volle longen, opgelapte tools, levende schuld en kennis die terugkeert als druk in plaats van macht.
 
 ## Scanner
 
-Tijdelijke ophaalvector bevestigd. Dezelfde oceaan blijft onder hetzelfde contract.
+Tijdelijke pickup bevestigd. Dezelfde oceaan blijft onder hetzelfde contract.
 
 ## Terminal
 
-KENNISGEVING GEDEELTELIJKE UITGANG: tijdelijke Black Keel-ophaal geaccepteerd; terugkeer naar dezelfde seed toegestaan onder lien-verlenging; routewaarschuwingen, custody-records en open bewijspakketten blijven; geologie en wereldwaarheid onveranderd.
+MELDING GEDEELTELIJKE EXIT: tijdelijke Black Keel-pickup geaccepteerd; terugkeer naar dezelfde seed toegestaan onder lien-verlenging; routewaarschuwingen, custody-records, scangeheugen en open bewijspakketten blijven bestaan.
 
 ## Audio
 
-Je verliet de druk. Het contract hield je stoel warm.
+De druk laat los. Het contract houdt de stoel warm.
 
 ## Field Note
 
-Een adem in de baan is geen vrijheid wanneer het terugkeerslot al is gefactureerd.
+Een ademtocht in orbit is geen vrijheid wanneer de terugkeerslot al gefactureerd is.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/nl_NL. -->

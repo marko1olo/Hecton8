@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Fabriktempel-Schwelle
 
-Sie beschreibt die Endzone als Körper aus Industrie, Ozean und beschädigter KI, nicht als Bossraum.
+Die Fabriktempel-Schwelle ist HECTON-8s letzte untere Torübergabe: eine lastteilende Anlagenschwelle, in der Trägerwerk, Solerücklauf, Druckdichtung und Atlas-Routing die gescheiterte Kolonie erreichbar halten.
 
 ## Scanner
 
-Die Bodenstruktur ist keine Basis. Fabrikhülle, Schreinlogik und lebendes Druckgewebe teilen einen Lastpfad.
+Unteres Tor gelesen: Fabrikträger, Rücklaufrohr, Druckdichtung und Atlas-Routingbus tragen dieselbe Last. Eine saubere Wand-Tür-Grenze bleibt nicht.
 
 ## Terminal
 
-Schwellenwarnung: Industrieträger, biogene Dichtung, Xenon-Lattice-Hitze und Atlas-Routing teilen Strukturhoheit.
+THRESHOLD LOAD NOTICE
+Träger: unter Spannung
+Rücklaufrohr: aktiv
+Druckdichtung: Karbonatüberwuchs
+Routingbus: ATLAS-6-Kontinuitätskanal
+Menschlicher Zugang: ungeprüft
+Aktion: Schellenfolge markieren, bevor eine Naht geöffnet wird
 
 ## Audio
 
-Der Ozean begrub die Fabrik nicht. Er machte sie zu einem Körper.
+Nenn es nicht Tür. Finde erst heraus, welche Leitung den Druck hält, bevor du sie öffnen lässt.
 
 ## Field Note
 
-Hier hört die Karte auf, Kolonieruine zu spielen.
+Das Kartenlabel sagt Schwelle. Prüfe die Schellen, nicht das Wort. Das Tor hält, weil vier Systeme dieselbe Last übernehmen.
 
 <!-- External Site; generated from P035_FACTORY_TEMPLE_THRESHOLD/de_DE. -->

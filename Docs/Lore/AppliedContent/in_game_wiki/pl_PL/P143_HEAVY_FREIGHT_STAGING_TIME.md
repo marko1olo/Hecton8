@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Czas przygotowania ciężkiego frachtu"
+title: "Czas ustawiania ciężkiego frachtu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Czas przygotowania ciężkiego frachtu
+# Czas ustawiania ciężkiego frachtu
 
-Czas ciężkiego frachtu chroni linię czasu bez FTL. Sprzęt Atlas może dotrzeć przed masowym osadnictwem, bo korporacje wcześnie wysyłają ładunek prekursorowy, ustawiają go naprzód, akceptują ryzyko bezzałogowe i grzebią okna awarii w języku programu. Ratunek nie może pożyczyć tej sztuczki po rozpoczęciu kryzysu.
+Ciężki fracht zmienił HECTON-8 z celu badań w obiekt długu. Duży ładunek nie mógł gonić zmieniającej się prawdy; musiał być ustawiony, zabezpieczony, ubezpieczony, zaparkowany, wyhamowany i odebrany przez kogoś z władzą. Gdy pociąg modułów przeciął trasę, stojący za nim kontrakt miał większą bezwładność niż sprzeciw kolonii.
 
 ## Scanner
 
-Fracht klasy Atlas to opłacona z góry cierpliwość owinięta pancerzem.
+Stos manifestów: ładunek zatwierdzono, zanim miejsce odbioru dowiodło, że żyje.
 
 ## Terminal
 
-NOTA FRACHTU: Atlas i ładunek seed używają stagingu, pomocy fuzji pelletowej, długich dryfów i infrastruktury hamowania. Daty publiczne mogą ukrywać starty prekursorów i wyloty z forward-domain.
+USTAWIANIE FRACHTU: kadłuby ciśnieniowe, osłony ceramiczne, masa reaktora, zapasy seed, ramy crawlerów i pierścienie habitatów wymagają okien startowych oddzielonych latami. Po zabezpieczeniu ładunek staje się argumentem prawnym w ruchu.
 
 ## Audio
 
-Statek tak ciężki nie podróżuje po prostu. Staje się fakturą ze śladem.
+Wysyłka była już opłacona. To sprawiło, że trudniej było ją zatrzymać niż ratować ludzi.
 
 ## Field Note
 
-Ciężka trasa powstaje z depotów, okien wiązki, masy hamującej i nerwu politycznego.
+Fracht się nie spieszy. Sprawia, że pośpiech innych staje się drogi.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/pl_PL. -->

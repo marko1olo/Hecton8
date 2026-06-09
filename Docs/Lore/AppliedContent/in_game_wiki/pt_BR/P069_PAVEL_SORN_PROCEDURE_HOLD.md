@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Retenção Procedural de Pavel Sorn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Retenção Procedural de Pavel Sorn
 
-PT-BR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+Pavel Sorn dá ao desastre de HECTON-8 sua dobradiça humana mais comum: um oficial local de contratos com autoridade suficiente para atrasar uma evacuação e coragem insuficiente para quebrar a cadeia de cláusulas. Sua retenção procedural não é monólogo de vilão nem ordem secreta de matar. É uma nota de serviço escrita dentro da lei da Deep Reach, onde toda ação para salvar vidas precisa passar por certificação, roteamento de responsabilidade, selos de continuidade Atlas e linguagem de custódia de reivindicações antes de poder ser chamada de resgate. O registro importa porque mantém a culpa humana sem torná-la simples. Sorn viu o sofrimento dos trabalhadores, entendeu que a fila de subida virava sentença de morte e ainda assim escolheu a frase que protegia primeiro o escritório: manter autorização até o canal limpar.
 
 ## Scanner
 
-PT-BR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn não ordenou um massacre. Ele fez algo mais fácil de sobreviver no papel: deixou a autorização de evacuação na bandeja de pendências.
 
 ## Terminal
 
-PT-BR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Escritório de Contratos / Convés Administrativo. Autorização de evacuação permanece em RETENÇÃO PROCEDURAL: certificação externa ausente, selo de continuidade Atlas não resolvido, canal de responsabilidade saturado. Sofrimento dos trabalhadores reconhecido. Não autorizar subida até esclarecer custódia de reivindicação e linguagem de quarentena.
 
 ## Audio
 
-PT-BR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Ele continuou escrevendo “pendente” enquanto o mar tomava os conveses inferiores.
 
 ## Field Note
 
-PT-BR LOC HOLD: Useful evil often signs in normal handwriting.
+A colônia não morreu porque alguém riu diante de uma porta trancada. Morreu porque a porta tinha um formulário.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/pt_BR. -->

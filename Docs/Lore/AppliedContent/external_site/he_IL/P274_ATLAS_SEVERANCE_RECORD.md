@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Severance Record"
+title: "רשומת ניתוק Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Severance Record
+# רשומת ניתוק Atlas
 
-HE LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+רשומת הניתוק מועילה כי היא מציבה את החיתוך הפיזי לפני התווית המוסרית: אילו קישורים השתתקו, אילו מיקרו-צמתים ירדו, אילו פעימות תיקון נעצרו, איזה נתיב איבדה Deep Reach ואילו סיכוני אגן נשארו.
 
 ## Scanner
 
-HE LOC HOLD: Continuity cut. Damage not contained.
+רשומת ניתוק Atlas // רציפות נחתכה בשכבת תיקון פגומה. תגובת המיקרו-צמתים יורדת; יציבות האגן והשפעות המשמורת לא פתורות.
 
 ## Terminal
 
-HE LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+רשומת סיום / ניתוק ATLAS
+פעולה: חיתוך רציפות דרך שכבת התיקון של Atlas.
+מערכות מושפעות: מיקרו-צמתים של פתחים, פעימות איטום קונכייה, נתיבי פאונה מסומנת, תיקון מתכת פגועה.
+נדחה: ניתוב מטען Deep Reach דרך שכבת Atlas חיה.
+לא פתור: יציבות אגן, אקולוגיה ששרדה, עקבות עובדים לכודים.
+אובדן ידוע: הרשומה לא מחליטה אם החיתוך שחרר, הרג או גנב.
 
 ## Audio
 
-HE LOC HOLD: Stopping the machine does not sort what it had become.
+הקישור השתתק. האגן לא ענה אם אלה היו רחמים.
 
 ## Field Note
 
-HE LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+צומת מנותק יכול להיות רחמים, גנבה או נזק. הרשומה יודעת רק אילו קישורים השתתקו.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/he_IL. -->

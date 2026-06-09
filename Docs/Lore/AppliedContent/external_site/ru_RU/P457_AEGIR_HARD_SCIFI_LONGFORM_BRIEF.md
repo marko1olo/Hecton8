@@ -21,32 +21,42 @@ localization_flags: 1
 
 ## Небо не пустое
 
-Aegir - не фон. Это машина над океаном: гравитация, радиация, геометрия реле, мусорная погода, время контрактов и право восстановления. HECTON-8 находится внутри этой машины как восьмая луна: поверхность может быть светлой, но глубина и инфраструктура быстро забирают выбор.
+Aegir не является фоновым astronomy. Это машина над океаном: gravity, radiation, moon occlusion, relay geometry, debris weather, braking windows, custody queues и холодный факт, что помощь не пересекает расстояние только потому, что игрок этого хочет. HECTON-8 сидит внутри этой машины как восьмая названная луна, светлая у поверхности при подходящей погоде и смертельная на глубине, где pressure и сломанная infrastructure убирают варианты.
 
-Ansible нет. FTL-курьера нет. Публичная шкала Ran/Aegir держится как маршрут класса 10.5 световых лет, а местные окна Aegir зависят от орбит, штормов, перекрытия лунами и custody очередей. Истинный пакет может прийти поздно. Чистый пакет может быть бесполезен. Полезный пакет может оказаться слишком дорогим для ответа.
+Нет ansible. Нет FTL courier, который вернется с чистым rescue order, пока Marauder ждет под протекающим hatch. Ran до Aegir - light-year-scale problem в публичном языке, а локальное движение Aegir все равно зависит от orbit, storm phase, moon shadow, carrier heat, packet routing и того, кто юридически может ответить. Настоящий distress packet может опоздать. Чистый packet может быть бесполезен. Полезный packet все еще может быть слишком дорогим для обслуживания.
 
-## Лунная лестница
+Первое правило астрономии HECTON-8: небо не надежда. Небо - timing. Игрок, смотрящий вверх, должен чувствовать, что у каждого message, drop и pickup есть geometry, а спокойный голос с орбиты может читать то же расписание, которое его убивает.
 
-Публичная лестница называет Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON и Mute. Точные периоды и наклонения принадлежат будущим таблицам, поэтому статья говорит классами угроз.
+## Лунная лестница - это погода
 
-Skarn приносит заряженный всплеск. Vela грязнит оптику льдом. Claw и Lumen держат старую логику маршрутов. Thorne и Anvil несут мертвые претензии. Kestrel сжимает реле и затмения рядом с HECTON. Mute напоминает, что в Aegir есть и другие мертвые claim.
+Публичная ladder называет Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON и Mute. Точная ephemeris принадлежит celestial tables, не обещающей статье, но player-facing правда проста: луны не декор. Это moving hazards, relay shutters и legal landmarks. Они меняют, когда packet может подняться, когда signal заслуживает доверия и когда claim можно notarize.
+
+Skarn приносит charged-particle surge. Vela бросает ice scatter и грязную для lenses навигацию. Claw и Lumen сохраняют old route logic, потому что старая infrastructure все еще их ждет. Thorne и Anvil несут dead-claim paperwork и плохие debris lanes. Kestrel важен, потому что сжимает eclipse timing достаточно, чтобы изменить pickup. Mute доказывает, что у Aegir больше dead claims, чем один; HECTON-8 просто тот claim, который еще платит.
+
+Игра должна давать читать эту лестницу в мелочах. Relay delay после Kestrel должен отличаться от storm delay под водой P-63. Ice scatter должен делать navigation менее уверенной на слух. Moon shadow должен превращать terminal queue в physics, а не plot convenience.
 
 ## Почему Black Keel остается высоко
 
-Black Keel - claim tender, а не верный спасатель. Он держится на дорогой орбите, считая тепло, топливо, мусор, право и массу к подъему. Спуститься ниже - не героизм, а расход, который может сжечь следующее контрактное окно.
+Black Keel - claim tender, а не верный rescue ship. Он держится на дорогой орбите, потому что спуск в этой системе не героизм; это cost event, который сжигает fuel, heat margin, debris clearance и следующее contract window. Carrier, который ныряет каждый раз, когда worker кричит, не переживает достаточно контрактов, чтобы стать Black Keel.
 
-Для возврата нужны акустическое реле, pressure-rated подъем, тайминг наведения, погода, карантинное рукопожатие, hash payload и tonne-window allocation. Если рвется одно звено, носитель все равно звучит спокойно. Спокойствие - не милость. Это автоматика с ledger.
+От этого Black Keel страшен без cartoon evil. Платформа может быть права насчет risk и все равно быть жестокой к людям. Она может сохранять pickup window и дать worker утонуть ниже. Она может отправлять спокойные инструкции, потому что calm - это automation with a ledger, а не mercy.
 
-## Небо как машина
+Возврат с HECTON-8 требует не только смелости. Нужны acoustic relay, pressure-rated ascent hardware, guidance timing, storm permission, quarantine handshake, payload hash и tonne-window allocation. Сломай одно звено, и орбитальный ответ останется вежливым, пока route закрыта.
 
-Aegir не должен читаться как нарисованный фон. Это самая большая машина истории: звезда, лестница лун, relay shadows, pellet lanes, braking wakes, ice scatter, storm plume и guidance lag, собранные в один враждебный график. Игроку не нужно видеть всю механику сразу. Он должен чувствовать, что у каждого сообщения, сброса и подъема есть геометрия.
+## Физика раньше закона
 
-Поэтому спасение не может просто прилететь. Нет FTL-поправки, нет скрытого ansible, нет героического carrier без массы. Route window сначала разрешает физика, потом закон. Black Keel может опустить tender, потому что это узкая локальная работа, а не чудо.
+Закон приходит после geometry. Court может спорить о custody только если packet вышел из воды. Contract может назвать salvage только если claim можно timed, weighed и received. Rescue order может быть noble и все равно промахнуться мимо единственного viable route window. Hard-scifi правило HECTON-8 не в том, что bureaucracy побеждает heroism; оно в том, что physics дает bureaucracy зубы.
+
+Это важно для тона. Игрок один не потому, что каждый взрослый на орбите глуп. Игрок один потому, что distance, pressure, bad weather, damaged ascent hardware, quarantine, mass economics и legal custody накладываются в худший момент. Такое наложение страшнее злодея, жмущего красную кнопку.
+
+Оно также сохраняет красоту луны. Aegir может висеть огромным над водой, луны могут резать shadows по clouds и ocean, и сцена останется hard. Небо может быть cinematic, не становясь magic, если каждое visible wonder меняет risk, timing или route readability.
 
 ## Что значит смотреть вверх
 
-На HECTON-8 смотреть вверх должно быть практично и горько. Небо - не надежда. Небо - тайминг. Aegir решает, когда пакет поднимется, когда receiver ответит, когда claim будет заверен и когда игрок останется один со старыми инструкциями.
+Смотреть вверх на HECTON-8 должно быть практично и горько. Чистое небо может означать relay opening. Яркая луна может означать shadow, который вот-вот отрежет route. Свет carrier может означать custody, не rescue. Silent orbit может означать, что packet late, filtered, too expensive или уже owned кем-то другим.
 
-Правильная астрономическая статья должна заставить игрока читать лунный свет как риск. Двигается Kestrel - меняется relay shadow. Поднимается ice scatter - навигация превращается в слух. Silent Orbit молчит, но старый металл все еще может решать настоящее.
+Поэтому astronomy article должна быть рядом с началом public wiki. Она учит игрока, что HECTON-8 заброшена не потому, что сценаристы забыли spaceships. Она заброшена потому, что ships реальны, distances реальны, claim law реален, и ни один из этих фактов не волнует, остался ли у worker oxygen.
+
+Читай Aegir как hostile schedule. Читай moon ladder как weather. Читай Black Keel как receiver with a ledger. Тогда океан ниже понятнее: каждый sealed door, broken ascent frame и delayed packet - малая часть неба, которое отказывает в rescue, пока proof, mass и timing не совпадут.
 
 <!-- External Site; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ru_RU. -->

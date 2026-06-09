@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Legal Insurance Automated Ping"
+title: "Автоматичний страховий legal ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Legal Insurance Automated Ping
+# Автоматичний страховий legal ping
 
-UK LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+Автоматичний страховий legal ping робить корпоративний тиск ігровим, бо приходить як корисне і ненависне маленьке повідомлення. Система не витрачає слова на питання, чи живий гравець. Вона вимагає mass class, contamination state, coordinate proof, claim priority і receiver custody acceptance. Це виконує дві роботи одночасно. Механічно повідомляє гравцю, які категорії важливі для повернення. Наративно показує, де він стоїть в економіці порятунку: життя не ігнорують, але воно не перше в черзі. Ping має з'являтися досить рідко, щоб різати. Якщо повторювати його постійно, він стане шумом. Якщо він приходить на route thresholds після того, як гравець ризикував собою заради доказу або sample payload, він стає чистою корпоративною рукою, простягнутою через радіо, щоб зважити тіло до порятунку.
 
 ## Scanner
 
-UK LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Отримано автоматичний ping. Мову порятунку замінено receiver proof, mass class і custody status.
 
 ## Terminal
 
-UK LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / до recovery-window assignment потрібно: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-UK LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Перше, що вони питають, не чи ти живий. Вони питають, що ти несеш.
 
 ## Field Note
 
-UK LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Короткий bark для route thresholds. Використовувати рідко; жорстокість у тому, що система питає першою.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/uk_UA. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Quiet Salvage Contract Seed"
+title: "조용한 살비지 계약 시드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Quiet Salvage Contract Seed
+# 조용한 살비지 계약 시드
 
-KO LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+조용한 살비지는 깨끗한 슬롯으로 시작한다. 폭풍 활동은 낮고, 초기 접촉은 적고, bathydrop 창은 완납처럼 보인다. 이 형태는 긴 살비지 주행에 유용하다. 경로가 부품을 다시 가져가기 전에 오퍼레이터가 도구와 쉘터를 안정화할 수 있다.
 
-## Scanner
-
-KO LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-KO LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-KO LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-KO LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+빚은 custody 안에 있다. 샘플, 사고 패킷, pinger 기록, 경로 통지는 전액 지급 전에 receiver-first 감사에 묶인다. 주행이 더 조용한 이유는 보드가 깨끗한 증거의 소유자를 이미 정했기 때문이다.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ko_KR. -->

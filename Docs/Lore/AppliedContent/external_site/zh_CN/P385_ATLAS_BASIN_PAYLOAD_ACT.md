@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas 盆地 payload 门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Basin Payload Act
+# Atlas 盆地 payload 门
 
-ZH LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Atlas 盆地是路线停止询问发生了什么、开始询问谁获得可用包裹的地方。证据链、盆地向量、salvage 等级和 proof hash 不可能全部保持未触碰。必须选择接收方，拒绝接收方，或用本地保留替代。
 
-## Scanner
-
-ZH LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-ZH LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-ZH LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-ZH LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+这就是最后的压力：没有路线能清理现场。坐标出售支付并暴露盆地。切断切掉返回路径并杀死有用结构。检疫保存并扣留。公共总账在没有地图的情况下发布。blind return 拒绝所有人并冒着丢失包裹的风险。战役以保管结束，而不是以安慰结束。
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/zh_CN. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Quarantine Hold Interrogation Record"
+title: "Verhoorrecord van quarantainebewaring"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Quarantine Hold Interrogation Record
+# Verhoorrecord van quarantainebewaring
 
-NL LOC HOLD: A HECTON-8 exit can be physically successful and politically catastrophic.
+Een HECTON-8-uitgang kan lichamelijk slagen en politiek rampzalig zijn. De speler verlaat misschien de oceaan en komt toch in een kamer waar elke vraag zijn lichaam behandelt als het enige overgebleven routelog.
 
 ## Scanner
 
-NL LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+Geborgen claimant leeft. Quarantaineflag overschrijft reddingstaal; bewijs-payload geïsoleerd.
 
 ## Terminal
 
-NL LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+QUARANTINE HOLD-RECORD: biologische claimant levend geborgen. Beweging beperkt tot besmettingsscan, drukblootstellingsgesprek en bewijsbewaringsreview. Ontvangerverhoor geeft Atlas-toegangsvector prioriteit boven medische vrijgave.
 
 ## Audio
 
-NL LOC HOLD: They saved the body first because the body knew the route.
+Ze redden eerst het lichaam omdat het lichaam de route kende.
 
 ## Field Note
 
-NL LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Dossier na uitgang: biologische redding wordt vóór vrijheid quarantaine, verhoor, route-extractie en payloadbewaring.
 
 <!-- External Site; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/nl_NL. -->

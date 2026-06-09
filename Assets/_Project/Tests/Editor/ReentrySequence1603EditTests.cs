@@ -116,25 +116,43 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void PrologueSurvivalAbortRequiresExplicitDeathFlag()
+        public void PrologueSurvivalAbortRequiresExplicitPlayerSourceAndDeathFlag()
         {
             CompilationUnitSyntax root = Parse(DirectorPath);
+            string source = Read(DirectorPath);
             string body = FindMethod(root, "ShouldAbortForSurvivalVitals").ToFullString();
             string tryBegin = FindMethod(root, "TryBeginSequenceRun").ToFullString();
             string prime = FindMethod(root, "PrimeSurvivalSignalCursors").ToFullString();
+            string clear = FindMethod(root, "ClearSurvivalSignalCursors").ToFullString();
+            string onDisable = FindMethod(root, "OnDisable").ToFullString();
+            string dispose = FindMethod(root, "Dispose").ToFullString();
 
-            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal deathSignal, out int deathSequence)", body);
+            StringAssert.Contains("private uint _playerSurvivalVitalsSourceId;", source);
+            StringAssert.Contains("case GlobalRegistryServiceSlot.Player:", source);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);", source);
+            StringAssert.Contains("uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;", body);
+            StringAssert.Contains("if (playerSurvivalVitalsSourceId == 0u)", body);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(playerSurvivalVitalsSourceId, out SurvivalVitalsChangedSignal deathSignal, out int deathSequence)", body);
             StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration", body);
             StringAssert.Contains("SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot()", body);
+            StringAssert.Contains("vitals.SourceId != playerSurvivalVitalsSourceId", body);
             StringAssert.Contains("(vitals.Flags & SurvivalVitalsChangedSignalFlags.Death) != 0u", body);
             StringAssert.DoesNotContain("vitals.DeathCause != 0", body);
             StringAssert.DoesNotContain("TryGetLatest(out SurvivalVitalsChangedSignal vitals", body);
+            StringAssert.Contains("RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", tryBegin);
             StringAssert.Contains("PrimeSurvivalSignalCursors();", tryBegin);
+            AssertTextBefore(tryBegin, "RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);", "PrimeSurvivalSignalCursors();");
             AssertTextBefore(tryBegin, "PrimeSurvivalSignalCursors();", "_runCancellationToken = cancellationToken;");
             StringAssert.DoesNotContain("_lastSurvivalVitalsSnapshotGeneration = 0", tryBegin);
             StringAssert.DoesNotContain("_lastSurvivalDeathSequence = 0", tryBegin);
+            StringAssert.Contains("uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;", prime);
             StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;", prime);
-            StringAssert.Contains("_lastSurvivalDeathSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int deathSequence)", prime);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(playerSurvivalVitalsSourceId, out _, out int deathSequence)", prime);
+            StringAssert.Contains("ClearSurvivalSignalCursors();", onDisable);
+            StringAssert.Contains("ClearSurvivalSignalCursors();", dispose);
+            StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", clear);
+            StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = 0;", clear);
+            StringAssert.Contains("_lastSurvivalDeathSequence = 0;", clear);
         }
 
         [Test]

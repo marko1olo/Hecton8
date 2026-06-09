@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Public Ledger Record"
+title: "רשומת יומן ציבורי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Public Ledger Record
+# רשומת יומן ציבורי
 
-HE LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.
+רשומת יומן ציבורי היא שבירת משמורת, לא פסק דין. המטען מגיע לנתיב Tau/Luyten עם האש עדות, קואורדינטות מושחרות, דרגת ראיה וחותמת קבלה לפני ש-Deep Reach יכולה לסגור את הארכיון. המחיקה נעשית קשה יותר, אבל גם פקידים, נושים, בתי דין של צ'רטר, רשתות שורדים ואופורטוניסטים מקבלים קובץ חי.
 
 ## Scanner
 
-HE LOC HOLD: Witness hash escaped claimant custody.
+רשומת יומן ציבורי // האש העדות יצא ממשמורת פרטית דרך נתיב חבילת Tau/Luyten. דרגת ראיה ציבורית נקבעה; עיכוב תגובת Deep Reach צורף.
 
 ## Terminal
 
-HE LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+רשומת סיום / יומן ציבורי
+נתיב: חבילת Tau/Luyten מושהית.
+מטען: האש עדות, פס משמורת, דרגת ראיה עם קואורדינטות מושחרות, חותמת זמן של המקלט.
+שליטה אחרי ממסר: נמסרה.
+תגובת Deep Reach: חבילת נגד מושהית בגלל קבלה ציבורית.
+אובדן ידוע: השולח לא בוחר את הקורא הראשון או את שרשרת ההגשה הבאה.
 
 ## Audio
 
-HE LOC HOLD: Truth can leave your hands and still matter.
+היומן חתם. אתה כבר לא בוחר את הקורא הראשון.
 
 ## Field Note
 
-HE LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+אם הקבלה ציבורית, הקובץ שורד כי הוא יוצא מהידיים שלך. בדוק השחרת קואורדינטות לפני שאתה חוגג את החותמת.
 
 <!-- In-Game Wiki; generated from P273_PUBLIC_LEDGER_RECORD/he_IL. -->

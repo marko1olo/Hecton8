@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "חלונות Deep Reach הנוכחיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# חלונות Deep Reach הנוכחיים
 
-HE LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+חלונות Deep Reach הנוכחיים מסבירים כיצד תאגיד נעדר עדיין יכול להיות אנטגוניסט פעיל בשנת 2190. אין כאן מוקד חילוץ מהיר מן האור ואין מנהל חי שמנווט את HECTON-8 מכיסא בעולמות הליבה. המרחק אמיתי: החלונות נדירים, מאוחרים ומסוננים דרך עמודי ממסר, פרוקסים מקומיים, הודעות משפטיות אוטומטיות ולשון תביעות Black Keel. זה לא הופך את Deep Reach לבלתי מזיקה. עד שאות חוצה את הפער, המושבה כבר מעוצבת בידי חוזים ישנים, ברירות מחדל של הסגר, ספי תשלום וכללי משמורת. כשהשחקן מחזיק ראיות, קול החברה נשמע כהצעה: מסור מפתחות סמכות Atlas, קבל משמורת מטען, היכנע לבחינה, ואולי תקבל שחזור במקום נטישה.
 
 ## Scanner
 
-HE LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach אינה יכולה לנווט את HECTON-8 ברדיו, אבל החלונות המעוכבים, הודעות הפרוקסי וסעיפי Black Keel עדיין קובעים כמה עולה עזרה.
 
 ## Terminal
 
-HE LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / פרוקסי DEEP REACH: שחזור מפעיל נתון למשא ומתן לאחר בחינת ראיות, משמורת מטען, ציות להסגר והעברת מפתחות סמכות Atlas. סירוב משמר מעמד תובע אך מבטל עדיפות חילוץ מיידית.
 
 ## Audio
 
-HE LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+כשהקול שלהם מגיע אליך, הוא כבר חוזה.
 
 ## Field Note
 
-HE LOC HOLD: Their voice is delayed. Their leverage is already here.
+התשובה שלהם מגיעה מאוחר. התנאים שלהם הגיעו לפני שנים.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/he_IL. -->

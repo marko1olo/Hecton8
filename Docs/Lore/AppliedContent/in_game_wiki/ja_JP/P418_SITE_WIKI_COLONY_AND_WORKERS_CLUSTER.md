@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 植民地と労働者
 
-回収されたworker index: water ledgers、relay witness trays、brine route stamps、triage repair tags、vent-forge rejectsが仕事を通して名前を残す。
+労働者dossier hub: HECTON-8はshift boards、maintenance debts、pressure calls、handoff marks、Deep Reachが損失カテゴリへ潰そうとした記録で人々を覚えている。
 
 ## Scanner
 
-WORKER INDEX // ルート連動の5名記録。Pump、relay、brine、triage、forge。金属を剥がす前にtag chainを保持。
+WORKER INDEX // pump boards、relay trays、brine stamps、triage tags、vent-forge rejectsが人々をroute evidenceとして残す。
 
 ## Terminal
 
-KEELMARK LOSS DESK: route、claim、custody、pressure workに結びつくname tagsは保持。
+KEELMARK LOSS DESK: pressure decision、delay、custody claim、repair routeを説明するname tagsは保持する。
 
 ## Audio
 
-Mara Venn、pump chief: ポンプがきれいに歌うなら記録しろ。歌わなくなったら上へ走れ。
+pump cardの名前は飾りではない。扉が開いたままだった理由だ。
 
 ## Field Note
 
-家族ではない。仕事だ。pump cardの名前が、扉が開いた理由を語る。
+家族釣りではない。仕事、圧力、署名、ミス。それで死者はまだ反論する。
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/ja_JP. -->

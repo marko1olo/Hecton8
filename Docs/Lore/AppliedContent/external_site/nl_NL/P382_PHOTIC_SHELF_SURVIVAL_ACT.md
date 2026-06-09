@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Photic Shelf Survival Act"
+title: "Fotische-schelfpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Photic Shelf Survival Act
+# Fotische-schelfpoort
 
-NL LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+De schelf geeft de route werkwoorden: pomp, afdichting, snede, ping, patch, bijvullen. Elke handeling is klein en fysiek. Een deur opent omdat een klem houdt, niet omdat de kolonie verkend wil worden.
 
-## Scanner
-
-NL LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-NL LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-NL LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-NL LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Atlas-residu komt hier binnen als onderhoudstip, niet als definitief antwoord. Een gerepareerd paneel, geleidende film of verkeerd geroute servicepatch kan de operator helpen overleven en tegelijk bewijzen dat het systeem de route al heeft aangeraakt. Helderheid maakt het werk leesbaar; schuld maakt het dringend.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/nl_NL. -->

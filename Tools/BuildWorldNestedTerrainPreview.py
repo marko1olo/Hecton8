@@ -36,7 +36,7 @@ from BuildWorldMacroGeologyPreview import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "Docs" / "GeneratedAssets" / "Terrain" / "NestedDetail"
-DETAIL_ARTIFACT_VERSION = 1
+DETAIL_ARTIFACT_VERSION = 5
 
 
 def make_params(seed: int, runtime_seed: int, macro_extent: float, chunk: float) -> Params:
@@ -119,7 +119,9 @@ def meso_delta(x: float, z: float, base_height: float, mask, slope01: float, cur
     basin = mask.basin
     trench = mask.trench
     sediment = clamp01((1.0 - slope01) * 0.54 + basin * 0.36 + shelf * 0.18 - ridge * 0.24 - trench * 0.18)
+    terrace_patch = fractal_noise(x * 0.0017 + 22.5, z * 0.0017 - 14.2, seed ^ 0x334EAA71)
     terrace = clamp01(shelf_break * 0.45 + shelf * 0.12 + curvature01 * 0.16 - trench * 0.18)
+    terrace *= 0.24 + smoothstep(0.28, 0.82, terrace_patch) * 0.76
     slump = clamp01(shelf_break * 0.35 + slope01 * 0.35 + basin * 0.10 - ridge * 0.15)
     tributary = clamp01(fault * 0.22 + shelf_break * 0.24 + curvature01 * 0.30 + sediment * 0.12)
     talus = clamp01(slope01 * 0.42 + ridge * 0.24 + fault * 0.18 - basin * 0.12)
@@ -127,25 +129,33 @@ def meso_delta(x: float, z: float, base_height: float, mask, slope01: float, cur
     reef_detail = clamp01(shelf * 0.45 + (1.0 - slope01) * 0.24 - trench * 0.40)
 
     terrace_step = 18.0 + shelf_break * 48.0 + ridge * 24.0
-    terrace_target = round(base_height / max(1.0, terrace_step)) * terrace_step
-    terrace_delta = (terrace_target - base_height) * terrace * 0.18 * detail_gate
+    terrace_warp = (fractal_noise(x * 0.0011 - 5.4, z * 0.0011 + 30.7, seed ^ 0x7D4B9143) - 0.5) * terrace_step * 0.42
+    terrace_height = base_height + terrace_warp
+    terrace_local = terrace_height / max(1.0, terrace_step)
+    terrace_level = round(terrace_local)
+    terrace_offset = terrace_level * terrace_step - terrace_height
+    terrace_distance = abs(terrace_offset) / max(1.0, terrace_step)
+    terrace_plate = 1.0 - smoothstep(0.16, 0.54, terrace_distance)
+    terrace_soft_edge = 1.0 - smoothstep(0.42, 0.64, terrace_distance)
+    terrace_delta = (terrace_offset - terrace_warp * 0.18) * terrace * terrace_plate * terrace_soft_edge * 0.10 * detail_gate
 
     channel_noise = fractal_noise(x * 0.0042 + 18.4, z * 0.0042 - 9.1, seed ^ 0x58B9D13D)
-    channel_lines = smoothstep(0.62, 0.92, channel_noise) * tributary
-    channel_delta = -channel_lines * (4.0 + 20.0 * detail_gate) * clamp01(0.40 + shelf_break + fault * 0.45)
+    channel_weave = fractal_noise(x * 0.0013 - 44.8, z * 0.0013 + 12.4, seed ^ 0x9C31B8EF)
+    channel_lines = smoothstep(0.56, 0.94, channel_noise) * tributary * (0.30 + smoothstep(0.12, 0.84, channel_weave) * 0.46)
+    channel_delta = -channel_lines * (2.4 + 11.0 * detail_gate) * clamp01(0.32 + shelf_break * 0.72 + fault * 0.36)
 
     slump_noise = fractal_noise(x * 0.0021 - 31.7, z * 0.0021 + 7.9, seed ^ 0x711CE4A9)
-    slump_lobes = smoothstep(0.55, 0.86, slump_noise) * slump
+    slump_lobes = smoothstep(0.58, 0.91, slump_noise) * slump
     slump_delta = -slump_lobes * (5.0 + 34.0 * detail_gate)
 
     talus_noise = fractal_noise(x * 0.0100 + 4.2, z * 0.0100 - 19.5, seed ^ 0xA9C3EF17)
     talus_delta = (talus_noise - 0.5) * (4.0 + 16.0 * detail_gate) * talus
 
     rubble_noise = fractal_noise(x * 0.0220 - 12.3, z * 0.0220 + 28.1, seed ^ 0xC361A27F)
-    rubble_delta = (rubble_noise - 0.5) * (2.0 + 8.0 * detail_gate) * rubble
+    rubble_delta = (rubble_noise - 0.5) * (1.6 + 6.5 * detail_gate) * rubble
 
     reef_noise = fractal_noise(x * 0.0350 + 51.0, z * 0.0350 - 37.0, seed ^ 0x91D4C0DE)
-    reef_delta = (reef_noise - 0.5) * (1.2 + 4.8 * detail_gate) * reef_detail * smoothstep(0.0, 120.0, 120.0 - depth)
+    reef_delta = (reef_noise - 0.5) * (0.8 + 3.8 * detail_gate) * reef_detail * smoothstep(0.0, 120.0, 120.0 - depth)
 
     total = terrace_delta + channel_delta + slump_delta + talus_delta + rubble_delta + reef_delta
     max_delta = 70.0 if extent >= 1000.0 else 24.0 if extent >= 512.0 else 7.0
@@ -226,6 +236,8 @@ def build_preview(args: argparse.Namespace) -> int:
     }
     suffix = f"OriginX{int(round(args.origin_x_m))}_Z{int(round(args.origin_z_m))}_Extent{int(round(extent))}m_Res{resolution}"
     out_dir = Path(args.output) if args.output else DEFAULT_OUTPUT / suffix
+    if not out_dir.is_absolute():
+        out_dir = ROOT / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     files: dict[str, str] = {}
     hashes: dict[str, str] = {}
@@ -266,7 +278,7 @@ def build_preview(args: argparse.Namespace) -> int:
         "heightMeters": {"baseMin": min_base, "baseMax": max_base, "detailMin": min_detail, "detailMax": max_detail},
         "detailDeltaMeters": {"min": min(deltas), "max": max(deltas)},
         "runtimeContract": {
-            "source": "WorldMacroGeologyFields + future WorldTerrainMesoDetailFields",
+            "source": "WorldMacroGeologyFields + WorldTerrainMesoDetailFields",
             "chunkSizeMeters": 512,
             "nearPlayableHeightResolution": 513,
             "midTraversalHeightResolution": 257,

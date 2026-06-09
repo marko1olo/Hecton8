@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Sortie partielle : retour même seed
 
-La sortie partielle protège la campagne longue d'une fausse clôture. Black Keel peut remonter l'opérateur pour une fenêtre limitée, réparer la combinaison, enregistrer les paquets récupérés et vendre la pause comme du bien-être. Le monde dessous ne bascule pas vers une version plus propre.
+La sortie partielle est une soupape de pression pour une histoire de survie longue. Le contractant gagne une fenêtre de pickup, reçoit des blessures fermées et de l'équipement réparé, et entend le rare son d'un air qui ne passe pas par une combinaison mourante. Ce soulagement est réel, c'est pourquoi le retour fait mal.
 
-Quand le joueur revient, le même seed est toujours là. L'escalier de saumure a le même piège, le même relais a le même mauvais angle, et la même preuve reste dangereuse. Cette fin donne du soulagement sans absolution : de l'air dans les poumons, plus de dette dans le contrat, et aucune suppression de ce qui a été trouvé.
+Black Keel inscrit la pause comme bien-être et maintenance du lien. Le même world seed reste actif, les mêmes preuves restent ouvertes, et le même océan attend avec toutes les routes découvertes. La sortie partielle n'est pas une miséricorde du système. C'est l'entretien d'un actif qui doit encore redescendre.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/fr_FR. -->

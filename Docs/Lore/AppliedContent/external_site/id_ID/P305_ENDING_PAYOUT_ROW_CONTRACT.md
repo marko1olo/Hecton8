@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Ending Payout Data Boundary"
+title: "Batas Data Pembayaran Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Ending Payout Data Boundary
+# Batas Data Pembayaran Akhir
 
-ID LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+Ending HECTON-8 mencatat siapa menerima bukti, kustodi apa yang didapat, apa yang dibayar, dan biaya apa yang belum selesai. Angka bisa menutup satu baris kontrak. Ia tidak bisa menutup samudra.
 
 ## Scanner
 
-ID LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Baris akhir mengikat penerima, kustodi, keadaan bukti, pembayaran, dan konsekuensi belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: baris membutuhkan rute payload, penerima, keadaan bukti, pembayaran material, konsekuensi legal, delay karantina, dan biaya belum selesai. Kredit tidak menutup tempat kejahatan.
 
 ## Audio
 
-ID LOC HOLD: Credits do not close a crime scene.
+Kredit tidak menutup tempat kejahatan.
 
 ## Field Note
 
-ID LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value, quarantine delay, dan dossier flags dicatat hanya setelah receiver dan evidence state jelas.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/id_ID. -->

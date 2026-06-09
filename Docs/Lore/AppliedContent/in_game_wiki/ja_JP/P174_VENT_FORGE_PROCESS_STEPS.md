@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Vent Forge Process Steps"
+title: "噴出孔鍛造工程"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Vent Forge Process Steps
+# 噴出孔鍛造工程
 
-JA LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+噴出孔鍛造工程は、HECTON-8のクラフトを物理感のある工業儀式に変える。プレイヤーはポケットに幻想の炉を持ち歩いているのではない。鍛造場とは、海、地熱噴出孔、壊れた植民地機材が一瞬だけ同意する場所だ。まず素材をパージし、古いブラインが内部で沸騰しないようにする。次に噴出パルスの前に固定し、圧力上昇で予熱し、短い緩みの間に封止し、冷たい戻り流で急冷する。最後の音響リングは飾りではない。部品が隠れた亀裂ではなく、一つの清い物体として響くことを証明する。これによりクラフトは、VFX、音、UIで支えられるリズムを得る。熱は重要だが、タイミングはもっと重要だ。窓を逃しても謎の失敗にはならない。歪んだ屑、塩ブルーム、圧力亀裂のある部品になり、何が悪かったかをプレイヤーに伝える。
 
 ## Scanner
 
-JA LOC HOLD: Vent forging should feel like using the planet against itself.
+噴出孔鍛造は魔法の金工ではない。惑星の熱、圧力、タイミングを借り、部品を惑星に奪わせない作業だ。
 
 ## Terminal
 
-JA LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+噴出孔鍛造工程 / 01 素材からブラインを抜く / 02 パルス前に固定 / 03 噴出上昇で予熱 / 04 圧力緩みで封止 / 05 冷戻り流で急冷 / 06 音響リングで認証 / 失敗: 歪んだ屑、塩ブルーム、圧力亀裂部品。
 
 ## Audio
 
-JA LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+月そのものが炉だ。あなたはそれを借りる許可を得ただけだ。
 
 ## Field Note
 
-JA LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+工程はパージ、クランプ、予熱、封止、急冷、リング試験として読めるべきだ。危険は炎ではなく、圧力の短い緩みを逃すことにある。
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/ja_JP. -->

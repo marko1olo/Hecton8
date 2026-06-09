@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Worker Name Pool Record"
+title: "Реестр имен рабочих"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Worker Name Pool Record
+# Реестр имен рабочих
 
-RU LOC HOLD: Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
+Реестр имен рабочих задает, как HECTON-8 превращает seed-улики в человеческую непрерывность. Каждая личность складывается из авторского имени, доменной полосы, профессии под давлением, фрагмента жетона, маршрутного допуска и метки смены. Это не случайный колорит. Это читаемая ответственность: кто мог открыть люк, кто обслуживал насос, кому отказали в медицинском выводе и чей след поздний Marauder сейчас потревожит.
+
+Система сохраняет личность и при этом позволяет менять расположение предметов и пары улик. Так появляется replay без противоречий. Рабочий может проявиться через шкафчик, доску задач, маршрутную карту или манифест, но принцип один: люди не становятся процедурно расходными только потому, что комната seed-ится.
 
 ## Scanner
 
-RU LOC HOLD: Names are evidence, not collectible flavor.
+ИМЕННАЯ ПОЛОСА // Полоса происхождения, маршрутный допуск, сменная роль и шрам на жетоне сходятся на одном рабочем. Сначала прочитай имя, потом разбирай шкафчик.
 
 ## Terminal
 
-RU LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+ПРОТОКОЛ ИМЕН // Личности рабочих собираются из устойчивого личного имени, доменной полосы происхождения, давления профессии, буквы смены, фрагмента жетона и маршрутного допуска. Система может менять порядок и пары по seed, но не имеет права превращать людей в случайные бирки лута. Личные имена задаются для каждой локали; роль, маршрут и доступ несут механику.
 
 ## Audio
 
-RU LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+Имя было первым предметом, который колония попыталась разобрать на запчасти.
 
 ## Field Note
 
-RU LOC HOLD: Seed names must preserve identity without making family melodrama.
+Имена не фон. Имя показывает, кому разрешили быть в мокром отсеке, когда станция начала врать.
 
 <!-- External Site; generated from P166_WORKER_NAME_POOL_PROTOCOL/ru_RU. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "כללי סימוני תיקון Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# כללי סימוני תיקון Marauder
 
-HE LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+כללי סימוני תיקון Marauder מסבירים איך HECTON-8 מאפשרת למחלצי salvage מאוחרים לגעת בראיות ישנות בלי לשבור קאנון. סימוני תיקון מוסיפים שכבה חיה מעל ניירת תאגידית: לשמר שם, לערער קטגוריה, להזהיר נתיב, לתמחר דגימה, להסתיר עד או לסמן חוב. הם גורמים לראיות replay להרגיש מטופלות בידי עובדי תביעה אחרים, תוך שמירה על כל שינוי בכתב יד כפונקציונלי.
 
 ## Scanner
 
-HE LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+סימון תיקון יכול להציל שם, לזהם תביעה או להזהיר את הצולל הבא שהקטגוריה הרשמית משקרת.
 
 ## Terminal
 
-HE LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: סימוני Marauder חייבים לשנות פירוש ראיה, סיכון נתיב או לחץ תשלום. סימונים תקפים משמרים שם עובד, מערערים קטגוריית ביטוח, מזהירים נתיב, מתמחרים דגימה, מסתירים עד או מסמנים חוב. גרפיטי ריק שובר את שרשרת הראיות.
 
 ## Audio
 
-HE LOC HOLD: Somebody came before you and still failed to leave clean.
+מישהו בא לפניך ועדיין לא הצליח לצאת נקי.
 
 ## Field Note
 
-HE LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+סימונים: לשמר שם, לערער קטגוריה, להזהיר נתיב, לתמחר דגימה, להסתיר עד, לסמן חוב. כתב היד חייב לשנות את הקריאה, לא לקשט את החפץ.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/he_IL. -->

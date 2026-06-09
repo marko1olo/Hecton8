@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Cadena Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Cadena Recovery Compliance
 
-ES LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+La cadena Recovery Compliance convierte un desastre en campo de activos controlado. Puede autorizar entrada, corte, muestreo, recolección de testigos, sellado de datos y masa de retorno. También puede seguir preguntando si una persona viva es evidencia, responsabilidad, carga u obstáculo.
 
 ## Scanner
 
-ES LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Orden de recovery aceptada. No hay lenguaje de rescate en la cadena.
 
 ## Terminal
 
-ES LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+CADENA RECOVERY: la acción posterior al incidente pasa por autorización de contratistas, custodia de evidencia, derechos de salvamento, manejo de testigos, seguro de ruta y redacción pública sin admisión. Rescatar no es el verbo rector.
 
 ## Audio
 
-ES LOC HOLD: You are not rescued. You are classified.
+Vinieron a cumplir recovery. No es lo mismo que volver por nosotros.
 
 ## Field Note
 
-ES LOC HOLD: Delay does not make an order harmless.
+Compliance llega con guantes, sellos y ninguna promesa de que alguien siga siendo persona.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/es_ES. -->

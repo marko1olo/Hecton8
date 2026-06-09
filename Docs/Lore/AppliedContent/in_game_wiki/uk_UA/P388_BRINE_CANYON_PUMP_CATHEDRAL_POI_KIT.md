@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Набір доказів насосного собору соляного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Набір доказів насосного собору соляного каньйону
 
-UK LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+Насосний собор соляного каньйону - промисловий об'єм, побудований навколо тиску, щільності й затримки. Його машини самі нікого не звинувачують, але оглядове скло, годинник утримання, сліди помпи й журнал черги складаються в придатний ланцюг відповідальності.
 
 ## Scanner
 
-UK LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Набір доказів POI: насосний собор зводить скло щільності, пошкодження помпи, маршрутні годинники й журнали черги робітників.
 
 ## Terminal
 
-UK LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+НАБІР НАСОСНОГО СОБОРУ: оглядове скло щільності, задир соляної помпи, нотатка прийнятого допуску, годинник утримання маршруту, журнал черги робітників, ключ запуску помпи, мітка затопленої галереї.
 
 ## Audio
 
-UK LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Помпи рухали воду. Кімната вела записи краще, ніж офіс.
 
 ## Field Note
 
-UK LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Нотатка мародера: сфотографуй оглядове скло до осушення кишені. Коли соляний шар зрушить, лінія допуску стане пласкішою.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/uk_UA. -->

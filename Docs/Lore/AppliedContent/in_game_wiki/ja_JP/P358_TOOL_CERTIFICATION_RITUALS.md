@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Tool Certification Board"
+title: "工具認証ボード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Tool Certification Board
+# 工具認証ボード
 
-JA LOC HOLD: Tool certification boards show colony culture without mysticism: trust came from repeated technical checks and custody marks.
+工具認証ボードは、植民地を読み違えると儀式に見える。だがここに神秘はない。繰り返されるスタンプ、グリースペンの頭文字、赤い保留印は、降下前の恐怖を手順に変えるためのものだった。カッターヘッドは鋭そうだから信頼されたのではない。シーラントカートリッジはラベルに満量とあるから信頼されたのではない。耐圧グローブは二人が署名し、そのうち一人が次のグローブを使う立場になるまで信頼されなかった。
+
+そこから文化が生まれた。ポンプ技師、シールリガー、塩水ダイバー、ファブリケータ操作員、経路係は、ほぼ正しいだけで静かに人を殺す工具に依存していた。彼らの「儀式」は反復だった。量る、確認する、署名する、返す、再確認する。それは社会的圧力でもあった。遅れたポンプキーは道徳演説にならない。ボードの印、保留された降下キット、再確認に戻された作業員、そして遅延が水を消費したなら後の食堂での口論になる。
+
+マローダーにとって、このボードは美しい記念品である前に実用品だ。信頼された工具、遅れた経路、部屋が沈む前に消されなかった警告を教えてくれる。署名を装飾と思うな。二名署名のグローブは作業員を経路に結びつける。遅延キーの印は寝台スレートをポンプ作業命令に結ぶ。保留カッターは、なぜ一枚の密閉扉がまだ残っているかを説明する。認証は、植民地が信頼を可視化した方法だ。
 
 ## Scanner
 
-JA LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
+工具認証ボード // カッターヘッド再登録、シーラントカートリッジ計量、耐圧グローブ二名署名、ポンプキー遅延返却印。降下前、信頼は工具に刻印された。
 
 ## Terminal
 
-JA LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
+認証ボード: カッターヘッド確認; シーラントカートリッジ計量; 耐圧グローブ二名署名; ポンプキー遅延返却; 降下キットは再確認まで保留。80m以深で単独署名カッター禁止。
 
 ## Audio
 
-JA LOC HOLD: They did not pray before descent. They checked each other's tools.
+彼らは降下前に祈らなかった。互いの工具を確認した。
 
 ## Field Note
 
-JA LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+カッターヘッド確認。シーラントカートリッジ計量。耐圧グローブは二つの手で署名。ポンプキーは遅れて返却され、警告は消されなかった。
 
 <!-- In-Game Wiki; generated from P358_TOOL_CERTIFICATION_RITUALS/ja_JP. -->

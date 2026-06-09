@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63 泵房工作单"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: P-63 Pump Room Work Order
+# P-63 泵房工作单
 
-ZH LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+P-63 泵房工作单是小尺度的 HECTON-8 遗物：房间里的水、手中的工具、声学回线，以及一个必须等环境回应后才可信的路线。它让机制像殖民地习惯。
 
 ## Scanner
 
-ZH LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+第一次维修读起来像殖民地习惯：先抽水，后密封，先听，再在房间停止撒谎时切割。
 
 ## Terminal
 
-ZH LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: 清空 sump；修补 cold seam；确认 return pinger；只有在压力保持后才切 fused latch；用本地库存打印 gasket；acoustic return 重复三次后标记 route safe。主管缩写在水渍下缺失。
 
 ## Audio
 
-ZH LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+先泵。再封。如果它唱，就别切。
 
 ## Field Note
 
-ZH LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+夹板下半部分已经湿透。切割那行还能读，因为有人把它圈了两遍并写下：如果它唱，就停。
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/zh_CN. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: certyfikat ewakuacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: certyfikat ewakuacji
 
-PL LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+Noor Haldane jest prawnym i certyfikacyjnym głosem Deep Reach za wstrzymaniami ewakuacji. Jej podpis nie jest napisany jak panika. Jest napisany jak kontrola. Trasa musi pozostać certyfikowalna. Przewoźnik musi przyjąć opiekę. Stan biologiczny musi dać się przejrzeć. Łańcuch prawny musi przetrwać katastrofę, nawet jeśli ludzie w trasie jej nie przetrwają.
+
+Dlatego akta Haldane bolą. Język potrafi się bronić. Naruszenie kwarantanny może roznieść skażenie. Niecertyfikowana ekstrakcja może uwięzić przewoźników. Odmowa portu może zmienić ratunek w kolejną katastrofę. W czystej sali konferencyjnej każda klauzula brzmi jak odpowiedzialne powstrzymywanie. W korytarzu ciśnieniowym, gdzie rośnie woda, te same klauzule stają się zamkiem.
+
+Dla gracza ten artykuł łączy blokady tras kolonii, opóźnienia medyczne i odpowiedzialność Deep Reach. Haldane nie musi nikogo nienawidzić. Wystarczy, że każe ewakuacji czekać na warunki, które dowiodą, że ewakuacja jest bezpieczna. Ciśnienie nie czeka. Tlen nie czeka. Certyfikat czekał.
 
 ## Scanner
 
-PL LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+WSTRZYMANIE CERTYFIKACJI // N. Haldane utrzymała trasę prawnie czystą, gdy trasa fizycznie zawodziła.
 
 ## Terminal
 
-PL LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // Radczyni certyfikacji ewakuacji // Zwolnienie odmówione do czasu spełnienia wymagań kwarantanny ciśnieniowo-biologicznej, opieki przewoźnika i zewnętrznego przeglądu trasy. Nieautoryzowana ekstrakcja może naruszyć łańcuch roszczeń, odpowiedzialność habitatu i akceptację portu docelowego.
 
 ## Audio
 
-PL LOC HOLD: The door was not locked by fear. It was locked by compliance.
+Drzwi nie zamknął strach. Zamknęła je zgodność.
 
 ## Field Note
 
-PL LOC HOLD: This is the paper signature players should hate.
+To papierowy podpis, którego gracz powinien nienawidzić: nie panika, nie złośliwość, tylko drzwi czekające na zewnętrzny przegląd, gdy tlen dalej odlicza.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/pl_PL. -->

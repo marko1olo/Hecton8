@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Contract Approach Act Gate"
+title: "Porte d'approche contractuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Contract Approach Act Gate
+# Porte d'approche contractuelle
 
-FR LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+L'approche contractuelle pose la pression de la campagne sans prétendre que l'océan a déjà tout expliqué. Un tableau Black Keel assigne transfert de réclamation, horaire bathydrop, exposition au gage et dette d'outils avant que l'opérateur atteigne l'eau ouverte. La route commence comme un travail payé sous de mauvais termes.
 
-## Scanner
-
-FR LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-FR LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-FR LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-FR LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Le détail important est le résidu Deep Reach dans le profil opérateur. Ce n'est pas un crochet familial ni un titre héroïque. C'est une correspondance procédurale: langage d'accès, abréviations de maintenance et habitudes d'infrastructure d'évacuation qui correspondent encore aux systèmes de colonie abandonnés. La première porte dit que la descente est du travail; la seconde ligne dit que ce travail a déjà un dossier.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/fr_FR. -->

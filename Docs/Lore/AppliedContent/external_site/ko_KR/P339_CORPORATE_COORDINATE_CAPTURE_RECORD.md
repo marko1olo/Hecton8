@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Corporate Coordinate Capture Record"
+title: "기업 좌표 포획 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Corporate Coordinate Capture Record
+# 기업 좌표 포획 기록
 
-KO LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+질문은 플레이어가 HECTON-8을 떠나는지뿐만이 아니다. 떠난 뒤 누가 지도를 받는가, 그리고 생존이 옛 주인에게 되돌아올 길을 주는 대가로 산 것인가가 문제다.
 
 ## Scanner
 
-KO LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+좌표 payload 수락. Deep Reach 수신자 우선순위 복구. 공개 보고서는 변경 없음.
 
 ## Terminal
 
-KO LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: Atlas 분지 벡터가 Deep Reach 수신기로 전송됨. 협조 기록 아래 회수 승인. 공개 사고 기록 변경 없음. 미래 작전은 기업 경로 권한을 되찾는다.
 
 ## Audio
 
-KO LOC HOLD: You opened the door from the inside.
+너는 안쪽에서 문을 열었다.
 
 ## Field Note
 
-KO LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+기업 부분 엔딩 기록: 좌표는 범죄 현장을 Deep Reach 통제로 다시 열어 회수를 산다.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/ko_KR. -->

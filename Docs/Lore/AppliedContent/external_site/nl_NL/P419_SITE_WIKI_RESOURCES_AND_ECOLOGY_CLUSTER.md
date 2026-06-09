@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Grondstoffen en Ecologie"
+title: "Grondstoffen en ecologie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,16 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Grondstoffen en Ecologie
+# Grondstoffen en ecologie
 
-Het grondstoffencluster moet procesketens tonen, geen buitlijst. Een mineraal kan uit drowned crust komen, uit brine trap-sediment, uit vent heat-spoor, uit oude machine of uit weefsel dat na Atlas-ingreep rond metaal groeide. Blue debt verbindt economie met geologie: wat omhoog kan, is boven al geprijsd. Ecologie is geen achtergrond en geen dierentuin. Fauna reageert op geluid, druk, licht, zoutspoor en beschadigde repair paths. Daarom moeten grondstoffen, biota en bewijs samen gelezen worden: één monster kan een gereedschap voeden, een ongeluk blootleggen en tonen waar Atlas reparatie verwarde met gebruik van levend materiaal.
+De eerste fout is HECTON-8-grondstoffen rauw noemen. Beneden komt bijna niets nuttigs onaangeraakt aan. Een scherf van de Drowned Crust draagt drukgeschiedenis. Een blue debt-aderspoor bewaart geheugen van hitte, pekel en extractiemethode. Een schaalplaat kan rifpantser, mislukt afdichtmiddel, door Atlas gegroeide kabelhuid en juridisch bewijs zijn voordat een Marauder haar in een kist legt.
+
+Daarom staan grondstoffenpagina's naast ecologiepagina's. De oude kolonie groef niet in een dode vloer. Deep Reach sneed in pekelladders, door vents gevoede mineraalbanken, dichtgeslibde machines en levende filtersystemen die het ritme van de maan al kenden. Na de catastrofe duwde Atlas zijn reparatiemodel in alles wat een lek kon sluiten of een signaal kon dragen. Biofilm werd geleider. Wortelmat werd pakking. Gemarkeerde fauna werd bewegende feedback.
+
+Dieren zijn geen lootkisten met vinnen. Ze lezen trilling, warmte, lichtverlies, bloedchemie, zoutsporen en verstoord slib. Een grazer kan veilige schraapzones blootleggen door gewoon te doen wat hij altijd doet. Een roofdierschaduw kan tonen welke gang de verkeerde akoestische puls draagt. Een gemarkeerd dier kan in één passage reparatieroute, getuige en gevaar zijn.
+
+Blue debt maakt de morele rekening vuiler. Het beste monster kan dof, verzegeld en lelijk zijn omdat het de druktoestand bewaart die bewijst waar het ontstond. Een heldere scherf kan waardeloos zijn als een vent haar geheugen heeft schoongewassen. Een van beide meenemen kan een stroming veranderen, een jager wekken, een Atlas-patch beschadigen of een arbeidersongevalsspoor wissen dat belangrijker was dan de uitbetaling.
+
+De nuttige vraag is nooit alleen wat geoogst kan worden. Ze vraagt wat de oceaan met dat materiaal deed voordat een mensenhand de keten binnenkwam. HECTON-8 wordt leesbaar wanneer geologie, leven, machines en custody als één systeem worden behandeld dat schade onthoudt.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/nl_NL. -->

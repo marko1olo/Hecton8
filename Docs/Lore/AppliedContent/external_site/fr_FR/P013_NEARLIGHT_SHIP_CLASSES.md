@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Classes de vaisseaux proches lumière"
+title: "Classes de vaisseaux proche-lumière"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Classes de vaisseaux proches lumière
+# Classes de vaisseaux proche-lumière
 
-HECTON-8 n'a pas besoin de FTL pour paraître immense. Les sondes se perdaient, les vaisseaux graines portaient les instructions, les carriers Atlas déplaçaient la masse chère.
+Un vaisseau proche-lumière dans HECTON-8 n'est pas un moteur miracle enveloppé d'une coque. C'est l'extrémité visible d'une économie de route. Les arrays de faisceau dépensent de l'énergie avant le départ. Les lanes de pellets alimentent la masse de réaction avec une discipline de timing brutale. Gorges fusion-electric, glace de bouclier, radiateurs et cryo empêchent la charge de devenir une erreur brillante. Magsails, peaux d'aerobrake et fenêtres réceptrices décident si le vaisseau a le droit de s'arrêter.
 
-L'arrivée compte autant que le départ. La vitesse doit être perdue par voiles magnétiques, géométrie de géantes gazeuses et marges de sécurité. Voilà pourquoi un claim peut être humain tandis que le joueur reste seul dans l'eau.
+La table des classes est donc utile. Une needleprobe explique pourquoi Aegir était connu avant d'être sûr. Un seed ship explique l'arrivée des machines avant la communauté. Un Atlas explique la dette et les compromis. Un tender explique les limites de Black Keel : il travaille le claim Aegir, pas la distance interstellaire.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/fr_FR. -->

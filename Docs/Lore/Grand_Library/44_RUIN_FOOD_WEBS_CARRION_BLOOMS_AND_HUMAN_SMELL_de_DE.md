@@ -1,62 +1,80 @@
-<!-- localization_status: draft_machine_or_llm -->
-# NAHRUNGSNETZE DER RUINEN, AASFLOREN UND MENSCHENGERUCH
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# NAHRUNGSNETZE IN RUINEN, AASFÄULNISBLÜTEN UND MENSCHLICHER GERUCH
 
-> **Quelle:** Atlas-Biologiefragmente, Marauder-Routennotizen, Black-Keel-Kontaminationsbriefings über organische Spurenübertragung.  
-> **Stimme:** Feldökologe für Bergungsrisiken, mit Randbemerkungen von Arbeitern, die dieselben Lektionen durch verlorene Köder, Blut, Werkzeuge und Freunde lernten.  
-> **Prüfernotiz:** Ruinen in HECTON-8 dürfen sich nie biologisch leer anfühlen. Ein toter menschlicher Raum wird zu einem Fressereignis, einem Unterschlupf, einer chemischen Narbe und einem Verhaltenssignal.
+> **Quelle:** Atlas-Biologiefragmente, Marauder-Routennotizen, Deep-Reach-Randnotizen zur Leckökologie und Black-Keel-Briefings zur Übertragung organischer Spuren.  
+> **Umfang:** Wie verlassene menschliche Räume zu Futterstellen werden, wie Aasblüten durch Infrastruktur wandern und warum ein dichter Anzug das Wasser trotzdem verändert.  
+> **Feldeinsatz:** Vor dem Betreten nasser Ruinen lesen, wenn die Route ruhig, frisch geräumt oder zu sauber wirkt.
 
 ---
 
-## 1. Eine Ruine ist ein Fressereignis
+## 1. Ein Raum beginnt zu füttern
 
-Ein menschlicher Raum stirbt nicht auf einmal.
+Ein menschlicher Raum stirbt nicht auf einmal. Er wird ungleichmäßig.
 
-Zuerst wird die Energie ungleichmäßig. Warme Paneele kühlen ab. Kalte Paneele werden warm. Pumpen husten, stocken, starten neu und drücken altes Wasser durch Stellen, die jahrelang trocken waren. Der Raum verändert den Druck. Er entlässt Geruch. Er verliert Farbflocken, Fett, Haut, Stofffasern, tote Mikroben, gekochte Isolierung und Metallstaub. Draußen bemerkt etwas diese Veränderung.
+Strom fällt wandweise aus, nicht in einem Schritt. Ein Paneel bleibt warm. Ein anderes wird kalt. Eine Pumpe bleibt stehen, startet wieder und drückt altes Wasser durch einen trockenen Servicethroat. Eine Drucktür öffnet sich handbreit und gibt Geruch eine gerade Linie. Farbe blättert dort ab, wo Salz unter die Grundierung gekommen ist. Fett wird weich. Stofffasern quellen. Tote Mikroben lösen sich vom Ablaufgitter. Batteriehitze hält eine Strebe wärmer als den Schlick ringsum.
 
-Die ersten Tiere kommen nicht, weil der Raum dramatisch wirkt. Sie kommen, weil Gradienten sich verändert haben. Wärme wanderte. Chemie löste sich. Eine Dichtung versagte und gab dem Wasser eine Linie organischer Stoffe. Ein Nahrungsdrucker verdarb hinter einer verschlossenen Tür. Ein Körper wurde schlecht entfernt. Eine Batteriebank wärmte eine Wand länger als die nächste. Leben auf HECTON-8 braucht keine Geschichte, um zu untersuchen. Es braucht einen Unterschied.
+Das Leben auf HECTON-8 folgt solchen Unterschieden. Es braucht keinen tragischen Raum, keinen sichtbaren Körper und keine menschliche Erklärung. Es braucht Wärme, Organik, Strömung, Deckung, Ladung, weiches Mineral, Metallgeschmack oder einen Weg zur nächsten ähnlichen Stelle.
 
-Darum sind verlassene Basen keine leeren Level. Sie sind aufgeschobene Mahlzeiten. Jede Luke, jeder Schacht und jede Kabeldurchführung wird zu einer Frage des Ozeans: Gibt es Wärme, Salz, Protein, Strömung, Schutz, Metall, Ladung, Licht, Fäulnis oder einen Weg zu mehr davon?
+Die ersten Ankömmlinge sind klein. Filtermatten breiten sich über langsamen Lecks aus. Blasse Weider raspeln Mineralfilm von Rohrnähten. Krill sammelt sich dort, wo Pumpenvibration Nahrung losrüttelt. Schalenreiniger leben in Schraubensenken und Dichtungslippen. Sie können einen toten Raum gepflegt aussehen lassen, weil sie weiche Beweise entfernen, bevor sie harte berühren.
 
-Wenn ein Marauder eintrifft, kann die Antwort bereits Zähne haben.
+Wenn ein Marauder die Luke erreicht, kann der Raum bereits eine Futterordnung haben.
 
-## 2. Was menschliche Infrastruktur ernährt
+## 2. Was Infrastruktur füttert
 
-Menschliche Infrastruktur ernährt mehr als Raubtiere.
+Ruinen füttern mehr als Raubtiere.
 
-Filtermatten leben von langsamen Lecks. Blasse Weider schaben mineralischen Schleim von Rohrnähten. Blinder Krill drängt in Versorgungsschächte, wo Vibration mikrobielle Filme löst. Eisenkelp verankert sich an warmen Streben in der Nähe von Stromlecks und knirscht so leise, dass ein müder Taucher es für Maschinen halten kann. Winzige gepanzerte Reiniger leben in Schraubmulden, Dichtungslippen und gerissener Keramik. Aus der Entfernung lassen sie tote Räume gewartet aussehen, weil sie zuerst die falschen Beweise entfernen.
+Eine warme Batteriewand füttert Weider. Ein gerissener Algentank füttert eine Blüte. Eine taktende Pumpe füttert Krill, indem sie Film löst. Ein undichter medizinischer Recycler füttert weiße Matten, die später Schalenreiniger füttern. Eine Kabeldurchführung füttert Eisenkelp dort, wo Strömung Wärme berührt. Ein halb offener Spind füttert alles, was Salz aus Stoff und Haut von der Innenseite eines Handschuhs kratzen kann.
 
-Die großen Jäger kommen später. Sie beginnen das System nicht; sie kassieren es. Ein Grabenstalker muss keinen Türalarm verstehen. Er muss nur lernen, dass auf Alarme Bewegung folgt, auf Bewegung Blut, und auf Blut kleinere Tiere, die Vorsicht vergessen. Ein Leviathan jagt keinen Korridor, weil er weiß, was ein Korridor ist. Er jagt die Mündung einer wiederholten Strömung, die nach eingeschlossenem Fleisch und heißem Kupfer riecht.
+Große Jäger kommen später. Sie beginnen das System nicht; sie ziehen Gewinn daraus. Ein Trench Stalker muss keinen Türalarm verstehen. Er muss nur lernen, dass auf Alarm Bewegung folgt, auf Bewegung Blut, und auf Blut kleinere Tiere, die Vorsicht vergessen. Ein Leviathan-class-Kontakt jagt keinen Korridor, weil er das Wort Korridor kennt. Er wartet am Maul einer wiederholten Strömung, die nach eingeschlossenem Fleisch und heißem Kupfer riecht.
 
-Deep Reach versuchte, dies als Kontaminationsmanagement zu beschreiben. Atlas schrieb es als Wartungsökologie. Arbeiter schrieben es kürzer: Wenn ein Ort gefüttert riecht, nimm nicht an, dass du zuerst da bist.
+Deep Reach legte das als Kontaminationsmanagement ab. Atlas markierte Teile davon als Wartungsökologie. Marauder-Notizen fassen es kürzer: Wenn ein Ort gefüttert riecht, geh nicht davon aus, dass du zuerst da bist.
 
-## 3. Aasfloren
+## 3. Aasblüten
 
-Aasfloren entstehen nicht nur aus Körpern.
+Aasblüten bestehen nicht nur aus Körpern.
 
-Eine Flore kann mit toter Crew beginnen, ja. Sie kann auch mit einer Kiste Nährpaste beginnen, einem gerissenen Algentank, einer Spule Anzugfutter, einem Gefrierschrank, der drei Stunden warm war, einem medizinischen Recycler, der einmal mit dem falschen Ventil offen lief, oder einer Werkzeugtasche, die lange genug in einer nassen Ecke lag, um eine Haut zu bilden. Dem Ozean ist egal, welcher Teil menschlich, korporativ, tierisch oder hergestellt war. Ihn interessiert, was gefressen werden kann und was Fressen weiterträgt.
+Eine Blüte kann von toter Crew ausgehen, aber auch von Nährpaste, einem gerissenen Algentank, einer Rolle Anzugfutter, drei Stunden lang warmer Gefrierpaste, einem medizinischen Recycler mit falschem Ventil offen oder einer nassen Werkzeugtasche, die lange genug lag, um Haut anzusetzen. Das Wasser sortiert die Quelle nicht in moralische Kategorien. Es sortiert danach, was gefressen, getragen, gefiltert, versteckt oder als Deckung genutzt werden kann.
 
-Die Flore hat Stufen. Zuerst Trübung: Wasser wirkt in der Nähe einer Naht leicht milchig oder staubig. Dann Sortierung: kleine Münder, Filterfächer, weiße Fühler, weiche Filme und bewegte Punkte, die verschwinden, sobald Licht sie trifft. Dann Vertrauen: abgeweidete Kanten, polierte Schrauben, Panzerspuren, Bissgruben, Kabel bis zur Mantelschicht freigelegt. Dann Besitz: größere Tiere nutzen die Flore als Route, Blende, Paarungsplatz oder Vorratskammer.
+Die meisten Blüten bewegen sich in Stufen. Zuerst Trübung: Wasser nahe einer Naht oder eines Ablaufs wirkt leicht milchig. Dann Sortierung: kleine Münder, Filterfächer, weiße Fühler, weicher Film und bewegte Punkte, die im Lampenlicht verschwinden. Dann Arbeit: abgeweidete Kanten, polierte Schrauben, Schalenspuren, Bissgruben, Kabelmäntel bis zum Gummi gereinigt. Dann Routennutzung: größere Tiere nutzen die Blüte als Versteck, Vorratsstelle, Paarungsplatz oder Strömungsmarker.
 
-Die gefährliche Stufe ist nicht immer laut. Eine stille Flore kann bedeuten, dass das kleine Leben bereits gefressen wurde. Ein polierter Boden kann bedeuten, dass Reiniger hindurch waren. Ein Geruch wie warme Münzen kann bedeuten, dass Blut alt, aber nicht vergessen ist. Eine Türöffnung ganz ohne Wachstum kann schlimmer sein als eine mit zu viel Wachstum, weil etwas sie sauber hält.
+Die laute Stufe ist nicht immer die gefährliche. Eine ruhige Blüte kann bedeuten, dass das kleine Leben bereits gefressen wurde. Ein polierter Boden kann bedeuten, dass Reiniger die Warnspur entfernt haben. Ein Geruch nach warmen Münzen kann bedeuten, dass Blut alt genug ist, um sich verteilt zu haben, und frisch genug, um noch zu zählen. Eine Tür ohne Bewuchs kann schlimmer sein als eine überwachsene Tür, weil etwas sie frei halten könnte.
 
-Marauders lernen, Abwesenheit so sorgfältig zu lesen wie Überfluss.
+Abwesenheit ist eine biologische Markierung. Behandle sie so.
 
-## 4. Menschengeruch
+## 4. Menschlicher Geruch
 
-Menschengeruch ist nicht ein Geruch.
+Menschlicher Geruch ist nicht ein Geruch.
 
-Für HECTON-8 ist er Seifenrest, synthetischer Stoff, Batteriewärme, Hautsalz, Stressschweiß, Klebstoff, Werkzeugschmiermittel, Weichmacher, Sterilisationsmittel, Bluteisen, gekochte Isolierung, abgestandener Atem und die scharfe Chemie der Angst, die durch schlechte Dichtungen sickert. Ein Taucher glaubt, er sei versiegelt, weil der Anzug Druck hält. Der Ozean widerspricht. Er liest Spuren.
+Für HECTON-8 ist er Seifenrest, synthetischer Stoff, Batteriehitze, Hautsalz, Stressschweiß, Klebstoff, Werkzeugschmierstoff, Weichmacher, Sterilisationsmittel, Bluteisen, gegarte Isolierung, abgestandener Atem und die scharfe Chemie von Angst, die durch eine schlechte Manschettendichtung entweicht. Ein Taucher vertraut dem Anzug, weil er Druck hält. Das Wasser liest Spur.
 
-Darum hören manche Crews vor einem Abstieg auf, frische Reinigungstücher zu benutzen. Die Tücher machen den Taucher sicher für Black-Keel-Inspektion und laut für das Wasser. Andere reiben Handschuhe mit altem Schlamm ein, bevor sie einen Fressraum betreten. Manche Crews tragen Opfer-Proteintabs, nicht um Raubtiere wie Haustiere zu füttern, sondern um der Strömung einen kleineren Streit zuzuwerfen, bevor der eigene Körper der größere wird. Keine dieser Gewohnheiten wird offiziell empfohlen. Die meisten stehen in den Rändern der Routennotizen toter Menschen.
+Deshalb benutzen manche Crews vor dem Abstieg keine frischen Reinigungstücher mehr. Die Tücher bestehen die Black-Keel-Inspektion und machen den Taucher laut für die Route. Andere Crews reiben Handschuhe in altem Schlick, bevor sie einen Futterraum betreten. Einige tragen Opfer-Proteinplättchen mit, nicht um Raubtiere zu zähmen, sondern um einen kleineren Streit in die Strömung zu werfen, bevor der eigene Körper der größere wird.
 
-Black Keel verkauft Geruchskontrolle als Verbrauchsgut. Deep Reach nannte es Spurendisziplin. Marauders nennen es, nicht die Essensglocke zu läuten.
+Nichts davon ist offizielles Verfahren. Das meiste steht am Rand von Routennotizen toter Arbeiter. Black Keel verkauft Geruchskontrolle als Verbrauchsgut. Deep Reach nannte es Spurdisziplin. Marauders nennen es, nicht die Essensglocke zu läuten.
 
-## 5. Was der Spieler lernt
+## 5. Wenn sauber gefüttert bedeutet
 
-Der Spieler lernt, dass Ökologie kein Hintergrund ist.
+Eine saubere Ruine ist nicht automatisch sicher.
 
-Ruinleben zeigt Zeit. Frische Filme sagen, dass ein Leck jung ist. Alte Panzerspuren sagen, dass eine Route lange nass blieb. Gereinigte Knochen sagen, dass kleine Tiere vor großen Zugang hatten. Ein Korridor, dem plötzlich Krill fehlt, kann leer sein, weil er sicher ist, oder leer, weil etwas ihn für sich sicher gemacht hat. Ein stiller Maschinenraum kann abgeschaltet sein, oder er kann ein lauschender Hinterhalt sein.
+Saubere Schrauben können Schalenreiniger bedeuten. Freiliegende Kabelmäntel können bedeuten, dass Weider den weichen Bewuchs abgezogen haben. Leere Krilltaschen können bedeuten, dass kürzlich ein Raubtier durchkam. Ein Durchgang mit perfekter Sicht kann starke Strömung bedeuten, oder ein größeres Tier nutzt die Öffnung oft genug, um die Wände abgeschabt zu halten.
 
-Gutes Spiel bedeutet zu fragen, wovon die Ruine gefressen hat, was von ihr gefressen hat und was der Spieler gleich hinzufügen wird. Eine geöffnete Luke kann eine Flore starten. Ein geschnittenes Kabel kann Wärme freisetzen. Blut in einem Handschuh kann eine Route verändern. Das Entfernen einer Filtermatte kann eine Strömung freilegen, die etwas Größeres bringt. Zurückgelassener Köder kann ein Leben retten oder dem falschen Tier eine neue Tür beibringen.
+Gute Routenleser vergleichen die falschen Dinge. Eine staubige Wand neben einem polierten Riegel. Ein kalter Boden unter einem warmen Scharnier. Neue Schale auf einer alten Blutspur. Keine Filtermatten in einem Raum mit aktivem Leck. Ein versiegelter Schrank mit Salz in der Griffmulde. Solche Widersprüche erzählen Zeit besser als ein toter Atlas-Zeitstempel.
 
-HECTON-8 trennt Bergung nicht von Biologie. Ein geborgener Gegenstand, eine gebrochene Dichtung, ein toter Arbeiter und eine warme Wand gehen in dasselbe Hauptbuch des Appetits ein. Der Ozean führt Buch mit Mündern, Filmen, Spuren und Stille.
+Die sicherste Kammer einer Ruine ist oft die, die bereits von Mäulern gereinigt wurde.
+
+## 6. Umgang mit Bergungsgut
+
+Biologie kann Beweise zerstören, bevor jemand darüber lügt.
+
+Eine Körpermarke kann durch den Darm eines Reinigers wandern. Ein Recorder kann so blank poliert werden, dass das Blut verschwindet, das den Halter bewies. Ein Probenbeutel kann genug Film ansetzen, um den ursprünglichen Schlick zu verdecken. Ein Wandstempel kann unter Schalenversiegelung verschwinden. Ein markiertes Tier kann einen Atlas-Sensor in einen Gang tragen, dem keine Drohne folgen kann. Ein Raubtier kann Nutzlast in eine Anspruchskategorie ziehen, die Keelmark bevorzugt: nicht bergbar, kontaminiert, strittig.
+
+Gute Crews verpacken Beweise vor dem Reinigen. Sie fotografieren Bissgruben, Schalenwuchs, Filmränder und fehlendes Kleinleben. Sie notieren Geruch, Wassertemperatur, Pinger-Antwort, Strömungsrichtung und ob das Objekt in Wasser, Schlick, Darm, Blüte, Schalenwuchs oder Atlas-markiertem Gewebe gefunden wurde. Diese Details wirken klein, bis ein Sachbearbeiter entscheidet, ob ein toter Arbeiter eine Person, eine Kontaminationsquelle oder eine zahlbare Frachtkategorie war.
+
+Wisch die Geschichte nicht vom Objekt, bevor das Anspruchssystem sie falsch lesen kann.
+
+## 7. Feldregel
+
+Frag vor dem Öffnen einer nassen Ruine, was dort gefüttert hat.
+
+Frag danach, was sich davon ernährt hat, was fernblieb, was Temperatur änderte, was eine Strömung öffnete, was aufhörte Geräusche zu machen und was dein Anzug hinzufügt, wenn die Dichtung nachgibt.
+
+Wenn die Antwort den Anspruch noch wert ist, tritt ein, als wäre der Raum bereits besetzt.

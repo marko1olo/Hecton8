@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "سجل Black Keel"
+title: "دفتر Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سجل Black Keel
+# دفتر Black Keel
 
-Black Keel ليست سفينة ودية. إنها عطاء claim-pool يرى الأجساد والحمولات والحجر وكتلة الصعود والتأمين كمدخلات في سجل واحد.
-
-لا تحتاج إلى كراهية اللاعب. تستطيع الرد بأدب وقبول hash استغاثة وترفض الالتقاط حتى تتغير الأرقام.
+Black Keel ليست سفينة صديقة فوق HECTON-8. إنها tender claim-pool: عامل، دفتر، بوابة حجر وآلة تأمين. تسمع اللاعب، توجه حزمة، تحسب نافذة، وترفع كتلة لاحقا. لكنها قد ترى الدليل أو العينة أو الهيكل المؤمن أهم من الشخص. ليست شريرة؛ إنها موثوقة داخل عقدها وخطرة حين يخلط اللاعب بين العقد والرحمة.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/ar_SA. -->

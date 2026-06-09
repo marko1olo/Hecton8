@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "حالة أدلة حقيقة الانتشال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# حالة أدلة حقيقة الانتشال
 
-AR LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+الأدلة المستعادة تمنح HECTON-8 مؤامرتها البطيئة. المستعمرة ليست صامتة لأن شيئا لم يحدث، بل لأن لكل غرض مثبت قيمة سوقية وقيمة مسؤولية وقيمة قانونية. تظهر الحقيقة عبر مسارات الحيازة والأشياء المتضررة، لا عبر اعتراف واحد مريح.
 
 ## Scanner
 
-AR LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+حزمة صندوق أسود: حقيقة حتى يلمسها مكتب المطالبات.
 
 ## Terminal
 
-AR LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: يتحول الانتشال الخام افتراضيا إلى مادة مطالبات. الدليل العام يحتاج إلى بصمة مصدر سليمة، وختم ضغط وزمن، وحزمة شاهد، وموثق مرحلات خارج سيطرة صاحب المطالبة، ومسار حيازة ينجو من فقدان السفينة والتعرض للمحلول الملحي والتعديلات اليدوية.
 
 ## Audio
 
-AR LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+الجثة لا تصبح دليلا إلا إذا فشل أحدهم في دفنها داخل الملف الخطأ.
 
 ## Field Note
 
-AR LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+الحقيقة القادمة من العمق لا تصبح خطرة إلا إذا حافظت على شهودها.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/ar_SA. -->

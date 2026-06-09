@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Marauder Correction Note Sample"
+title: "Образец мародерской правки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Marauder Correction Note Sample
+# Образец мародерской правки
 
-RU LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Образец мародерской правки не является признанием, и именно поэтому он полезнее. Это грязная пометка поверх официального акта об аварии, сделанная человеком, который привык не доверять чистым причинам. Записка не говорит, кто кого убил. Она говорит, что надо проверить, прежде чем слову авария позволят остаться в деле: сертификат насоса, состав смены, категорию тел, рассинхрон дверных часов и очередь допуска, которая держала спасение достаточно долго, чтобы отсек стал уликой. Для HECTON-8 этот предмет соединяет физическое доказательство и голос фракции. Колониальный журнал пытается закрыть историю погодой. Мародерская рука разворачивает игрока обратно к комнате.
 
 ## Scanner
 
-RU LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Жирным карандашом поверх акта об аварии: не погода, не паника, а задержка допуска с телами в ведомости.
 
 ## Terminal
 
-RU LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+МАРОДЕРСКАЯ ПРАВКА / ОФИЦИАЛЬНАЯ ПРИЧИНА: ОТКЛОНЕНА / ДО ЗАЯВЛЕНИЯ ПРОВЕРИТЬ: сертификат насоса, смену, категорию тел, рассинхрон часов двери, очередь допуска спасработ.
 
 ## Audio
 
-RU LOC HOLD: Someone else smelled the paperwork rot.
+Кто-то учуял гниль в бумагах еще до того, как отсек высох.
 
 ## Field Note
 
-RU LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+НЕ ПОГОДА. ЗАДЕРЖКА ДОПУСКА. Проверить сертификат насоса, смену, категорию тел. Часы двери спешат на шесть минут относительно штампа заявления.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/ru_RU. -->

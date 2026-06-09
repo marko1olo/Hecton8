@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Набор доказательств мелководного отсека P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Shallow Annex P-63 POI Kit
+# Набор доказательств мелководного отсека P-63
 
-RU LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+Мелководный отсек P-63 - первое место, где процедура выживания и доказательство ответственности лежат на одном столе. Оператор восстанавливает помпу, герметизирует карман, читает пакет аварии и находит уведомление маршрута, которое не совпадает с повреждениями снаружи.
 
 ## Scanner
 
-RU LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Набор доказательств POI: P-63 держит рабочий карман-убежище, ремонт помпы и первое официальное противоречие.
 
 ## Terminal
 
-RU LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+НАБОР P-63: трюмная помпа, лоток прокладок, след резака, линия пингера, пакет аварии, запечатанное уведомление маршрута, сухой шкаф, ручной зажим обхода.
 
 ## Audio
 
-RU LOC HOLD: First room with air. First room with a lie.
+Первая комната с воздухом. Первая комната с ложью.
 
 ## Field Note
 
-RU LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Заметка мародера: держи помпу рабочей, прежде чем читать пакет. Мертвое убежище дает плохое доказательство.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ru_RU. -->

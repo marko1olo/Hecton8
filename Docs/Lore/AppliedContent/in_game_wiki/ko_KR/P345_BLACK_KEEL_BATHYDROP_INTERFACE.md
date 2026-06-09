@@ -35,6 +35,6 @@ Bathydrop 인터페이스 손상: 압력 등급 부품, 릴레이 타이밍, 깨
 
 ## Field Note
 
-첫 시간 탈출 기록: 캐리어는 존재하지만 플레이어, 바다, 표면, 궤도를 잇는 사슬은 이름 있는 부품들에서 끊어졌다.
+첫 시간 탈출 기록: 캐리어는 존재하지만 수트, 바다, 표면, 궤도를 잇는 사슬은 이름 붙은 부품들에서 끊어졌다.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ko_KR. -->

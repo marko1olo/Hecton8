@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "הסוף הטוב ביותר: אין ידיים נקיות"
+title: "הנתיב הטוב ביותר: שארית גלויה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# הסוף הטוב ביותר: אין ידיים נקיות
+# הנתיב הטוב ביותר: שארית גלויה
 
-אין ידיים נקיות הוא כלל הטון הסופי. HECTON-8 מתגמל הבנה, הכנה ועבודת עד, לא טוהר. הסוף הטוב ביותר צריך לגרום לשחקן להרגיש כשיר ומעורב בו זמנית.
+שארית גלויה היא התקן לנתיב החזק ביותר. הסיום צריך להציל דבר מוחשי בלי להפוך את HECTON-8 למסך פרס: רשומה ציבורית, ניתוב Deep Reach שנדחה, אגן שמור, מפעיל משוחרר, שמות עובדים או Atlas proof hash. הרשומה חייבת גם להשאיר שדות פתוחים למשמורת מקבל, אחריות, שמות חסרים, נזק אגן, מצב Atlas ושארית חוב.
 
 ## Scanner
 
-הסוף הטוב ביותר צריך להציל משהו אמיתי בלי להעמיד פנים שהתמימות שרדה את הירידה.
+כלל הנתיב הטוב ביותר // שמור תוצאה מוחשית: משמורת המפעיל, רשומה ציבורית, מטען שנדחה, אגן חי, חבילת שמות עובדים או Atlas proof hash. השאר שדות נזק פתוחים.
 
 ## Terminal
 
-כלל אין ידיים נקיות: קריטריוני הסוף הטוב הידוע דורשים agency, ראיות, תוצאה ושארית. אם כל צד שנפגע מרוצה, הסוף שכח את HECTON-8.
+תקן רשומת סיום
+אובייקט או מצב שנדרשים להישמר: יציאת המפעיל, רשומה ציבורית, מטען Deep Reach שנדחה, אקולוגיית אגן שמורה, חבילת שמות עובדים או Atlas proof hash.
+שדות שחייבים להישאר פתוחים: משמורת מקבל, שרשרת אחריות, שמות חסרים, נזק אגן, מצב Atlas, שארית שעבוד.
+רשומה פסולה: כל העלויות מוסתרות מאחורי תשלום, חילוץ או סגירה תאגידית.
+שימוש ברשומה: להראות מה השתנה ומה עדיין מחזיק צד הגשה.
 
 ## Audio
 
-אם זה מרגיש נקי, זה שכח איפה אתה.
+אם כל השורות נסגרות, הרשומה משקרת.
 
 ## Field Note
 
-נתיב חזק יכול לחשוף אמת, לסרב לDeep Reach, לשמר חלק מהאקולוגיה ולשחרר את השחקן, אבל המחיר חייב להישאר נראה.
+אם כל השורות נסגרות, הסיום הסתיר את החדר.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/he_IL. -->

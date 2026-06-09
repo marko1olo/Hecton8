@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Publiczny wstęp do systemu Aegir
 
-Aegir to system gospodarza wokół HECTON-8 i ma znaczenie w każdym praktycznym sensie. Jego drabina księżyców kształtuje pływy i okna podejścia. Geometria przekaźników pozwala dowodom podróżować szybciej niż masa ratunkowa. Orbity przewoźników sprawiają, że Black Keel jest obecny, ale nie od razu pomocny. Nie ma cudownego napędu, ratunku ansible ani czystego przycisku alarmowego. Publiczna wersja Aegir powinna wydawać się dość osiągalna, by być okrutna: połączona, rozpisana, wyceniona i nadal za wolna dla ludzi uwięzionych niżej.
+Aegir ma znaczenie, bo czyni niebo praktycznym. System wokół HECTON-8 nie jest dekoracyjną mapą gwiazd; to maszyna księżyców, okien, pogody radiacyjnej, cieni przekaźników, ryzyka ice-scatter i geometrii transferu carriera. Wiadomość może wyjść w wąskim oknie sygnału, gdy ciało nadal jest nie do odzyskania. Próbka może być cenna i spóźnić się na kwarantannę. Black Keel może być w systemie, lecz nie nad tobą tak, jak chce przestraszony nurek.
 
-## Scanner
+Tak HECTON-8 pozostaje hard-sci-fi bez stawania się pracą domową. Gracz nie potrzebuje wykładu z mechaniki orbitalnej, by czuć Aegir. Czuje go, gdy sygnał przechodzi, a lift nie, gdy szum burzy psuje relay, gdy cień księżyca zmienia bezpieczny uplink w martwy slot, gdy okno pływu decyduje, czy trasa canyonu jest przeżywalna.
 
-Aegir nie jest tłem. To rozkład z grawitacją, promieniowaniem, pływami, opóźnieniem przekaźników i drogimi oknami masy.
-
-## Terminal
-
-PUBLICZNY POZIOM ARTYKUŁU / SYSTEM AEGIR
-dozwolone: system gospodarza, rola księżyca HECTON-8, okna pływów, geometria przekaźników, opóźnienie przewoźnika, język tras bez FTL
-zablokowane: końcowe trasowanie payload, ukryty priorytet receiver, dokładne późne blokady efemeryd
-uwaga redakcyjna: wyjaśnić opóźnienie, nie czyniąc świata nieosiągalnym.
-
-## Audio
-
-System jest dość blisko, by odpowiedzieć. To jest okrutna część. Nie jest dość blisko, by na rozkaz podnieść ciało.
-
-## Field Note
-
-Nie nazywaj Aegir odległym i nie kończ. Nazwij, co robi dystans: wycenia podnoszenie, opóźnia ciała i pozwala dowodom wyprzedzić ratunek.
+Aegir sprawia też, że frontier nie jest pusty. Inne księżyce niosą role relay, zimne claims, martwe beacons, blizny ruchu i presję kwarantanny. HECTON-8 jest grywalnym kryzysem, nie całym systemem. Szersza drabina czyni ratunek drogim, salvage legalnym, dowód opóźnionym, a każde okno powrotu zasłużonym.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/pl_PL. -->

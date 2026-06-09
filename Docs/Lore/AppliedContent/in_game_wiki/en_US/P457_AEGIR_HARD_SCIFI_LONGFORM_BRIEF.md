@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir: The Sky That Refuses Rescue
 
-Aegir is an operational sky. Skarn, Vela, Kestrel, HECTON, Mute and the rest of the moon ladder can delay or corrupt a clean packet without making the surface permanently dark. Rescue fails through distance, geometry, law, and cost.
+Aegir is the orbital machine above HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window and the reason rescue travels slower than paperwork.
 
 ## Scanner
 
-Celestial route primer. No FTL or ansible path exists. Aegir windows route through moons, debris, relay custody, storm state, and Black Keel mass accounting.
+Public astronomy article: no FTL, no ansible, Aegir relay geometry, moon ladder hazards, Black Keel orbital custody, route windows before law.
 
 ## Terminal
 
-AEGIR NAVIGATION PRIMER // PUBLIC BAND. Use hazard classes, not final constants: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
+SITE LONGFORM: make the sky practical and hostile; every packet, drop, pickup and claim must have physics, timing, mass, and custody behind it.
 
 ## Audio
 
-Black Keel scheduling excerpt: "Signal true is not signal useful. Window holds for mass, weather, custody, and receiver lock."
+The sky above HECTON-8 is not empty. It is a schedule with teeth.
 
 ## Field Note
 
-Marauder sky rule: do not ask whether the signal was sent. Ask which moon blocked it, which ledger caught it, and whether the receiver heard a person or a mass class.
+Look up for timing, not comfort. On HECTON-8, moonlight can be a relay opening, a storm warning, or a claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/en_US. -->

@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Relay Spine
 
-Human space in HECTON-8 is connected by relays rather than miracles. Stations and beam arrays pass packets along scheduled routes. Custody hashes prove who received what. Legal chains keep claims alive long after the people named in them are gone.
+HECTON-8 does not use an ansible, a magic emergency channel or a core-world court that can speak live over the ocean. Human space is connected by a Relay Spine: scheduled beams, packet custody, witness hashes, local buffers and receipt chains. It is a powerful machine for preserving facts. It is a terrible machine for saving someone who needs air now.
 
-That network is powerful, but it is not warm. The player can send a true message and still die before it matters. The delay is not a plot excuse; it is the shape of the setting. Civilization can know, record and bill faster than it can arrive.
+That makes the setting colder without making it empty. The player can find a true file, prove its origin, push it into a queue and still watch the local situation worsen. Black Keel can hear a burst and turn it into a lien. Luyten can authenticate a packet after the window closes. Tau Ceti can make the story public later. The no-FTL rule is not a lore footnote; it is why every immediate choice on HECTON-8 belongs to the person still underwater.
 
 <!-- External Site; generated from P012_RELAY_SPINE/en_US. -->

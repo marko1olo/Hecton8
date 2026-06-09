@@ -1,58 +1,78 @@
 <!-- localization_status: draft_machine_or_llm -->
 # CAHAYA PINJAMAN, BROWNOUT, DAN START DINGIN
 
-> **Sumber:** Kursus daya darurat Deep Reach, catatan valuasi salvage Black Keel, rekaman ruang breaker Marauder.  
-> **Suara:** Instruktur daya infrastruktur, dengan anotasi kru utang belakangan.  
-> **Catatan Peninjau:** Di HECTON-8, cahaya bukan bukti kehidupan. Cahaya adalah bukti bahwa sesuatu, di suatu tempat, masih bersedia membelanjakan tatanan tersimpan melawan gelap.
+> **Sumber:** kursus daya darurat Deep Reach, kartu servis ruang pemutus, catatan penilaian salvage Black Keel, dan rekaman perompak dari aneks yang dipulihkan.  
+> **Cakupan:** prioritas beban, perilaku brownout, start dingin, cadangan pinjaman, dan catatan daya yang dipakai untuk rute, klaim, dan keputusan bertahan hidup.  
+> **Penggunaan lapangan:** baca sebelum memercayai ruangan terang, menjembatani breaker, membangunkan panel mati, membuka loker bertenaga, atau memindahkan sel yang mungkin memberi makan hal lain.
 
 ---
 
-## 1. Cahaya Adalah Negosiasi
+## 1. Ruang terang adalah beban
 
-Orang terlalu cepat mempercayai cahaya.
+Di HECTON-8, cahaya bukan bukti ruangan sehat. Cahaya adalah bukti bahwa sirkuit masih menghabiskan daya.
 
-Di HECTON-8, ruangan menyala bisa hidup, sekarat, berbohong, atau menghabiskan detik-detik sopan terakhir dari bank kapasitor. Lampu bisa berjalan dari cadangan darurat sementara controller pintu di sebelahnya sudah tidak punya otoritas untuk membuka kunci. Koridor bisa bersinar karena habitat masih memprioritaskan optik moral setelah setiap pompa berguna diam. Workstation bisa bangun cukup lama untuk meminta login dan mati sebelum jawabannya berarti.
+Lampu bisa berjalan dari cadangan darurat sementara pengendali pintu di sampingnya tidak lagi punya wewenang untuk membuka kunci. Koridor bisa menyala karena habitat masih melindungi lampu moral setelah pompa berguna berhenti melapor. Workstation bisa bangun cukup lama untuk meminta login lalu mati sebelum jawaban mencapai buffer. Manik status hijau bisa tetap hidup karena berada di sisi terlindung breaker, bukan karena sistem di belakangnya hidup.
 
-Deep Reach membangun sistem daya berdasarkan prioritas, bukan kenyamanan. Udara dulu. Tekanan berikutnya. Panas di tempat panas menjaga seal tetap lentur. Data di tempat data mencegah kehilangan legal dan medis. Cahaya datang belakangan, kecuali kegelapan itu sendiri menjadi bahaya. Koloni lama bisa tampak manusiawi karena hierarkinya bekerja. Setelah ditinggalkan, hierarki itu menjadi ladang janji yang setengah ditepati.
+Deep Reach membangun hierarki daya di sekitar bertahan hidup, tanggung jawab, dan kebiasaan. Udara dulu. Kontrol tekanan berikutnya. Panas di tempat panas menjaga seal tetap lentur. Pendinginan di tempat sampel, obat, atau tubuh menciptakan risiko hukum. Data di tempat log mencegah kehilangan medis atau kontrak. Cahaya datang belakangan, kecuali gelap itu sendiri menjadi bahaya tersandung, terpotong, atau panik.
 
-Marauder belajar bertanya siapa yang membayar cahaya. Ruangan yang tidak bisa menjawab belum tentu kosong. Mungkin ia meminjam dari sesuatu yang belum ditemukan pemain.
+Setelah ditinggalkan, hierarki itu lebih sulit dibaca. Ruangan bisa tampak ditempati karena sirkuit murah masih bekerja. Ruangan bisa tampak mati karena beban lebih penting mengambil setiap sel yang bisa dijangkau. Pertanyaan berguna bukan apakah lampu menyala. Pertanyaan berguna adalah beban mana yang membayarnya.
 
-## 2. Logika Brownout
+## 2. Urutan brownout
 
-Brownout adalah mesin yang memilih apa yang pantas terus ada.
+Brownout bukan blackout. Itu urutan.
 
-Ketika daya jatuh, sistem lama membuang beban secara berurutan. Panel dekoratif mati sebelum pompa. Arsip nonkritis tidur sebelum kontrol atmosfer. Motor pintu melambat sebelum pressure lock melepas. Kabinet medis bisa menjaga pendinginan sambil menolak terbuka. Hierarki itu rasional saat dirawat, kejam saat ditinggalkan, dan berbahaya saat diperbaiki sebagian oleh orang yang tidak memahami asumsi awal.
+Saat tegangan jatuh, sistem terawat melepas beban sesuai urutan rancangan. Strip cahaya dinding mati sebelum pompa sirkulasi. Terminal nonkritis tidur sebelum logika tekanan. Motor pintu melambat sebelum kunci keras melepas. Lemari medis bisa mempertahankan pendinginan sambil menolak terbuka. Safe room bisa mempertahankan pertukaran udara dengan membunuh setiap stopkontak yang diharapkan kru perbaikan.
 
-Brownout menciptakan ruangan aneh. Bangku bisa punya panas tetapi tidak punya log. Pompa bisa berjalan tetapi tidak lagi melapor. Lampu peringatan bisa berkedip dari circuit terlindung sementara sensor yang diperingatkannya mati. Safe room bisa menjaga udara bergerak dengan membunuh setiap outlet yang diharapkan pemain untuk dipakai.
+Sistem terbengkalai tidak selalu mengikuti bagan lama. Kontaktor bergaram menempel. Koridor tambalan memberi makan balik panel yang seharusnya mati. Sensor mati bisa menjaga lampu peringatan hidup karena sirkuit peringatan lebih mudah diberi daya daripada kebenaran yang pernah dilaporkannya. Pompa bisa berjalan tanpa melapor karena rel telemetrinya mati lebih dulu.
 
-Black Keel menghargai riwayat brownout karena riwayat itu mengungkap urutan kegagalan. Circuit mana yang mati lebih dulu bisa membuktikan kapan habitat kehilangan kru, kapan klaim disentuh, apakah kulkas sampel tetap dingin, dan apakah ruangan terkunci disegel oleh prosedur atau oleh kelaparan daya.
+Urutan brownout penting karena menunjukkan kapan ruangan berhenti dirawat. Beban mana yang mati dulu bisa menunjukkan apakah sampel tetap dingin, apakah pintu disegel oleh prosedur atau kelaparan daya, apakah beacon darurat punya daya ketika Black Keel menandainya tidak aktif, dan apakah seseorang memindahkan breaker setelah log rute resmi ditutup.
 
-## 3. Start Dingin
+## 3. Start dingin
 
-Men-start dingin tempat mati tidak sama dengan menyalakannya.
+Men-start dingin ruangan mati tidak sama dengan menyalakannya.
 
-Start dingin meminta mesin tua mengingat bentuknya setelah tekanan, garam, waktu, dan pengabaian menyuntingnya. Bearing bangun dalam keadaan kering. Contactor melengkung melalui film mineral. Baterai menerima muatan tidak rata. Sistem keselamatan membandingkan hari ini dengan ambang yang ditulis untuk koloni berawak dan menemukan seluruh dunia mencurigakan. Kadang kecurigaan itu benar.
+Start dingin meminta mesin tua bergerak setelah tekanan, garam, dan waktu mengubah toleransinya. Bearing bangun kering. Kontaktor melengkung lewat film mineral. Tumpukan baterai menerima muatan tidak rata. Kipas melempar debu, jamur, atau uap kimia yang mengendap ke udara yang tampak bisa dihirup. Logika keselamatan membandingkan ruangan rusak dengan ambang untuk koloni berawak dan menyatakan setengah tempat mencurigakan.
 
-Marauder yang baik tidak menghantam ruangan mati dengan daya kecuali siap untuk jawaban buruk. Kipas bisa melempar racun ke udara bernapas. Pintu bisa mengunci untuk melindungi keadaan tekanan yang sudah tidak ada. Server bisa menimpa crash log terakhir yang berguna dengan kegagalan boot bersih. Pemanas bisa melunakkan gasket yang bertahan hanya karena dingin.
+Kadang mesin benar untuk curiga. Pintu bisa terkunci untuk melindungi keadaan tekanan yang tidak ada lagi. Pemanas bisa melunakkan gasket yang bertahan hanya karena tetap dingin. Server bisa menimpa crash record terakhir yang berguna dengan kegagalan boot baru. Pompa bisa membersihkan air dari satu ruangan dan mendorongnya lewat baki retak ke ruangan lain.
 
-Start dingin adalah pilihan urutan. Bangunkan hal yang salah dulu, dan ruangan menceritakan satu kisah. Bangunkan dengan hati-hati, dan ia mungkin menceritakan kisah lain.
+Kru baik tidak membangunkan ruangan sekaligus. Mereka membangunkan pengukuran dulu, lalu penahanan, lalu gerakan, lalu kenyamanan. Jika urutan harus berubah, mereka menulis alasannya. Start dingin adalah taruhan tentang urutan, dan HECTON-8 menagih kru yang menebak karena kebiasaan.
 
-## 4. Daya Pinjaman
+## 4. Daya pinjaman
 
-Tidak ada yang mempermalukan profesional seperti mengetahui bahwa ia memakai cadangan orang lain.
+Daya pinjaman melakukan pekerjaan yang tidak diakui labelnya.
 
-HECTON-8 penuh daya pinjaman. Sel darurat yang saling memberi makan melalui koridor tambalan. Charger drone memberi makan lampu safe room. Lab mati mencuri arus tetes dari array antena yang lahir mati. Freezer medis terlupakan menjaga satu sampel hidup dengan melaparkan otoritas motor enam pintu. Koloni tidak selalu gagal dalam pulau bersih. Ia gagal dalam negosiasi yang tidak ditutup siapa pun yang masih hidup.
+HECTON-8 penuh dengan itu: sel darurat yang disilang lewat koridor tambalan, charger drone menjaga lampu safe room hidup, lab mati mencuri arus tetes dari array antena, freezer medis mempertahankan satu sampel dengan membuat enam pintu kelaparan wewenang motor. Koloni jarang gagal dalam pulau bersih. Beban terus bernegosiasi setelah orang yang paham negosiasinya hilang.
 
-Marauder memanfaatkan ini dan takut padanya. Kabel jembatan bisa memulihkan konsol cukup lama untuk memberi harga lot salvage. Kabel itu juga bisa menguras cadangan terakhir yang menjaga beacon saksi tetap hidup. Sel portabel bisa membuka pintu, membangunkan circuit parasit, atau membuat Black Keel bertanya mengapa catatan daya tidak lagi cocok dengan rute yang diklaim.
+Perompak memakai daya pinjaman karena bisa mengubah rute mati menjadi rute berbayar. Garis jembatan bisa membangunkan konsol cukup lama untuk menilai lot salvage. Sel portabel bisa membuka loker sebelum seal mengering. Charger bisa menjalankan pompa selama beberapa menit yang diperlukan untuk menyeberangi sump.
 
-Daya adalah bukti. Setiap kabel yang dipindahkan adalah kalimat dalam bukti itu.
+Jembatan yang sama bisa menguras cadangan terakhir yang memberi makan beacon bukti, menghapus celah waktu dalam power log, atau membuat pintu safe room gagal tertutup dengan obat di dalamnya. Auditor Black Keel menyukai daya pinjaman saat meningkatkan nilai yang bisa dipulihkan. Mereka tidak menyukainya saat jalur daya baru menjelaskan mengapa penolakan lama mereka palsu.
 
-## 5. Yang Dipelajari Pemain
+## 5. Ruang breaker
 
-Pemain belajar bahwa daya bukan keadaan biner. Daya adalah tatanan sosial di antara mesin.
+Ruang breaker adalah peta dengan bekas bakar.
 
-Panel hidup bisa dipercaya, dibebani, dilewati, dilaparkan, dipulihkan, atau dibiarkan. Setiap tindakan mengubah apa yang bisa diingat tempat itu. Memberi daya pada arsip bisa membunuh pompa. Menyelamatkan pompa bisa meninggalkan pesan tidak terbaca. Memulihkan cahaya bisa membuat ruangan lebih aman bagi pemain dan lebih terlihat bagi segala hal lain yang memakai gelap.
+Label Deep Reach berguna sampai tidak. Breaker bertanda `Hab Lighting B` bisa memberi makan pompa setelah tiga tambalan darurat. Gagang yang ditutup pita bisa menyembunyikan cross-feed life-support rakitan. Breaker bersih di ruangan kotor biasanya berarti seseorang menyentuhnya setelah banjir. Breaker hangat di aneks dingin pantas diperhatikan sebelum pintu di sebelahnya.
 
-Kerja daya yang baik bukan tentang membuat semuanya terang. Itu tentang memutuskan kebenaran mana yang layak mendapat energi lebih dulu. Marauder terbaik bukan yang membawa sel terbesar, tetapi yang memahami apa yang telah dikorbankan ruangan untuk menjaga satu lampu hijau tetap hidup.
+Rekaman perompak menyukai fakta yang cepat diperiksa: posisi gagang, suhu bus, garam di engsel, bau pada kontaktor, beban mana yang berkedip saat penjepit sel menggigit. Penjelasan panjang membunuh orang di ruang breaker. Label pendek menjaga tangan lebih jujur.
 
-Di HECTON-8, gelap bukan kekosongan dan cahaya bukan belas kasihan. Keduanya adalah akuntansi. Pemain bertahan hidup dengan belajar membaca tagihan sebelum membayarnya.
+Catatan terbaik bukan `safe`. Catatan terbaik adalah `memberi makan kunci klinik, trip pada 11 A, jangan jembatani saat siklus pompa`.
+
+## 6. Daya sebagai bukti
+
+Catatan daya bisa membuktikan urutan ketika ruangan berbohong.
+
+Trip breaker bisa menunjukkan pintu dibuka setelah evakuasi yang diklaim. Kurva muatan bisa menunjukkan sel portabel terhubung ke sisi yang salah dari segel kustodi. Log brownout bisa menunjukkan pendinginan bertahan cukup lama agar sampel tetap bernilai. Hilangnya outage bisa menunjukkan seseorang mengedit arsip atau memberinya daya dari jalur tak terdaftar.
+
+Daya juga menciptakan tanggung jawab. Kru yang memulihkan cahaya bisa membuka dirinya di log penerima. Kru yang menjaga pompa hidup bisa menghancurkan catatan terminal. Kru yang mencuri sel bisa mengubah safe room tenang menjadi mati dan meninggalkan tagihan dalam jejak tegangan.
+
+Setiap kabel yang dipindahkan mengubah cerita yang bisa dibuktikan ruangan.
+
+## 7. Aturan lapangan
+
+Sebelum memercayai cahaya, temukan bebannya.
+
+Sebelum menjembatani daya, sebutkan apa yang akan kehilangan daya.
+
+Sebelum start dingin ruangan, bangunkan instrumen yang bisa memberi tahu kapan harus berhenti.
+
+Di HECTON-8, gelap bukan bukti kosong dan cahaya bukan bukti aman. Keduanya adalah keadaan daya dengan pemilik, biaya, dan catatan. Kru yang bertahan bukan yang membawa sel terbesar. Mereka yang tahu breaker mana yang membuat ruangan mengatakan kebohongan paling murah.

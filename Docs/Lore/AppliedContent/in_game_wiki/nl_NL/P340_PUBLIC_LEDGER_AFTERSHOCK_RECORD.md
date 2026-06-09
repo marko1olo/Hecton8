@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Public Ledger Aftershock Record"
+title: "Naschokrecord van openbaar ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Public Ledger Aftershock Record
+# Naschokrecord van openbaar ledger
 
-NL LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+Dit record voorkomt dat waarheid een schone overwinningsknop wordt. Publicatie breekt uitwissing, maar de speler verliest controle over paniek, uitbuiting, vergelding en wat vreemden met het bewijs bouwen.
 
 ## Scanner
 
-NL LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Ledgerspiegels geaccepteerd. Bewijs is niet meer verwijderbaar; gevolg niet meer bestuurbaar.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: bewijs vrijgegeven buiten Deep Reach-bewaring. Werknamen, Atlas-vectorfragmenten en aansprakelijkheidstags gespiegeld over publieke ontvangers. Spelerautoriteit over interpretatie beëindigd.
 
 ## Audio
 
-NL LOC HOLD: Truth left the room. It did not ask where to go next.
+De waarheid verliet de kamer. Ze vroeg niet waarheen.
 
 ## Field Note
 
-NL LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Publiek waarheidsrecord: gespiegeld bewijs voorkomt wissen, maar beëindigt de controle van de speler over interpretatie en vergelding.
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/nl_NL. -->

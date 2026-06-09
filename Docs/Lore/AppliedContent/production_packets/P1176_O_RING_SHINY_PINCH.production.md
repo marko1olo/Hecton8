@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_seal_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS180_FIRST_SEAL_TRACE_ARTICLES.md |
 | Speaker | Maintenance scanner, O-ring inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter seal inspection |
@@ -33,7 +33,7 @@ Forbidden facts: no leak simulation, no pressure verdict, no repair action imple
 
 ### Scanner
 
-O-RING // Shiny pinch mark on curve. Reseat before trusting groove.
+O-RING // Shiny pinch mark on curve. Check seating before trusting groove.
 
 ### Codex
 
@@ -48,9 +48,9 @@ Seal note:
 - O-ring: shiny pinch.
 - Groove edge: clean.
 - Coupler face: salt dust.
-- Use class: reseat caution.
+- Use class: seating caution.
 
-Do not trust the groove until the ring sits cleanly.
+Do not trust the groove until the ring seating is checked.
 
 ### Environmental Label
 
@@ -58,7 +58,7 @@ O-RING
 
 SHINY PINCH MARK
 
-RESEAT BEFORE TRUST
+CHECK SEATING FIRST
 
 ## Future Integration Notes
 
@@ -71,18 +71,18 @@ RESEAT BEFORE TRUST
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| ru_RU | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| ja_JP | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| zh_CN | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| fr_FR | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| es_ES | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| de_DE | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| pl_PL | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| uk_UA | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| ar_SA | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| id_ID | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| ko_KR | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| he_IL | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| pt_BR | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
-| nl_NL | draft_machine_or_llm | O-RING // Shiny pinch mark on curve. Reseat before trusting groove. |
+| en_US | source_authority | O-RING // Shiny pinch mark on curve. Check seating before trusting groove. |
+| ar_SA | draft_machine_or_llm | حلقة O // علامة قرص لامعة على الانحناء. افحص الجلوس قبل الوثوق بالأخدود. |
+| de_DE | draft_machine_or_llm | O-RING // Glaenzende Quetschspur an Kurve. Sitz pruefen, bevor du der Nut traust. |
+| es_ES | draft_machine_or_llm | JUNTA TORICA // Marca brillante de pellizco en la curva. Revisa el asiento antes de fiarte de la ranura. |
+| fr_FR | draft_machine_or_llm | JOINT TORIQUE // Marque de pincement brillante sur la courbe. Verifier l'assise avant de faire confiance a la gorge. |
+| he_IL | draft_machine_or_llm | טבעת O // סימן צביטה מבריק על העיקול. בדוק ישיבה לפני שאתה סומך על החריץ. |
+| id_ID | draft_machine_or_llm | O-RING // Bekas jepit mengilap di lengkungan. Periksa dudukan sebelum mempercayai alur. |
+| ja_JP | draft_machine_or_llm | Oリング // 曲面に光る挟み跡。溝を信用する前に座りを確認。 |
+| ko_KR | draft_machine_or_llm | O링 // 곡면에 반짝이는 눌림 자국. 홈을 믿기 전에 안착 상태를 확인한다. |
+| nl_NL | draft_machine_or_llm | O-RING // Glanzende knelmarkering op bocht. Controleer zitting voor je groef vertrouwt. |
+| pl_PL | draft_machine_or_llm | O-RING // Blyszczacy slad scisniecia na luku. Sprawdz osadzenie, zanim zaufasz rowkowi. |
+| pt_BR | draft_machine_or_llm | O-RING // Marca brilhante de pinca na curva. Verifique o assentamento antes de confiar na canaleta. |
+| ru_RU | draft_machine_or_llm | O-КОЛЬЦО // Блестящий след защемления на изгибе. Проверь посадку, прежде чем доверять канавке. |
+| uk_UA | draft_machine_or_llm | O-КІЛЬЦЕ // Блискучий слід защемлення на вигині. Перевір посадку, перш ніж довіряти канавці. |
+| zh_CN | draft_machine_or_llm | O形圈 // 弯曲处有亮夹痕。信任槽位前先检查就位。 |

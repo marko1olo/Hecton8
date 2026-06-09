@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Evacuation Queue Terminal POI Kit"
+title: "Evacuation Queue Terminal Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Evacuation Queue Terminal POI Kit
+# Evacuation Queue Terminal Evidence Kit
 
-Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+The Evacuation Queue Terminal is not valuable because it says people waited. It is valuable because the door state, clock drift, worker count and route capacity disagree in ways that can be checked on site.
 
 ## Scanner
 
-POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+POI evidence kit: the queue terminal proves delay through door state, clock drift, worker mismatch and route capacity.
 
 ## Terminal
 
-QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+QUEUE TERMINAL KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch, salvage conflict tag, hatch-state strip, badge residue.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A queue is a body count with cleaner formatting.
 
 ## Field Note
 
-POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Marauder note: do not pry the hatch strip until the badge residue is scanned. The metal will pay less than the timestamp.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/en_US. -->

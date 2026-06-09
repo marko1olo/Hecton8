@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Змінні бригади, не герої"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Змінні бригади, не герої
 
-UA LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 має робити колонію людською через роботу раніше, ніж через трагедію. Технік тиску міняє прокладку клапана, кухар рахує водні жетони, маршрутний клерк ставить не той штамп повернення, водолаз бере різак і вже не повертає його в журнал: такі деталі роблять людей читабельними без примусового сімейного revenge-hook. Потонула колонія найсильніша тоді, коли здається місцем, перерваним посеред рутини, а не музеєм після смерті.
 
 ## Scanner
 
-UA LOC HOLD: The colony becomes human through schedules, not speeches.
+ЛЮДСЬКИЙ ШАР // Колонія стає справжньою через графіки, стерті інструменти, пропущені повернення й імена на дошках змін. Не через промови.
 
 ## Terminal
 
-UA LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+ПРАВИЛО ПИСЬМА: записувати працівників як техніків насосів, медиків, маршрутних клерків, водолазів, кухарів, операторів фабрикатора й утомлених старших змін. Розклад з одним пропущеним поверненням болить сильніше за пам'ятник.
 
 ## Audio
 
-UA LOC HOLD: They were not symbols. They were late for shift.
+Вони не були символами. Вони запізнювалися на зміну.
 
 ## Field Note
 
-UA LOC HOLD: People are more believable as workers than as memorial statues.
+Люди правдоподібніші як працівники, ніж як меморіальні статуї.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/uk_UA. -->

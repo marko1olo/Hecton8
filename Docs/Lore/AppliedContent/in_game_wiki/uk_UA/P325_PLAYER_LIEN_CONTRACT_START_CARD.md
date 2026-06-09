@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Player Lien Contract Start Card"
+title: "Стартова contract card з lien гравця"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Player Lien Contract Start Card
+# Стартова contract card з lien гравця
 
-UK LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+Стартова contract card з lien гравця закріплює протагоніста HECTON-8 як скомпрометованого професіонала, а не невинного туриста. Гравець починає з практичного мотиву: salvage contract, борговий lien, старі знання доступу і достатньо впевненості, щоб вважати це роботою. Це важливо, бо грі не потрібен lost-relative hook, щоб зробити спуск особистим. Особистий тиск приходить із доказів. Те, що колишній Deep Reach field key досі розпізнається Black Keel, - не зручність, а попередження: стара система так і не забула оператора до кінця. Контракт дає гравцю причину увійти в океан і причину неправильно зрозуміти першу загрозу. Він думає, що читає job file. Файл теж читає його: попередній clearance, знайомство з маршрутом, liability history і beneficiary conflict. На той момент, коли гравець розуміє, що старий роботодавець не просто фон, lien уже перетворив професійну цікавість на утримання.
 
 ## Scanner
 
-UK LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+Стартова карта не робить тебе обраною жертвою. Вона робить тебе колишнім фахівцем Deep Reach із lien, ключем і причиною брехати собі.
 
 ## Terminal
 
-UK LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACT START / оператор: незалежний salvage contractor / колишній доступ: Deep Reach field key, неактивний, але розпізнаний / lien: активний / заявлений мотив: claim value / прихований тиск: prior exposure, знайомий маршрут, beneficiary conflict.
 
 ## Audio
 
-UK LOC HOLD: You came for work. The file remembered you before you remembered it.
+Ти прийшов по роботу. Файл згадав тебе раніше, ніж ти згадав його.
 
 ## Field Note
 
-UK LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Без lost-relative hook. Мотив починається як робота: salvage value, старий field access, професійна засвітка, прихований особистий тиск.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/uk_UA. -->

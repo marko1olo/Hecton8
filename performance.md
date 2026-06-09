@@ -22,6 +22,20 @@ Performance does not own gameplay truth. It owns budgets, measurement, load-shed
 
 Domain owners decide what matters. Performance decides whether the chosen route is affordable, scalable, and proved. If a visual or gameplay feature cannot fit the compact lane, it must define a cheaper premium approximation or be rejected.
 
+## Process Gate And Unity Slot Law
+
+Heavy proof actions are a shared workstation resource, not an agent-local right.
+
+Before launching `dotnet`, `csc`, Unity batchmode, import, profiler capture, player build, asset reimport, or any equivalent heavy proof action:
+
+- sample local CPU load and active `Unity`, `Unity Hub`, `dotnet`, `csc`, `VBCSCompiler`, `MSBuild`, `Unity.ILPP.Runner`, `UnityShaderCompiler`, `ShaderCompiler`, and `AssetImportWorker` processes;
+- if CPU is above `50%`, a compile/import/build is already active, or Unity is importing/compiling, do not start another heavy action;
+- return or report `BUILD_GATE_BLOCKED: <reason>` and continue with static/scoped work only;
+- after two blocked attempts over unchanged process state, stop that lane with the exact blocker instead of polling;
+- never convert a static scan, watchdog status, or proof-packet gate pass into Unity import, Play Mode, profiler, visual, player-build, or release readiness.
+
+`Tools/ProofGate/unity_process_proof_watchdog.py` is the current static process/proof sampler. It may summarize busy Unity/compiler/import state, raw screenshot groups, proof-packet status, and dirty log tokens. It must not launch Unity, enter Play Mode, profile, build, kill processes, accept visual quality, or take the Unity slot.
+
 ## Frame Budget Law
 
 Every runtime feature must name:

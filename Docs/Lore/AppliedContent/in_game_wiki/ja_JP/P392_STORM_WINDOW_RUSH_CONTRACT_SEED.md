@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Storm Window Rush Contract Seed"
+title: "嵐窓ラッシュ契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Storm Window Rush Contract Seed
+# 嵐窓ラッシュ契約シード
 
-JA LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+嵐窓ラッシュは、天候と軌道が最初の圧力システムになる契約群である。ルートは継承された力を足さない。安全作業時間を短くし、回収形状を狭め、雑な修理を早く罰する。
 
 ## Scanner
 
-JA LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+契約シード: ラッシュ窓。閉じる嵐カバー、軌道シャッター時刻、減った修理余裕に高い支払いが結び付く。
 
 ## Terminal
 
-JA LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: 嵐ウィンドウ圧縮、軌道リレーシャッター不利、支払い上限上昇、bathydrop呼び戻し前倒し、修理許容低下。
 
 ## Audio
 
-JA LOC HOLD: This contract pays because it hates waiting.
+この契約が払うのは、窓が閉じているからだ。
 
 ## Field Note
 
-JA LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+マローダーメモ: ラッシュ報酬が大きく見えるのは、契約が毎分を二度請求するからだ。
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ja_JP. -->

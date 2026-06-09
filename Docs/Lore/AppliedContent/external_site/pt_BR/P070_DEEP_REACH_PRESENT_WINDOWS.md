@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Janelas Presentes da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Janelas Presentes da Deep Reach
 
-PT-BR LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Janelas Presentes da Deep Reach preserva a distância de hard sci-fi de HECTON-8 enquanto mantém viva a pressão corporativa. A Deep Reach não pode teleoperar o fundo do mar, resgatar instantaneamente o operador ou reescrever o planeta em tempo real. O que ela pode fazer é pior para a história: deixar procedimentos, proxies e sistemas de reivindicação no lugar, depois falar apenas em janelas raras quando o jogador tem algo que vale negociação. Este artigo define essa pressão de fim de jogo. O poder da corporação não é comunicação mágica; é linguagem de propriedade que sobreviveu ao desastre e ainda sabe precificar uma vida humana contra provas, quarentena e salvamento.
 
 ## Scanner
 
-PT-BR LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+A Deep Reach não consegue conduzir HECTON-8 por rádio, mas suas janelas atrasadas, avisos proxy e cláusulas Black Keel ainda decidem quanto custa a ajuda.
 
 ## Terminal
 
-PT-BR LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / PROXY DEEP REACH: recuperação do operador negociável após revisão de provas, custódia de carga, conformidade de quarentena e transferência das chaves de autoridade Atlas. Recusa preserva status de reclamante, mas anula prioridade de extração imediata.
 
 ## Audio
 
-PT-BR LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Quando a voz deles chega até você, ela já é um contrato.
 
 ## Field Note
 
-PT-BR LOC HOLD: Their voice is delayed. Their leverage is already here.
+A resposta deles chega tarde. As condições deles chegaram anos atrás.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/pt_BR. -->

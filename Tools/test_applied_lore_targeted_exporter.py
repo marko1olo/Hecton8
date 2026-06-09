@@ -242,6 +242,7 @@ class TestAppliedLoreTargetedExporter(unittest.TestCase):
                     "page_path": "in_game_wiki/en_US/P_KEEP.md",
                     "localization_status": "source_authority",
                     "localization_flags": "0",
+                    "title": "x" * 150_000,
                     "status_bucket": "ready",
                 }
             )
@@ -311,6 +312,61 @@ class TestAppliedLoreTargetedExporter(unittest.TestCase):
 
             self.assertEqual(stats.target_packets, 1)
             self.assertEqual(stats.pages_written, 0)
+
+    def test_refresh_indexes_with_explicit_packet_source_preserves_default_packets(self):
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            base = root / "Docs" / "Lore" / "AppliedContent"
+            packet_dir = base / "packets"
+            packet_dir.mkdir(parents=True)
+            keep = {
+                "packet_id": "P_KEEP_INDEX",
+                "release_set_id": "RS_KEEP",
+                "article_id": "test.keep_index",
+                "localized": complete_localized(),
+            }
+            selected = {
+                "packet_id": "P_SELECTED_INDEX",
+                "release_set_id": "RS_SELECTED",
+                "article_id": "test.selected_index",
+                "localized": complete_localized(),
+            }
+            packet_dir.joinpath("RS_KEEP.packets.json").write_text(
+                json.dumps({"release_set_id": "RS_KEEP", "packets": [keep]}),
+                encoding="utf-8",
+            )
+            selected_source = packet_dir / "RS_SELECTED.packets.json"
+            selected_source.write_text(
+                json.dumps({"release_set_id": "RS_SELECTED", "packets": [selected]}),
+                encoding="utf-8",
+            )
+
+            export_targeted(
+                root,
+                (),
+                include_all=True,
+                explicit_packet_sources=(),
+                dry_run=False,
+                validate_only=False,
+                source_only=False,
+                refresh_indexes=True,
+            )
+
+            export_targeted(
+                root,
+                ("P_SELECTED_INDEX",),
+                include_all=False,
+                explicit_packet_sources=(selected_source.resolve(),),
+                dry_run=False,
+                validate_only=False,
+                source_only=False,
+                refresh_indexes=True,
+            )
+
+            index_text = (base / "in_game_wiki" / "en_US" / "INDEX.md").read_text(encoding="utf-8")
+            self.assertIn("localized_pages: 2", index_text)
+            self.assertIn("(P_KEEP_INDEX.md) `P_KEEP_INDEX`", index_text)
+            self.assertIn("(P_SELECTED_INDEX.md) `P_SELECTED_INDEX`", index_text)
 
     def test_source_only_can_validate_selected_baked_csv_bridge(self):
         with temporary_directory() as tmp:

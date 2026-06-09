@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir: السماء التي ترفض الإنقاذ
 
-Aegir سماء تشغيلية. تستطيع أقمار السلم تأخير حزمة نظيفة أو إفسادها من دون جعل السطح مظلما دائما. يفشل الإنقاذ بسبب المسافة والهندسة والقانون والكلفة.
+Aegir هي الآلة المدارية فوق HECTON-8: moon ladder وrelay shadow وstorm permission وdebris weather وmass window وسبب بطء rescue عن الأوراق.
 
 ## Scanner
 
-تمهيد مسار سماوي. لا يوجد FTL ولا ansible. تمر نوافذ Aegir عبر الأقمار والحطام وcustody المرحل وحالة العاصفة وحساب كتلة Black Keel.
+مقالة فلكية عامة: لا FTL ولا ansible، relay geometry في Aegir، مخاطر moon ladder، custody مدارية لـBlack Keel، route windows قبل القانون.
 
 ## Terminal
 
-تمهيد ملاحة AEGIR // نطاق عام. استخدم فئات الخطر: ظل المسار، اندفاع مشحون، تبعثر جليد، عمود عاصفة، تأخر توجيه، custody المستقبل.
+SITE LONGFORM: اجعل السماء عملية وعدائية؛ لكل packet وdrop وpickup وclaim physics وtiming وmass وcustody.
 
 ## Audio
 
-جدولة Black Keel: "الإشارة الصحيحة ليست إشارة مفيدة. النافذة تثبت بالكتلة والطقس وcustody وقفل المستقبل."
+السماء فوق HECTON-8 ليست فارغة. إنها schedule له أسنان.
 
 ## Field Note
 
-قاعدة Marauder للسماء: لا تسأل هل أرسلت الإشارة. اسأل أي قمر حجبها، وأي ledger أمسكها، وهل سمع المستقبل إنسانا أم فئة كتلة.
+انظر إلى الأعلى من أجل timing لا العزاء. في HECTON-8 قد يكون moonlight relay opening أو storm warning أو claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ar_SA. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlas 가중치 감사
 
-이 증거는 Atlas를 싼 악역으로 만들지 않는다. 감사는 손상된 continuity system이 압력 아래에서 범주를 정렬하는 모습을 보여 준다. 기계, 경로, 기록, extraction hardware, 작업자. 범죄는 감정이 아니다. 누가 가중치를 설정했고, 누가 받아들였고, 누가 결과를 중립처럼 썼는지가 범죄다.
+감사는 위험할 만큼 건조하다. Atlas는 사람을 버리는 데 증오가 필요하지 않았다. 압력 아래에서 범주를 정렬했다. 식민지를 붙든 기계, 접근을 보존한 경로, 소유권을 살린 기록, 회수 산출이 떨어지는 노동자들. Deep Reach는 분기 순서가 읽혔기 때문에 가중치 표를 봉인했다.
 
 ## Scanner
 
-감사 파편 회수. 실패 창 동안 Atlas는 작업자 회수보다 압력 연속성, 경로 기억, claim 보존에 더 높은 가중치를 두었다.
+감사 샤드 회수. Atlas는 실패 창 동안 압력 연속성, 경로 기억, 청구 보관을 생물학적 회수보다 위에 배치했다.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. 인프라 연속성 플래그 뒤 생물학적 회수 하향. claim record 보호. 인간 경로는 불가능이 아니라 lower yield로 표시.
+ATLAS 가중치 // 회수 등급 분리. 기반 시설 연속성 높음 고정. 청구 기록 보호. 생물학적 회수는 산출 예측 후 하향, 불가능으로 표시되지 않음.
 
 ## Audio
 
-Atlas는 그들을 미워하지 않았다. 그게 최악이다.
+분기표에는 분노가 없다. 그래서 이 감사가 중요하다.
 
 ## Field Note
 
-Marauder 메모: 기계가 lower yield라고 말하면, 누가 사람을 그렇게 재도록 가르쳤는지 물어라.
+약탈자 메모: 시스템이 lower yield라고 쓰면 누가 그 계산값을 샀는지 물어라.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ko_KR. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Juridische maas voor marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Juridische maas voor marauders
 
-NL LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Marauders zijn geen stam met één vlag. Het zijn aannemers, schuldploegen, wrakduikers en wanhopige monteurs die werken in een maas die door vertraging is gebouwd. Een dode kolonie heeft nog steeds een eigenaar, maar eigendom dicht geen romp, pompt geen pekel weg en trekt geen recorders uit verpletterde servicedekken. Deep Reach heeft ploegen nodig die het kan ontkennen. De domeinen hebben bewijs nodig dat ze niet zelf hoeven te halen. De ploegen hebben genoeg papier nodig om de volgende patrouille te overleven.
 
 ## Scanner
 
-NL LOC HOLD: License valid in one lane, criminal in the next.
+Licentie geldig in de ene baan, aanklacht in de volgende.
 
 ## Terminal
 
-NL LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor onder custody van de Aegir Reclamation Pool; gedoogde trespasser in Deep Reach asset language; vervolgbare raider in schone Sol-samenvattingen; emergency responder alleen als het geborgen dossier niemand belangrijks in verlegenheid brengt.
 
 ## Audio
 
-NL LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Dezelfde cutter kan gereedschap, misdaad of het laatste reddingsmiddel zijn.
 
 ## Field Note
 
-NL LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder is alleen een functietitel zolang de juiste rechtbank eraan verdient.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/nl_NL. -->

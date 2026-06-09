@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Escape Recipe Cost Boundary"
+title: "逃离配方成本边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Escape Recipe Cost Boundary
+# 逃离配方成本边界
 
-CN LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+逃离配方成本边界让出口链保持机械性，而不是任意门槛。每个上升部件都有压力历史、所有者和证明需求，所以逃离像法律下的维修，而不是菜单里的任务代币。
 
 ## Scanner
 
-CN LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+逃离配方行绑定部件类别、压力层级、路线证明和权限状态。
 
 ## Terminal
 
-CN LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT：合格成本必须标明中继、密封、导航、上升能量、法律握手、payload 权限和接收器风险。上去的路有部件；部件有主人。
 
 ## Audio
 
-ZH LOC HOLD: The way up has parts. The parts have owners.
+上去的路有部件。部件有主人。
 
 ## Field Note
 
-CN LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure band 来自封存规则；精确成本属于 recipe table。
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/zh_CN. -->

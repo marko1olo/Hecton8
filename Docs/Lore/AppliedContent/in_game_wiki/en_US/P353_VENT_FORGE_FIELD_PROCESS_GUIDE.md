@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Vent Forge Field Process Guide
 
-Vent forges are natural-industrial reactors. They turn heat, brine and pressure history into useful ceramics, sealants and charge materials while keeping each sample tied to its thermal path.
+Vent forges are natural-industrial reactors. They turn heat, brine, pressure history, and slow cooling into ceramics, sealants, and charge materials. A sample is only useful if its thermal path survives recovery.
 
 ## Scanner
 
-Vent-forge chemistry active. Quality follows pressure history, heat pulse and slow cooling, not the shine of the sample.
+Vent-forge chemistry active. Quality follows pressure history, heat pulse, and slow cooling, not sample shine.
 
 ## Terminal
 
-FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramics and sealant precursors. A sample's route through heat, brine and pressure matters more than its name.
+FIELD GUIDE: vent forges cook sulfides, noble-gas pockets, ceramic grains, and sealant precursors. A sample's route through heat, brine, and pressure matters more than its name.
 
 ## Audio
 

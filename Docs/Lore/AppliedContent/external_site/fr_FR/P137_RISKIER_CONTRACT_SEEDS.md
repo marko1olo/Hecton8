@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Seeds de contrats plus risqués"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Seeds de contrats plus risqués
 
-FR LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+Les seeds de contrats plus risqués rendent le replay économique et procédural : le contrat change ce que l'océan exige, pas ce que le joueur porte.
 
 ## Scanner
 
-FR LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED CONTRAT // Fenêtre pire, première cible plus profonde, garde plus stricte, échantillon plus rare, allègement de lien plus fort. Aucun pouvoir hérité.
 
 ## Terminal
 
-FR LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+OPTION SEED : augmenter le paiement en acceptant un mauvais timing orbital, des objectifs initiaux plus profonds, une garde des preuves plus dure, une preuve de ressource rare ou un compte retour plus serré. Puissance d'équipement et inventaire se réinitialisent.
 
 ## Audio
 
-FR LOC HOLD: The board pays more when it expects less of you to return.
+Le tableau paie plus quand il s'attend moins à ton retour.
 
 ## Field Note
 
-FR LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Le replay doit demander avidité, courage ou bêtise. Pas du grind.
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/fr_FR. -->

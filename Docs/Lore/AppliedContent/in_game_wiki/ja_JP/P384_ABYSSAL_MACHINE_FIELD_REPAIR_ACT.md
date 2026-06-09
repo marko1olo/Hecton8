@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Abyssal Machine Field Repair Act"
+title: "深淵機械場修復ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Abyssal Machine Field Repair Act
+# 深淵機械場修復ゲート
 
-JA LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+深淵場は、請求を傷つけたシステムをオペレーターに使わせる。Atlas成長は電力を橋渡しし、ルートハードウェアをパッチし、生体材料を通じて信号を運べる。成功した修復は同時に分類を変える。工具、生物、資産、汚染、証拠がフィールドを行き来し続ける。
 
 ## Scanner
 
-JA LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+ルートゲート: 深淵機械場。Atlas修復生態が保管リスク付きの利用可能なルートハードウェアになる。
 
 ## Terminal
 
-JA LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+キャンペーンルート // 深淵機械場。必要: 導電膜、音響器官、サービス盆地、圧力安全reroute。修復出力は同じ手順でハードウェアを復旧し、所有クラスを汚染し得る。
 
 ## Audio
 
-JA LOC HOLD: It fixed the wall before it decided what the wall was.
+壁に名前を付ける前に、壁を直した。
 
 ## Field Note
 
-JA LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+略奪者メモ: パネルを横切って育っているなら、切る前にスキャンしろ。そのせいでパネルがまだ動いているのかもしれない。
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ja_JP. -->

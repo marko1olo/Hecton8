@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Photic Shelf Life
 
-Photic Shelf Life is the opening ecological baseline for HECTON-8. It is not a safe aquarium, and it is not a dead ocean waiting for horror to arrive. The upper 0-250 meters still receive light, heat shift and sky rhythm, so native life writes the first route language in color: oxygen mats over stone, clear-bodied grazers cutting lanes through algae, pressureweed leaning before the surge, and route algae drawing currents around wreckage. That beauty matters. It gives the player a reason to understand why Deep Reach wanted the moon and why a stranded Marauder might fight to read it instead of only loot it. The shelf also teaches the core rule of the setting: readable is not harmless. A bright mat can hold breathable water and hide contaminated seams. A glass grazer school can mark a safe lane or vanish because something larger moved through. Pressureweed can warn of weather, predator displacement or a pressure pulse from infrastructure below. Use the photic shelf as the player's first honest comparison point. Before cable reefs, before repair scars, before Atlas starts turning life into maintenance logic, the moon shows what it was doing on its own.
+Photic Shelf Life is HECTON-8's upper-water ecological baseline. The surface band still receives light, heat shift and sky rhythm, so native life leaves readable route evidence before Atlas repair logic appears below: oxygen mats, glass-grazer lanes, pressureweed flex and route algae around wreckage. The shelf explains why Deep Reach wanted the moon without making the shelf harmless. Every useful cue carries a failure path. The same oxygen mat that can buy a breath can hide contamination; the same algae lane that marks a return current can move under storm silt or predator pressure.
 
 ## Scanner
 
-PHOTIC SHELF BIOTA // Living mats, glass grazers, pressureweed and route algae confirmed. Bright water gives oxygen and route cues; it does not forgive bad weather, predators or a lost return line.
+PHOTIC SHELF SCAN // Oxygen mat on basalt lip. Fresh glass-grazer lane cuts through green growth. Pressureweed bent west before surge. Route algae marks current back to shelter line. Hazards: shallow predator pass, storm silt, loose return line.
 
 ## Terminal
 
-SHELF SURVEY: native photic ecology outside Atlas repair dominance. Baseline samples: oxygen mat, transparent grazer track, pressureweed flex line, route-algae wake. Compare against cable-reef growth and repair-scar tissue before harvesting.
+SHELF BASELINE SURVEY
+Depth: 0-250 m
+Sample A: oxygen mat / mineral-fed / breathable pocket low volume
+Sample B: glass-grazer lane / fresh cut / predator scatter unknown
+Sample C: pressureweed flex / west bend before surge
+Sample D: route algae / current returns to shelter line
+Compare against: cable-root mat, repair scar tissue, pressure gate biofilm
 
 ## Audio
 
-The first living water is not mercy. It is a baseline you can swim through.
+I see the return current. Tie off before you follow the color.
 
 ## Field Note
 
-The first color is not mercy. It is the moon showing you what normal looked like before the machines learned it.
+Bright water is useful before it is safe. Count mat color, grazer lanes, weed bend and line tension before you trust it.
 
 <!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/en_US. -->

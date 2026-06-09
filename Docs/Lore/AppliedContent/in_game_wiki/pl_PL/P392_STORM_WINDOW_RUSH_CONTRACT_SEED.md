@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Storm Window Rush Contract Seed"
+title: "Ziarno kontraktu pośpiechu okna burzowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Storm Window Rush Contract Seed
+# Ziarno kontraktu pośpiechu okna burzowego
 
-PL LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Pośpiech Okna Burzowego to rodzina kontraktów, w której pogoda i orbita stają się pierwszymi systemami nacisku. Trasa nie dodaje odziedziczonej siły; skraca bezpieczny czas pracy, zawęża geometrię odzysku i szybciej karze niechlujne naprawy.
 
 ## Scanner
 
-PL LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Ziarno kontraktu: okno pośpiechu. Wyższa wypłata związana z zamykającą się osłoną burzy, czasem przesłony orbitalnej i mniejszym luzem napraw.
 
 ## Terminal
 
-PL LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: okno burzowe skompresowane, orbitalna przesłona przekaźnika niekorzystna, pułap wypłaty podniesiony, odwołanie bathydrop wcześniejsze, tolerancja napraw zmniejszona.
 
 ## Audio
 
-PL LOC HOLD: This contract pays because it hates waiting.
+Ten kontrakt płaci, bo okno się zamyka.
 
 ## Field Note
 
-PL LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Notatka marodera: wypłata za pośpiech wygląda większa, bo kontrakt liczy każdą minutę dwa razy.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/pl_PL. -->

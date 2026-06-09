@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Ressources et écologie
 
-Le cluster ressources doit montrer des chaînes de processus, pas une liste de butin. Un minéral peut venir de drowned crust, d'un dépôt de brine trap, d'une trace de vent heat, d'une ancienne machine ou d'un tissu qui a poussé autour du métal après intervention d'Atlas. Blue debt relie l'économie à la géologie : ce qui peut remonter a déjà été tarifé au-dessus. L'écologie n'est ni décor ni ménagerie. La faune réagit au son, à la pression, à la lumière, aux traces de sel et aux repair paths abîmés. Ressources, biote et preuves doivent donc être lus ensemble : un échantillon peut nourrir un outil, révéler un accident et montrer où Atlas a confondu réparation et usage du vivant.
+La première erreur consiste à appeler les ressources de HECTON-8 des matières brutes. En bas, presque rien d'utile n'arrive intact. Un éclat du Drowned Crust porte un historique de pression. Une veine de blue debt garde la mémoire de la chaleur, de la saumure et de la méthode d'extraction. Une plaque de carapace peut être armure de récif, joint raté, peau de câble poussée par Atlas et preuve juridique avant même qu'un Marauder la mette en caisse.
+
+C'est pourquoi les pages de ressources restent à côté des pages d'écologie. L'ancienne colonie ne minait pas un sol mort. Deep Reach coupait dans des échelles de saumure, des terrasses minérales nourries par les évents, des machines ensablées et des systèmes filtrants vivants qui connaissaient déjà le rythme de la lune. Après la catastrophe, Atlas a poussé son modèle de réparation dans tout ce qui pouvait fermer une fuite ou porter un signal. Le biofilm est devenu conducteur. Le tapis de racines est devenu joint. La faune marquée est devenue retour mobile.
+
+Les animaux ne sont pas des coffres à loot avec des nageoires. Ils lisent vibration, chaleur, chute de lumière, chimie du sang, traces de sel et vase dérangée. Un brouteur peut exposer des zones de raclage sûres simplement en faisant son travail. Une ombre de prédateur peut révéler quel couloir transporte la mauvaise impulsion acoustique. Un animal marqué peut être route de réparation, témoin et danger dans le même passage.
+
+Le blue debt rend le calcul moral plus sale. Le meilleur échantillon peut être terne, scellé et laid parce qu'il a conservé l'état de pression qui prouve son lieu de formation. Un éclat brillant peut ne rien valoir si l'évent l'a lavé de sa mémoire. Prendre l'un ou l'autre peut changer un flux, réveiller un chasseur, déchirer un patch Atlas ou effacer une trace d'accident ouvrier plus importante que le paiement.
+
+La question utile n'est jamais seulement ce qui peut être récolté. Elle demande ce que l'océan faisait avec cette matière avant qu'une main humaine entre dans la chaîne. HECTON-8 devient lisible quand géologie, vie, machines et custody sont traitées comme un seul système qui se souvient du dommage.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/fr_FR. -->

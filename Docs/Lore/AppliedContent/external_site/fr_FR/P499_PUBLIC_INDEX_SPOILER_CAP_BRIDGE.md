@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limite anti-divulgation de l'index public"
+title: "Règle de caviardage de l'index public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,23 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Limite anti-divulgation de l'index public
+# Règle de caviardage de l'index public
 
 ## Ce que le dossier prouve
 
-L'index public sert a rendre l'archive utilisable sans bruler la route. Un titre peut nommer une famille de preuves: route de garde, classe de preuve, etat de caviardage, langage de reclamation, porte scanner. Cela suffit pour savoir quel type de preuve le joueur poursuit et pourquoi un paquet voisin compte.
+Une ligne d'index public est un enregistrement de contrôle d'accès, pas un résumé. Elle peut montrer la famille de dossier, la voie de garde, le type de preuve, le marqueur de caviardage, le seuil scanner et le prochain objet nécessaire pour ouvrir le paquet. C'est assez pour orienter une recherche sans exposer le destinataire.
 
-L'index ne doit pas reveler qui recoit la charge, ou la route finale arrive, dans quel etat se trouve la charge, ce qu'Atlas en fait, quelle branche de fin est mise sous pression, ni quel resultat legal suit. Ces sens appartiennent au chemin de preuve gagne. Si un titre donne la ligne recepteur, l'index cesse d'etre une archive et devient une machine a divulgation. La promesse publique correcte est simple: cette etagere existe, la derniere page est masquee.
+Les champs masqués comptent plus que le titre. Chaîne de destinataires, coordonnées finales, état de charge, réponse d'Atlas, pression de fin et résultat juridique restent derrière le sceau de caviardage jusqu'à ce que la route les gagne. Si l'index imprime trop tôt une adresse de destinataire, il n'informe pas le dossier ; il fuit la route à quiconque surveille le miroir.
 
 ## Comment le lire
 
-TAMPON DE LIMITE D'INDEX PUBLIC
-Montrer: titre de categorie, route de garde, classe de preuve, etat de caviardage, porte scanner, prochaine cible de preuve.
-Retenir: chaine de recepteurs, coordonnees finales, etat de charge, consequence Atlas, branche de fin, resultat legal.
-Regle: montrer l'etagere, masquer la derniere page. L'index dit quel type de preuve existe, pas ce qu'elle fera en fin de route.
+SCEAU DE CAVIARDAGE DE L'INDEX PUBLIC
+Montrer : titre, famille de dossier, voie de garde, type de preuve, marqueur de caviardage, seuil scanner, prochain objet de preuve.
+Masquer : chaîne de destinataires, coordonnées finales, état de charge, réponse d'Atlas, pression de fin, résultat juridique.
+Échec : adresse de destinataire visible avant le seuil de garde.
+Action : garder les champs de route scellés jusqu'à concordance du hash de paquet et de la preuve objet.
 
 ## Note de terrain
 
-Les titres de categorie voyagent plus loin que les corps. Lisez l'etagere, mais ne la prenez pas pour la derniere page. Si la derniere page est gratuite, quelqu'un a deja vendu la route.
+Utilise l'index pour choisir le prochain objet de preuve. Une catégorie visible n'est ni garde, ni verdict, ni destination.
 
 <!-- External Site; generated from P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE/fr_FR. -->

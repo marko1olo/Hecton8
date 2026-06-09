@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artikel Publik Sumber Daya Blue Debt
 
-Blue debt adalah nama perbatasan untuk Xenon-Omega-bearing pressure substrate di HECTON-8. Ia dapat muncul sebagai mineral kaya brine, kantong clathrate, kontaminasi pressure glass, kisi terikat biofilm, atau containment material industri yang rusak. Nilainya berasal dari komputasi, containment, dan penyimpanan lingkungan ekstrem. Bahayanya berasal dari kustodi: setiap sampel bertanya siapa pemiliknya, siapa yang mensertifikasinya, dan siapa yang disalahkan jika ia berubah keadaan.
+Blue debt bukan bijih ajaib. Itu istilah perbatasan untuk substrat tekanan yang membawa Xenon-Omega: kantong mineral asin, lapisan clathrate, kontaminasi pressure glass, kisi yang terikat biofilm, dan material containment rusak yang bertahan ketika peralatan biasa gagal. Nilainya datang dari sejarah di bawah tekanan. Sebuah sampel dapat menyimpan jejak komputasi, perilaku containment, memori sensor, atau keadaan kimia yang hanya bisa dibuat HECTON-8.
 
-## Scanner
-
-Bahasa slang itu jujur. Nama resmi justru menyembunyikan liabilitas: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-TINGKAT ARTIKEL PUBLIK / BLUE DEBT
-diizinkan: perilaku sampel, kimia tekanan, pembawa clathrate dan brine, nilai containment, penggunaan komputasi, risiko kustodi
-dikunci: tabel resep persis, tuning payout, rute substrate Atlas akhir game
-catatan editor: tanpa bijih ajaib, tanpa fantasi loot bercahaya, tanpa kepemilikan bersih.
-
-## Audio
-
-Mereka menyebutnya blue debt karena setiap gram berguna tiba sudah berutang tekanan, dokumen, atau darah kepada seseorang.
-
-## Field Note
-
-Jika ia bersinar seperti harta, tulis ulang. Blue debt harus terasa berguna, basah, diatur, tidak stabil, dan sudah diperebutkan.
+Kata debt penting. Orang lain sudah membayar pembentukan material itu dengan infrastruktur, kerja, waktu, dan risiko. Potongan yang terlihat bersih dapat membawa paparan karantina, kustodi Deep Reach, penalti massa Black Keel, dan nilai bukti sekaligus. Mengambilnya bukan sekadar menambang; itu berdebat dengan buku rute.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/id_ID. -->

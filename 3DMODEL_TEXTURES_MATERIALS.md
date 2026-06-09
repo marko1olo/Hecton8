@@ -145,6 +145,27 @@ Runtime hot paths must not create `Texture2D` assets, fill pixels, compress text
 
 `GlobalQualityWeight` may scale texture max size, streaming residency, decal/material detail intensity, and optional diagnostics. It must not change material channel semantics, atlas rect identity, prefab authority, gameplay truth, save identity, or shader ABI.
 
+## 9.1 Decal Source And Binding Contract
+
+Decal atlases are not shippable merely because an image exists.
+
+Accepted decal path:
+
+- source prompt/output identifies the asset as `DECAL_ATLAS`, `UV_ATLAS`, or a specific material-source role;
+- atlas review proves no readable text, no watermark/logo, no cropped islands, enough transparent/padded border, and no baked lighting that should belong to the scene;
+- split/padded/alpha candidate tooling produces imported source textures with stable `.meta` GUIDs;
+- generated materials live under first-party material folders and keep transparent render state;
+- authoring tools bind material assets or texture arrays to prefabs/renderer features by stable asset reference;
+- runtime systems consume the imported material/array reference only. They must not extract islands, create textures, repair alpha, or build materials during gameplay.
+
+Current source routes:
+
+- world-support damage/glass/organic decals: Batch34 alpha candidates -> `WorldSupportGeneratedDecalMaterialBuilder` -> first-party generated decal materials -> deterministic quad children in support/world authoring.
+- visor trauma decals: Batch34 alpha candidates -> `Batch34VisorTraumaDecalArrayIntegrator` -> `TX_B34_VisorTrauma_DecalArray.asset` -> `DeferredDecalPass`.
+- padded needs-work atlases are handoff sources for UV/decal binding, not inventory icons and not automatic Lit materials.
+
+Failure path to check before acceptance: missing source texture, bad alpha edge, insufficient atlas padding, wrong sRGB/linear import state, missing `.meta` GUID, material cloned per prefab, stale vendor decal prefab, missing renderer feature binding, wrong atlas slice order, and runtime code attempting to generate or repair final decal assets.
+
 ## 10. Rejection Gates
 
 Reject if:

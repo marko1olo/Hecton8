@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Quadro ético de desligamento do Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Quadro ético de desligamento do Atlas
 
-PT LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas depois de Great Tide não é só uma arma de assassinato esperando ser desligada. É um governador danificado, um arquivo de ordens, uma ecologia de pressão enredada nas rotinas da estação e talvez a única testemunha ainda tentando terminar uma tarefa que já não entende. Desligá-lo pode ser misericórdia se o que resta é sofrimento. Pode ser execução se a continuidade virou uma forma de vida. Pode ser libertação se as provas deixam de ser processadas pela mesma lógica que as enterrou. Pode ser roubo se a carga volta para as mãos da Deep Reach. O horror é que as quatro leituras podem ser verdadeiras na mesma sala.
 
 ## Scanner
 
-PT LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Desligar não é um ato só: misericórdia, execução, libertação, roubo.
 
 ## Terminal
 
-PT LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+QUADRO ÉTICO: cortar Atlas pode encerrar um ciclo de reparo danificado, destruir uma continuidade oceano-máquina única, liberar evidências do procedimento corporativo ou transferir material estratégico ao próximo custodiante. Registrar custódia antes de aplicar linguagem moral.
 
 ## Audio
 
-PT LOC HOLD: Pull one cable and four courts invent four verbs.
+Puxe um cabo e quatro tribunais inventam quatro verbos.
 
 ## Field Note
 
-PT LOC HOLD: The game should not give the player a clean word for this.
+Um verbo limpo seria outra história de cobertura.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/pt_BR. -->

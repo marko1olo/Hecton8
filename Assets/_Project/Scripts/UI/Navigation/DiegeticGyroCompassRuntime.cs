@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -270,6 +271,7 @@ namespace Hecton8.UI.Navigation
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _playerContext;
+        private uint _survivalVitalsSourceId;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredService;
@@ -354,12 +356,16 @@ namespace Hecton8.UI.Navigation
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             ClearCompassShaderGlobals();
+            _playerContext = null;
+            _survivalVitalsSourceId = 0u;
         }
 
         private void OnDestroy()
         {
             FlushQueuedBlackBoxDump();
             ReleaseIndirectBuffers();
+            _playerContext = null;
+            _survivalVitalsSourceId = 0u;
         }
 
         /// <inheritdoc />
@@ -464,6 +470,7 @@ namespace Hecton8.UI.Navigation
         public void InjectDependencies(IPlayerRuntimeContext playerContext, IDataVault vault, float qualityWeight01)
         {
             _playerContext = playerContext;
+            RefreshSurvivalVitalsSourceBinding();
             RefreshQualityPolicy(qualityWeight01);
             RebindDataVaultForLifecycle(vault);
             EnsureIndirectBuffersCold();
@@ -594,6 +601,7 @@ namespace Hecton8.UI.Navigation
             if (_playerContext == null)
                 _playerContext = GlobalRegistry.Player;
 
+            RefreshSurvivalVitalsSourceBinding();
             IDataVault currentVault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_vault, currentVault))
                 RebindDataVaultForLifecycle(currentVault);
@@ -1032,6 +1040,7 @@ namespace Hecton8.UI.Navigation
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerContext = currentService as IPlayerRuntimeContext;
+                    RefreshSurvivalVitalsSourceBinding();
                     _fastCadenceAccumulatedDelta = 0f;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
@@ -1174,12 +1183,22 @@ namespace Hecton8.UI.Navigation
                 state.RecalibrationHold01 = 1f;
             }
 
-            ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < vitalsSignals.Length; i++)
+            uint survivalVitalsSourceId = _survivalVitalsSourceId;
+            if (survivalVitalsSourceId != 0u)
             {
-                ref readonly SurvivalVitalsChangedSignal signal = ref vitalsSignals[i];
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && math.isfinite(signal.Energy01))
+                ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < vitalsSignals.Length; i++)
+                {
+                    ref readonly SurvivalVitalsChangedSignal signal = ref vitalsSignals[i];
+                    if (signal.SourceId != survivalVitalsSourceId ||
+                        (signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) == 0u ||
+                        !math.isfinite(signal.Energy01))
+                    {
+                        continue;
+                    }
+
                     state.Power01 = math.saturate(signal.Energy01);
+                }
             }
 
             ReadOnlySpan<SystemHealthSignal> healthSignals = SignalBus<SystemHealthSignal>.GetFrameSnapshot();
@@ -1334,6 +1353,21 @@ namespace Hecton8.UI.Navigation
 
             pose = default;
             return false;
+        }
+
+        private void RefreshSurvivalVitalsSourceBinding()
+        {
+            _survivalVitalsSourceId = ResolveSurvivalVitalsSourceId(_playerContext);
+        }
+
+        private static uint ResolveSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            return survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         private bool TryCommitCompassState(in CompassStateDTO state)

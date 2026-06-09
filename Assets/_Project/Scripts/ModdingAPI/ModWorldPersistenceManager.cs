@@ -605,8 +605,7 @@ namespace Hecton8.Modding
         {
             _liveEntitiesByHash.Clear();
             ModSpawnedEntity[] entities = UnityEngine.Object.FindObjectsByType<ModSpawnedEntity>(
-                UnityEngine.FindObjectsInactive.Include,
-                UnityEngine.FindObjectsSortMode.None);
+                UnityEngine.FindObjectsInactive.Include);
             for (int i = 0; i < entities.Length; i++)
             {
                 ModSpawnedEntity marker = entities[i];

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach清理指令"
+title: "Deep Reach 实时清理指令"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach清理指令
+# Deep Reach 实时清理指令
 
-该命令把Deep Reach重塑为当前敌手：不只是历史恶棍，而是活跃清理与开采压力。
+Deep Reach 实时清理指令是当前工单，不是档案备注。它显示撤离暂停后，资源保管、Atlas 访问和证据删除被排进代理承包流程。
 
 ## Scanner
 
-恢复命令栈：资源、Atlas访问、证据删除。幸存者回收低于资产控制。
+发现实时指令：扣押认证样本，开启 Atlas 通道，隔离幸存者，删除责任证据。
 
 ## Terminal
 
-代理指令：承包人可否认。保全样本。本地风险可接受则开启Atlas通道。清除责任语料。
+代理工单 DR-CLEANSE-19 仍在执行。可否认承包方先取得样本保管权，其次取得 Atlas 访问，最后才处理证人回收。若 Black Keel 或站点账本暴露责任，清除队列会把证据档案转入 cold delete，并把现场死亡重标为天气损失。
 
 ## Audio
 
-Deep Reach不是在追你。它把你当成更便宜的探针。
+那个声音不是救援通信。那是清理报价。
 
 ## Field Note
 
-他们回来不是为了道歉。
+道歉字段为空。
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/zh_CN. -->

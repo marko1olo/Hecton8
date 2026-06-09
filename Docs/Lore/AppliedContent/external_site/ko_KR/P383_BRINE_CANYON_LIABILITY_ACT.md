@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Brine Canyon Liability Act"
+title: "염수 협곡 책임 게이트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Brine Canyon Liability Act
+# 염수 협곡 책임 게이트
 
-KO LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+협곡에서 경로는 salvage 서류처럼 느껴지는 것을 멈추고 사건 파일처럼 행동한다. 밀도층은 나쁜 시계를 보존한다. 염수는 보통 물이 지웠을 흔적을 붙잡는다. 부서진 대피 판이 마진 로그 옆에 놓이면 두 문서 모두 더 무거워진다.
 
-## Scanner
-
-KO LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-KO LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-KO LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-KO LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+그 사슬이 중요한 이유는 물리를 부정하지 않기 때문이다. 대조는 닥쳤다. 벽은 실패했다. 회사의 거짓은 그 사실 주변의 결정 순서에 있다. 수락된 마진, 지연된 대기열, 손상된 경로, 보호된 청구. 보이는 작업은 물리적으로 남는다. 흔적을 스캔하고, 시계를 맞추고, 증거를 들고 나간다.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/ko_KR. -->

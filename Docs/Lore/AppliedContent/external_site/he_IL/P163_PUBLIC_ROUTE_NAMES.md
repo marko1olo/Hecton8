@@ -19,10 +19,14 @@ localization_flags: 1
 
 # שמות נתיבים ציבוריים
 
-## Names That Bill
+## שמות שמחייבים
 
-שמות הנתיבים הציבוריים אינם שירה בחושך. הם תוויות עבודה ששורדות חוזים, לוחות גוף, תורי ממסר ומוצגים משפטיים. Sol-Centauri Charter Spine נושא לגיטימיות, Barnard Breaker Run מריח מפירוק ספינות וחוב. Luyten Packet Ladder הוא שרשרת custody שהופכת ראיה לקבילה או חסרת ערך, Tau Public Ledger Lane הוא לחץ ציבורי איטי, ו-Ran Long Claim אומר שהעבודה כבר יקרה לפני שהאוקיינוס גובה.
+הנתיבים הציבוריים של HECTON-8 לא נועדו ליופי. הם נועדו לשרוד חשבוניות, חותמות, טבלאות ביטוח וויכוחי salvage. שם נתיב הוא החלק במפה שעדיין חשוב כשהתמונה נעלמת ורק החוזה נשאר.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spine הוא הקו המכובד. הוא נושא לגיטימיות ישנה, שפת תאימות וניסוחים ש-Deep Reach אוהבת לצטט כשהיא רוצה שפרויקט גבול ייראה תרבותי. Barnard Breaker Run מכוער וישר יותר: פירוק ספינות, חומרת לחץ, צוותי חוב, גופים מפורקים והתרבות המעשית שמאפשרת Marauders.
+
+Luyten Packet Ladder אינו חברה רומנטית. זו תשתית משמורת חבילות. היא מסבירה למה הודעה יכולה להפוך לראיה, למה ראיה יכולה להתעכב ולמה חבילה ישרה אינה עזרה. Tau Public Ledger Lane הוא המקום שבו ראיה נעשית לחץ ציבורי אחרי שהאור סיים את עבודתו האיטית.
+
+Ran Long Claim הוא השם הקרוב ביותר ל-HECTON-8. הוא אינו כביש מהיר, אלא נתיב תביעה דרך מרחק, חוק, זכויות בלימה ועלות מטען. לוח נתיב צריך להיקרא כסימן לחץ: החוק של מי עובר כאן, המטען של מי זז, הראיה של מי שורדת, והגוף של מי נשאר מחוץ למניפסט החזרה.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/he_IL. -->

@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _AegirBandTex:
-        m_Texture: {fileID: 2800000, guid: d9d11072e85a2b54cacd11eaad6614a8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 6c173d4e1a858b34ca1b7e5610aae988, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []

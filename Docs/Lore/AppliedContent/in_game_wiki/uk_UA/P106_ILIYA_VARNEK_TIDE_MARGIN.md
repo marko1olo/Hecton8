@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Ілія Варнек: припливний допуск"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Ілія Варнек: припливний допуск
 
-UA LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+Ілія Варнек — підпис Deep Reach від 2147 року, пов'язаний із допуском Великого припливу. Він не карикатурний керівник із важелем. Мемо страшніше саме буденністю: виробничий графік, усереднена модель, рядок впевненості, примітка про експозицію робітників і рекомендація рухатися далі.
+
+Ключова фраза — усереднена впевненість моделі. У середньому маршрут виглядав придатним для виживання. У хвості розподілу, де сходилися припливні стеки Aegir, віддача льодового шельфу, рух маршрутів тиску й помилки компенсації Atlas, запас звужувався до бухгалтерського допуску. Люди в тих відсіках жили не в середньому значенні. Вони жили в найгіршій годині.
+
+Підпис Варнека дає гравцеві один шар відповідальності. Він не доводить, що Варнек знав точну майбутню катастрофу. Він доводить, що Deep Reach мала читабельний шлях ризику й вибрала дешевше тлумачення. Злочин не у всевіданні. Злочин у прийнятті невизначеності, бо тіла, які мали нести її вниз, не сиділи в кімнаті, де призначали ціну допуску.
 
 ## Scanner
 
-UA LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+МЕМО РИЗИКУ // І. Варнек знизив допуск Великого припливу після того, як модель пройшла за середнім значенням. Хвостовий ризик залишили у робочих відсіках під тиском.
 
 ## Terminal
 
-UA LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+ВАРНЕК, І. // Ризики операцій Aegir // Рекомендація: зберегти виробничий графік. Екстремальний стек припливів лишається низькочастотною операційною варіацією до перегляду компенсації Atlas. Експозиція робочих маршрутів прийнятна за усередненої впевненості моделі.
 
 ## Audio
 
-UA LOC HOLD: He did not order a flood. He priced it low enough to happen.
+Він не наказував влаштувати потоп. Він оцінив його достатньо дешево, щоб той стався.
 
 ## Field Note
 
-UA LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Не читай це як наказ убити. Читай як бюджетний рядок, де невизначеність стала достатньо дешевою, щоб її витратити.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/uk_UA. -->

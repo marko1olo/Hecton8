@@ -11,11 +11,12 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "SubmarineAutoLevelBallastController.cs");
             string prepareSample = ExtractMethodBody(source, "private bool PrepareBallastFluidSample(float fixedDeltaTime)");
-            string fallbackDepth = ExtractMethodBody(source, "private static float ResolveFallbackExternalDepthMeters(Vector3 worldCenter)");
+            string fallbackDepth = ExtractMethodBody(source, "private float ResolveFallbackExternalDepthMeters(Vector3 worldCenter)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
             StringAssert.Contains(": ResolveFallbackExternalDepthMeters(worldCenter);", prepareSample);
-            StringAssert.Contains("math.max(0f, DefaultSeaLevelY - worldCenter.y)", fallbackDepth);
+            StringAssert.Contains("float seaLevelY = ResolveFallbackSeaLevelY();", fallbackDepth);
+            StringAssert.Contains("math.max(0f, seaLevelY - worldCenter.y)", fallbackDepth);
             StringAssert.DoesNotContain(": math.max(0f, -worldCenter.y);", source);
         }
 

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Job Title Table"
+title: "جدول وظائف الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Job Title Table
+# جدول وظائف الضغط
 
-AR LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+جدول الوظائف هو هيكل العمل في المستعمرة. يربط الأشخاص بالمضخات والأختام والـ relays وmedlocks والـ fabricators ولوحات المسار وvent-kilns ووحدات Atlas.
+
+يجب أن يعد اللقب بدليل مادي. مركب الأختام يترك طباشير gasket وآثار clamp وسجلات فتحات. غواص brine يترك ملاحظات كثافة وقطع خطوط مثقلة وآثار غسل بدلة. أمين relay يترك أوراق توقيت ورفض دخول. مساعد medlock يترك نماذج تثبت أن المحطة اختارت الطاقم بدلا من التعافي.
 
 ## Scanner
 
-AR LOC HOLD: Job titles should explain what kept the colony alive.
+لوحة العمل // اللقب ليس زينة موارد بشرية. إنه يخبر أي نظام فشل عندما توقف العامل عن الرد.
 
 ## Terminal
 
-AR LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+وظائف الضغط // فني مضخات، مركب أختام، كاتب مسارات، غواص brine، مشغل fabricator، مساعد medlock، أمين relay، عامل vent-kiln، قارئ أمان Atlas ومشرف وردية ليست نكهة اجتماعية. إنها منطق دخول. اللقب يحدد ما يعرفه العامل، أي لوحة تقبل شارته، أين أدواته، وأي فشل سيلصق به بعد Great Tide.
 
 ## Audio
 
-AR LOC HOLD: Nobody died as Employee 438. They died doing a job.
+لم يمت أحد بصفته الموظف 438. ماتوا وهم يحملون عملا كان المحيط لا يزال يحتاجه.
 
 ## Field Note
 
-AR LOC HOLD: Every title should imply a tool, route or failure.
+يجب أن يشير كل لقب إلى أداة أو غرفة أو تصريح مسار أو سبب منع الجسد من المغادرة.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/ar_SA. -->

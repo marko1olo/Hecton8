@@ -35,6 +35,6 @@ Bathydrop接口损坏：没有耐压部件、中继时序和干净的上升锁�
 
 ## Field Note
 
-第一小时逃脱记录：载体存在，但玩家、海、水面和轨道之间的链条在具名部件中断裂。
+第一小时逃脱记录：载体存在，但潜水服、海、水面和轨道之间的链条在具名部件中断裂。
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/zh_CN. -->

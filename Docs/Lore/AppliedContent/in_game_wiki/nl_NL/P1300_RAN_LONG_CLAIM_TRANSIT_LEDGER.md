@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Route Physics And Claim Primer
 spoiler_tier: 1
-title: "Ran Lange-Claim Transitregister"
+title: "Ran-Langclaim-Transitregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran Lange-Claim Transitregister
+# Ran-Langclaim-Transitregister
 
-De eerste leugen die een gestrande Marauder wil geloven is dat contact redding betekent. Rond Ran betekent contact dat een pakket een carriervenster heeft gevonden. Het kan een positie, getuigehash, juridische eis, prijs of dreiging verplaatsen. Het verplaatst geen drukromp, arts, vrachttender of remstack.
+Een Ran-langclaimregister is wat een noodoproep wordt nadat beschaving hem hoort en weigert te doen alsof natuurkunde veranderd is. Het pakket kan de route snel genoeg kruisen om als antwoord te voelen. Het antwoord brengt geen romp. Het registreert claimant, positie, payload, custodyketen en een reden voor iemand buiten de wereld om massa uit te geven.
 
-Daarom lezen de lange-claimregisters van Ran als boekhouding. Een levende overlevende is één veld. Daarnaast staan coördinatenvertrouwen, payloadklasse, bewaringsgraad, opstijgmassa, quarantainerisico, routeverzekering en wie wordt betaald als de persoon sterft voor pickup. Black Keel verplaatst pakketten omdat pakketten goedkoop zijn en omdat contractmacht leeft in vertraging.
+            Het register is oud grensrecht rond harde transit gevouwen. Ran-relais accepteren getuigenpakketten met lichtsnelheid. Luyten-kantoren hashen het ontvangstbewijs. Black Keel beweegt een schone burst door spiegels en carriervensters. Geen van die systemen bezit een gratis reddingsschip. Een tender heeft nog steeds lane, remtoewijzing, ontvangstslot, quarantainevrijgave en een betaler nodig die audit overleeft.
 
-De nuttige vraag is niet of iemand je hoorde. Waarschijnlijk wel. De vraag is wat ze eerst hoorden. Een schone levensstatus koopt een plek in de rij. Een geverifieerde route-ontvangst koopt hefboomwerking. Bewijs van Deep Reach-aansprakelijkheid kan veranderen wie de rij mag prijzen. Een payload die buiten HECTON-8 telt, kan een schip risico laten accepteren dat het voor een lichaam alleen op de oceaanbodem zou laten liggen.
+            Daarom doet het eerste carriervenster pijn. Een Marauder wil schreeuwen dat hij leeft. Het register heeft daar al een veld voor. Het betere pakket zegt waar, hoe zeker, wat omhoog kan, wie het heeft aangeraakt, wat Deep Reach heeft beschadigd, of het opstijgpakket sluit, en welk bewijs verloren gaat als niemand komt. Het lichaam telt. Het lichaam alleen is goedkoop in de verkeerde kolom.
+
+            Black Keels wreedheid is meestal rekenwerk zonder menselijke stem. Een levend mens is aansprakelijkheid. Een levend mens met toelaatbaar bewijs is hefboom. Een levend mens vast aan onvervangbare routedataan is vracht met tanden. Het register maakt van angst velden, omdat velden geprijsd, getuigd en bevochten kunnen worden nadat het signaal HECTON-8 heeft verlaten.
 
 ## Scanner
 
-ROUTEREGISTER // Luyten-getuigehash intact. Een sterk carriervenster kan één schone burst dragen: positie, schade, bewaring, bewijs of smeekbede. Het is geen redding.
+LANGCLAIMREGISTER // Luyten-getuigenvlecht intact. Een carriervenster beschikbaar. Velden: levendstatus, coördinatenvertrouwen, opstijgmassa, custodygraad, Deep Reach-bezwaar, payloadwaarde. Nood is geen tenderorder.
 
 ## Terminal
 
-ROUTE-ONTVANGST: RAN LANGE CLAIM / LPL-GETUIGENSLOT 7C // Alleen levensstatus is onvoldoende voor recovery-planning. Dien coördinatenvertrouwen, status van opstijgpakket, bewaringsgraad en payloadmassa in vóór tenderprioriteit.
+BLACK KEEL / RAN-LANGCLAIMONTVANGST 7C // Pakket geaccepteerd als levende claim, niet als recovery-autorisatie. Dien locatiewijs, salvageklasse, medische aansprakelijkheid, quarantaineblootstelling en eerste-terugkeer voorkeur in voordat het venster verslechtert. Lege velden worden vracht-negatief, lichaam lage prioriteit.
 
 ## Audio
 
-Black Keel-relais: Het venster houdt één schone burst. Stuur positie, payload of bewijs. Kies voordat de storm carrier lock opeet.
+Black Keel-relais: Je hebt het register bereikt. Goed. Dat maakt je een record, niet gered. Besteed de burst aan bewijs, positie of waarde voordat de carrier slipt.
 
 ## Field Note
 
-Schepen redden je niet. Routes misschien, als het juiste kantoor betaald was voor je nat werd. Besteed het venster als lucht.
+Levend is een vakje. Coördinaten zijn een weddenschap. Bewijs is aas met handtekening. Stuur het pakket dat ze bang maakt om je te negeren.
 
 <!-- In-Game Wiki; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/nl_NL. -->

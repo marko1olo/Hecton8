@@ -101,6 +101,74 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return saveManager != null && saveManager.IsInitialized;", saveManagerUsable);
         }
 
+        [Test]
+        public void RunModifierController_PermadeathDeathRouteUsesPlayerSurvivalSource()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project", "Scripts", "Meta", "RunModifierController.cs"));
+            string hotSwap = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string refreshCold = ExtractMethodBody(source, "private void RefreshColdRegistryDependencies()");
+            string registerUpdate = ExtractMethodBody(source, "private void TryRegisterWithUpdateDispatcher()");
+            string consume = ExtractMethodBody(source, "private void ConsumeSurvivalDeathSignal()");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string shutdown = ExtractMethodBody(source, "public void OnServiceShutdown()");
+            string cachePlayer = ExtractMethodBody(source, "private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)");
+            string clearPlayer = ExtractMethodBody(source, "private void ClearPlayerRuntimeContext()");
+            string refreshSurvival = ExtractMethodBody(source, "private void RefreshSurvivalSignalBinding()");
+            string resolveSource = ExtractMethodBody(source, "private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)");
+
+            StringAssert.Contains("using Hecton8.Gameplay;", source);
+            StringAssert.Contains("private IPlayerRuntimeContext _playerRuntimeContext;", source);
+            StringAssert.Contains("private HectonSurvivalSystem _survivalSystem;", source);
+            StringAssert.Contains("private uint _survivalSignalSourceId;", source);
+
+            StringAssert.Contains("if (serviceSlot == GlobalRegistryServiceSlot.Player)", hotSwap);
+            StringAssert.Contains("CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);", hotSwap);
+            StringAssert.Contains("RefreshSurvivalSignalBinding();", hotSwap);
+            AssertTextBefore(
+                hotSwap,
+                "if (serviceSlot == GlobalRegistryServiceSlot.Player)",
+                "if (serviceSlot != GlobalRegistryServiceSlot.Save)");
+
+            StringAssert.Contains("CachePlayerRuntimeContext(GlobalRegistry.Player);", refreshCold);
+            StringAssert.Contains("RefreshSurvivalSignalBinding();", refreshCold);
+            AssertTextBefore(refreshCold, "CachePlayerRuntimeContext(GlobalRegistry.Player);", "RefreshSurvivalSignalBinding();");
+
+            StringAssert.Contains("uint sourceId = _survivalSignalSourceId;", registerUpdate);
+            StringAssert.Contains("sourceId != 0u &&", registerUpdate);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)", registerUpdate);
+            StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)", registerUpdate);
+
+            StringAssert.Contains("uint sourceId = _survivalSignalSourceId;", consume);
+            StringAssert.Contains("if (sourceId == 0u)", consume);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)", consume);
+            StringAssert.Contains("signal.SourceId != sourceId", consume);
+            StringAssert.Contains("SurvivalVitalsChangedSignalFlags.Death", consume);
+            StringAssert.Contains("HandlePlayerDied();", consume);
+            StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)", consume);
+            AssertTextBefore(consume, "_lastSurvivalDeathSignalSequence = sequence;", "if (signal.SourceId != sourceId");
+            AssertTextBefore(consume, "if (signal.SourceId != sourceId", "HandlePlayerDied();");
+
+            StringAssert.Contains("_playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;", cachePlayer);
+            StringAssert.Contains("_survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;", cachePlayer);
+
+            StringAssert.Contains("ClearPlayerRuntimeContext();", onDisable);
+            StringAssert.Contains("ClearPlayerRuntimeContext();", shutdown);
+            AssertTextBefore(onDisable, "ClearPlayerRuntimeContext();", "TryUnregisterService();");
+            AssertTextBefore(shutdown, "ClearPlayerRuntimeContext();", "TryUnregisterService();");
+            StringAssert.Contains("_playerRuntimeContext = null;", clearPlayer);
+            StringAssert.Contains("_survivalSystem = null;", clearPlayer);
+            StringAssert.Contains("_survivalSignalSourceId = 0u;", clearPlayer);
+            StringAssert.Contains("_lastSurvivalDeathSignalSequence = 0;", clearPlayer);
+
+            StringAssert.Contains("uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);", refreshSurvival);
+            StringAssert.Contains("_survivalSignalSourceId = sourceId;", refreshSurvival);
+            StringAssert.Contains("sourceId != 0u &&", refreshSurvival);
+            StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)", refreshSurvival);
+
+            StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))", resolveSource);
+            StringAssert.Contains(": 0u;", resolveSource);
+        }
+
         private static void AssertTextBefore(string body, string expectedEarlier, string expectedLater)
         {
             int earlierIndex = body.IndexOf(expectedEarlier, StringComparison.Ordinal);

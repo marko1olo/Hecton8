@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Recovery Compliance Chain
 
-Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance is the phrase that makes the endgame colder. It sounds orderly because it is orderly. Contractors need clearance, evidence needs custody, salvage needs title, route insurers need records, and public offices need wording that does not confess.
 
-## Scanner
-
-The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-You are not rescued. You are classified.
-
-## Field Note
-
-Delay does not make an order harmless.
+The horror is that the chain can include living people without becoming rescue. A survivor may be handled as witness material. A pressure suit may be return mass. A confession may be data payload. The chain can bring someone out and still serve the office that left them below.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/en_US. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Abyssale-machineveldpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Abyssal Machine Field Repair Act
+# Abyssale-machineveldpoort
 
-NL LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+Het abyssale machineveld maakt van angst een procedure. Geleidende films, akoestische organen en servicebekkens zijn geen decoratie. Het zijn componenten waar de operator doorheen moet routeren onder druk, stroomverlies en vervuilde eigendomstabellen.
 
-## Scanner
-
-NL LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-NL LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-NL LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-NL LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Deze fase werkt omdat elke reparatie nuttig en juridisch vuil is. Een levende brug kan een deur herstellen. Dezelfde brug kan de deur biologisch maken, de reparatie tot Atlas-event maken en de claimclassificatie moeilijker maken. De weg vooruit is gebouwd uit wat het papierwerk slechter maakt.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/nl_NL. -->

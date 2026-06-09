@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rantai Keluar Pengecut"
+title: "Rantai Keluar Darurat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rantai Keluar Pengecut
+# Rantai Keluar Darurat
 
-Keluar pengecut adalah ending parsial sah: wahana bisa dibangun, kampanye belum tuntas secara emosional.
+Rantai Keluar Darurat menjelaskan kenaikan legal pertama lewat rute dangkal. Rantai ini disusun dari seal lambung, cadangan baterai, pengulangan relay, dan prediksi celah badai, lalu ledger klaim menandainya tidak lengkap.
 
 ## Scanner
 
-Jalan keluar ini nyata sekaligus tipis: kapsul diperbaiki, cuaca sempit, tanpa kebenaran, tanpa bayaran bersih.
+Rantai peluncuran awal itu nyata, tetapi semua lampunya sementara: seal lambung, cadangan B2, ping pulang, celah badai, beacon klaim.
 
 ## Terminal
 
-Rantai naik tersedia setelah seal lambung, cadangan baterai, ping relay, dan prediksi celah badai. Ledger: salvage tidak lengkap.
+Naik darurat hanya terbuka saat cradle mengunci, katup ballast kering, Black Keel mengulang jendela pulang P036, dan squall permukaan menyisakan koridor bersih. Ledger kontrak menstempel keberangkatan sebagai tidak lengkap: tanpa kesaksian Atlas, paket tanggung jawab Deep Reach, atau pembayaran tersertifikasi.
 
 ## Audio
 
-Kau bisa lari. Laut di belakangmu tidak akan menjelaskan diri.
+Peluncuran mungkin. Penutupan tidak ikut naik.
 
 ## Field Note
 
-Pergi awal harus terasa selesai, bukan memuaskan.
+Kapsul menerima penumpang sebelum situs menerima catatan.
 
 <!-- In-Game Wiki; generated from P037_COWARD_EXIT_CHAIN/id_ID. -->

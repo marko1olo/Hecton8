@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Reglas de props de fragmentos de audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Reglas de props de fragmentos de audio
 
-ES LOC HOLD: Audio Fragment Prop Rules keep voice logs useful and restrained.
+Las Reglas de props de fragmentos de audio mantienen los registros de voz raros, útiles y arraigados. HECTON-8 no es un museo de últimos discursos. Un fragmento de voz debe hacer que el jugador se acerque porque la sala ya sugiere parte de la verdad. Una tira de hidrófono puede llevar ruido de presión y timestamp de ruta. Un grabador de traje puede probar quién cruzó una escotilla después de que se denegara permiso. Un caché de terminal puede guardar una transcripción dañada que contradice el libro limpio. Un fragmento de caja negra puede preservar el momento en que una prioridad de máquina anuló una petición humana. Si la voz dice lo que ningún objeto puede sostener, se vuelve exposición barata. Si el objeto y la voz discrepan, el jugador obtiene investigación.
 
 ## Scanner
 
-ES LOC HOLD: Voice is expensive. It must prove something the room also proves.
+La voz es cara. Debe probar algo que la sala también pueda probar con metal, agua, marca temporal o daño.
 
 ## Terminal
 
-ES LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: nada de monólogos flotantes. La voz pertenece a una tira de hidrófono, grabador de traje, caché de terminal, auricular de mantenimiento o fragmento de caja negra. Cada línea reproducible debe tener una fuente, estado de transcripción dañada, timestamp de ruta y una contradicción que el jugador pueda inspeccionar.
 
 ## Audio
 
-ES LOC HOLD: If the room cannot prove me, cut the line.
+Si la sala no puede probarme, corta la línea.
 
 ## Field Note
 
-ES LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Los fragmentos de audio necesitan un prop fuente, daño de transcripción, timestamp de ruta y una contradicción física.
 
 <!-- In-Game Wiki; generated from P215_AUDIO_FRAGMENT_PROP_RULES/es_ES. -->

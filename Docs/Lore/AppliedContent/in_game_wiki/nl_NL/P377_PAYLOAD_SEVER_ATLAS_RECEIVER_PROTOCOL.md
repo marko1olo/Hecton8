@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Payload-protocol Atlas-severance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Payload-protocol Atlas-severance
 
-NL LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Het severance-protocol is een destructieve ontvangerroute, geen schone vrijgave. Het kan beschadigde reparatielogica stoppen en Deep Reach een recovery-vector weigeren. Het kan ook machine-ecologie vernietigen, bruikbaar routegeheugen wissen en een bewijsroute maken die onder ontvangerrecht leest als containment, sabotage, diefstal of genade.
 
 ## Scanner
 
-NL LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Severance-route actief. Payload draagt snijsleutels voor Atlas-continuiteit, routegeheugenisolatie en proof-hash-behoud.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+PAYLOAD-ONTVANGER // ATLAS-SEVERANCE. Doel: Atlas-continuiteitsspine. Reparatielus snijden, routegeheugen isoleren, proof hash bewaren, corporate recovery-vector weigeren. Ecologische cascade onopgelost. Juridische classificatie betwist.
 
 ## Audio
 
-NL LOC HOLD: If this is mercy, it still leaves a body.
+Atlas kan worden gesneden. De snede laat toch custody-markeringen achter.
 
 ## Field Note
 
-NL LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Plunderaarsnotitie: een schone snede is nog steeds een snede. Fotografeer de custody-markeringen voordat je trekt.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/nl_NL. -->

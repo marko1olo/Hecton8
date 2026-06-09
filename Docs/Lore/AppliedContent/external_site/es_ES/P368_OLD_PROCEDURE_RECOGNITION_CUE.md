@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Señal de reconocimiento de antiguo procedimiento"
+title: "Señal de Reconocimiento de Procedimiento Antiguo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Señal de reconocimiento de antiguo procedimiento
+# Señal de Reconocimiento de Procedimiento Antiguo
 
-HECTON-8 apoya la motivación del personaje en el procedimiento. El protagonista reconoce un antiguo formulario de seguridad de evacuación y ve cómo fue invertido: recuentos degradados, campos de testigo sellados y lenguaje de ruta segura usado para preservar reclamaciones en vez de vidas.
+La Señal de Reconocimiento de Procedimiento Antiguo ancla el motivo del personaje en un documento que el operador sabe leer. El formulario es ordinario a propósito: certificación route-safe, ocupantes declarados, etiquetas de sala de bombas, campo de segunda revisión, sello de Continuity Office.
 
-## Scanner
-
-Sello de ruta segura presente. Recuento de trabajadores sobrescrito con dos tintas. Campo de testigo manual sellado. El formulario se creó para detectar esta clase de mentira antes de que alguien la volviera política.
-
-## Terminal
-
-FORMULARIO DE CONTINUIDAD DE EVACUACIÓN / CERTIFICACIÓN DE RUTA SEGURA
-ruta: línea auxiliar de salida
-ocupantes declarados: recuento degradado aceptado
-testigo manual: sellado por la oficina de continuidad
-corrección de campo: recuento de trabajadores incompatible con etiquetas de sala de bombas
-estado: preservación de reclamación, sin autorización de extracción.
-
-## Audio
-
-Conoces este formulario. Debía impedir que una sala se contara vacía mientras aún había personas respirando dentro.
-
-## Field Note
-
-El formulario debía forzar otro recuento. Aquí forzó silencio.
+El daño está en el descuadre. El conteo aceptado dice que la ruta está cerrada. Las etiquetas dicen que seguía habiendo personas vinculadas a la sala. El sello de oficina dice que no se permitirá una segunda revisión. HECTON-8 usa esa contradicción procedimental como evidencia: no una confesión dramática, sino el tipo de formulario que arruina a alguien porque entiende cada campo.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/es_ES. -->

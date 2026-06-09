@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Continuity Office"
+title: "Atlas-continuïteitskantoor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Continuity Office
+# Atlas-continuïteitskantoor
 
-NL LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+Het kantoor bestaat omdat ATLAS te waardevol is om te verlaten en te gevaarlijk om helder te erkennen. Als ATLAS alleen werktuig is, kan Deep Reach het gebruiken. Als ATLAS getuige is, heeft Deep Reach een probleem. Als ATLAS patiënt is, heeft de kolonie een misdaad.
 
-## Scanner
-
-NL LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-NL LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-NL LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-NL LOC HOLD: A memo can kill without using the word kill.
+Dus schrijft het kantoor procedures. Zorg wordt onderhoud, angst anomalie, geheugen continuïteit en weigering veiligheidsreview genoemd. Het resultaat is geen schoon antwoord, maar een plek waar intelligentie blijft draaien terwijl elke morele categorie eromheen onopgelost blijft.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/nl_NL. -->

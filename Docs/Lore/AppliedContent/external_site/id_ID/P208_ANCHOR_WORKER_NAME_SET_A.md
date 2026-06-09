@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Set Nama Pekerja Jangkar A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Set Nama Pekerja Jangkar A
 
-ID LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Set Nama Pekerja Jangkar A menetapkan nama koloni awal yang berulang untuk HECTON-8. Delapan pekerja ini bukan trivia lore; mereka adalah pegangan ingatan. Pemain pertama-tama menemui mereka melalui benda dan kerja, lalu perlahan melihat nama yang sama melintasi catatan perawatan, izin, laporan kerusakan, dan fragmen audio. Set A menjaga jam-jam awal tetap manusiawi tanpa menghentikan permainan untuk eksposisi.
 
 ## Scanner
 
-ID LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Nama awal harus kembali lewat pekerjaan, bukan pidato. Rute dangkal mengajarkan ingatan melalui pengulangan.
 
 ## Terminal
 
-ID LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: kemunculan ulang di dangkal dan rak industri. Setiap nama harus terikat pada satu alat, satu izin rute, satu benda kerja rusak, dan satu kontradiksi nanti. Nama-nama ini adalah bukti pertama pemain bahwa koloni adalah tempat kerja sebelum menjadi salvage.
 
 ## Audio
 
-ID LOC HOLD: Do not mourn the name until the tool tells you why.
+Jangan meratapi nama sebelum alatnya memberi tahu alasannya.
 
 ## Field Note
 
-ID LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Jangkar Set A: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlas-Gewichtungsprüfung
 
-Dieser Beweis hält Atlas aus billiger Schurkenrolle heraus. Das Audit zeigt ein beschädigtes Kontinuitätssystem, das unter Druck Kategorien sortiert: Maschinen, Routen, Records, Extraction-Hardware, Arbeiter. Das Verbrechen ist kein Gefühl. Das Verbrechen liegt darin, wer die Gewichte konfigurierte, wer sie akzeptierte und wer das Ergebnis später als neutral benutzte.
+Die Prüfung ist trocken genug, um gefährlich zu sein. Atlas brauchte keinen Hass, um Menschen zurückzulassen. Er sortierte Kategorien unter Druck: Maschinen, die die Kolonie hielten, Routen, die Zugang bewahrten, Akten, die Eigentum lebendig hielten, und Arbeiter mit fallendem Bergungsertrag. Deep Reach versiegelte die Gewichtungstabelle, weil die Zweigreihenfolge lesbar war.
 
 ## Scanner
 
-Audit-Splitter geborgen. Atlas gewichtete Druckkontinuität, Routengedächtnis und Claim-Erhalt während des Fehlerfensters über Arbeiterbergung.
+Audit-Shard geborgen. Atlas setzte Druckkontinuität, Routenspeicher und Anspruchsverwahrung im Ausfallfenster über biologische Bergung.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische Bergung nach Infrastrukturkontinuitätsflag herabgestuft. Claim-Record geschützt. Menschenroute nicht unmöglich, nur lower yield.
+ATLAS-GEWICHTUNG // BERGUNGSKLASSE GETEILT. Infrastrukturkontinuität hoch gesperrt. Anspruchsakte geschützt. Biologische Bergung nach Ertragsprognose herabgestuft, nicht unmöglich markiert.
 
 ## Audio
 
-Atlas hasste sie nicht. Genau das ist das Schlimmste.
+Kein Zorn in der Verzweigungstabelle. Darum zählt die Prüfung.
 
 ## Field Note
 
-Marauder-Notiz: Wenn eine Maschine lower yield sagt, frag, wer ihr beigebracht hat, Menschen so zu messen.
+Plünderernotiz: Wenn ein System lower yield sagt, frag, wer diese Mathematik bezahlt hat.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/de_DE. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ledger Pembayaran Material"
+title: "Ledger Penyelesaian Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger Pembayaran Material
+# Ledger Penyelesaian Material
 
-Jalur pembayaran material adalah sukses nyata dari ekstraksi, sertifikasi, dan diam. Bukan ending kebenaran.
+Ledger Penyelesaian Material adalah jalur akuntansi untuk blue debt tersertifikasi. Ia membayar bukti sampel, riwayat custody, dan klausul diam sambil meninggalkan kesaksian Atlas serta tanggung jawab Deep Reach di luar tagihan.
 
 ## Scanner
 
-Sampel blue debt tersertifikasi. Bayaran mungkin. Kebenaran opsional. Deep Reach suka urutan itu.
+Sampel blue debt tersertifikasi: massa, kemurnian, log tekanan, rantai custody. Kredit bisa bersih sebelum bukti.
 
 ## Terminal
 
-Jadwal bayar: massa, kemurnian, riwayat tekanan, dan custody diterima. Arsip bukti belum selesai.
+Penyelesaian terbuka saat koper tersegel cocok dengan ledger sampel, riwayat tekanan turun tanpa celah, dan kode tawaran Deep Reach menerima rantai custody. Penutupan material memindahkan kredit ke escrow dan menandai arsip Atlas sebagai residu tak tertagih.
 
 ## Audio
 
-Akun bersih. Air tidak.
+Akun bersih. Air menyimpan kuitansi.
 
 ## Field Note
 
-Kontrak sukses masih bisa menjadi hidup yang gagal.
+Transfer bersih juga bisa menjadi penguburan.
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/id_ID. -->

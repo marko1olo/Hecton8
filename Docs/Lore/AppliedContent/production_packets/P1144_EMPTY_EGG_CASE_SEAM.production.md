@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fauna_traces |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS171_FIRST_FAUNA_TRACE_ARTICLES.md |
 | Speaker | Field scanner, abandoned case note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first fauna trace reading |
@@ -39,7 +39,7 @@ EMPTY CASE // Split seam clean. Record anchor thread before moving shell.
 
 The case is empty, and the split seam is clean enough to show it opened from within. The anchor thread still holds to the frond mat, while sediment dust has settled over the lower edge.
 
-The important event already happened.
+The seam and thread say the shell is empty before the case is moved.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD ANCHOR THREAD
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| ar_SA | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| de_DE | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| es_ES | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| fr_FR | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| he_IL | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| id_ID | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| ja_JP | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| ko_KR | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| nl_NL | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| pl_PL | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| pt_BR | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| ru_RU | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| uk_UA | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
-| zh_CN | draft_machine_or_llm | EMPTY CASE // Split seam clean. Record anchor thread before moving shell. |
+| ar_SA | draft_machine_or_llm | كيس فارغ // درز الانقسام نظيف. سجل خيط التثبيت قبل تحريك الغلاف. |
+| de_DE | draft_machine_or_llm | LEERE HUELLE // Spaltnaht sauber. Ankerfaden vor dem Bewegen der Schale erfassen. |
+| es_ES | draft_machine_or_llm | CAPSULA VACIA // Costura partida limpia. Registra el hilo de anclaje antes de mover la cubierta. |
+| fr_FR | draft_machine_or_llm | ETUI VIDE // Couture fendue nette. Relever le fil d'ancrage avant de bouger la coque. |
+| he_IL | draft_machine_or_llm | מעטפת ריקה // תפר הפיצול נקי. רשום את חוט העיגון לפני הזזת הקליפה. |
+| id_ID | draft_machine_or_llm | CANGKANG BEKAS // Jahitan belah bersih. Catat benang jangkar sebelum cangkang dipindah. |
+| ja_JP | draft_machine_or_llm | 空殻 // 裂け目は清潔。殻を動かす前に固定糸を記録。 |
+| ko_KR | draft_machine_or_llm | 빈 케이스 // 갈라진 이음선이 깨끗하다. 껍질을 옮기기 전 고정 실을 기록한다. |
+| nl_NL | draft_machine_or_llm | LEGE HULS // Gespleten naad schoon. Leg ankergaren vast voordat je de schaal verplaatst. |
+| pl_PL | draft_machine_or_llm | PUSTA OSLOKA // Czysty szew pekniecia. Przed ruszeniem skorupki zapisz nic kotwiczaca. |
+| pt_BR | draft_machine_or_llm | CAPSULA VAZIA // Costura aberta limpa. Registre o fio de ancoragem antes de mover a casca. |
+| ru_RU | draft_machine_or_llm | ПУСТАЯ ОБОЛОЧКА // Шов раскрыт чисто. Запиши якорную нить до перемещения скорлупы. |
+| uk_UA | draft_machine_or_llm | ПОРОЖНЯ ОБОЛОНКА // Шов розкрито чисто. Запиши якірну нитку до переміщення шкаралупи. |
+| zh_CN | draft_machine_or_llm | 空卵囊 // 裂缝干净。移动外壳前先记录锚丝。 |

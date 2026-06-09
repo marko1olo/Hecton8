@@ -50,6 +50,11 @@ Shader "Hecton8/World/PhoticTerrainLit1453"
                 half _WetSpec;
             CBUFFER_END
 
+            float4 _HectonCelestialLightReadability0; // x depth, y direct sun, z ambient readability, w visibility meters
+            float4 _HectonCelestialLightReadability1; // x mesophotic, y deep darkness, z artificial light, w biolum
+            float4 _HectonCelestialLightReadability2; // x caustic, y fog, z scattering, w exposure
+            float4 _HectonCelestialLightReadability3; // x stratum, y flags, z sequence, w black-crush floor
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -110,15 +115,35 @@ Shader "Hecton8/World/PhoticTerrainLit1453"
                 half3 rock = tex * _Tint.rgb;
                 rock = lerp(rock, rock * _RidgeTint.rgb * 1.12h, mineral * 0.42h);
 
-                half waterFill = _FillLight * (0.54h + top * 0.46h);
-                half3 shaded = lerp(_ShadowTint.rgb, rock, waterFill);
-
                 half caustic = CausticLine(input.positionWS.xz, 0.42h, 1.1h) + CausticLine(input.positionWS.xz + 19.3h, 0.71h, 3.4h) * 0.55h;
                 half wet = pow(saturate(1.0h - abs(n.y)), 3.0h) * _WetSpec;
-                half3 col = shaded + _CausticColor.rgb * caustic * _CausticStrength * saturate(input.color.a);
-                col += half3(0.17h, 0.22h, 0.24h) * wet;
+                half lightSignal = (half)(
+                    abs(_HectonCelestialLightReadability0.x) +
+                    abs(_HectonCelestialLightReadability0.y) +
+                    abs(_HectonCelestialLightReadability0.z) +
+                    abs(_HectonCelestialLightReadability2.x) +
+                    abs(_HectonCelestialLightReadability3.z));
+                half lightKnown = step(0.0001h, lightSignal);
+                half directSun = (half)saturate(_HectonCelestialLightReadability0.y);
+                half ambientReadability = (half)saturate(max(_HectonCelestialLightReadability0.z, _HectonCelestialLightReadability3.w));
+                half deepDarkness = (half)saturate(_HectonCelestialLightReadability1.y);
+                half artificialLight = (half)saturate(_HectonCelestialLightReadability1.z);
+                half causticGate = lerp(1.0h, (half)saturate(_HectonCelestialLightReadability2.x), lightKnown);
+                half exposureLift = (half)saturate(_HectonCelestialLightReadability2.w);
+                half playableFloor = lerp(0.11h, max(0.055h, (half)_HectonCelestialLightReadability3.w), lightKnown);
+                half runtimeFill = lerp(
+                    _FillLight,
+                    max(playableFloor, ambientReadability + directSun * 0.24h + artificialLight * 0.08h),
+                    lightKnown);
 
-                return half4(max(col, half3(0.11h, 0.16h, 0.18h)), 1.0h);
+                half3 shaded = lerp(_ShadowTint.rgb, rock, saturate(runtimeFill * (0.54h + top * 0.46h)));
+
+                half3 col = shaded + _CausticColor.rgb * caustic * _CausticStrength * causticGate * saturate(input.color.a);
+                col += half3(0.17h, 0.22h, 0.24h) * wet;
+                col *= lerp(1.0h, 1.0h - deepDarkness * 0.18h + exposureLift * 0.05h, lightKnown);
+                col = min(col, half3(1.0h, 1.0h, 1.0h));
+
+                return half4(max(col, half3(playableFloor, playableFloor * 1.35h, playableFloor * 1.55h)), 1.0h);
             }
             ENDHLSL
         }

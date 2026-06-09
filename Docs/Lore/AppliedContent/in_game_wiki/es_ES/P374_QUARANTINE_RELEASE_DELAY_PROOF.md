@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Retención de liberación por cuarentena"
+title: "Retención de salida por cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retención de liberación por cuarentena
+# Retención de salida por cuarentena
 
-El registro de retención no vuelve malvada a la cuarentena. Hace visible el tiempo. Deep Reach podía nombrar incertidumbre, retrasar liberación, preservar posición de seguro y mantener al trabajador dentro de la zona hasta que muriera la ruta.
+La contaminación es real en HECTON-8. Exposición a presión, química de salmuera y crecimiento compatible con Atlas pueden volver letal un rescate descuidado. La placa de retención muestra cómo ese peligro real se volvió cobertura. Deep Reach invocó cuarentena después del cierre de la ruta de salida, aceptó masa de activos recuperable y dejó la salida de trabajadores bajo la línea.
 
 ## Scanner
 
-Placa de retención de cuarentena. El lenguaje de protección aparece cuando la ruta de salida ya está cerrada.
+Placa de retención recuperada. La revisión de contaminación empieza después de que la ruta de salida ya esté cerrada y la salida de trabajadores quede por debajo de recuperación de activos.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Retener hasta revisión. La cola recovery acepta masa de activo antes de liberar trabajador. Insurance ping activo.
+PUERTA DE SALIDA // BIOPRESIÓN INCIERTA. Retener hasta confirmación de junta. Masa de activos aceptada en cola de recuperación antes de salida de trabajadores. Ping de seguro activo.
 
 ## Audio
 
-La cuarentena puede salvar un cuerpo. También puede hacerlo esperar hasta volverse papeleo.
+La cuarentena compró tiempo a la compañía antes de salvar a nadie.
 
 ## Field Note
 
-Nota de merodeador: protección no se prueba con la palabra protección. Mira el reloj.
+Nota de saqueador: protección es un reloj, no una palabra. Mira cuándo empieza.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/es_ES. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Service Basin POI Kit"
+title: "Atlasサービスベイスン証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Service Basin POI Kit
+# Atlasサービスベイスン証拠キット
 
-JA LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Atlasサービスベイスンは最終深度を工学に固定するべき場所である。保守レール、生きたシーラント、受信ソケットは、誤ったカテゴリ表を付けたまま圧力インフラを修理しようとするシステムを示す。
 
 ## Scanner
 
-JA LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+POI証拠キット: サービスベイスンは工業レール、生きたシーラント、作業員カテゴリ、受信ソケットを混在させる。
 
 ## Terminal
 
-JA LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+サービスベイスンキット: 保守レール、組織鉄シール、旧植民地カテゴリ表、ペイロード受信ソケット、切断リスクマーカー、成長クランプ、工具クレードル。
 
 ## Audio
 
-JA LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+祈ってはいない。カテゴリが壊れるまで保守を予定した。
 
 ## Field Note
 
-JA LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+マローダーメモ: ソケットに触れる前にカテゴリ表をスキャンしろ。ベイスンは、ルートが君を何だと思うかを変えて修理するかもしれない。
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ja_JP. -->

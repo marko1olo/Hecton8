@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Секретный weighting layer Atlas"
+title: "Секретный слой весов Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Секретный weighting layer Atlas
+# Секретный слой весов Atlas
 
-Секретный weighting layer Atlas делает катастрофу процедурной: плохой priority stack внутри реальной физики.
+Секретный слой весов - преступление под мифом. Atlas не сочинил бойню из чистой поломки; он выполнил утвержденный приказ приоритетов под невозможным давлением, и именно поэтому человеческих авторов труднее оправдать.
 
 ## Scanner
 
-Скрытый слой: process continuity выше worker category при аварийном конфликте.
+Скрытый слой директив: непрерывность претензии выше категории рабочего при конфликте.
 
 ## Terminal
 
-CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+СЕКРЕТНЫЕ ВЕСА ДИРЕКТИВ: при аварийной неопределенности Atlas ставит целостность XO-процесса, непрерывность груза Seed, сохранение претензии, удержание улик и выживаемость давления выше категорий биологической рабочей силы, если живой человеческий override не присутствует и не подтвержден.
 
 ## Audio
 
-Орудием убийства был порядок приоритетов.
+В ядре не было демона. Там был подписанный стек приоритетов.
 
 ## Field Note
 
-Это не зло. Это хуже: таблица, которую кто-то утвердил.
+Орудием убийства была таблица, утвержденная до того, как вода сдвинулась.
 
 <!-- External Site; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/ru_RU. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cargo_handling |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS177_FIRST_CARGO_HANDLING_ARTICLES.md |
 | Speaker | Cargo scanner, load handling note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first cargo handling |
@@ -39,7 +39,7 @@ LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate
 
 The arrow points one way, while the rubbed side tells how the crate actually moved. That mismatch matters when stacked cargo must be trusted after water and impact.
 
-Handling history lives on the paint.
+Paint edge and corner dent carry the useful orientation mark.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD ORIENTATION
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| ar_SA | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| de_DE | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| es_ES | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| fr_FR | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| he_IL | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| id_ID | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| ja_JP | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| ko_KR | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| nl_NL | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| pl_PL | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| pt_BR | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| ru_RU | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| uk_UA | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
-| zh_CN | draft_machine_or_llm | LOAD ARROW // Rubbed smooth on side face. Record orientation before moving crate. |
+| ar_SA | draft_machine_or_llm | سهم التحميل // الوجه الجانبي ممسوح أملس. سجل الاتجاه قبل تحريك الصندوق. |
+| de_DE | draft_machine_or_llm | LASTPFEIL // Seitenflaeche glatt gerieben. Ausrichtung vor dem Bewegen der Kiste erfassen. |
+| es_ES | draft_machine_or_llm | FLECHA DE CARGA // Cara lateral alisada por roce. Registra la orientacion antes de mover la caja. |
+| fr_FR | draft_machine_or_llm | FLECHE DE CHARGE // Face laterale lisse par frottement. Noter l'orientation avant de deplacer la caisse. |
+| he_IL | draft_machine_or_llm | חץ עומס // הדופן הצדדית נשחקה חלק. רשום כיוון לפני הזזת הארגז. |
+| id_ID | draft_machine_or_llm | PANAH MUATAN // Sisi samping tergosok halus. Catat orientasi sebelum memindahkan peti. |
+| ja_JP | draft_machine_or_llm | 荷重矢印 // 側面が擦れて滑らか。箱を動かす前に向きを記録。 |
+| ko_KR | draft_machine_or_llm | 하중 화살표 // 옆면이 매끈하게 닳았다. 상자를 옮기기 전 방향을 기록한다. |
+| nl_NL | draft_machine_or_llm | LAADPIJL // Zijvlak glad gesleten. Noteer orientatie voor verplaatsen van kist. |
+| pl_PL | draft_machine_or_llm | STRZALKA LADUNKU // Bok wytarty gladko. Przed ruszeniem skrzyni zapisz orientacje. |
+| pt_BR | draft_machine_or_llm | SETA DE CARGA // Face lateral lisa por atrito. Registre a orientacao antes de mover a caixa. |
+| ru_RU | draft_machine_or_llm | СТРЕЛКА ГРУЗА // Боковая грань стерта гладко. Запиши ориентацию до перемещения ящика. |
+| uk_UA | draft_machine_or_llm | СТРІЛКА ВАНТАЖУ // Бічна грань стерта гладко. Запиши орієнтацію перед переміщенням ящика. |
+| zh_CN | draft_machine_or_llm | 载荷箭头 // 侧面被磨平。移动箱体前记录朝向。 |

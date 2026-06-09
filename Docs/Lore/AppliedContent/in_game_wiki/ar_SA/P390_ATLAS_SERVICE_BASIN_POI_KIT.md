@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Service Basin POI Kit"
+title: "عدة أدلة حوض خدمة Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Service Basin POI Kit
+# عدة أدلة حوض خدمة Atlas
 
-AR LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+يجب أن يثبت حوض خدمة Atlas العمق الأخير في الهندسة. قضبان الصيانة، ومادة الإحكام الحية، ومقابس المستقبل تعرض نظاما يحاول إصلاح بنية الضغط بجدول فئات خاطئ ما زال متصلا.
 
 ## Scanner
 
-AR LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+عدة أدلة نقطة اهتمام: يمزج حوض الخدمة قضبانا صناعية، ومادة إحكام حية، وفئات عمال، ومقابس مستقبل.
 
 ## Terminal
 
-AR LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+عدة حوض الخدمة: سكة صيانة، ختم نسيج-حديد، جدول فئات مستعمرة قديم، مقبس مستقبل حمولة، علامة خطر فصل، مشبك نمو، مهد أداة.
 
 ## Audio
 
-AR LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+لم يصل. ظل يجدول الصيانة حتى انكسرت الفئات.
 
 ## Field Note
 
-AR LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+ملاحظة مارودر: امسح جدول الفئات قبل لمس المقبس. قد يصلح الحوض المسار بتغيير ما يظن المسار أنك عليه.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/ar_SA. -->

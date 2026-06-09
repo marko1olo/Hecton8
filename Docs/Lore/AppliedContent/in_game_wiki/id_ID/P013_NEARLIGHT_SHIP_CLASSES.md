@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Kelas Kapal Dekat-Cahaya"
+title: "Kelas Kapal Nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kelas Kapal Dekat-Cahaya
+# Kelas Kapal Nearlight
 
-Kapal dekat-cahaya membangun ruang manusia tanpa merusak fisika. Probe murah datang dulu, lalu kapal benih dan carrier Atlas yang membawa pabrik, sleeper, kontrak, dan pelindung.
+Kapal nearlight membangun ruang manusia dengan menerima bahwa fisika tidak bisa disihir. Needleprobe berangkat dulu karena sempit, terlindung, dan cukup murah untuk hilang. Seed ship menyusul membawa mesin, genom, instruksi rute, dan kebiasaan konstruksi yang tahan bertahun-tahun staging dingin. Carrier Atlas memindahkan massa mahal: inti pabrik, ruang sleeper, es perisai, radiator, sistem bor, dan kontrak yang sudah tua saat kru bangun.
 
-Tabel kelas memisahkan kepemilikan dari penyelamatan. Aegir bisa diklaim hukum manusia dan tetap sulit dicapai oleh tubuh.
+Kelas kapal penting karena tiap kelas gagal dengan cara berbeda. Probe bisa mati berguna. Seed ship bisa tiba tanpa saksi. Transport sleeper bisa menyimpan tubuh sambil mengubah tenaga kerja menjadi kustodi. Tender sistem bisa bekerja di Aegir dan tetap tidak bisa dipanggil dari ruang inti. Black Keel bukan kebebasan bermesin; ia mesin pemulihan yang menghitung massa, karantina, asuransi, dan bukti dalam ledger yang sama.
+
+Tidak ada kelas yang memecah cahaya. Beam sail, pellet lane, throat fusion-electric, es perisai, magsail, dan jendela receiver membuat perjalanan mungkin, bukan santai. Tiba adalah separuh yang kejam. Tanpa pemilik pengereman, tidak ada yang tiba sebagai massa berguna.
 
 ## Scanner
 
-Manifest transit mencantumkan needleprobe, kapal benih, carrier kargo Atlas, transport tidur, tender sistem, dan carrier claim-pool.
+Manifest transit memuat needleprobe, seed ship, carrier kargo Atlas, transport sleeper, tender sistem, dan carrier claim-pool. Tidak ada kelas FTL.
 
 ## Terminal
 
-TABEL KELAS TRANSIT // Tidak ada jalur FTL. Semua kelas butuh infrastruktur peluncuran, massa pelindung, rencana pengereman, kustodi rute, dan otoritas utang. Kepemilikan antarbintang tidak berarti penyelamatan lokal.
+TABEL KELAS KAPAL // Needleprobe dapat hilang. Seed ship otomatis. Kargo Atlas dinilai massa. Transport sleeper kustodi biologis. Tender sistem dalam domain. Claim-pool carrier terikat lien. Semua kelas butuh pemilik pengereman.
 
 ## Audio
 
-Kapal bisa menyeberangi bintang dan tetap tidak berguna bagi ruang yang banjir.
+Kapal tidak membuat jarak kecil. Kapal membuat jarak bisa ditagih.
 
 ## Field Note
 
-Kapal bukan kebebasan. Kapal adalah jadwal dengan mesin.
+Kapal adalah rute dengan hull di sekitar bagian mahal.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/id_ID. -->

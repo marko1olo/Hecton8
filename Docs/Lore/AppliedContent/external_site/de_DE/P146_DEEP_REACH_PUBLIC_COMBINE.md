@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Deep Reach Public Combine"
+title: "Öffentlicher Deep-Reach-Verbund"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Deep Reach Public Combine
+# Öffentlicher Deep-Reach-Verbund
 
-DE LOC HOLD: Deep Reach Public Combine is the public shell name players see first: broad enough for contracts, narrow enough to keep subsidiary offices distinct.
+Der öffentliche Deep-Reach-Verbund ist die erste Maske und die haltbarste. Er muss nicht leugnen, HECTON-8 berührt zu haben. Er berührte Transport, Habitatlogistik, Routendienste, Versicherungsschnittstellen, Notfallsprache und das Verwaltungswörterbuch, das die Kolonie für Banken lesbar machte, bevor Familien sie lesen konnten.
 
-## Scanner
-
-DE LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
-
-## Terminal
-
-DE LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
-
-## Audio
-
-DE LOC HOLD: A clean title is the cheapest pressure suit.
-
-## Field Note
-
-DE LOC HOLD: The seal is clean. The rooms under it are not.
+Diese Breite ist Verteidigung. Wenn die Katastrophe auftaucht, kann Deep Reach auf ein öffentliches Mandat zeigen und sagen, es habe Infrastruktur gewartet. Die hässlicheren Verben wandern in Tochterfirmen: klassifizieren, aufschieben, recovern, rückversichern, ablehnen, entsorgen. Der Verbund behält das saubere Substantiv. Die unteren Räume behalten die Körper.
 
 <!-- External Site; generated from P146_DEEP_REACH_PUBLIC_COMBINE/de_DE. -->

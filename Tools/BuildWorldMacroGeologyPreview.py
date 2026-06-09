@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "Docs/GeneratedAssets/Terrain/MacroGeology"
 MIN_EXTENT_METERS = 30_000.0
-ARTIFACT_VERSION = 5
+ARTIFACT_VERSION = 6
 
 
 @dataclass(frozen=True)
@@ -357,19 +357,19 @@ def evaluate_height(x: float, z: float, params: Params) -> tuple[float, Masks]:
         (network_z * 0.88 - network_x * 0.12) * 0.000044 + 5.9,
         params.seed ^ 0x7E2C4D55,
     )
-    network_activity = smoothstep(0.34, 0.82, fractal_noise(network_x * 0.000082 + 4.4, network_z * 0.000082 - 19.1, params.seed ^ 0x92E4B77D))
+    network_activity = smoothstep(0.26, 0.78, fractal_noise(network_x * 0.000082 + 4.4, network_z * 0.000082 - 19.1, params.seed ^ 0x92E4B77D))
     braided_network = max(
-        smoothstep(0.34, 0.90, network_edge_a),
-        smoothstep(0.40, 0.94, network_edge_b) * 0.66,
+        smoothstep(0.28, 0.86, network_edge_a),
+        smoothstep(0.34, 0.90, network_edge_b) * 0.74,
     )
     network_texture = fractal_noise(network_x * 0.000115 - 2.7, network_z * 0.000115 + 8.9, params.seed ^ 0xCA97D1F3)
     tectonic_network = clamp01(
         braided_network
-        * (0.36 + network_activity * 0.48)
+        * (0.44 + network_activity * 0.50)
         * (0.78 + network_texture * 0.22)
-        + province_relief * 0.04
+        + province_relief * 0.06
     )
-    network_node = smoothstep(0.78, 0.98, network_edge_a) * smoothstep(0.60, 0.94, network_edge_b) * network_activity
+    network_node = smoothstep(0.72, 0.96, network_edge_a) * smoothstep(0.52, 0.90, network_edge_b) * network_activity
     highland_plate = smoothstep(0.56, 0.84, fractal_noise(x * 0.000047 - 31.6, z * 0.000047 + 7.3, params.seed ^ 0xE35A9217))
     shallow_province = smoothstep(
         0.50,
@@ -392,8 +392,8 @@ def evaluate_height(x: float, z: float, params: Params) -> tuple[float, Masks]:
     distributed_highs = max(
         smoothstep(0.52, 0.82, distributed_highs_noise),
         smoothstep(0.70, 0.96, distributed_highs_wave) * 0.72,
-    ) * (0.58 + network_activity * 0.24 + province_relief * 0.18)
-    uplift_network = clamp01(max(max(max(max(tectonic_network * 0.50, highland_plate * 0.48), shallow_province * 0.58), directed_uplift), distributed_highs * 0.52) + province_relief * 0.04 + ridge_chain_hills * 0.10 + network_node * 0.08)
+    ) * (0.54 + network_activity * 0.32 + province_relief * 0.18)
+    uplift_network = clamp01(max(max(max(max(tectonic_network * 0.62, highland_plate * 0.48), shallow_province * 0.58), directed_uplift), distributed_highs * 0.58) + province_relief * 0.04 + ridge_chain_hills * 0.12 + network_node * 0.12)
     basin_wave = 0.5 + 0.5 * math.sin((x * 0.68 - z * 0.74 + regional_warp_b * 0.72) * 0.00012 + hash_to_unit(params.seed ^ 0x53C9E2B1) * math.tau)
     recurring_basin = clamp01(smoothstep(0.72, 0.98, basin_wave) * (1.0 - uplift_network * 0.62))
     fracture_noise = cellular_edge(x * 0.00018 + 19.3, z * 0.00018 - 7.1, params.seed ^ 0x51633E2D)
@@ -401,7 +401,7 @@ def evaluate_height(x: float, z: float, params: Params) -> tuple[float, Masks]:
     depth += trench * params.trench_depth * smoothstep(0.24, 1.0, descent)
     depth += secondary_depression * 520.0 * smoothstep(0.18, 0.95, descent)
     basin = max(basin, recurring_basin * 0.34)
-    ridge = max(ridge, uplift_network * 0.32, tectonic_network * 0.34)
+    ridge = max(ridge, uplift_network * 0.38, tectonic_network * 0.48)
     depth += basin * params.basin_depth
     depth -= ridge * params.ridge_height * smoothstep(0.16, 0.90, descent)
     depth -= ridge_chain_hills * lerp(260.0, 980.0, clamp01(shelf * 0.18 + shelf_break * 0.24 + ridge * 0.58))
@@ -410,7 +410,7 @@ def evaluate_height(x: float, z: float, params: Params) -> tuple[float, Masks]:
     depth += regional_breakup * 320.0 * clamp01(0.25 + descent * 0.65 + shelf_break * 0.12)
     depth += regional_swell * 170.0 * clamp01(0.20 + shelf * 0.35 + descent * 0.45)
     depth += province_relief * 145.0 * clamp01(0.18 + descent * 0.50 + shelf_break * 0.18 + ridge * 0.18)
-    depth -= uplift_network * lerp(240.0, 1240.0, clamp01(descent * 0.82 + ridge * 0.16 + shelf_break * 0.10))
+    depth -= uplift_network * lerp(260.0, 1480.0, clamp01(descent * 0.82 + ridge * 0.16 + shelf_break * 0.10))
     depth -= highland_plate * lerp(120.0, 720.0, clamp01(descent * 0.75 + shelf_break * 0.12))
     depth -= shallow_province * lerp(220.0, 1850.0, clamp01(descent * 0.88 + shelf_break * 0.10))
     depth -= distributed_highs * lerp(180.0, 1150.0, clamp01(descent * 0.90 + shelf_break * 0.08 + ridge * 0.08))
@@ -488,7 +488,7 @@ def resolve_zone(depth: float, masks: Masks, sediment: float, seep: float, slope
     if masks.shelf > 0.68 and depth < 260.0:
         return 1
 
-    if masks.shelf_break > 0.42 and 150.0 < depth < 2400.0:
+    if masks.shelf_break > 0.35 and 150.0 < depth < 2400.0:
         return 2
 
     if (
@@ -507,7 +507,7 @@ def resolve_zone(depth: float, masks: Masks, sediment: float, seep: float, slope
     if masks.ridge > 0.72 or (masks.fault > 0.82 and slope01 > 0.48):
         return 3
 
-    if depth > 4000.0:
+    if depth > 3900.0 and masks.trench < 0.76:
         return 8
 
     return 5
@@ -684,23 +684,127 @@ def shade_depth_strata(depth: float) -> tuple[int, int, int]:
     return 38, 48, 66
 
 
-def shade_material_region(depth: float, masks: Masks, sediment: float, seep: float, slope01: float) -> tuple[int, int, int]:
-    color = (76, 82, 84)
-    if depth < 260.0 and masks.shelf > 0.58:
-        color = blend(color, (185, 175, 124), masks.shelf)
-    if masks.shelf_break > 0.36:
-        color = blend(color, (111, 128, 107), masks.shelf_break * 0.70)
-    if sediment > 0.48:
-        color = blend(color, (134, 122, 95), sediment * 0.72)
-    if masks.basin > 0.45:
-        color = blend(color, (88, 91, 84), masks.basin * 0.45)
-    if masks.ridge > 0.42 or slope01 > 0.58:
-        color = blend(color, (49, 78, 70), max(masks.ridge, slope01 * 0.65))
-    if masks.trench > 0.42 or depth > 5400.0:
-        color = blend(color, (55, 73, 86), max(masks.trench, clamp01((depth - 4300.0) / 2100.0)) * 0.82)
-    if seep > 0.40:
-        color = blend(color, (141, 85, 48), clamp01((seep - 0.32) / 0.48) * 0.75)
-    return color
+SURFACE_MATERIAL_COLORS = {
+    "shellSand": (185, 178, 132),
+    "limestoneShelf": (156, 164, 142),
+    "claySilt": (104, 116, 118),
+    "hardRock": (52, 84, 78),
+    "brineSaltCrust": (176, 188, 190),
+    "manganeseNodulePlain": (54, 50, 48),
+    "reefRubble": (126, 150, 109),
+    "seepCrust": (151, 92, 54),
+}
+
+
+def coarse_value_noise(x: float, z: float, seed: int, cell_size_m: float) -> float:
+    inv_cell = 1.0 / max(1.0, cell_size_m)
+    sx = x * inv_cell
+    sz = z * inv_cell
+    ix = math.floor(sx)
+    iz = math.floor(sz)
+    lx = sx - ix
+    lz = sz - iz
+    fx = lx * lx * (3.0 - 2.0 * lx)
+    fz = lz * lz * (3.0 - 2.0 * lz)
+    a = hash01(ix, iz, seed)
+    b = hash01(ix + 1, iz, seed)
+    c = hash01(ix, iz + 1, seed)
+    d = hash01(ix + 1, iz + 1, seed)
+    return lerp(lerp(a, b, fx), lerp(c, d, fx), fz)
+
+
+def resolve_surface_material_weights(
+    x: float,
+    z: float,
+    seed: int,
+    depth: float,
+    masks: Masks,
+    sediment: float,
+    seep: float,
+    slope01: float,
+    erosion: float,
+    terrace: float,
+    slump: float,
+    tributary: float,
+    nodule: float,
+    reef: float,
+    hard_rock: float,
+) -> dict[str, float]:
+    slope = clamp01(slope01)
+    flat = 1.0 - slope
+    shallow = 1.0 - clamp01((depth - 40.0) / 420.0)
+    upper_water = 1.0 - clamp01((depth - 500.0) / 1250.0)
+    abyss = clamp01((depth - 1200.0) / 2300.0)
+    province_jitter = coarse_value_noise(x, z, seed ^ 0x51A7E531, 900.0)
+    local_patch = coarse_value_noise(x, z, seed ^ 0xB34ACE21, 240.0)
+    weights = {
+        "shellSand": clamp01(masks.shelf * shallow * flat * 0.62 + terrace * shallow * 0.20 + (local_patch - 0.42) * 0.08),
+        "limestoneShelf": clamp01(masks.shelf * (0.35 + masks.shelf_break * 0.28) + masks.ridge * shallow * 0.20 + terrace * 0.22),
+        "claySilt": clamp01(sediment * (0.58 + masks.basin * 0.30) * (1.0 - hard_rock * 0.42) + slump * 0.18 + flat * abyss * 0.16),
+        "hardRock": clamp01(hard_rock * 0.72 + masks.ridge * 0.44 + slope * 0.36 + masks.fault * 0.24 - sediment * 0.22 - reef * 0.12 - seep * 0.16),
+        "brineSaltCrust": clamp01(masks.trench * (0.46 + abyss * 0.34) + (masks.basin * 0.12 if depth > 2500.0 else 0.0)),
+        "manganeseNodulePlain": clamp01(nodule * abyss * flat * (0.72 + province_jitter * 0.24) * (1.0 - masks.trench * 0.55)),
+        "reefRubble": clamp01(reef * shallow * upper_water * (0.82 + local_patch * 0.38) * (1.0 - masks.trench * 0.72)),
+        "seepCrust": clamp01(seep * (0.72 + tributary * 0.32 + erosion * 0.24) * (1.0 - masks.shelf * 0.24)),
+    }
+    total = sum(weights.values())
+    if total <= 0.0001 or not math.isfinite(total):
+        rock = clamp01(slope)
+        silt = clamp01((1.0 - rock) * sediment)
+        sand = clamp01((1.0 - rock) * (1.0 - silt))
+        total = max(0.0001, sand + silt + rock)
+        return {"shellSand": sand / total, "claySilt": silt / total, "hardRock": rock / total}
+    return {key: value / total for key, value in weights.items()}
+
+
+def fold_surface_material_to_control(weights: dict[str, float]) -> tuple[float, float, float, float]:
+    rock = clamp01(
+        weights.get("hardRock", 0.0)
+        + weights.get("limestoneShelf", 0.0) * 0.78
+        + weights.get("reefRubble", 0.0) * 0.30
+        + weights.get("seepCrust", 0.0) * 0.34
+    )
+    sand = clamp01(
+        weights.get("shellSand", 0.0)
+        + weights.get("reefRubble", 0.0) * 0.52
+        + weights.get("limestoneShelf", 0.0) * 0.18
+    )
+    silt = clamp01(
+        weights.get("claySilt", 0.0)
+        + weights.get("manganeseNodulePlain", 0.0) * 0.62
+        + weights.get("brineSaltCrust", 0.0) * 0.22
+    )
+    deposition = clamp01(
+        weights.get("brineSaltCrust", 0.0) * 0.62
+        + weights.get("seepCrust", 0.0) * 0.46
+        + weights.get("manganeseNodulePlain", 0.0) * 0.22
+    )
+    total = max(0.0001, rock + sand + silt + deposition)
+    return rock / total, sand / total, silt / total, deposition / total
+
+
+def shade_material_region(weights: dict[str, float]) -> tuple[int, int, int]:
+    r = 0.0
+    g = 0.0
+    b = 0.0
+    total = 0.0
+    for key, weight in weights.items():
+        color = SURFACE_MATERIAL_COLORS.get(key)
+        if color is None:
+            continue
+        w = clamp01(weight)
+        r += color[0] * w
+        g += color[1] * w
+        b += color[2] * w
+        total += w
+    if total <= 0.0001:
+        return 76, 82, 84
+    return int(r / total + 0.5), int(g / total + 0.5), int(b / total + 0.5)
+
+
+def shade_surface_control(weights: dict[str, float]) -> tuple[int, int, int]:
+    rock, sand, silt, deposition = fold_surface_material_to_control(weights)
+    return int(42 + 205 * rock), int(42 + 205 * sand), int(42 + 205 * max(silt, deposition))
 
 
 def shade_waterline_sweep(height: float) -> tuple[int, int, int]:
@@ -814,6 +918,9 @@ def build_preview(args: argparse.Namespace) -> int:
     reef_values = [0.0] * (analysis_resolution * analysis_resolution)
     hard_rock_values = [0.0] * (analysis_resolution * analysis_resolution)
     voxel_seam_values = [0.0] * (analysis_resolution * analysis_resolution)
+    surface_material_pixels = [(0, 0, 0)] * (analysis_resolution * analysis_resolution)
+    terrain_control_pixels = [(0, 0, 0)] * (analysis_resolution * analysis_resolution)
+    surface_material_counts: dict[str, int] = {name: 0 for name in SURFACE_MATERIAL_COLORS}
     zones = [0] * (analysis_resolution * analysis_resolution)
     zone_counts = {name: 0 for name in ZONE_NAMES.values()}
     for y in range(analysis_resolution):
@@ -842,6 +949,27 @@ def build_preview(args: argparse.Namespace) -> int:
             reef_values[i] = float(sample["reef"])
             hard_rock_values[i] = float(sample["hardRock"])
             voxel_seam_values[i] = float(sample["voxelSeam"])
+            material_weights = resolve_surface_material_weights(
+                wx,
+                wz,
+                params.seed,
+                depths[i],
+                masks[i],
+                sediment,
+                seep,
+                slope01,
+                erosion,
+                float(sample["terrace"]),
+                float(sample["slump"]),
+                float(sample["tributary"]),
+                float(sample["nodule"]),
+                float(sample["reef"]),
+                float(sample["hardRock"]),
+            )
+            surface_material_pixels[i] = shade_material_region(material_weights)
+            terrain_control_pixels[i] = shade_surface_control(material_weights)
+            dominant_material = max(material_weights, key=material_weights.get)
+            surface_material_counts[dominant_material] = surface_material_counts.get(dominant_material, 0) + 1
 
     curvature_shaded = curvature_values
 
@@ -1001,9 +1129,10 @@ def build_preview(args: argparse.Namespace) -> int:
         "curvature": [blend((47, 79, 116), (201, 179, 133), v) for v in curvature_shaded],
         "erosion_flow": [blend((35, 52, 62), (196, 224, 218), v) for v in erosion_values],
         "material_regions": [
-            shade_material_region(depths[i], masks[i], sediment_values[i], seep_values[i], slope_values[i])
+            surface_material_pixels[i]
             for i in range(len(depths))
         ],
+        "terrain_control_rgba_fold": [terrain_control_pixels[i] for i in range(len(depths))],
         "geology_zones": [ZONE_COLORS[z] for z in zones],
         "ridge_fault_mask": [blend(gray(m.ridge), (94, 166, 142), m.fault * 0.55) for m in masks],
         "sediment_seep_mask": [blend((80, 72, 58), (182, 150, 98), sediment_values[i]) for i in range(len(sediment_values))],
@@ -1230,6 +1359,14 @@ def build_preview(args: argparse.Namespace) -> int:
         "depthBandCountsMeters": depth_band_counts,
         "waterLevelSweepMeters": water_level_sweep,
         "zoneCounts": zone_counts,
+        "surfaceMaterialContract": {
+            "version": 1,
+            "source": "WorldTerrainSurfaceMaterialResolver",
+            "logicalClasses": list(SURFACE_MATERIAL_COLORS.keys()),
+            "dominantCounts": surface_material_counts,
+            "terrainControlFold": "R=rock, G=sand, B=silt, A=deposition; preview stores RGB where blue=max(B,A)",
+            "runtimePath": "WorldProceduralTerrainSlopeCavitySplatmapJob -> HectonTerrainSplatmapMapMagicNode -> TerrainMaster _TerrainControlRGBA",
+        },
         "playerApproachProofWaypoints": proof_waypoints,
         "runtimeContract": {
             "owner": "WorldMacroGeologyFields",

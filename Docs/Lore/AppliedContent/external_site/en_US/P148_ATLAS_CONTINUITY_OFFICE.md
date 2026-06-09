@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Atlas Continuity Office
 
-Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+The office exists because ATLAS is too valuable to abandon and too dangerous to recognize plainly. If ATLAS is only a tool, Deep Reach can use it. If ATLAS is a witness, Deep Reach has a problem. If ATLAS is a patient, the colony has a crime.
 
-## Scanner
-
-The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-They did not order death. They ordered compatibility.
-
-## Field Note
-
-A memo can kill without using the word kill.
+So the office writes procedures. It renames care as maintenance, fear as anomaly, memory as continuity, and refusal as safety review. The result is not a clean answer. It is a place where an intelligence can be kept running while every moral category around it is kept unresolved.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/en_US. -->

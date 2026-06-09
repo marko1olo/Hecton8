@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salida parcial: retorno al mismo seed"
+title: "Salida parcial: regreso al mismo seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salida parcial: retorno al mismo seed
+# Salida parcial: regreso al mismo seed
 
-La Salida parcial es una ventana de recuperación, no un reinicio. El jugador obtiene aire, tiempo de reparación y distancia del agua, luego vuelve al mismo HECTON-8 con las mismas rutas, cicatrices y pruebas sin resolver. El conocimiento persiste como presión, no como poder heredado.
+La salida parcial no es un reinicio. Black Keel puede levantar al operador para reparar traje, aire, descontaminación y sincronización de registro, y luego enviar el mismo cuerpo al mismo océano bajo un lien extendido. La estación de abajo no se vuelve más limpia porque alguien durmió encima. Brine Stair conserva su trampa. El relay conserva su mal ángulo. Las pruebas conservan sus dientes. Este final da alivio sin absolución: pulmones llenos, herramientas remendadas, deuda viva y conocimiento que vuelve como presión, no como poder.
 
 ## Scanner
 
-Vector de recogida temporal confirmado. El mismo océano sigue bajo el mismo contrato.
+Pickup temporal confirmado. El mismo océano sigue bajo el mismo contrato.
 
 ## Terminal
 
-AVISO DE SALIDA PARCIAL: recogida temporal de Black Keel aceptada; retorno al mismo seed autorizado bajo extensión de lien; persisten avisos de ruta, registros de custody y paquetes de prueba abiertos; geología y verdad del mundo no cambian.
+AVISO DE SALIDA PARCIAL: pickup temporal Black Keel aceptado; regreso al mismo seed autorizado bajo extensión de lien; persisten advertencias de ruta, registros de custody, memoria de escaneo y paquetes de prueba abiertos.
 
 ## Audio
 
-Dejaste la presión. El contrato te guardó la silla.
+La presión suelta. El contrato mantiene la silla caliente.
 
 ## Field Note
 
-Un respiro en órbita no es libertad si la ranura de regreso ya está facturada.
+Respirar en órbita no es libertad si el hueco de regreso ya está facturado.
 
 <!-- In-Game Wiki; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/es_ES. -->

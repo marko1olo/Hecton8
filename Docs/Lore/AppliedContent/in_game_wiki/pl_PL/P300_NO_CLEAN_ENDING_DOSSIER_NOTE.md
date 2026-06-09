@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: No Clean Ending Dossier Note"
+title: "Notatka dossier bez czystego zakończenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: No Clean Ending Dossier Note
+# Notatka dossier bez czystego zakończenia
 
-PL LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+Notatka definiuje ton pamięci po zakończeniu. Nawet najsilniejszy finał zostawia żywy plik: rzecz ocaloną, rzecz uszkodzoną i koszt, który odmawia uporządkowania.
 
 ## Scanner
 
-PL LOC HOLD: Dossier note: closure denied; consequence retained.
+Notatka dossier: zamknięcie odmówione; konsekwencja zachowana.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: wynik zapisany. Czyste zamknięcie niedostępne przy obecnym stanie dowodów. Dług, ekologia, odpowiedzialność i dozór świadka pozostają aktywnymi zapisami.
 
 ## Audio
 
-PL LOC HOLD: You saved something. That is not the same as clearing it.
+Coś ocaliłeś. To nie znaczy, że to oczyściłeś.
 
 ## Field Note
 
-PL LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Dossier po zakończeniu zostawia most otwarty: wynik zapisany, dług i dowody nierozwiązane, brak idealnego zwycięstwa.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/pl_PL. -->

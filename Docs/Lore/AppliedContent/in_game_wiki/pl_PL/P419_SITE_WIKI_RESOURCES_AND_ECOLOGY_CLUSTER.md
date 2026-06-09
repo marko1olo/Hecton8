@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Zasoby i ekologia
 
-Hub zasobów i ekologii: drowned crust, brine ladders, vent chemistry, living systems i uszkodzona repair logic Atlas.
+Węzeł zasobów i ekologii: Drowned Crust, drabiny solankowe, chemia kominów, blue debt, ślady drapieżników, oznakowana fauna i naprawy Atlas traktujące żywe systemy jak sprzęt.
 
 ## Scanner
 
-Hub publikacji: geology, blue debt, gramatyka fauny i misuse sieci napraw Atlas.
+Węzeł publikacji: Drowned Crust, drabiny solankowe, historia ciśnienia blue debt, ślady fauny i błędne użycie napraw Atlas.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology i encounter grammar jako jedna process map.
+SITE NAV: czytaj próbki według pochodzenia, historii ciśnienia, kontaktu z życiem, szkód wydobycia i wartości custody.
 
 ## Audio
 
-Tutaj nic nie jest zwykłym loot.
+Tutaj nic nie jest tylko lootem.
 
 ## Field Note
 
-Zasoby i ekologia należą razem, gdy materiały, biota i evidence pressure dzielą tę samą trasę.
+Czysta próbka rzadko jest najbogatsza. Zapytaj, co ją uformowało, co jej dotknęło i co ucierpiało, gdy ją zabrano.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/pl_PL. -->

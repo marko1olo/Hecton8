@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Lapisan Koreksi Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Lapisan Koreksi Marauder
 
-ID LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+Lapisan koreksi Marauder adalah tempat bahasa korporat lama kehilangan otoritas. Deep Reach menulis variance, custody, hold, asset, exposure. Marauder menulis apa yang dibutuhkan penyelam sebelum napas berikutnya: CO2 membuat tangan lambat, brine menyembunyikan pijakan, seal tape gagal di tekukan, jangan percaya hatch bersih. Catatan ini harus terasa seperti budaya yang membangun diri ulang dari orang yang dilatih sistem lalu belajar membenci kosakatanya.
 
 ## Scanner
 
-ID LOC HOLD: Marauders turn corporate language back into survival facts.
+LAPISAN KOREKSI // Label korporat: temporary atmospheric variance. Catatan Marauder: CO2 memakan penilaian lebih dulu.
 
 ## Terminal
 
-ID LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ATURAN ANOTASI: terjemahkan bahasa Deep Reach kembali menjadi fakta bertahan hidup. Catatan harus pendek, praktis, marah, dan berguna di bawah tekanan.
 
 ## Audio
 
-ID LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Catatan bagus tidak terdengar pintar. Ia membuat seseorang tetap hidup.
 
 ## Field Note
 
-ID LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Pemain harus merasakan bahasa lama Deep Reach diterjemahkan menjadi hitungan tubuh.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/id_ID. -->

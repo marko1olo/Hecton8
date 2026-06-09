@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Brine Canyon Liability Act"
+title: "卤水峡谷责任门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Brine Canyon Liability Act
+# 卤水峡谷责任门
 
-ZH LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+在峡谷里，路线不再像 salvage 文书，而开始像案件档案。密度层保存坏时钟。卤水留住普通水会抹掉的痕迹。断裂疏散板可以躺在余量日志旁边，让两份文件都更重。
 
-## Scanner
-
-ZH LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-ZH LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-ZH LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-ZH LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+链条重要，因为它不否认物理。大潮袭来。墙体失效。公司的谎言藏在这些事实周围的决定顺序里：接受余量、延迟队列、受损路线、受保护索赔。可见工作仍是物理性的：扫描痕迹、匹配时钟、把证据带出去。
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/zh_CN. -->

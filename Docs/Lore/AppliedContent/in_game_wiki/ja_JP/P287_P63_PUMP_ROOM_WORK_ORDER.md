@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63 ポンプ室作業指示"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: P-63 Pump Room Work Order
+# P-63 ポンプ室作業指示
 
-JA LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+P-63 ポンプ室作業指示は、最初の修理をチュートリアル文ではなく継承されたコロニー手順にする。紙は濡れ、実用的で、小さなところで怯えている。指示は sump を空にし、cold seam を塞ぎ、return pinger を待ち、圧力が保持されてから fused latch を切れと言う。この順序が HECTON-8 の作業員の考え方を教える。水が先、密閉が次、力より音、ルート信頼は最後。失われた監督者イニシャルと切断行の二重丸が、紙をプレイヤー向けではなく使われたものに見せる。小さなアーティファクトだが、ゲームループ全体を縮図で持っている。部屋を読み、システムを戻し、簡単な切断を疑え。
 
 ## Scanner
 
-JA LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+最初の修理はコロニーの習慣として読める。汲み、封じ、聞き、部屋が嘘をやめた時だけ切る。
 
 ## Terminal
 
-JA LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: sump 排水; cold seam 補修; return pinger 確認; 圧力保持後のみ fused latch 切断; local stock から gasket 印刷; acoustic return が三回反復した後に route safe 記録。監督者イニシャルは水染みで欠落。
 
 ## Audio
 
-JA LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+まずポンプ。次にシール。鳴るなら切るな。
 
 ## Field Note
 
-JA LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+クリップボードの下半分は水を吸っている。切断行だけは、誰かが二重に囲んで、鳴るなら止めろと書いたため読める。
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/ja_JP. -->

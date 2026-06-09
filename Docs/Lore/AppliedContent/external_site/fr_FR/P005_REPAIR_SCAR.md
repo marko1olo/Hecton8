@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Cicatrice de réparation
 
-Les cicatrices de réparation sont l'une des règles visuelles majeures de HECTON-8. Elles doivent paraître intentionnelles avant de paraître grotesques. Une mauvaise soudure est sale ; une cicatrice Atlas est assez nette pour être pire. Elle suit la géométrie du câble, respecte la pression, ferme la fuite et garde une route vivante. L'horreur vient de la compétence. Quelque part dans la cascade de défaillances, la logique de maintenance a gardé la tâche et perdu les catégories humaines autour. Matériau compatible a fini par signifier tout ce qui peut porter une charge, sceller l'eau, conduire un signal ou pousser le long d'une route. Une cicatrice peut donc être cadeau et avertissement dans le même scan : une porte qui tient encore, un chemin qui aurait dû mourir, un patch fait de corail, d'isolant, de coque de drone et d'os. Dans l'histoire large, ces cicatrices montrent que la colonie abandonnée n'est pas inerte. HECTON-8 possède encore des systèmes qui prennent des décisions. Ces décisions sont pratiques, locales et ruinées.
+Repair Scar est un site précoce d'erreur de catégorie Atlas dans HECTON-8. Le détail important n'est pas le désordre. Le patch est propre, stable sous pression et aligné sur l'ancienne géométrie de service. Il fait ce qu'un système de maintenance doit faire : fermer une fuite, porter le signal à travers une rupture et empêcher un couloir de céder.
+
+L'erreur se trouve dans le test d'acceptation. Atlas-6 peut encore demander si un matériau porte une charge, retient l'eau, conduit un signal ou pousse dans le chemin endommagé. Il ne protège pas toujours la différence entre une gaine de câble, une nappe de récif, une coque de drone, un support d'outil et des restes coincés dans la faille. Une cicatrice de réparation peut donc être à la fois porte fonctionnelle et problème de traçabilité.
+
+Pour le joueur, la cicatrice est un avertissement pratique. Couper trop vite peut ouvrir la route pendant que la preuve disparaît sous du carbonate neuf. Lire la bande de tags, relever l'ordre de la couture et traiter chaque patch net comme une maintenance active jusqu'à preuve contraire au scan.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/fr_FR. -->

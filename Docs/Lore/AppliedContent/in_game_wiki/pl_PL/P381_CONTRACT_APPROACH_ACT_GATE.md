@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Contract Approach Act Gate"
+title: "Brama podejścia kontraktowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Contract Approach Act Gate
+# Brama podejścia kontraktowego
 
-PL LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+Pierwsza brama to papier z ciśnieniem za plecami. Black Keel nie wysyła turysty w wody Aegir. Operator przyjmuje transfer roszczenia, ekspozycję długu, slot bathydrop i rachunek za narzędzia przed pierwszym głębokim skanem. Stary profil Deep Reach ma znaczenie, bo rozpoznanie procedur zaczyna się, zanim trasa wygląda osobiście.
 
 ## Scanner
 
-PL LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Brama trasy: kontrakt przyjęty. Ekspozycja zastawu, czas bathydrop i stara procedura Deep Reach aktywne przed zejściem.
 
 ## Terminal
 
-PL LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+TRASA KAMPANII // PODEJŚCIE KONTRAKTOWE. Właściciel: tablica roszczeń Black Keel. Przyjmij transfer roszczenia, ekspozycję zastawu, slot bathydrop i dług narzędzi. W profilu operatora wykryto pozostałość uprawnień Deep Reach. Odzysk warunkowy.
 
 ## Audio
 
-PL LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Przyszedłeś po pracę. Kontrakt już wie, gdzie pracowałeś wcześniej.
 
 ## Field Note
 
-PL LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Notatka szabrownika: przeczytaj tablicę kontraktu dwa razy. Drugi raz pokaże, które dawne pozwolenia nadal pasują do twoich rąk.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/pl_PL. -->

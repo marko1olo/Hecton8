@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: Sertifikat Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: Sertifikat Evakuasi
 
-ID LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+Noor Haldane adalah suara hukum dan sertifikasi Deep Reach di balik penahanan evakuasi. Tanda tangannya tidak ditulis sebagai panik. Ia ditulis sebagai kendali. Rute harus tetap dapat disertifikasi. Pengangkut harus menerima kustodi. Status biologis harus bisa ditinjau. Rantai hukum harus selamat dari bencana meski orang-orang di dalam rute tidak selamat.
+
+Itulah mengapa file Haldane menyakitkan. Bahasanya dapat membela diri. Pelanggaran karantina dapat menyebarkan kontaminasi. Ekstraksi tanpa sertifikasi dapat membuat pengangkut terdampar. Penolakan pelabuhan dapat mengubah penyelamatan menjadi bencana lain. Di ruang rapat bersih, setiap klausul terdengar seperti pengurungan yang bertanggung jawab. Di koridor bertekanan dengan air naik, klausul yang sama menjadi kunci.
+
+Bagi pemain, artikel ini menghubungkan penahanan rute koloni, penundaan medis, dan tanggung jawab Deep Reach. Haldane tidak perlu membenci siapa pun. Ia hanya perlu membuat evakuasi menunggu kondisi yang membuktikan evakuasi aman. Tekanan tidak menunggu. Oksigen tidak menunggu. Sertifikat menunggu.
 
 ## Scanner
 
-ID LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+PENAHANAN SERTIFIKASI // N. Haldane menjaga rute tetap bersih secara hukum sementara rute itu gagal secara fisik.
 
 ## Terminal
 
-ID LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // Penasihat Sertifikasi Evakuasi // Pelepasan ditolak sampai syarat karantina tekanan-biologis, kustodi pengangkut, dan tinjauan rute eksternal terpenuhi. Ekstraksi tanpa izin dapat membahayakan rantai klaim, tanggung jawab habitat, dan penerimaan pelabuhan hilir.
 
 ## Audio
 
-ID LOC HOLD: The door was not locked by fear. It was locked by compliance.
+Pintunya tidak dikunci oleh rasa takut. Pintunya dikunci oleh kepatuhan.
 
 ## Field Note
 
-ID LOC HOLD: This is the paper signature players should hate.
+Ini tanda tangan kertas yang seharusnya dibenci pemain: bukan panik, bukan niat jahat, hanya pintu menunggu tinjauan luar sementara oksigen terus menghitung mundur.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/id_ID. -->

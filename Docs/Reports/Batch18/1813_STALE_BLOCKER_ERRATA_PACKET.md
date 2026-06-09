@@ -12,7 +12,7 @@ Source basis:
 - `C:/hades/Hecton8/Docs/Reports/Batch18/1804_APPLIED_LORE_DATAMONOLITH_RECONCILE.md`
 - `C:/hades/Hecton8/Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs`
 - `C:/hades/Hecton8/Assets/_Project/Scripts/Quest/MissionMarkerSystem.cs`
-- Older stale source examples under `Docs/BibleMandateAudits/1700/`, `Docs/BIBLE_MANDATE_AUDIT_1700_COMBINED.md`, `Docs/Tasks/Status_1428.md`, `Docs/AgentLogs/LOG_1428.md`, `Docs/Tasks/Status_1778.md`, and `Docs/AgentLogs/LOG_1778.md`
+- Older stale source examples under `Docs/DEPRECATED/BibleMandateAudits_1700_Stale_20260609/1700/`, `Docs/BIBLE_MANDATE_AUDIT_1700_COMBINED.md`, `Docs/Tasks/Status_1428.md`, `Docs/AgentLogs/LOG_1428.md`, `Docs/Tasks/Status_1778.md`, and `Docs/AgentLogs/LOG_1778.md`
 
 ## Errata
 

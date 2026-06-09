@@ -153,6 +153,8 @@ Do not reuse the same paragraph across surfaces with only headings changed. That
 
 Reject text that sounds like a packet summary, content brief, or AI article.
 
+If a draft matches the patterns below, do not polish it. Reject the source route and rewrite from the source brief: scene, evidence object, speaker, surface, and knowledge boundary. The failure is structural, not cosmetic.
+
 Hard-ban patterns unless quoted as bad corporate copy:
 
 - "`X` defines/explains/shows why..."
@@ -173,7 +175,372 @@ Hard-ban patterns unless quoted as bad corporate copy:
 - audio lines that sound like trailer taglines;
 - encyclopedia pages that read like root design docs.
 
+Hard-reject HECTON-8-specific AI smell:
+
+- abstract merger thesis: "infrastructure stops separating from habitat", "the system becomes one body", "boundary labels are invalid", or any equivalent category-collapse statement without a literal machine, room, sample, or organism doing an observable action;
+- organic metaphor spam: "one skin", "one tissue", "one body", "corridor as gut", "wall as organ", "cable blooms", "membrane shares..." unless the text is literal xenobiology or a named character's believable phrase and the scene proves it;
+- proper-noun pileups that name Deep Reach, Atlas, blue debt, workers, ocean biology, membranes, and tools in one sentence without an owner action, timestamp, route, or physical consequence;
+- repeated "X can be Y" rhythm used to fake discovery instead of describing what the player can inspect;
+- fake metaphysical conclusion: "not mutation but function", "without human categories", "loss routed", "continuity protected", or similar abstract verdicts not spoken by a justified machine interface;
+- pseudo-terminal all-caps with abstract labels instead of real fields, values, warnings, owners, timestamps, and failure codes;
+- scanner lines that contain philosophy, theme, or taxonomy jokes instead of observed material, confidence, hazard, and limitation;
+- audio stingers such as "it still works" or "it uses what fell into it" unless attached to an actual damaged recording with a speaker, place, interruption, and concrete fact;
+- player-facing text that mentions what the player should learn, how the article should be used, or why the packet exists;
+- legal/corporate mistranslation where a procedural claim, custody claim, insurance claim, or salvage claim becomes a courtroom plaintiff unless the canon source is literally a lawsuit.
+
+Russian and Ukrainian rows must specifically reject "язык истцов", "мова позивачів", "конверсия истца", and similar legal mistranslations for claim/custody/insurance language. Use procedural equivalents such as "претензионный язык", "язык претензий", "мова претензій", or a more exact local phrase tied to the source context. If the English authority phrase cannot be localized without this failure, rewrite the English source first.
+
 Strong HECTON-8 prose uses concrete nouns, dates, quantities, roles, failure states, custody marks, stains, gaps, and procedural pressure.
+
+## LLM Style Suppression Law
+
+Current AI-text detection research is not reliable enough to approve prose, especially after paraphrase, translation, or mixed human/AI editing. HECTON-8 therefore controls AI smell at authoring time, not by trusting a detector after the fact.
+
+For every writer, translator, or scenario agent:
+
+- detection is triage only; manual redline is acceptance;
+- stylometric suspicion is actionable: uniform sentence length, repeated balanced clauses, over-clean paragraph closure, vague abstract subjects, low punctuation variety, and identical rhythm across surfaces require rewrite;
+- prevention beats repair: constrain the draft with speaker, object, route, surface, and forbidden facts before prose starts;
+- examples beat adjectives: the prompt must carry bad examples to reject and good source-grounded examples to imitate;
+- line editing is mandatory: final 5-10 percent of prose is hand-redline work, not another generation pass;
+- old text is not grandfathered. If it fails the current firewall, rewrite it or mark it blocked.
+
+Forbidden LLM sentence shapes:
+
+- balanced thesis: "`X` is not merely `A`; it is `B`";
+- fake escalation: "`X` becomes `Y`, `Z`, and finally `theme`";
+- abstract subject: "the system", "the colony", "the ocean", "the process", "the factory" doing a moral or metaphysical action with no owner;
+- generalized contrast: "danger is not random; it is..." unless a specific source can prove that distinction;
+- aphoristic closer: final sentence that sounds quotable but carries no new evidence;
+- noun stack without verb pressure: many proper nouns arranged as mood instead of action;
+- metaphor chain: more than one metaphor in a paragraph, or any metaphor that hides missing mechanics.
+
+Required HECTON-8 sentence shapes:
+
+- actor + operation + constraint: "Shift K-12 locked Pump 4 open because the return gauge would not settle below 31 MPa.";
+- object + trace + consequence: "The lower hinge has white salt under the paint; pry from the top or the seal tears first.";
+- source + limit: "Atlas tagged the packet as cargo loss. The terminal never saw the two suit IDs still inside the bay.";
+- human + procedure + omission: "Mara signed the return form because the loader was already flooding. She left the handwheel number in the margin.";
+
+Beauty rule: beautiful language is allowed only when it is exact. Atmosphere comes from pressure, light, salt, worn tools, bad forms, missing people, delayed signals, and local sensory truth. It does not come from slogans, soft philosophy, or polished AI cadence.
+
+## Creative Freedom Envelope
+
+Strict anti-AI rules do not ban voice, rhythm, dread, humor, anger, grief, or beauty. They ban unsupported abstraction.
+
+Creative language is allowed only when it is anchored to all four points:
+
+- source: a named person, institution, instrument, document class, archive, or machine route;
+- object: a physical thing, room, route, sample, form, sensor, body trace, tool, seal, gauge, locker, clamp, container, hull plate, pump, or signal;
+- pressure: time, debt, oxygen, pressure rating, heat, mass, custody, liability, contamination, blackout, route loss, or maintenance cost;
+- limit: what the source cannot know, cannot admit, cannot measure, or cannot safely say.
+
+The writer may use metaphor only after the literal object is already clear. One exact metaphor can survive. A chain of metaphors is usually AI cover for missing evidence.
+
+Good HECTON-8 beauty:
+
+- a practical sentence that reveals a lie;
+- a worn object that carries history without explaining it;
+- a human omission inside a clean form;
+- a machine field that is technically correct and morally useless;
+- a local sensory detail that changes how the player reads a room.
+
+Bad HECTON-8 beauty:
+
+- a quotable closer;
+- a universal statement about the ocean, colony, humanity, systems, or survival;
+- a balanced analogy;
+- a paragraph that would still work if every HECTON-8 noun were replaced by generic sci-fi nouns;
+- any sentence whose main job is to sound deep.
+
+Voice freedom by surface:
+
+| Surface/source | Allowed flavor | Must still contain |
+|---|---|---|
+| Scanner | clipped sensor language, uncertainty, material caution | material, confidence/limit, hazard/action |
+| Terminal | cold procedure, liability evasion, stale authority | owner, field names, timestamp or route, requested action |
+| Survivor diary | fatigue, wrong assumption, practical fear, named care | person/object/route, next-hour need, knowledge limit |
+| Marauder field note | sharp correction, contempt for bad data, salvage pressure | tool/route/debt/air/custody detail |
+| Public/wiki article | readable history, context, restraint | source boundary, spoiler boundary, factual sectioning |
+| Engineering article | precise explanation, dry tradeoff, hard cost | infrastructure, limit, mass/heat/time/maintenance cost |
+| Corporate/legal | polished omission, procedural cleanliness | claim/custody/liability term, physical contradiction elsewhere |
+| Audio | urgency, interruption, breath, damaged carrier | one concrete fact and a reason the line cuts off or continues |
+
+## Risk Word And Rhythm Firewall
+
+Some words are not banned as dictionary items, but they are high-risk AI perfume. They require a literal source object and a reason to exist.
+
+High-risk English words and habits:
+
+- "echo", "whisper", "haunt", "scar", "wound", "memory", "ghost", "song", "breath", "pulse", "hunger", "dream", "truth", "silence", "ritual", "liminal", "threshold", "synthesis", "convergence", "interplay", "tapestry";
+- "quietly" used to make an abstract sentence feel serious;
+- "beneath the surface" as a metaphor rather than a literal depth/surface relation;
+- "what remains", "what was left behind", "the cost of", "the weight of" when no object or procedure carries the cost;
+- paragraph openers that define a concept before naming a place, object, source, or action;
+- final sentences written to be quotable rather than informative.
+
+Use these words only when literal, sourced, and useful:
+
+- "scar" is allowed for a hull gouge, tissue sample, route mark, or repaired fracture;
+- "ghost" is allowed for a sonar return, UI artifact, stale route ID, or local slang from a named speaker;
+- "memory" is allowed for a recorder buffer, custody log, witness statement, or character voice;
+- "pulse" is allowed for pressure, signal, power, sonar, pump cadence, or biological rhythm with observed evidence.
+
+If a risky word can be removed without losing fact, remove it. If removing it breaks only the mood, the line was probably filler.
+
+Rhythm rejection:
+
+- three similar-length sentences in a row that all resolve cleanly;
+- a paragraph that starts broad, narrows, then ends with a lesson;
+- repeated "The [noun]..." openings in encyclopedia tone;
+- a scanner, terminal, field note, and public article sharing the same sentence cadence;
+- every paragraph ending with a short dramatic sentence.
+
+## AI Phrase Family Quarantine
+
+Do not treat AI smell as a fixed dictionary. Treat it as families of moves that make text sound generated. A banned phrase rewritten with synonyms is still banned if it performs the same move.
+
+Quarantine these phrase families in every language:
+
+- essay-framing: "this article explores", "this entry examines", "this section shows", or any equivalent that tells the reader what the text is doing;
+- thesis contrast: "not merely X but Y", "more than X", "at once X and Y", or any equivalent balanced reveal;
+- prestige abstraction: "essence", "core", "truth", "legacy", "continuity", "humanity", "meaning", "memory" used without a source object;
+- museum-label prose: "stands as", "serves as", "testament", "witness", "reminder", "symbol", "reflection";
+- generated transition glue: "however", "moreover", "ultimately", "in this way", "together these", when used to smooth a weak paragraph rather than connect evidence;
+- fake sensory fog: "whispers", "breathes", "echoes", "hums", "sings", "hungers", when no actual sound, pressure, power, signal, or organism supports it;
+- universal moral closure: final lines about what the ocean, colony, machine, debt, or survival "really" is;
+- concept-as-actor: "the system", "the ocean", "the colony", "the process", "the factory", "the debt" acting without a specific owner, mechanism, document, or route;
+- category soup: infrastructure, biology, labor, debt, ocean, machine, memory, and loss merged into one abstract sentence.
+
+Replacement rule:
+
+- do not replace a quarantined phrase with a prettier synonym;
+- replace it with actor + action + object + constraint;
+- if that cannot be done from canon, mark `BLOCKED_SOURCE`;
+- if the line was only mood, cut it.
+
+Examples:
+
+```text
+AI: The colony's silence stands as a testament to the cost of survival.
+Rewrite: Pump Room K-12 has three suit hooks and two tags in the drain tray. Deep Reach filed the room as cleared.
+```
+
+```text
+AI: The ocean does not merely reclaim the base; it rewrites it.
+Rewrite: The north intake has fresh carbonate over yesterday's weld bead. The patch is holding, but the panel number is gone.
+```
+
+```text
+AI: Together, these fragments reveal a delicate balance between progress and loss.
+Rewrite: The invoice lists two replacement seals. The manifest lists one. The missing seal is on the flooded side of the lock.
+```
+
+## Living Prose Floor
+
+Anti-AI editing must not flatten the text into sterile documentation. A line can be alive without becoming vague.
+
+A living HECTON-8 line usually has at least one of:
+
+- a specific verb that changes state: locked, bled, buckled, vented, billed, sealed, jammed, tagged, misrouted, flashed, pitted, stripped, fouled;
+- a handled object: gauge, form, clamp, boot, tag, locker, cassette, seal, flange, sample bag, valve wheel, cable jacket;
+- a small human pressure: hurry, shame, debt, cold hands, bad handwriting, fear of losing the route, a person choosing the cheaper lie;
+- a procedural contradiction: the field says safe while the room proves otherwise;
+- a sensory fact that a source could know: salt under paint, warm hinge, sour insulation, grit in a glove ring, delayed sonar return.
+
+Do not remove anger, fatigue, humor, grief, or dread. Move them into the source voice:
+
+- survivor: clipped, tired, wrong about one thing;
+- Marauder: practical, suspicious, debt-aware;
+- corporate: clean language hiding an ugly omission;
+- scanner: narrow, material, uncertain;
+- public article: clear and restrained, with spoiler boundary.
+
+If every sentence becomes perfectly neutral, the rewrite failed in the opposite direction. The target is specific and alive, not generic and safe.
+
+## Zero-Shot Writer Contract
+
+When asking any writer, translator, or scenario agent for lore, the prompt must not say only "write beautifully" or "make it atmospheric." It must supply constraints that force source-grounded prose.
+
+Minimum zero-shot contract:
+
+```text
+Write a HECTON-8 in-world artifact, not a summary.
+Surface:
+Speaker/source:
+Audience:
+Location/depth/route:
+Evidence object:
+Unlock moment:
+What the source knows:
+What the source cannot know:
+What the source hides or mislabels:
+Required facts/numbers/units:
+Forbidden facts:
+Forbidden style:
+- no aphorisms
+- no "not just X but Y"
+- no "at its core"
+- no category-collapse thesis
+- no organic metaphor unless literal
+- no fake terminal/scanner poetry
+Acceptance:
+- every paragraph attaches to a physical object or document
+- every surface has its own voice
+- every locale row is manually redlined
+```
+
+If the prompt lacks these fields, the output is a draft-risk item even if the prose sounds good.
+
+## Few-Shot Rewrite Pattern Bank
+
+Use examples to train the writer away from AI prose. A few-shot example must show the failure and the repair. Do not include only good prose; the agent must see what is forbidden.
+
+Bad AI lore:
+
+```text
+The Bottom Factory is where infrastructure and habitat become one body. Its corridors breathe with the logic of pressure, turning loss into continuity.
+```
+
+Why it fails:
+
+- abstract category collapse;
+- organ metaphor chain;
+- no room, route, timestamp, source, surface, or player-inspectable object;
+- "loss into continuity" is a fake thesis, not evidence.
+
+Acceptable terminal fragment:
+
+```text
+DEEP REACH MAINTENANCE PACKET 6-14
+Bay: Silt Return / East lower service throat
+Action: keep Pump 4 open until brine density reads below 1.23.
+Exception: two suit tags remain inside the return cage.
+Claim language: cargo delay, not personnel delay.
+```
+
+Acceptable field note:
+
+```text
+East lower return cage: do not cut the blue hose first. It is carrying the pressure readout for the lock above it. Cut the clamp, wait for the gauge to stop hunting, then pull the tag drawer. There were two IDs in mine.
+```
+
+Bad AI legal/corporate lore:
+
+```text
+The language of plaintiffs proves how the colony weaponized words.
+```
+
+Why it fails:
+
+- mistranslates procedural claim language into courtroom plaintiff language;
+- tells the theme instead of showing the form;
+- no document field or affected worker.
+
+Acceptable corporate/public record:
+
+```text
+Return Form KR-77 lists the failed pickup as "partial cargo fitness." The loader manifest beside it lists four crates and one suit locker. Deep Reach only billed the crates.
+```
+
+Bad scanner:
+
+```text
+The wall is no longer wall or flesh. Boundary tags are invalid.
+```
+
+Acceptable scanner:
+
+```text
+Scan: pressure-grown carbonate over service panel C-12.
+Confidence: 62 percent.
+Hazard: panel edge is still conductive.
+Limit: cannot classify the pale fiber until a sample is sealed.
+```
+
+These examples are pattern law. New examples may be added only when they name the rejected mechanism and the concrete repair.
+
+## Fine-Tune And Example Dataset Policy
+
+If HECTON-8 later uses fine-tuning, retrieval examples, style cards, or a writer memory pack, the data must come from manually redlined pairs, not raw generated output.
+
+Allowed training/example items:
+
+- bad source text marked with the exact failure class;
+- rewritten authority text;
+- source brief fields used for the rewrite;
+- surface type;
+- locale status;
+- notes on why the repair works.
+
+Forbidden training/example items:
+
+- generated prose accepted because it "sounds better";
+- detector-scored text without human redline;
+- multilingual rows with copied English or unreviewed idiom;
+- examples that only say "make it more human";
+- examples with no object, source, pressure, and limit.
+
+The target model behavior is not "more literary." The target behavior is: refuse unsupported abstraction, ask for source facts when missing, and rewrite from physical evidence.
+
+## Paragraph Evidence Firewall
+
+Before localization or packet export, every paragraph must survive this check:
+
+1. What exact object, room, route, organism, interface, document, or person does this paragraph attach to?
+2. What action happens, failed, or is being hidden?
+3. Who can know this, and why can this source know it?
+4. What can the player later see, scan, repair, steal, contradict, or route around?
+5. Which words would fail if the proper nouns were removed?
+
+If two or more answers are absent, the paragraph is rejected as AI-style filler. Rewrite from physical evidence instead of adding adjectives.
+
+## Manual Redline Protocol
+
+Every new or old lore fragment that is being accepted, repaired, localized, exported, or published must be read line by line by the writer. Automated checks can help find suspects, but they cannot accept prose.
+
+For every paragraph, surface line, terminal field, scanner line, audio line, field note, title, and locale row, mark it mentally or in the edit pass as one of:
+
+- `KEEP`: concrete source, concrete object, believable voice, useful player or reader value;
+- `REWRITE`: valid canon fact, bad wording, weak source voice, bad localization, vague sentence, wrong surface;
+- `CUT`: AI-style filler, theme explanation, unsupported metaphor, generic aphorism, repeated summary, no evidence object;
+- `BLOCKED_SOURCE`: canon fact missing, source cannot know it, or the English authority row cannot be localized without distortion.
+
+The writer must not carry a sentence forward because it sounds dramatic. A dramatic line survives only if a named source could actually write or say it under the current pressure, route, document, or playback condition.
+
+Manual redline questions:
+
+1. Would this line still mean anything if `HECTON-8`, `Deep Reach`, `Atlas`, and `blue debt` were removed? If yes, treat it as generic unless a concrete source object proves otherwise.
+2. Could the same line be said by a survivor, scanner, corporate counsel, Marauder, and public archivist? If yes, the voice is dead.
+3. Is the sentence mainly an aphorism, metaphor, analogy, or thesis? If yes, cut it unless the speaker and evidence object justify that exact phrasing.
+4. Does the line contain a physical noun the player can find, repair, scan, steal, fear, or contradict? If no, rewrite.
+5. Does a translation row preserve the same source voice, or did it become generic literary prose? If generic, rewrite the source or the locale row.
+6. Does any non-English row preserve English words only because the agent was lazy? If the terms are not stable IDs, route labels, or intentional in-world labels, rewrite the row.
+
+Manual rewrite sequence for old corpus:
+
+1. Read the current source line.
+2. Mark `KEEP`, `REWRITE`, `CUT`, or `BLOCKED_SOURCE`.
+3. If `REWRITE`, write the replacement from object/source/pressure/limit.
+4. If the English authority row changes, rewrite every locale row from the new meaning.
+5. If the old line is dramatic but sourceless, cut it. Do not preserve it as "flavor".
+6. Do not batch-accept adjacent paragraphs because one paragraph was fixed.
+
+## Legacy Corpus Rewrite Law
+
+Existing lore, generated pages, production packets, field notes, terminal fragments, scanner text, audio stubs, website articles, wiki pages, and localization rows do not get a pass because they already exist.
+
+When an agent touches an old file or release set, it must:
+
+- inspect the current file, not a stale report;
+- read every title, heading, paragraph, surface block, and locale row in scope;
+- cut or rewrite AI-style filler instead of adding a new note that says it is bad;
+- preserve canon facts, stable IDs, unlocks, source voices, and locale status honestly;
+- mark missing canon as `BLOCKED_SOURCE`, not invent connective prose;
+- rewrite the English authority row before repairing translated rows when the failure starts in English;
+- rewrite a locale row directly when the English source is good but the row contains calque, wrong legal register, copied English, or local AI boilerplate.
+
+A "reviewed" old file with unchanged AI-style prose is not reviewed. It is still dirty.
 
 ## Anti-Machine Edit
 

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Continuity Office"
+title: "Kantor Kontinuitas Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Continuity Office
+# Kantor Kontinuitas Atlas
 
-ID LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+Kantor ini ada karena ATLAS terlalu bernilai untuk ditinggalkan dan terlalu berbahaya untuk diakui jelas. Jika hanya alat, Deep Reach bisa memakainya. Jika saksi, Deep Reach punya masalah. Jika pasien, koloni punya kejahatan.
 
-## Scanner
-
-ID LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-ID LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-ID LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-ID LOC HOLD: A memo can kill without using the word kill.
+Maka kantor menulis prosedur. Perawatan diganti nama menjadi pemeliharaan, takut menjadi anomali, ingatan menjadi kontinuitas, penolakan menjadi tinjauan keamanan. Hasilnya bukan jawaban bersih, melainkan tempat kecerdasan dijaga tetap berjalan sementara semua kategori moral di sekitarnya dibiarkan belum selesai.
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/id_ID. -->

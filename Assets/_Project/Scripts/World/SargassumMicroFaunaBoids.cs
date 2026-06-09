@@ -1818,6 +1818,7 @@ namespace Hecton8.World
         private BiomeMatrixDirector _biomeMatrixDirector;
         private HectonMapMagicVegetationBridge _mapMagicVegetationBridge;
         private MapMagicBridge _mapMagicRuntime;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private WorldProceduralScatterDirector _proceduralScatterDirector;
         private IDataVault _dataVault;
         private IAbyssalFlowGpuReadModel _fluidEngine;
@@ -2043,6 +2044,7 @@ namespace Hecton8.World
             _reportedWakeFlowDirectionWS = Vector3.zero;
             _fluidEngine = null;
             _submarineRuntime = null;
+            _oceanKinematicsService = null;
             _encounterDirector = null;
             _ecosystemDirector = null;
             _beaconNetworkRuntime = null;
@@ -2108,6 +2110,7 @@ namespace Hecton8.World
             ResetDependencyProbeCache();
             _fluidEngine = null;
             _submarineRuntime = null;
+            _oceanKinematicsService = null;
             _encounterDirector = null;
             _ecosystemDirector = null;
             _beaconNetworkRuntime = null;
@@ -2446,7 +2449,7 @@ namespace Hecton8.World
                     _mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _mapMagicVegetationBridge);
                     _threatVoxelPayloadRefreshRequested = _mapMagicVegetationBridge != null;
-                    SyncWaterSurfaceLevelFromTerrainBridge();
+                    SyncWaterSurfaceLevelFromRuntime();
                     break;
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime:
                     ReconcileRuntimeOwnerFromRegistryReplacement(previousService, currentService);
@@ -2460,7 +2463,11 @@ namespace Hecton8.World
                         _mapMagicRuntime = currentMapMagic;
                     else
                         _mapMagicRuntime = null;
-                    SyncWaterSurfaceLevelFromTerrainBridge();
+                    SyncWaterSurfaceLevelFromRuntime();
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    SyncWaterSurfaceLevelFromRuntime();
                     break;
                 case GlobalRegistryServiceSlot.BiolumManagerRuntime:
                     biolumManager = currentService as HectonBiolumManager;
@@ -2557,7 +2564,8 @@ namespace Hecton8.World
                 _mapMagicRuntime = null;
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref _mapMagicRuntime);
             }
-            SyncWaterSurfaceLevelFromTerrainBridge();
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            SyncWaterSurfaceLevelFromRuntime();
 
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerRuntimeContextProbeAttempted = true;
@@ -2569,8 +2577,14 @@ namespace Hecton8.World
             _simulationBucketerProbeAttempted = true;
         }
 
-        private void SyncWaterSurfaceLevelFromTerrainBridge()
+        private void SyncWaterSurfaceLevelFromRuntime()
         {
+            if (TryResolveOceanWaterLevel(out float oceanWaterLevel))
+            {
+                waterLevel = oceanWaterLevel;
+                return;
+            }
+
             MapMagicBridge bridge = _mapMagicRuntime;
             if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge))
                 return;
@@ -2581,11 +2595,41 @@ namespace Hecton8.World
                 waterLevel = resolvedWaterLevel;
         }
 
+        private bool TryResolveOceanWaterLevel(out float resolvedWaterLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out resolvedWaterLevel))
+            {
+                return true;
+            }
+
+            resolvedWaterLevel = DefaultWaterLevel;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)
+        {
+            if (math.isfinite(candidateWaterLevel) &&
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevel = candidateWaterLevel;
+                return true;
+            }
+
+            waterLevel = DefaultWaterLevel;
+            return false;
+        }
+
         private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)
         {
             if (math.isfinite(candidateWaterLevel) &&
                 math.abs(candidateWaterLevel) > 0.0001f &&
-                math.abs(candidateWaterLevel) <= 1000f)
+                math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevel = candidateWaterLevel;
                 return true;

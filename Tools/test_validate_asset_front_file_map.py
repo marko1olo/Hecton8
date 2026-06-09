@@ -15,7 +15,7 @@ class ValidateAssetFrontFileMapTests(unittest.TestCase):
     def test_current_project_file_map_matches_static_contract(self) -> None:
         rows = validator.validate_asset_front_file_map()
 
-        self.assertEqual(193, len(rows))
+        self.assertEqual(196, len(rows))
 
     def test_duplicate_path_rejected(self) -> None:
         rows = validator.load_rows()

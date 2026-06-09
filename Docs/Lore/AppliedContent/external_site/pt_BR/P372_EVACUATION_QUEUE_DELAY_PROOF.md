@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Registro de atraso da fila de evacuação
 
-Uma sala afogada ainda pode preservar tempo. O relógio recuperado mostra uma ordem cruel: alarme, revisão, atraso, classe de selo excedida, água. A linguagem pública da Deep Reach reduz isso a evacuação incompleta durante falha estrutural súbita. A sala discorda. O registro mantém um campo de testemunha vazio e uma revisão de quarentena pendente além do ponto em que um caminho de resgate ainda era fisicamente útil. Não é alegar que todos podiam ser salvos. É pior e mais preciso: a autorização esperou até diminuir o número de pessoas salváveis. Quando o jogador encontra isso, resgate deixa de soar como promessa e passa a soar como sistema de permissão.
+Logs de evacuação são fáceis de suavizar depois que os corpos somem. Na linguagem pública, a Deep Reach pode dizer que uma rota estava incompleta, interrompida ou degradada. O relógio de fila recuperado é menos flexível. Ele registra um portão respondendo a estado administrativo depois que o alarme de pressão já havia entrado nas seções ocupadas.
 
-## Scanner
-
-Relógio de fila recuperado. O portão de liberação ficou travado depois que alarmes de pressão passaram da previsão ao corredor.
-
-## Terminal
-
-EVAC QUEUE // WITNESS SLOT EMPTY. Confirmação manual ausente. Revisão de quarentena pendente. Pressão de rota excedeu classe de selo antes da autorização resolver.
-
-## Audio
-
-Eles não falharam em salvar todos. Esperaram até salvar qualquer um ficar mais difícil.
-
-## Field Note
-
-Nota de saqueador: portão fechado com campo pendente não é acidente. É decisão esperando assinatura.
+O detalhe importante não é que todos poderiam ter sido salvos. O registro não promete isso. Ele mostra que a empresa ainda tinha um caminho de controle e o usou para esperar. A confirmação manual ficou vazia. O conselho de quarentena ficou pendente. A classe de vedação cruzou o limite antes da autorização. Atraso virou infraestrutura.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/pt_BR. -->

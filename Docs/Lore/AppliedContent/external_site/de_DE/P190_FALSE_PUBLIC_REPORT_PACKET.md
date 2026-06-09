@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Falsches öffentliches Berichtspaket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Falsches öffentliches Berichtspaket
 
-DE LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
+Das falsche öffentliche Berichtspaket formuliert Deep Reachs öffentliche Version des Kolonieverlusts und die Auslassungen, die sie falsch machen. Das ist keine Propaganda, die das Desaster leugnet; es ist Propaganda, die das Desaster zu einem Unfall ohne verantwortliche Hände schneidet. Der Artikel zählt, weil HECTON-8 seine Hard-SF-Katastrophe behalten und zugleich eine Deckgeschichte beweisen kann. Ozeanphysik erklärt, warum die Kolonie verwundbar war. Die fehlenden Memos erklären, warum Verwundbarkeit zu Aufgabe wurde.
 
 ## Scanner
 
-DE LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Der öffentliche Bericht funktionierte, weil er den echten Ozean behielt und die menschlichen Entscheidungen darin entfernte.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: HECTON-8-Verlust zugeschrieben außergewöhnlicher Gezeitenkaskade, Relaisverzug und Quarantäneunsicherheit. Ausgelassen: akzeptierte Risikomargen, Evakuierungsfreigabe-Hold, Atlas-Kontinuitäts-Override, Anspruchsumwandlung und Nutzlast-zuerst-Recovery-Antrag.
 
 ## Audio
 
-DE LOC HOLD: They did not fake the storm. They buried the choice.
+Sie sagten die Wahrheit über das Wasser und logen über die Hände.
 
 ## Field Note
 
-DE LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Die beste Lüge leugnete die Flut nicht. Sie benutzte die Flut als Deckung.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/de_DE. -->

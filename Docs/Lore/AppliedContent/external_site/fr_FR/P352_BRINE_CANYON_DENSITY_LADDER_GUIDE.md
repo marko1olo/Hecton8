@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guide d'échelle de densité des canyons de saumure
 
-Le Guide d'échelle de densité des canyons de saumure traite les tranchées de HECTON-8 comme géographie d'ingénierie : le chemin vers le bas est fait de densité, pas de décor.
+Un canyon de saumure ressemble à de l'eau vide jusqu'à ce que le bord d'une lampe se courbe, qu'une jauge hésite ou qu'un outil lâché cesse de tomber là où il ne devrait pas. Les couches denses de HECTON-8 transforment la profondeur en architecture. Eau douce, charge de sel, résidus de suintement froid, limon argileux et film chimique s'empilent en planchers invisibles capables de porter un nuage d'écailles minérales ou d'avaler tout le signal d'un drone.
 
-## Scanner
-
-Brine ladder détectée : densité stratifiée, faux plancher, courbure sonar. Suis les bords ; l'eau ouverte ment ici.
-
-## Terminal
-
-FIELD GUIDE : les canyons de brine cachent pressure shelves, current ledges, resource pockets et scanner false positives. Hull rating et density transition décident quelle corniche est une route et laquelle est une chute.
-
-## Audio
-
-Un canyon est un escalier si ta coque peut payer chaque marche.
-
-## Field Note
-
-Utilise les ombres de vane comme des marches. Une lecture blanche dans la brine n'est pas du vide ; c'est l'instrument qui perd la dispute.
+Le canyon enseigne la survie avant le profit. Suivre les ombres des ailettes. Lire la ligne de vase. Dans la saumure, un instrument silencieux mérite moins de confiance qu'en dehors. Les poches de ressources se forment là où la densité ralentit la chute de matière utile, mais les mêmes poches cachent gaz stagnant, capteurs morts et changements de pression assez nets pour punir les coques bon marché. Descendre n'est jamais seulement aller plus profond. C'est traverser des accords entre fluides.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/fr_FR. -->

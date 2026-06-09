@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ресурсы и экология
 
-Узел ресурсов и экологии: drowned crust, brine ladders, vent chemistry, living systems и поврежденная repair logic Atlas.
+Узел ресурсов и экологии: Утопленная кора, соляные лестницы, химия вентилей, blue debt, признаки хищников, помеченная фауна и ремонты Atlas, которые обращаются с живыми системами как с оборудованием.
 
 ## Scanner
 
-Навигационный узел публикации: geology, blue debt, грамматика фауны и misuse ремонтной сети Atlas.
+Публикационный узел: Утопленная кора, соляные лестницы, история давления blue debt, признаки фауны и неправильное применение ремонта Atlas.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology и encounter grammar как одна process map.
+SITE NAV: читать образцы по происхождению, истории давления, живому контакту, ущербу добычи и ценности custody.
 
 ## Audio
 
-Здесь ничто не является просто loot.
+Здесь ничто не является просто добычей.
 
 ## Field Note
 
-Навигационный кластер: resources and ecology идут вместе, когда материалы, биота и evidence pressure делят один маршрут.
+Чистый образец редко самый богатый. Спроси, что его сформировало, что его касалось и что пострадало, когда его забрали.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ru_RU. -->

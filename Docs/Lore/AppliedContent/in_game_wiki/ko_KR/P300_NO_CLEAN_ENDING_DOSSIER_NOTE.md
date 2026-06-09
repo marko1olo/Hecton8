@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: No Clean Ending Dossier Note"
+title: "깨끗한 엔딩 없음 dossier 메모"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: No Clean Ending Dossier Note
+# 깨끗한 엔딩 없음 dossier 메모
 
-KO LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+이 메모는 엔딩 후 기억의 톤을 정의한다. 가장 강한 엔딩조차 살아 있는 파일을 남긴다. 구한 것, 손상된 것, 깔끔해지기를 거부하는 비용이다.
 
 ## Scanner
 
-KO LOC HOLD: Dossier note: closure denied; consequence retained.
+Dossier 메모: 종결 거부. 결과 유지.
 
 ## Terminal
 
-KO LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: 결과 저장. 현재 증거 상태에서 깨끗한 종결 불가. 빚, 생태, 책임, 증인 보관은 활성 기록으로 남는다.
 
 ## Audio
 
-KO LOC HOLD: You saved something. That is not the same as clearing it.
+너는 무언가를 구했다. 그것을 정리한 것은 아니다.
 
 ## Field Note
 
-KO LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+엔딩 후 dossier는 다리를 열어 둔다. 결과는 기록, 빚과 증거는 미해결, 완벽한 승리는 주어지지 않는다.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/ko_KR. -->

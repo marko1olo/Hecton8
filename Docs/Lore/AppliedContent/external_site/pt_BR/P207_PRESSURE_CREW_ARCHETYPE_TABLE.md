@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Tabela de Arquétipos de Equipes de Pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Tabela de Arquétipos de Equipes de Pressão
 
-PT LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Arquétipos de equipes de pressão transformam o elenco de trabalhadores de HECTON-8 em história de trabalho legível. A colônia não é explicada primeiro por biografias; ela é explicada por trabalho. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany e Payload Witness dão a cada nome uma função, um lugar na economia oceânica e uma razão para aparecer como evidência. Assim o lore surge por objetos e rotas, não por exposição solta.
 
 ## Scanner
 
-PT LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Equipes são verbos antes de serem história pessoal: bombear, selar, retransmitir, mapear, forjar, triar, cultivar, testemunhar.
 
 ## Terminal
 
-PT LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany e Payload Witness. Toda identidade de trabalhador se liga a uma família de equipe antes do detalhe pessoal. Isso mantém a evidência ligada a máquinas, rotas, falhas de pressão, cultura alimentar, lei de salvage e cadeia final do payload.
 
 ## Audio
 
-PT LOC HOLD: Job first. Memory second. That is how the colony survives.
+Trabalho primeiro. Memória depois. É assim que a colônia sobrevive no papel.
 
 ## Field Note
 
-PT LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Um trabalhador morto se lê melhor quando a sala ainda precisa do trabalho que ele conhecia.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/pt_BR. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Roster Size Rule"
+title: "作業員名簿サイズ規則"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Roster Size Rule
+# 作業員名簿サイズ規則
 
-JP LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise.
+作業員名簿サイズ規則は、読めるコロニー証拠のための人口契約だ。HECTON-8 には72人の作業員IDがある。24人は反復する物語上の証拠用アンカー、48人はリプレイ変化用 seed-role ID。プレイヤーは、ロッカー、工具、通行スタンプ、修理命令、最後の音声タグと結びついた名前を少しずつ覚えていくべきだ。コロニーは名簿より大きく感じられるが、証拠は覚えられるだけ作者性を保つ。
 
 ## Scanner
 
-JP LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.
+72人の名前は雰囲気づけではない。これはコロニーの記憶予算だ。働いていた場所に見えるだけの人数があり、ロッカー、修理タグ、最後のシフトが同じ人物へ戻れるだけ少ない。
 
 ## Terminal
 
-JP LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: 実運用名簿は72人の作業員IDを持つ。24人はアンカー名で、ロッカー、台帳、壊れた工具、通行許可スタンプ、音声断片に繰り返し現れる。48人はリプレイ変化用の seed-role 名だ。生成名は証拠順を動かしてよいが、使い捨ての埋め草になってはならない。
 
 ## Audio
 
-JP LOC HOLD: A name is evidence only when the room can prove the job.
+部屋が仕事を証明できる時、名前は証拠になる。
 
 ## Field Note
 
-JP LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+仕事と結びついて後で戻れない名前なら、名簿から削れ。
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/ja_JP. -->

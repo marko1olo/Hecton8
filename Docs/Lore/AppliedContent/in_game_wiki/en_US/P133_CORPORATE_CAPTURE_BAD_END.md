@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Corporate Capture: Clean Rescue
 
-Corporate Capture is a bad ending built from a plausible rescue. The player leaves the ocean alive, but the answering authority treats the witness as containment material and the payload as the actual patient.
+Corporate Capture begins exactly like help should begin. The signal is clean, the pickup vector is professional, and the room has breathable air. Then the order of questions exposes the rescue: coordinates first, custody second, Atlas access third, welfare after review. The contractor leaves the ocean alive, but the answering authority treats the witness as contamination and the payload as the patient. Testimony is sealed before it can become public record. The body survives pressure only to enter a quieter machine built for evidence control.
 
 ## Scanner
 
-Recovery source verified: Deep Reach proxy. Payload requested before welfare check.
+Recovery source verified: Deep Reach proxy. Payload requested before pulse check.
 
 ## Terminal
 
-DEEP REACH PICKUP: recovery team accepts coordinates, XO custody and Atlas access key before contractor welfare review. Contractor testimony sealed under contamination protocol.
+DEEP REACH PICKUP: recovery team requests coordinates, XO custody, Atlas access key and Seed payload seal before contractor welfare review. Witness testimony sealed under contamination protocol.
 
 ## Audio
 
-The clean room is not for you.
+The clean room is not for the witness.
 
 ## Field Note
 
-A clean rescue that wants coordinates first is capture with better air.
+A clean rescue that asks for coordinates first is custody with warm air.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/en_US. -->

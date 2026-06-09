@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "וריאציות claim פתיחה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# וריאציות claim פתיחה
 
-HE LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+וריאציות claim פתיחה מאפשרות replay של HECTON-8 עם קרסים כלכליים שונים תוך שימור גיבור אחד חזק.
 
 ## Scanner
 
-HE LOC HOLD: Same protagonist. Different claim pressure.
+וריאציית CLAIM // אותו Marauder לשעבר מ-Deep Reach. חוב ראשון, bounty, חומרת מסלול, משמורת דגימה או הקלת blacklist שונים.
 
 ## Terminal
 
-HE LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+כלל פתיחה: וריאציות משנות לחץ התחלתי, גישה לשמועות, משקל ראיות ולוגיקת תשלום. הן לא יוצרות גיבורים חלופיים ולא מוחקות את עמוד השדרה של Deep Reach לשעבר.
 
 ## Audio
 
-HE LOC HOLD: You can change the job without changing who took it.
+אפשר לשנות את העבודה בלי לשנות את מי שלקח אותה.
 
 ## Field Note
 
-HE LOC HOLD: Variants should color motive, not erase the canon character.
+שנה את ה-claim. השאר את הצלקת.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/he_IL. -->

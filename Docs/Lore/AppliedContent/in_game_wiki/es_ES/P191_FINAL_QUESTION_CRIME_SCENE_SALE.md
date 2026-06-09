@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Pregunta final: venta de la escena del crimen
 
-La venta de la escena del crimen es la ruta de éxito material. El jugador sobrevive, puede cancelar la deuda e incluso salir con dinero. El coste es que la evidencia de la colonia se vuelve palanca para la misma red de autoridad que enterró el sitio, racionó masa de rescate y trató los cuerpos como clima contractual.
+La venta de la escena del crimen es el eje de éxito material. El operador puede sobrevivir, saldar deuda y marcharse con dinero porque Keelmark/Recovery Compliance reconoce coordenadas, valor de muestra, prueba XO y hash de custodia del transportista. Importa el adjunto ausente: sin paquete testigo aparte, nombres de trabajadores, contabilidad de masa de rescate y responsabilidad de Deep Reach quedan fuera del recibo pagado.
 
 ## Scanner
 
-Coordenadas, prueba XO y una cadena de custodia limpia pueden comprar una salida. También venden la sala del asesinato a quienes le pusieron precio.
+EJE DE VENTA DE ESCENA DEL CRIMEN // Keelmark puede cerrar el gravamen contra coordenadas de cuenca Atlas, muestra de deuda azul, prueba testigo XO y hash de custodia del transportista. Las pruebas de trabajadores quedan fuera del recibo salvo notarización aparte.
 
 ## Terminal
 
-EJE DE VENTA FINAL: coordenadas de la cuenca Atlas, muestra viable de deuda azul, prueba de testigo XO y hash de custodia del carrier pueden cancelar el gravamen del operador. Sin notarización separada, Deep Reach obtiene un camino de regreso a HECTON-8 más limpio que el que tuvieron los trabajadores muertos hacia el rescate.
+EJE FINAL / VENTA DE ESCENA DEL CRIMEN
+Receptor: Keelmark/Recovery Compliance.
+Aceptado: coordenadas de cuenca Atlas, muestra viable de deuda azul, prueba testigo XO, hash de custodia del transportista.
+Efecto sobre gravamen: deuda del operador cerrada o reducida por tabla contractual.
+Omitido por defecto: libro de nombres de trabajadores, auditoría de masa de rescate, paquete testigo público.
+Ventaja de Deep Reach: geometría de retorno y valoración de muestra llegan sin cadena de custodia hostil.
+Pérdida conocida: un mapa de tumba puede volverse propiedad antes de volverse testimonio.
 
 ## Audio
 
-Puedes pagar la deuda con un mapa de tumbas. El libro mayor lo llamará trabajo.
+Puedes vender el mapa de la tumba. El recibo seguirá llamándolo trabajo.
 
 ## Field Note
 
-No es un final malo de broma. Es un final pagado, con recibo, deuda cancelada y un futuro peor para quien siga abajo.
+Es una salida pagada con recibo. La línea peligrosa es la vacía: no hay libro de nombres de trabajadores adjunto.
 
 <!-- In-Game Wiki; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/es_ES. -->

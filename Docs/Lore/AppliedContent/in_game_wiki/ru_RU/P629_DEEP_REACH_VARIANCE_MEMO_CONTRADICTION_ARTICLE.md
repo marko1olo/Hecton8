@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Противоречие variance-мемо Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Противоречие variance-мемо Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+Variance-мемо само по себе не доказательство. Оно становится полезным, когда следы насосной, метки времени и штампы accepted-margin противоречат чистому офисному языку.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+МЕТКА ПРОТИВОРЕЧИЯ // Мемо говорит variance. След насоса показывает позднее ручное вмешательство.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // Проникновение воды остается в управляемом допуске до review возвратных действий. Локальная ремонтная очередь может отложить не критичный язык эскалации.
 
 ## Audio
 
-Trust the room before the clean word.
+Никто не пишет variance на стене, которая все еще капает.
 
 ## Field Note
 
-Trust the wet room first.
+Если офисное слово чище комнаты, сначала верь комнате.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/ru_RU. -->

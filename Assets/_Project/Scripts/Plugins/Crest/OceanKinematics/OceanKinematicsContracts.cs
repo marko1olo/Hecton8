@@ -1,5 +1,7 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -67,6 +69,31 @@ namespace Hecton8.Physics
         public const BufferID CsvScratch = (BufferID)72948;
         public const BufferID QueueCounters = (BufferID)72949;
         public const BufferID RollbackFence = (BufferID)72950;
+    }
+
+    public static class OceanKinematicsWaterlineUtility
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveRuntimeSeaLevelY(float seaLevelY)
+        {
+            return TryResolveRuntimeSeaLevelY(seaLevelY, out float resolvedSeaLevelY)
+                ? resolvedSeaLevelY
+                : AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool TryResolveRuntimeSeaLevelY(float seaLevelY, out float resolvedSeaLevelY)
+        {
+            if (math.isfinite(seaLevelY) &&
+                math.abs(seaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                resolvedSeaLevelY = seaLevelY;
+                return true;
+            }
+
+            resolvedSeaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return false;
+        }
     }
 
     /// <summary>

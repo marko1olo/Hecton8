@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Conversão de perda da continuidade claim"
+title: "Conversão de perda por continuidade de reivindicação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conversão de perda da continuidade claim
+# Conversão de perda por continuidade de reivindicação
 
-A cadeia de prova termina em conversão. A Deep Reach pode admitir dano e manter propriedade se trabalhadores viram perdas, evidência vira material custody e o claim continua vivo. Por isso o jogador não carrega só verdade. Carrega algo que o sistema sabe comprar.
+A cadeia termina no livro-razão porque o livro-razão pode sobreviver a todo o resto. Trabalhadores viram perda irrecuperável, módulos danificados viram custódia material, e provas continuam presas à reivindicação. Quem carrega esses documentos não carrega sentimento. Carrega um problema para todo receptor que quer a reivindicação sem os corpos.
 
 ## Scanner
 
-Carimbo da mesa de perdas recuperado. O ledger sobreviveu melhor que os trabalhadores que renomeou.
+Carimbo da mesa de perdas recuperado. O status dos trabalhadores vira irrecuperável antes de a custódia de provas sair da reivindicação ativa.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+PERDA KEELMARK // CONTINUIDADE RETIDA. Força de trabalho biológica convertida em perda irrecuperável. Custódia material e custódia de prova ativas até designação de receptor.
 
 ## Audio
 
-É aqui que pessoas viraram uma coluna limpa.
+Aqui nomes viraram uma coluna limpa.
 
 ## Field Note
 
-Nota de saqueador: um ledger pode lembrar dos mortos e ainda gastá-los.
+Nota de saqueador: um livro-razão pode lembrar os mortos e ainda gastá-los.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/pt_BR. -->

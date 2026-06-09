@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Public Archive Receiver Ambiguity"
+title: "Public Archive Receiver Conflict"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,33 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Public Archive Receiver Ambiguity
+# Public Archive Receiver Conflict
 
-Two receiver labels on one HECTON-8 packet do not automatically prove a forged file. Public archives split the receiver problem into lanes: original address band, first relay node, quarantine office, claimant desk, and legal archive. Those lanes can disagree without being harmless. The mistake is treating the cleanest label as the real one. Deep Reach paperwork often keeps the public receiver narrow while useful custody moves elsewhere. Atlas recovery fragments can invert the pattern: a relay receipt may look like ownership when it only proves transit. Receiver conflict is ambiguity, not acquittal and not conviction.
+A receiver is not a person in these packets. It is a field copied at each handoff. One HECTON-8 archive packet can carry an original address band for Deep Reach Claims, an Atlas relay stamp, a shallow-annex quarantine hold, a Keelmark claimant desk number, and a public archive filing line. None of those fields alone proves who held the evidence, who altered it, or who paid to make it visible. In the public mirror, the clean receiver is often the office allowed to answer mail, not the place where the packet physically moved.
+
+Read receiver conflict as a route problem. Check seal order, hash time, waterline on the sleeve, tool marks on the tray, and which office still had power when the upload happened. If the address band names one office and the relay receipt names another, do not call the packet forged until the physical custody marks break sequence. Do not clear anyone because the public field looks tidy. The useful evidence sits between the office name and the marks left by handling.
 
 ## Scanner
 
-RECEIVER AMBIGUITY // Address band, relay receipt, quarantine hold, claimant summary, and archive filing line do not name the same office. Confidence: partial.
+RECEIVER CONFLICT // Visible: address band, relay node, quarantine hold, claimant desk, archive filing line. Required: seal order, hash time, object proof. Confidence: partial.
 
 ## Terminal
 
-PUBLIC ARCHIVE RECEIVER AMBIGUITY
-Do not collapse address, relay, quarantine, claimant, and archive fields into one owner.
-Public summary may name the office allowed to answer. Custody route may show the office that actually held the packet.
-Hold final receiver text until route proof is present.
+PUBLIC ARCHIVE RECEIVER CONFLICT
+Do not merge receiver fields.
+Address band = intended destination.
+Relay receipt = transit.
+Quarantine hold = control.
+Claimant desk = payment and legal response.
+Archive filing line = publication owner.
+Action: hold final receiver until the physical custody sequence matches the packet hash.
 
 ## Audio
 
-A clean receiver label is not the whole route. Follow the packet's body, not the office name polished for public mail.
+Five offices can touch one packet. The name on the index is only the office that answered first.
 
 ## Field Note
 
-Receiver fields are polite. Custody marks are physical. If the label smiles and the route bleeds, follow the route.
+Start with the wet mark, not the letterhead. Offices can rename a packet; they cannot move a rust line on the tray.
 
 <!-- In-Game Wiki; generated from P500_PUBLIC_ARCHIVE_RECEIVER_AMBIGUITY_BRIDGE/en_US. -->

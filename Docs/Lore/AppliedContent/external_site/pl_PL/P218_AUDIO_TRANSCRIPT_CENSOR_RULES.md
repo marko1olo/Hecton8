@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Pasma uszkodzeń transkryptu audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Pasma uszkodzeń transkryptu audio
 
-PL LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Log głosowy HECTON-8 nie jest pełny tylko dlatego, że ma dźwięk. Transkrypt musi pokazać swoje rany.
 
-## Scanner
+Pasma uszkodzeń czynią te rany uczciwymi. Mogą oznaczać szum, utratę pakietów, redakcję prawną, zniekształcenie ciśnieniem, złą separację głosów, nieudane tłumaczenie maszynowe lub późniejszą edycję. Bez tej warstwy każde zepsute nagranie staje się fałszywą jasnością albo fałszywą tajemnicą. Z nią gracz widzi różnicę między tym, co świat utracił, a tym, co ktoś usunął.
 
-PL LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+Reguła jest surowa, bo gra opiera się na dowodach. Uszkodzenie może ukrywać nazwiska, numery i spoilerowe ładunki. Może budować podejrzenie. Może sprawić, że trasa wyda się groźna przed zobaczeniem drzwi. Ale reszta transkryptu musi nieść działanie: nie otwieraj śluzy, wróć po drabinie serwisowej, licz tlen ręcznie, ignoruj zieloną lampę statusu, zostaw oficjalną linię widoczną.
 
-## Terminal
-
-PL LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-PL LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-PL LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Dla lokalizacji i dostępności pasmo jest częścią treści. Tłumaczony transkrypt musi zachować rolę mówiącego, presję czasu i czytelne ostrzeżenia. Redakcja jest atmosferą tylko wtedy, gdy gracz nadal może działać. Inaczej to po prostu zepsuty interfejs udający lore.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/pl_PL. -->

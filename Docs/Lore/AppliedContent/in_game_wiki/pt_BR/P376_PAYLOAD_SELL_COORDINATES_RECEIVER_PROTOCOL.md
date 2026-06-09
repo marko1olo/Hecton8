@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protocolo de venda de coordenadas do payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protocolo de venda de coordenadas do payload
 
-PT LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+O protocolo de venda de coordenadas trata HECTON-8 como propriedade recuperável. Ele converte o payload final em pacote receptor para a Deep Reach: vetor da bacia, grade de confiança, digest de provas e classe de acesso salvage. O remetente recebe dinheiro e alívio de dívida. A Deep Reach recebe o mapa de aproximação e um caminho mais limpo de volta à reivindicação.
 
 ## Scanner
 
-PT LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Rota de venda de coordenadas armada. Vetor da bacia, mapa de confiança e digest de provas seguem para Deep Reach Recovery Compliance.
 
 ## Terminal
 
-PT LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+RECEPTOR PAYLOAD // VENDA DE COORDENADAS. Receptor: Deep Reach Recovery Compliance. Transmitir vetor da bacia, grade de confiança, XO proof digest, classe de acesso salvage. Retornar recibo de pagamento, redução de lien, selo de prioridade de recuperação. Transferir mapa de acesso no bloqueio do recibo.
 
 ## Audio
 
-PT LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Pagamento liberado. Mapa transferido. Livro de trabalhadores ainda aberto.
 
 ## Field Note
 
-PT LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Nota de saqueador: se a primeira linha é o valor, leia a segunda. A segunda é access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/pt_BR. -->

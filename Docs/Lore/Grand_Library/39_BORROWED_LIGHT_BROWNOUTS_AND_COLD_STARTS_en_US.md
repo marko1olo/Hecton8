@@ -1,58 +1,78 @@
 <!-- localization_status: source_authority_en_US -->
 # BORROWED LIGHT, BROWNOUTS AND COLD STARTS
 
-> **Source:** Deep Reach emergency power course, Black Keel salvage valuation notes, Marauder breaker-room recordings.  
-> **Speaker:** Infrastructure power instructor, with later debt-crew annotations.  
-> **Reviewer Note:** On HECTON-8, light is not proof of life. It is proof that something, somewhere, is still willing to spend stored order against the dark.
+> **Source:** Deep Reach emergency power course, breaker-room service cards, Black Keel salvage valuation notes, and Marauder recordings from restored annexes.  
+> **Scope:** Load priority, brownout behavior, cold starts, borrowed reserves and power records used in routes, claims and survival decisions.  
+> **Field use:** Read before trusting a lit room, bridging a breaker, waking a dead panel, opening a powered locker, or moving a cell that may be feeding something else.
 
 ---
 
-## 1. Light Is A Negotiation
+## 1. A Lit Room Is A Load
 
-People trust light too quickly.
+On HECTON-8, light is not proof that a room is healthy. It is proof that a circuit is still spending power.
 
-On HECTON-8, a lit room may be alive, dying, lying or spending the last polite seconds of a capacitor bank. A lamp can run from emergency reserve while the door controller beside it has no authority left to unlock. A corridor can glow because the habitat still prioritizes morale optics after every useful pump is silent. A workstation can wake long enough to ask for a login and die before the answer matters.
+A lamp can run from an emergency reserve while the door controller beside it has no authority left to unlock. A corridor can glow because the habitat still protects morale lighting after the useful pumps have stopped reporting. A workstation can wake long enough to request a login and die before the answer reaches its buffer. A green status bead can stay alive because it is on the protected side of a breaker, not because the system behind it is alive.
 
-Deep Reach built power systems around priority, not comfort. Air first. Pressure next. Heat where heat keeps seals flexible. Data where data prevents legal and medical loss. Light came later, unless darkness itself became a hazard. The old colony could look humane because the hierarchy worked. After abandonment, that hierarchy became a field of half-kept promises.
+Deep Reach built power hierarchy around survival, liability and habit. Air first. Pressure control next. Heat where heat kept seals flexible. Refrigeration where samples, medicine or bodies created legal exposure. Data where logs prevented medical or contractual loss. Light came later unless darkness itself created a trip, cut or panic hazard.
 
-Marauders learn to ask who is paying for the light. A room that cannot answer is not necessarily empty. It may be borrowing from something the player has not found yet.
+After abandonment, that hierarchy became harder to read. A room may look occupied because a low-cost circuit still works. It may look dead because a higher-priority load took every cell it could reach. The useful question is not whether the light is on. The useful question is which load is paying for it.
 
-## 2. Brownout Logic
+## 2. Brownout Order
 
-A brownout is a machine choosing what deserves to keep existing.
+A brownout is not a blackout. It is a sequence.
 
-When power falls, old systems shed loads in order. Decorative panels die before pumps. Noncritical archives sleep before atmosphere control. Door motors slow before pressure locks release. Medical cabinets may preserve refrigeration while refusing to open. The hierarchy was rational when maintained, cruel when abandoned and dangerous when partially repaired by people who did not understand the original assumptions.
+When voltage falls, maintained systems shed loads in a designed order. Wall glow strips drop before circulation pumps. Noncritical terminals sleep before pressure logic. Door motors slow before hard locks release. Medical cabinets may keep refrigeration while refusing to open. A safe room may preserve air exchange by killing every outlet a repair crew hoped to use.
 
-Brownouts create strange rooms. A bench may have heat but no logs. A pump may run but no longer report. A warning light may blink from a protected circuit while the sensor it warns about is dead. A safe room may keep air moving by killing every outlet the player hoped to use.
+Abandoned systems do not always follow the old chart. Salted contactors stick. Patched corridors back-feed panels that were supposed to die. A dead sensor may keep a warning light alive because the warning circuit is easier to power than the truth it once reported. A pump may run without reporting because its telemetry rail died first.
 
-Black Keel values brownout histories because they reveal the order of failure. Which circuits died first can prove when the habitat lost crew, when a claim was tampered with, whether a sample fridge stayed cold and whether a locked room was sealed by procedure or by hunger.
+Brownout order matters because it tells when the room stopped being maintained. Which loads died first can show whether a sample stayed cold, whether a door was sealed by procedure or by starvation, whether a distress beacon had power when Black Keel marked it inactive, and whether someone moved a breaker after the official route log closed.
 
 ## 3. Cold Starts
 
-Cold-starting a dead place is not the same as turning it on.
+Cold-starting a dead room is not the same as turning it on.
 
-A cold start asks old machines to remember their shape after pressure, salt, time and neglect have edited them. Bearings wake dry. Contactors arc through mineral film. Batteries accept charge unevenly. Safety systems compare today against thresholds written for a staffed colony and find the whole world suspicious. Sometimes that suspicion is correct.
+A cold start asks old machines to move after pressure, salt and time have changed their tolerances. Bearings wake dry. Contactors arc through mineral film. Battery stacks accept charge unevenly. Fans throw settled dust, mold or chemical vapor into air that looked breathable. Safety logic compares a damaged room against thresholds written for a staffed colony and declares half the place suspect.
 
-Good Marauders do not slam power into a dead room unless they are ready for the room to answer badly. A fan can throw poison into breathable air. A door can lock to protect a pressure state that no longer exists. A server can overwrite the last useful crash log with a clean boot failure. A heater can soften a gasket that had been surviving only because it was cold.
+Sometimes the machine is right to be suspicious. A door can lock to protect a pressure state that no longer exists. A heater can soften a gasket that survived only because it stayed cold. A server can overwrite the last useful crash record with a fresh boot failure. A pump can clear water from one room and push it through a cracked tray into another.
 
-Cold start is a choice about sequence. Wake the wrong thing first and the room tells one story. Wake it carefully and it may tell another.
+Good crews do not wake a room all at once. They wake measurement first, then containment, then movement, then comfort. If the order has to change, they write down why. A cold start is a wager about sequence, and HECTON-8 collects from crews that guess by habit.
 
 ## 4. Borrowed Power
 
-Nothing embarrasses a professional like learning they have been using someone else's reserve.
+Borrowed power is power doing a job its label does not admit.
 
-HECTON-8 is full of borrowed power. Emergency cells cross-fed through patched corridors. Drone chargers feeding safe-room lights. A dead lab stealing trickle current from a stillborn antenna array. A forgotten medical freezer keeping one sample alive by starving six doors of motor authority. The colony did not always fail in clean islands. It failed in negotiations nobody was alive to close.
+HECTON-8 is full of it: emergency cells cross-fed through patched corridors, drone chargers keeping safe-room lights alive, a dead lab stealing trickle current from an antenna array, a medical freezer preserving one sample by starving six doors of motor authority. The colony rarely failed in clean islands. Loads kept bargaining after the people who understood the bargain were gone.
 
-Marauders exploit this and fear it. A bridge line can restore a console long enough to price a salvage lot. It can also drain the last reserve keeping a witness beacon alive. A portable cell can open a door, wake a parasite circuit, or make Black Keel ask why the power record no longer matches the claimed route.
+Marauders use borrowed power because it can turn a dead route into a paid route. A bridge line can wake a console long enough to price a salvage lot. A portable cell can open a locker before the seal dries out. A charger can run a pump for the few minutes needed to cross a sump.
 
-Power is evidence. Every cable moved is a sentence in that evidence.
+The same bridge can drain the last reserve feeding a witness beacon, erase the time gap in a power log, or make a safe door fail closed with medicine inside. Black Keel auditors like borrowed power when it increases recoverable value. They dislike it when the new power path explains why their old denial was false.
 
-## 5. What The Player Learns
+## 5. Breaker Rooms
 
-The player learns that power is not a simple on/off state. It is a social order among machines.
+A breaker room is a map with burn marks.
 
-A live panel can be trusted, taxed, bypassed, starved, restored or left alone. Each action changes what the place can remember. Powering an archive may kill a pump. Saving a pump may leave a message unread. Restoring light may make the room safer for the player and more visible to everything else using the dark.
+Deep Reach labels are useful until they are not. A breaker marked `Hab Lighting B` may feed a pump after three emergency patches. A taped-over handle may hide a jury-rigged life-support cross-feed. A clean breaker in a dirty room usually means someone touched it after the flood. A warm breaker in a cold annex deserves attention before the door beside it does.
 
-Good power work is not about making everything bright. It is about deciding which truth deserves energy first. The best Marauder is not the one who carries the biggest cell, but the one who understands what the room has been sacrificing to keep one green light alive.
+Marauder recordings favor facts that can be checked fast: handle position, bus temperature, salt in the hinge, smell at the contactor, which loads flicker when the cell clamps bite. Long explanations get people killed in breaker rooms. Short labels keep hands honest.
 
-On HECTON-8, darkness is not emptiness and light is not mercy. Both are accounting. The player survives by learning how to read the bill before paying it.
+The best note is not `safe`. The best note is `feeds clinic lock, trips at 11 amps, do not bridge during pump cycle`.
+
+## 6. Power As Evidence
+
+Power records can prove sequence when rooms lie.
+
+A breaker trip can show a door was opened after a claimed evacuation. A charge curve can show a portable cell was connected to the wrong side of a custody seal. A brownout log can show refrigeration survived long enough for a sample to retain value. A missing outage can show that somebody edited the archive or powered it from an unlisted line.
+
+Power also creates liability. A crew that restores light may reveal itself on a receiver log. A crew that keeps a pump alive may destroy a terminal record. A crew that steals a cell may turn a quiet safe room into a dead one and leave the invoice in the voltage trace.
+
+Every cable moved changes the story the room can prove.
+
+## 7. Field Rule
+
+Before trusting light, find its load.
+
+Before bridging power, name what will lose power.
+
+Before cold-starting a room, wake the instruments that can tell you when to stop.
+
+On HECTON-8, darkness is not proof of emptiness and light is not proof of safety. Both are power states with owners, costs and records. The crews that survive do not carry the largest cells. They know which breaker will make the room tell the least expensive lie.

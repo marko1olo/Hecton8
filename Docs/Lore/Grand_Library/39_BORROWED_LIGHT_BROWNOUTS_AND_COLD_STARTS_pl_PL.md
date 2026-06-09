@@ -1,58 +1,78 @@
 <!-- localization_status: draft_machine_or_llm -->
-# POŻYCZONE ŚWIATŁO, SPADKI MOCY I ZIMNE STARTY
+# POŻYCZONE ŚWIATŁO, SPADKI NAPIĘCIA I ZIMNE STARTY
 
-> **Źródło:** Kurs Deep Reach o zasilaniu awaryjnym, notatki wyceny ratunkowej Black Keel, nagrania Marauderów z rozdzielni.  
-> **Głos:** Instruktor zasilania infrastruktury, z późniejszymi adnotacjami załóg dłużnych.  
-> **Uwaga recenzenta:** Na HECTON-8 światło nie dowodzi życia. Dowodzi, że coś gdzieś nadal jest gotowe wydawać zgromadzony porządek przeciw ciemności.
+> **Źródło:** kurs awaryjnego zasilania Deep Reach, karty serwisowe rozdzielni, notatki wyceny odzysku Black Keel oraz nagrania szabrowników z przywróconych aneksów.  
+> **Zakres:** priorytet obciążeń, zachowanie przy spadku napięcia, zimne starty, pożyczone rezerwy i zapisy zasilania używane przy trasach, roszczeniach i decyzjach przeżycia.  
+> **Użycie w terenie:** przeczytać przed zaufaniem oświetlonemu pokojowi, mostkowaniem wyłącznika, budzeniem martwego panelu, otwarciem zasilanej szafki albo przeniesieniem ogniwa, które może karmić coś innego.
 
 ---
 
-## 1. Światło Jest Negocjacją
+## 1. Oświetlony pokój jest obciążeniem
 
-Ludzie zbyt szybko ufają światłu.
+Na HECTON-8 światło nie dowodzi, że pokój jest zdrowy. Dowodzi, że obwód nadal wydaje energię.
 
-Na HECTON-8 oświetlony pokój może być żywy, umierający, kłamiący albo wydawać ostatnie uprzejme sekundy banku kondensatorów. Lampa może działać z rezerwy awaryjnej, kiedy kontroler drzwi obok nie ma już uprawnień do odblokowania. Korytarz może świecić, bo habitat nadal priorytetyzuje optykę morale po tym, jak każda użyteczna pompa zamilkła. Stacja robocza może obudzić się na tyle długo, by poprosić o login, i umrzeć, zanim odpowiedź będzie miała znaczenie.
+Lampa może działać z rezerwy awaryjnej, gdy kontroler drzwi obok nie ma już uprawnień do odblokowania. Korytarz może świecić, bo habitat wciąż chroni oświetlenie morale po tym, jak użyteczne pompy przestały raportować. Stacja może obudzić się dość długo, by poprosić o login, i umrzeć, zanim odpowiedź trafi do bufora. Zielony koralik statusu może żyć, bo siedzi po chronionej stronie wyłącznika, a nie dlatego, że system za nim żyje.
 
-Deep Reach budował systemy zasilania wokół priorytetu, nie komfortu. Najpierw powietrze. Potem ciśnienie. Ciepło tam, gdzie ciepło utrzymuje elastyczność uszczelnień. Dane tam, gdzie dane zapobiegają stratom prawnym i medycznym. Światło przychodziło później, chyba że sama ciemność stawała się zagrożeniem. Stara kolonia mogła wyglądać ludzko, bo hierarchia działała. Po porzuceniu ta hierarchia stała się polem obietnic dotrzymanych tylko w połowie.
+Deep Reach budowało hierarchię zasilania wokół przetrwania, odpowiedzialności i nawyku. Powietrze pierwsze. Potem kontrola ciśnienia. Ciepło tam, gdzie ciepło utrzymywało uszczelki elastyczne. Chłodzenie tam, gdzie próbki, lekarstwa albo ciała tworzyły ryzyko prawne. Dane tam, gdzie logi zapobiegały stratom medycznym lub kontraktowym. Światło później, chyba że sama ciemność tworzyła ryzyko potknięcia, cięcia lub paniki.
 
-Marauderzy uczą się pytać, kto płaci za światło. Pokój, który nie potrafi odpowiedzieć, niekoniecznie jest pusty. Może pożyczać od czegoś, czego gracz jeszcze nie znalazł.
+Po opuszczeniu tę hierarchię trudniej czytać. Pokój może wyglądać na zajęty, bo tani obwód nadal działa. Może wyglądać na martwy, bo ważniejsze obciążenie zabrało każde ogniwo w zasięgu. Użyteczne pytanie nie brzmi, czy światło jest włączone. Użyteczne pytanie brzmi, jakie obciążenie za nie płaci.
 
-## 2. Logika Spadku Mocy
+## 2. Kolejność spadku napięcia
 
-Spadek mocy to maszyna wybierająca, co zasługuje na dalsze istnienie.
+Spadek napięcia to nie blackout. To sekwencja.
 
-Kiedy zasilanie spada, stare systemy zrzucają obciążenia po kolei. Panele dekoracyjne umierają przed pompami. Archiwa niekrytyczne śpią przed kontrolą atmosfery. Silniki drzwi zwalniają, zanim zamki ciśnieniowe puszczą. Szafki medyczne mogą zachować chłodzenie i odmawiać otwarcia. Hierarchia była racjonalna, gdy ją utrzymywano, okrutna po porzuceniu i niebezpieczna po częściowych naprawach ludzi, którzy nie rozumieli pierwotnych założeń.
+Kiedy napięcie spada, utrzymywane systemy zrzucają obciążenia w zaprojektowanej kolejności. Listwy świetlne na ścianach padają przed pompami obiegowymi. Terminale niekrytyczne zasypiają przed logiką ciśnienia. Silniki drzwi zwalniają, zanim twarde zamki puszczą. Szafy medyczne mogą zachować chłodzenie i odmówić otwarcia. Bezpieczny pokój może zachować wymianę powietrza, zabijając każde gniazdo, na które liczyła ekipa naprawcza.
 
-Spadki mocy tworzą dziwne pokoje. Ławka może mieć ciepło, ale nie logi. Pompa może pracować i już nie raportować. Lampka ostrzegawcza może migać z chronionego obwodu, kiedy sensor, przed którym ostrzega, jest martwy. Bezpieczny pokój może utrzymywać ruch powietrza, zabijając każde gniazdo, którego gracz miał nadzieję użyć.
+Porzucone systemy nie zawsze idą według starego wykresu. Zasolone styczniki kleją się. Łatane korytarze cofają zasilanie do paneli, które miały umrzeć. Martwy czujnik może utrzymać lampę ostrzegawczą, bo obwód ostrzegawczy łatwiej zasilić niż prawdę, którą kiedyś raportował. Pompa może działać bez raportowania, bo jej szyna telemetrii umarła pierwsza.
 
-Black Keel ceni historie spadków, bo ujawniają kolejność awarii. Które obwody zginęły pierwsze, może dowieść, kiedy habitat stracił załogę, kiedy manipulowano roszczeniem, czy lodówka próbek pozostała zimna i czy zamknięty pokój zapieczętowała procedura czy głód.
+Kolejność spadku ma znaczenie, bo mówi, kiedy pokój przestał być utrzymywany. To, które obciążenia umarły pierwsze, może pokazać, czy próbka została zimna, czy drzwi zamknięto procedurą czy głodem zasilania, czy beacon alarmowy miał moc, gdy Black Keel oznaczyło go jako nieaktywny, i czy ktoś ruszył wyłącznik po zamknięciu oficjalnego logu trasy.
 
-## 3. Zimne Starty
+## 3. Zimne starty
 
-Zimny start martwego miejsca nie jest tym samym co włączenie go.
+Zimny start martwego pokoju to nie to samo co włączenie go.
 
-Zimny start prosi stare maszyny, by przypomniały sobie swój kształt po tym, jak ciśnienie, sól, czas i zaniedbanie go zredagowały. Łożyska budzą się suche. Styczniki łukują przez film mineralny. Baterie przyjmują ładunek nierówno. Systemy bezpieczeństwa porównują dzisiaj z progami napisanymi dla obsadzonej kolonii i uznają cały świat za podejrzany. Czasem to podejrzenie jest słuszne.
+Zimny start prosi stare maszyny o ruch po tym, jak ciśnienie, sól i czas zmieniły ich tolerancje. Łożyska budzą się suche. Styczniki łukują przez film mineralny. Stosy baterii przyjmują ładunek nierówno. Wentylatory rzucają osiadły kurz, pleśń albo parę chemiczną w powietrze, które wyglądało na zdatne do oddychania. Logika bezpieczeństwa porównuje uszkodzony pokój z progami pisanymi dla obsadzonej kolonii i uznaje połowę miejsca za podejrzaną.
 
-Dobrzy Marauderzy nie wpychają energii do martwego pokoju, jeśli nie są gotowi na złą odpowiedź. Wentylator może wrzucić truciznę w oddychalne powietrze. Drzwi mogą się zablokować, by chronić stan ciśnienia, który już nie istnieje. Serwer może nadpisać ostatni użyteczny crash log czystą porażką rozruchu. Grzejnik może zmiękczyć uszczelkę, która przeżywała tylko dlatego, że była zimna.
+Czasem maszyna ma rację, że podejrzewa. Drzwi mogą się zablokować, chroniąc stan ciśnienia, który już nie istnieje. Grzałka może zmiękczyć uszczelkę, która przetrwała tylko dlatego, że była zimna. Serwer może nadpisać ostatni użyteczny crash record świeżą awarią bootu. Pompa może usunąć wodę z jednego pokoju i przepchnąć ją przez pękniętą tacę do drugiego.
 
-Zimny start jest wyborem sekwencji. Obudź najpierw złą rzecz, a pokój opowie jedną historię. Obudź go ostrożnie, a może opowiedzieć inną.
+Dobre ekipy nie budzą pokoju naraz. Budzą najpierw pomiar, potem powstrzymanie, potem ruch, potem komfort. Jeśli kolejność musi się zmienić, zapisują dlaczego. Zimny start to zakład o sekwencję, a HECTON-8 pobiera od ekip, które zgadują z nawyku.
 
-## 4. Pożyczona Energia
+## 4. Pożyczone zasilanie
 
-Nic nie zawstydza profesjonalisty tak, jak odkrycie, że używał cudzej rezerwy.
+Pożyczone zasilanie wykonuje pracę, do której jego etykieta się nie przyznaje.
 
-HECTON-8 pełen jest pożyczonej energii. Komórki awaryjne krzyżowo zasilane przez łatane korytarze. Ładowarki dronów karmiące światła bezpiecznych pokoi. Martwe laboratorium kradnące prąd kroplowy z martwo urodzonej anteny. Zapomniany medyczny zamrażalnik utrzymujący jedną próbkę przy życiu przez głodzenie autorytetu silników sześciu drzwi. Kolonia nie zawsze zawodziła czystymi wyspami. Zawodziła negocjacjami, których nikt żywy nie zamknął.
+HECTON-8 jest tego pełne: awaryjne ogniwa karmione krzyżowo przez łatane korytarze, ładowarki dronów trzymające światła safe-roomów, martwe laboratorium kradnące prąd kropelkowy z macierzy antenowej, medyczna zamrażarka zachowująca jedną próbkę przez odebranie sześciu drzwiom uprawnień silnika. Kolonia rzadko zawodziła w czystych wyspach. Obciążenia negocjowały dalej po zniknięciu ludzi, którzy rozumieli umowę.
 
-Marauderzy wykorzystują to i boją się tego. Linia mostkująca może przywrócić konsolę dość długo, by wycenić partię ratunkową. Może też osuszyć ostatnią rezerwę utrzymującą przy życiu beacon świadka. Przenośna komórka może otworzyć drzwi, obudzić obwód pasożytniczy albo sprawić, że Black Keel zapyta, dlaczego zapis zasilania nie pasuje już do zgłoszonej trasy.
+Szabrownicy używają pożyczonego zasilania, bo może zmienić martwą trasę w trasę płatną. Linia mostka może obudzić konsolę dość długo, by wycenić partię odzysku. Przenośne ogniwo może otworzyć szafkę, zanim uszczelka wyschnie. Ładowarka może uruchomić pompę na kilka minut potrzebnych do przejścia sumpu.
 
-Energia jest dowodem. Każdy przesunięty kabel jest zdaniem w tym dowodzie.
+Ten sam mostek może wyssać ostatnią rezerwę karmiącą beacon dowodowy, wymazać lukę czasu w power logu albo sprawić, że drzwi safe-roomu zawiodą zamknięte z lekami w środku. Audytorzy Black Keel lubią pożyczone zasilanie, gdy zwiększa wartość odzysku. Nie lubią go, gdy nowa ścieżka zasilania wyjaśnia, czemu ich stara odmowa była fałszywa.
 
-## 5. Czego Uczy Się Gracz
+## 5. Rozdzielnie
 
-Gracz uczy się, że zasilanie nie jest stanem binarnym. Jest porządkiem społecznym między maszynami.
+Rozdzielnia to mapa ze śladami przypaleń.
 
-Żywemu panelowi można zaufać, obciążyć go, obejść, zagłodzić, przywrócić albo zostawić w spokoju. Każde działanie zmienia to, co miejsce może pamiętać. Zasilenie archiwum może zabić pompę. Uratowanie pompy może zostawić wiadomość nieprzeczytaną. Przywrócenie światła może uczynić pokój bezpieczniejszym dla gracza i bardziej widocznym dla wszystkiego innego, co używa ciemności.
+Etykiety Deep Reach są użyteczne, dopóki nie są. Wyłącznik `Hab Lighting B` może po trzech łatkach awaryjnych karmić pompę. Zaklejona dźwignia może ukrywać improwizowane zasilanie krzyżowe podtrzymania życia. Czysty wyłącznik w brudnym pokoju zwykle znaczy, że ktoś dotknął go po zalaniu. Ciepły wyłącznik w zimnym aneksie zasługuje na uwagę przed drzwiami obok.
 
-Dobra praca z zasilaniem nie polega na tym, by wszystko rozjaśnić. Polega na decyzji, która prawda zasługuje na energię jako pierwsza. Najlepszy Marauder nie jest tym, który nosi największą komórkę, lecz tym, który rozumie, co pokój poświęcał, by utrzymać jedno zielone światło przy życiu.
+Nagrania szabrowników wolą fakty do szybkiego sprawdzenia: pozycja dźwigni, temperatura szyny, sól w zawiasie, zapach przy styczniku, które obciążenia migają, gdy zaciski ogniwa gryzą. Długie wyjaśnienia zabijają ludzi w rozdzielniach. Krótkie etykiety trzymają ręce uczciwiej.
 
-Na HECTON-8 ciemność nie jest pustką, a światło nie jest miłosierdziem. Oba są księgowością. Gracz przeżywa, ucząc się czytać rachunek, zanim go zapłaci.
+Najlepsza notatka to nie `safe`. Najlepsza notatka to `karmi zamek kliniki, wybija przy 11 A, nie mostkować w cyklu pompy`.
+
+## 6. Zasilanie jako dowód
+
+Zapisy zasilania mogą dowieść sekwencji, gdy pokoje kłamią.
+
+Wyzwolenie wyłącznika może pokazać, że drzwi otwarto po deklarowanej ewakuacji. Krzywa ładowania może pokazać, że przenośne ogniwo podłączono po złej stronie pieczęci depozytowej. Log spadku może pokazać, że chłodzenie przetrwało dość długo, by próbka zachowała wartość. Brak przerwy może pokazać, że ktoś edytował archiwum albo zasilił je z nieujętej linii.
+
+Zasilanie tworzy też odpowiedzialność. Ekipa, która przywróci światło, może ujawnić się w logu odbiornika. Ekipa, która utrzyma pompę przy życiu, może zniszczyć zapis terminala. Ekipa, która ukradnie ogniwo, może zmienić cichy safe-room w martwy i zostawić rachunek w śladzie napięcia.
+
+Każdy przeniesiony kabel zmienia historię, którą pokój może dowieść.
+
+## 7. Reguła terenowa
+
+Zanim zaufasz światłu, znajdź jego obciążenie.
+
+Zanim zmostkujesz zasilanie, nazwij, co straci zasilanie.
+
+Zanim wykonasz zimny start pokoju, obudź instrumenty, które powiedzą, kiedy przestać.
+
+Na HECTON-8 ciemność nie dowodzi pustki, a światło nie dowodzi bezpieczeństwa. Oba są stanami zasilania z właścicielami, kosztami i zapisami. Nie przeżywają ekipy z największymi ogniwami. Przeżywają te, które wiedzą, jaki wyłącznik każe pokojowi powiedzieć najtańsze kłamstwo.

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: No Clean Ending Dossier Note"
+title: "Dossiernotitie zonder schoon einde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: No Clean Ending Dossier Note
+# Dossiernotitie zonder schoon einde
 
-NL LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+De notitie bepaalt de geheugentoon na het einde. Zelfs het sterkste einde laat een levend bestand achter: iets gered, iets beschadigd en een kost die weigert netjes te worden.
 
 ## Scanner
 
-NL LOC HOLD: Dossier note: closure denied; consequence retained.
+Dossiernotitie: afsluiting geweigerd; gevolg behouden.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: uitkomst opgeslagen. Schone afsluiting niet beschikbaar onder huidige bewijsstatus. Schuld, ecologie, aansprakelijkheid en getuigenbewaring blijven actieve records.
 
 ## Audio
 
-NL LOC HOLD: You saved something. That is not the same as clearing it.
+Je hebt iets gered. Dat is niet hetzelfde als het zuiveren.
 
 ## Field Note
 
-NL LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Dossier na einde houdt de brug open: uitkomst geregistreerd, schuld en bewijs onopgelost, geen perfecte overwinning toegekend.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/nl_NL. -->

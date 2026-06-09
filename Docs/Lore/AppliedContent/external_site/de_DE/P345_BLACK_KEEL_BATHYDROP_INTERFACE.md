@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Black-Keel-Bathydrop-Schnittstelle
 
-Die Bathydrop-Schnittstelle ist der Punkt, an dem das Weltraumsetting das Ozeanspiel berührt. Black Keel im Orbit reicht nicht. Der Spieler braucht eine Kette: Kapselintegrität, Auftriebskontrolle, Komm-Mast, Aufstiegsklinke, druckfeste Dichtungen, Relaismathematik, Oberflächentiming und Trägerakzeptanz. Ein gebrochenes Glied macht Rettung zur Theorie. So bleibt der Anfang ehrlich. Der Spieler ist nicht gefangen, weil die Geschichte das Schiff vergessen hat. Er ist gefangen, weil die einzige Maschine, die Abyss, Oberfläche und Orbit verbinden kann, auf Arten versagt hat, die das Wasser stündlich verschlimmert.
+Die Bathydrop-Schnittstelle ist der Ort, an dem die Routenökonomie den Ozean berührt. Es genügt nicht, dass Black Keel im Orbit existiert. Ein funktionierender Aufstieg braucht eine Kette: Kapselintegrität, Auftriebskontrolle, Komm-Mast, Aufstiegsklinke, druckfeste Dichtungen, Relaismathematik, Oberflächentiming und Trägerakzeptanz.
+
+Bricht ein Glied, wird die gesamte Rettung Theorie. Das hält den Anfang ehrlich. Niemand ist gefangen, weil der Träger aus der Welt verschwunden wäre. Die Falle existiert, weil die einzige Maschine, die Abyss, Oberfläche und Orbit verbinden kann, in benannten Teilen versagt hat, und weil Wasser jedes versagte Teil Stunde für Stunde verschlimmern kann.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Варіанти реквізиту тріажних реєстрів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Варіанти реквізиту тріажних реєстрів
 
-UA LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Варіанти реквізиту тріажних реєстрів визначають медичний доказ як доказ процесу. HECTON-8 використовує реєстри, щоб поєднати травму, відмову тиску, відмову маршруту, стан обладнання й прогалини свідків. Так жах лишається системним: гравець читає не лише те, що людей поранило, а й те, як колонія перетворювала шкоду на маршрутні рішення.
 
 ## Scanner
 
-UA LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Медичний доказ має викривати затримку й маршрутизацію, а не прикрашати кімнату стражданням.
 
 ## Terminal
 
-UA LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: кожен запис реєстру має пов'язувати травму з тиском, відмовою маршруту, станом обладнання, затримкою сертифікації або відсутнім ланцюгом свідка. Самого болю недостатньо. Реквізит має показувати, хто міг рухатися, кого утримали і яка система зробила затримку процедурною.
 
 ## Audio
 
-UA LOC HOLD: Pain is not proof until the route bears the mark.
+Біль не доказ, доки маршрут не несе мітку.
 
 ## Field Note
 
-UA LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Варіанти: скорочення crush-status, мітка кисневого боргу, закреслений route hold, нотатка стабілізації Atlas, розрив witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/uk_UA. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # מדריך היסטוריית לחץ של חוב כחול
 
-Blue debt היא שפת חוזה כרוכה סביב substrate מסוכן. Pressure history, custody marks ו-signal drift מחליטים אם הוא הופך לתשלום נקי, מנוף Atlas או מניע החזרה של Deep Reach.
+חוב כחול הוא שפת חוזים הכרוכה סביב מצע מסוכן. היסטוריית לחץ, סימני משמורת וסטיית אות מחליטים אם יהפוך לתשלום נקי, מנוף של Atlas או מניע חזרה של Deep Reach.
 
 ## Scanner
 
-דגימת blue debt סומנה. אמת pressure history, containment stage ו-signal drift לפני export.
+דגימת חוב כחול סומנה. אמת היסטוריית לחץ, שלב הכלה, שרשרת משמורת וסטיית אות לפני יצוא.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt הוא סלנג salvage ל-Xenon-Omega-bearing pressure-stable substrate. הוא יקר כי extreme computation ו-energy isolation אוהבים אותו, לא כי הוא זוהר.
+הערת בוזזים: חוב כחול הוא סלנג salvage למצע יציב לחץ הנושא Xenon-Omega. הוא יקר כי חישוב קיצוני ובידוד אנרגיה אוהבים אותו, לא כי הוא זוהר.
 
 ## Audio
 
-חוב כחול הוא השם שאנשים נותנים לו אחרי שהחשבונית מגיעה.
+קוראים לזה חוב כחול אחרי שהחשבונית מגיעה.
 
 ## Field Note
 
-צבע אינו grade. מיכל שקט עם custody נקייה משלם; מיכל שר מזמין לך drone wake.
+צבע אינו דירוג. מכל שקט עם משמורת נקייה משלם; מכל ששר קונה עקבת רחפנים.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/he_IL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Table des archétypes d'équipes de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Table des archétypes d'équipes de pression
 
-FR LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Les archétypes d'équipes de pression transforment la distribution ouvrière de HECTON-8 en histoire du travail lisible. La colonie ne s'explique pas d'abord par des biographies ; elle s'explique par le travail. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany et Payload Witness donnent à chaque nom une fonction, une place dans l'économie océanique et une raison d'apparaître comme preuve. Le lore remonte ainsi par les objets et les routes plutôt que par une exposition détachée.
 
 ## Scanner
 
-FR LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Les équipes sont des verbes avant d'être des biographies : pomper, sceller, relayer, cartographier, forger, trier, cultiver, témoigner.
 
 ## Terminal
 
-FR LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES : Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany et Payload Witness. Chaque identité ouvrière se lie à une famille d'équipe avant le détail personnel. Les preuves restent ainsi attachées aux machines, routes, ruptures de pression, culture alimentaire, droit de récupération et chaîne finale du payload.
 
 ## Audio
 
-FR LOC HOLD: Job first. Memory second. That is how the colony survives.
+Le travail d'abord. La mémoire ensuite. C'est ainsi que la colonie survit sur papier.
 
 ## Field Note
 
-FR LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Un ouvrier mort se lit plus clairement quand la pièce a encore besoin du travail qu'il connaissait.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/fr_FR. -->

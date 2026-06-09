@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Public Ledger Record"
+title: "Запис публічного реєстру"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Public Ledger Record
+# Запис публічного реєстру
 
-UA LOC HOLD: Public Ledger Record defines the truth ending that blocks erasure without promising clean justice.
+Запис публічного реєстру — це розрив зберігання, а не вирок. Корисний вантаж доходить до маршруту Tau/Luyten зі свідковим хешем, закритими координатами, рівнем доказу й міткою приймання до того, як Deep Reach встигає закрити архів. Стерти запис стає важче, але живий файл отримують і майбутні клерки, кредитори, хартійні суди, мережі вцілілих та мисливці за чужими справами.
 
 ## Scanner
 
-UA LOC HOLD: Witness hash escaped claimant custody.
+ЗАПИС ПУБЛІЧНОГО РЕЄСТРУ // Свідковий хеш вийшов із приватного зберігання пакетним маршрутом Tau/Luyten. Публічний рівень доказу задано; затримку відповіді Deep Reach додано.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ЗАПИС ФІНАЛУ / ПУБЛІЧНИЙ РЕЄСТР
+Маршрут: відкладений пакет Tau/Luyten.
+Вантаж: свідковий хеш, смуга зберігання, рівень доказу із закритими координатами, мітка часу приймача.
+Контроль після реле: втрачено.
+Відповідь Deep Reach: зустрічний пакет затримано публічною квитанцією.
+Відома втрата: відправник не обирає першого читача й подальший ланцюг подання.
 
 ## Audio
 
-UA LOC HOLD: Truth can leave your hands and still matter.
+Реєстр поставив штамп. Першого читача ти вже не обираєш.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Якщо квитанція публічна, файл виживає тому, що виходить із твоїх рук. Перевір закриття координат, перш ніж радіти штампу.
 
 <!-- In-Game Wiki; generated from P273_PUBLIC_LEDGER_RECORD/uk_UA. -->

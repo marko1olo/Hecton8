@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Behandeling van blauweschuld-casket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Behandeling van blauweschuld-casket
 
-Blue debt is condition-dependent salvage.
+Blauwe schuld is toestand-afhankelijke salvage. Houd het verzegeld, koud en drukstabiel voordat je beslist of het gereedschapsmateriaal, claimwaarde, aas of bewijs is.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+DRUKCASKET // Stabiel zolang koud en verzegeld. Niet ontluchten. Klem voor transport als de naadtemperatuur stijgt.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+XO-CONTINUÏTEITSSUBSTRAAT // Drukstaat bewaren. Civiele opslag verboden. Monstertelemetrie alleen via claim-grade custody routeren.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Als de casket op sonar begint te tellen, is hij niet meer alleen van jou.
 
 ## Field Note
 
-Stabilize before you spend it.
+Blauwe schuld betaalt omdat hij met drie eigenaars aankomt: degene die hem vond, degene die hem wil en het ding dat merkte dat hij bewoog.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/nl_NL. -->

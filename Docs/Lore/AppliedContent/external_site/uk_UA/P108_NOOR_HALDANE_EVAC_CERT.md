@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Нур Халдейн: евакуаційний сертифікат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Нур Халдейн: евакуаційний сертифікат
 
-UA LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+«Нур Халдейн: евакуаційний сертифікат» — стаття-доказ Deep Reach про дотримання процедури як смертельний об'єкт. Халдейн не криклива лиходійка. Вона підпис юрисконсульта, який зберігає евакуацію юридично захищеною, поки фізичний маршрут відмовляє.
 
-## Scanner
+Її утримання побудоване з правдоподібних вимог: тисково-біологічний карантин, опіка перевізника, зовнішній перегляд маршруту, приймання наступного порту, ланцюг відповідальності. Жодне з цих слів не абсурдне. У цьому суть. Система може бути права у власній рамці й однаково вбивати очікуванням.
 
-UA LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-UA LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-UA LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-UA LOC HOLD: This is the paper signature players should hate.
+Стаття дає гравцям спосіб читати старі двері колонії та маршрутні панелі. Замкнений евакуаційний шлях — не лише зламана машина. Це може бути юридичне рішення, яке досі чекає перегляду. Noir HECTON-8 народжується з цієї затримки: нікому не треба казати «нехай помруть», якщо сертифікат може достатньо довго казати «ще ні».
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/uk_UA. -->

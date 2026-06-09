@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Preserve Quarantine Record"
+title: "רשומת שימור הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Preserve Quarantine Record
+# רשומת שימור הסגר
 
-HE LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+רשומת שימור הסגר היא הוראת ההחזקה לסיום הפגום הטוב ביותר האפשרי. המטען נשאר מחוץ למשמורת ישירה של Deep Reach, הקואורדינטות נשארות עיוורות וקבלה חלקית שומרת לחץ חיצוני פעיל. Atlas ממשיך לנשום דרך לוגיקת תיקון פגומה, ומגן על אקולוגיית לחץ ועל חיי תחזוקה ששרדו, בזמן ששמות עובדים, אחריות אגן והגשות salvage עתידיות נשארים לא פתורים.
 
 ## Scanner
 
-HE LOC HOLD: Payload withheld. Consequence deferred.
+רשומת שימור הסגר // המטען הוחזק מ-Deep Reach. Atlas נשאר פגום אך פעיל; הוראת החזקת אקולוגיה חוסמת העברת בעלות נקייה.
 
 ## Terminal
 
-HE LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+רשומת סיום / שימור הסגר
+מטען: הוחזק מחוץ למשמורת ישירה של Deep Reach.
+הוראה: החזקת אקולוגיה, קואורדינטות עיוורות, קבלה ציבורית חלקית.
+מצב Atlas: לוגיקת תיקון פגומה פעילה.
+מוגן: אקולוגיית לחץ וחיי תחזוקה ששרדו.
+לא פתור: שמות עובדים, אחריות אגן, הגשות salvage עתידיות.
+אובדן ידוע: שימור לא נהיה חפות.
 
 ## Audio
 
-HE LOC HOLD: Leaving something alive is not the same as saving it.
+השארת את זה חי. זה לא אותו דבר כמו להציל.
 
 ## Field Note
 
-HE LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+החזקת החבילה מגנה על כמה מערכות חיות ומשאירה את הסמכות השבורה נושמת. עקוב אחר תור התביעות העיוורות.
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/he_IL. -->

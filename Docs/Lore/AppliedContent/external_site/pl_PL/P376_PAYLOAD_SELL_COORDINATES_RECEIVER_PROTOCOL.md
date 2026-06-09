@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protokół sprzedaży koordynat payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protokół sprzedaży koordynat payload
 
-PL LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+Ten protokół nie jest prostą sprzedażą łupu. To przekazanie zasięgu. Deep Reach ma już dość papieru, by spierać się o HECTON-8; brakuje jej pewnej drogi powrotu przez uszkodzony basen. Payload daje tę drogę, wiążąc koordynaty z pewnością, dozorem dowodów i klasą salvage.
 
-## Scanner
-
-PL LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-PL LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-PL LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-PL LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Wypłata jest prawdziwa, ulga w długu też. Dlatego trasa jest groźna, a nie karykaturalna. Zdesperowany operator może wyczyścić zastaw i jednocześnie dostarczyć drogę powrotu do kolonii firmie, która pogrzebała zapisy czasu. Stempel odbiorcy zmienia przetrwanie w usługę.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/pl_PL. -->

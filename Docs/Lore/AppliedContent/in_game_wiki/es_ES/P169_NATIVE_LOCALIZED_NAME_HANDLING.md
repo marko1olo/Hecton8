@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protocolo de localización nativa de nombres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protocolo de localización nativa de nombres
 
-ES LOC HOLD: Native name handling keeps the worker-evidence layer compatible with multilingual in-game wiki, site pages, lockers and terminals.
+La localización nativa de nombres evita que la capa de evidencia obrera se vuelva un accidente de interfaz. El jugador no debe ver nombres aplastados, invertidos sin sentido, medio traducidos por fallback ni restos debug en inglés.
+
+La regla es simple: la identidad personal se escribe por locale y los sistemas alrededor se traducen normalmente. El nombre debe seguir siendo un artefacto deliberado. Si un idioma necesita forma corta para placa, se escribe y se hornea, no se improvisa en runtime.
 
 ## Scanner
 
-ES LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Esta tira está autorada, no traducida en vivo. La persona sobrevive a la interfaz solo si la interfaz deja de improvisar.
 
 ## Terminal
 
-ES LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+LOCALIZACIÓN DE NOMBRES // Nombres personales, tiras cortas y fragmentos de placa se hornean por locale. Cargos, departamentos, permisos de ruta y notas de turno se localizan alrededor. RTL y CJK requieren formas cortas autoradas, saltos seguros y sin recomposición live en escáner, UI de casillero, terminales o wiki externa.
 
 ## Audio
 
-ES LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Un nombre que rompe la UI no es respeto. Es la colonia borrando al trabajador dos veces.
 
 ## Field Note
 
-ES LOC HOLD: No live name translation. Preserve identity through baked strings.
+Nunca permitas que un fallback runtime renombre a un trabajador muerto. Un nombre roto es otra forma de borrado.
 
 <!-- In-Game Wiki; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/es_ES. -->

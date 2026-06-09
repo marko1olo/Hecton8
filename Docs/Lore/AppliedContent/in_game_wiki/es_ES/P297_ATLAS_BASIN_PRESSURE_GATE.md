@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Basin Pressure Gate"
+title: "Compuerta de presión de la cuenca Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Basin Pressure Gate
+# Compuerta de presión de la cuenca Atlas
 
-ES LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+La compuerta ancla el umbral final en grado de traje, prueba de presión y conflicto de autoridad. La puerta no es mística; es un sistema industrial decidiendo si el jugador cuenta como acceso, prueba o contaminación.
 
 ## Scanner
 
-ES LOC HOLD: Basin gate requires pressure proof and authority response.
+La compuerta de la cuenca exige prueba de presión, autoridad de ruta y un cuerpo que pueda clasificar.
 
 ## Terminal
 
-ES LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: prueba de presión incompleta. Grado de traje aceptado bajo el umbral de descenso. La abrazadera de autoridad reconoce patrón Deep Reach revocado, no al reclamante actual. Anulación manual requiere carga local, elección de receptor y payload testigo.
 
 ## Audio
 
-ES LOC HOLD: It knows the old key. It does not know you.
+Conoce la vieja llave. No te conoce a ti.
 
 ## Field Note
 
-ES LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+El umbral final debe leerse como una puerta de servicio a una fábrica viva, no como un portal fantástico.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/es_ES. -->

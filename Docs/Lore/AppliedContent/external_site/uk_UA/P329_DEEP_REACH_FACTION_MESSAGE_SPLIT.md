@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Deep Reach Faction Message Split"
+title: "Розкол повідомлень Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Deep Reach Faction Message Split
+# Розкол повідомлень Deep Reach
 
-UK LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+Гравець має чути Deep Reach як систему під тиском: контроль відповідальності, повернення сальважу, стара інженерна провина, тиск страховика і чорні скриньки автоматики, що перехрещують дроти над затопленою колонією. Конфлікт не виправдовує компанію. Він робить її небезпечнішою, бо жоден голос не контролює її повністю.
 
 ## Scanner
 
-UK LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Три джерела Deep Reach суперечать одне одному: Recovery хоче координати, Legal хоче тиші, старий інженерний вузол попереджає, що басейн відповість.
 
 ## Terminal
 
-UK LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance запитує судноплавні координати. Asset Silence наказує стримувати докази й не визнавати нічого публічно. Legacy Engineering Node 4 повторює доколапсне попередження: не турбувати нижні релейні лінії басейну під час тіні Aegir. Це не бунтівники. Це відділи, що захищають різні втрати.
 
 ## Audio
 
-UK LOC HOLD: A company can be one logo and three knives.
+Один логотип. Три голоси. Жоден не чистий.
 
 ## Field Note
 
-UK LOC HOLD: This is not redemption. It is pressure-source readability.
+Використати після того, як гравець почув принаймні два тони Deep Reach. Удар має бути неоднозначністю із зубами: суперечливі інструкції, спільна власність, жодного чистого союзника.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/uk_UA. -->

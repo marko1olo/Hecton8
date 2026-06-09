@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodnik po pressure glass i sealant"
+title: "Przewodnik po szkle ciśnieniowym i uszczelniaczu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik po pressure glass i sealant
+# Przewodnik po szkle ciśnieniowym i uszczelniaczu
 
-Pressure glass to miejsce spotkania geologii z Atlas. Repair network używa istniejących pęknięć, krawędzi minerałów i pressure memories jako tras, więc użyteczna soczewka może być także żywą granicą.
+Szkło ciśnieniowe to miejsce spotkania geologii z Atlasem. Stare pęknięcia, krawędzie minerałów, szwy biofilmu i pamięć naprężeń stają się trasami chemii naprawczej, więc użyteczna soczewka może być także żywą granicą.
 
 ## Scanner
 
-Fraktura pressure-glass uszczelniona chemią Atlas. Bezpieczny lens stock tylko jeśli seal map pozostaje nienaruszona.
+Pęknięcie szkła ciśnieniowego zapieczętowane chemią Atlasu. Zapas soczewek jest bezpieczny tylko dopóki mapa uszczelnienia pozostaje cała.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass zapisuje stary tide stress. Atlas sealant podąża tymi pęknięciami, bo pęknięcia już opisują linie awarii systemu.
+PRZEWODNIK TERENOWY: szkło ciśnieniowe zapisuje dawny stres pływów. Uszczelniacz Atlasu idzie tymi pęknięciami, bo pęknięcia już opisują linie awarii systemu.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Sieć naprawcza czyta pęknięcia tak, jak ty czytasz mapę.
 
 ## Field Note
 
-Nie szlifuj ładnej krawędzi. Idź za fracture map i tnij od martwej strony seal.
+Nie szlifuj ładnej krawędzi. Idź za mapą pęknięć i tnij od martwej strony uszczelki.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/pl_PL. -->

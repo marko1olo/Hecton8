@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "Garde tonne-window de Black Keel"
+title: "Garde tonne-window Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Garde tonne-window de Black Keel
+# Garde tonne-window Black Keel
 
-Un reçu Keelmark explique pourquoi Black Keel parle en masse avant de parler de secours. Le porteur fonctionne par garde tonne-window : un slot légal apparié à une charge physique, une exposition d'assurance et une phase de l'horloge de route. Un corps vivant, un noyau de preuve scellé, une coupe de matériau de procédé Xenon-Omega et une caisse de coque récupérable se disputent la même fenêtre si le contrat les place sur la même ligne. Le système est froid, mais pas aléatoire. Il dit au joueur ce que la frontière valorise et quel choix rentrera le premier.
+La tonne-window est une expression nette de la cruauté frontier. Elle sonne comme de la comptabilité parce que c'en est, mais l'objet compté est physique : masse dans une fenêtre de récupération étroite. Black Keel ne lève pas tout l'océan, seulement ce que route, assurance, quarantaine et garde autorisent.
+
+Chaque payload devient donc aigu. Un contracteur vivant a de la valeur, mais un noyau de preuve contre Deep Reach aussi. Xenon-Omega peut valoir plus que du salvage ordinaire et empoisonner la quarantaine. Une coque récupérable peut satisfaire un assureur plus vite qu'un dossier ouvrier satisfait la justice.
 
 ## Scanner
 
-LIGNE DE GARDE // La masse tonne-window acceptée peut être sauvetage, preuve, corps ou objet de dette. Un paquet entendu ne donne pas priorité de levage ; il attribue la responsabilité.
+Reçu Keelmark. Une tonne-window associe masse payload, phase de route, exposition assurance, classe quarantaine et priorité recovery dans un slot carrier.
 
 ## Terminal
 
-REÇU DE MASSE KEELMARK // La fenêtre accorde la garde à un slot, pas la pitié à une personne. Les charges en surmasse passent au prochain passage sauf si valeur de revendication, classe de quarantaine et géométrie du porteur s'alignent.
+GARDE TONNE-WINDOW // Créance 4.8 tonne-window active. Contracteur vivant, noyau de preuve scellé, coupe Xenon-Omega et caisse de coque récupérable partagent la classe recovery sauf repriorisation par preuve de garde. Statut humain seul insuffisant.
 
 ## Audio
 
-Audio de dette Black Keel : je peux porter la preuve, le métal ou toi. Le registre demandera lequel garde le navire solvable.
+Black Keel parle en tonnes parce que les tonnes sont ce que la fenêtre peut porter.
 
 ## Field Note
 
-Quand le porteur dit masse acceptée, il ne dit pas personne acceptée. Attache ta preuve à ta combinaison avant que le registre te fasse choisir.
+Une tonne-window n'est pas de l'argent. C'est la permission donnée à une masse de partir.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/fr_FR. -->

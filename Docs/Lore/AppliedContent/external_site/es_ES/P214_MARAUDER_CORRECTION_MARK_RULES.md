@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Reglas de marcas de corrección marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Reglas de marcas de corrección marauder
 
-ES LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Las Reglas de marcas de corrección marauder explican cómo HECTON-8 deja que salvagers posteriores toquen evidencia antigua sin romper canon. Las marcas añaden una capa viva sobre papeleo corporativo: preservar un nombre, desafiar una categoría, advertir una ruta, tasar una muestra, ocultar un testigo o marcar deuda. Hacen que la evidencia de rejugada parezca manipulada por otros trabajadores de reclamación sin dejar de ser funcional.
 
 ## Scanner
 
-ES LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Una marca de corrección puede rescatar un nombre, contaminar una reclamación o advertir al siguiente buzo que la categoría oficial miente.
 
 ## Terminal
 
-ES LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: las marcas marauder deben cambiar la interpretación de evidencia, el riesgo de ruta o la presión de pago. Las marcas válidas preservan un nombre laboral, desafían una categoría de seguro, advierten una ruta, tasan una muestra, ocultan un testigo o marcan deuda. El graffiti vacío rompe la cadena de evidencia.
 
 ## Audio
 
-ES LOC HOLD: Somebody came before you and still failed to leave clean.
+Alguien vino antes que tú y aun así no logró irse limpio.
 
 ## Field Note
 
-ES LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Marcas: preservar nombre, desafiar categoría, advertir ruta, tasar muestra, ocultar testigo, marcar deuda. La escritura debe cambiar la lectura, no decorar el prop.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/es_ES. -->

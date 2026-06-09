@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Storm Window Rush Contract Seed"
+title: "Seed Kontrak Rush Jendela Badai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Storm Window Rush Contract Seed
+# Seed Kontrak Rush Jendela Badai
 
-ID LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Rush Jendela Badai adalah keluarga kontrak tempat cuaca dan orbit menjadi sistem tekanan pertama. Rute tidak menambah kekuatan warisan; ia memendekkan waktu kerja aman, mempersempit geometri pemulihan, dan menghukum perbaikan ceroboh lebih cepat.
 
 ## Scanner
 
-ID LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Seed kontrak: jendela rush. Bayaran lebih tinggi terikat tutupan badai yang menutup, waktu shutter orbital, dan slack perbaikan berkurang.
 
 ## Terminal
 
-ID LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: jendela badai dipadatkan, shutter relai orbital bermusuhan, plafon bayaran naik, recall bathydrop lebih awal, toleransi perbaikan turun.
 
 ## Audio
 
-ID LOC HOLD: This contract pays because it hates waiting.
+Kontrak ini membayar karena jendelanya sedang menutup.
 
 ## Field Note
 
-ID LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Catatan marauder: bayaran rush terlihat lebih besar karena kontrak menagih setiap menit dua kali.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/id_ID. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Sanitized Accident Reply Window"
+title: "Вичищене вікно відповіді про аварію"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Sanitized Accident Reply Window
+# Вичищене вікно відповіді про аварію
 
-UK LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+Вичищене вікно відповіді про аварію дає Deep Reach голос у теперішньому часі, не перетворюючи корпорацію на всезнаючу силу. Їхня перша жива відповідь - не погроза. Вона гірша і тихіша: старе публічне пояснення, проштовхнуте через новий канал під тиском. Повідомлення досі говорить про штормовий нагін, геологічний обвал і провал автономної евакуації, бо цей script уже раз захистив Deep Reach, і система тягнеться до нього знову. Гравець має почути його лише після фізичної суперечності: неправильного часу дверей, поганого сертифіката насоса, імен, що пережили payroll erasure, кімнати, чиї пошкодження не схожі на погоду. Таймінг важливий. Якщо script приходить першим, це експозиція. Якщо після мокрих доказів, це образа. Deep Reach говорить не з відсіком, де стоїть гравець. Вона говорить із сухим звітом, яким цей відсік мав стати.
 
 ## Scanner
 
-UK LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Вікно відповіді відкрите. Deep Reach повторює штормовий обвал, геологічний збій і автономну евакуацію, ніби відсік досі сухий.
 
 ## Terminal
 
-UK LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: штормовий нагін, геологічний обвал, відмова автономної евакуації / RESTRICTED ADVICE: не передавати непідтверджену Atlas continuity, body-category disputes або basin-coordinate claims.
 
 ## Audio
 
-UK LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Вони відповіли кімнаті, яку ти мав знайти, а не кімнаті, у якій стоїш.
 
 ## Field Note
 
-UK LOC HOLD: Place after first physical contradiction, not before.
+Ставити після першої фізичної суперечності: гравець уже має мати мокрий доказ до stale public script.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/uk_UA. -->

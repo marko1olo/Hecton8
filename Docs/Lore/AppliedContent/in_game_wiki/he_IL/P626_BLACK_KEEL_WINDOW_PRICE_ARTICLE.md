@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "מחיר החלון של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# מחיר החלון של Black Keel
 
-Black Keel can answer without granting immediate rescue.
+Black Keel יכולה לאשר הישרדות בלי להעניק חילוץ מיידי. חלון מסלולי חזק נושא חבילה שימושית אחת, ופנקס התביעה מחליט כמה היא שווה.
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+תורן ממסר // מיושר לחלון מסלולי חלש. בחר חבילה אחת לפני שרעש מזג האוויר עולה.
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+מאגר קשר // מפעיל חי; תביעה פתוחה; חילוץ ממתין לחלון. מצב דגימה וביטחון קואורדינטות נדרשים לפני תזמון חילוץ.
 
 ## Audio
 
-One clean burst; choose what to send.
+החלון נקי ל-burst אחד. תגיד איפה אתה, או תגיד מה מצאת.
 
 ## Field Note
 
-A priced packet is not mercy.
+כש-carrier מתמחר את הנשימה שלך לפי חבילה, אל תבזבז חבילה על השאלה אם אכפת לו.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/he_IL. -->

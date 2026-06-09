@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "payload 检疫保存接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# payload 检疫保存接收协议
 
-ZH LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+检疫保存是谨慎路线，而谨慎不等于无害。payload 阻止直接转交 Deep Reach，并保持坐标向量封存。与 Atlas 相关的生态保持到足以复核，盆地不会凭收据交给回收买家。
 
-## Scanner
-
-ZH LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-ZH LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-ZH LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-ZH LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+危险来自制度。检疫 escrow 可以比最初证明它合理的紧急状态活得更久。受保护的盆地可以变成被保留的盆地，再变成被分配的盆地，最后变成拥有更好措辞的索赔。这条路线保存时间和活结构，但把保管痕迹留满未来。
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/zh_CN. -->

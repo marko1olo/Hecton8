@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "פרוטוקול שימור הסגר payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# פרוטוקול שימור הסגר payload
 
-HE LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+שימור הסגר הוא המסלול הזהיר, וזהיר אינו חסר נזק. ה-payload חוסם העברה ישירה ל-Deep Reach ומחזיק את וקטור הקואורדינטות חתום. האקולוגיה המקושרת ל-Atlas נשארת שלמה מספיק לבדיקה, והאגן אינו נמסר לקונה שחזור על קבלה.
 
-## Scanner
-
-HE LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-HE LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-HE LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-HE LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+הסכנה מוסדית. escrow הסגר יכול לשרוד אחרי מצב החירום שהצדיק אותו. אגן מוגן יכול להפוך לאגן מוחזק, אחר כך לאגן מוקצה, אחר כך לתביעה עם שפה טובה יותר. המסלול הזה מציל זמן ומבנה חי, אבל משאיר סימני משמורת על כל העתיד.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/he_IL. -->

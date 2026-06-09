@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Crafting;
@@ -265,6 +266,7 @@ namespace Hecton8.Construction
         private IPlayerInventoryService _cachedPlayerInventoryService;
         private IDataVault _cachedDataVault;
         private IGasDynamicsSolver _cachedGasDynamics;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private IAtmosphereReadModel _cachedAtmosphereReadModel;
         private IAmbientCurrentReadModel _cachedAmbientCurrentReadModel;
         private IAudioService _cachedAudioService;
@@ -513,6 +515,7 @@ namespace Hecton8.Construction
             _cachedDataVault = GlobalRegistry.DataVault;
             _cachedSaveService = GlobalRegistry.Save;
             _cachedGasDynamics = GlobalRegistry.GasDynamics;
+            _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             _cachedAtmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             _cachedAmbientCurrentReadModel = GlobalRegistry.AmbientCurrent;
             CacheAudioService(GlobalRegistry.Audio);
@@ -561,6 +564,7 @@ namespace Hecton8.Construction
         private void BindConstructionRuntimeServices()
         {
             _habitatGraphManager?.SetRuntimeServices(
+                _cachedOceanKinematicsService,
                 _cachedAtmosphereReadModel,
                 _cachedAmbientCurrentReadModel,
                 ResolveAudioService(),
@@ -570,7 +574,7 @@ namespace Hecton8.Construction
 
         private void ClearCachedRegistryServices()
         {
-            _habitatGraphManager?.SetRuntimeServices(null, null, null, null);
+            _habitatGraphManager?.SetRuntimeServices(null, null, null, null, null);
             BaseDegradationSystem.BindRuntimeServices(null, null);
             BaseLogisticsNetwork.BindDataVault(null);
             LogisticsPipeTransportScheduler.BindDataVault(null);
@@ -579,6 +583,7 @@ namespace Hecton8.Construction
             _cachedDataVault = null;
             _cachedSaveService = null;
             _cachedGasDynamics = null;
+            _cachedOceanKinematicsService = null;
             _cachedAtmosphereReadModel = null;
             _cachedAmbientCurrentReadModel = null;
             ClearCachedAudioService();
@@ -979,7 +984,7 @@ namespace Hecton8.Construction
             if (!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool))
             {
                 RejectDeconstruction(in request, DeconstructReasonInventoryFull, 0, ReadDfsVisitedCount(), ReadDfsExpectedCount());
-                PublishDeconstructionHudNotification(request.TargetEntityId, DeconstructReasonInventoryFull);
+                PublishDeconstructionInventoryFullNotification();
                 return;
             }
 
@@ -3670,6 +3675,10 @@ namespace Hecton8.Construction
                     break;
                 case GlobalRegistryServiceSlot.GasDynamicsRuntime:
                     _cachedGasDynamics = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    _habitatGraphManager?.SetOceanKinematicsService(_cachedOceanKinematicsService);
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;

@@ -1,0 +1,6 @@
+# MemorySentinelRuntime editor CSV input.
+# Parser rule: key,value. Accepted keys: validation_frequency_hz, aup_teleport_tolerance_meters, strictness_level.
+# Values below mirror runtime defaults; this file exists so the tuner/load path has a real source input.
+validation_frequency_hz,10
+aup_teleport_tolerance_meters,50000
+strictness_level,1

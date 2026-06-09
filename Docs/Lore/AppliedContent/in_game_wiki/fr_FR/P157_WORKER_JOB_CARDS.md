@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Cartes de poste ouvrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Cartes de poste ouvrier
 
-FR LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Une carte de poste est la plus petite biographie de la colonie. Elle n'a pas besoin d'enfance, de romance ou de discours pour compter. Il lui faut un rôle, un tampon de permission, une dernière tâche et la chose que l'ouvrier pensait finir après le prochain ton. Quand le joueur trouve ces cartes, les gens cessent d'être des victimes de fond et deviennent des preuves de route : quelqu'un tenait la clé de pompe, retardait une écoutille, cuisinait pour une équipe, sortait un cutter, certifiait un joint, ou ratait le retour parce que le système faisait attendre l'aide.
 
 ## Scanner
 
-FR LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Nom, rôle, dernière tâche, permission de route, certification d'outil. Un visage que le budget pouvait lire.
 
 ## Terminal
 
-FR LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+RÈGLE DE PREUVE : chaque nom récupéré doit s'attacher à une action : route de pompe, ledger cuisine, appel médical, garde de cutter, contrôle pression, lot de fabrication. Une tâche transforme un nom en preuve.
 
 ## Audio
 
-FR LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Un nom sans tâche devient sanctuaire. Une tâche en fait une preuve.
 
 ## Field Note
 
-FR LOC HOLD: Make names useful before making them tragic.
+Rends les noms utiles avant de les rendre tragiques.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/fr_FR. -->

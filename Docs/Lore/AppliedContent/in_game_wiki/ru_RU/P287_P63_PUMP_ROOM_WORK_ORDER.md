@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: P-63 Pump Room Work Order"
+title: "Рабочий приказ насосной P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: P-63 Pump Room Work Order
+# Рабочий приказ насосной P-63
 
-RU LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+Рабочий приказ насосной P-63 делает первый ремонт наследованной процедурой колонии, а не текстом обучения. Он мокрый, практичный и немного испуганный. Приказ говорит очистить sump, залатать cold seam, дождаться return pinger и резать fused latch только после удержания давления. Эта последовательность учит игрока тому, как думали рабочие HECTON-8: сначала вода, потом герметизация, звук перед силой, доверие к маршруту в самом конце. Пропавшие инициалы старшего и двойной круг вокруг строки резки делают бумагу использованной, а не написанной для игрока. Это маленький артефакт, но в миниатюре он держит весь игровой цикл: прочитай комнату, восстанови систему, не верь простому разрезу.
 
 ## Scanner
 
-RU LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Первый ремонт читается как привычка колонии: качай, герметизируй, слушай, режь только если комната перестала лгать.
 
 ## Terminal
 
-RU LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: очистить sump; залатать cold seam; проверить return pinger; резать fused latch только после удержания давления; печатать gasket из местного запаса; отмечать маршрут safe после трех повторов acoustic return. Инициалы старшего отсутствуют под водяным пятном.
 
 ## Audio
 
-RU LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Сначала насос. Потом герметизация. Если поет, прекращай резать.
 
 ## Field Note
 
-RU LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Нижняя половина планшета промокла насквозь. Строка про резку читается, потому что кто-то дважды обвел ее и написал: если поет, стой.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/ru_RU. -->

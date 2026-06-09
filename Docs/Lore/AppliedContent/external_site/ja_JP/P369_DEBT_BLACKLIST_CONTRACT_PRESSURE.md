@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "債務ブラックリスト契約圧力"
+title: "債務ブラックリスト契約圧"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 債務ブラックリスト契約圧力
+# 債務ブラックリスト契約圧
 
-HECTON-8は運命ではなくフロンティア経済で主人公を描く。債務、ブラックリスト、請求プール保管、酸素クレジット、寝台アクセス、古いDeep Reach資格情報が、サルベージ契約を強制的でありながら無力ではないものにする。
+債務ブラックリスト契約圧は、有能な元Deep Reach作業員がなぜHECTON-8でMarauderになるかを説明する。契約に誘拐は要らない。blacklist、berth台帳、oxygen credit、待たないルート窓があれば足りる。
 
-## Scanner
-
-先取特権通知はBlack Keelの保管責任に紐づいている。拒否は合法だが、足止めになる。寝台なし、清算済み酸素クレジットなし、Aegirを出る経路窓なし。
-
-## Terminal
-
-請求受諾 / ブラックリスト救済窓
-契約者状態: 債務拘束Marauder
-運搬者: Black Keel請求プール保管
-救済条件: 回収可能質量、保管証明、受領者遵守
-失敗状態: ブラックリスト継続、寝台アクセス拒否、酸素福祉支援は請求対象へ変換。
-
-## Audio
-
-これは誘拐ではなかった。フロンティアが自由として売る種類の選択だった。署名して潜るか、書類上は清潔なまま、実際には閉じ込められるか。
-
-## Field Note
-
-先取特権は銃を向けなかった。空気の請求書、寝台名簿、次の経路窓を指した。
+Black Keelはその圧力の中で仕事を提示する。claimを受ければ移動へ戻る道はできるが、道の全てが測られる。recoverable mass、custody proof、receiver compliance、debt relief。拒否は書類上の手を汚さないが、実用的なルートは閉じる。契約の残酷さはそこにある。選択肢を残し、片側の値段をほとんど選択でないところまで上げる。
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "上昇エネルギーチャージアセンブリ"
+title: "上昇エネルギー装薬組立品"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 上昇エネルギーチャージアセンブリ
+# 上昇エネルギー装薬組立品
 
-上昇チャージは深部資源を機械的かつ倫理的な取引に変える。高圧材料はカプセルを持ち上げ、custody 中の証拠を守り、あるいは帰還航路を弱める支払いになる。
+上昇エネルギー装薬は、HECTON-8の深部材料を制御された打ち上げインパルスへ変える。燃料の山ではない。vent-forged heat cell、圧力履歴インシュレーション、段階式インパルススリーブ、そして燃焼を生き残った材料種別を受信側へ示すcustody印のクレードルだ。
+
+blue debtは安全になる前に価値を持つ。圧力成長したXenon-Omega試料はcarrier請求を払える。アップグレードを支えられる。Deep Reachが動かしたまま残した物を証明できる。だが履歴をただの拾得物として扱えば、打ち上げ荷重で割れる。装薬はエネルギーと書類を同時に運ぶ必要がある。質量、圧力状態、汚染分類、custody stampだ。
+
+だからこの組立品は本物のサルベージ判断を作る。クレードルを支払いのために剥げば、カプセルは認証済み揚力を失う。生材料を積めば、インパルスプロファイルは不安定になる。署名済み装薬を保てば、上昇ルートは重く、貧しく、そして否認されにくくなる。
 
 ## Scanner
 
-エネルギークレードルは pressure pulse で削られている。安いチャージは清潔な棺を作る。
+エネルギークレードル // 圧力パルス傷、歪んだheat-cellポケット、custody stampソケット空。生のblue debtは燃えるかもしれないが、揚力は認証しない。
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell、pressure-history insulator、custody stamp 必須。Raw fuel 拒否。未認証 blue debt は launch impulse 下で割れ、recovery claim を無効化。
+ASCENT CHARGE: vent-forged heat cell、圧力履歴インシュレータ、段階式インパルススリーブ、署名済みcustody stampを装填。生燃料、欠けたインシュレータ、無印のblue debtは拒否。
 
 ## Audio
 
-揚力は売るか、それに乗るかだ。両方はできない。
+揚力を売れば、カプセルは積荷になる。
 
 ## Field Note
 
-クレードル内のすべてのグラムは、脱出、証拠、または blue-debt payout だ。カプセルは欲を許さない。
+装薬は誰もが盗みたがる部品だ。海底から出るための部品でもあるからだ。
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ja_JP. -->

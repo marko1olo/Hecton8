@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Sanitized Accident Reply Window"
+title: "Вичищене вікно відповіді про аварію"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Sanitized Accident Reply Window
+# Вичищене вікно відповіді про аварію
 
-UK LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+Вичищене вікно відповіді про аварію показує, як Deep Reach бреше до будь-яких криків. Брехня процедурна, знайома і залежана: public loss line стикається з фізичним доказом. Корпоративний жах HECTON-8 працює найкраще, коли офіційна відповідь надто чиста для місця, що її породило.
 
 ## Scanner
 
-UK LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Вікно відповіді відкрите. Deep Reach повторює штормовий обвал, геологічний збій і автономну евакуацію, ніби відсік досі сухий.
 
 ## Terminal
 
-UK LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: штормовий нагін, геологічний обвал, відмова автономної евакуації / RESTRICTED ADVICE: не передавати непідтверджену Atlas continuity, body-category disputes або basin-coordinate claims.
 
 ## Audio
 
-UK LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Вони відповіли кімнаті, яку ти мав знайти, а не кімнаті, у якій стоїш.
 
 ## Field Note
 
-UK LOC HOLD: Place after first physical contradiction, not before.
+Ставити після першої фізичної суперечності: гравець уже має мати мокрий доказ до stale public script.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/uk_UA. -->

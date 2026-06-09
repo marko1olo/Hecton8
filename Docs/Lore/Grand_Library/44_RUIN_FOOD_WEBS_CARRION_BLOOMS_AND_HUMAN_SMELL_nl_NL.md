@@ -1,62 +1,80 @@
-<!-- localization_status: draft_machine_or_llm -->
-# VOEDSELWEBBEN VAN RUÏNES, AASGROEI EN MENSENGEUR
+<!-- localization_status: draft_machine_or_llm_nl_NL -->
+# VOEDSELWEBBEN IN RUÏNES, AASBLOEI EN MENSELIJKE GEUR
 
-> **Bron:** Atlas-biologiefragmenten, routenotities van Marauders, besmettingsbriefings van Black Keel over overdracht van organische sporen.  
-> **Stem:** veldecoloog toegewezen aan bergingsrisico, met kantlijnnotities van arbeiders die dezelfde lessen leerden door aas, bloed, gereedschap en vrienden te verliezen.  
-> **Redactienotitie:** ruïnes in HECTON-8 mogen nooit biologisch leeg voelen. Een dode menselijke ruimte wordt een voedingsevenement, een schuilplaats, een chemisch litteken en een gedragssignaal.
+> **Bron:** Atlas-biologiefragmenten, Marauder-routenotities, Deep Reach-kantlijnen over lekecologie en Black Keel-briefings over overdracht van organische sporen.  
+> **Bereik:** hoe verlaten menselijke kamers voerplekken worden, hoe aasbloei door infrastructuur trekt en waarom een afgesloten pak het water nog steeds verandert.  
+> **Veldgebruik:** lezen voordat je natte ruïnes betreedt waar de route stil, pas schoongemaakt of te schoon lijkt.
 
 ---
 
-## 1. Een ruïne is een voedingsevenement
+## 1. Een Kamer Begint Te Voeren
 
-Een menselijke kamer sterft niet in één keer.
+Een menselijke kamer sterft niet in één keer. Hij wordt ongelijk.
 
-Eerst wordt de stroom ongelijk. Warme panelen koelen af. Koude panelen worden warm. Pompen hoesten, slaan af, starten opnieuw en duwen oud water door plekken die jarenlang droog waren. De kamer verandert van druk. Ze laat geur los. Ze verliest verfvlokken, vet, huid, textielvezels, dode microben, gekookte isolatie en metaalstof. Iets buiten merkt het op.
+Stroom valt per wand uit. Eén paneel blijft warm. Een ander koelt af. Een pomp slaat af, start opnieuw en duwt oud water door een droge servicekeel. Een drukdeur opent een handbreedte en geeft geur een rechte lijn. Verf bladdert waar zout onder de primer kwam. Vet wordt week. Stofvezels zwellen. Dode microben komen los van het afvoerrooster. Batterijwarmte houdt één steun warmer dan het slib eromheen.
 
-De eerste dieren komen niet omdat de kamer dramatisch is. Ze komen omdat gradiënten veranderden. Warmte bewoog. Chemie kwam los. Een pakking faalde en gaf het water een lijn organisch materiaal. Een voedselprinter bedierf achter een gesloten deur. Een lichaam werd slecht weggehaald. Een batterijbank hield één muur langer warm dan de andere. Leven op HECTON-8 heeft geen verhaal nodig om te onderzoeken. Het heeft verschil nodig.
+Het leven van HECTON-8 volgt zulke verschillen. Het heeft geen tragische kamer, zichtbaar lichaam of menselijke uitleg nodig. Het heeft warmte, organisch materiaal, stroming, dekking, lading, zacht mineraal, metaalsmaak of een pad naar meer van hetzelfde nodig.
 
-Daarom zijn verlaten bases geen lege levels. Het zijn uitgestelde maaltijden. Elk luik, kanaal en kabeldoorvoer wordt een vraag die de oceaan stelt: is er warmte, zout, eiwit, stroming, beschutting, metaal, lading, licht, rotting of een pad naar meer van hetzelfde?
+De eersten zijn klein. Filtermatten spreiden zich over trage lekken. Bleke grazers schrapen mineraalfilm van pijpnaden. Krill verzamelt waar pompstrilling voedsel losmaakt. Schildreinigers leven in schroefkommen en pakkinglippen. Ze kunnen een dode kamer onderhouden laten lijken omdat ze zacht bewijs verwijderen voordat ze hard bewijs aanraken.
 
-Tegen de tijd dat een Marauder aankomt, kan het antwoord al tanden hebben.
+Tegen de tijd dat een Marauder de hatch bereikt, kan de kamer al een voerorde hebben.
 
-## 2. Wat menselijke infrastructuur voedt
+## 2. Wat Infrastructuur Voert
 
-Menselijke infrastructuur voedt meer dan roofdieren.
+Ruïnes voeren meer dan roofdieren.
 
-Filtermatten leven van langzame lekken. Bleke grazers schrapen mineraalslijm van pijpnaden. Blinde krill pakken zich samen in serviceschachten waar trilling microbiële films losbreekt. IJzerkelp hecht aan warme stutten bij stroomlekken en schuurt zo zacht dat een vermoeide duiker het voor machines kan houden. Kleine schildrugreinigers leven in schroefholtes, pakkinglippen en gebarsten keramiek. Van een afstand laten ze dode kamers onderhouden lijken, omdat ze eerst het verkeerde bewijs verwijderen.
+Een warme batterijwand voert grazers. Een gebarsten algentray voert bloei. Een cyclende pomp voert krill door film los te slaan. Een lekkende medische recycler voert witte matten die later schildreinigers voeren. Een kabeldoorvoer voert ijzerkelp waar stroming warmte raakt. Een halfopen locker voert alles wat zout uit stof en huid uit de binnenkant van een handschoen kan schrapen.
 
-De grote jagers komen later. Ze beginnen het systeem niet; ze innen het. Een sleufstalker hoeft geen deuralarm te begrijpen. Hij hoeft alleen te leren dat op alarm beweging volgt, op beweging bloed, en op bloed kleinere dieren die voorzichtigheid vergeten. Een leviathan jaagt niet op een gang omdat hij weet wat een gang is. Hij jaagt op de mond van een herhaalde stroming die ruikt naar opgesloten vlees en heet koper.
+Grote jagers komen later. Ze beginnen het systeem niet; ze innen het. Een trench stalker hoeft een deuralarm niet te begrijpen. Hij hoeft alleen te leren dat op alarm beweging volgt, op beweging bloed, en op bloed kleinere dieren die voorzichtigheid vergeten. Een Leviathan-class-contact jaagt niet op een gang omdat het weet wat een gang is. Het wacht aan de mond van een herhaalde stroming die ruikt naar opgesloten vlees en heet koper.
 
-Deep Reach probeerde dit als besmettingsbeheer op te schrijven. Atlas schreef het als onderhoudsecologie. Arbeiders schreven het korter: als een plek gevoed ruikt, neem dan niet aan dat jij de eerste bent.
+Deep Reach borg dit op als contaminatiebeheer. Atlas markeerde delen als onderhoudsecologie. Marauder-notities houden het korter: als een plek gevoerd ruikt, neem niet aan dat je de eerste bent.
 
-## 3. Aasgroei
+## 3. Aasbloei
 
-Aasgroei gaat niet alleen over lichamen.
+Aasbloei bestaat niet alleen uit lichamen.
 
-Een groei kan beginnen met dode bemanning, ja. Ze kan ook beginnen met een krat voedingspasta, een gescheurde algentank, een spoel pakvoering, een vriezer die drie uur warm stond, een medische recycler die één cyclus draaide met het verkeerde ventiel open, of een gereedschapszak die lang genoeg in een natte hoek lag om een huid te krijgen. De oceaan geeft er niet om welk deel menselijk, zakelijk, dierlijk of gemaakt was. Hij geeft om wat gegeten kan worden en wat eten verder kan dragen.
+Bloei kan beginnen met dode crew, maar ook met voedingspasta, een gescheurde algentank, een rol pakvoering, vriezerpasta die drie uur warm werd, een medische recycler die met de verkeerde klep open draaide, of een natte gereedschapstas die lang genoeg bleef liggen om een huid te vormen. Het water sorteert de bron niet in morele categorieën. Het sorteert op wat gegeten, gedragen, gefilterd, verborgen of als dekking gebruikt kan worden.
 
-De groei heeft stadia. Eerst komt vertroebeling: water dat bij een naad licht melkachtig of stoffig lijkt. Daarna sortering: kleine monden, filterwaaiers, witte snorharen, zachte films en bewegende stippen die verdwijnen wanneer licht ze raakt. Daarna vertrouwen: afgegraasde randen, gepolijste schroeven, schildsporen, bijtputten, kabels schoon tot op de mantel. Daarna bezit: grotere dieren gebruiken de groei als route, schuilplek, paringsplaats of voorraadkast.
+De meeste bloei beweegt in fasen. Eerst troebeling: water bij een naad of afvoer lijkt licht melkachtig. Dan sortering: kleine monden, filterwaaiers, witte snorharen, zachte film en bewegende spikkels die verdwijnen wanneer een lamp erop valt. Dan werk: begraasde randen, gepolijste schroeven, schelpsporen, bijtgaten, kabelmantels schoongemaakt tot rubber. Dan routegebruik: grotere dieren gebruiken de bloei als blind, voorraadplek, paarplaats of stromingsmarkering.
 
-Het gevaarlijke stadium is niet altijd luid. Een stille groei kan betekenen dat het kleine leven al gegeten is. Een gepolijste vloer kan betekenen dat reinigers erdoorheen zijn gegaan. Een geur als warme munten kan betekenen dat bloed oud is, maar niet vergeten. Een deuropening zonder groei kan erger zijn dan een met te veel groei, omdat iets haar schoon houdt.
+De luide fase is niet altijd de gevaarlijke. Stille bloei kan betekenen dat het kleine leven al is opgegeten. Een gepolijste vloer kan betekenen dat reinigers het waarschuwingsspoor hebben weggehaald. Een geur van warme munten kan betekenen dat bloed oud genoeg is om zich te verspreiden en vers genoeg om te tellen. Een deur zonder groei kan erger zijn dan een dichtbegroeide deur, omdat iets hem vrij kan houden.
 
-Marauders leren afwezigheid net zo zorgvuldig te lezen als overvloed.
+Afwezigheid is een biologische markering. Behandel die zo.
 
-## 4. Mensengeur
+## 4. Menselijke Geur
 
-Mensengeur is niet één geur.
+Menselijke geur is niet één geur.
 
-Voor HECTON-8 is het zeeprest, synthetische stof, batterijwarmte, huidzout, stresszweet, lijm, gereedschapsvet, weekmaker, sterilisatiemiddel, bloedijzer, gekookte isolatie, oude adem en de scherpe chemie van angst die door slechte pakkingen lekt. Een duiker denkt dat hij verzegeld is omdat het pak druk houdt. De oceaan is het oneens. Hij leest spoor.
+Voor HECTON-8 is het zeeprest, synthetische stof, batterijwarmte, huidzout, stresszweet, lijm, gereedschapsolie, weekmaker, sterilisatiemiddel, bloedijzer, gaar geworden isolatie, oude adem en de scherpe chemie van angst die door een slechte manchetseal ontsnapt. Een duiker vertrouwt het pak omdat het druk houdt. Het water leest spoor.
 
-Daarom stoppen sommige bemanningen met frisse reinigingsdoekjes voor een afdaling. De doekjes maken de duiker veilig voor Black-Keel-inspectie en luid voor het water. Anderen wrijven handschoenen in oud slib voordat ze een voerkamer binnen gaan. Sommige bemanningen dragen opofferbare eiwittabletten, niet om roofdieren als huisdieren te voeren, maar om een kleiner argument in de stroming te gooien voordat hun eigen lichaam het grotere wordt. Geen van deze gewoonten wordt officieel aanbevolen. De meeste staan in de marges van routenotities van dode mensen.
+Daarom gebruiken sommige crews geen verse schoonmaakdoekjes meer voor een afdaling. De doekjes komen door Black Keel-inspectie en maken de duiker luid voor de route. Andere crews wrijven handschoenen in oud slib voordat ze een voerkamer ingaan. Sommige dragen offer-eiwittabs, niet om roofdieren te temmen, maar om een kleiner argument in de stroming te gooien voordat hun eigen lichaam het grotere wordt.
 
-Black Keel verkoopt geurcontrole als verbruiksartikel. Deep Reach noemde het spoordiscipline. Marauders noemen het de etensbel niet luiden.
+Geen van die gewoonten is officiële procedure. De meeste staan in de kantlijn van routenotities van dode werkers. Black Keel verkoopt geurcontrole als verbruiksartikel. Deep Reach noemde het spoordiscipline. Marauders noemen het niet aan de etensbel trekken.
 
-## 5. Wat de speler leert
+## 5. Wanneer Schoon Gevoerd Betekent
 
-De speler leert dat ecologie geen achtergrond is.
+Een schone ruïne is niet automatisch veilig.
 
-Ruïneleven vertelt tijd. Verse films zeggen dat een lek recent is. Oude schildsporen zeggen dat een route nat bleef. Schoongemaakte botten zeggen dat kleine dieren eerder toegang hadden dan grote. Een gang die plots geen krill heeft, kan leeg zijn omdat hij veilig is, of leeg omdat iets hem veilig maakte voor zichzelf. Een stille machinekamer kan uitgeschakeld zijn, of een luisterende hinderlaag.
+Schone schroeven kunnen schildreinigers betekenen. Vrije kabelmantels kunnen betekenen dat grazers zachte groei hebben gestript. Lege krillzakken kunnen betekenen dat een roofdier recent is langsgekomen. Een deuropening met perfect zicht kan sterke stroming betekenen, of dat een groter dier de opening vaak genoeg gebruikt om de muren schoon geschraapt te houden.
 
-Goed spelen betekent vragen wat de ruïne gevoed heeft, wat zich ermee gevoed heeft en wat de speler eraan gaat toevoegen. Een luik openen kan groei starten. Een kabel doorsnijden kan warmte loslaten. Bloeden in een handschoen kan een route veranderen. Een filtermat verwijderen kan een stroming blootleggen die iets groters brengt. Aas achterlaten kan een leven redden of het verkeerde dier een nieuwe deur leren.
+Goede routelezers vergelijken de verkeerde dingen. Een stoffige wand naast een gepolijste klink. Een koude vloer onder een warme scharnier. Nieuwe schelp op een oud bloedspoor. Geen filtermatten in een kamer met actief lek. Een verzegelde kast met zout in de handgreepkom. Zulke mismatches vertellen tijd beter dan een dode timestamp in een Atlas-bestand.
 
-HECTON-8 scheidt berging niet van biologie. Een teruggehaald object, een gebroken pakking, een dode arbeider en een warme muur gaan hetzelfde grootboek van eetlust in. De oceaan houdt rekening met monden, films, sporen en stilte.
+De veiligst ogende kamer in een ruïne is vaak al door monden schoongemaakt.
+
+## 6. Salvage Afhandeling
+
+Biologie kan bewijs verpesten voordat iemand erover liegt.
+
+Een body tag kan door de darm van een reiniger reizen. Een recorder kan zo glad gepolijst worden dat het bloed verdwijnt dat bewees wie hem vasthield. Een samplezak kan genoeg film groeien om het oorspronkelijke sediment te verbergen. Een wandstempel kan verdwijnen onder schelpsealant. Een gemarkeerd dier kan een Atlas-sensor een doorgang in dragen waar geen drone kan volgen. Een roofdier kan payload naar een claimcategorie slepen die Keelmark liever ziet: onbergbaar, gecontamineerd, betwist.
+
+Goede crews verpakken bewijs voordat ze het schoonmaken. Ze fotograferen bijtgaten, schelpgroei, filmranden en ontbrekend klein leven. Ze noteren geur, watertemperatuur, pingerrespons, stromingsrichting en of het object gevonden werd in water, slib, darm, bloei, schelpgroei of Atlas-gemarkeerd weefsel. Die details lijken klein tot een klerk beslist of een dode werker een persoon, contaminatiebron of betaalbare vrachtcategorie was.
+
+Veeg het verhaal niet van het object voordat het claimsysteem het verkeerd kan lezen.
+
+## 7. Veldregel
+
+Vraag vóór het openen van een natte ruïne wat daar heeft gegeten.
+
+Vraag daarna wat daarvan at, wat wegbleef, wat temperatuur veranderde, wat stroming opende, wat ophield geluid te maken en wat je pak toevoegt wanneer de seal buigt.
+
+Als het antwoord de claim nog waard is, ga naar binnen alsof de kamer al bezet is.

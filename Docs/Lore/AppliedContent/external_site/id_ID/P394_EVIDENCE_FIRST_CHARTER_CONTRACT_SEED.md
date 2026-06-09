@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Evidence First Charter Contract Seed"
+title: "Seed Kontrak Charter Bukti Dulu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Evidence First Charter Contract Seed
+# Seed Kontrak Charter Bukti Dulu
 
-ID LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Charter Bukti Dulu mengubah papan kontrak sebelum turun. Bayaran material turun, kapasitas notaris naik, loker bukti mendapat prioritas, dan stripping salvage membawa penalti. Operator masuk dengan rute yang melindungi catatan lebih baik daripada suku cadang.
 
-## Scanner
-
-ID LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-ID LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-ID LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-ID LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Tekanan muncul dalam pilihan kecil. Strip status hatch dapat menghalangi penjualan panel. Paket kecelakaan basah dapat memakai slot kering terakhir. Log pinger mungkin membutuhkan relai hidup yang seharusnya memberi daya ke perbaikan. Charter membayar terlambat karena meminta operator menjaga benda merepotkan tetap utuh cukup lama agar receiver di luar Black Keel dapat membacanya.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/id_ID. -->

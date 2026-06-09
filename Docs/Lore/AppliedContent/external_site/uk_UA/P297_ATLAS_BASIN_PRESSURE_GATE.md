@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Basin Pressure Gate"
+title: "Напірні ворота басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Basin Pressure Gate
+# Напірні ворота басейну Atlas
 
-UK LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+Фінальний спуск зберігає hard sci-fi під страхом. Дно відкривається через рейтинги тиску, пошкоджені повноваження, докази навантаження і машину, що досі довіряє ключам форми Deep Reach більше, ніж живому заявнику.
 
 ## Scanner
 
-UK LOC HOLD: Basin gate requires pressure proof and authority response.
+Ворота басейну вимагають доказ тиску, маршрутну владу й тіло, яке можна класифікувати.
 
 ## Terminal
 
-UK LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: доказ тиску неповний. Клас костюма прийнято нижче порога спуску. Authority clamp розпізнає відкликаний патерн Deep Reach, а не поточного заявника. Ручний обхід потребує локального навантаження, вибору приймача і свідкового payload.
 
 ## Audio
 
-UK LOC HOLD: It knows the old key. It does not know you.
+Воно знає старий ключ. Воно не знає тебе.
 
 ## Field Note
 
-UK LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Фінальний поріг має читатися як сервісні ворота живої фабрики, а не фантазійний портал.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/uk_UA. -->

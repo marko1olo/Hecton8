@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Resource Yield Data Boundary"
+title: "حد بيانات مردود المورد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Resource Yield Data Boundary
+# حد بيانات مردود المورد
 
-AR LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+قيمة المورد في HECTON-8 سلسلة لا ملصق. الجدول يملك الرقم، لكن السرد يملك سبب وجوده: من أخذ العينة، تحت أي ضغط، بأي ختم حيازة، وكم من ذلك العرق يستطيع المسار نزعه بأمان.
 
 ## Scanner
 
-AR LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+يرفض صف المردود القيمة السائبة: يجب أن تتفق الفئة ونطاق الضغط والحيازة والاستنزاف والـ hash.
 
 ## Terminal
 
-AR LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT: لا يقبل أي رقم دون packet hash وفئة المورد ونطاق الضغط ودرجة الحيازة ومنحنى الندرة وسلوك الاستنزاف. عينة بلا تاريخ ضغط دليل لا قيمة.
 
 ## Audio
 
-AR LOC HOLD: A sample without pressure history is not a value.
+عينة بلا تاريخ ضغط ليست قيمة.
 
 ## Field Note
 
-AR LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+تبقى أرقام المردود مؤقتة حتى يتفق نطاق الضغط ودرجة الحيازة وسلوك الاستنزاف وpacket hash.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ar_SA. -->

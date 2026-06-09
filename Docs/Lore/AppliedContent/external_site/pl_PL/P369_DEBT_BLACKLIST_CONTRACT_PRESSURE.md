@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Presja długu, czarnej listy i kontraktu"
+title: "Presja Kontraktu Blacklist Długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Presja długu, czarnej listy i kontraktu
+# Presja Kontraktu Blacklist Długu
 
-HECTON-8 opisuje protagonistę przez ekonomię pogranicza, nie przeznaczenie. Dług, czarne listy, piecza puli roszczeń, kredyt tlenowy, dostęp do koi i stare poświadczenia Deep Reach sprawiają, że kontrakt salvage jest przymusowy, ale nie czyni gracza bezradnym.
+Presja Kontraktu Blacklist Długu wyjaśnia, czemu zdolny były pracownik Deep Reach zostaje Marauderem na HECTON-8. Kontrakt nie potrzebuje porwania. Potrzebuje blacklist, rejestru berth, oxygen credit i okna trasy, które nie poczeka.
 
-## Scanner
-
-Zawiadomienie o zastawie powiązane z pieczą Black Keel. Odmowa pozostaje legalna, ale uziemia: bez koi, bez czystego kredytu tlenowego, bez okna trasy z Aegir.
-
-## Terminal
-
-AKCEPTACJA ROSZCZENIA / OKNO ZDJĘCIA Z CZARNEJ LISTY
-status wykonawcy: Marauder związany długiem
-przewoźnik: piecza puli roszczeń Black Keel
-warunki ulgi: masa odzyskiwalna, dowód pieczy, zgodność odbiorcy
-stan porażki: czarna lista aktywna; dostęp do koi odmówiony; wsparcie tlenowe zmienione w usługę rozliczaną.
-
-## Audio
-
-To nie było porwanie. To był wybór, który pogranicze sprzedaje jako wolność: podpisz, nurkuj, albo pozostań czysty na papierze i uwięziony w praktyce.
-
-## Field Note
-
-Zastaw nie wycelował broni. Wskazał rachunek za powietrze, listę koi i następne okno trasy.
+Black Keel oferuje pracę wewnątrz tej presji. Przyjęcie claim daje operatorowi drogę z powrotem do ruchu, ale każda część tej drogi jest mierzona: recoverable mass, custody proof, receiver compliance, debt relief. Odmowa zostawia ręce czyste na papierze, gdy praktyczne trasy się zamykają. To okrucieństwo kontraktu: zostawia wybór i wycenia jedną stronę tak wysoko, że prawie przestaje być wyborem.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pl_PL. -->

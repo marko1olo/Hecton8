@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guide d'historique de pression de la dette bleue
 
-Le Xenon-Omega, appelé blue debt par les salvagers, lie la géologie de HECTON-8 au computation, au debt law et à la raison pour laquelle Deep Reach veut encore récupérer une réclamation noyée.
+La dette bleue n'est pas une gemme et pas un minerai magique. C'est le nom de terrain d'un substrat stable sous pression portant du Xenon-Omega : une structure minérale qui ne prend de valeur qu'après avoir été comprimée, chauffée, refroidie et électriquement scarifiée par l'océan dans le bon ordre. Un échantillon brillant peut ne rien valoir. Un bloc terne et scellé peut payer un mois d'oxygène si son historique de pression est propre et si sa dérive du signal reste silencieuse.
 
-## Scanner
-
-Échantillon de blue debt marqué. Vérifier pressure history, containment stage et signal drift avant export.
-
-## Terminal
-
-MARAUDER NOTE : blue debt est l'argot de salvage pour un Xenon-Omega-bearing pressure-stable substrate. Il vaut cher parce que l'extreme computation et l'energy isolation l'aiment, pas parce qu'il brille.
-
-## Audio
-
-La dette bleue, c'est le nom qu'on lui donne après l'arrivée de la facture.
-
-## Field Note
-
-La couleur n'est pas le grade. Un conteneur silencieux avec custody propre paie ; un conteneur qui chante achète un drone wake.
+C'est pourquoi chaque découverte de dette bleue devient aussitôt matière juridique. Atlas veut la dérive. Deep Reach veut l'historique de revendication. Les équipes salvage veulent un conteneur qui ne chante pas assez fort pour réveiller les drones. La ressource est dangereuse parce qu'elle se trouve au croisement de la géologie, du calcul, de la garde et de la dette. Elle prouve que HECTON-8 n'a jamais été seulement une colonie noyée. C'était un livre de comptes enterré, avec la pression pour écrire les chiffres.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/fr_FR. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Basin Pressure Gate"
+title: "Gerbang Tekanan Cekungan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Basin Pressure Gate
+# Gerbang Tekanan Cekungan Atlas
 
-ID LOC HOLD: The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+Turun terakhir tetap menyimpan hard sci-fi di bawah rasa takut. Dasar terbuka lewat rating tekanan, otoritas rusak, bukti beban, dan mesin yang masih lebih percaya kunci berbentuk Deep Reach daripada pengklaim hidup.
 
 ## Scanner
 
-ID LOC HOLD: Basin gate requires pressure proof and authority response.
+Gerbang cekungan meminta bukti tekanan, otoritas rute, dan tubuh yang bisa diklasifikasikan.
 
 ## Terminal
 
-ID LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: bukti tekanan tidak lengkap. Grade suit diterima di bawah ambang turun. Authority clamp mengenali pola Deep Reach yang dicabut, bukan pengklaim saat ini. Override manual membutuhkan beban lokal, pilihan penerima, dan payload saksi.
 
 ## Audio
 
-ID LOC HOLD: It knows the old key. It does not know you.
+Ia tahu kunci lama. Ia tidak mengenalmu.
 
 ## Field Note
 
-ID LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+Ambang final harus terbaca seperti gerbang servis menuju pabrik hidup, bukan portal fantasi.
 
 <!-- External Site; generated from P297_ATLAS_BASIN_PRESSURE_GATE/id_ID. -->

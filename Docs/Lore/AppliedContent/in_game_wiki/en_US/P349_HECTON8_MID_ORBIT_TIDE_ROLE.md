@@ -19,7 +19,7 @@ localization_flags: 0
 
 # HECTON-8 Mid-Orbit Tide Role
 
-HECTON-8 is the moon where Aegir's orbital math becomes personal. It is far enough from the worst inner radiation for long operations, close enough for tides to keep the ocean moving, and valuable enough for Deep Reach to build under pressure. The same position makes rescue dirty. Tide phase, carrier mass, storm noise, and legal custody all meet above the player's head.
+HECTON-8 is the moon where Aegir's orbital math becomes personal. It sits far enough from the worst inner radiation for long operations, close enough for tides to keep the ocean moving, and valuable enough for Deep Reach to build under pressure. The same position makes rescue dirty. Tide phase, carrier mass, storm noise, and legal custody all meet above the suit as a moving ceiling.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ It sits in the part of the ladder where work looks possible until the water star
 
 ## Field Note
 
-HECTON-8 pays because it sits where pressure, tide, and liability overlap.
+HECTON-8 pays because pressure, tide, and liability overlap in the same water column.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/en_US. -->

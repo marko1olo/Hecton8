@@ -11,16 +11,24 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "HabitatIntegrityManager.cs");
             string depthBody = ExtractMethodBody(source, "private float ResolveDepthMeters()");
+            string waterlineBody = ExtractMethodBody(source, "private float ResolveWaterSurfaceLevelY()");
+            string oceanSanitizerBody = ExtractMethodBody(source, "private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)");
+            string fallbackSanitizerBody = ExtractMethodBody(source, "private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)");
 
             StringAssert.Contains("private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", source);
-            StringAssert.Contains("float seaLevelY = DefaultSeaLevelY;", depthBody);
-            StringAssert.Contains("terrainProvider != null && TryResolveSeaLevelY(terrainProvider.WaterSurfaceLevel, out float terrainSeaLevelY)", depthBody);
-            StringAssert.Contains("_atmosphereRuntime != null && TryResolveSeaLevelY(_atmosphereRuntime.SeaLevelY, out float atmosphereSeaLevelY)", depthBody);
+            StringAssert.Contains("float seaLevelY = ResolveWaterSurfaceLevelY();", depthBody);
+            StringAssert.Contains("if (TryResolveOceanWaterSurfaceLevel(out float oceanSeaLevelY))", waterlineBody);
+            StringAssert.Contains("terrainProvider != null && TryResolveSeaLevelY(terrainProvider.WaterSurfaceLevel, out float terrainSeaLevelY)", waterlineBody);
+            StringAssert.Contains("_atmosphereRuntime != null && TryResolveSeaLevelY(_atmosphereRuntime.SeaLevelY, out float atmosphereSeaLevelY)", waterlineBody);
+            StringAssert.Contains("TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY)", source);
+            StringAssert.Contains("private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
             StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", source);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", source);
-            StringAssert.DoesNotContain("terrainProvider != null && math.isfinite(terrainProvider.WaterSurfaceLevel)", depthBody);
-            StringAssert.DoesNotContain("_atmosphereRuntime != null && math.isfinite(_atmosphereRuntime.SeaLevelY)", depthBody);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", oceanSanitizerBody);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", oceanSanitizerBody);
+            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", fallbackSanitizerBody);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", fallbackSanitizerBody);
+            StringAssert.DoesNotContain("terrainProvider != null && math.isfinite(terrainProvider.WaterSurfaceLevel)", waterlineBody);
+            StringAssert.DoesNotContain("_atmosphereRuntime != null && math.isfinite(_atmosphereRuntime.SeaLevelY)", waterlineBody);
             StringAssert.DoesNotContain("float seaLevelY = " + "0f;", depthBody);
         }
 

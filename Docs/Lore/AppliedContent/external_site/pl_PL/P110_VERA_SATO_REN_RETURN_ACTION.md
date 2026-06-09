@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: akcja zwrotna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: akcja zwrotna
 
-PL LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: akcja zwrotna jest mostem między dawną katastrofą Deep Reach a obecną kampanią gracza. Reprezentuje Biuro zgodności odzysku w 2190 roku, gdzie Deep Reach nie musi stać w pokoju, by wywierać siłę. Wysyła pakiety akcji zwrotnej.
 
-## Scanner
+Pakiet żąda współrzędnych, dowodu XO, stanu dostępu Atlas i milczenia kontraktora w oknie opieki. Ten kształt ma znaczenie. Groźba nie jest przemową. Groźba jest czasem. Jeśli ładunek jest odzyskiwalny, Deep Reach może zaoferować ratunek, osłonę prawną albo dostęp przewoźnika. Jeśli ryzyko dowodów rośnie, ten sam system może zmienić gracza w odpowiedzialność.
 
-PL LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-PL LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-PL LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-PL LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Artykuł utrzymuje frakcję przy ziemi. Deep Reach jest niebezpieczne, bo nadal jest proceduralne, wypłacalne i cierpliwe. Chce odzysku przed ratunkiem i opieki przed prawdą. Sato-Ren jest ludzką krawędzią tej maszynerii.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/pl_PL. -->

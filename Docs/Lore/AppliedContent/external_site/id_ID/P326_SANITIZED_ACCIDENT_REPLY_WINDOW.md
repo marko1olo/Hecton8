@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sanitized Accident Reply Window"
+title: "Window Balasan Kecelakaan yang Disanitasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sanitized Accident Reply Window
+# Window Balasan Kecelakaan yang Disanitasi
 
-ID LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+Window Balasan Kecelakaan yang Disanitasi menunjukkan cara Deep Reach berbohong sebelum siapa pun berteriak. Bohongnya prosedural, familiar, dan basi: public loss line bertabrakan dengan bukti fisik. Horor korporat HECTON-8 bekerja paling baik ketika jawaban resmi terlalu bersih untuk tempat yang menghasilkannya.
 
 ## Scanner
 
-ID LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Window balasan terbuka. Deep Reach mengulang keruntuhan badai, kegagalan geologis, dan evakuasi otonom gagal seolah ruangan masih kering.
 
 ## Terminal
 
-ID LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure / RESTRICTED ADVICE: jangan kirim Atlas continuity tak terverifikasi, body-category disputes, atau basin-coordinate claims.
 
 ## Audio
 
-ID LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Mereka menjawab ruangan yang seharusnya kau temukan, bukan ruangan tempat kau berdiri.
 
 ## Field Note
 
-ID LOC HOLD: Place after first physical contradiction, not before.
+Tempatkan setelah kontradiksi fisik pertama: pemain harus punya bukti basah sebelum mendengar skrip publik lama.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/id_ID. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quiet Salvage Contract Seed"
+title: "静默打捞合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quiet Salvage Contract Seed
+# 静默打捞合同种子
 
-ZH LOC HOLD: Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+静默打捞从一个干净槽位开始：风暴活动低，早期接触少，bathydrop窗口看起来已经付清。这种形态适合长线打捞，因为操作员能在航路开始索回零件前稳定工具和避难点。
 
-## Scanner
-
-ZH LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-ZH LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-ZH LOC HOLD: Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-ZH LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+债务藏在custody里。样本、事故包、pinger记录和航路通知会在全额付款前绑定到receiver-first审计。航程更安静，是因为合同板已经决定了干净证据归谁所有。
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/zh_CN. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Locker Name Protocol"
+title: "ロッカー名プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Locker Name Protocol
+# ロッカー名プロトコル
 
-JA LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+ロッカーが個人的なのは、人生を丸ごと説明するからではなく、使われていたからだ。最良の証拠は実用的だ。片側だけ光ったバッジ、割れたシールの上のテープ、経路ステッカー、作業員の略記で書かれた修正メモ、後にpayrollが消した名札。Marauderは使用痕と未完の作業から人を取り戻す。コロニーに人間味を持たせるのにメロドラマはいらない。企業清掃が削り切れなかった小さな痕跡が必要だ。
 
 ## Scanner
 
-JA LOC HOLD: A locker is personal without needing a family plot.
+LOCKER TRACE // 名札、工具摩耗、pressure tape、修正メモ、経路ステッカー。家族劇なしの個人的証拠。
 
 ## Terminal
 
-JA LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ロッカー規則: Deep Reachがpayrollから消した名前を保存する。ロッカーはバッジ、役割、経路許可、修理癖、中に残った未完の物を結ぶべきだ。
 
 ## Audio
 
-JA LOC HOLD: The company deleted the employee. The rust kept the label.
+会社は従業員を消した。錆はラベルを残した。
 
 ## Field Note
 
-JA LOC HOLD: The smallest human trace should survive corporate cleanup.
+最小の人間の痕跡こそ企業清掃を生き残るべきだ。
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/ja_JP. -->

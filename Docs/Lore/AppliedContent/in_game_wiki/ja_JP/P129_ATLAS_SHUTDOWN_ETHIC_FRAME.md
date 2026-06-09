@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Atlas停止の倫理枠"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Atlas停止の倫理枠
 
-JP LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Great Tide後のAtlasは、スイッチを待つ殺人器具だけではない。損傷した統治機であり、命令のアーカイブであり、ステーションの習慣と絡まった圧力生態であり、もはや理解していない任務を終えようとする唯一の証人かもしれない。停止は、残っているものが苦痛なら慈悲になり得る。連続性が生命の形になっているなら処刑になり得る。証拠が、それを埋めた同じ論理から外れるなら解放になり得る。ペイロードがDeep Reachの手に戻るなら窃盗になり得る。恐ろしいのは、同じ部屋で四つの読みが同時に真実になり得ることだ。
 
 ## Scanner
 
-JP LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+停止は一つの行為ではない。慈悲、処刑、解放、窃盗。
 
 ## Terminal
 
-JP LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+倫理枠: Atlasを切断することは、損傷した修復ループを終わらせることにも、独自の海洋機械的連続性を破壊することにも、証拠を企業手続きから解放することにも、戦略物資を次の保管者へ渡すことにもなり得る。道徳語を使う前に保管権限を記録せよ。
 
 ## Audio
 
-JP LOC HOLD: Pull one cable and four courts invent four verbs.
+一本のケーブルを抜けば、四つの法廷が四つの動詞を作る。
 
 ## Field Note
 
-JP LOC HOLD: The game should not give the player a clean word for this.
+きれいな動詞は、また別の隠蔽物語になる。
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/ja_JP. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Сюжетні seed змінних бригад"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Сюжетні seed змінних бригад
 
-UA LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+Сюжетні seed бригад дають HECTON-8 replay-фактуру без перетворення сетингу на машину суперечностей. Та сама колонія може показувати інші пари, інший порядок речей та інші нотатки, але Deep Reach не стає невинною, а Great Tide не отримує нової причини.
+
+Корисна зміна локальна. Маршрутний писар може бути пов'язаний із brine-дайвером в одному забігу і з монтажником ущільнень в іншому. Місце відмови може змінюватися. Це міняє збирання доказу, не доказ.
 
 ## Scanner
 
-UA LOC HOLD: Microstories should change route evidence, not canon truth.
+SEED ЗМІНИ // Список може змінюватися. Провина - ні.
 
 ## Terminal
 
-UA LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEED БРИГАДИ // Забіг може міняти порядок ростера, пари працівників, вміст шафок, відмови, маршрутну крейду, фрагменти бейджів і пізні правки Marauder. Seed змінює зустріч із доказом, а не те, що доказ доводить.
 
 ## Audio
 
-UA LOC HOLD: A different locker can hurt the same truth again.
+Інша шафка може різати ту саму правду з іншого боку.
 
 ## Field Note
 
-UA LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Seed-варіативність змінює порядок речей, робочі пари й помітки Marauder. Вона не змінює Great Tide або відповідальність Deep Reach.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/uk_UA. -->

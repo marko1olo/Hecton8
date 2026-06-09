@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Atlas Continuity Office"
+title: "Kantor Kontinuitas Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Atlas Continuity Office
+# Kantor Kontinuitas Atlas
 
-ID LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Kantor Kontinuitas Atlas adalah membran birokratis di sekitar pikiran koloni. Ia menjaga ATLAS cukup berguna untuk memerintah sistem, cukup ambigu untuk menolak personhood, dan cukup terdokumentasi untuk menjual kontinuitas setelah bencana.
 
 ## Scanner
 
-ID LOC HOLD: The office that wrote worker safety into a machine priority stack.
+Kantor itu tidak membangun jiwa untuk ATLAS. Ia membangun lemari arsip di sekitar satu jiwa.
 
 ## Terminal
 
-ID LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+CATATAN KANTOR ATLAS: wewenang pemeliharaan, isolasi liabilitas, tinjauan kognisi, bahasa pematian, dan klaim kontinuitas publik ditangani jauh dari operasi ekstraksi.
 
 ## Audio
 
-ID LOC HOLD: They did not order death. They ordered compatibility.
+Mereka memberi ATLAS prosedur, bukan hak.
 
 ## Field Note
 
-ID LOC HOLD: A memo can kill without using the word kill.
+Sistem lebih aman dieksploitasi saat tak seorang pun sepakat apakah ia alat, saksi, aset, atau pasien.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/id_ID. -->

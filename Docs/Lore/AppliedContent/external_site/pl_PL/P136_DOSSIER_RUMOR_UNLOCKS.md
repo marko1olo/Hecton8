@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Pamięć plotek w dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Pamięć plotek w dossier
 
-PL LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+Pamięć plotek w dossier czyni wiedzę z replayu częścią świata: zapis przechowuje podejrzenia i skutki, ale nie daje następnej próbie silniejszego ciała.
 
 ## Scanner
 
-PL LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+PAMIĘĆ DOSSIER // Plotki, ostrzeżenia, kontekst kontraktu i zapisy zakończeń trwają. Kadłub, tlen, narzędzia, ładunek i mapa nie.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+REGUŁA TRWAŁOŚCI: dossier może przenosić rodziny plotek, kategorie dowodów, znaczniki zakończeń i ostrzeżenia tras między kampaniami. Nie przenosi sprzętu, zasobów, geografii seed ani prawa do prawdy.
 
 ## Audio
 
-PL LOC HOLD: Your file remembers what your hands cannot carry.
+Akta pamiętają to, czego ręce nie uniosą.
 
 ## Field Note
 
-PL LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Niech wiedza zostanie. Niech ciśnienie zostanie.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/pl_PL. -->

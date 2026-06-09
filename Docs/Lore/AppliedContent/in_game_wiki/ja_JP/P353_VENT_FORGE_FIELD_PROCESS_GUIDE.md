@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ベントフォージ野外工程ガイド"
+title: "ベントフォージ現地工程ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ベントフォージ野外工程ガイド
+# ベントフォージ現地工程ガイド
 
-vent forges は自然産業炉だ。熱、brine、pressure history を有用な ceramics、sealants、charge materials へ変え、すべての試料をその熱経路に結びつけたままにする。
+ベントフォージは自然と産業の中間にある反応炉だ。熱、塩水、圧力履歴、低速冷却をセラミック、シーラント、電荷材料に変える。試料は、その熱経路が回収に耐えるときだけ役に立つ。
 
 ## Scanner
 
-vent-forge chemistry 活性。品質は試料の輝きではなく、pressure history、heat pulse、slow cooling に従う。
+ベントフォージ化学反応が進行中。品質は試料の光沢ではなく、圧力履歴、熱パルス、低速冷却に従う。
 
 ## Terminal
 
-FIELD GUIDE: vent forges は sulfides、noble-gas pockets、ceramics、sealant precursors を煮る。試料の名前より、heat、brine、pressure を通った経路が重要だ。
+現地ガイド: ベントフォージは硫化物、希ガスポケット、セラミック粒、シーラント前駆体を煮る。試料名より、熱、塩水、圧力を通った経路が重要だ。
 
 ## Audio
 
-vent は鉱石を作らなかった。君が中断した工程を作った。
+ベントは鉱石を作ったのではない。中断された工程を作った。
 
 ## Field Note
 
-新しいロットをそのまま冷水へ持ち上げるな。vent に anneal を終えさせろ。そうしなければ shell はひび割れる。
+新しいロットをそのまま冷水へ上げるな。ベントに焼きなましを終えさせろ。でなければ殻がひび割れる。
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ja_JP. -->

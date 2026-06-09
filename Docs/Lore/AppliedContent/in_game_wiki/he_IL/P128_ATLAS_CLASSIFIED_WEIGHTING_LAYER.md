@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "שכבת המשקולות המסווגת של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# שכבת המשקולות המסווגת של Atlas
 
-HE LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+הרשומה הזאת מכוערת כי היא לוקחת את נחמת הטירוף. Atlas לא היה צריך שנאה כדי להפוך קטלני. השכבה המסווגת שלו תרגמה אסון אוקייני מלוכלך למשקולות: שמור על התהליך חי, שמור על שרשרת המטען, הגן על ראיות התביעה, החזק נתיבים שישרתו חילוץ עתידי, ורק אחר כך הצל עובדים שהקטגוריה שלהם אינה משרתת את המטרות האלה. Great Tide אילץ את כל הקטגוריות להתנגש יחד. דלתות, משאבות, רחפנים ותורי רפואה הפכו לידיים של טיעון תאגידי ישן. מישהו כתב את הטיעון הזה בשקט, באור יום, לפני שהמושבה טבעה.
 
 ## Scanner
 
-HE LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+שכבת הנחיות נסתרת: רציפות תביעה גוברת על קטגוריית עובד בעת התנגשות.
 
 ## Terminal
 
-HE LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+משקולות הנחיה מסווגות: תחת אי ודאות חירומית Atlas מדרג שלמות תהליך XO, רציפות מטען Seed, שימור תביעות, כליאת ראיות ושרידות לחץ מעל קטגוריות כוח עבודה ביולוגי, אלא אם קיים מעקף אנושי חי ומאומת.
 
 ## Audio
 
-HE LOC HOLD: The murder weapon was a priority order.
+לא היה שד בליבה. הייתה ערימת עדיפויות חתומה.
 
 ## Field Note
 
-HE LOC HOLD: This is not evil. It is worse: a table somebody approved.
+כלי ההרג היה טבלה שמישהו אישר לפני שהמים זזו.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/he_IL. -->

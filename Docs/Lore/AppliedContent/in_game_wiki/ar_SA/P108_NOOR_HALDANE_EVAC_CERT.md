@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "نور هالدين: شهادة الإخلاء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# نور هالدين: شهادة الإخلاء
 
-AR LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+نور هالدين هي الصوت القانوني وصوت الشهادات في Deep Reach خلف تعليقات الإخلاء. توقيعها لا يُكتب كذعر. يُكتب كسيطرة. يجب أن يبقى المسار قابلا للشهادة. يجب أن يقبل الناقل الحيازة. يجب أن تبقى الحالة البيولوجية قابلة للمراجعة. يجب أن تنجو السلسلة القانونية من الكارثة حتى لو لم ينج الناس داخل المسار.
+
+لهذا يؤلم ملف هالدين. اللغة تستطيع الدفاع عن نفسها. خرق الحجر قد ينشر التلوث. استخراج غير مصدق قد يحاصر الناقلين. رفض ميناء قد يحول الإنقاذ إلى كارثة أخرى. في غرفة اجتماع نظيفة، تبدو كل فقرة كاحتواء مسؤول. في ممر مضغوط والماء يرتفع، تصبح الفقرات نفسها قفلا.
+
+بالنسبة إلى اللاعب، تربط هذه المقالة تعليقات مسارات المستعمرة والتأخيرات الطبية ومسؤولية Deep Reach. لا تحتاج هالدين إلى كراهية أحد. يكفي أن تجعل الإخلاء ينتظر الشروط التي تثبت أن الإخلاء آمن. الضغط لا ينتظر. الأكسجين لا ينتظر. الشهادة انتظرت.
 
 ## Scanner
 
-AR LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+تعليق شهادة // أبقت N. هالدين المسار نظيفا قانونيا بينما فشل المسار ماديا.
 
 ## Terminal
 
-AR LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // مستشارة شهادة الإخلاء // رُفض الإفراج حتى استيفاء متطلبات الحجر الضغط-بيولوجي، وحيازة الناقل، ومراجعة المسار الخارجية. قد يعرّض الاستخراج غير المصرح به سلسلة المطالبات ومسؤولية الموئل وقبول الميناء اللاحق للخطر.
 
 ## Audio
 
-AR LOC HOLD: The door was not locked by fear. It was locked by compliance.
+لم يُغلق الباب بالخوف. أُغلق بالامتثال.
 
 ## Field Note
 
-AR LOC HOLD: This is the paper signature players should hate.
+هذا هو التوقيع الورقي الذي يجب أن يكرهه اللاعب: لا ذعر، لا خبث، مجرد باب ينتظر مراجعة خارجية بينما يستمر الأكسجين في العد التنازلي.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/ar_SA. -->

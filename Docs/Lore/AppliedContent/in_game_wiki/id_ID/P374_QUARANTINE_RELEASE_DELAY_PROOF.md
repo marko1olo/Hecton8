@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tahan Rilis Karantina"
+title: "Tahan Pelepasan Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tahan Rilis Karantina
+# Tahan Pelepasan Karantina
 
-Catatan tahan tidak membuat karantina jahat. Ia membuat waktu terlihat. Deep Reach bisa menamai ketidakpastian, menunda rilis, menjaga posisi asuransi, dan menahan pekerja di zona sampai rutenya mati.
+Kontaminasi nyata di HECTON-8. Paparan tekanan, kimia brine, dan pertumbuhan kompatibel Atlas dapat membuat penyelamatan ceroboh menjadi mematikan. Pelat tahan menunjukkan bagaimana bahaya nyata itu menjadi perlindungan. Deep Reach memakai karantina setelah rute keluar terkunci, menerima massa aset yang dapat dipulihkan, dan menjaga pelepasan pekerja di bawah garis.
 
 ## Scanner
 
-Pelat tahan karantina. Bahasa perlindungan muncul setelah rute keluar sudah terkunci.
+Pelat tahan ditemukan. Tinjauan kontaminasi dimulai setelah rute keluar sudah terkunci dan pelepasan pekerja tetap di bawah pemulihan aset.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Tahan sampai review. Antrean recovery menerima massa aset sebelum rilis pekerja. Insurance ping aktif.
+GERBANG LEPAS // BIO-TEKANAN TIDAK PASTI. Tahan sampai konfirmasi dewan. Massa aset diterima ke antrean pemulihan sebelum pelepasan pekerja. Ping asuransi aktif.
 
 ## Audio
 
-Karantina bisa menyelamatkan tubuh. Ia juga bisa membuat tubuh menunggu sampai menjadi berkas.
+Karantina membeli waktu untuk perusahaan sebelum menyelamatkan siapa pun.
 
 ## Field Note
 
-Catatan Marauder: perlindungan tidak terbukti oleh kata perlindungan. Periksa jamnya.
+Catatan perompak: perlindungan adalah jam, bukan kata. Periksa kapan dimulai.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/id_ID. -->

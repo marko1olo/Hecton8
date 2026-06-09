@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Legal Insurance Automated Ping"
+title: "Automatische juridische verzekeringsping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Legal Insurance Automated Ping
+# Automatische juridische verzekeringsping
 
-NL LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+De Automatische juridische verzekeringsping is een compacte uitdrukking van HECTON-8s bureaucratische horror. Het huidige Deep Reach kan via geautomatiseerde verzekeringsbewaring net zo effectief spreken als via mensen. Het systeem vraagt wat de overlevende draagt voordat het vraagt of de overlevende gered moet worden.
 
 ## Scanner
 
-NL LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Automatische ping ontvangen. Reddingstaal is vervangen door receiverbewijs, massaklasse en bewairstatus.
 
 ## Terminal
 
-NL LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / vereist voor recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-NL LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Het eerste wat ze vragen is niet of je leeft. Het is wat je draagt.
 
 ## Field Note
 
-NL LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Korte bark-kandidaat bij routedrempels. Spaarzaam gebruiken; de wreedheid zit in wat het systeem eerst vraagt.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/nl_NL. -->

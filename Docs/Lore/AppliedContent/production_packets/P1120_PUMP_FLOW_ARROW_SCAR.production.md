@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_repair_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS167_FIRST_REPAIR_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, pump-room repair note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first repair reading |
@@ -33,7 +33,7 @@ Forbidden facts: no pump-system claim, no automatic repair, no full pressure ass
 
 ### Scanner
 
-PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat.
+PUMP MARK // Scratched arrow marks flow direction. Match the hose socket before reseating.
 
 ### Codex
 
@@ -71,18 +71,18 @@ MATCH HOSE BEFORE RESEAT
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| ar_SA | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| de_DE | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| es_ES | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| fr_FR | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| he_IL | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| id_ID | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| ja_JP | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| ko_KR | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| nl_NL | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| pl_PL | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| pt_BR | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| ru_RU | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| uk_UA | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
-| zh_CN | draft_machine_or_llm | PUMP MARK // Scratched arrow shows flow direction. Match hose socket before reseat. |
+| en_US | source_authority | PUMP MARK // Scratched arrow marks flow direction. Match the hose socket before reseating. |
+| ar_SA | draft_machine_or_llm | علامة المضخة // السهم المحفور يحدد اتجاه التدفق. طابق مقبس الخرطوم قبل إعادة تركيبه. |
+| de_DE | draft_machine_or_llm | PUMPENMARKIERUNG // Eingeritzter Pfeil zeigt die Flussrichtung. Schlauchanschluss vor dem Wiedereinsetzen abgleichen. |
+| es_ES | draft_machine_or_llm | MARCA DE BOMBA // La flecha arañada indica el sentido del flujo. Comprueba la toma de manguera antes de recolocarla. |
+| fr_FR | draft_machine_or_llm | MARQUE DE POMPE // La flèche gravée indique le sens du flux. Vérifier le raccord du tuyau avant de le remettre en place. |
+| he_IL | draft_machine_or_llm | סימון משאבה // החץ החרוט מציין את כיוון הזרימה. יש להתאים את שקע הצינור לפני ההושבה מחדש. |
+| id_ID | draft_machine_or_llm | TANDA POMPA // Panah tergores menunjukkan arah aliran. Cocokkan soket selang sebelum memasang ulang. |
+| ja_JP | draft_machine_or_llm | ポンプ標識 // 傷で刻まれた矢印が流れの向きを示す。ホースソケットを合わせてから戻す。 |
+| ko_KR | draft_machine_or_llm | 펌프 표시 // 긁어 새긴 화살표가 유량 방향을 가리킨다. 다시 끼우기 전에 호스 소켓을 맞춰라. |
+| nl_NL | draft_machine_or_llm | POMPMARKERING // Ingekraste pijl geeft de stroomrichting aan. Stem de slangaansluiting af voor het terugplaatsen. |
+| pl_PL | draft_machine_or_llm | ZNACZNIK POMPY // Wydrapana strzałka pokazuje kierunek przepływu. Dopasuj gniazdo węża przed ponownym osadzeniem. |
+| pt_BR | draft_machine_or_llm | MARCA DA BOMBA // A seta riscada indica o sentido do fluxo. Confira o encaixe da mangueira antes de recolocar. |
+| ru_RU | draft_machine_or_llm | МЕТКА НАСОСА // Процарапанная стрелка показывает направление потока. Перед посадкой совмести гнездо шланга. |
+| uk_UA | draft_machine_or_llm | МІТКА НАСОСА // Подряпана стрілка показує напрямок потоку. Перед встановленням сумісти гніздо шланга. |
+| zh_CN | draft_machine_or_llm | 泵标记 // 刻划箭头标明流向。重新装回前先对准软管接口。 |

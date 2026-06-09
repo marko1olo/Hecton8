@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Почати тут: HECTON-8
 
-Стартовий кластер: контракт, роль гравця, тиск виживання HECTON-8 і перша суперечність у версії Deep Reach.
+Почати тут: HECTON-8 починається як salvage contract навколо затопленої колонії, боргового Marauder і версії Deep Reach, занадто чистої для правди.
 
 ## Scanner
 
-Публікаційний вузол: premise, роль гравця, перші обмеження і перша брехня Deep Reach.
+Публічний вхід: salvage contract, борговий Marauder, пошкоджена capsule, суперечність Deep Reach і перший слід ремонту Atlas.
 
 ## Terminal
 
-SITE NAV: контрактний вхід, колишній спеціаліст Deep Reach, борговий Marauder, пошкоджена капсула, без родинного гачка, перший слід ремонту Atlas.
+SITE NAV: починати з мови контракту, виживання під тиском, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-Ти прийшов по salvage. Океан зробить цей мотив надто малим.
+Перший запис не кличе на допомогу. Він заявляє claim.
 
 ## Field Note
 
-Spoiler-light навігація починається тут: спершу premise, потім evidence, фінали лише після здобутого доступу.
+Спершу читай папери. На HECTON-8 брехня виживає тому, що в кожному реченні є щось правдиве.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/uk_UA. -->

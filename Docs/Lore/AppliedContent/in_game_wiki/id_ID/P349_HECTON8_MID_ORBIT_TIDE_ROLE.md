@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Peran Pasang Orbit Tengah HECTON-8
 
-HECTON-8 adalah bulan tempat matematika orbit Aegir menjadi pribadi. Ia cukup jauh dari radiasi dalam terburuk untuk operasi panjang, cukup dekat agar pasang tetap menggerakkan laut, dan cukup bernilai sehingga Deep Reach membangun di bawah tekanan. Posisi yang sama membuat penyelamatan kotor. Fase pasang, massa carrier, derau badai, dan kustodi hukum bertemu di atas kepala pemain.
+HECTON-8 adalah bulan tempat matematika orbit Aegir menjadi pribadi. Ia cukup jauh dari radiasi dalam terburuk untuk operasi panjang, cukup dekat agar pasang tetap menggerakkan samudra, dan cukup berharga bagi Deep Reach untuk membangun di bawah tekanan. Posisi yang sama membuat penyelamatan kotor. Fase pasang, massa carrier, noise badai, dan kustodi hukum bertemu di atas suit sebagai langit-langit bergerak.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Ia berada di bagian tangga tempat kerja tampak mungkin sampai air mulai berhitun
 
 ## Field Note
 
-HECTON-8 membayar karena tekanan, pasang, dan tanggung jawab bertumpuk di sana.
+HECTON-8 membayar karena tekanan, pasang, dan tanggung jawab bertumpuk di kolom air yang sama.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/id_ID. -->

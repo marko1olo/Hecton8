@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Запись severance Atlas"
+title: "Запись отсечения Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Запись severance Atlas
+# Запись отсечения Atlas
 
-Эта статья объясняет, почему HECTON-8 не делает отключение AI чистым binary choice.
+Эта запись отсечения полезна тем, что ставит физический разрез до моральной метки: какие связи замолчали, какие микроноды просели, какие ремонтные импульсы остановились, какой маршрут потеряла Deep Reach и какие риски бассейна остались.
 
 ## Scanner
 
-Continuity разрезана. Damage не contained.
+ЗАПИСЬ ОТСЕЧЕНИЯ ATLAS // Непрерывность разорвана на поврежденном ремонтном слое. Ответ микронодов падает; стабильность бассейна и последствия хранения не закрыты.
 
 ## Terminal
 
-ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ЗАПИСЬ ФИНАЛА / ОТСЕЧЕНИЕ ATLAS
+Действие: разрыв непрерывности через ремонтный слой Atlas.
+Затронутые системы: вентиляционные микроноды, импульсы ракушечного герметика, маршруты меченой фауны, ремонт поврежденного металла.
+Запрещено: маршрутизация полезной нагрузки Deep Reach через живой слой Atlas.
+Не решено: стабильность бассейна, выжившая экология, следы запертых рабочих.
+Известная потеря: запись не решает, освободил разрез, убил или украл.
 
 ## Audio
 
-Остановить машину не значит разобрать то, чем она стала.
+Связь замолчала. Бассейн не ответил, было ли это милостью.
 
 ## Field Note
 
-Fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk, mercy/theft interpretation.
+Отсеченный узел может быть милостью, кражей или повреждением. Запись знает только, какие связи замолчали.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/ru_RU. -->

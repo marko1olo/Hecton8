@@ -19,22 +19,32 @@ localization_flags: 1
 
 # Drabina ciśnienia
 
-Drabina ciśnienia niesie kampanię: tlen, kadłub, energia, izolacja, trasy i okna orbitalne zamiast arbitralnych blokad.
+Drabina ciśnienia to logika tras stojąca za postępem głębokości w HECTON-8. To nie lista nazw poziomów. Każdy głębszy pas zadaje to samo praktyczne pytanie w ostrzejszej wersji: czy uszczelka skafandra, bateria, pętla tlenowa, izolacja, sygnał i ping powrotny przetrwają następne zejście jednocześnie?
+
+Pierwsza półka dopuszcza krótką pracę z uszkodzonym sprzętem, bo linię powrotną da się jeszcze odnaleźć. Półka serwisowa dodaje kontrolę klasy skafandra i zatrzasku baterii przy każdej bramie głębokości. Kaniony solanki wymagają izolacji i trymu wyporu, bo sól, ciepło i zmiany gęstości psują dobry odczyt podczas zejścia. Abisalne pola maszyn wymagają utwardzonego sygnału i dyscypliny kadłuba; spóźniony ping może oznaczać, że trasa została już za nurkiem. Basen Atlas dodaje do tej samej sekwencji szum magistrali i utratę ciśnienia.
+
+Przeczytaj tablicę konserwacyjną, zanim uznasz bramę za pozwolenie. Jeśli jeden odczyt jest czerwony, następne zejście nie jest trasą, tylko proceduralnie złe. Najpierw napraw najsłabszą uszczelkę, pakiet, pętlę, owijkę albo przekaźnik.
 
 ## Scanner
 
-Głębokość dzieli się ratingami ciśnienia, nie nazwami poziomów. Każdy pas wymaga inżynierii.
+ODCZYT BRAMY GŁĘBOKOŚCI // Pas: zejście serwisowe 250-1200 m. Margines uszczelki 11%. Płyta skafandra przyjmuje Grade C dopiero po zatrzaśnięciu pakietu B2. Ping powrotny słaby pod trzecią obejmą. Nie otwierać dolnej śluzy odwagą.
 
 ## Terminal
 
-Drabina: sprzęt półki, wzmocnienie kanionu, izolacja solanki, dyscyplina kadłuba, hartowanie sygnału fabryki.
+TABLICA DOSTĘPU GŁĘBOKOŚCI
+0-250 m: półka fotyczna / krótka praca z uszkodzonym sprzętem dopuszczona
+250-1200 m: półka serwisowa / wymagana uszczelka skafandra Grade C, zatrzaśnięta bateria i ping liny
+1200-2800 m: kanion solanki / wymagana owijka izolacyjna i trymer wyporu
+2800-4300 m: abisalne pole maszyn / wymagany utwardzony sygnał i dyscyplina kadłuba
+4300-5600 m: basen Atlas / plan powrotu musi przeżyć utratę ciśnienia i szum magistrali
+Błąd: następny pas zablokowany do naprawy najsłabszego odczytu
 
 ## Audio
 
-Nie schodzisz, bo jesteś odważny. Schodzisz, bo następna uszczelka trzyma.
+Przestań kłócić się z drzwiami. Margines uszczelki jest czerwony, a ping powrotny już się spóźnia.
 
 ## Field Note
 
-Ocean bramkuje postęp matematyką.
+Brama nie pyta, po co ci trasa. Czyta uszczelkę, zasilanie, tlen, izolację, sygnał, a potem daje zielone albo zabija pomysł.
 
 <!-- In-Game Wiki; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/pl_PL. -->

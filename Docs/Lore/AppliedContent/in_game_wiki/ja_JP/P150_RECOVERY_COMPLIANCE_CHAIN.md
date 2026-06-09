@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Complianceチェーン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Complianceチェーン
 
-JP LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+Recovery Complianceチェーンは災害現場を管理された資産場へ変える手順だ。入域、切断、採取、証人収集、データ封印、返還質量を許可できる。同時に生きた人が証拠、責任、貨物、障害のどれかを問い続ける。
 
 ## Scanner
 
-JP LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Recovery命令受理。チェーン内に救助語はない。
 
 ## Terminal
 
-JP LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+RECOVERYチェーン: 事故後行動は請負許可、証拠管理、サルベージ権、証人処理、航路保険、非認定の公開文言を通る。救助は支配動詞ではない。
 
 ## Audio
 
-JP LOC HOLD: You are not rescued. You are classified.
+彼らはrecoveryに従うため来た。私たちのために戻ったのとは違う。
 
 ## Field Note
 
-JP LOC HOLD: Delay does not make an order harmless.
+Complianceは手袋と封印を持って来るが、誰かがまだ人間である約束は持って来ない。
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ja_JP. -->

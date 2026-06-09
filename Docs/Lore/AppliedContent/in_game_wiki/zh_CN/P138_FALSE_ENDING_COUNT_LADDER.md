@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "假结局数量阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# 假结局数量阶梯
 
-CN LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 可以有很多离开的方式，但真相不能变成噪音。档案应把假结局或部分结局分成少数可读的族群：拿走 material 离开；逃出又被拖回；落入企业保管或隔离；泄露足够的 ledger 真相以伤到机器，却不足以结束它。每个出口都是真的。没有一个是最底层。
 
 ## Scanner
 
-CN LOC HOLD: Four major false families before the deep Atlas resolutions.
+结局阶梯 // 物资结算，部分返回，企业捕获或隔离，公共 ledger 泄露。深层 Atlas 答案前的四个假结局族。
 
 ## Terminal
 
-CN LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+档案范围：可以标记许多出口，但要归入清晰族群。物资结算、部分离开/返回、企业捕获/隔离、公共 ledger 泄露位于 Atlas 盆地 payload 解决之下。
 
 ## Audio
 
-CN LOC HOLD: The dossier can mark many exits before it marks an answer.
+档案可以先标记出口，再标记答案。
 
 ## Field Note
 
-CN LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+结局要足以奖励玩法。又不能多到让真相廉价。
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/zh_CN. -->

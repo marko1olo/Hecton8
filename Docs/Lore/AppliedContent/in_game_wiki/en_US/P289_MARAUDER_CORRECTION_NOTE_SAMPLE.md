@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Marauder Correction Note Sample
 
-Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+The Marauder Correction Note Sample is not a confession and it is more useful because of that. It is a dirty annotation on top of an official accident form, written by someone who had learned to distrust clean causes. The note does not say who killed whom. It says what must be checked before the word accident is allowed to stand: pump certificate, shift count, body category, door-clock mismatch and the authorization queue that held rescue long enough for the room to become evidence. In HECTON-8 terms this makes the object a bridge between environmental proof and faction voice. The colony record tries to end the story with weather. The marauder hand forces the player back into the room.
 
 ## Scanner
 
-Marauder correction note rejects accident wording and points to authorization delay.
+Grease-pencil correction on an accident form: not weather, not panic, an authorization delay with a body count attached.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch, rescue authorization queue.
 
 ## Audio
 
-Someone else smelled the paperwork rot.
+Someone smelled the rot in the paperwork before the room dried.
 
 ## Field Note
 
-NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. Door clock is six minutes ahead of the claim stamp.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/en_US. -->

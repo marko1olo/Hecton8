@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Resources and Ecology
 
-Resource/ecology hub: drowned crust, brine ladders, vent chemistry, living systems and Atlas' damaged repair logic.
+Resources and ecology hub: the Drowned Crust, brine ladders, vent chemistry, blue debt, predator cues, tagged fauna, and Atlas repairs that treat living systems as hardware.
 
 ## Scanner
 
-Publication hub: geology, blue debt, fauna grammar and Atlas repair-network misuse.
+Publication hub: drowned crust, brine ladders, blue debt pressure history, fauna cues, and Atlas repair misuse.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology and encounter grammar as one process map.
+SITE NAV: read samples by origin, pressure history, living contact, extraction damage, custody value.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Nothing here is just loot.
 
 ## Field Note
 
-Navigation cluster record: resources and ecology belong together when materials, biota, and evidence pressure share the same route.
+A clean sample is rarely the richest one. Ask what formed it, what touched it, and what got harmed when it was taken.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/en_US. -->

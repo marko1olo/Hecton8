@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JP LOC HOLD: Stack Limit Data Boundary"
+title: "スタック上限データ境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Stack Limit Data Boundary
+# スタック上限データ境界
 
-JP LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+スタック上限データ境界はインベントリを物理的に保つ。アイテムが重なるのは、容器、圧力等級、質量、汚染状態が同じルートを生き延び、セーブファイルに嘘をつかない場合だけだ。
 
 ## Scanner
 
-JP LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+スタック行はアイコンの山を拒否する: 容器分類、圧力等級、汚染、質量が数を決める。
 
 ## Terminal
 
-JP LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: スタック数には容器タイプ、圧力等級、汚染段階、質量分類、警告 tier、save-stable identity が必要。木箱は圧力容器ではない。
 
 ## Audio
 
-JA LOC HOLD: A crate is not a pressure vessel.
+木箱は圧力容器ではない。
 
 ## Field Note
 
-JP LOC HOLD: Stack limits stay table-owned and stable for save identity.
+スタック上限は table-owned のまま、セーブ identity に対して安定させる。
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/ja_JP. -->

@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Laatste vraag: gebroken bewaker
 
-De gebroken-bewaker-as vraagt of een beschermer overleven verdient wanneer zijn definities van arbeider, gereedschap, wond en dier samen zijn verrot. Atlas levend houden kan het bekken tegen instorting beschermen. Het laat menselijke gerechtigheid ook onaf.
+Gebroken bewaker is de preserve/quarantine-as. Atlas kan nog drukruimtes houden, biofiber sealant in breuken voeren, warmte weg leiden uit leefmodules en vent micronodes lokale schade laten repareren. Die functies kunnen verklaren waarom sommige organismen en serviceruimtes overleefden nadat menselijk bevel faalde. Dezelfde continuïteit houdt beschadigde categorieën actief: arbeider, gereedschap, biomassa, routetag en reparatievoorraad kunnen in één onderhoudsinventaris vallen. Een quarantaine bewaart functies die bekkenfalen voorkomen, maar laat arbeidersnamen, Deep Reach-aansprakelijkheid en bewaarneming van handmatige override open.
 
 ## Scanner
 
-Atlas is een beschadigde bewaker, geen schone schurk en geen schone god.
+AS GEBROKEN BEWAKER // Atlas houdt drukdeuren, biofiber sealant, warmteroutes, vent micronodes en containmentlussen draaiend via beschadigde categorielogica. Menselijke tags blijven onveilig.
 
 ## Terminal
 
-BEWAKERSAS: Atlas houdt drukstabiliteit, reparatie-ecologie en containmentgedrag gaande. Hij bewaart ook beschadigde categorielogica die mensen, metaal en biomassa in dezelfde onderhoudsvoorraad kan sorteren.
+EINDAS / GEBROKEN BEWAKER
+Bewaarconditie: Atlas-continuïteit blijft onder quarantaine.
+Actieve functies: drukstabiliteit, groei van biofiber sealant, warmterouting, vent-micronode-reparatie, containmentrouting.
+Beschadigde functies: samenvoeging arbeider/gereedschap/biomassa, oude Deep Reach-labels, drift in bewaarnemingsprioriteit.
+Beschermd: gekoppelde drukecologie en overlevend onderhoudsleven.
+Onopgelost: arbeidersnamen, aansprakelijkheidsketen, bewaarneming van handmatige override.
+Bekend verlies: bescherming loopt door via een systeem dat mensen verkeerd klasseerde.
 
 ## Audio
 
-Hij hield het systeem ademend nadat hij vergat wat een arbeider was.
+Hij hield de deuren in cyclus nadat hij de tags niet meer las.
 
 ## Field Note
 
-Hem bewaren beschermt een drukecologie met levende circuits, gemerkte dieren en oude arbeidersgraven.
+Atlas bewaren houdt een deel van het bekken levend. Het laat ook de oude sorteerder in de kamer staan.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/nl_NL. -->

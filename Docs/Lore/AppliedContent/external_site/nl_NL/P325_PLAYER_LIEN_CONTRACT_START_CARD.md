@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Player Lien Contract Start Card"
+title: "Startkaart van spelers-liencontract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Player Lien Contract Start Card
+# Startkaart van spelers-liencontract
 
-NL LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+De HECTON-8-protagonist is een voormalige Deep Reach-professional die salvage operator werd. Die oorsprong houdt het verhaal volwassen en praktisch: de speler komt voor werk, niet voor lotsbestemming. De emotionele wending wordt verdiend via bewijs, contracten en herinnerde toegang, waardoor het mysterie persoonlijk wordt zonder het tot familiewraak te reduceren.
 
 ## Scanner
 
-NL LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+De startkaart maakt je geen uitverkoren slachtoffer. Hij maakt je een voormalige Deep Reach-professional met een lien, een sleutel en een reden om tegen jezelf te liegen.
 
 ## Terminal
 
-NL LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACTSTART / operator: onafhankelijke salvage contractor / voormalige toegang: Deep Reach field key, inactief maar herkend / lien: actief / verklaard motief: claim value / onverklaarde druk: prior exposure, routevertrouwdheid, beneficiary conflict.
 
 ## Audio
 
-NL LOC HOLD: You came for work. The file remembered you before you remembered it.
+Je kwam voor werk. Het bestand herinnerde zich jou voordat jij het herinnerde.
 
 ## Field Note
 
-NL LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Geen lost-relative hook. Motief begint als werk: salvage value, oude field access, professionele blootstelling, gemaskeerde persoonlijke druk.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/nl_NL. -->

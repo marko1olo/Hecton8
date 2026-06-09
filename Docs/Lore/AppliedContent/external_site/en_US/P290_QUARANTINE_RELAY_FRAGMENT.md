@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Quarantine Relay Fragment
 
-HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Quarantine Relay Fragment defines the bitter edge of HECTON-8 survival. The setting is not only about escaping water pressure; it is about escaping records, custody chains and ownership claims that survive the flood. The fragment gives endings a harder shape: someone can be recovered from the ocean and still not be free.
 
 ## Scanner
 
-Relay fragment approves extraction and denies clean release in the same packet.
+The same relay packet approves extraction and denies release. The ocean lets the body go before the colony lets the person leave.
 
 ## Terminal
 
-RELAY HOLD QRF-17: extraction accepted; release denied pending sample custody, air review and claimant dispute.
+RELAY HOLD QRF-17 / EXTRACTION: ACCEPTED / RELEASE: DENIED / REASONS: sample custody unresolved, air review stale, claimant dispute active, witness status provisional.
 
 ## Audio
 
-Relay hold. Extraction accepted. Release denied: sample custody, air review, claimant dispute. You are dry, not free.
+Relay hold. Extraction accepted. Release denied. You are out of the water, not out of custody.
 
 ## Field Note
 
-Stamped twice: body recovered, person retained. Legal acceptance and release denial share one packet.
+Stamped twice: BODY RECOVERED, PERSON RETAINED. Air review predates the rescue receipt; claimant dispute remains open.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/en_US. -->

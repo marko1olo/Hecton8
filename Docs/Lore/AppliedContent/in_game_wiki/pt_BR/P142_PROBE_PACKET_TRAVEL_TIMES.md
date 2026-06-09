@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Tempos de viagem de pacotes-sonda"
+title: "Tempos de viagem dos pacotes-sonda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tempos de viagem de pacotes-sonda
+# Tempos de viagem dos pacotes-sonda
 
-Tempo de viagem de sondas é por que a Deep Reach pôde valorar HECTON-8 antes de proteger pessoas ali. Os primeiros registros eram estreitos, velhos ao chegar e já financeiros. Um pacote pode fazer uma reivindicação parecer madura enquanto o plano humano por trás ainda é palpite.
+Pacotes-sonda fizeram Aegir parecer governável antes de qualquer trabalhador ficar sob sua água. Mapas seed, pistas minerais, faixas de perigo e permissões de rota chegaram em camadas, cada uma carimbada com uma verdade de lançamento que já envelhecera. HECTON-8 herdou esses fantasmas. Um gráfico com aparência atual podia ser uma discussão de dez anos com formatação melhor.
 
 ## Scanner
 
-As primeiras testemunhas de Aegir foram pacotes, não colonos.
+Cabeçalho recuperado: data de chegada mais antiga que o mapa colonial que atualizou.
 
 ## Terminal
 
-CADEIA DE LEVANTAMENTO: sondas assistidas por feixe e naves-pacote cruzam primeiro, devolvem verdade velha, estabelecem matemática de frenagem e deixam corporações venderem uma rota antes de ela ser humana.
+NOTA DE PACOTE-SONDA: feixes de pesquisa Ran-Aegir viajam por queimas escalonadas, sono, capturas de relé e paciência barata. Um pacote pode estar exato ao lançar, obsoleto ao abrir e ainda caro o bastante para virar política.
 
 ## Audio
 
-A sonda viu o oceano antes de alguém ter uma sepultura lá.
+O mapa era verdade quando partiu. Esse era o problema.
 
 ## Field Note
 
-Uma sonda pode gastar uma carreira humana cruzando uma rota antes que alguém arrisque um corpo.
+Uma sonda não traz o presente. Traz um fóssil com telemetria.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/pt_BR. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Юридична лазівка marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Юридична лазівка marauder
 
-UA LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Мародери не є племенем під одним прапором. Це підрядники, боргові екіпажі, нирці по уламках і відчайдушні механіки, які працюють у лазівці, створеній затримкою. Мертва колонія все ще має власника, але власник не латає корпуси, не відкачує розсіл і не витягає реєстратори зі зім'ятих сервісних палуб. Deep Reach потрібні екіпажі, від яких можна відмовитися. Доменам потрібні докази, які вони самі не мусять збирати. Екіпажам потрібні папери, достатні, щоб пережити наступний патруль.
 
 ## Scanner
 
-UA LOC HOLD: License valid in one lane, criminal in the next.
+Ліцензія чинна в одному коридорі й стає обвинуваченням у наступному.
 
 ## Terminal
 
-UA LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor під custody Aegir Reclamation Pool; терпимий trespasser у мові активів Deep Reach; переслідуваний raider у чистих зведеннях Sol; emergency responder лише якщо відновлений запис не ганьбить нікого важливого.
 
 ## Audio
 
-UA LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Один і той самий різак може бути інструментом, злочином або єдиним рятувальним засобом, що лишився.
 
 ## Field Note
 
-UA LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder є посадою лише тоді, коли потрібний суд може на цьому заробити.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/uk_UA. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "도시어 지식, 힘이 아니다"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# 도시어 지식, 힘이 아니다
 
-KO LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+도시어 지식, 힘이 아니다는 HECTON-8을 길고 위험하며 서사적으로 정직하게 유지하는 replayability 규칙이다.
 
 ## Scanner
 
-KO LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // 계승 산소, 선체 등급, 무기, 인벤토리, 경로 권한, 마법 shortcut 없음. 도시어는 경고를 저장하지 근육을 저장하지 않는다.
 
 ## Terminal
 
-KO LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+하드 리밋: 지속 도시어 데이터는 경고, 소문 계열, claim 변형, 엔딩 맥락을 열 수 있다. 장비 힘, 자원 인벤토리, 세계 진실 소유권, 경로 허가는 보존하면 안 된다.
 
 ## Audio
 
-KO LOC HOLD: Memory does not reinforce a cracked hull.
+기억은 금 간 선체를 보강하지 않는다.
 
 ## Field Note
 
-KO LOC HOLD: The player can become wiser. The ocean should not become smaller.
+플레이어는 더 현명해져도 된다. 바다는 작아지면 안 된다.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/ko_KR. -->

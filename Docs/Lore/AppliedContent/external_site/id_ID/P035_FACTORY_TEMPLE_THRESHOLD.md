@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Ambang Pabrik-Kuil
 
-Zona akhir bukan ruang bos, melainkan tubuh bersama industri, laut dan AI rusak.
+Ambang Pabrik-Kuil adalah serah-terima gerbang bawah terakhir HECTON-8: ambang fasilitas berbagi beban tempat rangka, balik brine, segel tekanan, dan rute Atlas menjaga koloni gagal tetap dapat dicapai.
 
 ## Scanner
 
-Struktur dasar bukan basis. Lambung pabrik, logika kuil dan jaringan tekanan hidup berbagi jalur beban.
+Bacaan gerbang bawah: rangka pabrik, pipa balik, segel tekanan, dan bus rute Atlas memikul beban yang sama. Batas bersih antara dinding dan pintu tidak tersisa.
 
 ## Terminal
 
-Peringatan: rangka industri, segel biogenik, panas xenon lattice dan rute Atlas berbagi otoritas struktur.
+THRESHOLD LOAD NOTICE
+Rangka: tertekan
+Pipa balik: aktif
+Segel tekanan: pertumbuhan karbonat berlebih
+Bus rute: kanal kontinuitas ATLAS-6
+Akses manusia: belum diverifikasi
+Tindakan: tandai urutan klem sebelum membuka sambungan apa pun
 
 ## Audio
 
-Laut tidak mengubur pabrik. Ia membuat pabrik menjadi tubuh.
+Jangan sebut itu pintu. Cari dulu jalur mana yang menahan tekanan sebelum kau memintanya terbuka.
 
 ## Field Note
 
-Di sini peta berhenti berpura-pura sebagai reruntuhan koloni.
+Label peta menyebutnya ambang. Periksa klemnya, bukan katanya. Gerbang bertahan karena empat sistem memikul beban yang sama.
 
 <!-- External Site; generated from P035_FACTORY_TEMPLE_THRESHOLD/id_ID. -->

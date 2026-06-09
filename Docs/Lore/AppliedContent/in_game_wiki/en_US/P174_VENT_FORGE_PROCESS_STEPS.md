@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Vent Forge Process Steps
 
-Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Vent Forge Process Steps turn HECTON-8 crafting into an industrial ritual that still feels physical. The player is not carrying a fantasy furnace in a pocket. The forge is a place where ocean, geothermal vent and ruined colony hardware briefly agree. First the blank is purged so old brine does not boil inside it. Then it is clamped before the vent pulse rises, preheated on the pressure climb, sealed during the short lull and quenched in the cold return current. The final acoustic ring is not decoration; it proves the part carries one clean body instead of hidden cracks. This gives crafting a rhythm the world can support through VFX, audio and UI. Heat matters, but timing matters more. A missed window does not produce a mysterious fail state. It produces warped scrap, salt bloom or a pressure-cracked component that tells the player exactly what went wrong.
 
 ## Scanner
 
-Vent forging should feel like using the planet against itself.
+Vent forging is not magic metalwork. It is borrowing the planet's heat, pressure and timing without letting the planet keep the part.
 
 ## Terminal
 
-FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+VENT FORGE STEPS / 01 purge brine from blank / 02 clamp before pulse / 03 preheat on vent rise / 04 seal during pressure lull / 05 quench in cold current / 06 certify by acoustic ring / failure: warped scrap, salt bloom or pressure-cracked part.
 
 ## Audio
 
-The moon is the furnace. The player is only allowed to borrow it.
+The moon is the furnace. You are only allowed to borrow it.
 
 ## Field Note
 
-Make forge steps readable as heat, pressure, wait and risk.
+Process must read as purge, clamp, preheat, seal, quench, ring-test. The risk is not flame; the risk is missing the pressure lull.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/en_US. -->

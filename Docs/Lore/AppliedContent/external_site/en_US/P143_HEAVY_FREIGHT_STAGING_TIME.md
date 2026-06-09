@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Heavy Freight Staging Time
 
-Heavy freight hides time inside infrastructure. Atlas hardware, seed cargo, shield stock, and braking parts can arrive early because they are launched years before public settlement language catches up. That does not make emergency rescue easy. A prepared route can move mass because depots, beam windows, pellet streams, and catch stages were waiting. A disaster route has none of that patience left. HECTON-8 is full of machinery that arrived on old plans and people who needed help on new clocks.
+Heavy freight staging is where interstellar logistics becomes violence without needing a weapon. A habitat ring, reactor shell, cutter crawler, pressure rib, or food stock is too expensive to treat as a casual promise. It accumulates insurers, liens, carriers, inspectors, and fallback clauses before it ever reaches Aegir.
+
+When conditions changed, Deep Reach did not have to invent cruelty from nothing. It only had to keep honoring the cargo chain. Every ton already staged demanded a receiver, every receiver demanded a work site, and every work site demanded bodies. The colony became the human answer to freight that had already been paid for.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/en_US. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Papel mareal de HECTON-8 en órbita media"
+title: "Rol mareal de órbita media de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Papel mareal de HECTON-8 en órbita media
+# Rol mareal de órbita media de HECTON-8
 
-HECTON-8 es la luna donde la matemática orbital de Aegir se vuelve personal. Está lo bastante lejos de la peor radiación interior, lo bastante cerca para mantener vivo el océano, y vale lo suficiente para que Deep Reach construya bajo presión.
+HECTON-8 es la luna donde las matemáticas orbitales de Aegir se vuelven personales. Está lo bastante lejos de la peor radiación interna para operaciones largas, lo bastante cerca para que las mareas mantengan vivo el océano y lo bastante valiosa para que Deep Reach construya bajo presión. La misma posición ensucia el rescate. Fase de marea, masa del portador, ruido de tormenta y custodia legal se juntan sobre el traje como un techo móvil.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ Está en la parte de la escalera donde el trabajo parece posible hasta que el ag
 
 ## Field Note
 
-HECTON-8 paga porque presión, marea y responsabilidad se solapan allí.
+HECTON-8 paga porque presión, marea y responsabilidad se superponen en la misma columna de agua.
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/es_ES. -->

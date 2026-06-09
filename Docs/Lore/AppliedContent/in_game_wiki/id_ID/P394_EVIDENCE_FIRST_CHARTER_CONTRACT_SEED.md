@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Evidence First Charter Contract Seed"
+title: "Seed Kontrak Charter Bukti Dulu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Evidence First Charter Contract Seed
+# Seed Kontrak Charter Bukti Dulu
 
-ID LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Charter Bukti Dulu adalah keluarga kontrak yang membayar lebih rendah untuk salvage lepas dan menyisihkan lebih banyak kapasitas rute untuk bukti. Paket kecelakaan, strip status hatch, log pinger, dan kaset notaris bergerak mendahului bagian berat saat rute mulai gagal.
 
 ## Scanner
 
-ID LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Seed kontrak: charter bukti dulu. Bayaran material lebih rendah, kapasitas notaris lebih besar, dan konflik preservasi bukti lebih keras.
 
 ## Terminal
 
-ID LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: bayaran material turun, kapasitas kaset notaris naik, prioritas loker bukti aktif, penalti strip salvage aktif, dorongan receiver Deep Reach mungkin.
 
 ## Audio
 
-ID LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Catatan paling bersih membayar terlambat dan membuat orang marah lebih awal.
 
 ## Field Note
 
-ID LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Catatan marauder: loker bukti tidak memaafkan utang. Ia hanya mencegah utang memilih bukti mana yang mati lebih dulu.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/id_ID. -->

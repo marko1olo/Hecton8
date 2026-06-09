@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "医疗 triage ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# 医疗 triage ledger
 
-CN LOC HOLD: Medical Triage Ledger is the human cost of delayed evacuation.
+医疗 triage ledger 把延迟撤离变成人类证据：干净类别、等待中的救援，以及被哀悼前先被计数的工人。
 
 ## Scanner
 
-CN LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // 压力伤、缺氧、舱锁延迟、路线缺失、认证 hold。恐怖在于救援等待得多么整齐。
 
 ## Terminal
 
-CN LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+医疗规则：计数身体，但不要写成 gore。用 pressure-state、氧债、路线延迟、triage 优先级和 signoff hold 表现程序如何比医护更快制造病人。
 
 ## Audio
 
-CN LOC HOLD: The cleanest handwriting is on the worst page.
+最干净的字迹写在最糟的一页。
 
 ## Field Note
 
-CN LOC HOLD: Medical text should count bodies without becoming gore.
+医疗文本应该计数身体，而不是变成 gore.
 
 <!-- External Site; generated from P159_MEDICAL_TRIAGE_LEDGER/zh_CN. -->

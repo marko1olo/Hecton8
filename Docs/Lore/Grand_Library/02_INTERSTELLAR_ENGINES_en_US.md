@@ -1,45 +1,86 @@
 <!-- localization_status: source_authority_en_US -->
-# ENGINE DESIGN AND INTERSTELLAR LOGISTICS
+# NEARLIGHT ENGINES AND ROUTE LOGISTICS
 
-> **Source:** Technical Syllabus, Barnard Yards. Document 44-A. Required reading for all outbound contractors.  
-> **Speaker:** Silas Vane, Propulsion Technician First Class (retired).  
-> **Reviewer note:** This syllabus is provided to contractors post-cryo induction. It contains zero proprietary Deep Reach telemetry. 
+> **Source:** Black Keel contractor library, Route Mechanics Primer 02.  
+> **Access note:** Cleared for Marauder induction. Proprietary beam timing, receiver geometry, and custody pricing tables removed.  
+> **Reader warning:** This article does not explain how to leave HECTON-8. It explains why nobody leaves quickly.
 
 ---
 
-## 1. The Fiction of Speed
+## 1. The First Lie Is A Single Engine
 
-Let me get this out of the way before you step into the cold tube: there is no magic button. You grew up watching vids about jump gates and hyperspace. Erase them. In the HECTON-8 universe, there is no Faster-Than-Light drive. There are no ansibles for instant chat with your mother. There are no reactionless thrusters that cheat the conservation of momentum.
+People call them interstellar engines because it is comforting to imagine one machine at the stern, one throat of fire, one decisive burn. That is not how the Ran-to-Aegir corridor works.
 
-Space expansion is slow, grueling, and burns money on a scale that makes nation-states weep. This is exactly why the deep black belongs to the megacorporations. Only an entity with a century-long financial horizon can afford to wait twenty years for a return on investment. 
+The engine is the route.
 
-When you leave this dock, you are bound by physics, not poetry.
+It begins before a hull is named: launch lasers and pellet guns in the inner yards, tug fleets that move dumb mass into the correct shadow, accounting clocks that reserve a braking window decades before the crew wakes up, witness relays that swear a cargo seal was still intact when the ship crossed a given line. A ship's onboard drive is only the part a person can point at. The rest is distributed through stations, old debt, maintenance treaties, thermal capacity, orbital politics, and machines that never see the destination they are pushing toward.
 
-## 2. How You Get There
+That is why a transit contract reads less like a ticket and more like an autopsy form written in advance. It lists what mass may be accelerated, what heat may be dumped, what packets may be answered, what bodies may be revived, and which authority gets to own the delay.
 
-The logistics chain to Aegir depends on three hard facts of engineering:
+The void does not care. The ledgers do.
 
-### A. The Pellet-Beam Push
-The first things that reached Aegir weren't ships; they were autonomous probes. We didn't strap rockets to them. We built orbital laser arrays—colossal pellet-beam installations at Luyten Junction—and literally shot them across the void. The probes are small, unmanned, and cheap enough that the Corporation can throw a dozen down a transit corridor before anyone even knows if the route is clear. It was one of these disposable scouts that first pinged the Xenon-Omega signature.
+## 2. No Shortcut In The Numbers
 
-### B. The Flying Mortgage
-You are going on an *Atlas*-class heavy colonial freighter. It is powered by fusion-electric pulse engines. It carries factories, drilling rigs, and you—sleeping in torpor so you don't eat the profit margin. The transit takes years. 
+Ran and Aegir are separated by years of light and by a much larger distance in money. There is no hidden channel for a rescue order, no private whisper that outruns a distress packet, no ancient trick waiting under a corporate seal. Every message, every claim, every apology travels inside the same hard limit as the ship.
 
-Do not romanticize the ship. It is literally a mortgage with engines. Deep Reach does not burn reaction mass to rescue a stranded technician. They only dispatch a freighter when the math proves the cargo is worth more than the fuel.
+This matters more than any engine diagram. A disaster on HECTON-8 can be perfectly recorded, perfectly transmitted, and still arrive as old news. A reply can be honest and still be useless. By the time a board approves a route correction, the bodies named in the report may have been bones, slurry, or salvage for longer than the clerk reviewing the packet has been alive.
 
-### C. The Braking Problem
-Accelerating to near-light speed is easy; stopping is the nightmare. When your ship approaches Aegir, it won't just turn around and fire thrusters. That wastes mass. Instead, the freighter deploys Magsails—giant magnetic sails stretching for hundreds of kilometers. You will brake against the interstellar medium itself. In the final, violent stages of orbital insertion, the ship will use aerodynamic braking, skipping like a stone across the atmosphere of gas giants, or dragging its belly through the storm envelope of HECTON-8. If the math is wrong by a fraction of a percent, the ship burns.
+Colonies are designed around that cruelty. They are not brave outposts waiting for help from home. They are local systems forced to keep working after the conversation has become historical.
 
-## 3. The Rescue Doctrine (Or Lack Thereof)
+Atlas was installed for that reason. So were local fabrication vaults, legal proxies, sealed medical stores, and the Black Keel's ugly little court of claim tags and custody pings. The delay is not a bug in the civilization. It is the shape of the civilization.
 
-Because light speed is the hard limit, rescue from the core worlds is physically impossible. 
+## 3. The Route Stack
 
-If a pressure cascade wipes out a sector on HECTON-8, the distress signal takes over ten years to reach Earth. The response—if they even bother to send one—takes another ten years to arrive. 
+A nearlight route is built in layers.
 
-This is why Deep Reach installed the Atlas-6 AI. It was built to be a "Factory-governor," maintaining the colony without needing to call home. It was supposed to keep the lights on and the pumps running. 
+The first layer is push: launch beams, pellet streams, orbital mass drivers, and fusion-electric tugs that spend years turning cargo into a future arrival. None of it feels heroic up close. It is scaffolding, dust, burnt shielding, coil maintenance, and crews counting down to burns they will not live to see repeated.
 
-When you descend to the ocean surface, you will be dropped from the orbital tender *Black Keel*. You will ride in a "Styx"-class pod. Understand this: the Styx is designed for a one-way trip. Its frame is built to deform under abyssal pressure, and its avionics are meant to flood once you hit the bottom. 
+The second layer is endurance: sacrificial forward plates, magnetic field cages, thermal shutters, radiation-hard sensor beds, cryo vaults, and guidance systems old enough to distrust anything elegant. Xenon-Omega appears here as pressure-process material, not a miracle. It is used where high fields, thermal switching, or deep radiation punish ordinary components. It improves margins. It does not forgive stupidity.
 
-To get back to orbit, you have to find, repair, or pry thermochemical ascent charges from the hands of the dead colony. 
+The third layer is receipt. A ship must be caught. Magnetic sails bloom into dark geometry. Pellet catchers wake. Receiver arrays spend heat budget they may have promised to someone else. Tugs come out if the contract says they may come out. Quarantine tanks open if the cargo category permits it. A ship that misses its slot does not become romantic. It becomes a problem with velocity.
 
-You are not a pioneer. You are not a passenger. You are expendable mass at the end of a very long, very slow rope stretched across the void. Act accordingly.
+From the inside, passengers experience the whole stack as sleep, alarms, nausea, bad light, and paperwork presented by machines with pleasant voices. From the outside, it is one civilization pulling another through a narrow accounting hole without tearing the cargo apart.
+
+## 4. Acceleration Is Easy To Sell
+
+Acceleration photographs well. A launch beam can be rendered in blue-white glory. A fusion plume makes donors feel like history is still vertical. Shipbuilders love that part because it lets them sell the myth of departure: leave the old world, enter the black, become a frontier name.
+
+The working engineers talk about something duller. Heat. Bearing wear. Pellet dispersion. Shield pitting. Sensor drift. The mass penalty of one more sleeping contractor. The legal penalty of waking that contractor in the wrong jurisdiction. The extra months added by a cargo lock that cannot be opened without three absent signatures.
+
+Deep Reach logistics are full of these details because details are cheaper than funerals and cheaper than lawsuits. Nobody sends a route stack across the dark for romance. It carries ore rights, pressure glass, sealed survey data, replacement marrow, machine seed, claim witnesses, debt schedules, frozen labor, and people whose contracts describe them as operational mass.
+
+That last phrase is not poetic. It is how a route accountant can move a living body without pretending the body is the purpose of the trip.
+
+## 5. Stopping Is The Expensive Part
+
+Speed is not the conquest. Stopping is.
+
+To arrive at Aegir, a ship must be given permission to become slow in a specific place at a specific time. The receiver side has to reserve thermal capacity, tug hours, parking orbit, medical inspection, custody volume, data quarantine, and legal attention. If one of those pieces is gone, the ship may still exist, still transmit, still be full of people, and still be told to wait.
+
+This is the truth that breaks new contractors: a distress call can be believed and declined. Not because the listener is evil. Because the route is already carrying other obligations with names, signatures, insurance riders, and penalties large enough to bankrupt a habitat.
+
+Black Keel crews understand this better than anyone on HECTON-8. They sit close enough to the ocean to hear the consequences and far enough from the route stack to be unable to change the timetable. They can log a claim. They can assign salvage custody. They can certify that a Marauder entered the water with a valid debt chain and a working suit. They cannot summon a benevolent ship out of physics.
+
+## 6. Why Rescue Is Local
+
+Every serious colony system therefore grows its own rescue doctrine, and every doctrine becomes uglier than the brochure.
+
+On HECTON-8, rescue means pressure doors that still cycle. It means a wet printer that can make a gasket from spoiled feedstock. It means Atlas finding enough intact routing to tell a pump from a coffin. It means a Class-IV suit keeping one body warm while the surrounding station forgets how to be a station. It means a salvage tender with authority to record your death, not prevent it.
+
+The Marauder learns this quickly. The ocean is not isolated because everyone outside it is ignorant. It is isolated because the correct answer to most emergencies cannot arrive in the same lifetime as the scream.
+
+So the playable world is full of local answers: jury-rigged buoys, dead relays, cached suit patches, route witness tags, battery rafts, pressure maps, blackbox fragments, sealed cargo that still thinks it is in transit. These are not decorations. They are the civilization's failed promises made physical.
+
+## 7. What The Wreckage Says
+
+A player can read interstellar logistics without ever opening a textbook.
+
+Look for ablated forward-plate flakes in old cargo bays. Look for receiver-shutter ceramics bolted into machinery that was never meant to fly again. Look for pellet-catcher scars on fragments traded as lucky charms by people who do not believe in luck. Look for Xenon-Omega components under custody seal, always documented more carefully than the people handling them. Look for cryo crate numbers scratched into bunks because someone woke early and wanted proof that the years had really happened.
+
+Most of all, listen for the difference between an engine and an escape.
+
+An engine moves mass through a route someone paid to maintain.
+
+An escape requires the route to care who you are.
+
+HECTON-8 was built by the first principle. It was abandoned under the second.

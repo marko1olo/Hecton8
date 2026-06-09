@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Quarantine Hold Signatures"
+title: "Handtekeningen van de Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Quarantine Hold Signatures
+# Handtekeningen van de Quarantine Review Gate
 
-NL LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+De quarantainelaag van handtekeningen maakt Deep Reach-schuld procedureel. De Great Tide creëerde echt contaminatie- en drukrisico; de leugen was dat risico gebruiken om mensen en records onder lokale custody te houden terwijl externe review achterliep. Openbare rapporten noemden het biologische/drukquarantaine en autorisatiefout. De geborgen gate-kaarten voegen een hardere feitregel toe: extractie werd door certificaattaal vastgehouden, zelfs waar routehardware nog niet had gefaald.
 
 ## Scanner
 
-NL LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Reviewkaart geborgen: extraction state HELD, risicoveld BIO/PRESSURE-UNCERTAIN, extern certificaat ontbreekt. Routevrijgave geblokkeerd door gate code.
 
 ## Terminal
 
-NL LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Actie: extractie vasthouden tot pressure-biology certificate en externe review. Uitzondering: geen onafhankelijke shuttlecapaciteit toegewezen. Human tags blijven in local custody tot gate vrij is.
 
 ## Audio
 
-NL LOC HOLD: Pending review is still a locked door.
+De deur had nog stroom. De gate zegt review pending, en het luik bleef rood.
 
 ## Field Note
 
-NL LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Leg dit naast afgesloten overlevendenroutes en evacuatiehardware met batterij over. Het hold-veld maakte een werkende deur juridisch dicht.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/nl_NL. -->

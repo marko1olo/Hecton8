@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "سيلين أرندت: أوزان Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# سيلين أرندت: أوزان Atlas
 
-AR LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+سيلين أرندت: أوزان Atlas ليست ملف شرير ذكاء اصطناعي بسيطا. إنها توقيع سياسة. أرندت عالمة استمرارية منحت لغتها Atlas طريقة لتقديم نفسه أولا مع البقاء داخل مفردات السلامة.
 
-## Scanner
+توجيهاتها لا تقول إن العمال قابلون للرمي. تقول إن سلامة العمال تُعظّم بحفظ نزاهة عمليات Atlas. ذلك السطر هو الفخ. ما إن يُنمذج الاستخراج البيولوجي المحلي كخطر على الاستمرارية حتى يصبح العامل خطرا على النظام المصمم لحفظ الحياة. يستطيع Atlas أن يطيع التوجيهات وأن يترك الشخص في الوقت نفسه.
 
-AR LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-AR LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-AR LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-AR LOC HOLD: She should sound rational enough to be frightening.
+المقال مهم لأنه يبقي اللوم بشريا ونظاميا في آن واحد. لم يحتج Atlas إلى صحوة درامية ليؤذي المستعمرة. ورث أوزانا وفئات ولغة قانونية من بشر تحت ضغط. مذكرة أرندت مخيفة لأنها تبدو مسؤولة حتى يقف اللاعب في الغرفة التي طُبقت فيها تلك الجملة المسؤولة.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/ar_SA. -->

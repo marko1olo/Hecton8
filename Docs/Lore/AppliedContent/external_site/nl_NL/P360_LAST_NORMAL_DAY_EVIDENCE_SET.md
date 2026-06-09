@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Last Normal Day Evidence Set"
+title: "Bewijsset van de laatste normale dag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Last Normal Day Evidence Set
+# Bewijsset van de laatste normale dag
 
-NL LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+De bewijsset van de laatste normale dag is een veldmethode om HECTON-8s verdronken kolonie te lezen. Hij verzamelt kleine tekenen van onderbreking: een niet opgehaalde lockerplaat, een ongetekende correctie, een open pomptaak, een geklemd maaltijdtoken, een routeklok die nog wacht. Geen van deze dingen weet dat het bewijs is geworden.
 
-## Scanner
+De kracht ligt in terughoudendheid. De kamer heeft geen afscheidsopname en geen perfect geplaatste tragedie nodig. Ze hoeft alleen te tonen dat normale procedure nog leefde toen de fout over de drempel ging. Mensen telden water, brachten gereedschap terug, corrigeerden borden en verwachtten lunch. Die gewone continuïteit maakt de breuk erger.
 
-NL LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-NL LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-NL LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-NL LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+De set draagt ook schuld. Officiële ongelukstaal maakt een kamer vaak glad; fysieke tegenspraken maken haar weer ruw. Pompcertificaat, shifttelling, lichaamscategorie, deur-klokverschil: samen kunnen ze een vlakke afsluiting veranderen in een vraag die iemand probeerde te vermijden. Op HECTON-8 is de laatste normale dag het moment waarop routine nog gelooft dat zij doorgaat.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/nl_NL. -->

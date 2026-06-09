@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Od winy zawodowej do osobistej stawki"
+title: "Od Winy Zawodowej do Osobistej Stawki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Od winy zawodowej do osobistej stawki
+# Od Winy Zawodowej do Osobistej Stawki
 
-Motywacja protagonisty rośnie od ekspertyzy do odpowiedzialności. HECTON-8 unika wymuszonego rodzinnego melodramatu: dawny pracownik Deep Reach przejmuje się, bo rozumie maszynę procedur, która sprawiła, że porzucenie wyglądało na zakończone.
+Od Winy Zawodowej do Osobistej Stawki zamyka dossier odmową łatwego melodramatu. Operator nie musi być rodziną ofiary, tajnym sprawcą katastrofy ani wybrańcem kolonii. Motyw wyrasta z pracy.
 
-## Scanner
-
-Wzór podpisu pasuje do starej pamięci procedur. Nazwiska się zmieniły. Pomieszczenie zawiodło tak samo. Ekspertyza nie jest już dystansem.
-
-## Terminal
-
-ROZSTRZYGNIĘCIE DOSSIER / STAWKA ZAWODOWA
-dowody wyzwalające: rozpoznanie procedury, odzyskane tagi pracowników, konflikt odbiorcy roszczenia
-motyw wykluczony: więź rodzinna, linia zemsty, status wybranego świadka
-motyw aktywny: dawny pracownik systemów rozpoznaje możliwe do uniknięcia porzucenie i nadal potrafi czytać maszynę, która je złożyła do akt.
-
-## Audio
-
-Przyszedłeś po roszczenie. Zostałeś, bo papiery znały twoje ręce.
-
-## Field Note
-
-Nie twój podpis. Wciąż twój fach. Dlatego pomieszczenie nie zamilknie.
+Stare formularze, route stamps, zapieczętowane kontrole i konflikty odbiorców są dość znajome, by bolały. Pokazują możliwe do uniknięcia porzucenie zapisane językiem fachu, któremu operator kiedyś ufał. To czyni HECTON-8 osobistym w chłodniejszy sposób: gdy ktoś umie przeczytać, jak maszyna pogrzebała salę, odejście staje się kolejną linią w tej samej maszynie.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pl_PL. -->

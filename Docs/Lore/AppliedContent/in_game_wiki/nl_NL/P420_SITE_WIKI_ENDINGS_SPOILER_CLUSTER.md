@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Eindes en payload custody
 
-Einddossierhub: custody, evidence, toekomst van Atlas en de prijs van vertrekken.
+Hub voor einddossiers: elke uitgang is custody transfer, geen moreel kleurkaartje.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, publieke waarheid, Atlas continuity en after-action records.
+Spoiler hub: payload custody, receiver consequences, false exits, public proof, quarantainedruk en Atlas continuity.
 
 ## Terminal
 
-SITE NAV: final payload pages achter spoiler gates houden. Ordenen op receiver en proof ownership.
+SITE NAV: finale pagina's achter spoiler gates houden; ordenen op wie lichaam, coördinaten, samples, Atlas records en worker proof controleert.
 
 ## Audio
 
-Het einde is wie na de opstijging het bewijs bezit.
+Vertrekken is niet het einde. Het is custody transfer.
 
 ## Field Note
 
-Eindes blijven spoiler-gated en worden geordend op receiver en custody consequence, niet op morele labels.
+Als het lichaam ontsnapt maar de proof eigendom is, is de oceaan nog niet klaar met de zaak.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/nl_NL. -->

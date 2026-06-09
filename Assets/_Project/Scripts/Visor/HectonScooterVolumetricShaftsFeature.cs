@@ -1455,7 +1455,7 @@ namespace Hecton8.Visor
                 _pass.Dispose();
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
         }
 
         /// <inheritdoc />
@@ -1482,7 +1482,7 @@ namespace Hecton8.Visor
                 settings,
                 _material,
                 _cachedUnderwaterVisuals,
-                _cachedPlayerContext);
+                ResolvePlayerContext());
             renderer.EnqueuePass(_pass);
         }
 
@@ -1492,7 +1492,7 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             _material = null;
             _cachedUnderwaterVisuals = null;
-            _cachedPlayerContext = null;
+            ClearPlayerContext();
             TryUnregisterHotSwapListener();
         }
 
@@ -1507,7 +1507,7 @@ namespace Hecton8.Visor
                     _cachedUnderwaterVisuals = currentService as HectonUnderwaterVisuals;
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    CachePlayerContext(currentService as IPlayerRuntimeContext);
                     break;
             }
         }
@@ -1515,6 +1515,43 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            ClearPlayerContext();
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private void CacheGraphicsCapabilitiesCold()

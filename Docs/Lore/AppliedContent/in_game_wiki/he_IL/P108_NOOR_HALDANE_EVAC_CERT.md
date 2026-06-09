@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "נור הלדיין: תעודת פינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# נור הלדיין: תעודת פינוי
 
-HE LOC HOLD: Noor Haldane is the legal/certification voice behind evacuation holds. She does not need to hate workers. She only needs to make extraction wait for quarantine, carrier custody and external review while water, pressure and oxygen keep moving.
+נור הלדיין היא הקול המשפטי וקול ההסמכה של Deep Reach מאחורי עיכובי פינוי. החתימה שלה אינה כתובה כפאניקה. היא כתובה כשליטה. הנתיב חייב להישאר בר-הסמכה. המוביל חייב לקבל משמורת. המצב הביולוגי חייב להיות ניתן לביקורת. השרשרת המשפטית חייבת לשרוד את האסון גם אם האנשים בתוך הנתיב לא ישרדו אותו.
+
+לכן התיק של הלדיין כואב. השפה יכולה להגן על עצמה. הפרת הסגר עלולה להפיץ זיהום. חילוץ לא מוסמך עלול לתקוע מובילים. סירוב נמל יכול להפוך הצלה לאסון נוסף. בחדר ישיבות נקי כל סעיף נשמע כמו הכלה אחראית. במסדרון לחץ שבו המים עולים, אותם סעיפים נעשים מנעול.
+
+בשביל השחקן, המאמר הזה מחבר עיכובי נתיב במושבה, עיכובים רפואיים ואחריות Deep Reach. הלדיין לא צריכה לשנוא אף אחד. היא רק צריכה לגרום לפינוי להמתין לתנאים שיוכיחו שהוא בטוח. לחץ לא מחכה. חמצן לא מחכה. התעודה חיכתה.
 
 ## Scanner
 
-HE LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
+עיכוב הסמכה // N. הלדיין שמרה את הנתיב נקי משפטית בזמן שהנתיב נכשל פיזית.
 
 ## Terminal
 
-HE LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
+HALDANE, N. // יועצת הסמכת פינוי // שחרור נדחה עד לעמידה בדרישות הסגר לחץ-ביולוגי, משמורת מוביל וביקורת נתיב חיצונית. חילוץ לא מורשה עלול לפגוע בשרשרת תביעות, אחריות בית גידול וקבלת נמל המשך.
 
 ## Audio
 
-HE LOC HOLD: The door was not locked by fear. It was locked by compliance.
+הדלת לא ננעלה מפחד. היא ננעלה מציות.
 
 ## Field Note
 
-HE LOC HOLD: This is the paper signature players should hate.
+זו חתימת הנייר שהשחקן צריך לשנוא: לא פחד, לא זדון, רק דלת שמחכה לביקורת חיצונית בזמן שהחמצן ממשיך לספור לאחור.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/he_IL. -->

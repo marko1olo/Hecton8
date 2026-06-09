@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Protocole de préservation quarantaine payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Protocole de préservation quarantaine payload
 
-FR LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+Le protocole de préservation garde le bassin hors récupération corporate directe, mais ne le libère pas. Le payload scelle les coordonnées, maintient l'écologie Atlas sous escrow de quarantaine et pousse la revue vers une voie publique retardée. Cela peut protéger les systèmes vivants d'une extraction immédiate. Cela peut aussi construire une cage plus propre.
 
 ## Scanner
 
-FR LOC HOLD: Preserve route. No clean owner. No clean release.
+Route de préservation armée. Le payload assigne la garde récepteur à revue de quarantaine retardée et bloque le transfert direct à Deep Reach.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+RÉCEPTEUR PAYLOAD // PRÉSERVER QUARANTAINE. Récepteur: voie escrow quarantaine. Garder vecteur de bassin scellé, préserver continuité écologique Atlas, refuser récupération corporate directe. Revue publique retardée. Autorité de libération non résolue.
 
 ## Audio
 
-FR LOC HOLD: Keeping it alive does not mean keeping it free.
+Gardé vivant ne veut pas dire libéré.
 
 ## Field Note
 
-FR LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Note de pillard: une porte verrouillée peut protéger une pièce. Elle peut aussi devenir la pièce.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/fr_FR. -->

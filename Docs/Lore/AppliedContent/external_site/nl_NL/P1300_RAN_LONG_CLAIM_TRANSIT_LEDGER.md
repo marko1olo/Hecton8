@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Site Hard-Sci-Fi Frontier Article
 spoiler_tier: 1
-title: "Ran Lange-Claim Transitregister"
+title: "Ran-Langclaim-Transitregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran Lange-Claim Transitregister
+# Ran-Langclaim-Transitregister
 
-HECTON-8 volgt een harde regel: communicatie is goedkoop vergeleken met massa. Een Black Keel-relais kan antwoorden omdat een pakket licht, spiegels en carrierrijen gebruikt. Een tender kan dat niet. Schepen op de Ran-route blijven gebonden aan versnelling, remwarmte, pellet-lane planning, Aegirs weer en de economie van risicovensters.
+HECTON-8 behandelt eerste contact als papierwerk onder druk, omdat interstellaire redding zonder FTL daarop uitkomt. Een Black Keel-relais kan een gestrande Marauder binnen carriertijd erkennen. Het kan geen schip laten verschijnen. Het langclaimregister zit tussen die feiten.
 
-Het lange-claimregister is de administratieve vorm van die natuurkunde. Het vraagt niet of de overlevende bang is. Het vraagt of de coördinaten betrouwbaar zijn, of het opstijgpakket overdracht overleeft, of er een Luyten-getuigehash is, of Deep Reach quarantainecontrole kan claimen, en of de payload lichaam, bewijs, vracht of alle drie is.
+            In de wereld is het register geen formaliteit. Het is het eerste duurzame object dat de overlevende buiten de oceaan bezit. Het zegt dat een mens leeft, maar ook hoe betrouwbaar de coördinaten zijn, hoeveel massa omhoog moet, of het opstijgpakket verzegeld is, of Deep Reach een quarantaineargument heeft, of de payload persoonlijke uitrusting of claimveranderend bewijs is, en wie aansprakelijkheid draagt als pickup brandt, mist of besmet terugkomt.
 
-Zo wordt afstand speelbare druk. De oceaan is niet geïsoleerd omdat beschaving verdwenen is. Hij is geïsoleerd omdat beschaving traag, bezeten en procedureel is. De speler wacht niet op redding; de speler bouwt pakket, payload en hefboom om redding meer waard te maken dan stilte.
+            Zo houdt HECTON-8 beschaving aanwezig zonder haar tot nooduitgang te maken. Mensen horen je. Kantoren stempelen je. Relais bewaren je pakket. Verzekeraars en route-eigenaren hangen cijfers aan je lichaam. De horror is geen leegte. De horror is een systeem dat precies weet waar je bent en toch vraagt wat je recovery waard is.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/nl_NL. -->

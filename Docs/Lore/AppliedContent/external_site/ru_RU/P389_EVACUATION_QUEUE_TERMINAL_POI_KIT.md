@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Набор доказательств терминала эвакуационной очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Evacuation Queue Terminal POI Kit
+# Набор доказательств терминала эвакуационной очереди
 
-RU LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+Терминал очереди должен ощущаться как комната, построенная для административно аккуратного страдания. Терминал перечисляет удержания маршрута, задержку снятия карантина, веса Atlas и числа рабочих, но стены несут более грязную запись: полосу состояния люка, остаток бейджа, отсутствующие отметки пропускной способности и salvage-метку на панели, которую кто-то все еще хочет продать.
 
-## Scanner
-
-RU LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-RU LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-RU LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-RU LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Вес POI появляется через конфликт. Вытащить деталь - значит, возможно, открыть маршрут или закрыть долг, но можно уничтожить поверхность, которая доказывает задержку. Правильное чтение - не признание. Это набор несовпадающих предметов, заставляющих оператора выбрать, что переживет погружение.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ru_RU. -->

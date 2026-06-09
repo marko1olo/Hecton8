@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "מודל המרחק Ran-Aegir"
+title: "מודל מרחק Ran-Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מודל המרחק Ran-Aegir
+# מודל מרחק Ran-Aegir
 
-מרחק Ran-Aegir הוא המספר שממיר בידוד לפיזיקה. טווח של כעשר שנות אור קרוב מספיק לגשושים, מטען, חוק ישן ותיאבון תאגידי, אך רחוק מדי לרחמים שמגיעים לפי קצב נשימה אנושי. HECTON-8 משתמש בפער הזה כלחץ: הודעות נעות מהר מספינות, claims מהר מאנשים, וחדר מוצף מת לפני שתשובת העולמות הפנימיים רלוונטית. המרחק צריך להרגיש קטן לאסטרונום ועצום למי שמחכה תחת פתח דולף.
+מודל המרחק Ran-Aegir הוא היסוד השקט של הלחץ ב-HECTON-8. Aegir נמצא בתחום ביניים אכזרי: קרוב מספיק להצדיק לוחות נתיב, ציוד seed, שעבודי מטען, נוטריונים מרחוק ומושבת כרייה קבועה; רחוק מספיק כך שאיש אינו יכול לאלתר רחמים כשדלת לחץ כושלת.
+
+ההבדל הזה חשוב. הודעות, תביעות משפטיות, לוחות נשאים, ספינות חילוץ וגופים אנושיים אינם חולקים שעון אחד. אזהרה יכולה לנוע בזמן שהספינה שאמורה לענות עדיין נעולה בדלק, חלון, מסה ואישור בעלים. Deep Reach למדה להשתמש בפער הזה. המושבה חיה בתוכו.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/he_IL. -->

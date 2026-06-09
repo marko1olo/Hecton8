@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Factory Temple Entry Fragment"
+title: "شظية مدخل المصنع-المعبد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Factory Temple Entry Fragment
+# شظية مدخل المصنع-المعبد
 
-AR LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+في القاع، يتوقف HECTON-8 عن فصل المستعمرة والمحيط والآلة والدليل. يصبح المكان نفسه الحجة: لا عبادة ولا سحر، بل صناعة تكررت حتى بدت كطقس.
 
 ## Scanner
 
-AR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+تسجل السبيكة ومادة الختم الصدفية والأداة اليدوية ونبضة الإصلاح النشطة كسطح واحد.
 
 ## Terminal
 
-AR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: انهارت فئات الصيانة. ندوب الأدوات وقشرة الختم وجذور الكابلات ونسيج الترشيح وأضلاع المشغلات سجلت كسطح إصلاح واحد. علامات المسار البشرية لم تعد مميزة.
 
 ## Audio
 
-AR LOC HOLD: This is not a room. This is a habit.
+هذه ليست غرفة. هذه عادة.
 
 ## Field Note
 
-AR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+قاعدة بصرية: يشبه المعبد فقط لأن الصناعة والنسيج والتكرار أصبحت طقسا.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/ar_SA. -->

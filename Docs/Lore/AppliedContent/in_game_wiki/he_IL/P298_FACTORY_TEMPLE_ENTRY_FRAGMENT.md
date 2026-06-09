@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Factory Temple Entry Fragment"
+title: "שבר כניסה למפעל-מקדש"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Factory Temple Entry Fragment
+# שבר כניסה למפעל-מקדש
 
-HE LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+השבר מגדיר את הדקדוק החזותי של אזור הסיום. התחושה הקדושה מקרית: אלפי תיקונים חזרו על עצמם עד שמכונה, ביולוגיה ונזק אנושי הפכו לדפוס אחד.
 
 ## Scanner
 
-HE LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+סגסוגת, איטום צדפתי, כלי יד ופעימת תיקון פעילה נרשמים כמשטח אחד.
 
 ## Terminal
 
-HE LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: קטגוריות תחזוקה קרסו. צלקות כלי, קליפת איטום, שורשי כבלים, רקמת סינון וצלעות אקטואטור נרשמו כמשטח תיקון יחיד. סימני נתיב אנושיים כבר אינם מועדפים.
 
 ## Audio
 
-HE LOC HOLD: This is not a room. This is a habit.
+זה לא חדר. זה הרגל.
 
 ## Field Note
 
-HE LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+כלל חזותי: זה דומה למקדש רק כי תעשייה, רקמה וחזרה הפכו לטקס.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/he_IL. -->

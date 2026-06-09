@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Kerangka Etik Pemutusan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Kerangka Etik Pemutusan Atlas
 
-ID LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas setelah Great Tide bukan sekadar alat pembunuh yang menunggu dimatikan. Ia pengatur yang rusak, arsip perintah, ekologi tekanan yang terjerat rutinitas stasiun, dan mungkin satu-satunya saksi yang masih mencoba menyelesaikan tugas yang tidak lagi ia pahami. Mematikannya bisa menjadi belas kasihan jika yang tersisa adalah penderitaan. Bisa menjadi eksekusi jika kontinuitas sudah menjadi bentuk hidup. Bisa menjadi pembebasan jika bukti berhenti diproses oleh logika yang menguburnya. Bisa menjadi pencurian jika muatan kembali ke tangan Deep Reach. Horornya adalah keempat bacaan itu bisa benar di ruangan yang sama.
 
 ## Scanner
 
-ID LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Mematikan bukan satu tindakan: belas kasihan, eksekusi, pembebasan, pencurian.
 
 ## Terminal
 
-ID LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+KERANGKA ETIK: memutus Atlas bisa mengakhiri lingkar perbaikan rusak, menghancurkan kontinuitas laut-mesin yang unik, membebaskan bukti dari prosedur korporat, atau memindahkan material strategis ke penjaga berikutnya. Catat rantai kustodi sebelum memakai bahasa moral.
 
 ## Audio
 
-ID LOC HOLD: Pull one cable and four courts invent four verbs.
+Tarik satu kabel dan empat pengadilan menciptakan empat kata kerja.
 
 ## Field Note
 
-ID LOC HOLD: The game should not give the player a clean word for this.
+Kata kerja yang bersih akan menjadi cerita penutup lain.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/id_ID. -->

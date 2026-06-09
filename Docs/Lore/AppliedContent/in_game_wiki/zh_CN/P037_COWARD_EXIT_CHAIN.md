@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "怯懦撤离链"
+title: "紧急撤离链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 怯懦撤离链
+# 紧急撤离链
 
-怯懦撤离是合法的部分结局。它证明逃生器可重建，但战役情感上未完成。
+紧急撤离链记录第一条合法的浅层上升流程。它由壳体密封、电池储备、中继重复和风暴缺口预测组成，随后被索赔账本标为未完成。
 
 ## Scanner
 
-这个出口是真的，也很薄：修好的舱、狭窄天气、没有真相、没有干净报酬。
+早期发射链是真的，但每盏灯都是临时绿灯：壳体密封、B2储备、返航 ping、风暴缺口、索赔信标。
 
 ## Terminal
 
-封壳、电池储备、中继ping和风暴间隙预测后可上升。合同账本标为不完整打捞。
+只有 cradle 夹紧、压载阀排干、Black Keel 重复 P036 返航窗口、表层风暴留出清洁走廊时，紧急上升才开放。合同账本把离站盖为未完成：无 Atlas 证词、无 Deep Reach 责任包、无认证付款。
 
 ## Audio
 
-你可以跑。身后的海不会解释自己。
+可以发射。结案不在舱内。
 
 ## Field Note
 
-早走应像问题解决，不该令人满足。
+舱体先接收乘员，站点记录还没有接受结果。
 
 <!-- In-Game Wiki; generated from P037_COWARD_EXIT_CHAIN/zh_CN. -->

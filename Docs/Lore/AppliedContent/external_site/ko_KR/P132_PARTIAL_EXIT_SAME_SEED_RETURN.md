@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "부분 탈출: 동일 시드 귀환"
+title: "부분 탈출: 같은 Seed로 귀환"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 부분 탈출: 동일 시드 귀환
+# 부분 탈출: 같은 Seed로 귀환
 
-부분 탈출은 장기 캠페인을 가짜 종결로부터 보호한다. Black Keel은 제한된 창구 동안 운용자를 끌어올리고, 슈트를 수리하고, 회수 패킷을 기록하고, 그 멈춤을 복지로 판매할 수 있다. 아래 세계는 더 깨끗한 버전으로 바뀌지 않는다.
+부분 탈출은 긴 생존 이야기의 압력 밸브다. 계약자는 pickup 창구를 얻고, 상처를 닫고, 장비를 고치며, 죽어 가는 슈트를 거치지 않은 공기의 희귀한 소리를 듣는다. 그 안도는 진짜이기에 귀환이 아프다.
 
-플레이어가 돌아오면 같은 시드는 여전히 그곳에 있다. 소금물 계단은 같은 함정을, 같은 중계기는 같은 나쁜 각도를, 같은 증거는 같은 위험을 가진다. 이 결말은 면죄 없는 안도를 준다. 폐 속의 공기, 계약 속의 더 많은 빚, 그리고 발견한 것에 대한 삭제 없음.
+Black Keel은 이 정지를 복지와 lien 유지로 기록한다. 같은 world seed는 활성 상태이고, 같은 증거는 해결되지 않았으며, 같은 바다가 발견된 모든 경로와 함께 기다린다. 부분 탈출은 시스템의 자비가 아니다. 여전히 하강할 것으로 기대되는 자산의 정비다.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ko_KR. -->

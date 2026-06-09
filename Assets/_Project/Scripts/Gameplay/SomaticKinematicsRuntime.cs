@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -832,7 +833,9 @@ namespace Hecton8.Gameplay
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizeSeaLevelY(float value, float fallback)
         {
-            float resolved = math.isfinite(value) && math.abs(value) > 0.0001f && math.abs(value) <= 1000f
+            float resolved = math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? value
                 : fallback;
             return math.clamp(resolved, -100000.0f, 100000.0f);
@@ -985,6 +988,7 @@ namespace Hecton8.Gameplay
         private IDataVault _csvScratchWriteVault;
         private IWeatherService _weatherService;
         private IVRSomaticProvider _somaticProvider;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private Transform _cachedTransform;
         private SomaticKinematicsFrameInput _frameInput;
         private SomaticKinematicsFrameContext _frameContext;
@@ -1078,6 +1082,7 @@ namespace Hecton8.Gameplay
             if (!_localScratch.IsReady() || !HydrateLocalSimulationScratchFromVault())
                 return;
 
+            RefreshLocalTuningSeaLevelFromOcean();
             BuildFrameInput(fixedDeltaTime, NextSequence(ref _fixedFrameSequence), _localScratch.State);
             SomaticKinematicsJob job = new SomaticKinematicsJob
             {
@@ -1183,6 +1188,9 @@ namespace Hecton8.Gameplay
             {
                 RebindServices();
             }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
         }
 
         private void PublishOriginShiftFence(in PlayerKinematicState state, in OriginShiftEventData shiftData)
@@ -1259,6 +1267,8 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwap = false;
             }
+
+            _oceanKinematicsService = null;
         }
 
         private static void EnsureSignalLanesReady()
@@ -2598,6 +2608,71 @@ namespace Hecton8.Gameplay
             CacheDataVaultCold();
             _weatherService = GlobalRegistry.Weather;
             _somaticProvider = GlobalRegistry.VRSomatic;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+        }
+
+        private void RefreshLocalTuningSeaLevelFromOcean()
+        {
+            if (!_localScratch.Tuning.IsCreated || _localScratch.Tuning.Length <= 0)
+                return;
+
+            if (!TryResolveOceanSeaLevelY(out float seaLevelY))
+                return;
+
+            SomaticKinematicsTuningData tuning = _localScratch.Tuning[0];
+            tuning.SeaLevelY = seaLevelY;
+            _localScratch.Tuning[0] = tuning;
+        }
+
+        private bool TryResolveOceanSeaLevelY(out float seaLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TrySanitizeOceanRuntimeSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY))
+            {
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
+        private static bool TrySanitizeOceanRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
+        }
+
+        private static float SanitizeRuntimeSeaLevelY(float value, float fallback)
+        {
+            return TrySanitizeRuntimeSeaLevelY(value, out float seaLevelY)
+                ? seaLevelY
+                : fallback;
+        }
+
+        private static bool TrySanitizeRuntimeSeaLevelY(float value, out float seaLevelY)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) > 0.0001f &&
+                math.abs(value) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = value;
+                return true;
+            }
+
+            seaLevelY = DefaultSeaLevelY;
+            return false;
         }
 
         private void CacheDataVaultCold()

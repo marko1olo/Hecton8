@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_service_label |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS181_FIRST_SERVICE_LABEL_ARTICLES.md |
 | Speaker | Service scanner, stock-date note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter labels |
@@ -72,17 +72,17 @@ CHECK CONTENTS
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| ru_RU | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| ja_JP | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| zh_CN | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| fr_FR | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| es_ES | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| de_DE | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| pl_PL | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| uk_UA | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| ar_SA | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| id_ID | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| ko_KR | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| he_IL | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| pt_BR | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
-| nl_NL | draft_machine_or_llm | BOX DATE // Scrape cuts stamped year. Verify contents item by item. |
+| ar_SA | draft_machine_or_llm | تاريخ صندوق // خدش يقطع سنة الختم. تحقق من المحتويات قطعة بقطعة. |
+| de_DE | draft_machine_or_llm | KISTENDATUM // Kratzer schneidet gestempeltes Jahr. Inhalt Stueck fuer Stueck pruefen. |
+| es_ES | draft_machine_or_llm | FECHA DE CAJA // Rasguno corta el ano sellado. Verifica el contenido pieza a pieza. |
+| fr_FR | draft_machine_or_llm | DATE DE BOITE // Rayure coupe l'annee tamponnee. Verifier le contenu element par element. |
+| he_IL | draft_machine_or_llm | תאריך קופסה // שריטה חותכת את השנה המוטבעת. בדוק את התכולה פריט אחר פריט. |
+| id_ID | draft_machine_or_llm | TANGGAL KOTAK // Goresan memotong tahun cap. Periksa isi satu per satu. |
+| ja_JP | draft_machine_or_llm | 箱日付 // 擦り傷が刻印年を切る。中身を一つずつ確認。 |
+| ko_KR | draft_machine_or_llm | 상자 날짜 // 긁힘이 찍힌 연도를 가른다. 내용물을 하나씩 확인한다. |
+| nl_NL | draft_machine_or_llm | KISTDATUM // Kras snijdt gestempeld jaar. Controleer inhoud stuk voor stuk. |
+| pl_PL | draft_machine_or_llm | DATA SKRZYNKI // Rysa przecina wybity rok. Sprawdz zawartosc sztuka po sztuce. |
+| pt_BR | draft_machine_or_llm | DATA DA CAIXA // Risco corta o ano carimbado. Verifique o conteudo item por item. |
+| ru_RU | draft_machine_or_llm | ДАТА НА ЯЩИКЕ // Царапина режет штампованный год. Проверяй содержимое по предметам. |
+| uk_UA | draft_machine_or_llm | ДАТА НА СКРИНІ // Подряпина ріже штампований рік. Перевіряй вміст по предметах. |
+| zh_CN | draft_machine_or_llm | 箱盖日期 // 刮痕切过压印年份。逐件核查内容物。 |

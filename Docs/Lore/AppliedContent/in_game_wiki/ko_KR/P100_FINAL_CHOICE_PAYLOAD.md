@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "최종 선택 payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# 최종 선택 payload
 
-KO LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+마지막 결정은 깨끗한 승리 화면이 아니다. 도덕적 무게가 실린 배송 문제다. Marauder는 달에서 무엇이 올라갈지 결정한다. 좌표, 샘플, 노동자 이름, Atlas 접근, 격리 지침, 공개 증거, 또는 쓸모 있는 것은 아무것도 없을 수 있다. 모든 payload는 사후 결과의 다른 소유자를 만든다. Deep Reach는 통제를 되찾을 수 있다. 공적 법은 마침내 볼 수 있는 상처를 얻을 수 있다. Atlas 연속성은 끊기거나 갇힐 수 있다. 해양-기계 생태는 보호되거나 팔리거나 인간 언어 바깥에 남을 수 있다. 엔딩은 누가 깨끗한 손으로 탈출하는지가 아니다. 누가 먼저 움직일 만큼의 진실을 받는가다.
 
 ## Scanner
 
-KO LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+최종 PAYLOAD // 좌표, 샘플, 이름, Atlas 접근, 격리 명령, 공개 증거. HECTON-8을 떠나는 것이 이후 누가 행동할 수 있는지 결정한다.
 
 ## Terminal
 
-KO LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOAD 매트릭스: 좌표와 XO 증거를 판다; Atlas 연속성을 끊는다; 해양-기계 생태를 보존하거나 격리한다; 증거를 공개 ledger에 낸다; payload를 숨기고 Deep Reach를 눈먼 채 둔다.
 
 ## Audio
 
-KO LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+숨 쉬는 법을 배운 범죄 현장에는 깨끗한 소유권이 없다.
 
 ## Field Note
 
-KO LOC HOLD: The best ending should be defensible, not clean.
+최고의 엔딩은 깨끗한 것이 아니라 변호 가능한 것이어야 한다.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/ko_KR. -->

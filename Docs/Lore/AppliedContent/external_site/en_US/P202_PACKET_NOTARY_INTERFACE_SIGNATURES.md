@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Packet Notary Interface Signatures
 
-Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+Interstellar delay did not make every HECTON-8 message useless. It made message custody expensive. A Packet Notary strip records which relay window carried a packet, which hash witnessed it, and which owner kept custody before release. In the recovered HECTON-8 records, that machinery can protect a worker log or leave it stuck in claim material until a second witness is attached. Public archive note: this record identifies the evidence route, not the full Deep Reach command chain.
 
 ## Scanner
 
-A packet seal can protect truth or bury it under custody delay.
+Packet seal recovered: hash strip intact, relay-window stamp 17-A, custody owner unresolved. Treat as evidence only after the witness chain matches.
 
 ## Terminal
 
-SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Route: Relay Spine / witness hash strip. Action: seal packet hash, local relay delay, custody owner. Exception: missing worker-name attachment keeps packet in claim-material queue. Escalation: public ledger only after second witness hash.
 
 ## Audio
 
-A seal is not mercy. It is a clock with a price.
+Seal's intact. Time stamp is late by two windows. If the witness hash matches, they cannot call it static.
 
 ## Field Note
 
-The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Do not sell this as a log. Sell it as clock plus witness: relay time, packet hash, custody owner. Without all three, Deep Reach calls it loose carrier noise.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/en_US. -->

@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Domeinmarkeringen 2190
 
-Domeinmarkeringen tonen de mensenwereld via objecten: veiligheidsplaten, torsiesporen, bewaringscodes en oude toestemmingen. Elk merk bindt een deur, gereedschap of lading aan verre autoriteit.
+Domeinmarkeringen zijn kleine juridische littekens die HECTON-8 ver weg laten voelen zonder het primitief te maken. Eén beugel kan Sol Core-veiligheidsgrammatica, een Centauri-charterzin, een Barnard Yards-reparatiespoor, een Luyten-bewaringshash en een lokale Aegir-claimcode dragen. Niets daarvan is decoratie. Elke markering vertelt wie het onderdeel certificeerde, wie het repareerde, wie een pakket kan bewijzen, wie verlies verzekert en wie over berging zal ruziën nadat de kamer volloopt.
 
-De kolonie is ver weg, niet primitief. Recht, industrie en schuld bereikten het water. Redding heeft nog steeds massa, schip en venster nodig.
+Het nuttige detail is niet de lijst namen, maar de stapeling op vermoeid metaal. Sol kan een object certificeren dat het niet kan redden. Barnard maakt dead-claimwerk normaal. Luyten bewaart custody zonder zich om genade te bekommeren. Aegir voert vuil lokaal recht uit onder andermans papierwerk. Wanneer een Marauder de markeringen leest, is de oceaan niet leeg. Menselijke autoriteit kwam eerder dan menselijke warmte.
 
 ## Scanner
 
-Gemengde menselijke domeinmarkeringen: Sol-veiligheidsplaat, Barnard-gereedschapsstempel, Luyten-bewaringsroute en Aegir-claimcode op dezelfde verroeste beugel.
+Gemengde menselijke domeinmarkeringen op één gecorrodeerde beugel: Sol Core-veiligheidsformaat, Centauri-charterzegel, Barnard-reparatiebeet, Luyten-bewaringshash en Aegir-claimcode.
 
 ## Terminal
 
-DOMEINAFSTEMMING // Sol Core-veiligheidsformaat geaccepteerd. Barnard Yards-reparatiestempel geldig. Luyten Junction-pakketbewaring gekoppeld. Aegir lokaal claimrecht overschrijft bergingsprioriteit na verlies van afdaling.
+DOMEINAFSTEMMING // Sol Core-veiligheidsformaat geaccepteerd. Centauri-chartertaal aanwezig. Barnard Yards-reparatieautoriteit geldig. Luyten Packet Ladder-bewaring gekoppeld. Aegir lokaal claimrecht overschrijft open berging na verlies van afdaling.
 
 ## Audio
 
-Deze plek ligt niet voorbij beschaving. Dit is beschaving nadat afstand de warme delen eruit heeft gehaald.
+Beschaving bereikte deze kamer. Eerst als stempels, daarna als schuld, en pas als laatste als hulp.
 
 ## Field Note
 
-De mensheid werd groot. Redding moet nog steeds reizen.
+De mensheid werd breed. Redding moet nog steeds reizen.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/nl_NL. -->

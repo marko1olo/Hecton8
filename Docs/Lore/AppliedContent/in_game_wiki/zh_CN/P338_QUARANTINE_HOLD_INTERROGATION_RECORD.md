@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quarantine Hold Interrogation Record"
+title: "隔离留置审讯记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quarantine Hold Interrogation Record
+# 隔离留置审讯记录
 
-ZH LOC HOLD: Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+隔离留置审讯记录让救援变得不舒服。生存是真的，但玩家在重新成为自由人之前，会先作为证人、污染风险、地图载体和争议证据离开。
 
 ## Scanner
 
-ZH LOC HOLD: Recovered biological claimant held pending contamination and evidence custody review.
+已回收申领者存活。隔离标记覆盖救援措辞；证据载荷已隔离。
 
 ## Terminal
 
-ZH LOC HOLD: QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+QUARANTINE HOLD 记录：生物申领者已存活回收。移动受限，等待污染扫描、压力暴露访谈和证据监管审查。接收方审讯在医疗许可前优先索取 Atlas 接入矢量。
 
 ## Audio
 
-ZH LOC HOLD: They saved the body first because the body knew the route.
+他们先救身体，因为身体知道路线。
 
 ## Field Note
 
-ZH LOC HOLD: Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+退出后档案：生物救援在自由之前变成隔离、审讯、路线提取和载荷监管。
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/zh_CN. -->

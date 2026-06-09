@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Starting Claim Variants
 
-Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+A starting claim is the lie written at the top of the work order. Debt salvage, evidence bounty, missing route hardware, hazardous sample custody, blacklist relief: each variant changes why the board lets the Marauder down into the water. It should color motive and first pressure, not replace the protagonist with a new mask.
 
 ## Scanner
 
-Same protagonist. Different claim pressure.
+CLAIM VARIANT // Same ex-Deep-Reach Marauder. Different first debt, bounty, route hardware, sample custody or blacklist relief.
 
 ## Terminal
 
-CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+START RULE: variants alter initial pressure, rumor access, evidence weighting and payout logic. They do not create alternate heroes or erase the former Deep Reach spine.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You can change the job without changing who took it.
 
 ## Field Note
 
-Variants should color motive, not erase the canon character.
+Change the claim. Keep the scar.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/en_US. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra: Konversi Kerugian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra: Konversi Kerugian
 
-ID LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra adalah jejak penaksir Keelmark Mutual yang mengubah pekerja hilang menjadi status akuntansi tak terselesaikan. Tabel itu tidak ditulis untuk duka, melainkan untuk biaya penutupan: tubuh belum dipulihkan, status tekanan belum disertifikasi, kontaminasi tertunda, identitas payroll ditangguhkan.
+
+Itulah mengapa nama penting di HECTON-8. Pelat loker, tag setelan, baris ledger tubuh, atau jam rute yang dipulihkan dapat membawa pekerja keluar dari muatan tak terselesaikan dan kembali menjadi klaim. Ambiguitas lebih murah daripada penyelamatan, lebih murah daripada kompensasi, dan lebih mudah dikubur dalam sengketa pengangkut.
+
+Bagi Marauder, identitas yang dipulihkan bukan hiasan. Ia merusak trik akuntansi yang membuat seseorang hilang dua kali: pertama di air, lalu di ledger.
 
 ## Scanner
 
-ID LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+TABEL PENAKSIR // M. Ibarra mengubah pekerja hilang menjadi kelas muatan tak terselesaikan sampai status tekanan, kontaminasi, atau payroll dapat disertifikasi.
 
 ## Terminal
 
-ID LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Konversi Kerugian Keelmark Mutual // Aset biologis yang belum dipulihkan tetap tak terselesaikan menunggu sertifikasi status tekanan, kontaminasi, atau payroll. Jangan tutup kelas penggugat tanpa bukti kustodi.
 
 ## Audio
 
-ID LOC HOLD: A missing person became a pending category. That was cheaper.
+Orang hilang menjadi kategori tertunda. Itu lebih murah.
 
 ## Field Note
 
-ID LOC HOLD: Insurance language should feel colder than gunfire.
+Bahasa asuransi harus lebih dingin daripada tembakan. Nama yang dipulihkan bukan suasana; ia mematahkan kategori murah.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/id_ID. -->

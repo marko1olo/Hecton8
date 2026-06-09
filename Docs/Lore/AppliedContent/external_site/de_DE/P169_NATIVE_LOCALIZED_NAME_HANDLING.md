@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Native Localized Name Handling"
+title: "Protokoll nativer Namenslokalisierung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Native Localized Name Handling
+# Protokoll nativer Namenslokalisierung
 
-DE LOC HOLD: Native Localized Name Handling defines localization-safe colony naming.
+Das Protokoll bewahrt Arbeiteridentität in 15 Sprachen. Namen, Badgestreifen und kompakte Varianten werden pro Locale geschrieben; Berufe, Abteilungen, Schichtrollen, Routen und Labels separat lokalisiert. Ein Name ist ein Beweisobjekt, kein Live-String.
 
 ## Scanner
 
-DE LOC HOLD: Worker names need localization policy before they become UI bugs.
+NAME LOC // Dieser Streifen ist geschrieben, nicht live übersetzt. Die Person überlebt das Interface nur, wenn das Interface nicht improvisiert.
 
 ## Terminal
 
-DE LOC HOLD: NAME LOC: personal names remain authored/baked per locale. Job titles, departments and route permissions localize. RTL/CJK layouts need pre-baked short forms and fallback-safe name strips.
+NAMENSLOKALISIERUNG // Personennamen, Kurzstreifen und Badgefragmente werden pro Locale gebaked. Beruf, Abteilung, Routenerlaubnis und Schichtnotizen lokalisieren sich darum herum. RTL und CJK brauchen geschriebene Kurzformen, sichere Umbrüche und keine Live-Rekomposition in Scanner, Locker-UI, Terminals oder externer Wiki.
 
 ## Audio
 
-DE LOC HOLD: A name that breaks the UI is not respect. It is another erasure.
+Ein Name, der die UI bricht, ist kein Respekt. Es ist die Kolonie, die den Arbeiter ein zweites Mal löscht.
 
 ## Field Note
 
-DE LOC HOLD: No live name translation. Preserve identity through baked strings.
+Ein Runtime-Fallback darf keinen toten Arbeiter umbenennen. Ein kaputter Name ist eine weitere Löschung.
 
 <!-- External Site; generated from P169_NATIVE_LOCALIZED_NAME_HANDLING/de_DE. -->

@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Terugkeervectorvenster
 
-Legt uit waarom HECTON-8 niet zomaar verlaten kan worden: de carrier is er, maar ver weg, geautomatiseerd en gebonden aan Aegir-timing.
+Het Terugkeervectorvenster beschrijft HECTON-8-extractie als orbitale procedure, niet als directe redding. Black Keel kan een signaal ontvangen door smalle Aegir-vensters, maar ophalen hangt af van stormgaten, rust van geladen deeltjes, relaisintegriteit en herbouwde opstijghardware. Het packet verbindt eerste contact met de carrier met latere gedeeltelijke-exitrecords: een antwoord bewijst dat de route kan bestaan, niet dat ze klaar is.
 
 ## Scanner
 
-Baangeometrie is geen reddingsknop. De Black Keel hoort je alleen in smalle Aegir-vensters.
+TERUGKEERVECTOR-LEZING // Black Keel-ping ontvangen door Aegir-stormgat. Carrierbereik: hoge transferbaan. Relaislijn vuil onder wolklading. Capsule-opstijging geweigerd tot geleidingskern, hitteschild en terugkeerhandshake groen melden.
 
 ## Terminal
 
-Comms-voorspeller: carrier hoog boven Aegir. Capsule-opstijging vraagt stormgat, deeltjesluwte en schone relaislijn.
+VOORSPELLER TERUGKEERVENSTER
+Carrier: BLACK KEEL / geautomatiseerde transferbaan
+Venster: 17 min 40 sec na volgende rust van geladen deeltjes
+Weer: gat in oppervlaksquall vereist
+Relais: hemellijn met ruis / schuilermast kan eenmaal herhalen
+Opstijghardware: geleidingskern ontbreekt, hitteschild niet gecertificeerd, batterijreserve laag
+Actie: opstijgketen herbouwen voordat carrierping als ophaalactie geldt
 
 ## Audio
 
-De Black Keel leeft genoeg om te antwoorden. Niet dichtbij genoeg om je te redden.
+Black Keel hoorde de ping. Dat geeft een venster, geen ladder.
 
 ## Field Note
 
-Een antwoord is timing, geen genade.
+Een antwoord is geen redding. Het is een klok die je kunt missen.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/nl_NL. -->

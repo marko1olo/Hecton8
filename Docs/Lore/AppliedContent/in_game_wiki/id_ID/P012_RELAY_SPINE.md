@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Tulang Punggung Relai
 
-Tulang punggung relai adalah rangka komunikasi lambat: slot pancar, buffer paket, cap kustodi, dan jadwal ulang. Ia memindahkan bukti, klaim, dan perintah, tetapi bukan oksigen ke ruang banjir.
+Relay Spine menjaga ruang manusia tetap terhubung tanpa berpura-pura jarak hilang. Ia berupa rantai slot beam, buffer paket, hash kustodi, jadwal ulang, gulungan notaris, dan izin cuaca lokal. Sistem ini dapat memindahkan perintah, bukti, tagihan utang, dan sinyal bukti hidup melintasi jarak antarbintang. Ia tidak bisa memindahkan oksigen ke ruangan banjir.
 
-Di HECTON-8, pesan bisa sah, disaksikan, dan tetap terlambat. Kebenaran dan penyelamatan adalah logistik berbeda.
+Di HECTON-8, relai adalah tekanan, bukan latar. Pesan bisa terbaca dan tidak berguna. Paket Deep Reach bisa datang sudah dibersihkan karena penulis versi pertama sudah mati. Tanda terima publik Tau Ceti bisa membuat bukti berbahaya secara politik bertahun-tahun kemudian. Luyten dapat membuktikan kustodi dan tetap meninggalkan pemain sendirian di air. Relai membuat kebenaran tahan lama. Tidak membuatnya cepat.
 
 ## Scanner
 
-Buffer relai basi. Usia paket keluar melampaui relevansi penyelamatan lokal. Hash kustodi utuh; jendela respons mati.
+Buffer relai basi. Jam sumber valid, hash kustodi utuh, antrean ulang habis. Pesan mendahului massa penyelamatan lalu mati di slot tunggu.
 
 ## Terminal
 
-TULANG PUNGGUNG RELAI // Paket antre melalui Aegir lokal, Luyten Junction, dan jalur arsip Sol. Rute tunda cahaya diterima. Sengketa prioritas belum selesai. Estimasi respons manusia tidak operasional untuk jendela bertahan hidup saat ini.
+STATUS RELAY SPINE // Tidak ada jalur ansible. Kustodi paket valid lewat buffer lokal Aegir. Tanda terima Luyten tertunda oleh kelas jeda cahaya. Respons manusia sudah usang untuk kelangsungan hidup kompartemen. Pertahankan otoritas aksi lokal.
 
 ## Audio
 
-Relainya tidak rusak. Itu masalahnya. Ia melakukan persis yang diizinkan jarak.
+Sebuah paket bisa benar, diterima, dan tetap terlalu terlambat.
 
 ## Field Note
 
-Pesan bisa benar dan tetap tiba setelah kau jadi tulang.
+Jeda tidak membuat kebenaran palsu. Jeda membuatnya sepi.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/id_ID. -->

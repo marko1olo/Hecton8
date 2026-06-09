@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Keluar Material: Kredit Pahit
 
-Keluar material harus terasa sah dan dingin. Pemain mengambil material tekanan, menjaga custody tetap utuh, memenuhi akuntansi massa-jendela Black Keel, dan mendapat pengurangan lien nyata. Tidak ada alarm yang menyatakan gagal; sistem bekerja persis seperti dirancang.
+Keluar material harus terasa dingin secara hukum, bukan jahat kartun. Kontraktor melakukan pekerjaan, memulihkan material tekanan, menjaga custody cukup utuh untuk akuntansi Black Keel, dan mendapat pengurangan lien yang nyata. Kapal tidak meneriakkan kegagalan karena sistem komersial tidak punya alasan menyebutnya gagal.
 
-Kerusakan ada pada hal yang dikecualikan tanda terima. Nama pekerja hilang belum direkonsiliasi, rantai bukti tidak lengkap, dan Deep Reach memperoleh alasan komersial lebih bersih untuk kembali. HECTON-8 tidak menghukum pemain karena profesional. Ia menunjukkan biaya keberhasilan profesional saat lokasi kerja juga sebuah kuburan.
+Bagian pahit ada pada hal yang tak bisa dipaksa diingat tanda terima. Nama pekerja tetap disengketakan, payload bukti tidak lengkap, dan Deep Reach mendapat alasan komersial yang lebih bersih untuk kembali daripada alasan yang pernah dimiliki pekerja koloni untuk keluar. HECTON-8 tidak menghukum profesionalisme. Ia menunjukkan harga profesionalisme ketika lokasi kerja juga merupakan kuburan.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/id_ID. -->

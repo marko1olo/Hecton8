@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Pumpenraum des Flachannex P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Pumpenraum des Flachannex P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+P-63 wird erst nach der Reparatur des Pumpenraums nützlich. Manuelles Pumpen senkt das Wasser, legt alte Werkzeugschränke frei und hält den Feldfabrikator in einem sicheren Reparaturbefugnisfenster.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+PUMPENRAUM-EINLASS // Blockiert, aber wartbar. Manuelle Bilgeroute verfügbar. Erst lenzen, dann schneiden.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+P-63 WARTUNG // Geringer Wassereintritt protokolliert. Manuelle Bilge akzeptiert. Feldfabrikator bleibt auf Dichtung, Klemme und Kontakt-Schneider gesperrt, bis der Einlass frei ist.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+Kurble die Pumpe, bis der Boden antwortet. Wenn du zuerst schneidest, flutest du den Werkzeugschrank.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+Eine trockene Ecke ist kein Zuhause. Es sind zehn Minuten Denkzeit. Nimm sie.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/de_DE. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Ran-Aegir afstandsmodel"
+title: "Ran-Aegir-afstandsmodel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran-Aegir afstandsmodel
+# Ran-Aegir-afstandsmodel
 
-Het Ran-Aegir-model geeft HECTON-8 een schaal die de speler kan voelen. Aegir is dichtbij genoeg voor sondes, vracht, seed-hardware en door schuld gesteunde vestiging tegen 2190. Het is nog ver genoeg dat een overstroomde kamer niet kan wachten op genade van de binnenwerelden. Afstand verschijnt als vertraging, custody, brandstof, remmen en eigendom.
+Het Ran-Aegir-model geeft HECTON-8 een schaal die in het pak voelbaar is. Tegen 2190 ligt Aegir dichtbij genoeg voor sondes, vracht, routewet, schuldbewoning en corporatieve honger. Het blijft te ver weg voor een overstroomd compartiment om op goedheid uit de binnenwerelden te wachten. Afstand wordt druk via relaisvertraging, lanceervensters, rembrandstof, carrierbewaring, verzekeringsuitsluitingen en een eenvoudig feit: massa komt trager aan dan bevelen.
 
 ## Scanner
 
-Routeplaat: Aegir is bereikbaar door infrastructuur en onbereikbaar door medelijden.
+De routeplaat bevestigt Aegir binnen infrastructuurbereik, niet binnen noodhulpreik.
 
 ## Terminal
 
-ROUTEMODEL: Ran/Aegir geldt als doel van tien-lichtjaar-klasse vanaf Sol. Speltekst gebruikt Aegir; droge catalogi gebruiken RAN-B:H8. Exacte efemeride blijft routetabelwerk.
+ROUTEMODEL: Ran/Aegir wordt behandeld als bestemming van de tien-lichtjaar-klasse vanaf Sol. Publieke oppervlakken zeggen Aegir. Droge navigatiecatalogi houden RAN-B:H8. De exacte efemeride blijft tabelgesloten; de operationele waarheid is vertraging, remmassa, relaisbewaring en eigendomsrisico.
 
 ## Audio
 
-Tien lichtjaar is klein op een sterrenkaart. Groot genoeg om een redding failliet te maken.
+Een signaal kan het donker oversteken. Een schip betaalt voor elke meter.
 
 ## Field Note
 
-Geschatte afstand is druk, geen decoratie. Tien lichtjaar kan nog steeds een kamer doden.
+Tien lichtjaar is klein in een catalogus en hard voor een redding.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/nl_NL. -->

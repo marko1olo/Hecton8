@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Kit Bukti Yard Relai Karang Kabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Cable Reef Relay Yard POI Kit
+# Kit Bukti Yard Relai Karang Kabel
 
-ID LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+Yard relai mengubah rasa jijik menjadi disiplin alat. Jaket kabel terbelah, isolasi terkelupas, dan film servis Atlas menyeberangi soket yang tidak pernah dirancang berbagi permukaan. Potongan bersih dapat merusak satu-satunya jalur yang masih membawa sinyal.
 
-## Scanner
-
-ID LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-ID LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-ID LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-ID LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Kit buktinya fisik: respons pinger, peta kaki mati, peringatan potong, cabang relai, dan tanda servis tempat material hidup mengambil alih rute patah. Tempat ini harus terasa berguna sebelum terasa asing. Bahayanya adalah perbaikan yang dapat menyelamatkan operator sambil mengotori catatan klaim.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/id_ID. -->

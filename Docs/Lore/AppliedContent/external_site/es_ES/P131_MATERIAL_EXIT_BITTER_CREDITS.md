@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Salida material: créditos amargos
 
-La salida material debe sentirse fría y legítima. El jugador recupera material de presión, mantiene intacta la custody, satisface la contabilidad de masa por ventana de Black Keel y obtiene una reducción real del lien. Ninguna alarma declara fracaso; el sistema actúa exactamente como fue diseñado.
+La salida material debe sentirse legalmente fría, no malvada de forma caricaturesca. El contratista hizo el trabajo, recuperó material de presión, mantuvo custody suficiente para la contabilidad de Black Keel y obtuvo una reducción real del lien. La nave no grita fracaso porque el sistema comercial no tiene motivo para llamarlo fracaso.
 
-El daño está en lo que el recibo excluye. Los nombres de trabajadores desaparecidos siguen sin conciliar, la cadena de pruebas está incompleta y Deep Reach gana una razón comercial más limpia para volver. HECTON-8 no castiga al jugador por ser profesional. Muestra lo que cuesta el éxito profesional cuando el lugar de trabajo también es una tumba.
+Lo amargo está en lo que el recibo no puede ser obligado a recordar. Los nombres de trabajadores siguen en disputa, el payload probatorio está incompleto y Deep Reach recibe un pretexto comercial más limpio para volver que la vía de salida que tuvieron los trabajadores de la colonia. HECTON-8 no castiga el profesionalismo. Muestra cuánto cuesta cuando el lugar de trabajo también es una tumba.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/es_ES. -->

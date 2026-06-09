@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Contract Approach Act Gate"
+title: "Portão de aproximação contratual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Contract Approach Act Gate
+# Portão de aproximação contratual
 
-PT LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+O primeiro portão é papelada com pressão atrás. A Black Keel não manda turista para águas de Aegir. O operador aceita transferência de reivindicação, exposição de dívida, slot bathydrop e conta de ferramentas antes do primeiro scan profundo. O perfil antigo Deep Reach importa porque o reconhecimento de procedimento começa antes de a rota parecer pessoal.
 
 ## Scanner
 
-PT LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Portão de rota: contrato aceito. Exposição de lien, horário bathydrop e procedimento antigo Deep Reach ativos antes da descida.
 
 ## Terminal
 
-PT LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+ROTA DE CAMPANHA // APROXIMAÇÃO CONTRATUAL. Dono: quadro de reivindicações Black Keel. Aceitar transferência de reivindicação, exposição de lien, slot bathydrop e dívida de ferramentas. Resíduo de credencial Deep Reach detectado no perfil do operador. Recuperação condicional.
 
 ## Audio
 
-PT LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Você veio por trabalho. O contrato já sabe onde você trabalhou antes.
 
 ## Field Note
 
-PT LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Nota de saqueador: leia o quadro do contrato duas vezes. A segunda leitura mostra quais permissões antigas ainda cabem nas suas mãos.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/pt_BR. -->

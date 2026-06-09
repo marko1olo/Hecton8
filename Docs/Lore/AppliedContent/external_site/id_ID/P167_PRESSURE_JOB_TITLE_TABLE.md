@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Job Title Table"
+title: "Tabel Jabatan Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Job Title Table
+# Tabel Jabatan Tekanan
 
-ID LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+Tabel Jabatan Tekanan memberi HECTON-8 kosakata kerja. Jabatan dibaca lewat ruangan dan objek. Jabatan yang baik mengubah nama menjadi jalur: seal dekat hatch, relay dekat slip waktu, medlock dekat penolakan dan kebohongan triage.
 
 ## Scanner
 
-ID LOC HOLD: Job titles should explain what kept the colony alive.
+PAPAN KERJA // Jabatan bukan hiasan HR. Ia menunjukkan sistem mana yang gagal saat pekerja berhenti menjawab.
 
 ## Terminal
 
-ID LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+JABATAN TEKANAN // teknisi pompa, seal rigger, juru rute, penyelam brine, operator fabricator, asisten medlock, kustodian relay, pekerja vent-kiln, pembaca keamanan Atlas, dan supervisor sif bukan warna sosial. Itu logika akses. Jabatan menentukan apa yang pekerja tahu, panel mana menerima lencana, ruang mana menyimpan alat, dan kegagalan mana yang akan disalahkan pada mereka setelah Great Tide.
 
 ## Audio
 
-ID LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Tak ada yang mati sebagai Employee 438. Mereka mati memegang pekerjaan yang masih dibutuhkan laut.
 
 ## Field Note
 
-ID LOC HOLD: Every title should imply a tool, route or failure.
+Setiap jabatan harus menunjuk alat, ruangan, izin rute, atau alasan tubuh tidak boleh pergi.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/id_ID. -->

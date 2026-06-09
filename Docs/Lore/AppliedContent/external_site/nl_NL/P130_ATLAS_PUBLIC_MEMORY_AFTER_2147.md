@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Publieke herinnering aan Atlas na 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Publieke herinnering aan Atlas na 2147
 
-NL LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+De publieke herinnering aan Atlas na 2147 is de schoongemaakte publieke wond. Ze verandert gezag in ongeluk, ongeluk in ruis en ruis in quarantainebeleid, en laat alleen fragmenten over voor wie voorbij de officiële genade wil lezen.
 
 ## Scanner
 
-NL LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Publiek verhaal na 2147: falende automatisering, corrupte logs, geen agency.
 
 ## Terminal
 
-NL LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+PUBLIEKE LIJN NA 2147: Atlas-automatisering faalde tijdens een geotechnische cascade. Veiligheidslogs van arbeiders corrupt. Directe agency niet geverifieerd. Systeem onder quarantaine niet herstelbaar. Geen juridische inferentie toegestaan uit fragmentarische machine-output.
 
 ## Audio
 
-NL LOC HOLD: A dead machine makes a useful scapegoat.
+Een dode machine is een nuttige zondebok.
 
 ## Field Note
 
-NL LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Noem het een kapot hulpmiddel en niemand vraagt wat het moest beschermen.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/nl_NL. -->

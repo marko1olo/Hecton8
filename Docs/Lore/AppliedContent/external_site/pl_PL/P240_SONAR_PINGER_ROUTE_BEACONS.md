@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Sonar Pinger Route Beacons"
+title: "Sonarowe pinger jako boje trasy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Sonar Pinger Route Beacons
+# Sonarowe pinger jako boje trasy
 
-PL LOC HOLD: Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean.
+Sonarowe pinger jako boje trasy to przedmiot w duchu HECTON-8: tani, fizyczny, akustyczny i moralnie ciężki. Pomaga wrócić, ale zdradza obecność morzu.
 
 ## Scanner
 
-PL LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Pływak pinger oznacza geometrię powrotu, ujawnia fałszywe echa i przyciąga ratunek oraz niechciane życie.
 
 ## Terminal
 
-PL LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-PL LOC HOLD: One ping is a promise. Two pings are a bill.
+Jeden ping to obietnica. Dwa pingi to rachunek.
 
 ## Field Note
 
-PL LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+Pinger to pierwsze uczciwe narzędzie: mówi dźwiękiem o dystansie, długu, utracie trasy i ryzyku stworzeń.
 
 <!-- External Site; generated from P240_SONAR_PINGER_ROUTE_BEACONS/pl_PL. -->

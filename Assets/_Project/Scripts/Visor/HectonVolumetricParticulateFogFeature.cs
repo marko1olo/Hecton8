@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.VFX;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -23,7 +24,7 @@ namespace Hecton8.Visor
     {
         private const double SetupBudgetWarningMilliseconds = 0.2d;
         private const double MaxCameraLocalAupMeters = 1000000d;
-        private const float DefaultSeaLevelY = 14.02f;
+        private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private const uint SetupWarningHash = 0xA88120F0u;
         private const uint SetupContextHash = 0xC0120F6Au;
 
@@ -1577,7 +1578,32 @@ namespace Hecton8.Visor
 
             private static float ResolveCameraDepthFromProductionSeaLevel(float3 cameraPosition)
             {
-                return math.isfinite(cameraPosition.y) ? math.max(0f, DefaultSeaLevelY - cameraPosition.y) : 0f;
+                float seaLevelY = ResolveProductionSeaLevelY();
+                return math.isfinite(cameraPosition.y) ? math.max(0f, seaLevelY - cameraPosition.y) : 0f;
+            }
+
+            private static float ResolveProductionSeaLevelY()
+            {
+                Vector4 fogStratification = Shader.GetGlobalVector(ShaderConstants.NoirFogStratificationId);
+                float waterLevelY = fogStratification.x;
+                if (IsPublishedNoirFogStratification(in fogStratification) &&
+                    math.isfinite(waterLevelY) &&
+                    math.abs(waterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+                {
+                    return waterLevelY;
+                }
+
+                return DefaultSeaLevelY;
+            }
+
+            private static bool IsPublishedNoirFogStratification(in Vector4 fogStratification)
+            {
+                return math.isfinite(fogStratification.y) &&
+                       math.isfinite(fogStratification.z) &&
+                       math.isfinite(fogStratification.w) &&
+                       (math.abs(fogStratification.y) > 0.000001f ||
+                        math.abs(fogStratification.z) > 0.000001f ||
+                        math.abs(fogStratification.w) > 0.000001f);
             }
 
             private static void ApplyBiomeTransitionGlobals(
@@ -2520,6 +2546,7 @@ namespace Hecton8.Visor
             internal static readonly int BiomeTransitionFogColorId = Shader.PropertyToID("_H8BiomeTransitionFogColor");
             internal static readonly int BiomeTransitionAbsorptionId = Shader.PropertyToID("_H8BiomeTransitionAbsorption");
             internal static readonly int BiomeTransitionWeightsId = Shader.PropertyToID("_H8BiomeTransitionWeights");
+            internal static readonly int NoirFogStratificationId = Shader.PropertyToID("_HectonNoirFogStratification");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

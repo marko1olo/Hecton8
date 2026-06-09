@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Юридическая лазейка мародеров
 
-Мародеры не единая фракция. Они лицензированные подрядчики там, где мертвому claim нужна работа; терпимые преступники там, где recovery дешевле enforcement; и незаконные рейдеры, когда доказательства угрожают владельцу claim. Игрок живет внутри этой юридической неоднозначности.
+Мародеры не племя под одним флагом. Это подрядчики, долговые экипажи, ныряльщики по обломкам и отчаянные механики, живущие внутри лазейки, созданной задержкой. Мертвая колония все еще имеет собственника, но собственник не заделает корпус, не откачает рассол и не вытащит регистраторы из смятых сервисных палуб. Deep Reach нужны экипажи, от которых можно отказаться. Доменам нужны доказательства, которые они сами не обязаны собирать. Экипажам нужна бумага, достаточная, чтобы пережить следующий патруль.
 
 ## Scanner
 
-Лицензия действует в одном коридоре и становится преступлением в следующем.
+Лицензия действует в одном коридоре и становится обвинением в следующем.
 
 ## Terminal
 
-CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries; emergency responder only if the recovered record embarrasses nobody important.
 
 ## Audio
 
-Один и тот же резак может быть инструментом, преступлением или средством спасения.
+Один и тот же резак может быть инструментом, преступлением или единственным оставшимся средством спасения.
 
 ## Field Note
 
-Marauder - профессия только пока слушает правильный суд.
+Marauder — должность только пока правильный суд может на ней заработать.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ru_RU. -->

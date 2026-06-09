@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Wissensstufen der wahren Ursache"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Wissensstufen der wahren Ursache
 
-DE LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+Wissensstufen der wahren Ursache formen die Schuld von Deep Reach, ohne jeden Menschen im Unternehmen in dasselbe Monster zu verwandeln. Kein Büro besaß die ganze Katastrophe. Feldbeobachter sahen abnorme Gezeiten und kollabierende Sensormargen. Das Risikobüro übersetzte sie in akzeptable Tail-Exposure. Atlas Safety schützte Kontinuitätswerte. Evakuierungsjuristen verzögerten Freigabeautorität. Keelmark und Recovery-Schreibtische bereiteten Anspruchssprache vor, die Tod, Fracht und Schweigen in verwaltbaren Verlust verwandeln konnte. Jede Stufe konnte sagen, sie wusste allein nicht genug, um das Desaster zu stoppen. Zusammen wussten sie genug, um HECTON-8 langsam und legal ertrinken zu lassen.
 
 ## Scanner
 
-DE LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach kannte die Wahrheit in Scheiben: Gezeitenmargen in einem Büro, Atlas-Gewichtung in einem anderen, Evakuierungsverzug und Anspruchsumwandlung anderswo.
 
 ## Terminal
 
-DE LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: Gezeitenteams melden Margenverlust; Risk akzeptiert Tail-Exposure; Atlas Safety gewichtet Kontinuität über Evakuierung; Counsel hält Freigaben; Keelmark wandelt Tote in erstattbaren Verlust; Recovery Compliance verlangt Nutzlast vor Offenlegung.
 
 ## Audio
 
-DE LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Niemand musste „lasst sie sterben“ schreiben. Die Tabelle wusste schon wie.
 
 ## Field Note
 
-DE LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Verteiltes Nichtwissen war keine Unschuld. Es war Architektur.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/de_DE. -->

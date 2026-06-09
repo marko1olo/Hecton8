@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "인양 진실의 증거 상태"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# 인양 진실의 증거 상태
 
-KO LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+회수된 증거는 HECTON-8의 음모를 천천히 타오르게 한다. 식민지가 침묵하는 이유는 아무 일도 없었기 때문이 아니다. 모든 증거 물체가 시장 가치, 책임 가치, 법적 가치를 갖기 때문이다. 진실은 편리한 자백이 아니라 보관 경로와 손상된 물건을 통해 떠오른다.
 
 ## Scanner
 
-KO LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+블랙박스 패킷: 청구 데스크가 손대기 전까지는 진실.
 
 ## Terminal
 
-KO LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: 원시 인양물은 기본적으로 청구 자료가 된다. 공공 증거가 되려면 온전한 소스 해시, 압력-시간 스탬프, 증인 패킷, 청구자 통제 밖의 릴레이 공증, 선박 상실과 브라인 노출과 수동 편집을 견디는 보관 경로가 필요하다.
 
 ## Audio
 
-KO LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+시신은 누군가가 잘못 파일링하는 데 실패한 뒤에야 증거가 된다.
 
 ## Field Note
 
-KO LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+심해에서 온 사실은 증인을 지킬 때만 위험해진다.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/ko_KR. -->

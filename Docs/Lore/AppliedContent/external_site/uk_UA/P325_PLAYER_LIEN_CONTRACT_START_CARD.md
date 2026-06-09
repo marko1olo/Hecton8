@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Player Lien Contract Start Card"
+title: "Стартова contract card з lien гравця"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Player Lien Contract Start Card
+# Стартова contract card з lien гравця
 
-UK LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+Протагоніст HECTON-8 - колишній фахівець Deep Reach, який став salvage operator. Таке походження робить історію дорослою і практичною: гравець приходить по роботу, а не по долю. Емоційний поворот заробляється доказами, контрактами і розпізнаним старим доступом, дозволяючи таємниці стати особистою без зведення її до сімейної помсти.
 
 ## Scanner
 
-UK LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+Стартова карта не робить тебе обраною жертвою. Вона робить тебе колишнім фахівцем Deep Reach із lien, ключем і причиною брехати собі.
 
 ## Terminal
 
-UK LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACT START / оператор: незалежний salvage contractor / колишній доступ: Deep Reach field key, неактивний, але розпізнаний / lien: активний / заявлений мотив: claim value / прихований тиск: prior exposure, знайомий маршрут, beneficiary conflict.
 
 ## Audio
 
-UK LOC HOLD: You came for work. The file remembered you before you remembered it.
+Ти прийшов по роботу. Файл згадав тебе раніше, ніж ти згадав його.
 
 ## Field Note
 
-UK LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Без lost-relative hook. Мотив починається як робота: salvage value, старий field access, професійна засвітка, прихований особистий тиск.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/uk_UA. -->

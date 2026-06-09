@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Requisitenvarianten für Triagebücher"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Requisitenvarianten für Triagebücher
 
-DE LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Requisitenvarianten für Triagebücher definieren medizinische Beweise als Prozessbeweise. HECTON-8 nutzt Bücher, um Verletzung, Druckausfall, Routenverweigerung, Ausrüstungszustand und Zeugenlücken zu verbinden. So bleibt der Horror systemisch: Der Spieler liest nicht nur, dass Menschen verletzt wurden, sondern wie die Kolonie Schaden in Routingentscheidungen verwandelte.
 
 ## Scanner
 
-DE LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Medizinische Beweise sollen Verzögerung und Routing offenlegen, nicht den Raum mit Leid dekorieren.
 
 ## Terminal
 
-DE LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: Jeder Bucheintrag muss Verletzung mit Druck, Routenverweigerung, Ausrüstungszustand, Zertifizierungsverzögerung oder fehlender Zeugenkette verbinden. Schmerz allein reicht nicht. Die Requisite muss zeigen, wer sich bewegen konnte, wer gehalten wurde und welches System Verzögerung prozedural wirken ließ.
 
 ## Audio
 
-DE LOC HOLD: Pain is not proof until the route bears the mark.
+Schmerz ist kein Beweis, bis die Route die Marke trägt.
 
 ## Field Note
 
-DE LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Varianten: Crush-Status-Kürzel, Sauerstoffschuldmarke, durchgestrichener Route Hold, Atlas-Stabilisierungsnotiz, witness-hash-Lücke.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/de_DE. -->

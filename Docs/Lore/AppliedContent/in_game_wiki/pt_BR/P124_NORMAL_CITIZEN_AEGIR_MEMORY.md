@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Memória do cidadão comum sobre Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Memória do cidadão comum sobre Aegir
 
-PT LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Para cidadãos comuns, Aegir não é um segredo proibido. É pior: um item velho em leituras escolares, avisos de seguradoras e tabelas de taxas de rota. As pessoas lembram o planeta oceano, a colônia perdida e a palavra quarentena, mas não as equipes de turno, as crianças, os cozinheiros, os técnicos de pressão nem os primeiros nomes nos manifestos de mortos. Essa distância permite que a Deep Reach sobreviva na vida pública. Um desastre conhecido pode virar cenário se ninguém tiver de olhar para os corpos.
 
 ## Scanner
 
-PT LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Resto de arquivo público: todo mundo ouviu falar de Aegir, quase ninguém lembra um nome.
 
 ## Terminal
 
-PT LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: evento de perda HECTON-8, 2147. Causas oficiais: cascata de tempestades, falha de evacuação, corrupção de automação, quarentena biológica, telemetria não confiável. Status atual: reivindicação dormente, seguro ainda indexado, viagem civil desaconselhada.
 
 ## Audio
 
-PT LOC HOLD: Most people know the place as a line under insurance rates.
+A maioria conhece Aegir como uma linha sob sua taxa de seguro.
 
 ## Field Note
 
-PT LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Um desastre vira rotina quando já entrou na conta.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/pt_BR. -->

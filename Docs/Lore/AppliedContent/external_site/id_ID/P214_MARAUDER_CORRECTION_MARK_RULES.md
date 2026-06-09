@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Aturan Tanda Koreksi Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Aturan Tanda Koreksi Marauder
 
-ID LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Aturan Tanda Koreksi Marauder menjelaskan bagaimana HECTON-8 membiarkan salvager kemudian menyentuh bukti lama tanpa merusak kanon. Tanda koreksi menambahkan lapisan hidup di atas dokumen korporat: menyimpan nama, menantang kategori, memperingatkan rute, memberi harga sampel, menyembunyikan saksi, atau menandai utang. Ini membuat bukti replay terasa pernah ditangani pekerja klaim lain sambil menjaga setiap perubahan tulisan tangan tetap fungsional.
 
 ## Scanner
 
-ID LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Tanda koreksi bisa menyelamatkan nama, meracuni klaim, atau memperingatkan penyelam berikutnya bahwa kategori resmi berbohong.
 
 ## Terminal
 
-ID LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: tanda Marauder harus mengubah interpretasi bukti, risiko rute, atau tekanan pembayaran. Tanda valid menyimpan nama pekerja, menantang kategori asuransi, memperingatkan rute, memberi harga sampel, menyembunyikan saksi, atau menandai utang. Grafiti kosong merusak rantai bukti.
 
 ## Audio
 
-ID LOC HOLD: Somebody came before you and still failed to leave clean.
+Seseorang datang sebelum kamu dan tetap gagal pergi dengan bersih.
 
 ## Field Note
 
-ID LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Tanda: simpan nama, tantang kategori, peringatkan rute, beri harga sampel, sembunyikan saksi, tandai utang. Tulisan tangan harus mengubah bacaan, bukan menghias prop.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/id_ID. -->

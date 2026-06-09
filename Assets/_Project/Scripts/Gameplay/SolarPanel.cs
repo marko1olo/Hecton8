@@ -1,5 +1,7 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Power;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -52,6 +54,7 @@ namespace Hecton8.Gameplay
         private bool _registeredLate;
         private bool _registeredHotSwap;
         private IWeatherService _cachedWeatherService;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
 
 #if UNITY_EDITOR
         private static readonly GUIContent s_gizmoLabelContent = new GUIContent(); // COLD ALLOC: GUIContent[1] - Scene View solar label scratch - owner: SolarPanel editor gizmo
@@ -232,6 +235,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 SolarPowerGenerationRuntime.TryPrepareCold(
@@ -246,6 +255,12 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.Weather)
             {
                 _cachedWeatherService = currentService as IWeatherService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
                 return;
             }
 
@@ -279,6 +294,7 @@ namespace Hecton8.Gameplay
                 SolarPowerGenerationConstants.DefaultPanelCapacity,
                 SolarPowerGenerationConstants.DefaultPowerNodeCapacity);
             _cachedWeatherService = GlobalRegistry.Weather;
+            _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
             if (!_registeredSlow)
@@ -308,6 +324,7 @@ namespace Hecton8.Gameplay
             }
 
             _cachedWeatherService = null;
+            _cachedOceanKinematicsService = null;
         }
 
         private static void WriteAllPanelStates()
@@ -366,7 +383,7 @@ namespace Hecton8.Gameplay
             SolarPowerGenerationRuntime.TryGetTuning(out tuned);
             SolarConditionsDTO conditions = default;
             conditions.RuntimeOriginAUP = runtimeOrigin;
-            float baseSeaLevelY = SolarPowerGenerationConstants.ResolveSeaLevelDeltaMeters(seaLevelRuntimeY);
+            float baseSeaLevelY = ResolveSolarSeaLevelY();
             float tideHeightMeters = celestialValid && math.isfinite(celestial.TideHeightMeters) ? celestial.TideHeightMeters : 0f;
             conditions.SeaLevelAUP = SolarPowerGenerationConstants.BuildSeaLevelAUP(runtimeOrigin, baseSeaLevelY + tideHeightMeters);
             conditions.SunDirection = celestialValid ? celestial.SunDirection : new float3(0f, 1f, 0f);
@@ -381,6 +398,35 @@ namespace Hecton8.Gameplay
             conditions.VoxelSdfCellSize = new float3(1f);
             conditions.VoxelSdfRangeMeters = SolarPowerGenerationConstants.DefaultSdfRangeMeters;
             return conditions;
+        }
+
+        private float ResolveSolarSeaLevelY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSolarSeaLevelY(oceanKinematics.SeaLevel, out float oceanSeaLevelY))
+            {
+                return oceanSeaLevelY;
+            }
+
+            return SolarPowerGenerationConstants.ResolveSeaLevelDeltaMeters(seaLevelRuntimeY);
+        }
+
+        private static bool TryResolveSolarSeaLevelY(float candidateSeaLevelY, out float seaLevelY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelY = SolarPowerGenerationConstants.DefaultSeaLevelY;
+            return false;
         }
 
         private void ApplyOutput(in SolarPanelOpticalOutputDTO output)

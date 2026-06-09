@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Reistijden van sondepakketten
 
-Sondereistijd is waarom Deep Reach HECTON-8 kon waarderen voordat het mensen daar kon beschermen. De eerste records waren smal, oud bij aankomst en al financieel. Een pakket kan een claim volwassen laten lijken terwijl het menselijke plan erachter nog gokwerk is.
+Sondepakketten lieten Aegir bestuurbaar lijken voordat iemand onder zijn water stond. Seed-kaarten, mineraalsporen, gevarenbanden en routevergunningen kwamen in lagen aan, elk gestempeld met een lanceerwaarheid die al verouderd was. HECTON-8 erfde die geesten. Een kaart die actueel lijkt, kon een tien jaar oud argument zijn met betere opmaak.
 
 ## Scanner
 
-De eerste Aegir-getuigen waren pakketten, geen kolonisten.
+Geborgen pakketkop: aankomstdatum ouder dan de koloniekaart die hij bijwerkte.
 
 ## Terminal
 
-SURVEYKETEN: bundelondersteunde sondes en pakketvaartuigen steken eerst over, sturen oude waarheid terug, leggen remwiskunde vast en laten bedrijven een route verkopen voordat die menselijk is.
+SONDEPAKKETNOTITIE: Ran-Aegir-onderzoeksbundels reizen met gefaseerde brandingen, slaap, relaisvangsten en goedkope geduld. Een pakket kan juist zijn bij lancering, verouderd bij opening en nog duur genoeg om beleid te worden.
 
 ## Audio
 
-De sonde zag de oceaan voordat iemand daar een graf had.
+De kaart was waar toen zij vertrok. Dat was het probleem.
 
 ## Field Note
 
-Een sonde kan een mensenloopbaan besteden aan een route voordat iemand een lichaam riskeert.
+Een sonde brengt niet het heden. Zij brengt een fossiel met telemetrie.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/nl_NL. -->

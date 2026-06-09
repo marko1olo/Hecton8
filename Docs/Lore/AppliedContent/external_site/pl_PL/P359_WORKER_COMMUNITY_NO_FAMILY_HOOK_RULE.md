@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Worker Community Notice"
+title: "Tablica kontaktów roboczych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Worker Community Notice
+# Tablica kontaktów roboczych
 
-PL LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Tablica kontaktów roboczych jest małym dokumentem społecznym o twardej krawędzi. Wymienia rzędy koi, prowadzących trasy, świadków medlocka, kontakty narzędziowni i okna przekaźników. Wygląda jak administracja, dopóki nie widać logiki ciśnienia: kontakt poza światem może płakać, kłócić się i pamiętać, ale nie dotrze do włazu przed wodą.
 
-## Scanner
+Na HECTON-8 kontakt awaryjny znaczy więc: na stacji, przeszkolony, osiągalny po tonie i dopuszczony do trasy pracownika. Definicja jest surowa, nie bezduszna. Gdy nieudany powrót może stać się drogą zalania, troska przybiera taki kształt.
 
-PL LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-PL LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-PL LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-PL LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Tablica łączy też codzienne dowody w sieć wspólnoty. Klucz pompy w jednym artefakcie, poprawka wody w drugim, podpis narzędzia w trzecim: każdy znak przywiązuje zmęczonego pracownika do innego. To nie melodramat, lecz wiarygodna osada ciśnieniowa, w której odpowiedzialność staje się formą bliskości.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/pl_PL. -->

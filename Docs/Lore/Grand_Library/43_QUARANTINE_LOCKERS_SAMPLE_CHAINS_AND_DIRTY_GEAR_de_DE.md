@@ -1,66 +1,94 @@
-<!-- localization_status: draft_machine_or_llm -->
-# QUARANTÄNESCHRÄNKE, PROBENKETTEN UND SCHMUTZIGE AUSRÜSTUNG
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# QUARANTAENE-SCHRAENKE, PROBENKETTEN UND SCHMUTZIGE AUSRUESTUNG
 
-> **Quelle:** Black-Keel-Annahmeregeln, Deep-Reach-Kontaminationsrecht, Marauder-Decknotizen über Ausrüstung, die nicht an Bord hätte zurückkommen sollen.  
-> **Stimme:** Anspruchsannahmeoffizier, korrigiert von Auftragnehmern, die Werkzeuge öfter an Quarantäne verloren haben als an Räuber.  
-> **Prüfernotiz:** Quarantäne in HECTON-8-Lore soll körperlich wirken. Sie ist kein Papier über dem Spiel. Sie ist ein verschlossener Kasten, ein Timer, eine Rechnung, ein Geruch und manchmal der einzige Grund, warum das Schiff nicht zur nächsten Ruine wird.
+> **Quelle:** Black-Keel-Annahmeregeln, Deep-Reach-Kontaminationsrecht, Decknotizen von Maraudern ueber Ausruestung, die besser nicht wieder an Bord gekommen waere.  
+> **Umfang:** Wie geborgenes Material nach dem Ueberschreiten der Annahmelinie zu Beweis, Schuld, Infektionsrisiko, Auktionswert und eingeschlossenem Eigentum wird.  
+> **Feldeinsatz:** Vor dem Oeffnen eines geborgenen Behaelters, dem Abwischen eines Werkzeugs, dem Brechen eines Probensiegels oder dem Streit mit der Quarantaene lesen, wenn der einzige Schneidbrenner im Schrank liegt.
 
 ---
 
-## 1. Nichts kommt sauber zurück
+## 1. Die Annahmelinie
 
-Black Keel empfängt keine Schätze. Es empfängt Probleme mit Masse.
+Black Keel nimmt keine Schaetze entgegen. Black Keel nimmt nasse Gegenstaende mit unbekannter Biografie entgegen.
 
-Jeder Gegenstand, der von HECTON-8 gehoben wird, bringt einen Teil des Ozeans mit. Salz versteckt sich in Schraubenköpfen. Biofilm sitzt unter Griffen. Sole schwitzt aus Isolierung, sobald der Gegenstand wärmer wird. Druckglas hält mikroskopischen Abrieb in angeschlagenen Kanten. Eine versiegelte Probe trägt mehr als Material; sie trägt Ort, Zeit, Route, Kontakt, Verwahrung und alles, von dem die Person, die sie versiegelte, hoffte, dass die nächste Person es nicht fragt.
+Die Annahmelinie ist nur eine gemalte Naht auf dem Deck, aber alle behandeln sie wie einen Grenzuebergang. Unterhalb dieser Linie ist ein Objekt Bergungsgut. Oberhalb ist dasselbe Objekt Masse, Geruch, Wasser, Haftung und Beweis. Salz versteckt sich in Schraubkoepfen. Lauge schwitzt aus Isolierung, sobald das Objekt warm wird. Biofilm sitzt unter Griffen. Druckglas haelt Feingrit in abgeschlagenen Kanten. Ein Probenrohr traegt nicht nur Material, sondern Ort, Uebergabe, Druckgeschichte, Route, Zeugen und alles, wovon die Person, die es versiegelt hat, hoffte, dass niemand danach fragt.
 
-Deep Reach behandelte Kontamination als Kategorie. Black Keel behandelt sie als Hebel. Ein schmutziges Schneidwerkzeug kann eine Quarantänegebühr werden. Ein nasser Speicherkern kann Beweismittelverwahrung werden. Ein lebender Film auf einer Pumpe kann Biogefahr, stabilisierendes Oberflächensystem oder Auktionsaufschlag werden, je nachdem, welches Büro zuerst Gewinn sieht. Der Gegenstand ändert sich nicht. Das Etikett ändert sich.
+Deep Reach behandelte Kontamination als Kategorie. Black Keel behandelt sie als Hebel. Ein schmutziger Schneidbrenner kann eine Gebuehr werden. Ein nasser Speicherkern kann zur Beweisverwahrung werden. Ein lebender Film auf einer Pumpe kann Biogefahr, stabilisierendes Oberflaechensystem oder Auktionsaufschlag sein, je nachdem, welches Buero zuerst Gewinn sieht. Das Objekt veraendert sich nicht, wenn es die Linie kreuzt. Die Entscheidung veraendert sich.
 
-Marauders lernen, dass lebend zurückzukehren nur die erste Rückkehr ist. Ausrüstung muss zurückkehren. Proben müssen zurückkehren. Ansprüche müssen in einem Zustand zurückkehren, den jemand bepreisen kann. Ein Mensch, der mit dem falschen Schmutz am falschen Handschuh aus dem Ozean klettert, ist vielleicht sicherer als unten, aber noch nicht frei.
+Wer lebend aus dem Ozean steigt, hat nur die erste Rueckkehr geschafft. Ausruestung muss zurueckkehren. Proben muessen zurueckkehren. Ansprueche muessen in einem Zustand zurueckkehren, den jemand bepreisen kann. Auf Black Keel ist sauber kein Zustand. Sauber ist eine Entscheidung mit Stempel von jemandem, der den Schrankschluessel besitzt.
 
-Auf Black Keel ist sauber kein Zustand. Sauber ist ein Beschluss.
+## 2. Was an Bord kommt
 
-## 2. Der Quarantäneschrank
+Jede geborgene Sache bringt ein Stueck HECTON-8 mit.
 
-Ein Quarantäneschrank ist der Ort, an dem das Schiff Ungewissheit in Zeit verwandelt.
+Ein gesprungener Helm bringt Kratzrichtung, Salzband, alten Atem und alles, was beim Aufstieg am Rand gerieben hat. Ein Generator bringt Schlamm vom Boden, der ihn gehalten hat, Metallstaub vom Schnitt, Waermegeschichte in seinem Film und einen Geruch, der die Quittung ueberdauern kann. Ein versiegelter Beutel bringt Wasser, das Fundstueck, Handschuh, Messer, Deck und das Innere der Person beruehrt hat, die beim Versiegeln in Panik geriet.
 
-Die guten Schränke sind druckzertifiziert, entwässerbar, sensorausgekleidet und gemein. Sie riechen flüchtige Stoffe, testen Feuchtigkeitsanstieg, beobachten Wärmekurven, hören winzige Bewegung und vergleichen Oberflächenchemie mit alten Risikotabellen. Die schlechten Schränke sind billigere Kästen mit selbstsicheren Etiketten. Black Keel besitzt beide Arten und berechnet so, als wäre jeder Kasten die gute Art.
+Diese Fracht kann nuetzlich sein. Schmutz kann eine Route beweisen. Ein Fleck kann Kontakt beweisen. Ein lebender Film kann verhindern, dass eine tote Dichtung aufgibt. Ein Schmierfilm auf einem Handschuh kann sagen, welcher Raum betreten wurde, obwohl eine Anspruchsmarke etwas anderes behauptet. Dieselbe Fracht kann in Anzuggestelle kriechen, Nahrungsdrucker sauer machen, Luftfilter verunreinigen, einen Probenfroster impfen oder die Abkuerzung einer Crew zum Lungenproblem einer anderen machen.
 
-Crews hassen die Schränke, weil Schränke Bedarf nicht beachten. Eine Reparaturdichtung kann hinter Glas sitzen, während unten ein Habitat leckt. Ein privates Messer kann festgehalten werden, weil es einen unbewerteten Film berührte. Eine Probe, die einen Anspruch beweisen würde, kann warten, während ein automatischer Arm entscheidet, ob der Behälter schwitzt oder sich nur schämt. Ein Anzughandschuh kann die Quarantäne nicht bestehen und einen ganzen Werkzeugsatz hinter sich einsperren.
+Darum fragen erfahrene Crews nicht zuerst, ob ein Fund wertvoll ist. Sie fragen, was er tut, wenn er warm wird.
 
-Die Logik des Schiffs ist brutal, aber nicht dumm. Eine schlechte Rückkehr kann sich in Luftfilter, Nahrungsdrucker, Anzugständer, Probengefrierer und Crew-Lungen ausbreiten. Ein lebender Kontaminant an Bord eines geschlossenen Bergungstenders ist keine Unannehmlichkeit. Er ist ein zweiter Ozean, der das Schiff lernt.
+## 3. Der Quarantaene-Schrank
 
-Marauders markieren Schränke wie Gefangene Wände markieren: Daten, Gerüche, Warnungen, Preise, welcher Sensor lügt, welches Scharnier klemmt, welcher Techniker Gnade hat und welcher Schreiber Gnade als Dienst verkauft.
+Ein Quarantaene-Schrank verwandelt Unsicherheit in Zeit.
 
-## 3. Probenketten
+Gute Schraenke sind druckfest, entwassert, mit Sensoren ausgekleidet und gemein. Sie riechen fluechtige Stoffe, beobachten Feuchteanstieg, vergleichen Waermekurven, lauschen nach winziger Bewegung und gleichen Oberflaechenchemie mit alten Risikotabellen ab. Schlechte Schraenke sind billigere Kisten mit selbstsicheren Etiketten. Black Keel besitzt beide Arten und berechnet jede Kiste so, als waere sie die gute.
 
-Eine Probe ist nur wertvoll, wenn ihre Geschichte überlebt.
+Crews hassen die Schraenke, weil die Schraenke sich nicht fuer Bedarf interessieren. Eine Reparaturdichtung kann hinter Glas liegen, waehrend unten ein Habitat leckt. Ein persoenliches Messer kann festgehalten werden, weil es einen noch nicht bepreisten Film beruehrt hat. Eine Beweisprobe kann warten, waehrend ein Automatikarm entscheidet, ob der Behaelter schwitzt oder nur ungleichmaessig abkuehlt. Ein Anzughandschuh kann die Quarantaene nicht bestehen und den ganzen Werkzeugsatz hinter sich einsperren.
 
-Deep Reach liebte versiegelte Beweisröhren, weil sie die Welt ordentlich aussehen ließen. Röhre, Markierung, Zeitstempel, Ort, Bediener, Zeuge, Übergabe. Black Keel behielt die Struktur und entfernte den Trost. Eine Probenkette schützt nicht die Wahrheit. Sie entscheidet, welche Wahrheit abrechenbar ist.
+Die Logik ist brutal, nicht dumm. Ein geschlossener Tender ist eine kleine Welt. Eine schlechte Rueckkehr kann sich in Filter, Schlafplaetze, Froster, Schliessfaecher, Hautrisse und Atem ausbreiten. Ein lebender Kontaminant an Bord eines Bergungsschiffs ist keine Unannehmlichkeit. Er ist ein zweiter Ozean, der die Leitungen lernen will.
 
-Eine gute Probenkette sagt, wo etwas gefunden wurde, wer es berührte, wie es versiegelt wurde, welches Wasser in den Behälter kam, welchen Druck es überlebte, welcher Sensor die Übergabe sah und welche Anspruchsmarke daneben war. Eine schlechte Kette sagt "gefunden in Sektor 44" und hofft, dass niemand fragt, welcher Teil des Sektors, vor oder nach dem Pumpzyklus, oberhalb oder unterhalb der Soleschicht, sauberes Werkzeug oder geliehener Handschuh.
+Marauder markieren Schraenke wie Gefangene Waende markieren: Daten, Gerueche, Gebuehren, Luegen, welches Scharnier klemmt, welcher Sensor ueberreagiert, welcher Techniker Gnade hat und welcher Sachbearbeiter Gnade als Dienstleistung verkauft.
 
-Spieler können Probenketten als Waffen benutzen. Eine bewahrte Abschabung kann beweisen, dass eine andere Crew zuerst eintrat. Eine kontaminierte Dichtung kann die Beschwerde eines Käufers ruinieren. Ein fehlender Feuchtigkeitstakt kann zeigen, dass ein Behälter nach der Verwahrung geöffnet wurde. Eine perfekte Kette kann ein winziges Röhrchen wertvoller machen als eine schwere Maschine, weil das Röhrchen Gericht übersteht.
+## 4. Probenketten
 
-Darum sind einige der kleinsten Gegenstände auf HECTON-8 am gefährlichsten zu tragen.
+Eine Probe ist nur wertvoll, wenn ihre Geschichte ueberlebt.
 
-## 4. Schmutzige Ausrüstung als Schuld
+Deep Reach mochte versiegelte Rohre, weil sie Unordnung ordentlich aussehen liessen: Rohr, Marke, Zeitstempel, Ort, Bediener, Zeuge, Transfer. Black Keel behielt die Struktur und entfernte den Trost. Eine Probenkette ist nicht dazu gebaut, Wahrheit zu schuetzen. Sie ist dazu gebaut, zu entscheiden, welche Wahrheit in Rechnung gestellt werden kann.
 
-Schmutzige Ausrüstung ändert, was ein Mensch schuldet.
+Eine starke Kette verzeichnet, wo das Ding gefunden wurde, wer es beruehrte, welches Werkzeug es abschabte, welches Wasser in den Behaelter kam, welchen Druck es durchquerte, welcher Sensor die Uebergabe sah und welche Anspruchsmarke in der Naehe war. Eine schwache Kette sagt `gefunden in Sektor 44` und hofft, dass niemand fragt, welcher Absatz, vor oder nach dem Pumpzyklus, ueber oder unter der Laugenschicht, mit sauberem Werkzeug oder geliehenem Handschuh.
 
-Black Keel vermietet Werkzeuge mit Rückgabebedingungen. Ein Anzug kommt sauber zurück, oder der Arbeiter zahlt. Ein Schneidwerkzeug kommt mit zertifiziertem Rückstand zurück, oder der Arbeiter zahlt. Ein Probenbeutel kommt ungebrochen zurück, oder der Arbeiter zahlt. Wenn der Arbeiter stirbt, wird die Schuld nicht tragisch. Sie wird übertragbar.
+Ein erhaltener Schab kann beweisen, dass eine andere Crew zuerst hinein ging. Ein kontaminiertes Siegel kann die Beschwerde eines Kaeufers ruinieren. Ein fehlender Feuchtetick kann zeigen, dass ein Behaelter nach der Verwahrung geoeffnet wurde. Eine perfekte Kette kann ein kleines Flaeschchen wertvoller machen als eine schwere Maschine, weil das Flaeschchen vor Gericht ueberlebt.
 
-Das System erzeugt hässliche Gewohnheiten. Crews wischen Werkzeuge ab, bevor sie einander helfen. Sie verstecken Flecken, die eine Route beweisen könnten, weil eine Routengebühr billiger ist als eine Kontaminationsgebühr. Sie tauschen saubere Handschuhe wie Währung. Sie halten einen Opferbeutel für Dinge, die nach Gericht riechen, und einen vertrauten Beutel für Dinge, die nach Geld riechen. Sie wissen, welcher Schmutz verkauft werden kann, welcher versteckt werden muss und welcher auf dem Meeresboden bleiben sollte, weil Rückkehr Black Keel einen neuen Griff gibt.
+Die kleinsten Gegenstaende auf HECTON-8 sind oft die gefaehrlichsten zum Tragen. Sie sind leicht genug zum Stehlen und praezise genug zum Verurteilen.
 
-Schmutzige Ausrüstung ist auch Erinnerung. Ein Kratzmuster auf einem Helm kann sagen, welche Luke benutzt wurde. Salz in einer Stiefelnaht kann eine Soleschicht identifizieren. Roststaub in einem Schneidzahn kann beweisen, dass eine Tür nach der Flutung geschnitten wurde. Ein Schmierfilm auf einem Handschuh kann den Spieler mit einem Raum verbinden, den er nie betreten haben wollte.
+## 5. Schmutzige Ausruestung als Schuld
 
-Derselbe Schmutz, der einen Arbeiter eine Strafe kostet, kann verhindern, dass er gelöscht wird.
+Schmutzige Ausruestung veraendert, was ein Mensch schuldet.
 
-## 5. Was der Spieler lernt
+Black Keel vermietet Werkzeuge mit Rueckgabebedingungen. Ein Anzug kommt sauber zurueck, oder der Arbeiter zahlt. Ein Schneidbrenner kommt mit zertifiziertem Rueckstand zurueck, oder der Arbeiter zahlt. Ein Probenbeutel kommt ungebrochen zurueck, oder der Arbeiter zahlt. Stirbt der Arbeiter, wird die Schuld im Hauptbuch nicht tragisch. Sie wird uebertragbar.
 
-Der Spieler lernt, dass Bergung nicht das Ende des Kontakts ist.
+Das System erzeugt haessliche Gewohnheiten. Crews wischen Werkzeuge ab, bevor sie einander helfen. Sie verbergen Flecken, die eine Route beweisen koennten, weil eine Routengebuehr billiger ist als eine Kontaminationsgebuehr. Sie tauschen saubere Handschuhe wie Waehrung. Sie halten einen Opferbeutel fuer Dinge, die nach Gericht riechen, und einen vertrauten Beutel fuer Dinge, die nach Geld riechen. Sie lernen, welcher Schmutz verkauft werden kann, welcher versteckt werden muss und welcher auf dem Meeresboden bleiben sollte, weil seine Rueckkehr Black Keel einen neuen Griff gibt.
 
-Ein von HECTON-8 zurückgebrachter Gegenstand handelt weiter. Er wärmt sich, leckt, wächst, stinkt, leitet, beweist, verdirbt und kostet. Ein Schrank kann das Schiff schützen oder ein benötigtes Werkzeug als Geisel halten. Eine Probe kann einen Anspruch retten oder die Hand belasten, die sie versiegelte. Eine saubere Rückkehr kann ehrlich, gefälscht, gekauft oder unmöglich sein.
+Schmutzige Ausruestung ist auch Erinnerung. Ein Kratzmuster auf einem Helm kann eine Luke benennen. Salz in einer Stiefelnaht kann eine Laugenschicht benennen. Roststaub in einem Schneidzahn kann beweisen, dass eine Tuer nach der Flutung geschnitten wurde. Ein Schmierfilm auf einem Handschuh kann einen Koerper mit einem Raum verbinden, den er nie betreten haben wollte.
 
-Gutes Spiel bedeutet zu entscheiden, was an Bord kommen darf, was unten versiegelt bleiben sollte, was vor Quarantäne kopiert werden muss und welcher Schmutz die Gebühr wert ist. Manchmal ist es richtig, das schmutzige Ding zurückzubringen, weil seine Geschichte stärker ist als sein Risiko. Manchmal ist es richtig, Wert unten zu lassen, weil Black Keel ihn in dem Moment besitzt, in dem er die Annahmelinie überquert.
+Derselbe Schmutz, der einen Arbeiter bestraft, kann verhindern, dass dieser Arbeiter geloescht wird.
 
-Quarantäne ist der Ort, an dem der Ozean aufhört, Wasser zu sein, und Verwaltung mit Zähnen wird. Sie lehrt den Spieler, dass jeder geborgene Gegenstand nach dem Aufstieg einen zweiten Tauchgang hat: den Tauchgang durch Verwahrung, Preis und Beweis.
+## 6. Beweis, der weiterarbeitet
+
+Geborgener Beweis friert nicht ein, wenn er eingetuetet wird.
+
+Warme Lauge trennt sich. Film trocknet und wacht wieder auf, wenn jemand darauf atmet. Ein versiegeltes Rohr verschiebt Druck und befleckt sein eigenes Etikett von innen. Eine Mineralkruste waechst ueber eine Probenkante und veraendert, was wie erster Kontakt aussieht. Ein Werkzeug mit lebendem Schmierfilm kann einmal im Schrank leiten und nie wieder im Anhoerungsraum. Ein totes Insekt in einem Beutel kann nuetzlicher werden als das Teil daneben, weil das Insekt beweist, welches Licht an war.
+
+Black Keel mag Beweise, die stillsitzen. HECTON-8 liefert sie selten. Die besten Ketten geben Veraenderung zu, statt so zu tun, als habe sich nichts bewegt: Beuteltemperatur, Siegelzeit, Drucktick, Feuchteanstieg, Geruch, Tropfen, Klang, Farbumschlag, wer es bemerkte und wer Grund hatte, es nicht zu bemerken.
+
+Wenn der Beweis weiterarbeitet, muss die Kette weitersprechen.
+
+## 7. Wenn der Schrank luegt
+
+Quarantaene kann scheitern, ohne sich zu oeffnen.
+
+Ein Sensor kann verfilmen und alles sauber nennen. Ein Abfluss kann verstopfen und eine trockene Kiste schwitzen lassen. Eine billige Dichtung kann Schiffsluft in eine Probe lecken und die Druckgeschichte ausloeschen. Ein Heiztest kann genau das wecken, was er entlarven sollte. Ein Sachbearbeiter kann einen Beutel verschieben, um Platz zu sparen, und zwei Ketten zugleich zerstoeren. Eine Crew kann eine schnelle Freigabe bestechen und die gesparte Stunde damit verbringen, Schimmel aus einer Kojenbelueftung zu putzen.
+
+Falsch sauber ist schlimmer als Verzogerung. Falsch schmutzig ist auch nicht harmlos. Es kann einen Routenbeweis festhalten, bis der Kaeufer geht, ein Reparaturwerkzeug waehrend eines Lecks unzugaenglich machen oder Black Keel genug Anlass geben, den Fund durch auflaufende Gebuehren zu besitzen. Ein Schrank ist nicht Wahrheit. Er ist ein Zeuge mit Strom, Ablaeufen, Sensoren, Gewohnheiten und Besitzern.
+
+Behandle ein Quarantaene-Etikett als Behauptung, die jemand anders ueber dein Objekt macht. Manchmal stimmt das Etikett. Manchmal ist es der teuerste Kontaminant in der Kiste.
+
+## 8. Feldregel
+
+Vor der Annahmelinie: Tuete das Objekt ein, das du hast.
+
+Vor dem Schrank: Zeichne die Geschichte auf, die du brauchst.
+
+Vor der Anhoerung: Wisse, welcher Schmutz beweist, dass du dort warst, und welcher Schmutz jemand anderem erlaubt, den Beweis zu besitzen.
+
+Nichts kommt sauber zurueck. Die Frage ist, wer dafuer bezahlt wird, es schmutzig zu nennen.

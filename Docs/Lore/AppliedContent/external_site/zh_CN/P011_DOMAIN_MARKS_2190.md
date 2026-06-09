@@ -19,6 +19,8 @@ localization_flags: 1
 
 # 2190 域标记
 
-到 2190 年，一个破损物体可以承载多个主人：Sol 标准、Barnard 维修、Luyten 托管、Aegir 索赔。HECTON-8 的孤立不是没有历史，而是房间进水时历史仍压在金属印记上。
+到 2190 年，一个破损物体可以有多个法律父母。在 HECTON-8，一个压力锁扣可能由 Sol 认证，由 Barnard 维修，经 Luyten 托管，用 Centauri 语言合法化，再被 Aegir 壳公司索取。标记不会让殖民地安全，只会让它有记录。
+
+这个差别决定了游戏语气。HECTON-8 不在文明之外，而在文明冰冷的一面之下：那一面能给支架命名，给身体标价，保存数据包，却仍无法及时移动救援质量。
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/zh_CN. -->

@@ -19,6 +19,8 @@ localization_flags: 0
 
 # HECTON-8 Mid-Orbit Tide Role
 
-HECTON-8 sits in the profitable middle. The orbit gives Deep Reach an ocean that can cool machinery, hide assets, feed pressure industry, and move enough chemistry to justify the claim. It also gives the colony a ceiling that never stops moving. Tides load service canyons, flex drowned crust, ruin clean schedules, and decide when ascent mass can leave. The player is not only deep underwater. The player is under a sky that keeps changing the contract.
+HECTON-8 sits in the profitable middle of Aegir's ladder. The orbit gives Deep Reach an ocean that can cool machinery, hide assets, feed pressure industry, and move enough chemistry to justify the claim. It also gives the colony a ceiling that never stops moving. Tides load service canyons, flex drowned crust, ruin clean schedules, and decide when ascent mass can leave.
+
+A stranded diver is not only deep underwater. The body is under a sky that keeps changing the contract. A good rescue window is never just compassion plus thrust; it is tide phase, carrier acceptance, storm noise, custody language, fuel heat, and the ugly question of who pays if the capsule arrives contaminated, late, or full of evidence.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/en_US. -->

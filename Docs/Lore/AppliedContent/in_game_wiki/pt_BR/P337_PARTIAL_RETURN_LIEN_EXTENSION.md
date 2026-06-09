@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Partial Return Lien Extension"
+title: "Extensão de Gravame de Retorno Parcial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Partial Return Lien Extension
+# Extensão de Gravame de Retorno Parcial
 
-PT LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+A extensão fixa a persistência de replay como conhecimento, não como poder de equipamento. O jogador retorna porque o dossier e a dívida mudaram, não porque HECTON-8 ficou mais fácil.
 
 ## Scanner
 
-PT LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Retorno aprovado sob gravame estendido. Flags de conhecimento persistem; inventário de equipamentos é quarentenado e removido.
 
 ## Terminal
 
-PT LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ORDEM PARTIAL RETURN: reentrada no mesmo seed permitida sob gravame estendido, janela de tempestade revisada e dossier de conhecimento retido. Inventário físico resetado por quarentena de custódia; ferramentas continuam propriedade do carrier até o fim da revisão de provas.
 
 ## Audio
 
-PT LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+A rota lembra o que você provou. O oceano fica com o resto.
 
 ## Field Note
 
-PT LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Registro de reentrada: retorno same-seed carrega conhecimento, pressão de dívida, mudanças de tempestade e reset de custódia em vez de equipamento herdado.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/pt_BR. -->

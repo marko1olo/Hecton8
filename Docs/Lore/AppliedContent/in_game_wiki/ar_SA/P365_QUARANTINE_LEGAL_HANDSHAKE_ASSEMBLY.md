@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "تجميعة المصافحة القانونية للحجر"
+title: "مجموعة المصافحة القانونية للحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة المصافحة القانونية للحجر
+# مجموعة المصافحة القانونية للحجر
 
-مكون الهرب الأخير قانوني وطبي ودليلي في الوقت نفسه. يقرر quarantine status وreceiver identity وpayload custody وevidence state ما إذا كان ascent إنقاذا أو claim capture أو public proof.
+المصافحة القانونية للحجر هي آخر مكون هروب لأن HECTON-8 لا يعامل الوصول كحدث ميكانيكي فقط. قد تملك الكبسولة حلقة محكمة، وحاضنة مشحونة، ومرحلا عاملا، وتوقيتا صحيحا، ثم تصل تحت سلطة خاطئة.
+
+تحمل المصافحة هوية المستقبل، وحالة الحجر، وفئة custody للحمولة، وكشف lien، وتأخير السجل العام. يمكن أن يقبل Keelmark الكتلة والدين قبل أن يقبل شخصا. يمكن أن تقبل Recovery Compliance الإحداثيات بينما تبقي الفتحة تحت قفل طبي. يمكن للسجل العام أن يقبل الدليل فقط بعد أن تنجو الحزمة من التأخير والمراجعة.
+
+تجعل هذه المجموعة الخيار الأخير ملموسا. مفتاح سريع قد يفتح الفتحة إلى مطالبة شركة. مفتاح compliance قد يحول النجاة إلى احتجاز حجر. مسار عام قد يحمي الأدلة ويترك الجسد ينتظر. المحرك يرفع الكبسولة؛ المصافحة تقرر معنى recovered عند الالتحام.
 
 ## Scanner
 
-مقبس handshake. قد تكون الكبسولة جاهزة ميكانيكيا وما زالت تابعة للـ receiver الخطأ.
+مقبس مصافحة // مفتاح المستقبل غائب. يمكن للميكانيك أن يصدق مسار الإطلاق؛ لكن مكدس custody ما زال يختار من يحق له تسمية الوصول recovered.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: مطلوب receiver key. تقبل Keelmark الـ mass وlien. تقبل Recovery Compliance الـ coordinates وquarantine status. يقبل Public ledger الـ proof بعد تأخير. يتحول Unkeyed launch افتراضيا إلى custody dispute.
+RECOVERY HANDSHAKE: حمّل مجموعة مفاتيح المستقبل، وحالة الحجر، وفئة custody للحمولة، وتأخير السجل العام، وكشف lien. الإطلاق بلا مفتاح يدخل طابور نزاع بعد صعود نظيف.
 
 ## Audio
 
-من يجيب يقرر معنى الإنقاذ.
+يمكن للمحرك أن يرفعك. المقبس يقرر من يفتح الفتحة.
 
 ## Field Note
 
-العنصر الأخير ليس معدنا. إنه اسم النظام المسموح له أن يسميك recovered.
+القفل الأخير اسم وحالة حجر وتوقيع سجل. الفولاذ لا يقرر أيها يجيب.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ar_SA. -->

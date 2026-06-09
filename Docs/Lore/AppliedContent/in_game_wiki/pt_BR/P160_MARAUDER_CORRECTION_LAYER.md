@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Camada de correção Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Camada de correção Marauder
 
-PT LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+A camada de correção Marauder é onde a velha linguagem corporativa perde autoridade. A Deep Reach escreve variance, custody, hold, asset, exposure. Marauders escrevem o que um mergulhador precisa antes da próxima respiração: CO2 deixa mãos lentas, brine esconde o degrau, seal tape falha na dobra, não confie na escotilha limpa. Essas notas devem parecer uma cultura se reconstruindo a partir de pessoas treinadas pelo sistema que aprenderam a odiar seu vocabulário.
 
 ## Scanner
 
-PT LOC HOLD: Marauders turn corporate language back into survival facts.
+CAMADA DE CORREÇÃO // Rótulo corporativo: temporary atmospheric variance. Nota Marauder: CO2 come julgamento primeiro.
 
 ## Terminal
 
-PT LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+REGRA DE ANOTAÇÃO: traduzir a linguagem Deep Reach de volta em fatos de sobrevivência. Notas curtas, práticas, furiosas e úteis sob pressão.
 
 ## Audio
 
-PT LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Uma boa nota não soa inteligente. Mantém alguém vivo.
 
 ## Field Note
 
-PT LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+O jogador deve sentir a antiga linguagem Deep Reach sendo traduzida em contagem de corpos.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/pt_BR. -->

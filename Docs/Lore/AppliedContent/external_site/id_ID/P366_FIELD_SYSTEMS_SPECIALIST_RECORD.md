@@ -19,22 +19,10 @@ localization_flags: 1
 
 # Catatan Spesialis Sistem Lapangan
 
-Karakter pemain HECTON-8 masuk ke laut dengan luka praktis: bekas pekerjaan sistem lapangan Deep Reach, akses ke infrastruktur evakuasi, izin yang dicabut, dan ingatan prosedur yang cukup untuk membaca mesin tenggelam sebagai bukti. Ia kini Marauder, bukan pejabat perusahaan dan bukan pahlawan penumpang. Pompa rusak, cap rute, atau frasa liabilitas penting karena operator memahami bagaimana sistem itu seharusnya melindungi pekerja sebelum berubah menjadi berkas.
+Catatan Spesialis Sistem Lapangan memberi operator pusat HECTON-8 masa lalu yang berguna tanpa membuat masa lalu itu terlalu bersih. Mereka bukan staf komando dan bukan arsitek rahasia bencana. Mereka bekerja dekat sistem yang seharusnya menjaga rute evakuasi, pompa, segel, dan ruang relai tetap jujur.
 
-## Scanner
+Itu penting karena koloni terbengkalai penuh prosedur, bukan hanya puing. Stempel route-safe, rating clamp, atau frasa maintenance bisa lebih memberatkan daripada rekaman dramatis. Operator tahu seperti apa catatan ketika melindungi orang, dan seperti apa ketika perusahaan ingin mengubah perlindungan menjadi dokumen.
 
-Kredensial sistem lapangan lama. Bukan staf komando. Pekerja infrastruktur dengan akses cukup untuk mengenali di mana sebuah rute dikubur.
-
-## Terminal
-
-JEJAK PERSONEL: sistem lapangan, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah tinjauan kebisuan Aegir. Cache prosedur masih cocok dengan urutan operator.
-
-## Audio
-
-Kamu tidak pernah menandatangani kebohongan itu. Kamu tahu tata bahasa yang membuatnya lolos inspeksi.
-
-## Field Note
-
-Lencana itu berhenti membuka pintu. Ia tidak menghapus urutan kegagalan.
+Akses yang dicabut membuat sejarah lebih tajam. Lencana lama tidak lagi memberi kontrol, tetapi masih menyisakan kemampuan mengenali dialek kegagalan. HECTON-8 mengubah memori profesional itu menjadi motif: bukan rasa bersalah karena menyebabkan bencana, melainkan tanggung jawab setelah membaca bagaimana ruangan yang bisa dicegah kegagalannya diarsipkan.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/id_ID. -->

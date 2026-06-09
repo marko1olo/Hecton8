@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Quarantine Relay Fragment"
+title: "Fragmento de Relé de Quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Quarantine Relay Fragment
+# Fragmento de Relé de Quarentena
 
-PT-BR LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+O Fragmento de Relé de Quarentena é um pequeno fim com dentes. Ele prova que HECTON-8 pode salvar alguém da pressão e ainda se recusar a devolver a essa pessoa o status de pessoa. O pacote carrega duas verdades no mesmo fôlego administrativo: extração aceita, liberação negada. O corpo foi recuperado. A pessoa foi retida. A linha de revisão de ar é mais antiga que o recibo de resgate, o que significa que o veredito de quarentena já esperava antes de alguém abrir a escotilha. Para gameplay e lore, esse fragmento importa porque torna o resgate moralmente incompleto. Um piso seco não é liberdade. Um lacre médico não é liberação. A colônia pode guardar o que precisa como prova, amostra, propriedade de requerente ou inventário de testemunha, e manter o ser humano dentro do sistema que o feriu.
 
 ## Scanner
 
-PT-BR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+O mesmo pacote de relé aprova a extração e nega a liberação. O oceano solta o corpo antes de a colônia soltar a pessoa.
 
 ## Terminal
 
-PT-BR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+RETENÇÃO DE RELÉ QRF-17 / EXTRAÇÃO: ACEITA / LIBERAÇÃO: NEGADA / MOTIVOS: custódia de amostra sem solução, revisão de ar obsoleta, disputa de requerente ativa, status de testemunha provisório.
 
 ## Audio
 
-PT-BR LOC HOLD: You are out of the water. You are not out of custody.
+Retenção de relé. Extração aceita. Liberação negada. Você saiu da água, não da custódia.
 
 ## Field Note
 
-PT-BR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Carimbado duas vezes: CORPO RECUPERADO, PESSOA RETIDA. A revisão de ar é anterior ao recibo de resgate; disputa do requerente segue aberta.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/pt_BR. -->

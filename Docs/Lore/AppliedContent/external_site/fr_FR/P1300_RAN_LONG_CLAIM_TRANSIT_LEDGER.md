@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Registre de Transit de Réclamation Longue de Ran
 
-HECTON-8 respecte une règle dure : communiquer coûte peu à côté du déplacement de masse. Un relais Black Keel peut répondre parce qu'un paquet voyage par lumière, miroirs et files porteuses. Un tender ne le peut pas. Les vaisseaux de la route Ran restent soumis à l'accélération, à la chaleur de freinage, aux couloirs de pellets, à la météo d'Aegir et à l'économie du risque.
+HECTON-8 traite le premier contact comme de la paperasse sous pression, parce que le secours interstellaire sans FTL finit ainsi. Un relais Black Keel peut accuser réception d'un Marauder échoué dans les limites du porteur. Il ne peut pas faire apparaître un vaisseau. Le registre de réclamation longue se tient entre ces deux faits.
 
-Le registre de réclamation longue est la forme administrative de cette physique. Il ne demande pas si le survivant a peur. Il demande si les coordonnées tiennent, si le paquet d'ascension survivra au transfert, si un hash témoin Luyten existe, si Deep Reach peut revendiquer la quarantaine, et si la charge est corps, preuve, cargo ou tout cela à la fois.
+            Dans l'univers, le registre n'est pas une formalité. C'est le premier objet durable que le survivant possède hors de l'océan. Il dit qu'un humain vit, mais aussi la fiabilité des coordonnées, la masse à hisser, l'étanchéité du paquet d'ascension, l'argument de quarantaine de Deep Reach, la nature de la charge et qui accepte la responsabilité si la prise brûle, manque ou revient contaminée.
 
-Pour le jeu, c'est le pivot entre survie et fiction dure. L'océan n'est pas isolé parce que la civilisation a disparu. Il l'est parce que la civilisation est lente, possédée et procédurale. Le joueur ne fait pas qu'attendre : il construit le paquet, la charge et le levier qui rendent un sauvetage plus rentable que le silence.
+            Cette structure garde la civilisation présente sans en faire une issue facile. On vous entend. Des bureaux vous tamponnent. Des relais conservent votre paquet. Assureurs et propriétaires de route collent des chiffres à votre corps. L'horreur n'est pas le vide. L'horreur est un système qui sait exactement où vous êtes et demande encore ce que vaut votre récupération.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/fr_FR. -->

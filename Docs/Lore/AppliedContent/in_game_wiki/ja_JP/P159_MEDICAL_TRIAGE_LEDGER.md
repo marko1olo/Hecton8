@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "医療トリアージ台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# 医療トリアージ台帳
 
-JP LOC HOLD: Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.
+医療台帳はHECTON-8を見世物のゴアにしてはいけない。力はもっと冷たい。患者はpressure-stateになり、酸素負債になり、ロック遅延になり、認証保留になる。医療者は正しい処置を知っていても、ハッチ、経路時計、Deep Reachのsignoffが助けを遅らせるため患者を失う。台帳が人間的なのは、システムが正確さを無意味にしていく中で、人々が正確であろうとする姿を示すからだ。
 
 ## Scanner
 
-JP LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // 圧力傷害、低酸素、ロック遅延、消えた経路、認証保留。恐怖は、助けが整然と待たされたことだ。
 
 ## Terminal
 
-JP LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+医療規則: ゴアにせず身体を数える。pressure-state、酸素負債、経路遅延、トリアージ優先度、signoff holdで、手順が医療者より速く患者を増やしたことを示す。
 
 ## Audio
 
-JP LOC HOLD: The cleanest handwriting is on the worst page.
+最もきれいな筆跡は、最悪のページにある。
 
 ## Field Note
 
-JP LOC HOLD: Medical text should count bodies without becoming gore.
+医療文はゴアにならずに身体を数えるべきだ。
 
 <!-- In-Game Wiki; generated from P159_MEDICAL_TRIAGE_LEDGER/ja_JP. -->

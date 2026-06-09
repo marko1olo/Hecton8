@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "payload 격리 보존 수신 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# payload 격리 보존 수신 프로토콜
 
-KO LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+격리 보존은 신중한 경로이며, 신중함은 무해함이 아니다. payload는 Deep Reach 직접 이전을 막고 좌표 벡터를 봉인 상태로 유지한다. Atlas 연결 생태는 검토할 만큼 온전하게 남고, 분지는 영수증으로 회수 구매자에게 넘어가지 않는다.
 
-## Scanner
-
-KO LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-KO LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-KO LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-KO LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+위험은 제도적이다. 격리 escrow는 그것을 정당화한 긴급 상황보다 오래 살 수 있다. 보호된 분지는 보류된 분지, 배정된 분지, 더 좋은 언어를 가진 청구가 될 수 있다. 이 경로는 시간과 살아 있는 구조를 구하지만 미래 전체에 보관 흔적을 남긴다.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/ko_KR. -->

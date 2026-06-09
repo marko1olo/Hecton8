@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Blue Debt Sample Quality"
+title: "Qualité d'échantillon Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Blue Debt Sample Quality
+# Qualité d'échantillon Blue Debt
 
-FR LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+La Qualité d'échantillon Blue Debt définit la morale des ressources de HECTON-8. Les meilleurs échantillons ne valent pas seulement plus de monnaie. Ils portent chaînes de garde, historique de pression et valeur probante. Cela permet au salvage, au craft, au commerce et aux fins de parler la même langue : ce que vous remontez de l'océan peut vous payer, accuser quelqu'un ou rendre votre libération plus difficile.
 
 ## Scanner
 
-FR LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+La qualité d'un Blue Debt est valeur, risque et preuve dans un même nombre. Plus l'échantillon est riche, moins il ressemble à du butin.
 
 ## Terminal
 
-FR LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+CLASSES DE QUALITÉ / shard : faible garde, échange sûr / casketed bloom : valeur cotée pression / harmonic glass : preuve acoustique et fort intérêt Deep Reach / live-contaminated sample : priorité de preuve, manipulation instable / dead contaminated glass : faible paiement, forte odeur juridique.
 
 ## Audio
 
-FR LOC HOLD: The more it is worth, the less it is only loot.
+Plus cela vaut, moins c'est seulement du butin.
 
 ## Field Note
 
-FR LOC HOLD: Quality should affect payout, containment and ending pressure.
+La qualité change paiement, coût de confinement, pression de route et levier de fin. Un éclat propre paie ; un échantillon vivant contaminé force quelqu'un à répondre.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/fr_FR. -->

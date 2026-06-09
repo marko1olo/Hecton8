@@ -19,22 +19,29 @@ localization_flags: 0
 
 # Cable Reef Symbiosis
 
-Cable reefs mark the first place where life and infrastructure help each other enough to fool a salvage cutter. Mats reduce abrasion on power trunks, filter bodies calm current around service corridors, and grazing fauna keep some lines clean. The same growth can hide broken insulation or draw Atlas maintenance drones. Scan before cutting; a living sleeve may be the only thing keeping a relay line dry.
+Cable reefs form where mid-depth service trenches give living growth a stable shape: power trunks, relay pairs, clamp rings, and old cable trays. Some mats reduce abrasion and calm current around a line. Some grazing fauna keep slime off exposed conductors. The same sleeve can also hide cracked insulation, trap heat, or bring drone traffic to a route the diver had marked quiet.
+
+Treat cable reef as working infrastructure until the scan proves otherwise. A green sleeve may be the only thing keeping a relay dry; it may also be covering the fault that will fail under load. Check signal continuity, insulation color, clamp order, and drone movement before cutting. This is the bridge between the first repair scar and later repair fauna: living growth follows current before Atlas starts routing repair through living bodies.
 
 ## Scanner
 
-Flora is bonded to power trunks and signal lines. Some growth protects the cable; some hides failed insulation.
+Cable-root mat grips the P63 power trunk at three clamp rings. Signal still passes under the green sleeve. Insulation fault visible at lower edge. Hazard: drone grazer traffic follows live current.
 
 ## Terminal
 
-MAINTENANCE NOTE: cable-root mats reduce abrasion and preserve signal continuity. Drone and grazer traffic increases near live trunks.
+SERVICE TRENCH NOTE
+Line: P63 power trunk / relay pair C
+Condition: biological sleeve reducing abrasion
+Fault: exposed orange insulation under lower mat
+Traffic: grazers and maintenance drones near live current
+Action: scan continuity before cutting growth
 
 ## Audio
 
-A living reef learned the shape of a service corridor.
+The reef is not decoration. It is keeping that relay dry, and the drones know the current is live.
 
 ## Field Note
 
-If it is growing on a cable, prove it is killing the line before you strip it.
+Do not strip green growth just because it looks wrong. If it is holding the jacket dry, mark the fault and route around it.
 
 <!-- In-Game Wiki; generated from P033_CABLE_REEF_SYMBIOSIS/en_US. -->

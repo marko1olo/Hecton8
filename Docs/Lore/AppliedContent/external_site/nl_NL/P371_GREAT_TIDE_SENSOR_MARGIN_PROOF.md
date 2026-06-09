@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Margepoor van de Grote Getijde"
+title: "Spoor van getijdemarge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Margepoor van de Grote Getijde
+# Spoor van getijdemarge
 
-Het eerste bruikbare bewijs tegen Deep Reach is geen bekentenis. Het is een sensormarge die bleef opnemen nadat de gang verdronk. De cijfers maken de ramp niet kunstmatig: hydrostatische last, getijdenshear en falende infrastructuur overweldigden HECTON-8 echt. Daarom doet het bewijs ertoe. De leugen begint tussen ruwe trace en publiek rapport. De ruwe trace markeert een waarschuwingsmargebreuk vóór het goedgekeurde routevenster sloot. Het rapport bewaart de geotechnische cascade en verwijdert de accepted-tail-risk-notitie. Wie de trace vindt, ziet de schuldvorm scherp: fysica trof de kolonie, daarna besloten bevoegden dat waarschuwing goedkoper was dan shutdown.
+Een bruikbaar rampenrecord begint met weigeren om iets mooier te maken. De P-63 getijde-array beschuldigt de oceaan niet. Hij registreert een schuifpiek, een instorting van drukmarge en een controlesom die overleefde omdat brine-buffer-geheugen langer stroom hield dan de corridor.
 
-## Scanner
-
-Geborgen getijdensensor. Piekshear overschreed het koloniedesign, maar de waarschuwingsmargebreuk werd gelogd vóór het publieke cascade-tijdstempel.
-
-## Terminal
-
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-riskdrempel geaccepteerd door routeautoriteit. Operatornotitie uit publieke incidentketen verwijderd. Ruwe trace bewaard in brine-buffergeheugen.
-
-## Audio
-
-De oceaan loog niet. Het rapport wel.
-
-## Field Note
-
-Marauder-notitie: zoek geen schurkenspeech. Zoek de regel die iemand heeft verwijderd.
+Daarom telt het spoor. Deep Reach kon naar de Grote Getijde wijzen en een echt voorval benoemen, en daarna de regel verbergen die handelen verplicht maakte. De kolonie had nog een routebesluit open toen de marge onder de stopvloer viel. Het openbare rapport houdt de cascade en verwijdert de commerciele uitzondering, waardoor een vertraagd stopbevel weer wordt.
 
 <!-- External Site; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/nl_NL. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "掠夺者修正标记规则"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# 掠夺者修正标记规则
 
-CN LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+掠夺者修正标记规则说明 HECTON-8 如何让后来的打捞者触碰旧证据而不破坏正史。修正标记在企业文书上添加活的层次：保留姓名、质疑类别、警告路线、给样本估价、隐藏证人或标记债务。它们让重玩证据像被其他索赔工人处理过，同时保持每个手写改动都有功能。
 
 ## Scanner
 
-CN LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+修正标记可以拯救一个名字、污染一份索赔，或警告下一个潜水者官方分类在撒谎。
 
 ## Terminal
 
-CN LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: 掠夺者标记必须改变证据解释、路线风险或支付压力。有效标记可以保留工人姓名、质疑保险类别、警告路线、给样本定价、隐藏证人或标记债务。空洞涂鸦会破坏证据链。
 
 ## Audio
 
-CN LOC HOLD: Somebody came before you and still failed to leave clean.
+有人比你先到，却仍然没能干净离开。
 
 ## Field Note
 
-CN LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+标记：保留姓名、质疑类别、警告路线、给样本估价、隐藏证人、标记债务。手写必须改变阅读，而不是装饰道具。
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/zh_CN. -->

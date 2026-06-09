@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Claim Continuity Loss Conversion
 
-The final link in the Deep Reach lie is not a dramatic cover-up file. It is an accounting conversion that knows exactly how to survive. The ledger accepts that people are gone, modules are damaged and routes are compromised, then moves each fact into a category the claim system can process. Worker absence becomes unrecoverable loss. Evidence becomes material under custody. Surviving cargo becomes recoverable value. The claim itself remains continuous, which means ownership can outlive the colony. This is the moment HECTON-8 turns from accident record into moral machinery. A player who brings the ledger upward can expose the dead, sell the proof, bury it, or redirect it. The document is valuable because the corporation already trained the market to value it.
+The loss conversion is the quietest document in the chain and the hardest one to forgive. It does not argue about the Great Tide, the evacuation queue, Atlas weighting or quarantine. It accepts the resulting damage and sorts it into columns that can move through receivers, insurers and custody boards.
 
-## Scanner
-
-Loss desk stamp recovered. The ledger survived better than the workers it renamed.
-
-## Terminal
-
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
-
-## Audio
-
-This is where people became a clean column.
-
-## Field Note
-
-Marauder note: a ledger can remember the dead and still spend them.
+That sorting is Deep Reach's escape hatch. Biological workforce becomes unrecoverable loss. Material remains recoverable. Proof custody stays active because the claim still has value. The person carrying the packet is dangerous because the packet ties each earlier decision to the same ledger line. The company did not only survive the disaster; it built a clean ownership path through the dead.
 
 <!-- External Site; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/en_US. -->

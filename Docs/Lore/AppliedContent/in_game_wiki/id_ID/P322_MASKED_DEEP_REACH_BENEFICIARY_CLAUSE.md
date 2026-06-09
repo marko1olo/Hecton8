@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Klausul Penerima Manfaat Deep Reach Bertopeng"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Klausul Penerima Manfaat Deep Reach Bertopeng
 
-ID LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+Klausul Penerima Manfaat Deep Reach Bertopeng menjaga konspirasi tetap berpijak pada tekanan kontrak, bukan teater penjahat. Deep Reach tidak perlu muncul di hire sheet yang terlihat untuk membentuk misi. Ia muncul dalam urutan akses: kanal recovery mana yang terbuka pertama, receiver mana yang diasuransikan, paket koordinat mana yang lolos redaksi, dan meja mana yang dibayar jika klaim bertahan. Klausul ini memakai proxy loss desk untuk menjauhkan liability dari nama lama sambil mempertahankan satu hal yang masih diinginkan Deep Reach: akses ke rantai koordinat banjir yang gagal mereka kubur. Penemuan ini lebih dingin daripada pengakuan. Pemain tidak membaca monolog. Mereka membaca mesin yang sudah menyortir mereka sebagai asset, witness, contractor, dan recoverable debt. Deep Reach hadir sebagai tekanan, bukan asap. Nama yang hilang itulah buktinya.
 
 ## Scanner
 
-ID LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach tidak tercetak di hire sheet. Ia muncul di tempat uang, prioritas penerima, dan akses koordinat bertemu.
 
 ## Terminal
 
-ID LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+JEJAK BENEFICIARY / penyewa terlihat: proxy loss desk / beneficiary tertutup: shell terkait Deep Reach / liability: diisolasi / coordinate access: dipertahankan / priority recovery channel: terbuka sebelum contractor distress lane.
 
 ## Audio
 
-ID LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Jika namanya hilang tetapi kanalnya terbuka dulu, pemiliknya masih ada di ruangan.
 
 ## Field Note
 
-ID LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Jaga tetap prosedural: redaksi, proxy loss desk, jejak beneficiary, kanal recovery. Biarkan pemain menyimpulkan tekanannya.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/id_ID. -->

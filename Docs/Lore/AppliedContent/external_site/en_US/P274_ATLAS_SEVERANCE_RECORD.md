@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Atlas Severance Record
 
-Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+This severance record is useful because it lists the physical cut before the moral label: which links went quiet, which micronodes dropped, which repair pulses stopped, which route Deep Reach lost, and which basin risks remained.
 
 ## Scanner
 
-Continuity cut. Damage not contained.
+ATLAS SEVERANCE RECORD // Continuity cut at damaged repair layer. Micronode response falling; basin-stability and custody effects unresolved.
 
 ## Terminal
 
-ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ENDING RECORD / ATLAS SEVERANCE
+Action: continuity cut across Atlas repair layer.
+Affected systems: vent micronodes, shell sealant pulses, tagged fauna routes, damaged metal repair.
+Denied: Deep Reach payload routing through live Atlas layer.
+Unresolved: basin stability, surviving ecology, trapped-worker traces.
+Known loss: the record cannot decide whether the cut freed, killed, or stole.
 
 ## Audio
 
-Stopping the machine does not sort what it had become.
+The link went quiet. The basin did not answer whether that was mercy.
 
 ## Field Note
 
-Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+A severed node can be mercy, theft, or damage. The record only knows which links went quiet.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/en_US. -->

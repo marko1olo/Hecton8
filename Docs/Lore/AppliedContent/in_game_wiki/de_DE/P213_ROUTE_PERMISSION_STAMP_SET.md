@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Satz der Routengenehmigungsstempel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Satz der Routengenehmigungsstempel
 
-DE LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+Der Satz der Routengenehmigungsstempel gibt Bewegung eine visuelle Sprache. PUMP-, SEAL-, RELAY-, BRINE-, FORGE-, TRIAGE-, BOTANY- und WITNESS-Stempel sind keine Rangabzeichen. Sie sind Druckgenehmigungen: Wer eine Luke passieren, einen Anzug beanspruchen, einen Crawler freigeben oder eine Wartungsschleuse betreten durfte, während die Kolonie versagte. Der Stempel soll immer mit einem physischen Zustand gekoppelt sein: offen, versiegelt, verweigert, überschrieben, geflutet oder später von Marauder-Hand korrigiert. So rekonstruiert der Spieler Koloniebewegung ohne erklärende Figur.
 
 ## Scanner
 
-DE LOC HOLD: A route stamp is stronger than a diary line.
+Ein Routenstempel ist stärker als eine Tagebuchzeile, weil er beweist, wer die Druckgrenze passieren durfte.
 
 ## Terminal
 
-DE LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: Routengenehmigung muss einen Arbeiter, eine Tür oder ein Fahrzeug, eine Crew-Familie und einen späteren Widerspruch verbinden. Ein Stempel ohne physische Grenze ist Dekor. Ein Stempel auf Luke, Anzugregal, Crawler-Schiene oder Lift-Tag wird Bewegungsbeweis.
 
 ## Audio
 
-DE LOC HOLD: Access is biography under pressure.
+Zugang ist Biografie unter Druck.
 
 ## Field Note
 
-DE LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Stempel: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Mit Lukenzustand und Arbeitsobjekt koppeln.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/de_DE. -->

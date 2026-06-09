@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מדריך תהליך שטח של vent-forge"
+title: "מדריך תהליך שדה של מחשלת פתח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מדריך תהליך שטח של vent-forge
+# מדריך תהליך שדה של מחשלת פתח
 
-מדריך תהליך השטח של vent-forge קושר ערך משאב לטיפול בשדה: חשוב לא רק מה נמצא, אלא איך pressure ו-cooling מאפשרים לו לשרוד recovery.
+מחשלת פתח אינה תיבת אוצר על הקרקעית. היא כור איטי הבנוי מזרימת seep חמה, צפיפות תמלחת, הזנת מינרלים כתושה ולחץ שאינו סולח על חיפזון. החומר השימושי נמצא לעיתים בין משקע טבעי למנה תעשייתית הרוסה: גרגרי קרמיקה גדלים בגרונות מינרליים, קודמי איטום נאפים לתוך סדקים, וסרטים טעונים נשארים יציבים רק אם הקירור קורה בסדר הנכון.
 
-## Scanner
-
-כימיית vent-forge פעילה. האיכות הולכת אחרי pressure history, heat pulse וקירור איטי, לא אחרי ברק הדגימה.
-
-## Terminal
-
-FIELD GUIDE: vent forges מבשלים sulfides, noble-gas pockets, ceramics ו-sealant precursors. המסלול של דגימה דרך heat, brine ו-pressure חשוב משמה.
-
-## Audio
-
-ה-vent לא יצר עפרה. הוא יצר תהליך שאתה קטעת.
-
-## Field Note
-
-אל תרים מנה טרייה ישר למים קרים. תן ל-vent לסיים anneal או שה-shell ייסדק.
+לכן הטיפול בשטח נעשה חלק מן המשאב. הרם מנה טרייה למים קרים והקליפה תיסדק. אוורר חום מהר מדי ודגימה נקייה תהפוך לאבקה. המתן יותר מדי והפתח יכתוב כימיה אחרת מעל השכבה שרצית. צוותי salvage מעריכים מחשלות פתח כי הן גורמות ל-HECTON-8 להרגיש כמו כוכב שממשיך לעבוד בעצמו: האוקיינוס אינו רק מסתיר חומרים, הוא עדיין מייצר אותם.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/he_IL. -->

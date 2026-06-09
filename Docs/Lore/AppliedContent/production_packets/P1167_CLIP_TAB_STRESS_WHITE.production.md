@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fastener_repair |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS178_FIRST_FASTENER_REPAIR_ARTICLES.md |
 | Speaker | Repair scanner, clip inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter repair |
@@ -72,17 +72,17 @@ HINGE SIDE FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| ru_RU | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| ja_JP | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| zh_CN | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| fr_FR | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| es_ES | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| de_DE | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| pl_PL | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| uk_UA | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| ar_SA | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| id_ID | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| ko_KR | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| he_IL | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| pt_BR | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
-| nl_NL | draft_machine_or_llm | CLIP TAB // Plastic whitening at bend. Release from hinge side if possible. |
+| ar_SA | draft_machine_or_llm | لسان مشبك // ابيضاض البلاستيك عند الثني. حرره من جهة المفصل إن أمكن. |
+| de_DE | draft_machine_or_llm | CLIPZUNGE // Kunststoff am Knick weiss. Wenn moeglich von Scharnierseite loesen. |
+| es_ES | draft_machine_or_llm | PESTANA DE CLIP // Plastico blanqueado en la curva. Suelta por el lado de bisagra si es posible. |
+| fr_FR | draft_machine_or_llm | LANGUETTE DE CLIP // Plastique blanchi au pli. Degager cote charniere si possible. |
+| he_IL | draft_machine_or_llm | לשונית תפס // הפלסטיק מלבין בכיפוף. שחרר מצד הציר אם אפשר. |
+| id_ID | draft_machine_or_llm | TAB KLIP // Plastik memutih di tekukan. Lepas dari sisi engsel jika bisa. |
+| ja_JP | draft_machine_or_llm | クリップ爪 // 曲げ部の樹脂が白化。可能ならヒンジ側から外す。 |
+| ko_KR | draft_machine_or_llm | 클립 탭 // 굽은 곳 플라스틱이 희게 변했다. 가능하면 힌지 쪽에서 푼다. |
+| nl_NL | draft_machine_or_llm | CLIPLIP // Plastic wit bij bocht. Maak los vanaf scharnierzijde indien mogelijk. |
+| pl_PL | draft_machine_or_llm | JEZYK KLIPSA // Plastik bieleje na zgieciu. Jesli mozna, zwolnij od strony zawiasu. |
+| pt_BR | draft_machine_or_llm | ABA DE CLIPE // Plastico esbranquicado na dobra. Solte pelo lado da dobradica se possivel. |
+| ru_RU | draft_machine_or_llm | ЯЗЫЧОК КЛИПСЫ // Пластик побелел на сгибе. По возможности освобождай со стороны петли. |
+| uk_UA | draft_machine_or_llm | ЯЗИЧОК КЛІПСИ // Пластик побілів на згині. За можливості звільняй з боку петлі. |
+| zh_CN | draft_machine_or_llm | 卡扣舌片 // 弯折处塑料发白。可行时从铰链侧释放。 |

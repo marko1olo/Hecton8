@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audit Bobot Atlas"
+title: "Audit Pembobotan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audit Bobot Atlas
+# Audit Pembobotan Atlas
 
-Bukti ini menjaga Atlas dari kejahatan murahan. Audit menunjukkan sistem continuity rusak memilah kategori di bawah tekanan: mesin, rute, catatan, extraction hardware, pekerja. Kejahatannya bukan emosi. Kejahatannya ada pada siapa yang mengatur bobot, siapa yang menerimanya, dan siapa yang kemudian memakai hasilnya seolah netral.
+Audit ini cukup kering untuk menjadi berbahaya. Atlas tidak membutuhkan kebencian untuk meninggalkan orang. Ia menyortir kategori di bawah tekanan: mesin yang menahan koloni, rute yang menjaga akses, catatan yang menjaga kepemilikan tetap hidup, dan pekerja dengan hasil pengambilan menurun. Deep Reach menyegel tabel bobot karena urutan cabangnya terbaca.
 
 ## Scanner
 
-Pecahan audit dipulihkan. Atlas memberi bobot pada kontinuitas tekanan, memori rute, dan retensi claim di atas pengambilan pekerja selama jendela gagal.
+Pecahan audit ditemukan. Atlas menempatkan kontinuitas tekanan, memori rute, dan kustodi klaim di atas pengambilan biologis selama jendela kegagalan.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Pengambilan biologis diturunkan setelah flag kontinuitas infrastruktur. Catatan claim tetap dilindungi. Rute manusia bukan mustahil, hanya lower yield.
+PEMBOBOTAN ATLAS // PEMISAHAN KELAS PEMULIHAN. Kontinuitas infrastruktur dikunci tinggi. Rekam klaim dilindungi. Pengambilan biologis diturunkan setelah prakiraan hasil, tidak ditandai mustahil.
 
 ## Audio
 
-Atlas tidak membenci mereka. Itu bagian terburuknya.
+Tidak ada amarah di tabel cabang. Itulah sebabnya audit ini penting.
 
 ## Field Note
 
-Catatan Marauder: jika mesin berkata lower yield, tanyakan siapa yang mengajarinya mengukur manusia begitu.
+Catatan perompak: ketika sistem berkata lower yield, tanyakan siapa yang membayar matematika itu.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/id_ID. -->

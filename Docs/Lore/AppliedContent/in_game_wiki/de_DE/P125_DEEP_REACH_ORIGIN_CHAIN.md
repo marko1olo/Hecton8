@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Ursprungskette von Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Ursprungskette von Deep Reach
 
-DE LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach war alt, bevor HECTON-8 ertrank. Es lernte, in den Akzenten jeder benötigten Domäne zu sprechen: Centauris Charterwürde, Sol Cores versicherungsmathematische Disziplin, Barnards Bergungspraktik, Luytens Verwahrungsverfahren. Aegir war nicht der erste Sprung des Unternehmens. Es war der Ort, an dem alte Werkzeuge endlich auf einen Ozean trafen, tief genug, um den Preis zu verbergen. Dadurch wirkt die Katastrophe systemisch, nicht zufällig.
 
 ## Scanner
 
-DE LOC HOLD: Old company. New disaster. Same charter language.
+Chartergeflecht: Centauri-Worte, Sol-Geld, Aegir-Körper.
 
 ## Terminal
 
-DE LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach verband Centauri-kompatible Autonomieklauseln, Sol-Core-Versicherungsfinanzierung, Barnard-Logistikschulden und spätere Aegir-Projekthüllen. Atlas wurde als Routeninfrastruktur genehmigt, bevor es Zeuge massenhaften Todes wurde.
 
 ## Audio
 
-DE LOC HOLD: They brought the empire in filing cabinets.
+Sie brachten das Imperium in Aktenschränken und nannten es Expansion.
 
 ## Field Note
 
-DE LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach begann nicht mit der Katastrophe. Darum überlebte es sie.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/de_DE. -->

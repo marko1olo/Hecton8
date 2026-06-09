@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Blue Debt Sample Quality"
+title: "איכות דגימת Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Blue Debt Sample Quality
+# איכות דגימת Blue Debt
 
-HE LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+איכות דגימת Blue Debt מגדירה את מוסר המשאבים של HECTON-8. הדגימות הטובות ביותר אינן שוות רק יותר מטבע. הן נושאות שרשראות משמורת, היסטוריית לחץ וערך ראייתי. כך salvage, יצירה, מסחר וסופים יכולים לדבר באותה שפה: מה שאתה מעלה מן האוקיינוס יכול לשלם לך, להאשים מישהו או להקשות על שחרורך.
 
 ## Scanner
 
-HE LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+איכות Blue Debt היא ערך, סיכון וראיה במספר אחד. ככל שהדגימה עשירה יותר, כך היא פחות מתנהגת כמו שלל.
 
 ## Terminal
 
-HE LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+מחלקות איכות / shard: משמורת נמוכה, סחר בטוח / casketed bloom: ערך מדורג לחץ / harmonic glass: הוכחה אקוסטית ועניין גבוה של Deep Reach / live-contaminated sample: עדיפות ראיה, טיפול לא יציב / dead contaminated glass: תשלום נמוך, ריח משפטי חזק.
 
 ## Audio
 
-HE LOC HOLD: The more it is worth, the less it is only loot.
+ככל שזה שווה יותר, כך זה פחות רק שלל.
 
 ## Field Note
 
-HE LOC HOLD: Quality should affect payout, containment and ending pressure.
+האיכות משנה תשלום, עלות הכלה, לחץ נתיב וכוח בסוף. רסיס נקי משלם; דגימה חיה מזוהמת גורמת למישהו לענות.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/he_IL. -->

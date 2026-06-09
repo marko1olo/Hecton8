@@ -64,6 +64,10 @@ namespace Hecton8.SaveSystem
         public const int StorageCrateModulePersistenceVersion = 80;
         public const int FabricatorPendingOutputPersistenceVersion = 81;
         public const int CultivationSeedHashPersistenceVersion = 82;
+        public const int ProceduralTerrainIdentityPersistenceVersion = 83;
+        public const int CelestialLightPhasePersistenceVersion = 84;
+        public const int ProceduralTerrainIdentityContractPersistenceVersion = 85;
+        public const float CelestialLightTimeOfDayDefault = 0.25f;
         public const float HazardZoneMaxPersistedToxicityDose = 64f;
         public const float HazardZoneToxicityDamageDoseThreshold = 1f;
         public const float HazardZoneMaxPersistedToxicityPulseSeconds = 0.5f;
@@ -90,7 +94,7 @@ namespace Hecton8.SaveSystem
         public const uint InventoryShadowPayloadHashPrime = 16777619u;
 
         /// <summary>Tekuschaya versiya formata. Ispolzuetsya dlya migratsii.</summary>
-        public const int CurrentVersion = CultivationSeedHashPersistenceVersion; // v82: cultivation seed hash fallback is persisted.
+        public const int CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion; // v85: terrain material/detail identity is persisted.
 
         internal static string SanitizePersistenceString(string value)
         {
@@ -140,6 +144,7 @@ namespace Hecton8.SaveSystem
         public ResourceScarcityDTO resourceScarcity;
         public EnvironmentalStrainDTO environmentalStrain;
         public EcosystemStateDTO ecosystemState;
+        public ProceduralTerrainIdentityDTO proceduralTerrainIdentity;
         public VoxelDeltaPersistenceDTO voxelDeltaPersistence;
         public ExternalScavengerSiteDTO[] externalScavengerSites;
         public HazardZoneRuntimeDTO hazardZones;
@@ -329,6 +334,12 @@ namespace Hecton8.SaveSystem
         public double radiationGridOriginY;
         public double radiationGridOriginZ;
 
+        /// <summary>True when a save carried an authoritative celestial/atmosphere time-of-day phase. v84 LIGHT.</summary>
+        public bool celestialLightPhaseSerialized;
+
+        /// <summary>Authoritative time-of-day phase restored by HectonAtmosphereManager. v84 LIGHT.</summary>
+        public float celestialLightTimeOfDay01 = CelestialLightTimeOfDayDefault;
+
         /// <summary>Radiation grid cell size in meters. v68 RADIATION.</summary>
         public float radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters;
 
@@ -400,6 +411,7 @@ namespace Hecton8.SaveSystem
                 resourceScarcity = new ResourceScarcityDTO(),
                 environmentalStrain = new EnvironmentalStrainDTO(),
                 ecosystemState = new EcosystemStateDTO(),
+                proceduralTerrainIdentity = new ProceduralTerrainIdentityDTO(),
                 voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault(),
                 hazardZones = new HazardZoneRuntimeDTO(),
                 discoveredBiomeIds = null,
@@ -471,6 +483,8 @@ namespace Hecton8.SaveSystem
                 radiationGridOriginX = 0d,
                 radiationGridOriginY = 0d,
                 radiationGridOriginZ = 0d,
+                celestialLightPhaseSerialized = false,
+                celestialLightTimeOfDay01 = CelestialLightTimeOfDayDefault,
                 radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters,
                 radiationGridRleLength = 0,
                 radiationGridRle = new byte[RadiationGridRleMaxBytes],
@@ -2447,6 +2461,45 @@ namespace Hecton8.SaveSystem
             SaveData.EnsureExactArrayCapacity(ref infectedChunkKeys, MaxInfectedZones);
             SaveData.EnsureExactArrayCapacity(ref infectedSeverities, MaxInfectedZones);
         }
+    }
+
+    [Serializable]
+    public struct ProceduralTerrainIdentityDTO
+    {
+        public const uint FlagsMacroGeologyPresent = 1u << 0;
+        public const uint FlagsWaterCalibrationPresent = 1u << 1;
+        public const uint FlagsDefaultChunkRange = 1u << 2;
+        public const uint FlagsTerrainProviderIdentityPresent = 1u << 3;
+        public const uint FlagsTerrainHeightPayloadPresent = 1u << 4;
+        public const uint FlagsTerrainMaterialContractsPresent = 1u << 5;
+        public const uint FlagsTerrainMesoContractsPresent = 1u << 6;
+
+        public uint authoringSeed;
+        public int runtimeSeed;
+        public int worldGenerationVersionId;
+        public uint macroArtifactVersion;
+        public float macroChunkSizeMeters;
+        public int chunkMinX;
+        public int chunkMinZ;
+        public int chunkMaxX;
+        public int chunkMaxZ;
+        public uint chunkArtifactRangeHash;
+        public float selectedWaterLevelY;
+        public float waterCalibrationTravelMeters;
+        public uint waterCalibrationSourceHash;
+        public uint terrainProviderFlags;
+        public int heightCacheRevision;
+        public uint terrainEntityHash;
+        public uint surfaceMaterialContractVersion;
+        public uint mesoDetailContractVersion;
+        public uint detailEligibilityContractVersion;
+        public uint mesoParamsHash;
+        public uint flags;
+
+        public bool HasMacroIdentity =>
+            (flags & FlagsMacroGeologyPresent) != 0u ||
+            macroArtifactVersion != 0u ||
+            chunkArtifactRangeHash != 0u;
     }
 
     [Serializable]

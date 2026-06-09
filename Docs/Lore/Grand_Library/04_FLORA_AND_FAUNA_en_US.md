@@ -1,53 +1,80 @@
 <!-- localization_status: source_authority_en_US -->
 # LOCAL BIOTA: FLORA, FAUNA, AND ECOLOGICAL COLLAPSE
 
-> **Source:** Recovered PDA, Styx-class descent pod designated 'Lazarus'.  
-> **Speaker:** Unidentified salvage diver ("Jacks").  
-> **Reviewer note:** Audio transcription and text logs merged. The subject demonstrates extreme paranoia regarding local fauna, specifically regarding the "Alpha" acoustic signature.
+> **Source:** Deep Reach benthic ecology primer, Atlas maintenance-ecology fragments, Black Keel hazard annotations and recovered Marauder dive notes.  
+> **Speaker:** Field ecologist assigned to salvage risk, with worker comments preserved where they add useful fear.  
+> **Reviewer Note:** HECTON-8 life should feel dangerous because it is legible, hungry and adapted, not because every organism is a monster. The player should learn to read ecology as pressure, route, resource, warning and evidence.
 
 ---
 
-## 1. The Small Stuff
+## 1. No Single Ocean
 
-*Audio log fragment 04-A: "Scanner is useless. It says there are ten peaceful species down here. It lies. Nothing down here is peaceful. It's just too small to kill you quickly."*
+HECTON-8 does not have one ecosystem.
 
-If your scanner pings a **Lantern Sifter**, don't relax. They eat corpses. They use bioluminescence to lure organic debris, which means if you see a swarm of them, something just died, or something is about to. 
+It has stacked worlds. The bright shelf is thin, storm-filtered and mineral rich. The twilight slopes are full of suspended food, broken shell, drifting larvae and old colony waste. The abyssal basins run on vents, brine seams, pressure bacteria, falling carrion and heat leaking from stone. Ruined infrastructure adds a second geography: warm walls, dead pumps, leaking batteries, nutrient traps, light scars and corridors where animals learned that human machines make predictable food.
 
-Watch the **Brine Siphoners** in the deep canyons. They filter methane. If they suddenly scatter, a methane pocket is venting and your suit seals are about to melt. 
+This is why the old Deep Reach categories are only partly useful. "Flora" does not mean a garden. It means attached producers, filter mats, mineral-using growths, engineered cultures that escaped containment and native structures that function like plants without being Earth plants. "Fauna" does not mean animals waiting in the dark to attack. It means grazers, scavengers, cleaners, ambush predators, acoustic hunters, parasite swarms and large movers that may never care about the player until the player smells like opportunity.
 
-The **Iron Minnows** are the worst. They school near the thermal vents. Their scales are literally laced with heavy metals. When they panic and slam into your faceplate, it feels like getting hit with a fistful of ball bearings. 
+The ocean is not evil. It is busy. It notices gradients: heat, blood, oxygen, vibration, light, current, exposed metal, opened food paste, fresh plastic, disturbed silt. Most attacks begin as investigation. The mistake is thinking investigation is harmless.
 
-## 2. The Killers
+## 2. Producers Without a Garden
 
-I’ve lost three crew to the dark. The ocean doesn’t just crush you; it hunts you.
+There is sunlight near the surface, but not enough to explain Sector 44.
 
-*   **Pocket Ambusher:** Do not trust the maintenance shafts. I saw one drag O'Neill into a ventilation duct that was barely half a meter wide. They wedge themselves in the narrow pipes of the old stations and wait for a diver to swim past. Keep your back to a solid bulkhead.
-*   **Brine Stalker:** You can't hear them. They use the density of the hypersaline brine lakes to glide without displacing water. You won't know it's there until the vibration hits your suit, and by then, it's already got your tether.
-*   **Shadow Interceptor:** Turn off the P-63 spotlights! I don't care if you can't see! These things have learned that the corporate-issue lights mean panicked prey. If you turn on a high-beam, you're just ringing a dinner bell.
+Below the photic band, life borrows energy from other accounts. Vent chemistry feeds pale mats around black smokers. Brine margins host slick films that metabolize methane and sulfur. Iron kelp fixes mineral load into fibrous blades that cut weak seals. Halo sargassum forms drifting net-mats around slow currents, catching dust, larvae, scrap fibers and careless propellers. Cathedral kelp is not sacred and not intelligent. It is a tall conductive growth that likes heat, minerals and stable vibration; Atlas routines used it the way a desperate maintenance system uses any surviving path.
 
-## 3. The Fungal Network
+That distinction matters. The kelp is not taking orders. It is not praying to a machine. But if a living stalk carries a maintenance pulse better than a drowned cable, Atlas may route through it. If a mat damps vibration around a cracked pump, an automated system may preserve the mat. If growth keeps a door wet enough to conduct a weak signal, the door may answer after every copper line has failed. Biology becomes infrastructure by accident, then by habit.
 
-*Text note appended:* 
-There is no sunlight. The plants here don't photosynthesize. They cheat. They use the Atlas-6 AI. 
+Marauders do not need the taxonomy to survive. They need the rule: do not cut green-black growth just because it blocks a cleaner view. Ask what it feeds, what it holds, what hears through it and what will wake when it stops holding.
 
-The **Cathedral Kelp** isn't just seaweed. Those giant stalks are threaded with bio-conductive fibers. I swear the AI is using them as signal repeaters. If you cut a stalk, the drones show up three minutes later. 
+## 3. Small Mouths, Big Signals
 
-Watch out for the **Halo Sargassum Mats**. They look like floating garbage, but they are toxic nets. They will jam a mini-sub's propellers in seconds. If you get tangled, do not try to cut it free with your hands. The neurotoxin will burn right through standard neoprene.
+Small life kills indirectly.
 
-## 4. The Bloom and The Black Slime
+Lantern sifters are not peaceful because they are small. Their light attracts organic snow, damaged larvae and soft carrion. A swarm means something fed recently or is about to feed. If the swarm breaks into a ring, a larger mouth is pushing water through it. If it turns dark at once, something with better senses just arrived.
 
-The colony didn't just die; it poisoned the whole sector. When the factories collapsed, they leaked industrial coolant everywhere. It triggered a "Bloom"—an explosive growth of toxic brown algae. It ate all the oxygen. 
+Brine siphoners line canyon margins and density-layer edges. They filter methane-rich seep water and leave pale comb marks in silt. When they retract, the water chemistry is changing faster than the canyon can hide. A sudden empty patch may mean a gas pocket, a brine slosh, a pressure pulse or a predator using the layer as cover.
 
-Now, the small fish are suffocating. They cluster around the active ventilation grates of the ruined base, begging for the artificial air currents. And the predators know it. They just sit at the vents and gorge themselves. 
+Iron minnows are not dangerous because they hate divers. They school near warm mineral flow and carry metal load in their scales and gut stones. Under acoustic shock they flee as one hard cloud. A faceplate struck by a panicked school sounds like thrown bearings. A suit intake full of their scale dust can turn a routine swim into a maintenance problem with lungs attached.
 
-The algae has covered every window and airlock with a thick, black slime. It swallows the light. Atlas-6 logged this in the central database as a "Population Correction." It wasn't talking about the fish.
+The first skill is not shooting the big animal. It is noticing what the small animals decided before the big animal became visible.
 
-## 5. The "Alpha" Acoustic Signature
+## 4. Predators That Read Machines
 
-*Audio log fragment 04-B: [Breathing heavy. Sonar pings erratically.]*
+HECTON-8 predators do not need human intelligence to exploit human habits.
 
-Deep Reach redacted the file on the "Alpha Leviathan." I hacked the terminal in Sector 4 and found out why. It's not a single animal. It's a convergence label. It's whatever sits at the absolute top of the food chain. 
+A pocket ambusher wedges into shafts, broken ducts and half-flooded maintenance sleeves because those places concentrate small prey. A diver entering the same geometry becomes another predictable body. Brine stalkers ride density boundaries where motion is muted and tethers behave badly. Shadow interceptors learn that sudden white spotlights often mean panic, wounded food or a machine that will keep broadcasting its position even while the person behind it freezes.
 
-I haven't seen it. Nobody sees it and lives. But you feel it. It broadcasts a sub-40 Hz acoustic carrier wave. Your hull plating starts to vibrate. Then, every other living thing in the sector just... disappears. The water goes dead quiet. The currents shift backwards. 
+The frightening part is not malice. It is learning. Animals that survive around ruins inherit a training ground built by people: blinking lamps, pump rhythm, hatch noise, pressure cycling, waste vents, decompression burps, sample alarms and the regular panic of workers who think light means ownership. A predator does not know what a corporation is. It knows that corporate equipment makes dinner repeatable.
 
-It's not a boss you can shoot. It's a terror that rewrites your dive route. It arrives before you even see it. Turn around. Leave the xenon. Cut the tether and burn for the surface.
+Good crews change pattern. They dim before they enter. They pause after a ping. They do not leave a tether singing across a brine lip. They treat a silent corridor with more suspicion than a noisy one, because noise means the small life still feels entitled to be there.
+
+## 5. The Bloom After Collapse
+
+The colony did not poison the entire moon. It did something more useful for horror: it created local feasts.
+
+When Sector 44 failed, warm rooms cooled, cold pipes warmed, food printers spoiled, coolant mixed with brine, bodies were moved badly and waste cultures escaped tanks never meant to break. Oxygen vanished in some rooms and spiked in others. Bacteria ate insulation binders. Grazers polished screw heads. Filter mats sealed hairline leaks until somebody scraped them away. Black slime spread over windows because windows trapped heat and organics, not because darkness wanted symbolism.
+
+Deep Reach called the worst patches contamination. Atlas called some of them maintenance ecology. Black Keel calls them custody risk. Marauders use plainer language: if a room smells fed, do not assume you are first.
+
+The bloom changes routes. It can hide a door seam, cushion a noisy step, clog a pump, calm a predator, attract a predator, preserve a blood smear or erase one. It makes old rooms look alive in the wrong places and dead in the wrong places. A clean chamber can be sterile, recently scraped, or so dangerous nothing small dares settle. A dirty chamber can be hazardous, stable, or the only reason the wall still holds.
+
+## 6. The "Alpha" Label
+
+"Alpha" is not a confirmed individual.
+
+It is a salvage label for events where the normal food web changes shape around a top-level mover. The signs are more reliable than the story: sub-40 Hz vibration in hull plates, lantern swarms going dark, brine siphoners retracting, smaller predators abandoning easy food, current noise flattening, and large areas becoming quiet in a way that feels managed.
+
+Deep Reach hid some Alpha-tagged records because they were embarrassing, not because they proved a sea god. Several incidents show the same pattern: extraction noise, concentrated prey, structural vibration, then a large animal or animal group moving through the area on a route humans had made profitable. Sometimes the label may refer to a single apex body. Sometimes to a feeding convergence. Sometimes to a machine reading biological silence as a safe interval and sending workers into the worst possible moment.
+
+For the player, Alpha means one thing: the dive route has changed before the map admits it. Leave the prize, go quiet, stop making regular noise, and do not assume the tether is still a promise.
+
+## 7. What The Player Learns
+
+The player learns to read life as information.
+
+Biology marks depth, temperature, current, chemistry, age, food, danger and ownership. A scrape in a mat can be a route sign. A missing swarm can be louder than a roar. A kelp wall can be cover, wire, trap, seal, food source or witness. A predator may be avoided by understanding what it expected the last diver to do.
+
+Good play does not treat fauna as random damage and flora as decoration. It treats the ocean as a living index of what changed. What fed here? What fled? What grew over evidence? What stayed clean? What uses the player's light, blood, sound or trash better than the player does?
+
+On HECTON-8, survival begins when the player stops asking whether the water is safe and starts asking what the water has already decided.

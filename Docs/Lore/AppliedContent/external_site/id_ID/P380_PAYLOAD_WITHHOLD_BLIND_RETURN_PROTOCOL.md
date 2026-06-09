@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Protokol Tahan Blind Return Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Withhold Blind Return Protocol
+# Protokol Tahan Blind Return Payload
 
-ID LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return adalah rute penolakan. Ia menjaga payload di luar semua penerima formal dan membiarkan vektor cekungan tetap lokal. Deep Reach tidak mendapat peta akses. Buku publik tidak mendapat paket insiden. Karantina tidak mendapat penugasan escrow. Atlas tidak mendapat kunci potong.
 
-## Scanner
-
-ID LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-ID LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-ID LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Penolakan memiliki gigi dan biaya. Ia dapat menjauhkan pemangsa dari cekungan untuk satu interval lagi, tetapi juga meninggalkan bukti dalam wadah rapuh bersama orang rapuh. Utang tetap terbuka. Kustodi tetap informal. Jika paket terendam atau pembawa mati di koridor, rantai dapat lenyap tanpa perlu ditekan siapa pun.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/id_ID. -->

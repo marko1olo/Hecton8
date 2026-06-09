@@ -17,7 +17,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/AUDIO_LISTENING_PASS_QUEUE_20260605.csv` | 13 | 9 | 0 |
 | `Docs/AssetAudit/VISUAL_ASSET_REVIEW_QUEUE_20260605.csv` | 11 | 9 | 0 |
 | `Docs/AssetAudit/MESH_PREFAB_REVIEW_QUEUE_20260605.csv` | 8 | 9 | 0 |
-| `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` | 35 | 8 | 0 |
+| `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv` | 37 | 8 | 0 |
 | `Docs/AssetAudit/GENERATED_SOURCE_PACK_FILE_INVENTORY_20260605.csv` | 26 | 13 | 0 |
 | `Docs/AssetAudit/ASSET_STATIC_ROW_BLOCKER_SUMMARY_20260605.csv` | 16 | 9 | 0 |
 | `Docs/AssetAudit/AUDIO_ASSET_TAXONOMY_20260605.csv` | 11 | 13 | 0 |
@@ -41,7 +41,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/ASSET_GUID_REFERENCE_MATRIX_20260605.csv` | 7420 | 21 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv` | 800 | 15 | 0 |
 | `Docs/AssetAudit/ASSET_GUID_UNREFERENCED_SOURCE_TRIAGE_20260605.csv` | 3488 | 15 | 0 |
-| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 193 | 7 | 0 |
+| `Docs/AssetAudit/ASSET_FRONT_FILE_MAP_20260605.csv` | 196 | 7 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_MATERIAL_P0_TARGET_TABLE_20260605.csv` | 124 | 10 | 0 |
 | `Docs/AssetAudit/PRODUCT_FACE_PREFAB_P0_TARGET_TABLE_20260605.csv` | 39 | 11 | 0 |
 | `Docs/AssetAudit/AUDIO_P0_REMEDIATION_TARGET_TABLE_20260605.csv` | 6 | 9 | 0 |
@@ -73,7 +73,7 @@ This file proves only static parse hygiene for the curated current asset-front p
 | `Docs/AssetAudit/BIOLUM_BLACKBOX_ROUTE_DECISION_20260605.csv` | 4 | 15 | 0 |
 | `Docs/AssetAudit/VISUAL_HERO_SOURCE_COVERAGE_MATRIX_20260605.csv` | 10 | 15 | 0 |
 
-Total current rows: `14701`.
+Total current rows: `14706`.
 
 ## Excluded Older/Sidecar CSV Boundary
 
@@ -92,7 +92,7 @@ The direct `Docs/AssetAudit` root currently contains `58` CSV files; `53` direct
 
 - CSV parse hygiene: 62 files parse with zero empty cells.
 - Known semantic staleness: `ASSET_GUID_REFERENCE_MATRIX_20260605.csv`, `ASSET_GUID_ACTIVE_ROUTE_TRIAGE_20260605.csv`, and `audio_profile_usage_20260605.csv` still contain older direct Player-prefab rows for `Underwater Ambient.wav` and `dive_splash.wav`. Current direct-ref truth is `AUDIO_DIRECT_REF_DETAIL_20260605.csv` plus `Tools/ValidateAudioDirectRefDetail.py`: 24 direct refs total, P0 direct refs 0.
-- Summary validator hygiene: `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returns `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14701`; `python -m unittest Tools/test_validate_asset_static_summary.py` runs 4 tests OK. This is static summary consistency only.
+- Summary validator hygiene: `python Tools/ValidateAssetStaticSummary.py --summary Docs/Reports/AssetSystem_20260605/ASSET_STATIC_VALIDATION_SUMMARY_20260605.md` returns `ASSET_STATIC_VALIDATION_SUMMARY_OK files=62 rows=14706`; `python -m unittest Tools/test_validate_asset_static_summary.py` runs 4 tests OK. This is static summary consistency only.
 - Encoding hygiene: scoped replacement-character scan returned `0` in the latest run.
 - Diff hygiene: scoped `git diff --check` returned no whitespace errors in the latest run; Git reported CRLF normalization warnings only.
 - Language hygiene: current proof-language hits are negative caveats, evidence-boundary phrasing, or section headings; no Unity/runtime/visual/audio acceptance claim is accepted from this static pass.
@@ -111,12 +111,12 @@ The direct `Docs/AssetAudit` root currently contains `58` CSV files; `53` direct
 - Batch31 promotion-prep artifact hygiene: `python Tools/ValidateBatch31PromotionPrepArtifacts.py` returned `BATCH31_PROMOTION_PREP_ARTIFACTS_OK packages=3 files=28 blocked_masks=3`; `python -m unittest Tools/test_validate_batch31_promotion_prep_artifacts.py` ran 5 tests OK. This is static manifest/hash/blocker consistency only, not Unity import, material binding, residency, or visual acceptance.
 - Visual asset review queue hygiene: `python Tools/ValidateVisualAssetReviewQueue.py` returned `VISUAL_ASSET_REVIEW_QUEUE_OK rows=11 p0=2`; `python -m unittest Tools/test_validate_visual_asset_review_queue.py` ran 5 tests OK. This is static visual-review queue consistency only.
 - Asset action queue hygiene: `python Tools/ValidateAssetActionQueue.py` returned `ASSET_ACTION_QUEUE_OK rows=11 p0=4 p1=5 p2=2`; `python -m unittest Tools/test_validate_asset_action_queue.py` ran 5 tests OK. This is static action queue consistency only. The validator also forced correction of a stale Environment-prefab path to `Assets/_Project/Prefabs/Hecton Ocean.prefab`.
-- Asset proof artifact index hygiene: `python Tools/ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=35 mandatory_refs=15 diagnostic_rejected=4`; `python -m unittest Tools/test_validate_asset_proof_artifact_index.py` ran 5 tests OK. This is static proof-adjacent artifact consistency only; mandatory visual references and h8_1914 diagnostics are not acceptance proof.
+- Asset proof artifact index hygiene: `python Tools/ValidateAssetProofArtifactIndex.py` returned `ASSET_PROOF_ARTIFACT_INDEX_OK rows=37 mandatory_refs=15 diagnostic_rejected=4`; `python -m unittest Tools/test_validate_asset_proof_artifact_index.py` ran 5 tests OK. This is static proof-adjacent artifact consistency only; mandatory visual references, h8_1914 diagnostics, and generated Aegir contact sheets are not acceptance proof.
 - Audio waveform proof-artifact hygiene: `python Tools/ValidateAudioWaveformProofArtifacts.py` returned `AUDIO_WAVEFORM_PROOF_ARTIFACTS_OK stats=11 linked=7 placeholder_blocked=1`; `python -m unittest Tools/test_validate_audio_waveform_proof_artifacts.py` ran 5 tests OK. This is static waveform/stat/link consistency only, not listening or mix acceptance.
 - Audio scene static-route guard: `python Tools/ValidateAudioSceneStaticRoute.py --no-fail` returned `AUDIO_SCENE_STATIC_ROUTE_REJECTED blockers=1`; `python -m unittest Tools/test_validate_audio_scene_static_route.py` ran 5 tests OK. This is static blocker classification only, not runtime mix, listening, Addressables, GC, or memory proof.
 - Audio Addressables P0 synthesis hygiene: `python Tools/ValidateAudioAddressablesP0Synthesis.py` returned `AUDIO_ADDRESSABLES_P0_SYNTHESIS_OK blockers=1 direct_refs=24 p0=0 footsteps=20 ui=4 fallback_required=1`; `python -m unittest Tools/test_validate_audio_addressables_p0_synthesis.py` ran 5 tests OK. This is static synthesis consistency only, not Unity import, Addressables settings, mixer routing, listening, runtime audio, GC, memory, or build readiness.
 - Audio import meta policy guard: `python Tools/ValidateAudioImportMetaPolicy.py --no-fail` returned `AUDIO_IMPORT_META_POLICY_REJECTED blockers=41 rows=138 missing_meta=0 load_mismatch=27 compression_mismatch=0 quality_mismatch=14 force_mono_policy=0 sample_rate_policy=0 preload_background_policy=0 short_streaming_policy=0`; `python -m unittest Tools/test_validate_audio_import_meta_policy.py` ran 6 tests OK. This is static ledger-vs-`.meta` drift classification only, not Unity import readback, mixer routing, listening, runtime audio, GC, memory, Addressables, or build readiness.
-- Asset front file-map hygiene: `python Tools/ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=193 csv_rows=64`; `python -m unittest Tools/test_validate_asset_front_file_map.py` ran 6 tests OK. This is static file-map consistency only, not owner execution.
+- Asset front file-map hygiene: `python Tools/ValidateAssetFrontFileMap.py` returned `ASSET_FRONT_FILE_MAP_OK rows=196 csv_rows=64`; `python -m unittest Tools/test_validate_asset_front_file_map.py` ran 6 tests OK. This is static file-map consistency only, not owner execution.
 - Visual reference owner matrix hygiene: `python Tools/ValidateVisualReferenceOwnerMatrix.py` returned `VISUAL_REFERENCE_OWNER_MATRIX_OK rows=15 images=15`; `python -m unittest Tools/test_validate_visual_reference_owner_matrix.py` ran 5 tests OK. This is static VREF owner-matrix path dimension digest and owner-link consistency only, not Unity import, material binding, screenshot, Frame Debugger, runtime visual, memory, or build readiness.
 - Visual reference current rejection matrix hygiene: `python Tools/ValidateVisualReferenceCurrentRejectionMatrix.py` returned `VISUAL_REFERENCE_CURRENT_REJECTION_MATRIX_OK rows=10 diagnostic_rejected=2`; `python -m unittest Tools/test_validate_visual_reference_current_rejection_matrix.py` ran 4 tests OK. This is static rejection-only proof-route consistency only, not Unity visual acceptance, screenshot validity, Frame Debugger, runtime memory, or build readiness.
 - Mass-deletion dirty-set guard hygiene: `python Tools/ValidateMassDeletionDirtySet.py --no-fail` returns a rejection-class status without deleting, staging, restoring, or accepting files; `python -m unittest Tools/test_validate_mass_deletion_dirty_set.py` runs 7 tests OK. This is static git-status risk classification only, not deletion authorization or user approval.

@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Wyciek do rejestru publicznego
 
-Wyciek do rejestru publicznego to zakończenie częściowej prawdy. Gracz wysyła dość dowodów, by utrudnić wymazanie, ale za mało, by kontrolować Atlas, odwet Deep Reach albo to, co instytucje publiczne zrobią z pakietem.
+Wyciek do rejestru publicznego to trasa częściowej prawdy. Pakiet wychodzi wąskim oknem relay z dość mocnym witness hash, by zaprzeczanie było kosztowne, i z tyloma lukami, że nie jest bezpieczny. Deep Reach nie może już po prostu skasować roszczenia, ale nikt na HECTON-8 nie decyduje, kto użyje tej rany następny. Ubezpieczyciele, sądy obywatelskie, wrogie domeny, pule Marauder i biura korporacyjne przeczytają te same dowody inaczej. Publikacja ratuje prawdę przed czystym pochówkiem. Nie czyni jej łagodną.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Witness hash przyjęty. Częściowa prawda wychodzi przed pełną custody.
 
 ## Terminal
 
-TRASA REJESTRU PUBLICZNEGO: Tau Ceti packet notary przyjęło witness hash; payload niepełny; sprzeciw claimant prawdopodobny; okno odwetu Deep Reach zaczyna się po potwierdzeniu relay.
+TRASA REJESTRU PUBLICZNEGO: Tau Ceti packet notary przyjęło witness hash; payload niepełny; wyzwanie claimant prawdopodobne; okno odwetu Deep Reach zaczyna się po potwierdzeniu relay.
 
 ## Audio
 
-Prawda wychodzi pierwsza. Może nie spodoba ci się, kto ją przeczyta.
+Prawda wychodzi pierwsza. Kontrola nie wychodzi z nią.
 
 ## Field Note
 
-Publiczne nie znaczy bezpieczne. Znaczy tylko trudniejsze do wymazania.
+Publiczne nie znaczy bezpieczne. Znaczy tylko trudniejsze do skasowania.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/pl_PL. -->

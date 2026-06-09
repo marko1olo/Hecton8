@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "얕은 부속동 P-63 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Shallow Annex P-63 POI Kit
+# 얕은 부속동 P-63 증거 키트
 
-KO LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63이 작동하는 이유는 쉘터와 증거를 나누지 않기 때문이다. 방은 오퍼레이터에게 공기, 빌지 펌프, 개스킷 재고, 핑거 라인, 절단기 접촉을 준다. 이 부품들은 먼저 쓸모가 있다. 계약은 기다릴 수 있지만 물은 기다리지 않는다.
 
-## Scanner
-
-KO LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-KO LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-KO LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-KO LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+방이 안정되면 같은 물체의 무게가 달라진다. 봉인된 경로 통지는 통제 조건에서 부속동이 폐쇄되었다고 말하지만, 손상된 펌프와 덧댄 개스킷 트레이와 젖은 사고 패킷은 더 거친 퇴출을 보여 준다. 첫 모순은 연설 속에 숨지 않는다. 오퍼레이터를 살린 장소에 볼트로 고정되어 있다.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ko_KR. -->

@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS194 gives first-shelter galley and prep surfaces physical use traces: blue heat rings on warming plates, grease moons from meal trays, lime teeth under water taps, adhesive strips from ration sleeves, and steam shadows along cup rails.
+RS196 gives first-shelter galley and prep surfaces physical use traces: blue heat rings on warming plates, crescent grease marks from meal trays, lime teeth under water taps, adhesive strips from ration sleeves, and dark steam stains along cup rails.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 
@@ -24,7 +24,7 @@ These files do not create website pages, in-game wiki pages, route cards, bindin
 
 ## First-20 Boundary
 
-RS194 improves the first-20 route by making early galley surfaces communicate heat, moisture, labels, and repeated prep use without claiming cooking systems, food availability, water flow, survival mechanics, inventory, UI, or interaction implementation.
+RS196 improves the first-20 route by making early galley surfaces communicate heat, moisture, labels, and repeated prep use without claiming cooking systems, food availability, water flow, survival mechanics, inventory, UI, or interaction implementation.
 
 ## Localization Boundary
 

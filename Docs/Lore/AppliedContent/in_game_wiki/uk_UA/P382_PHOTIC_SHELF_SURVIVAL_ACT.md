@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Photic Shelf Survival Act"
+title: "Шлюз фотичного шельфу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Photic Shelf Survival Act
+# Шлюз фотичного шельфу
 
-UK LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Фотичний шельф навчає об'єктами, а не комфортом. Оператор дізнається, які корпуси насосів ще тримають повітря, які латки дають хвилини і які яскраві організми забивають інструмент. Atlas уперше з'являється як ремонтний залишок: корисний, місцями неправильний і досить близький, щоб торкнутися.
 
 ## Scanner
 
-UK LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Маршрутний шлюз: фотичний шельф. Кисневі кишені, насосні, перші різи й дрібний ремонтний залишок Atlas читаються в денній воді.
 
 ## Terminal
 
-UK LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+МАРШРУТ КАМПАНІЇ // ФОТИЧНИЙ ШЕЛЬФ. Потрібно: перезапуск насоса, латка ущільнення, різ кабелю, ping сканера. Обладнання підйому недоступне; витрачені комірки спрямовані в системи виживання. Залишок Atlas класифіковано як корисний із попередженням про забруднення.
 
 ## Audio
 
-UK LOC HOLD: The shallow water is not safe. It is only readable.
+Мілка вода не безпечна. Вона читабельна.
 
 ## Field Note
 
-UK LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Нотатка мародера: денне світло допомагає. Воно не робить тріснуту кисневу лінію щедрою.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/uk_UA. -->

@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Espina de relés
 
-El espacio humano está unido por relés, no milagros. Los hashes prueban recepción; las cadenas legales mantienen reclamos vivos.
+HECTON-8 no usa ansible, canal mágico de emergencia ni tribunal central que hable en vivo sobre el océano. El espacio humano se conecta por una Espina de relés: haces programados, custodia de paquetes, hashes testigo, búferes locales y cadenas de recibo. Es una máquina poderosa para preservar hechos. Es pésima para salvar a alguien que necesita aire ahora.
 
-La red es potente y fría. El jugador puede enviar la verdad y morir antes de que importe.
+El jugador puede hallar un archivo verdadero, probar su origen, empujarlo a la cola y ver empeorar la situación local. Black Keel oye un pulso y lo convierte en gravamen. Luyten autentica cuando la ventana ya cerró. La regla no-FTL no es una nota: explica por qué cada decisión inmediata pertenece a quien sigue bajo el agua.
 
 <!-- External Site; generated from P012_RELAY_SPINE/es_ES. -->

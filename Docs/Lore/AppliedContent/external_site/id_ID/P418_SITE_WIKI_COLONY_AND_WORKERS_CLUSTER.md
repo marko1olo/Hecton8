@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Koloni dan Pekerja
 
-Klaster koloni dan pekerja mencegah HECTON-8 menjadi peta ruangan kosong. Versi resmi Deep Reach menekan manusia menjadi kategori kerugian, tetapi catatan yang selamat menjaga mereka melalui kerja: pump chief di pressure board, relay operator di witness trays, brine crew di jalur garam dan ration ledgers, triage technician di repair tags, forge shift di rejects yang tak sempat disembunyikan. Ini bukan kait keluarga untuk protagonis. Ini bukti kerja. Marauder membaca mengapa pintu tetap terbuka, mengapa pompa dinyalakan terlambat, dan mengapa name tag kecil bisa lebih kuat daripada loss summary yang rapi.
+Jalur koloni dan pekerja mencegah HECTON-8 menjadi reruntuhan indah penuh ruangan tanpa nama. Deep Reach mencatat bencana sebagai storm, collapse, failed autonomy, Atlas rescue, dan lost data. Kata-kata itu berguna karena memampatkan tanggung jawab. Worker records yang selamat melakukan kebalikan. Mereka menjaga nama tetap melekat pada keputusan.
+
+Seorang pump chief tetap terlihat lewat pressure board yang tidak reset ketika seharusnya. Seorang relay hand tetap terlihat dalam baki witness tags yang dicabut sebelum jalur menjadi buta. Brine crew meninggalkan bentuknya di route stamps, ration ledgers, dan sarung tangan yang terbakar garam. Triage technician muncul di tempat repair tag menyatakan siapa boleh menghabiskan oksigen untuk orang asing. Vent-forge operator bertahan di rejected parts yang seharusnya disembunyikan jika loss report bersih.
+
+Karena itu worker cluster menolak cheap family hook. HECTON-8 tidak membutuhkan orang tua rahasia protagonis, saudara hilang, atau foto sentimental untuk membuat koloni terasa manusiawi. Seseorang menjadi terbaca ketika pintu tetap terbuka karena namanya ada di pump card, ketika shift swap mengubah siapa yang mati di koridor, ketika tanda tangan menggeser quarantine delay dari safety menjadi liability.
+
+Marauder membaca manusia sebagai pressure evidence. Setiap dossier yang baik harus menjawab pertanyaan praktis dulu: apa yang pekerja ini miliki, tunda, perbaiki, tolak, palsukan, atau lindungi? Ketika jawabannya jelas, emosi datang tanpa diminta.
+
+Koloni tidak kosong sebelum laut masuk. Ia penuh rutinitas, dendam, kompetensi, shortcuts, takut, dan kebanggaan profesional. Catatan yang tersisa bukan plakat memorial. Itu masih dokumen kerja, dan sebagian masih bisa menuduh.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/id_ID. -->

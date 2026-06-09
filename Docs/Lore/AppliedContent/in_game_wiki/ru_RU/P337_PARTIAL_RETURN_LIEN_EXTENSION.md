@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Partial Return Lien Extension"
+title: "Продление удержания для частичного возврата"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Partial Return Lien Extension
+# Продление удержания для частичного возврата
 
-RU LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+Продление удержания фиксирует replay-постоянство как знание, а не как силу снаряжения. Игрок возвращается потому, что изменились досье и долг, а не потому, что HECTON-8 стала проще.
 
 ## Scanner
 
-RU LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Возврат одобрен под продленным удержанием. Флаги знания сохраняются; инвентарь помещен в карантин и снят.
 
 ## Terminal
 
-RU LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ПРИКАЗ ЧАСТИЧНОГО ВОЗВРАТА: повторный вход в тот же seed разрешен под продленным удержанием, пересчитанным штормовым окном и сохраненным досье знаний. Физический инвентарь сброшен карантином хранения; инструменты остаются собственностью носителя до закрытия проверки доказательств.
 
 ## Audio
 
-RU LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+Маршрут помнит, что ты доказал. Океан оставляет себе остальное.
 
 ## Field Note
 
-RU LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Запись повторного входа: same-seed возврат несет знание, давление долга, изменения шторма и custody reset вместо унаследованного снаряжения.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/ru_RU. -->

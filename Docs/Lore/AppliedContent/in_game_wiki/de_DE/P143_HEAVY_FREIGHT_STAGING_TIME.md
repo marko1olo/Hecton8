@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Stagingzeit schwerer Fracht
 
-Timing schwerer Fracht schützt die No-FTL-Zeitlinie. Atlas-Hardware kann vor Massensiedlung ankommen, weil Konzerne Vorläuferfracht früh starten, sie vorwärts stagen, unbemanntes Risiko akzeptieren und Fehlerfenster in Programmsprache begraben. Rettung kann diesen Trick nach Beginn des Notfalls nicht ausleihen.
+Schwere Fracht verwandelte HECTON-8 von einem Vermessungsziel in ein Schuldobjekt. Große Fracht konnte veränderlicher Wahrheit nicht folgen; sie musste gestaged, gebunden, versichert, geparkt, gebremst und von jemandem mit Autorität empfangen werden. Als ein Modulzug die Route kreuzte, hatte der Vertrag dahinter mehr Trägheit als die Einwände der Kolonie.
 
 ## Scanner
 
-Atlas-Klasse-Fracht ist vorausbezahlte Geduld in Panzerung.
+Manifeststapel: Fracht gebunden, bevor der Empfangsort als lebendig bewiesen war.
 
 ## Terminal
 
-FRACHTNOTIZ: Atlas- und Seed-Fracht nutzen Staging, Pelletfusionshilfe, lange Drift und Bremsinfrastruktur. Öffentliche Daten können Vorläuferstarts und Forward-Domain-Abflüge verbergen.
+FRACHT-STAGING: Druckhüllen, Keramikschirmung, Reaktormasse, Seed-Vorräte, Crawlerrahmen und Habitat-Ringe benötigen Startfenster im Abstand von Jahren. Nach Bindung wird Fracht zu einem juristischen Argument in Bewegung.
 
 ## Audio
 
-Ein so schweres Schiff reist nicht einfach. Es wird eine Rechnung mit Kielwasser.
+Die Lieferung war bereits bezahlt. Das machte Stoppen schwerer als Menschen retten.
 
 ## Field Note
 
-Eine schwere Route wird aus Depots, Strahlfenstern, Bremsmasse und politischem Nerv gebaut.
+Fracht beeilt sich nicht. Sie macht Eile für alle anderen teuer.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/de_DE. -->

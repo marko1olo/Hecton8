@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Huidige Deep Reach-vensters"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Huidige Deep Reach-vensters
 
-NL LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Huidige Deep Reach-vensters bewaren de hard-scifi-afstand van HECTON-8 terwijl de bedrijfsdruk levend blijft. Deep Reach kan de zeebodem niet teleopereren, de operator niet direct redden en de planeet niet in realtime herschrijven. Wat het wel kan doen is erger voor het verhaal: procedures, proxy's en claimsystemen achterlaten, en dan alleen spreken tijdens zeldzame vensters wanneer de speler iets bezit dat onderhandeling waard is. Dit artikel definieert die late-speldruk. De macht van de corporatie is geen magische communicatie; het is eigendomstaal die de ramp heeft overleefd en nog steeds weet hoe ze een mensenleven naast bewijs, quarantaine en berging moet prijzen.
 
 ## Scanner
 
-NL LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach kan HECTON-8 niet per radio besturen, maar vertraagde vensters, proxyberichten en Black Keel-clausules bepalen nog steeds wat hulp kost.
 
 ## Terminal
 
-NL LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH-PROXY: herstel van operator onderhandelbaar na bewijsbeoordeling, vrachtbewaring, quarantainenaleving en overdracht van Atlas-autorisatiesleutels. Weigering behoudt claimantsstatus maar vernietigt prioriteit voor onmiddellijke extractie.
 
 ## Audio
 
-NL LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Wanneer hun stem je bereikt, is die al een contract.
 
 ## Field Note
 
-NL LOC HOLD: Their voice is delayed. Their leverage is already here.
+Hun antwoord komt laat. Hun voorwaarden kwamen jaren geleden al aan.
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/nl_NL. -->

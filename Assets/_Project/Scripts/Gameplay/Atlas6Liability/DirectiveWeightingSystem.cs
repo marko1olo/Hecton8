@@ -14,11 +14,16 @@ namespace Hecton8.Gameplay.Atlas6Liability
     {
         private float _currentPressureSealIntegrity = 1.0f;
         private float _powerDivertedToVaults = 0f;
+        private byte _triggeredHazardMask;
 
         // Settings
         private readonly float _drownTheCrewThreshold = 0.15f;
         private readonly float _criticalSubstrateThreshold = 1000f;
         private readonly Atlas6LiabilityTelemetry _telemetry;
+        private const float HazardThreshold80 = 0.8f;
+        private const float HazardThreshold60 = 0.6f;
+        private const float HazardThreshold40 = 0.4f;
+        private const float HazardThreshold20 = 0.2f;
 
         // State
         public bool IsBulkheadLocked { get; private set; }
@@ -39,6 +44,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
             _currentPressureSealIntegrity = math.isfinite(startingIntegrity) ? math.saturate(startingIntegrity) : 1f;
             IsBulkheadLocked = false;
             _powerDivertedToVaults = 0f;
+            _triggeredHazardMask = BuildHazardMaskForIntegrity(_currentPressureSealIntegrity);
         }
 
         public void Tick(float deltaTime, float currentXenonOmegaYield)
@@ -74,6 +80,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 _powerDivertedToVaults = (currentXenonOmegaYield - _criticalSubstrateThreshold) * 0.0001f;
 
                 // Degrade seals based on power diversion (Arendt Protocol)
+                float previousIntegrity = _currentPressureSealIntegrity;
                 float degradationRate = _powerDivertedToVaults * deltaTime;
                 _currentPressureSealIntegrity -= degradationRate;
                 _currentPressureSealIntegrity = math.saturate(_currentPressureSealIntegrity);
@@ -81,7 +88,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 OnIntegrityDegraded?.Invoke(_currentPressureSealIntegrity);
 
                 // Algorithmic hazard spawning (not random) based on strict integrity thresholds
-                EvaluateAlgorithmicHazards(_currentPressureSealIntegrity);
+                EvaluateAlgorithmicHazards(previousIntegrity, _currentPressureSealIntegrity);
 
                 // Drown the crew check
                 if (_currentPressureSealIntegrity <= _drownTheCrewThreshold)
@@ -91,11 +98,39 @@ namespace Hecton8.Gameplay.Atlas6Liability
             }
         }
 
-        private void EvaluateAlgorithmicHazards(float integrity)
+        private void EvaluateAlgorithmicHazards(float previousIntegrity, float currentIntegrity)
         {
-            // Instead of random chance, hazards trigger exactly at specific thresholds
-            // e.g. 80%, 60%, 40%, 20%
-            // In a full implementation, this tracks previous thresholds crossed.
+            TryEmitHazardThreshold(previousIntegrity, currentIntegrity, HazardThreshold80, 0);
+            TryEmitHazardThreshold(previousIntegrity, currentIntegrity, HazardThreshold60, 1);
+            TryEmitHazardThreshold(previousIntegrity, currentIntegrity, HazardThreshold40, 2);
+            TryEmitHazardThreshold(previousIntegrity, currentIntegrity, HazardThreshold20, 3);
+        }
+
+        private void TryEmitHazardThreshold(float previousIntegrity, float currentIntegrity, float threshold, int bitIndex)
+        {
+            byte bit = (byte)(1 << bitIndex);
+            if ((_triggeredHazardMask & bit) != 0)
+                return;
+
+            if (previousIntegrity > threshold && currentIntegrity <= threshold)
+            {
+                _triggeredHazardMask |= bit;
+                OnHazardSpawned?.Invoke(new Vector3(threshold, currentIntegrity, _powerDivertedToVaults));
+            }
+        }
+
+        private static byte BuildHazardMaskForIntegrity(float integrity)
+        {
+            byte mask = 0;
+            if (integrity <= HazardThreshold80)
+                mask |= 1 << 0;
+            if (integrity <= HazardThreshold60)
+                mask |= 1 << 1;
+            if (integrity <= HazardThreshold40)
+                mask |= 1 << 2;
+            if (integrity <= HazardThreshold20)
+                mask |= 1 << 3;
+            return mask;
         }
 
         private void ExecuteDrownTheCrew()
@@ -131,6 +166,7 @@ namespace Hecton8.Gameplay.Atlas6Liability
                 : 1f;
             IsBulkheadLocked = isBulkheadLocked;
             _powerDivertedToVaults = 0f;
+            _triggeredHazardMask = BuildHazardMaskForIntegrity(_currentPressureSealIntegrity);
         }
     }
 }

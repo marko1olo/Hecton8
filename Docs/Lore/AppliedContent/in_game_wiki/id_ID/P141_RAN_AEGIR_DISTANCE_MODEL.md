@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Model Jarak Ran-Aegir
 
-Model Ran-Aegir memberi HECTON-8 skala yang bisa dirasakan pemain. Aegir cukup dekat untuk probe, kargo, perangkat seed, dan pemukiman berbasis utang pada 2190. Ia tetap cukup jauh sehingga ruang yang banjir tidak bisa menunggu belas kasihan dunia dalam. Jarak muncul sebagai jeda, custody, bahan bakar, pengereman, dan kepemilikan.
+Model Ran-Aegir memberi HECTON-8 skala yang terasa di dalam pakaian tekanan. Pada 2190, Aegir cukup dekat bagi probe, kargo, hukum rute, permukiman berbasis utang, dan selera korporat. Ia tetap terlalu jauh bagi kompartemen banjir untuk menunggu kebaikan dunia dalam. Jarak menjadi tekanan lewat jeda relai, jendela peluncuran, propelan pengereman, kustodi carrier, pengecualian asuransi, dan fakta sederhana: massa datang lebih lambat daripada perintah.
 
 ## Scanner
 
-Pelat rute: Aegir dapat dicapai oleh infrastruktur dan tak dapat dicapai oleh simpati.
+Pelat rute menegaskan Aegir terjangkau infrastruktur, bukan terjangkau pertolongan darurat.
 
 ## Terminal
 
-MODEL RUTE: Ran/Aegir diperlakukan sebagai target kelas sepuluh tahun cahaya dari Sol. Teks permainan memakai Aegir; katalog kering memakai RAN-B:H8. Efemeris tepat tetap pekerjaan tabel rute.
+MODEL RUTE: Ran/Aegir diperlakukan sebagai tujuan kelas sepuluh tahun cahaya dari Sol. Permukaan publik memakai Aegir. Katalog navigasi kering menyimpan RAN-B:H8. Efemeris tepat terkunci pada tabel; kebenaran operasionalnya adalah jeda, massa pengereman, kustodi relai, dan risiko kepemilikan.
 
 ## Audio
 
-Sepuluh tahun cahaya kecil di peta bintang. Cukup besar untuk membangkrutkan penyelamatan.
+Sinyal bisa menyeberangi gelap. Kapal harus membayar setiap meternya.
 
 ## Field Note
 
-Jarak perkiraan adalah tekanan, bukan dekorasi. Sepuluh tahun cahaya masih bisa membunuh sebuah ruangan.
+Sepuluh tahun cahaya kecil di katalog dan kejam bagi penyelamatan.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/id_ID. -->

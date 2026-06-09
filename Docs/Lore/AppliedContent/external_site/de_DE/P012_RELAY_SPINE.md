@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relaisspine"
+title: "Relaisrückgrat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisspine
+# Relaisrückgrat
 
-Menschlicher Raum ist hier durch Relais verbunden, nicht durch Wunder. Hashes beweisen Empfang, Rechtsketten halten Ansprüche lebendig.
+HECTON-8 hat kein Ansible, keinen magischen Notkanal und kein Kernweltgericht, das live über den Ozean spricht. Der Menschenraum ist durch ein Relaisrückgrat verbunden: geplante Beams, Paketgewahrsam, Zeugenhashes, lokale Puffer und Belegketten. Es ist eine starke Maschine, um Fakten zu erhalten. Es ist eine schlechte Maschine, um jemanden zu retten, der jetzt Luft braucht.
 
-Das Netz ist mächtig, aber kalt. Der Spieler kann die Wahrheit senden und sterben, bevor sie hilft.
+Der Spieler kann eine wahre Datei finden, ihren Ursprung beweisen, sie in die Queue schicken und trotzdem zusehen, wie die Lage vor Ort schlechter wird. Black Keel hört den Burst und macht daraus ein Pfand. Luyten authentifiziert nach dem Fenster. No FTL ist kein Fußnotenkanon; es entscheidet, warum die nächste Handlung dem Menschen unter Wasser gehört.
 
 <!-- External Site; generated from P012_RELAY_SPINE/de_DE. -->

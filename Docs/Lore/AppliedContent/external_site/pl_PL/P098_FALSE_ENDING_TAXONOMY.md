@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taksonomia fałszywych zakończeń"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taksonomia fałszywych zakończeń
 
-PL LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+Taksonomia fałszywych zakończeń wyjaśnia strukturę powtórek: wyjście może być fizycznie realne, opłacalne i nadal moralnie niepełne. Dossier przenosi wiedzę między próbami, a presja, dług i publiczna prawda decydują, czy zakończenie jest tylko ucieczką, czy prawdziwym rozliczeniem.
 
 ## Scanner
 
-PL LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Tablica zakończeń. Niektóre wyjścia są dość realne, by się liczyć, i dość błędne, by boleć.
 
 ## Terminal
 
-PL LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+RODZINY ZAKOŃCZEŃ: wypłata materialna; częściowe wyjście i powrót do tego samego seeda; przejęcie korporacyjne; zatrzymanie kwarantannowe; ujawnienie publicznego rejestru; rozwiązanie basenu Atlas. Zapisy wyniku muszą oddzielać ładunek, dowód i stan długu.
 
 ## Audio
 
-PL LOC HOLD: Leaving is not the same as finishing.
+Wyjście z wody to nie to samo, co skończenie pracy.
 
 ## Field Note
 
-PL LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Fałszywe zakończenie nie jest sztuczką. To ważna umowa bez brakującej prawdy.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/pl_PL. -->

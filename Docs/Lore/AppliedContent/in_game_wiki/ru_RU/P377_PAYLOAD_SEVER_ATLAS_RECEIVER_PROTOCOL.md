@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Протокол отсечения Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Протокол отсечения Atlas payload
 
-RU LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Протокол отсечения - разрушительный маршрут получателя, а не чистый выпуск. Он может остановить поврежденную ремонтную логику и отказать Deep Reach вектору восстановления. Он также может разрушить машинную экологию, стереть полезную память маршрута и создать след доказательств, который по праву получателя читается как containment, sabotage, theft или mercy.
 
 ## Scanner
 
-RU LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Маршрут отсечения взведен. Payload несет ключи разрыва для непрерывности Atlas, изоляции памяти маршрута и сохранения proof hash.
 
 ## Terminal
 
-RU LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+ПОЛУЧАТЕЛЬ PAYLOAD // ОТСЕЧЕНИЕ ATLAS. Цель: хребет непрерывности Atlas. Разорвать ремонтный цикл, изолировать память маршрута, сохранить proof hash, отказать корпоративному вектору восстановления. Экологический каскад не решен. Правовая классификация спорная.
 
 ## Audio
 
-RU LOC HOLD: If this is mercy, it still leaves a body.
+Atlas можно отрезать. Разрез все равно оставит следы custody.
 
 ## Field Note
 
-RU LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Заметка мародера: чистый разрез все равно разрез. Сфотографируй custody marks, прежде чем дернуть.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/ru_RU. -->

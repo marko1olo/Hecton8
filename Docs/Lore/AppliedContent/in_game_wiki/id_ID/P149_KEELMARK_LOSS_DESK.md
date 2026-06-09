@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Meja Kerugian Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Meja Kerugian Keelmark
 
-ID LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark adalah ruang aritmetika. Ia menerjemahkan bencana menjadi kelas kerugian yang bisa diasuransikan, disengketakan, dijual, atau diabaikan. Bahayanya bukan kekejaman teatrikal, tetapi kemampuan tenang untuk menghilangkan orang di dalam kategori paparan tak terpulihkan.
 
 ## Scanner
 
-ID LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+Tabel kerugian ditemukan: satu kolom untuk peralatan, satu untuk tenaga kerja, satu untuk kesaksian yang merepotkan.
 
 ## Terminal
 
-ID LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+MEJA KEELMARK: triase sisi asuransi menetapkan kehilangan kargo, kehilangan habitat, gangguan tenaga kerja, paparan saksi, dan kelas material terpulihkan sebelum pernyataan publik menyebut yang mati.
 
 ## Audio
 
-ID LOC HOLD: The ledger is dry because the room was not.
+Mereka menghitung yang hilang sebelum menghitung nama.
 
 ## Field Note
 
-ID LOC HOLD: A loss category is a grave with better stationery.
+Meja kerugian tidak berduka. Ia menentukan ketidakhadiran mana yang bisa ditagih.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/id_ID. -->

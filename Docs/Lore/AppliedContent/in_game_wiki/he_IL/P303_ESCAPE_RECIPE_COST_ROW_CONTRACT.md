@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Escape Recipe Cost Boundary"
+title: "גבול עלות מתכון בריחה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Escape Recipe Cost Boundary
+# גבול עלות מתכון בריחה
 
-HE LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+הגבול שומר על שרשרת היציאה מכנית ולא שרירותית. לכל חלק עלייה יש היסטוריית לחץ, בעלים ודרישות ראיה, ולכן בריחה מרגישה כתיקון תחת חוק ולא כאסימוני משימה בתפריט.
 
 ## Scanner
 
-HE LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+שורת מתכון הבריחה קושרת מחלקת רכיב, דרגת לחץ, הוכחת מסלול ומצב סמכות.
 
 ## Terminal
 
-HE LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: עלויות מוסמכות חייבות לנקוב בממסר, איטום, הנחיה, אנרגיית עלייה, לחיצת יד משפטית, סמכות payload וסיכון מקלט. הדרך למעלה מורכבת מחלקים; לחלקים יש בעלים.
 
 ## Audio
 
-HE LOC HOLD: The way up has parts. The parts have owners.
+הדרך למעלה מורכבת מחלקים. לחלקים יש בעלים.
 
 ## Field Note
 
-HE LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+רצועות לחץ מגיעות מכללי הכלה; עלויות מדויקות שייכות לטבלאות מתכונים.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/he_IL. -->

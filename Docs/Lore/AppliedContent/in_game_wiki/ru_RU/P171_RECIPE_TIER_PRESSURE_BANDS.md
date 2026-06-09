@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Recipe Tier Pressure Bands"
+title: "Диапазоны давления для уровней рецептов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Recipe Tier Pressure Bands
+# Диапазоны давления для уровней рецептов
 
-RU LOC HOLD: Recipe pressure bands let crafting, scanner text, and material lore share one progression grammar.
+Диапазоны давления для уровней рецептов - грамматика крафта HECTON-8. Колония делила рецепты не по удобству, а по тому, что давление сделает с деталью после того, как игрок отойдет от верстака. Tier 0 удерживает игрока живым на мелководье: заплаты, ручные уплотнения и лом, который честно ломается. Tier 1 относится к rated repairs: детали насосных, старый промышленный склад и сертификационные метки, доказывающие работу под нагрузкой. Tier 2 начинается там, где появляются pressure hardware: промывка рассолом, выдержка на венте и акустическая проверка решают, безопасна ли деталь или просто похожа на деталь. Tier 3 принадлежит подъему, интерфейсам Atlas и бездонным полномочиям: рецепту нужны материалы, но также состояние приемника, юридическая цепочка и доказательство удержания. Так крафт остается связан с маршрутом. Вопрос никогда не только в том, что у тебя есть. Вопрос в том, где это было, какое давление выдержит и кто примет результат.
 
 ## Scanner
 
-RU LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Рецепт HECTON-8 - это аргумент о глубине, а не список покупок. Деталь считается деталью только если переживает заявленный диапазон давления.
 
 ## Terminal
 
-RU LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+ДИАПАЗОНЫ РЕЦЕПТОВ / T0 аварийная заплата: мелководный лом, ручная герметизация, без цепочки хранения / T1 rated repair: складские промдетали, сертификат насосной / T2 pressure hardware: промывка рассолом, выдержка на венте, акустическое доказательство / T3 ascent или Atlas: бездонный источник, легальный приемник, квитанция удержания.
 
 ## Audio
 
-RU LOC HOLD: A recipe is a depth permission form with bolts.
+Рецепт - это разрешение на глубину, к которому прикручены болты.
 
 ## Field Note
 
-RU LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+Уровень рецепта должен совпадать с рейтингом давления, ценой маршрута и риском хранения. Дешевый болт в неправильном диапазоне не дешевый; это будущая течь.
 
 <!-- In-Game Wiki; generated from P171_RECIPE_TIER_PRESSURE_BANDS/ru_RU. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Marauder Correction Note Sample"
+title: "Sampel Catatan Koreksi Penjarah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Marauder Correction Note Sample
+# Sampel Catatan Koreksi Penjarah
 
-ID LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Catatan penjarah adalah permukaan bukti yang kuat di HECTON-8 karena melawan sistem resmi tanpa berubah menjadi lore yang maha tahu. Sampel ini menjaga kecurigaan lewat tanda praktis: waktu, sertifikasi, kategori keliru, dan tunda antrean. Ia tidak memecahkan kasus untuk pemain. Ia mengajari pemain membaca kebohongan yang diajukan sebagai pemeliharaan.
 
 ## Scanner
 
-ID LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Koreksi pensil minyak di atas formulir kecelakaan: bukan cuaca, bukan panik, melainkan tunda otorisasi dengan hitungan jasad di dalamnya.
 
 ## Terminal
 
-ID LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+CATATAN PENJARAH / PENYEBAB RESMI: DITOLAK / SEBELUM KLAIM PERIKSA: sertifikat pompa, jumlah sif, kategori jasad, selisih jam pintu, antrean otorisasi penyelamatan.
 
 ## Audio
 
-ID LOC HOLD: Someone else smelled the paperwork rot.
+Seseorang mencium busuknya berkas sebelum ruangan itu kering.
 
 ## Field Note
 
-ID LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+BUKAN CUACA. OTORISASI TERTUNDA. Periksa sertifikat pompa, jumlah sif, kategori jasad. Jam pintu enam menit lebih maju dari cap klaim.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/id_ID. -->

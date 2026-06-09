@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Ending Payout Data Boundary"
+title: "Límite de datos de pago final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Ending Payout Data Boundary
+# Límite de datos de pago final
 
-ES LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+Los finales de HECTON-8 registran quién recibió la prueba, qué custodia ganó, qué pagó y qué coste queda sin resolver. Un número puede cerrar una línea de contrato. No puede cerrar el océano.
 
 ## Scanner
 
-ES LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+La fila de final ata receptor, custodia, estado de prueba, pago y consecuencia sin resolver.
 
 ## Terminal
 
-ES LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: las filas requieren ruta de payload, receptor, estado de prueba, pago material, consecuencia legal, demora de cuarentena y coste no resuelto. Los créditos no cierran una escena del crimen.
 
 ## Audio
 
-ES LOC HOLD: Credits do not close a crime scene.
+Los créditos no cierran una escena del crimen.
 
 ## Field Note
 
-ES LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value, quarantine delay y dossier flags solo se registran después de aclarar receptor y estado de prueba.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/es_ES. -->

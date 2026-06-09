@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Legal Insurance Automated Ping"
+title: "نبضة التأمين القانونية الآلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Legal Insurance Automated Ping
+# نبضة التأمين القانونية الآلية
 
-AR LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+نبضة التأمين القانونية الآلية تعبير مكثف عن رعب HECTON-8 البيروقراطي. يستطيع Deep Reach الحالي أن يتكلم عبر أنظمة حيازة التأمين الآلية بفعالية الكلام عبر شخص. يسأل النظام ماذا يحمل الناجي قبل أن يسأل إن كان ينبغي إنقاذه.
 
 ## Scanner
 
-AR LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+تم تلقي نبضة آلية. استُبدلت لغة الإنقاذ بإثبات المستقبل وفئة الكتلة وحالة الحيازة.
 
 ## Terminal
 
-AR LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / مطلوب قبل recovery-window assignment: mass class، contamination state، coordinate proof، claim priority، receiver custody acceptance.
 
 ## Audio
 
-AR LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+أول ما يسألون عنه ليس هل أنت حي. بل ماذا تحمل.
 
 ## Field Note
 
-AR LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+مرشح نداء قصير عند عتبات الطريق. استخدمه بندرة؛ القسوة في أول سؤال يطرحه النظام.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/ar_SA. -->

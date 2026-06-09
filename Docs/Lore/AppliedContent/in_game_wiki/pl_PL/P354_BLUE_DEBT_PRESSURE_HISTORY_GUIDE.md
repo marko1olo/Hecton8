@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodnik historii ciśnienia blue debt"
+title: "Przewodnik historii ciśnienia niebieskiego długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodnik historii ciśnienia blue debt
+# Przewodnik historii ciśnienia niebieskiego długu
 
-Blue debt to język kontraktu owinięty wokół niebezpiecznego substrate. Pressure history, custody marks i signal drift decydują, czy stanie się czystą wypłatą, dźwignią Atlas czy motywem powrotu Deep Reach.
+Niebieski dług to język kontraktów owinięty wokół niebezpiecznego substratu. Historia ciśnienia, znaki pieczy i dryf sygnału decydują, czy stanie się czystą wypłatą, dźwignią Atlasu czy powodem powrotu Deep Reach.
 
 ## Scanner
 
-Próbka blue debt oznaczona. Przed export sprawdź pressure history, containment stage i signal drift.
+Próbka niebieskiego długu oznaczona. Przed wywozem sprawdź historię ciśnienia, etap zamknięcia, łańcuch pieczy i dryf sygnału.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt to slang salvage na Xenon-Omega-bearing pressure-stable substrate. Jest cenny, bo extreme computation i energy isolation go lubią, nie dlatego, że świeci.
+NOTA SZABROWNIKA: niebieski dług to slang salvage dla stabilnego ciśnieniowo substratu z Xenon-Omega. Jest cenny, bo lubią go ekstremalne obliczenia i izolacja energii, nie dlatego, że świeci.
 
 ## Audio
 
-Blue debt to nazwa, której ludzie używają po przyjściu faktury.
+Niebieskim długiem nazywa się to po przyjściu faktury.
 
 ## Field Note
 
-Kolor nie jest grade. Cichy pojemnik z czystym custody płaci; śpiewający kupuje ci drone wake.
+Kolor nie jest klasą. Cichy pojemnik z czystą pieczą płaci; śpiewający kupuje ślad dronów.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/pl_PL. -->

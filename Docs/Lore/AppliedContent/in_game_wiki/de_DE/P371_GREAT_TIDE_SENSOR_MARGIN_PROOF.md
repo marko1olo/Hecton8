@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Randspur der Großen Tide"
+title: "Spur der Tide-Marge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Randspur der Großen Tide
+# Spur der Tide-Marge
 
-Die Spur beweist zwei Dinge zugleich: Die Große Tide war real, und die tödliche Marge war sichtbar, bevor der Bericht sie zugab. Deep Reach befahl dem Wasser nicht zu steigen. Die Firma akzeptierte ein Routenfenster, in dem die Druckhülle der Kolonie bereits keine Reserve mehr hatte, und veröffentlichte dann die Cascade ohne Sign-off.
+Dieser Sensor macht die Große Tide nicht falsch. Er legt die Zeit fest. Die Auslegungsreserve der Kolonie war weg, bevor Deep Reach das Risiko im öffentlichen Bericht zugab. Die Routenstelle hielt das Fenster unter kommerzieller Ausnahme offen und veröffentlichte danach eine Kaskadenkette ohne diese Ausnahme.
 
 ## Scanner
 
-Geborgener Gezeitensensor. Die Spitzenscherung überschritt das Koloniedesign, doch der Warnmargenbruch wurde vor dem öffentlichen Cascade-Zeitstempel geloggt.
+Geborgener Tidesensor. Der Scherungssprung ist real; der Margenbruch liegt sechzehn Minuten vor Deep Reachs öffentlicher Kaskadenzeit.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-Risk-Schwelle durch Routenautorität akzeptiert. Operatornotiz aus öffentlicher Unfallkette entfernt. Rohspur in Brine-Buffer-Speicher erhalten.
+TIDE-ARRAY // P-63 NORDRÜCKEN. Restmarge unter Abschaltboden. Routenfenster unter kommerzieller Ausnahme gehalten. Öffentliche Ereigniskette lässt Ausnahmenotiz aus. Brine-Buffer-Prüfsumme intakt.
 
 ## Audio
 
-Der Ozean hat nicht gelogen. Der Bericht schon.
+Die Tide brach den Korridor. Die Lüge beginnt mit der Uhr.
 
 ## Field Note
 
-Marauder-Notiz: Suche keine Bösewichtrede. Suche die Zeile, die jemand gelöscht hat.
+Plünderernotiz: Rohspur behalten. Eine gelöschte Margenzeile schlägt jede Rede.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/de_DE. -->

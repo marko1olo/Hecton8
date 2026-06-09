@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Atlas Severance Record"
+title: "Atlas-afsnijdingsrecord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Atlas Severance Record
+# Atlas-afsnijdingsrecord
 
-NL LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+Dit afsnijdingsrecord telt omdat het de fysieke snede vóór het morele label zet: welke links stilvielen, welke micronodes zakten, welke reparatiepulsen stopten, welke route Deep Reach verloor en welke bekkenrisico's bleven.
 
 ## Scanner
 
-NL LOC HOLD: Continuity cut. Damage not contained.
+ATLAS-AFSNIJDINGSRECORD // Continuïteit gesneden in beschadigde reparatielaag. Micronodereactie daalt; bekkenstabiliteit en bewaringseffecten onopgelost.
 
 ## Terminal
 
-NL LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+EINDRECORD / ATLAS-AFSNIJDING
+Actie: continuïteitssnede door Atlas-reparatielaag.
+Getroffen systemen: vent-micronodes, schelpsealantpulsen, routes van gemerkte fauna, beschadigd metaalherstel.
+Geweigerd: Deep Reach-payloadrouting via levende Atlas-laag.
+Onopgelost: bekkenstabiliteit, overlevende ecologie, sporen van opgesloten werknemers.
+Bekend verlies: het record beslist niet of de snede bevrijdde, doodde of stal.
 
 ## Audio
 
-NL LOC HOLD: Stopping the machine does not sort what it had become.
+De link werd stil. Het bekken zei niet of dat genade was.
 
 ## Field Note
 
-NL LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Een afgesneden node kan genade, diefstal of schade zijn. Het record weet alleen welke links stilvielen.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/nl_NL. -->

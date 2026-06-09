@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Abyssal Machine Field Repair Act"
+title: "Abyssal Machine Field Repair Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Abyssal Machine Field Repair Act
+# Abyssal Machine Field Repair Gate
 
-HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+The abyssal machine field turns fear into procedure. Conductive films, acoustic organs and service basins are not decorations. They are components the operator must route through pressure, power loss and contaminated ownership tables.
 
-## Scanner
-
-Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+This stage works because each repair is useful and legally dirty. A living bridge can restore a door. The same bridge can make the door biological, make the repair an Atlas event and make the claim harder to classify. The route forward is built from the thing that makes the paperwork worse.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/en_US. -->

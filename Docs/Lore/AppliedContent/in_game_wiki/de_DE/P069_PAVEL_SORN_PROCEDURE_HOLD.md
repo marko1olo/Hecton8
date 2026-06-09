@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Pavel Sorns Verfahrenssperre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Pavel Sorns Verfahrenssperre
 
-DE LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+Pavel Sorn gibt der HECTON-8-Katastrophe ihr gewöhnlichstes menschliches Scharnier: einen lokalen Vertragsbeamten mit genug Befugnis, eine Evakuierung zu verzögern, und zu wenig Mut, die Kette der Klauseln zu zerreißen. Seine Verfahrenssperre ist kein Schurkenmonolog und kein geheimer Tötungsbefehl. Sie ist ein Dienstvermerk im Rechtssystem von Deep Reach, wo jede lebensrettende Handlung erst durch Zertifizierung, Haftungsrouting, Atlas-Kontinuitätssiegel und Anspruchsverwahrung muss, bevor sie Rettung heißen darf. Der Eintrag zählt, weil er Schuld menschlich hält, ohne sie zu vereinfachen. Sorn sah die Not der Arbeiter, begriff, dass die Aufstiegswarteschlange zum Todesurteil wurde, und wählte trotzdem den Satz, der zuerst das Büro schützte: Freigabe halten, bis der Kanal frei ist.
 
 ## Scanner
 
-DE LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn befahl kein Massaker. Er tat etwas, das auf Papier leichter zu überleben war: Er ließ die Evakuierungsfreigabe im Eingangskorb liegen.
 
 ## Terminal
 
-DE LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Vertragsbüro / Verwaltungsdeck. Evakuierungsfreigabe bleibt in VERFAHRENSSPERRE: externe Zertifizierung fehlt, Atlas-Kontinuitätssiegel ungeklärt, Haftungskanal überlastet. Notlage der Arbeiter anerkannt. Aufstieg nicht autorisieren, bis Anspruchsverwahrung und Quarantänesprache geklärt sind.
 
 ## Audio
 
-DE LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Er schrieb weiter „ausstehend“, während das Meer die unteren Decks nahm.
 
 ## Field Note
 
-DE LOC HOLD: Useful evil often signs in normal handwriting.
+Die Kolonie starb nicht, weil ein Mann vor einer verschlossenen Tür lachte. Sie starb, weil die Tür ein Formular hatte.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/de_DE. -->

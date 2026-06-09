@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Protokół sprzedaży koordynat payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Protokół sprzedaży koordynat payload
 
-PL LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+Protokół sprzedaży koordynat traktuje HECTON-8 jako własność możliwą do odzysku. Zmienia finalny payload w pakiet odbiorcy dla Deep Reach: wektor basenu, siatkę pewności, digest dowodów i klasę dostępu salvage. Nadawca dostaje pieniądze i ulgę w długu. Deep Reach dostaje mapę podejścia i czystszą drogę z powrotem do roszczenia.
 
 ## Scanner
 
-PL LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+Trasa sprzedaży koordynat uzbrojona. Wektor basenu, mapa pewności i digest dowodów idą do Deep Reach Recovery Compliance.
 
 ## Terminal
 
-PL LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+ODBIORCA PAYLOAD // SPRZEDAŻ KOORDYNAT. Odbiorca: Deep Reach Recovery Compliance. Prześlij wektor basenu, siatkę pewności, XO proof digest, klasę dostępu salvage. Zwrot: pokwitowanie wypłaty, redukcja zastawu, stempel priorytetu odzysku. Przenieś mapę dostępu przy blokadzie pokwitowania.
 
 ## Audio
 
-PL LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+Wypłata rozliczona. Mapa przeniesiona. Księga pracowników nadal otwarta.
 
 ## Field Note
 
-PL LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Notatka szabrownika: jeśli pierwsza linia to kwota, czytaj drugą. Druga to access map transferred.
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/pl_PL. -->

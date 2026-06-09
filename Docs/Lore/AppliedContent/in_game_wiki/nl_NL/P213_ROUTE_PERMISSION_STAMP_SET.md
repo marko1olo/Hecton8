@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Set met routevergunningsstempels"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Set met routevergunningsstempels
 
-NL LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+De Set met routevergunningsstempels geeft beweging een visuele taal. PUMP-, SEAL-, RELAY-, BRINE-, FORGE-, TRIAGE-, BOTANY- en WITNESS-stempels zijn geen rangtekens. Het zijn drukvergunningen: wie een luik mocht oversteken, een pak mocht claimen, een crawler mocht vrijgeven of een onderhoudsslot mocht betreden terwijl de kolonie faalde. De stempel moet altijd gekoppeld zijn aan een fysieke staat: open, verzegeld, geweigerd, overschreven, ondergelopen of later door Marauder-hand gecorrigeerd. Zo reconstrueert de speler koloniale beweging zonder een personage dat het uitlegt.
 
 ## Scanner
 
-NL LOC HOLD: A route stamp is stronger than a diary line.
+Een routestempel is sterker dan een dagboekzin omdat hij bewijst wie door de drukgrens mocht.
 
 ## Terminal
 
-NL LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: routevergunning moet één arbeider, één deur of voertuig, één crewfamilie en één latere tegenspraak verbinden. Een stempel zonder fysieke grens is decoratie. Een stempel op een luik, pakkenrek, crawlerrail of lifttag wordt bewegingsbewijs.
 
 ## Audio
 
-NL LOC HOLD: Access is biography under pressure.
+Toegang is biografie onder druk.
 
 ## Field Note
 
-NL LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Stempels: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Koppel aan luikstatus en werkobject.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/nl_NL. -->

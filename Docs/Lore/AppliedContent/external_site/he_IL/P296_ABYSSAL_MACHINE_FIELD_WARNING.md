@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Abyssal Machine Field Warning"
+title: "אזהרת שדה מכונה תהומי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Abyssal Machine Field Warning
+# אזהרת שדה מכונה תהומי
 
-HE LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+לפני האגן האחרון, HECTON-8 מפסיק להיראות נטוש ומתחיל להיראות כמו מכונה גדולה מכדי להראות את כל גופה. האזהרה נשארת שקטה כי האימה אינה מרדף. היא קנה מידה.
 
 ## Scanner
 
-HE LOC HOLD: Machine field warning: silt motion does not match current.
+סחף נע נגד הזרם. גופי סינון משנים מיקום מתחת לאורות.
 
 ## Terminal
 
-HE LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: תנועת הסחף בשדה המכונה התהומי חורגת ממודל הזרם. גופי סינון וצלעות אקטואטור קבורות נרשמים כתשתית נעה. לשמור מרחק; לא לעגון ברצפה רכה.
 
 ## Audio
 
-HE LOC HOLD: The floor is not still.
+הרצפה אינה דוממת.
 
 ## Field Note
 
-HE LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+אזהרת סוף משחק: אימה שקטה ואובייקטיבית. השדה הסופי הוא תשתית שמתעוררת, לא בניית בוס.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/he_IL. -->

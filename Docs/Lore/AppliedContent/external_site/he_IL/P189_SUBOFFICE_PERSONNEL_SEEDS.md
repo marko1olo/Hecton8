@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "זרעי אנשי המשרדים המשניים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# זרעי אנשי המשרדים המשניים
 
-HE LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+זרעי אנשי המשרדים המשניים מגדירים כיצד שמות נמוכים של Deep Reach צריכים להופיע בלור של HECTON-8. המטרה אינה להמציא עוד רשימת נבלים; המטרה היא להפוך את הבירוקרטיה לקריאה ואנושית. השחקן צריך לפגוש ראשי תיבות על מזכרים פגומים, חותמות שולחן חוזרות, hashes של עדים וחתימות סותרות עד ש-Deep Reach תפסיק להרגיש כמו לוגו ותתחיל להרגיש כמו בניין מלא אנשים שאומנו להגן על הדבר הלא נכון. הזרעים האלה שומרים גם על עקביות מאמרים עתידיים: שמות נקשרים לפונקציות, פונקציות לראיות, וראיות לחדרים שהשחקן יכול להבין.
 
 ## Scanner
 
-HE LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+השמות הנמוכים של Deep Reach חשובים מפני שהאסון נישא בידיים, בראשי תיבות ובתיבות דואר, לא בלוגו מופשט של חברה.
 
 ## Terminal
 
-HE LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: קליטת שולי סיכון / ייעוץ תור פינוי / אנליסט רציפות Atlas / נוטריון חבילות / פקיד משמורת שחזור. להשתמש בשמות כעוגני חתימה, התנגשויות עדים וראיות חדרים, לא כסולם פיקוד פשוט.
 
 ## Audio
 
-HE LOC HOLD: A clerk can damage a life without owning the whole disaster.
+לשולחנות היו שמות. לכן הנייר כואב.
 
 ## Field Note
 
-HE LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+תאגיד נעשה אמיתי כאשר מאחורי חותמת עומד אדם עייף.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/he_IL. -->

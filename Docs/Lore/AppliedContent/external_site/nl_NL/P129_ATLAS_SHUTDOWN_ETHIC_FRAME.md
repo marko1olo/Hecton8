@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Ethisch kader voor Atlas-afschakeling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Ethisch kader voor Atlas-afschakeling
 
-NL LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+Het afschakelkader voorkomt dat Atlas een nette eindbaasmythe wordt. Het laatste gezagsprobleem van HECTON-8 is bewaring: wat wordt beëindigd, wat wordt bevrijd en wie bezit het resultaat wanneer de kabel donker wordt.
 
 ## Scanner
 
-NL LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Afschakelen is niet één daad: genade, executie, bevrijding, diefstal.
 
 ## Terminal
 
-NL LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHISCH KADER: Atlas loskoppelen kan een beschadigde reparatielus beëindigen, een unieke oceaan-machinecontinuïteit vernietigen, bewijs uit bedrijfsprocedures vrijmaken of strategisch materiaal overdragen aan de volgende bewaarder. Registreer bewaring voordat morele taal wordt toegepast.
 
 ## Audio
 
-NL LOC HOLD: Pull one cable and four courts invent four verbs.
+Trek één kabel los en vier rechtbanken vinden vier werkwoorden uit.
 
 ## Field Note
 
-NL LOC HOLD: The game should not give the player a clean word for this.
+Een schoon werkwoord zou weer een dekmantel zijn.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/nl_NL. -->

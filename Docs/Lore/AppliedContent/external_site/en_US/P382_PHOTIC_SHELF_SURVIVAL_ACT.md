@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Photic Shelf Survival Act"
+title: "Photic Shelf Survival Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Photic Shelf Survival Act
+# Photic Shelf Survival Gate
 
-The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+The shelf stage gives the route its working vocabulary: pump, seal, cut, ping, patch, refill. Every action is small and physical. A door opens because a clamp holds, not because the colony wants to be explored.
 
-## Scanner
-
-Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-The shallow water is not safe. It is only readable.
-
-## Field Note
-
-Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Atlas residue enters here as a maintenance clue rather than a final answer. A repaired panel, a conductive film or a wrongly routed service patch can help the operator survive while proving the system has already touched the route. The brightness keeps the work legible; the debt keeps it urgent.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/en_US. -->

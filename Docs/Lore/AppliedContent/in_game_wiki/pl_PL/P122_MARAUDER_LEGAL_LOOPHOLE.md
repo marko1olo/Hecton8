@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Prawna luka marauderów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Prawna luka marauderów
 
-PL LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Marauderzy nie są plemieniem pod jedną flagą. To kontraktorzy, załogi zadłużone, nurkowie wrakowi i zdesperowani mechanicy pracujący w luce stworzonej przez opóźnienia. Martwa kolonia nadal ma właściciela, ale właściciel nie łata kadłubów, nie wypompowuje solanki i nie wyciąga rejestratorów ze zmiażdżonych pokładów serwisowych. Deep Reach potrzebuje ludzi, których może się wyprzeć. Domeny potrzebują dowodów, których same nie muszą zbierać. Załogi potrzebują papierów wystarczających do przeżycia następnego patrolu.
 
 ## Scanner
 
-PL LOC HOLD: License valid in one lane, criminal in the next.
+Licencja ważna w jednym korytarzu, akt oskarżenia w następnym.
 
 ## Terminal
 
-PL LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor pod custody Aegir Reclamation Pool; tolerowany intruz w języku aktywów Deep Reach; ścigany raider w czystych streszczeniach Sol; emergency responder tylko wtedy, gdy odzyskany zapis nie kompromituje nikogo ważnego.
 
 ## Audio
 
-PL LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Ten sam palnik może być narzędziem, przestępstwem albo ostatnim urządzeniem ratunkowym.
 
 ## Field Note
 
-PL LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder jest stanowiskiem tylko wtedy, gdy właściwy sąd może na tym zarobić.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/pl_PL. -->

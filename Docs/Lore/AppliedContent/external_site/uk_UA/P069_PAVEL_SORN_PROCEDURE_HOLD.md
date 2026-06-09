@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Процедурне утримання Павла Сорна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Процедурне утримання Павла Сорна
 
-UK LOC HOLD: Pavel Sorn Procedure Hold is the bureaucratic horror packet: a local contract officer follows procedure too long, converting a real geophysical disaster into a fatal corporate permission problem.
+Процедурне утримання Павла Сорна - стаття про бюрократичний жах HECTON-8. Вона показує, як реальна океанічна катастрофа стала гіршою, коли процедура Deep Reach перетворила евакуацію на проблему дозволу. Сорн не написаний як великий змовник; так він корисніший і страшніший. Це людина, здатна прочитати звіт про затоплення, упізнати додані імена й усе одно залишити дозвіл у статусі очікування зовнішньої сертифікації, бо контрактна мова навчила його боятися не того наслідку. Для гравця цей запис оформлює крах колонії як ланцюг малих законних відмов: без миттєвого порятунку, без карикатурного лиходія на зв'язку, лише люди й системи, що перетворюють затримку на смерть.
 
 ## Scanner
 
-UK LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Павло Сорн не наказував різанину. Він зробив те, що легше пережити на папері: залишив дозвіл на евакуацію у теці очікування.
 
 ## Terminal
 
-UK LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+СОРН, П. Контрактний офіс / адміністративна палуба. Дозвіл на евакуацію лишається у ПРОЦЕДУРНОМУ УТРИМАННІ: немає зовнішньої сертифікації, печатка безперервності Atlas не закрита, канал відповідальності перевантажений. Лихо працівників визнано. Підйом не дозволяти до прояснення зберігання претензії та карантинного формулювання.
 
 ## Audio
 
-UK LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Він далі писав «очікує», поки море забирало нижні палуби.
 
 ## Field Note
 
-UK LOC HOLD: Useful evil often signs in normal handwriting.
+Колонія загинула не тому, що хтось сміявся біля замкнених дверей. Вона загинула тому, що в дверей була форма.
 
 <!-- External Site; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/uk_UA. -->

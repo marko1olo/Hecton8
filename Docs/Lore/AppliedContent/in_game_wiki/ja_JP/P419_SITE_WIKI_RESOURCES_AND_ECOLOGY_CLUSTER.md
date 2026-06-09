@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 資源と生態
 
-資源・生態ハブ: drowned crust、brine ladders、vent chemistry、living systems、Atlasの損傷したrepair logic。
+資源と生態のハブ: Drowned Crust、塩水ラダー、ベント化学、blue debt、捕食者の手掛かり、タグ付き動物、そして生きた系をハードウェア扱いする Atlas 修理。
 
 ## Scanner
 
-公開ハブ: geology、blue debt、fauna grammar、Atlas修理ネットワークの誤用。
+公開ハブ: Drowned Crust、塩水ラダー、blue debt の圧力履歴、動物の手掛かり、Atlas 修理の誤用。
 
 ## Terminal
 
-SITE NAV: native geology、process feedstock、Atlas-altered resources、shallow ecology、encounter grammarを一枚のprocess mapとして扱う。
+SITE NAV: 標本を起源、圧力履歴、生体接触、採取損傷、custody 価値で読む。
 
 ## Audio
 
-ここに単なるlootはない。
+ここに単なる loot はない。
 
 ## Field Note
 
-資源と生態は、材料、生物、証拠圧が同じルートを共有する時に結びつく。
+きれいな標本が最も豊かとは限らない。何が作り、何が触れ、採取で何が傷ついたかを読む。
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ja_JP. -->

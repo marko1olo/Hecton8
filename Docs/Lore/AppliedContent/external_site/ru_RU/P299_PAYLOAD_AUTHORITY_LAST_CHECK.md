@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Последняя проверка payload authority"
+title: "Последняя проверка полномочий payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Последняя проверка payload authority
+# Последняя проверка полномочий payload
 
-Концовка HECTON-8 не о том, выжил ли игрок. Она о том, кто получит proof и что этот receiver сможет с ним сделать.
+Финал HECTON-8 — не только о том, выживет ли игрок. Это вопрос, кто получит доказательство и что этому получателю будет позволено делать с океаном после ухода свидетеля.
 
 ## Scanner
 
-Payload check: receiver changes meaning, not only reward.
+Проверка payload: выбор приемника меняет владельца, а не только награду.
 
 ## Terminal
 
-PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+ПРОВЕРКА ПОЛНОМОЧИЙ PAYLOAD: выбрать приемник, массу, хранение доказательств, экологическое последствие и послевозвратную ответственность. Выбор приемника определяет, кто сможет действовать на основании доказательства после ухода.
 
 ## Audio
 
@@ -35,6 +35,6 @@ PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological con
 
 ## Field Note
 
-Использовать прямо перед irreversible ending route selection.
+Использовать прямо перед необратимым выбором маршрута концовки.
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/ru_RU. -->

@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Tulang Punggung Relai
 
-Ruang manusia tersambung oleh relai, bukan mukjizat. Hash membuktikan penerimaan; rantai hukum menjaga klaim hidup.
+HECTON-8 tidak memakai ansible, kanal darurat ajaib, atau pengadilan inti yang bicara langsung di atas lautan. Ruang manusia terhubung oleh Relay Spine: beam terjadwal, kustodi paket, hash saksi, buffer lokal, dan rantai tanda terima. Mesin ini kuat untuk menyimpan fakta. Buruk untuk menyelamatkan orang yang butuh udara sekarang.
 
-Jaringannya kuat dan dingin. Pemain bisa mengirim kebenaran lalu mati sebelum itu berguna.
+Pemain bisa menemukan file benar, membuktikan asalnya, mendorongnya ke antrean, dan tetap melihat kondisi lokal memburuk. Black Keel mendengar burst dan mengubahnya menjadi lien. Luyten mengautentikasi setelah jendela tertutup. Aturan no-FTL bukan catatan kecil; itulah alasan setiap pilihan segera milik orang yang masih di bawah air.
 
 <!-- External Site; generated from P012_RELAY_SPINE/id_ID. -->

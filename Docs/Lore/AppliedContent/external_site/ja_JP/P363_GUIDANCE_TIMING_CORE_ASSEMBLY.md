@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "誘導タイミングコアアセンブリ"
+title: "誘導タイミングコア組立品"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 誘導タイミングコアアセンブリ
+# 誘導タイミングコア組立品
 
-誘導タイミングコアアセンブリは HECTON-8 の宇宙飛行を硬く保つ。extraction は時計、影、傷んだ信頼でできた航路問題だ。
+誘導タイミングコア組立品は、脱出を単純な上向きの押し出しではなく軌道工学に変える。HECTON-8の上昇カプセルは、水、天候、月ジオメトリ、企業受信ルールを通過して初めて、その燃焼を回収可能と呼べる。
 
-## Scanner
+この部品は時刻付きの地図を持つ。Aegir暦、Black Keel受信レーン、月リレーシャッターキャッシュ、嵐プルームのドリフト、custody時計の許容値。どれも飾りではない。カプセルは密閉され、充電され、機械的に健全でも、パケットが誤ったレーンの誤った時刻に届けば回収を外す。
 
-空白の timing core。Aegir の幾何が、上昇を recovery、capture、または沈黙に変える。
-
-## Terminal
-
-GUIDANCE CORE: カプセル時計を Aegir window、Black Keel receiver lane、月 relay shutter、storm-plume drift に同期。遅い packets は証拠喪失に、早い packets は capture noise になる。
-
-## Audio
-
-上は方向ではない。証人付きの窓だ。
-
-## Field Note
-
-HECTON-8 から単純な“上”はない。受信機、影、嵐のドリフト、そして君の恐怖より古い packet queue がある。
+ここにHECTON-8の脱出幻想の苦さがある。生存者は深度から自由へ逃げるのではない。信号を曲げ続ける海の上で、狭い会計窓へカプセルを入れる。タイミングコアの修理は打ち上げにその窓の席を与える。窓そのものを優しくはしない。
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/ja_JP. -->

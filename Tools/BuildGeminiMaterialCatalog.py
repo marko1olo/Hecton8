@@ -36,6 +36,15 @@ SPLIT_ATLAS_MANIFESTS = (
     GENERATED_ROOT
     / "GeminiBatch34SplitAtlasCandidates_20260608/GeminiBatch34SplitAtlasCandidates_Manifest.json",
 )
+BATCH34_INTAKE_MANIFEST = (
+    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_IntakeManifest.json"
+)
+BATCH34_CURATION_MANIFEST = (
+    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json"
+)
+BATCH34_REGEN_TARGETS_MANIFEST = (
+    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json"
+)
 
 INTEGRATION_REPORTS = (
     GENERATED_ROOT / "GeminiBiomeFloraIntegration_20260607.json",
@@ -43,7 +52,9 @@ INTEGRATION_REPORTS = (
     GENERATED_ROOT / "GeneratedFloraImportedNormalization_20260607.json",
     GENERATED_ROOT / "GeneratedSingleTextureNormalization_20260607.json",
     GENERATED_ROOT / "GeminiReplacementTextureIntegration_20260607.json",
-    ROOT / "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/QA/Batch34_TextureExpansion_CurationManifest.json",
+    BATCH34_INTAKE_MANIFEST,
+    BATCH34_CURATION_MANIFEST,
+    BATCH34_REGEN_TARGETS_MANIFEST,
 )
 
 PREVIEW_SHEETS = (
@@ -56,6 +67,8 @@ WORLD_PROXY_VALIDATOR_PATH = ROOT / "Tools/ValidateWorldProxyGeminiBiomeAssignme
 EXTERNAL_PBR_IMPORTER_PATH = ROOT / "Assets/_Project/Scripts/Editor/ExternalPbrTexturePackImporter.cs"
 EXTERNAL_PBR_BINDING_VALIDATOR_PATH = ROOT / "Tools/ValidateExternalPbrImporterBindings.py"
 EXTERNAL_PBR_MATERIAL_ASSET_VALIDATOR_PATH = ROOT / "Tools/ValidateExternalPbrMaterialAssets.py"
+EXTERNAL_PBR_LIT_PREVIEW_BUILDER_PATH = ROOT / "Tools/BuildExternalPbrLitPreview.py"
+EXTERNAL_PBR_LIT_PREVIEW_VALIDATOR_PATH = ROOT / "Tools/ValidateExternalPbrLitPreview.py"
 GEMINI_STATE_VALIDATOR_PATH = ROOT / "Tools/ValidateGeminiGeneratedMaterialState.py"
 GEMINI_STATIC_PREFLIGHT_RUNNER_PATH = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 EXTERNAL_PBR_IMPORT_RUNNER_PATH = ROOT / "Tools/RunExternalPbrUnityImport.ps1"
@@ -81,6 +94,9 @@ CONSTRUCTION_INSULATION_VALIDATOR_PATH = ROOT / "Tools/ValidateConstructionInsul
 FLORA_IMPORTED_APPLIER_PATH = ROOT / "Tools/ApplyGeminiBiomeToFloraImported.py"
 FLORA_IMPORTED_VALIDATOR_PATH = ROOT / "Tools/ValidateGeminiBiomeFloraImportedAssignments.py"
 BATCH34_DIRECT_PROMPT_QUEUE_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34DirectPromptQueue.py"
+BATCH34_TARGETED_PROMPT_QUEUE_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34TargetedPromptQueues.py"
+BATCH34_REGEN_TARGETS_PROCESSOR_PATH = ROOT / "Tools/ProcessBatch34RegenTargets.py"
+BATCH34_REGEN_TARGETS_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34RegenTargets.py"
 SOURCE_ATLAS_IMPORTER_PATH = ROOT / "Assets/_Project/Scripts/Editor/Batch34SourceAtlasImporter.cs"
 SOURCE_ATLAS_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34SourceAtlasPack.py"
 SOURCE_ATLAS_IMPORTER_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34SourceAtlasImporter.py"
@@ -93,6 +109,7 @@ RESOURCE_PICKUP_MATERIAL_VALIDATOR_PATH = ROOT / "Tools/ValidateResourcePickupGe
 WORLD_SUPPORT_MATERIAL_APPLIER_PATH = ROOT / "Assets/_Project/Scripts/Editor/WorldSupportGeminiMaterialApplier.cs"
 WORLD_SUPPORT_MATERIAL_VALIDATOR_PATH = ROOT / "Tools/ValidateWorldSupportGeminiMaterialRoute.py"
 WORLD_SUPPORT_DECAL_BUILDER_PATH = ROOT / "Assets/_Project/Scripts/Editor/WorldSupportGeneratedDecalMaterialBuilder.cs"
+WORLD_SUPPORT_AUTHORING_PATH = ROOT / "Assets/_Project/Scripts/Editor/WorldProceduralSupportFinalAuthoring.cs"
 ALPHA_CANDIDATE_PROMOTER_PATH = ROOT / "Tools/PromoteBatch34AlphaCandidatesToUnitySources.py"
 ALPHA_CANDIDATE_VALIDATOR_PATH = ROOT / "Tools/ValidateBatch34AlphaCandidatePack.py"
 ALPHA_CANDIDATE_EXTRACTOR_PATH = ROOT / "Tools/ExtractBatch34SourceAtlasAlphaCandidates.py"
@@ -535,8 +552,10 @@ def parse_world_support_decal_source_consumers(consumers: dict[str, list[dict]])
         r'"(?P<sourceTexture>Assets/[^"]+\.png)"',
         re.MULTILINE,
     )
+    source_by_constant: dict[str, str] = {}
     for match in pattern.finditer(text):
         constant_name = match.group("materialPath")
+        source_by_constant[constant_name] = match.group("sourceId")
         suffix = constant_paths.get(constant_name, "")
         target = output_root + suffix if output_root and suffix else constant_name
         add_source_consumer(
@@ -545,6 +564,59 @@ def parse_world_support_decal_source_consumers(consumers: dict[str, list[dict]])
             "world_support_generated_decal_material",
             target,
             match.group("sourceTexture"),
+        )
+
+    parse_world_support_authoring_decal_consumers(consumers, source_by_constant, constant_paths, output_root)
+
+
+def parse_world_support_authoring_decal_consumers(
+    consumers: dict[str, list[dict]],
+    source_by_constant: dict[str, str],
+    material_suffixes: dict[str, str],
+    output_root: str,
+) -> None:
+    if not WORLD_SUPPORT_AUTHORING_PATH.exists():
+        return
+
+    text = WORLD_SUPPORT_AUTHORING_PATH.read_text(encoding="utf-8-sig")
+    child_names = {
+        match.group("name"): match.group("value")
+        for match in re.finditer(
+            r'private\s+const\s+string\s+(?P<name>[A-Za-z0-9_]+ChildName)\s*=\s*"(?P<value>[^"]+)"',
+            text,
+        )
+    }
+    material_constants_by_variable = {
+        match.group("variable"): match.group("constant")
+        for match in re.finditer(
+            r"Material\s+(?P<variable>[A-Za-z0-9_]+)\s*=\s*AssetDatabase\.LoadAssetAtPath<Material>\("
+            r"\s*"
+            r"WorldSupportGeneratedDecalMaterialBuilder\.(?P<constant>[A-Za-z0-9_]+MaterialPath)\)",
+            text,
+        )
+    }
+    attach_pattern = re.compile(
+        r"AttachSupportDecal\(\s*"
+        r"lod0,\s*"
+        r"(?P<variable>[A-Za-z0-9_]+),\s*"
+        r"(?P<child>[A-Za-z0-9_]+ChildName)\s*,",
+        re.MULTILINE,
+    )
+    for match in attach_pattern.finditer(text):
+        material_constant = material_constants_by_variable.get(match.group("variable"), "")
+        source_id = source_by_constant.get(material_constant, "")
+        child_name = child_names.get(match.group("child"), match.group("child"))
+        if not source_id:
+            continue
+
+        material_suffix = material_suffixes.get(material_constant, "")
+        material_path = output_root + material_suffix if output_root and material_suffix else material_constant
+        add_source_consumer(
+            consumers,
+            source_id,
+            "world_support_generated_decal_prefab_child",
+            f"Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Zone_RuinApex.prefab::{child_name}",
+            f"material={material_path}",
         )
 
 
@@ -664,6 +736,67 @@ def existing_paths(paths: tuple[Path, ...]) -> list[str]:
     return [display_path(path) for path in paths if path.exists()]
 
 
+def count_by(entries: list[dict], field_name: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        key = str(entry.get(field_name, "")).strip() or "<missing>"
+        counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def batch34_texture_expansion_summary() -> dict:
+    intake_payload = load_manifest(BATCH34_INTAKE_MANIFEST) if BATCH34_INTAKE_MANIFEST.exists() else {}
+    curation_payload = load_manifest(BATCH34_CURATION_MANIFEST) if BATCH34_CURATION_MANIFEST.exists() else {}
+    entries = list(curation_payload.get("entries", []) or intake_payload.get("entries", []) or [])
+    source_audit = intake_payload.get("sourceAudit", {}) or {}
+
+    issue_count = 0
+    warning_count = 0
+    entries_with_issues = 0
+    entries_with_warnings = 0
+    watermark_detected = 0
+    watermark_repaired = 0
+    seam_refined = 0
+    for entry in entries:
+        issues = entry.get("issues", []) or []
+        warnings = entry.get("warnings", []) or []
+        issue_count += len(issues)
+        warning_count += len(warnings)
+        if issues:
+            entries_with_issues += 1
+        if warnings:
+            entries_with_warnings += 1
+        if (entry.get("watermarkDetection") or {}).get("detected"):
+            watermark_detected += 1
+        if entry.get("watermarkRepaired"):
+            watermark_repaired += 1
+        if entry.get("seamRefined"):
+            seam_refined += 1
+
+    return {
+        "intakeManifest": display_path(BATCH34_INTAKE_MANIFEST) if BATCH34_INTAKE_MANIFEST.exists() else "",
+        "curationManifest": display_path(BATCH34_CURATION_MANIFEST) if BATCH34_CURATION_MANIFEST.exists() else "",
+        "expectedJobCount": int(source_audit.get("expectedJobCount", 0) or 0),
+        "downloadCandidateCount": int(source_audit.get("downloadCandidateCount", 0) or 0),
+        "selectedDownloadSourceCount": int(source_audit.get("selectedDownloadSourceCount", 0) or 0),
+        "uniqueSelectedDownloadSourceCount": int(source_audit.get("uniqueSelectedDownloadSourceCount", 0) or 0),
+        "ignoredDownloadCandidateCount": len(source_audit.get("ignoredDownloadCandidates", []) or []),
+        "entryCount": len(entries),
+        "curationStatusCounts": count_by(entries, "curationStatus"),
+        "verdictCounts": count_by(entries, "verdict"),
+        "sourceTypeCounts": count_by(entries, "sourceType"),
+        "visualStatusCounts": count_by(entries, "visualStatus"),
+        "unityImportStatusCounts": count_by(entries, "unityImportStatus"),
+        "entriesWithIssues": entries_with_issues,
+        "issueCount": issue_count,
+        "entriesWithWarnings": entries_with_warnings,
+        "warningCount": warning_count,
+        "watermarkDetectedCount": watermark_detected,
+        "watermarkRepairedCount": watermark_repaired,
+        "seamRefinedCount": seam_refined,
+    }
+
+
 def build() -> int:
     material_payloads = [(path, load_manifest(path)) for path in material_manifest_paths()]
     material_entries: list[dict] = []
@@ -701,6 +834,7 @@ def build() -> int:
     for entry in alpha_entries:
         status = str(entry.get("status", ""))
         alpha_status_counts[status] = alpha_status_counts.get(status, 0) + 1
+    batch34_summary = batch34_texture_expansion_summary()
 
     catalog = {
         "schema": "hecton8.generated_material_catalog.v2",
@@ -717,6 +851,7 @@ def build() -> int:
         "splitAtlasEntryCount": len(split_entries),
         "splitIslandCount": split_island_count,
         "alphaStatusCounts": alpha_status_counts,
+        "batch34TextureExpansionSummary": batch34_summary,
         "consumerBindingCount": consumer_count,
         "sourceConsumerBindingCount": source_consumer_count,
         "notes": [
@@ -733,13 +868,15 @@ def build() -> int:
             "Player suit material palette is an editor ProductFace handoff from Gemini PBR source materials into generated suit slot materials; prefab binding remains Unity-owner work.",
             "Resource pickup materials are updated through existing Mat_Resource_* assets so current pickup prefabs keep stable material GUIDs while gaining generated PBR maps.",
             "World-support final materials are updated through existing Mat_Support_* assets and self-healed by WorldProceduralSupportFinalAuthoring when generated sources are available.",
-            "World-support ruin decals are first-party generated quad decals sourced from Batch34 alpha candidates, replacing vendor ScifiFacility decal prefab dependency in that route.",
+            "World-support ruin decals are first-party generated quad decals sourced from Batch34 alpha candidates, replacing vendor ScifiFacility decal prefab dependency in that route; source consumer bindings include both generated decal materials and authored prefab children.",
             "Tool surface detail primitives bind old Gemini single/micro-panel materials as small no-collider tool accents instead of repainting whole tools.",
             "Batch34 UV/pickup atlas source handoff creates explicit Unity material assets for flora/fauna/pickup mesh owners without mutating current prefabs.",
             "Construction damp-insulation backing adds physical no-collider backing panels to damage/ruin prefabs and binds B34-3421.",
             "Gemini material Unity apply is a single gated batch through GeminiMaterialIntegrationApplier.ApplyAll; do not re-add per-stage Unity batch launches.",
             "Legacy generated-material runner names are compatibility wrappers that delegate to RunGeminiMaterialUnityApplyAll.ps1.",
             "Batch34 direct service prompt files are checked as two exact 25-job queues with non-empty negative prompts before source intake work.",
+            "Batch34 targeted fix and regen prompt files are checked together so newer regen prompts explicitly supersede overlapping older fix prompts.",
+            "Batch34 targeted regen outputs are processed into a manifest with explicit selected/rejected variants before any old source is replaced.",
         ],
         "materialManifests": manifest_summaries,
         "sourceAtlasManifests": existing_paths(SOURCE_ATLAS_MANIFESTS),
@@ -753,6 +890,8 @@ def build() -> int:
                 EXTERNAL_PBR_IMPORTER_PATH,
                 EXTERNAL_PBR_BINDING_VALIDATOR_PATH,
                 EXTERNAL_PBR_MATERIAL_ASSET_VALIDATOR_PATH,
+                EXTERNAL_PBR_LIT_PREVIEW_BUILDER_PATH,
+                EXTERNAL_PBR_LIT_PREVIEW_VALIDATOR_PATH,
                 GEMINI_STATE_VALIDATOR_PATH,
                 GEMINI_STATIC_PREFLIGHT_RUNNER_PATH,
                 EXTERNAL_PBR_IMPORT_RUNNER_PATH,
@@ -780,6 +919,9 @@ def build() -> int:
                 FLORA_IMPORTED_APPLIER_PATH,
                 FLORA_IMPORTED_VALIDATOR_PATH,
                 BATCH34_DIRECT_PROMPT_QUEUE_VALIDATOR_PATH,
+                BATCH34_TARGETED_PROMPT_QUEUE_VALIDATOR_PATH,
+                BATCH34_REGEN_TARGETS_PROCESSOR_PATH,
+                BATCH34_REGEN_TARGETS_VALIDATOR_PATH,
             SOURCE_ATLAS_IMPORTER_PATH,
             SOURCE_ATLAS_VALIDATOR_PATH,
             SOURCE_ATLAS_IMPORTER_VALIDATOR_PATH,
@@ -792,6 +934,7 @@ def build() -> int:
             WORLD_SUPPORT_MATERIAL_APPLIER_PATH,
             WORLD_SUPPORT_MATERIAL_VALIDATOR_PATH,
             WORLD_SUPPORT_DECAL_BUILDER_PATH,
+            WORLD_SUPPORT_AUTHORING_PATH,
             ALPHA_CANDIDATE_PROMOTER_PATH,
                 ALPHA_CANDIDATE_VALIDATOR_PATH,
                 ALPHA_CANDIDATE_EXTRACTOR_PATH,
@@ -834,6 +977,7 @@ def build() -> int:
         f"- split atlas candidate sources: {len(split_entries)} entries / {split_island_count} islands",
         f"- consumer bindings: {consumer_count}",
         f"- source consumer bindings: {source_consumer_count}",
+        f"- Batch34 selected Gemini sources: {batch34_summary.get('selectedDownloadSourceCount', 0)} / {batch34_summary.get('expectedJobCount', 0)}",
         "",
         "## Material Manifests",
         "",
@@ -843,6 +987,35 @@ def build() -> int:
             f"- `{summary['path']}` - provider `{summary['provider']}`, assets={summary['assetCount']}, "
             f"unity={summary['unityImportStatus'] or 'n/a'}"
         )
+
+    if batch34_summary:
+        lines.extend(["", "## Batch34 Intake And Curation", ""])
+        lines.append(f"- entries: {batch34_summary.get('entryCount', 0)}")
+        lines.append(
+            f"- selected download sources: {batch34_summary.get('selectedDownloadSourceCount', 0)} "
+            f"/ {batch34_summary.get('expectedJobCount', 0)}"
+        )
+        lines.append(f"- ignored duplicate download candidates: {batch34_summary.get('ignoredDownloadCandidateCount', 0)}")
+        lines.append(
+            f"- warnings: {batch34_summary.get('entriesWithWarnings', 0)} entries / "
+            f"{batch34_summary.get('warningCount', 0)} warnings"
+        )
+        lines.append(
+            f"- issues: {batch34_summary.get('entriesWithIssues', 0)} entries / "
+            f"{batch34_summary.get('issueCount', 0)} issues"
+        )
+        lines.append(
+            f"- watermark detected/repaired: {batch34_summary.get('watermarkDetectedCount', 0)} "
+            f"/ {batch34_summary.get('watermarkRepairedCount', 0)}"
+        )
+        for title, field_name in (
+            ("curation", "curationStatusCounts"),
+            ("verdict", "verdictCounts"),
+            ("source type", "sourceTypeCounts"),
+        ):
+            counts = batch34_summary.get(field_name, {}) or {}
+            formatted = ", ".join(f"{key}={value}" for key, value in sorted(counts.items()))
+            lines.append(f"- {title}: {formatted}")
 
     if source_entries:
         lines.extend(["", "## Source Atlases", ""])
@@ -945,6 +1118,12 @@ def build() -> int:
     print(f"splitIslands={split_island_count}")
     print(f"consumerBindings={consumer_count}")
     print(f"sourceConsumerBindings={source_consumer_count}")
+    print(f"batch34Entries={batch34_summary.get('entryCount', 0)}")
+    print(
+        "batch34SelectedSources="
+        f"{batch34_summary.get('selectedDownloadSourceCount', 0)}/{batch34_summary.get('expectedJobCount', 0)}"
+    )
+    print(f"batch34CurationStatusCounts={json.dumps(batch34_summary.get('curationStatusCounts', {}), sort_keys=True)}")
     return 0
 
 

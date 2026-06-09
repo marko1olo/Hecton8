@@ -478,6 +478,45 @@ namespace Hecton8.Editor
             AssertContains(feature, "builder.UseTexture(decalAtlasTexture, AccessFlags.Read);", DeferredDecalPassPath, "deferred decal declares atlas read before render func");
             AssertContains(feature, "context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);", DeferredDecalPassPath, "deferred decal binds atlas through command buffer");
             AssertContains(feature, "ReleaseDecalAtlasHandle();", DeferredDecalPassPath, "deferred decal releases cached atlas wrapper");
+            AssertContains(feature, "public void ClearFrameState()", DeferredDecalPassPath, "deferred decal exposes local frame-state clear for service replacement");
+            AssertContains(feature, "private void ClearPendingVisualSyncContext()", DeferredDecalPassPath, "deferred decal clears staged camera context on service replacement");
+            AssertContains(feature, "_pass?.ClearFrameState();", DeferredDecalPassPath, "deferred decal drops stale uploaded frame state on service replacement");
+            AssertContains(feature, "_pass = null;", DeferredDecalPassPath, "deferred decal does not retain disposed pass instance after feature dispose");
+            AssertTokenSequence(
+                feature,
+                DeferredDecalPassPath,
+                "deferred decal DataVault replacement clears staged visual state before vault rebind",
+                "if (serviceSlot == GlobalRegistryServiceSlot.DataVault)",
+                "ClearPendingVisualSyncContext();",
+                "DynamicDecalVaultRuntime.ResetColdStorageForRebind();",
+                "DynamicDecalVaultRuntime.TryInitializeColdStorage();",
+                "DynamicDecalVaultRuntime.RefreshColdPlayerContext();");
+            AssertTokenSequence(
+                feature,
+                DeferredDecalPassPath,
+                "deferred decal player replacement clears staged visual state before context refresh",
+                "if (serviceSlot == GlobalRegistryServiceSlot.Player)",
+                "ClearPendingVisualSyncContext();",
+                "DynamicDecalVaultRuntime.RefreshColdPlayerContext(currentService as IPlayerRuntimeContext);");
+            AssertTokenSequence(
+                feature,
+                DeferredDecalPassPath,
+                "deferred decal dispatcher replacement clears staged visual state before late-frame rebind",
+                "if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)",
+                "ClearPendingVisualSyncContext();",
+                "TryUnregisterLateFrame();",
+                "if (currentService != null && isActive)",
+                "TryRegisterLateFrame();");
+            AssertTokenSequence(
+                feature,
+                DeferredDecalPassPath,
+                "deferred decal dispose clears staged state before unregister and pass release",
+                "protected override void Dispose(bool disposing)",
+                "ClearPendingVisualSyncContext();",
+                "TryUnregisterLateFrame();",
+                "TryUnregisterHotSwapListener();",
+                "_pass?.Dispose();",
+                "_pass = null;");
             AssertTokenNotBetween(
                 feature,
                 "public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)",

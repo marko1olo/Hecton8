@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "متغيرات سجل الفرز الطبي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# متغيرات سجل الفرز الطبي
 
-AR LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+تحافظ متغيرات سجل الفرز الطبي على قابلية قراءة الضرر من دون تحويل الغرف إلى عروض معاناة. يجب أن يبيّن سجل الفرز كيف تحركت الإصابة عبر البيروقراطية: اختصار crush-status، ودين أكسجين، وroute hold مشطوب، وحالة معدات، وملاحظة تثبيت Atlas، وفجوة witness hash. الهدف ليس تزيين المستعمرة بالألم. الهدف هو إثبات أن التأخير كان له مسار، وأن للمسار مالكين. يجعل جسم الفرز الجيد اللاعب يسأل لماذا تم عد عامل، واحتجاز آخر، واختفاء ثالث داخل لغة الشهادات.
 
 ## Scanner
 
-AR LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+يجب أن يكشف الدليل الطبي التأخير والتوجيه، لا أن يزين الغرفة بالمعاناة.
 
 ## Terminal
 
-AR LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: يجب أن يربط كل إدخال في السجل الإصابة بالضغط، أو رفض المسار، أو حالة المعدات، أو تأخير الشهادة، أو سلسلة شاهد مفقودة. الألم وحده لا يكفي. يجب أن يبيّن الجسم من كان يستطيع الحركة، ومن تم احتجازه، وأي نظام جعل التأخير يبدو إجرائيا.
 
 ## Audio
 
-AR LOC HOLD: Pain is not proof until the route bears the mark.
+الألم ليس دليلا حتى يحمل المسار العلامة.
 
 ## Field Note
 
-AR LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+المتغيرات: اختصار crush-status، علامة دين أكسجين، route hold مشطوب، ملاحظة تثبيت Atlas، فجوة witness hash.
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/ar_SA. -->

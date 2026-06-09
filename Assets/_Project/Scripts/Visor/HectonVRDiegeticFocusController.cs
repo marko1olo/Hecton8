@@ -62,6 +62,7 @@ namespace Hecton8.Visor
         {
             TryUnregisterHotSwapListener();
             TryUnregisterTick();
+            ClearPlayerContext();
             if (clearGlobalsOnDisable)
             {
                 _worldBlur = 0f;
@@ -80,7 +81,7 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                CachePlayerContext(currentService as IPlayerRuntimeContext);
                 return;
             }
 
@@ -158,17 +159,17 @@ namespace Hecton8.Visor
 
         private Transform ResolveEyeSelectionOrigin()
         {
-            if (eyeSelectionOrigin != null)
+            if (IsTransformUsable(eyeSelectionOrigin))
                 return eyeSelectionOrigin;
 
-            Camera camera = fallbackEyeCamera;
+            Camera camera = IsCameraUsable(fallbackEyeCamera) ? fallbackEyeCamera : null;
             if (camera == null)
             {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                IPlayerRuntimeContext playerContext = ResolvePlayerContext();
                 camera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
-            return camera != null ? camera.transform : null;
+            return IsCameraUsable(camera) && IsTransformUsable(camera.transform) ? camera.transform : null;
         }
 
         private bool IsPanelInsideCheapFocusGate(Vector3 rayOriginPosition, Vector3 rayForward)
@@ -282,7 +283,32 @@ namespace Hecton8.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -342,6 +368,27 @@ namespace Hecton8.Visor
                    math.isfinite(value.y) &&
                    math.isfinite(value.z) &&
                    math.isfinite(value.w);
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsCameraUsable(Camera camera)
+        {
+            return camera != null && (!Application.isPlaying || camera.isActiveAndEnabled);
+        }
+
+        private static bool IsTransformUsable(Transform target)
+        {
+            return target != null && (!Application.isPlaying || target.gameObject.activeInHierarchy);
         }
     }
 }

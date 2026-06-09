@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Смены, не герои"
+title: "Сменные бригады, не герои"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Смены, не герои
+# Сменные бригады, не герои
 
-Смены, не герои - правило письма для очеловечивания drowned colony.
+Сменные бригады, не герои - правило человеческого письма для HECTON-8: рабочие запоминаются через работу, усталость, привычки и процедурные сбои.
 
 ## Scanner
 
-Колония становится человеческой через расписания, не speeches.
+ЧЕЛОВЕЧЕСКИЙ СЛОЙ // Колония становится настоящей через графики, стертые инструменты, пропущенные возвраты и имена на досках смен. Не через речи.
 
 ## Terminal
 
-COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. Shift roster can hurt more than a monologue.
+ПРАВИЛО ПИСЬМА: записывать рабочих как техников насосов, медиков, маршрутных клерков, водолазов, поваров, операторов фабрикатора и усталых старших смен. Роспись с одним пропущенным возвратом ранит сильнее памятника.
 
 ## Audio
 
-Они не были symbols. Они опаздывали на смену.
+Они не были символами. Они опаздывали на смену.
 
 ## Field Note
 
-Люди правдоподобнее как workers, чем как memorial statues.
+Люди правдоподобнее как работники, чем как памятные статуи.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/ru_RU. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir: Der Himmel, der Rettung verweigert
 
-Aegir ist ein operativer Himmel. Mondleiter und Relais können Pakete verzögern oder beschädigen, ohne die Oberfläche dauerhaft dunkel zu machen. Rettung scheitert an Entfernung, Geometrie, Recht und Kosten.
+Aegir ist die orbitale Maschine über HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window und der Grund, warum rescue langsamer reist als Papier.
 
 ## Scanner
 
-Himmelsrouten-Primer. Kein FTL, kein Ansible. Aegir-Fenster laufen durch Monde, Schutt, Relais-Custody, Sturmzustand und Black-Keel-Massenrechnung.
+Öffentliche Astronomie: kein FTL, kein Ansible, Aegir relay geometry, moon ladder hazards, Black Keel orbital custody, route windows vor Recht.
 
 ## Terminal
 
-AEGIR-NAVIGATIONSPRIMER // ÖFFENTLICHES BAND. Hazardklassen verwenden, keine finalen Konstanten: route-shadow, charged surge, ice scatter, storm plume, guidance lag, receiver custody.
+SITE LONGFORM: Himmel praktisch und feindlich machen; jedes packet, drop, pickup und claim braucht physics, timing, mass und custody.
 
 ## Audio
 
-Black-Keel-Planung: "Signal wahr ist nicht Signal brauchbar. Fenster hält für Masse, Wetter, Custody und Empfängerlock."
+Der Himmel über HECTON-8 ist nicht leer. Er ist ein schedule mit Zähnen.
 
 ## Field Note
 
-Marauder-Himmelsregel: Frag nicht, ob das Signal gesendet wurde. Frag, welcher Mond es blockierte, welches Ledger es fing und ob der Empfänger einen Menschen oder eine Masseklasse hörte.
+Schau nach oben wegen timing, nicht wegen Trost. Auf HECTON-8 kann moonlight relay opening, storm warning oder claim clock sein.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/de_DE. -->

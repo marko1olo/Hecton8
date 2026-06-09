@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Black Keel-ledger
 
-Black Keel is geen vriendelijk thuisschip. Het is een claim-pool-tender die lichamen, payloads, quarantaine, opstijgmassa en verzekering als ledgerregels leest.
-
-Het hoeft de speler niet te haten. Het kan beleefd antwoorden, een noodhash accepteren en pickup weigeren tot de cijfers veranderen.
+Black Keel is geen vriendelijk thuisschip boven HECTON-8. Het is een claim-pool tender: werkpaard, ledger, quarantainepoort en verzekeringsmachine. Het kan de speler horen, pakketten routeren, vensters berekenen en massa liften. Het kan ook bewijskern, sample of verzekerde romp hoger waarderen dan de persoon die hulp vraagt. Geen schurk, maar betrouwbaar binnen contract en gevaarlijk als contract voor genade wordt aangezien.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/nl_NL. -->

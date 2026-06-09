@@ -18,6 +18,9 @@ namespace Hecton8.Rendering.WaterOptics.Editor
         private const string TraumaShaderPath = "Assets/_Project/Art/Shaders/Hecton_VisorTrauma.shader";
         private const string DeferredDecalShaderPath = "Assets/_Project/Art/Shaders/Hecton_DeferredDecal.shader";
         private const string VisorUberPostShaderPath = "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader";
+        private const string CelestialLightReadabilityUtilityPath = "Assets/_Project/Scripts/Core/CelestialLightReadabilityUtility.cs";
+        private const string WaterOpticsRuntimePath = "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs";
+        private const string AbyssalOpticsTunerPath = "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs";
         private const string GlobalWaterOpticsCBufferToken = "CBUFFER_START(_GlobalWaterOptics)";
         private const string GlobalWaterOpticsCBufferEndToken = "CBUFFER_END";
         private const string AbsorptionLaneToken = "float4 _H8WaterOpticsAbsorptionCoefficientsRGB";
@@ -34,10 +37,12 @@ namespace Hecton8.Rendering.WaterOptics.Editor
 
         private static readonly string[] TargetSourcePaths =
         {
-            "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+            CelestialLightReadabilityUtilityPath,
+            WaterOpticsRuntimePath,
             "Assets/_Project/Scripts/Rendering/WaterOptics/HectonWaterOpticsTelemetryFeature.cs",
             "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/PostProcess_Fog_Scanner.cs",
             "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/WaterOpticsLayoutValidator.cs",
+            AbyssalOpticsTunerPath,
             "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
             "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
             "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
@@ -131,6 +136,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             bool visorUberWaterlineOk = FileContains(VisorUberPostShaderPath, "_InternalWaterlineY") &&
                                         FileContains(VisorUberPostShaderPath, "ResolveInternalWaterMask") &&
                                         FileContainsAny(VisorUberPostShaderPath, "clamp(", "saturate(");
+            bool celestialReadabilityBridgeOk = HasCelestialReadabilityBridge();
             int activeVisorUberPostSlots = CountActiveRendererFeatureSlots(VisorUberPostFeatureClassName);
             int activeLegacyStandalonePostSlots = CountActiveRendererFeatureSlots(LegacyStandalonePostFeatureClassNames);
             int activeOpticalStackSlots = CountActiveRendererFeatureSlots(OpticalStackFeatureClassNames);
@@ -170,6 +176,7 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             builder.Append("Trauma shader global buffer/bounded loop/clamp=").AppendLine(traumaShaderOk ? "PASS" : "FAIL");
             builder.Append("Deferred decal trauma shader global buffer/bounded loop/clamp=").AppendLine(deferredDecalShaderOk ? "PASS" : "FAIL");
             builder.Append("Visor uber waterline clamp route=").AppendLine(visorUberWaterlineOk ? "PASS" : "FAIL");
+            builder.Append("Celestial readability bridge=").AppendLine(celestialReadabilityBridgeOk ? "PASS" : "FAIL");
             builder.Append("Renderer post owner topology=").Append(rendererTopologyOk ? "PASS" : "FAIL")
                 .Append("; activeUberPost=").Append(activeVisorUberPostSlots)
                 .Append(", activeLegacyStandalonePost=").Append(activeLegacyStandalonePostSlots)
@@ -189,7 +196,38 @@ namespace Hecton8.Rendering.WaterOptics.Editor
                    traumaShaderOk &&
                    deferredDecalShaderOk &&
                    visorUberWaterlineOk &&
+                   celestialReadabilityBridgeOk &&
                    rendererTopologyOk;
+        }
+
+        private static bool HasCelestialReadabilityBridge()
+        {
+            return FileContains(CelestialLightReadabilityUtilityPath, "MaxReadableSunColor = 1f") &&
+                   FileContains(CelestialLightReadabilityUtilityPath, "MaxReadableSunSourceIntensity = 1.25f") &&
+                   FileContains(CelestialLightReadabilityUtilityPath, "snapshot.SunColorIntensity = new float4(lightColor, sourceIntensity)") &&
+                   FileContains(WaterOpticsRuntimePath, "ICelestialLightReadabilityReadModel") &&
+                   FileContains(WaterOpticsRuntimePath, "CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel)") &&
+                   FileContains(WaterOpticsRuntimePath, "ApplyCelestialLightVisibilityLimits") &&
+                   FileContains(WaterOpticsRuntimePath, "ApplyCelestialAbsorptionCoefficients") &&
+                   FileContains(WaterOpticsRuntimePath, "ApplyCelestialScatteringCoefficients") &&
+                   FileContains(WaterOpticsRuntimePath, "MaxReadableWaterLightColor = 1f") &&
+                   FileContains(WaterOpticsRuntimePath, "MaxReadableWaterLightIntensity = 1.25f") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightMissing") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightFallback") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightArtificialCritical") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightQualityReduced") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightTwilight") &&
+                   FileContains(WaterOpticsRuntimePath, "TelemetryFlagCelestialLightNight") &&
+                   FileContains(AbyssalOpticsTunerPath, "WaterOpticsRuntime.TelemetryFlagCelestialLightMissing") &&
+                   FileContains(AbyssalOpticsTunerPath, "WaterOpticsRuntime.TelemetryFlagCelestialLightFallback") &&
+                   FileContains(AbyssalOpticsTunerPath, "WaterOpticsRuntime.TelemetryFlagCelestialLightArtificialCritical") &&
+                   FileContains(AbyssalOpticsTunerPath, "WaterOpticsRuntime.TelemetryFlagCelestialLightQualityReduced") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: missing") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: artificial critical") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: fallback") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: quality reduced") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: night phase") &&
+                   FileContains(AbyssalOpticsTunerPath, "Celestial light bridge: twilight phase");
         }
 
         private static bool HasGlobalWaterOpticsCBufferLayout(string path)

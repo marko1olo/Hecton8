@@ -1524,6 +1524,7 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IHazardZoneReadModel _cachedHazardZones;
         private ResourceDistributionDirector _cachedResourceDistribution;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
         private float _eclipsePredatorMigrationAccumulator;
@@ -2542,6 +2543,7 @@ namespace Hecton8.World
             _cachedAmbientBiota = null;
             _cachedPlayerContext = null;
             _cachedSargassumMicroFauna = null;
+            _cachedOceanKinematicsService = null;
             ClearHostilityNotificationDiagnostics();
             DisposeRuntimeState();
         }
@@ -3930,6 +3932,8 @@ namespace Hecton8.World
                 _cachedHazardZones = GlobalRegistry.HazardZoneReadModel;
             if (_cachedResourceDistribution == null)
                 _cachedResourceDistribution = GlobalRegistry.ResourceDistribution;
+            if (_cachedOceanKinematicsService == null)
+                _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
             if (ambientBiota != null)
                 _cachedAmbientBiota = ambientBiota;
@@ -4823,6 +4827,9 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.ResourceDistributionRuntime:
                     _cachedResourceDistribution = currentService as ResourceDistributionDirector;
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
             }
         }
 
@@ -4987,6 +4994,9 @@ namespace Hecton8.World
 
         private float ResolveWaterSurfaceLevel()
         {
+            if (TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel))
+                return oceanWaterSurfaceLevel;
+
             MapMagicBridge bridge = _cachedMapMagicBridge;
             if (WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref bridge) &&
                 TryResolveWaterSurfaceLevel(bridge.WaterSurfaceLevel, out float bridgeWaterSurfaceLevel))
@@ -4998,11 +5008,41 @@ namespace Hecton8.World
             return DefaultWaterSurfaceLevelY;
         }
 
+        private bool TryResolveOceanWaterSurfaceLevel(out float waterSurfaceLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel))
+            {
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (math.isfinite(candidateWaterSurfaceLevel) &&
+                math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
+        }
+
         private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
         {
             if (math.isfinite(candidateWaterSurfaceLevel) &&
                 math.abs(candidateWaterSurfaceLevel) > 0.0001f &&
-                math.abs(candidateWaterSurfaceLevel) <= 1000f)
+                math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceLevel = candidateWaterSurfaceLevel;
                 return true;

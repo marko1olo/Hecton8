@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Black Keel Bathydrop Interface
 
-The bathydrop interface is where the space setting touches the ocean game. It is not enough for Black Keel to exist in orbit. The player needs a chain: capsule integrity, buoyancy control, comm mast, ascent latch, pressure-rated seals, relay math, surface timing, and carrier acceptance. Break one link and the whole rescue becomes theory. This keeps the opening honest. The player is not trapped because the story forgot the ship. The player is trapped because the only machine that can connect abyss, surface, and orbit has failed in ways the water can make worse every hour.
+The bathydrop interface is where the route economy touches the ocean. It is not enough for Black Keel to exist in orbit. A working ascent needs a chain: capsule integrity, buoyancy control, comm mast, ascent latch, pressure-rated seals, relay math, surface timing, and carrier acceptance.
+
+Break one link and the whole rescue becomes theory. This keeps the opening honest. Nobody is trapped because the carrier vanished from the world. The trap exists because the only machine that can connect abyss, surface, and orbit has failed in named parts, and the water can make every failed part worse by the hour.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/en_US. -->

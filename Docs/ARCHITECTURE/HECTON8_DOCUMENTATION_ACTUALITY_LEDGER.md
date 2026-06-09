@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Documentation Actuality Ledger
 
-Date: 2026-06-05
+Date: 2026-06-09
 Status: PENDING VERIFICATION
 Owner: DOC_ROOT_ARCH_AUDIT
 Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
@@ -23,6 +23,18 @@ This ledger is the concise documentation-change register and proof-snapshot hold
 | AUP/blit struct | `48` bytes | AUP static source |
 
 Prompt/report values that disagree with source are stale. Current source wins.
+
+## 2026-06-09 Documentation Validator Scope Refresh
+
+No runtime code, Unity assets, imports, builds, or Play Mode proof were touched by this refresh. This section records documentation tooling reality only.
+
+| Area | Current static fact | Source / proof |
+|---|---|---|
+| `taskslocal` boundary | `taskslocal/` is explicit standalone dispatch provenance, not authority or bulk context; batch archival requires exact path/name/batch reference proof | `../../taskslocal/README.md`; `../DOC_GOVERNANCE.md`; `../ROOT_DOCS_REFERENCE.md` |
+| Structure validator scope | `Tools/VerifyDocStructure.py` now validates the authority spine by default: root anchors and route bibles from `PROJECT_BIBLES.md`, root `Docs/*.md` control files, `Docs/ARCHITECTURE/**`, and explicit README boundary files | `../../Tools/VerifyDocStructure.py` |
+| Content corpus boundary | Lore, GeneratedAssets, Marketing, Modding, Reports, Tasks, AgentLogs, and other content/support corpora are not default authority-spine doc-structure failures; use `--include-corpora` only for explicit corpus sweeps | `../../Tools/VerifyDocStructure.py`; `../README.md` |
+| Encoding policy | UTF-8 and UTF-8 with BOM are accepted; missing BOM is informational, not an acceptance failure | `../../Tools/VerifyDocStructure.py` |
+| Structure validation | `pass=true`; `docScope=authority_spine`; activeDocCount `282`; rootTextDocCount `76`; missing root docs `0`; unexpected root docs `0`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `81` informational | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
 
 ## 2026-06-05 Documentation Completeness Static Refresh
 
@@ -122,7 +134,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache on 2026-05-28; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-06-01 filesystem count of `171` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
 | AtlasCheck | `ATLAS_CHECK_PASS references=5807` | `python Tools/AtlasCheck.py` |
 | H-Phi atlas | `Docs/Generated/PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `Docs/Generated/README.md` |
-| Structure validation | `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
+| Structure validation | Superseded by 2026-06-09 authority-spine validator scope; old `activeDocCount=704` was a pre-corpus snapshot | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |
 | OOP doc scanner | `finalPass=true`; activeFileCount `704`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent above `31%` | `../Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json` |
 
 Interpretation: project file topology is now easier to read.
@@ -551,7 +563,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Validator | Required state |
 |---|---|
 | Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `708`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent `30.358189496725423` |
-| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `708`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
+| Current `Tools/VerifyDocStructure.py` | 2026-06-09 `pass=true`; `docScope=authority_spine`; activeDocCount `282`; rootTextDocCount `76`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; missing-BOM count `81` informational |
 | `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; stale parameter files `0` |
 | `Tools/VerifyDocStructure.py` | `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 | 1334 final scan | `DOCUMENTATION_OPTIMIZATION_REPORT_1334_FINAL_SCAN.json`: `finalPass=true`; active docs `693`; stale parameter files `0`; reduction `48.0975%` |

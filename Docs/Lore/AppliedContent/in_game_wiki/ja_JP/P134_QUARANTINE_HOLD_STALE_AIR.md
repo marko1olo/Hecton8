@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "隔離保留：よどんだ空気"
+title: "隔離保持: よどんだ空気"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 隔離保留：よどんだ空気
+# 隔離保持: よどんだ空気
 
-隔離保留は身体を救い、agencyを停止する。プレイヤーは圧力から逃れたが、custodyからは逃れていない。証拠が審査文言の背後で待つ間、すべての呼吸は計量される。
+隔離保持は身体を救い、意思を停止する。部屋に悪役が立つ必要はない。書式は生存回収と言い、空気カウンターは配給有効と言い、次の扉は汚染審査、請求者異議、損失監査の後でしか開かない。証拠は理性的に聞こえる言語の後ろで待つ。すべての発言は、作業員に残された寿命より長く遅らされる。海は消えたが、圧力は書類を着ることを覚えた。
 
 ## Scanner
 
-身体回収。証人封印。空気配給作動中。
+身体回収。証人封印。空気配給有効。
 
 ## Terminal
 
-隔離保留：請負者は生存回収。空気配給作動中。sample custody未解決。外部証言は汚染審査、claimant異議、Keelmark損失審査まで延期。
+隔離保持: 請負者を生存回収。空気配給有効。サンプルcustody未解決。外部証言は汚染審査、請求者異議、Keelmark損失監査まで遅延。
 
 ## Audio
 
@@ -35,6 +35,6 @@ localization_flags: 1
 
 ## Field Note
 
-これは溺死の行政版である。
+これは行政的な溺死だ。
 
 <!-- In-Game Wiki; generated from P134_QUARANTINE_HOLD_STALE_AIR/ja_JP. -->

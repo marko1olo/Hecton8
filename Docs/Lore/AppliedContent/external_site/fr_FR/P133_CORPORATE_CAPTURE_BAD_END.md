@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Capture corporative : secours propre"
+title: "Capture corporative : sauvetage propre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Capture corporative : secours propre
+# Capture corporative : sauvetage propre
 
-La capture corporative fonctionne parce qu'elle commence comme une aide. Le signal est propre, le ramassage professionnel, et la pièce contient de l'air. Puis l'ordre des opérations apparaît : coordonnées d'abord, custody XO ensuite, accès Atlas en troisième, bien-être du contractant après examen.
+La capture corporative effraie parce qu'elle est compétente. L'équipe de secours ne ressemble pas à des pillards. Elle a des procédures, des surfaces propres, un langage médical et un droit plausible de demander la custody. Le piège peut donc se fermer sans coup de feu.
 
-L'océan cesse d'écraser le joueur, mais Deep Reach commence à préserver l'histoire. Le témoignage est scellé sous langage de contamination, la custody du payload bouge avant le débrief médical, et chaque nom porté par le joueur devient un écran de responsabilité. Ce n'est pas la mort. C'est survivre dans la machine qui avait besoin de silence.
+La séquence dit la vérité. Les coordonnées sont demandées avant le pouls. La custody XO et l'accès Atlas se déplacent avant le témoignage. Le contractant est vivant, mais l'histoire est scellée sous examen de contamination, et chaque nom transporté devient un écran de responsabilité. Ce n'est pas la mort. C'est la survie à l'intérieur de l'institution qui avait besoin du silence.
 
 <!-- External Site; generated from P133_CORPORATE_CAPTURE_BAD_END/fr_FR. -->

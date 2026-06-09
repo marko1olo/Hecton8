@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Opóźnienie wiadomości przekaźnikowych
 
-Opóźnienie przekaźnika pozwala Deep Reach grozić graczowi bez żywego głosu w pokoju. Maszyny kontraktowe, notariusze, okna roszczeń i klauzule nośnika mogą dotrzeć przed współczuciem, bo napisano je wcześniej, ustawiono w kolejce wcześniej i wyceniono pod przetrwanie dystansu.
+Opóźnienie przekaźników pozwala HECTON-8 otrzymywać władzę bez opieki. Pakiet może nieść ostrzeżenie, dług, własność, nadzór albo wyznanie przez dystans, ale nie może przynieść rąk do zalanego pokoju. Ten rozdział czyni komunikację straszną: odległe systemy pozostają potężne, bo napisano je wcześnie, wcześnie ustawiono w kolejce, wyceniono na dystans i powierzono maszynom, które nie wiedzą, że nadawca nie żyje.
 
 ## Scanner
 
-Wiadomość może być prawnie wiążąca i nadal przyjść za późno, by ocalić powietrze.
+Wiążąca moc wiadomości ważna. Odpowiedź człowieka nieobecna. Pozostałe powietrze ustalane lokalnie.
 
 ## Terminal
 
-OPÓŹNIENIE PRZEKAŹNIKA: lokalne wiadomości Aegir mogą iść godziny lub dni. Pakiety prawne między domenami mogą iść lata. Presja Deep Reach jest stara, zautomatyzowana, kontraktowa i nadal groźna.
+OPÓŹNIENIE PRZEKAŹNIKA: lokalne pakiety Aegir mogą iść godziny albo dni. Pakiety prawne między domenami mogą iść lata. Presja Deep Reach trwa, bo stare instrukcje, zawiadomienia o zastawie, roszczenia trasy i automatyczne odmowy pozostają wykonalne po zniknięciu osoby, która je napisała.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Odpowiedź jest spóźniona. Zastaw jest aktualny.
 
 ## Field Note
 
-Brak ansibla oznacza, że prawda porusza się jak fracht.
+Brak ansible znaczy, że prawda podróżuje jak fracht, lecz prawo jak uzbrojony harmonogram.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/pl_PL. -->

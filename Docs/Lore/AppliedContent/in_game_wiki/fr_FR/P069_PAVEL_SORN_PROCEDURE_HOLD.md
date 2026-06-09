@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Mise en attente procédurale de Pavel Sorn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Mise en attente procédurale de Pavel Sorn
 
-FR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+Pavel Sorn donne à la catastrophe de HECTON-8 son pivot humain le plus ordinaire : un agent local des contrats, assez puissant pour retarder une évacuation, pas assez courageux pour briser la chaîne des clauses. Sa mise en attente procédurale n'est ni un monologue de méchant ni un ordre secret de tuer. C'est une note de service écrite à l'intérieur du droit de Deep Reach, où chaque geste de sauvegarde des vies doit passer par la certification, le routage de responsabilité, les sceaux de continuité Atlas et la langue de garde des réclamations avant de pouvoir s'appeler secours. Le dossier compte parce qu'il garde la culpabilité humaine sans la rendre simple. Sorn a vu la détresse des travailleurs, a compris que la file d'ascension devenait une condamnation à mort, et a quand même choisi la phrase qui protégeait d'abord le bureau : maintenir l'autorisation jusqu'à clarification du canal.
 
 ## Scanner
 
-FR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Pavel Sorn n'a pas ordonné un massacre. Il a fait une chose plus facile à survivre sur le papier : laisser l'autorisation d'évacuation dans le bac des dossiers en attente.
 
 ## Terminal
 
-FR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. Bureau des contrats / pont administratif. Autorisation d'évacuation maintenue en ATTENTE PROCÉDURALE : certification externe absente, sceau de continuité Atlas non résolu, canal de responsabilité saturé. Détresse des travailleurs reconnue. Ne pas autoriser l'ascension avant clarification de la garde de la réclamation et du libellé de quarantaine.
 
 ## Audio
 
-FR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Il a continué d'écrire « en attente » pendant que la mer prenait les ponts inférieurs.
 
 ## Field Note
 
-FR LOC HOLD: Useful evil often signs in normal handwriting.
+La colonie n'est pas morte parce qu'un homme riait devant une porte fermée. Elle est morte parce que la porte avait un formulaire.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/fr_FR. -->

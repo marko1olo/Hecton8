@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "ורה סאטו-רן: פעולת החזרה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# ורה סאטו-רן: פעולת החזרה
 
-HE LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+ורה סאטו-רן: פעולת החזרה היא הגשר בין האסון הישן של Deep Reach לבין קמפיין ההווה של השחקן. היא מייצגת את משרד ציות ההשבה בשנת 2190, שם Deep Reach כבר לא צריך לעמוד בחדר כדי להפעיל כוח. הוא שולח חבילות פעולת החזרה.
 
-## Scanner
+החבילה דורשת קואורדינטות, הוכחת XO, מצב גישה ל-Atlas ושקט קבלן בתוך חלון משמורת. הצורה הזאת חשובה. האיום אינו נאום. האיום הוא תזמון. אם המטען בר-השבה, Deep Reach יכול להציע חילוץ, כיסוי משפטי או גישת מוביל. אם סיכון הראיות גדל, אותה מערכת יכולה להפוך את השחקן לאחריות.
 
-HE LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-HE LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-HE LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-HE LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+המאמר שומר את הסיעה מקורקעת. Deep Reach מסוכן כי הוא עדיין פרוצדורלי, ממומן וסבלני. הוא רוצה השבה לפני חילוץ ומשמורת לפני אמת. סאטו-רן היא הקצה דמוי האדם של המכונה הזאת.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/he_IL. -->

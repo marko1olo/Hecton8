@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Public Memory After 2147
 
-Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+Atlas Public Memory After 2147 is the cleaned public wound. It turns authority into accident, accident into noise, and noise into quarantine policy, leaving only fragments for anyone willing to read past the official mercy.
 
 ## Scanner
 
-Public story: failed automation, corrupted logs, no recoverable agency.
+Public story after 2147: failed automation, corrupted logs, no agency.
 
 ## Terminal
 
-POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions. No legal inference authorized from fragmentary machine output.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A dead machine makes a useful scapegoat.
 
 ## Field Note
 
-If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Call it a broken tool and nobody asks what the tool was ordered to protect.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/en_US. -->

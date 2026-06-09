@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Quiet Salvage Contract Seed
 
-Replay in HECTON-8 varies pressure and route context, not inherited power. Quiet salvage is an easier start with worse ownership terms.
+Quiet Salvage begins with a clean slot: low storm activity, fewer early contacts, a bathydrop window that looks paid in full. That shape is useful for a long salvage run because the operator can stabilize tools and shelter before the route starts taking pieces back.
 
-## Scanner
-
-Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
-
-## Terminal
-
-SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
-
-## Audio
-
-Low storm windows are never free. They are bought somewhere else.
-
-## Field Note
-
-Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+The debt sits in custody. Samples, accident packets, pinger records and route notices bind to a receiver-first audit before full payout. The run is quieter because the board has already decided who gets to own the clean evidence.
 
 <!-- External Site; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/en_US. -->

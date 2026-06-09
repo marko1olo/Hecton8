@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Dossier Knowledge, Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Dossier Knowledge Not Power
+# Dossier Knowledge, Not Power
 
-Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Dossier Knowledge, Not Power is the replayability rule that keeps HECTON-8 long-form, dangerous and narratively honest.
 
 ## Scanner
 
-No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // No inherited oxygen, hull rating, weapons, inventory, route authority or magic shortcut. The dossier keeps warnings, not muscle.
 
 ## Terminal
 
-META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+HARD LIMIT: persistent dossier data may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route permission.
 
 ## Audio
 

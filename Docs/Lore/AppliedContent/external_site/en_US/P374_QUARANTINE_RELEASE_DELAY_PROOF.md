@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Quarantine Release Hold
 
-Quarantine is credible on HECTON-8 because contamination is not fake. Pressure exposure, brine chemistry and Atlas-compatible growth can make a careless rescue lethal. That truth gives Deep Reach cover. The release hold shows how protection language moved through the system after practical exit had already narrowed. The gate did not say execute anyone. It said hold until review, retain biological uncertainty, accept asset mass, keep insurance ping alive. Each phrase is defensible alone. Together, in a drowning colony, they become custody. This packet should make players uneasy because the tool is real: quarantine can be necessary, and it can still be used to delay people until only their claim remains.
+Quarantine records are some of the easiest documents for Deep Reach to defend. On HECTON-8, contamination is not decorative policy. Brine-reactive growth, pressure damage and Atlas-linked biofilms can turn a rescue corridor into a second casualty zone. A real release system needs holds.
 
-## Scanner
-
-Quarantine hold plate. Protection language appears after the exit route is already locked.
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
-
-## Audio
-
-Quarantine can save a body. It can also make a body wait until it becomes paperwork.
-
-## Field Note
-
-Marauder note: protection is not proven by the word protection. Check the clock.
+The recovered plate shows a hold used after the route had already closed. Worker release waits for board confirmation. Asset mass enters recovery queue first. Insurance ping remains active. The company did not have to fake danger; it had to place the danger on the clock where delay served the claim.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/en_US. -->

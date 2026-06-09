@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Manipulation de cassette de dette bleue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Manipulation de cassette de dette bleue
 
-Blue debt is condition-dependent salvage.
+La dette bleue est un salvage dépendant de son état. Garde-la scellée, froide et stable en pression avant de choisir entre matériau, valeur de réclamation, appât ou preuve.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+CASSETTE DE PRESSION // Stable si froide et scellée. Ne pas purger. Poser un collier avant transport si la couture chauffe.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+SUBSTRAT DE CONTINUITÉ XO // Préserver l’état de pression. Stockage civil interdit. Acheminer la télémétrie d’échantillon par garde de niveau réclamation uniquement.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Si la cassette commence à compter au sonar, elle n’est plus seulement à toi.
 
 ## Field Note
 
-Stabilize before you spend it.
+La dette bleue paie parce qu’elle arrive avec trois propriétaires: celui qui l’a trouvée, celui qui la veut et ce qui a remarqué son déplacement.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/fr_FR. -->

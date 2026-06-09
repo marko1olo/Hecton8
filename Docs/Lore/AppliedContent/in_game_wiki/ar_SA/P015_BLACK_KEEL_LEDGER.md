@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "سجل Black Keel"
+title: "دفتر Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سجل Black Keel
+# دفتر Black Keel
 
-Black Keel هي خيطك المداري، لكنها ليست خيال إنقاذ. إنها بنية claim-pool: سجلات عهدة، دين تأمين، نوافذ استرداد، حجر صحي وسلطة ناقل.
-
-يمكنها أن ترشدك لأن الإرشاد يحمي القيمة، ويمكنها أن تؤخرك للسبب نفسه. مساعدتها لا تعني أنها في صفك.
+Black Keel هي خط الحياة المداري، لكنها ليست سفينة اللاعب. علنا تتبع Aegir Reclamation Pool، وقانونيا تغلفها Keelmark Mutual بالتأمين والدين وحسابات الاسترداد. أما أولوية Deep Reach القديمة فتستطيع ثني ترتيب الحمولة والحجر وشهادات الطريق. الدفتر بارد لأنه عملي: جسد حي، نواة دليل، عينة blue-debt، صندوق أدوات وقطع هيكل كلها قد تتنافس على tonne-window واحد.
 
 ## Scanner
 
-سجل عطاء claim-pool. عهدة ناقل عامة، دين تأمين، غرامات كتلة صعود وخطافات أولوية Deep Reach مخفية.
+دفتر tender claim-pool. عهدة Aegir Reclamation Pool، تعرض Keelmark Mutual، رهن 4.8 tonne-window، و hooks أولوية Deep Reach مخفية.
 
 ## Terminal
 
-سجل BLACK KEEL // خدمة الاسترداد مشروطة. تصفية المطالبة ناقصة. طريق الأولوية العميقة مخفي. سلطة الحمولة تبقى عند الناقل. نجاة المتعاقد لا تتجاوز الشحنة المؤمنة بلا قيمة صعود محدثة.
+دفتر BLACK KEEL // بقاء المتعاقد مسجل كحمولة بيولوجية قابلة للاسترداد. نواة الدليل تنتظر فئة العهدة. مادة blue-debt تتطلب مراجعة احتواء. مستفيد الأولوية العميقة مخفي. دين tonne-window فعال حتى تتجاوز قيمة الاسترداد تعرض الحمولة المؤمن عليها.
 
 ## Audio
 
-Black Keel ليست سفينتك. إنها الآلة التي تعرف ما تدين به.
+يمكن أن تنقذك Black Keel من المحيط وتبيع كل ثانية من الرفع.
 
 ## Field Note
 
-يمكن للسفينة مساعدتك دون أن تكون في صفك.
+السفينة تستطيع مساعدتك من غير أن تكون في صفك.
 
 <!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/ar_SA. -->

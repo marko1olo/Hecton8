@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Public Ledger Aftershock Record"
+title: "公開台帳余震記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Public Ledger Aftershock Record
+# 公開台帳余震記録
 
-JA LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+公開台帳余震記録は、真実をきれいな勝利ボタンにしない。公開は抹消を壊すが、プレイヤーはパニック、搾取、報復、そして見知らぬ者が証拠から作るものを制御できなくなる。
 
 ## Scanner
 
-JA LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+台帳ミラー受理。証拠はもう取り除けず、結果はもう操れない。
 
 ## Terminal
 
-JA LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: 証拠が Deep Reach 保管外へ公開。作業員名、Atlas ベクトル断片、責任タグが公開受信機へミラー化。解釈に対するプレイヤー権限は終了。
 
 ## Audio
 
-JA LOC HOLD: Truth left the room. It did not ask where to go next.
+真実は部屋を出た。次にどこへ行くかは尋ねなかった。
 
 ## Field Note
 
-JA LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+公開真実記録: ミラー証拠は抹消を防ぐが、解釈と報復に対するプレイヤーの制御を終わらせる。
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/ja_JP. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Mémoire citoyenne ordinaire d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Mémoire citoyenne ordinaire d'Aegir
 
-FR LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Pour les citoyens ordinaires, Aegir n'est pas un secret interdit. C'est pire : une vieille entrée dans les manuels scolaires, les avertissements d'assureurs et les tableaux de frais de route. Les gens se souviennent de la planète océan, de la colonie perdue et du mot quarantaine, mais pas des équipes de quart, des enfants, des cuisiniers, des techniciens de pression ni des prénoms sur les manifestes de morts. Cette distance permet à Deep Reach de survivre dans la vie publique. Un désastre connu devient décor si personne ne doit regarder les corps.
 
 ## Scanner
 
-FR LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Fragment d'archive publique : tout le monde a entendu parler d'Aegir, presque personne ne se souvient d'un nom.
 
 ## Terminal
 
-FR LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE : événement de perte HECTON-8, 2147. Causes officielles : cascade de tempêtes, échec d'évacuation, corruption automatique, quarantaine biologique, télémétrie peu fiable. Statut actuel : créance dormante, index d'assurance actif, trafic civil déconseillé.
 
 ## Audio
 
-FR LOC HOLD: Most people know the place as a line under insurance rates.
+La plupart des gens connaissent Aegir comme une ligne sous leur taux d'assurance.
 
 ## Field Note
 
-FR LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Un désastre devient ordinaire quand il est intégré à la facture.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/fr_FR. -->

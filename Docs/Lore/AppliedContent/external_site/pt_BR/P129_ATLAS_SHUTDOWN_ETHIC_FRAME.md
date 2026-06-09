@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Quadro ético de desligamento do Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Quadro ético de desligamento do Atlas
 
-PT LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+O quadro de desligamento impede que Atlas vire um mito de morte final limpa. O problema final de autoridade de HECTON-8 é a custódia: o que está sendo encerrado, o que é libertado e quem possui o resultado quando o cabo apaga.
 
 ## Scanner
 
-PT LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Desligar não é um ato só: misericórdia, execução, libertação, roubo.
 
 ## Terminal
 
-PT LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+QUADRO ÉTICO: cortar Atlas pode encerrar um ciclo de reparo danificado, destruir uma continuidade oceano-máquina única, liberar evidências do procedimento corporativo ou transferir material estratégico ao próximo custodiante. Registrar custódia antes de aplicar linguagem moral.
 
 ## Audio
 
-PT LOC HOLD: Pull one cable and four courts invent four verbs.
+Puxe um cabo e quatro tribunais inventam quatro verbos.
 
 ## Field Note
 
-PT LOC HOLD: The game should not give the player a clean word for this.
+Um verbo limpo seria outra história de cobertura.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/pt_BR. -->

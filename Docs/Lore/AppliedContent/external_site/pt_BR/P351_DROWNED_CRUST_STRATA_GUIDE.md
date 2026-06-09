@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guia de Estratos da Crosta Afogada"
+title: "Guia de estratos da crosta afogada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Estratos da Crosta Afogada
+# Guia de estratos da crosta afogada
 
-O Guia de Estratos da Crosta Afogada faz o fundo de HECTON-8 parecer construído e quebrado: terrain, salvage routes e amostras minerais vêm da mesma história de pressão em camadas.
+A crosta de HECTON-8 não se comporta como leito marinho intocado. A colônia a cortou, aqueceu, selou, carregou com vidro de pressão e depois a abandonou a um oceano que continuou trabalhando quando a folha de pagamento parou. Uma parede pode mostrar marcas de ferramenta de um furo de serviço, uma prateleira pálida de colapso de gelo, uma faixa mineral verde-preta de fluxo seep e uma costura fina onde a Atlas depois encontrou caminho.
 
-## Scanner
-
-Estratos inundados expõem marcas de corte antigas, costuras de pressure-glass e faixas minerais que não falham duas vezes na mesma direção.
-
-## Terminal
-
-FIELD GUIDE: a crosta afogada de HECTON-8 é rocha de assentamento empilhada, memória de gelo colapsado, pressure glass e extraction scars sob brine móvel. Linhas de fratura valem mais que superfícies limpas.
-
-## Audio
-
-O mapa não é terreno. É uma pilha de afogamentos.
-
-## Field Note
-
-Se uma faixa soa oca, não confie na face plana. Marque a fratura, pegue a amostra, deixe a parede segurando.
+Para uma equipe salvage, estratos são navegação. Uma face plana pode soar oca. Uma bela borda mineral pode ser a única coisa ainda segurando um cânion de serviço. Boa leitura de rota significa tirar a amostra sem ensinar a parede a cair. Por isso a crosta afogada importa em campo: o fundo não é cenário. É arquivo, estrada e às vezes armadilha.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/pt_BR. -->

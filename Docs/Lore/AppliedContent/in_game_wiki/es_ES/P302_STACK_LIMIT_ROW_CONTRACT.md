@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Stack Limit Data Boundary"
+title: "Límite de datos de apilado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Stack Limit Data Boundary
+# Límite de datos de apilado
 
-ES LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+El límite mantiene físico el inventario. Los objetos solo se apilan cuando contenedor, presión, masa y contaminación pueden sobrevivir la misma ruta sin mentirle al archivo de guardado.
 
 ## Scanner
 
-ES LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+La fila de pila rechaza montones de iconos: recipiente, presión, contaminación y masa deciden la cantidad.
 
 ## Terminal
 
-ES LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: el conteo de pila requiere tipo de recipiente, rating de presión, etapa de contaminación, clase de masa, nivel de advertencia e identidad estable de guardado. Una caja no es un recipiente de presión.
 
 ## Audio
 
-ES LOC HOLD: A crate is not a pressure vessel.
+Una caja no es un recipiente de presión.
 
 ## Field Note
 
-ES LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Los límites de stack permanecen table-owned y estables para save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/es_ES. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Hemelvenster van de Aegir-maanladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Hemelvenster van de Aegir-maanladder
 
-The Aegir moon ladder is route grammar, not decoration.
+Aegirs manen zijn geen kalenderdecoratie. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 en Mute markeren verkeersbanen, relaisschaduwen, getijtijden, blackout-risico en transferkosten. De speler leest de hemel als routedruk, niet als exacte orbitale wiskunde.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+De speler heeft geen exacte orbitale constanten nodig om de hemel te gebruiken. Een maan achter weer kan nog steeds een slecht relay-pad betekenen. Een helder venster kan één schoon pakket betekenen. Een conjunctie kan getijdenlast betekenen, geen wonder. De ladder maakt de hemel leesbaar zonder er een les van te maken.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/nl_NL. -->

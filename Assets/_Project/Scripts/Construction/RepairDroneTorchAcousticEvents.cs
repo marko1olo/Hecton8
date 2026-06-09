@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;

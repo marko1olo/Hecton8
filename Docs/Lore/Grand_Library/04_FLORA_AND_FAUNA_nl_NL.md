@@ -1,53 +1,80 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# LOKALE BIOTA: FLORA, FAUNA EN ECOLOGISCHE INeenstorting
+<!-- localization_status: draft_machine_or_llm -->
+# LOKALE BIOTA: FLORA, FAUNA EN ECOLOGISCHE INSTORTING
 
-> **Bron:** Geborgen PDA, Styx-klasse afdaalcapsule genaamd 'Lazarus'.  
-> **Spreker:** Ongeïdentificeerde bergingsduiker ("Jacks").  
-> **Opmerking van de beoordelaar:** Audiotranscriptie en tekstlogboeken samengevoegd. Het subject toont extreme paranoia met betrekking tot lokale fauna, specifiek met betrekking tot de "Alpha" akoestische signatuur.
+> **Bron:** benthische ecologieprimer van Deep Reach, fragmenten van Atlas-onderhoudsecologie, gevarennotities van Black Keel en teruggevonden duiknotities van Marauders.  
+> **Stem:** veldecoloog toegewezen aan salvage-risico, met arbeiderscommentaar bewaard waar angst nuttige precisie toevoegt.  
+> **Reviewnotitie:** Leven op HECTON-8 moet gevaarlijk voelen omdat het leesbaar, hongerig en aangepast is, niet omdat elk organisme een monster is. De speler moet ecologie leren lezen als druk, route, hulpbron, waarschuwing en bewijs.
 
 ---
 
-## 1. Het Kleine Spul
+## 1. Geen Enkele Oceaan
 
-*Audiolog-fragment 04-A: "De scanner is nutteloos. Hij zegt dat hier tien vreedzame soorten leven. Hij liegt. Niets hier beneden is vreedzaam. Het is alleen te klein om je snel te doden."*
+HECTON-8 heeft niet één ecosysteem.
 
-Als je scanner een **Lantaarnzever (Lantern Sifter)** oppikt, ontspan dan niet. Ze eten lijken. Ze gebruiken bioluminescentie om organisch afval aan te trekken, wat betekent dat als je een zwerm van hen ziet, er net iets gestorven is, of iets op het punt staat te sterven.
+Het heeft gestapelde werelden. Het lichte plat is dun, door stormen gefilterd en mineraalrijk. De schemerhellingen zitten vol zwevend voedsel, gebroken schelp, drijvende larven en oud kolonieafval. De abyssale bekkens leven op vents, brinenaden, drukbacteriën, vallend aas en warmte die uit steen lekt. Ruïnes voegen een tweede geografie toe: warme muren, dode pompen, lekkende batterijen, voedingsvallen, lichtlittekens en gangen waar dieren leerden dat menselijke machines voorspelbaar voedsel maken.
 
-Let op de **Pekelhevelaars (Brine Siphoners)** in de diepe kloven. Ze filteren methaan. Als ze plotseling uiteenstuiven, is er een methaanbel aan het ontluchten en staan je pakuitsluitingen op het punt te smelten.
+Daarom zijn de oude Deep Reach-categorieën maar deels bruikbaar. "Flora" betekent geen tuin. Het betekent vastzittende producenten, filtermatten, minerale groei, ontsnapte technische culturen en inheemse structuren die als planten werken zonder aardse planten te zijn. "Fauna" betekent geen dieren die in het donker wachten om aan te vallen. Het betekent grazers, aaseters, schoonmakers, hinderlaagroofdieren, akoestische jagers, parasitaire zwermen en grote bewegers die misschien niets om de speler geven totdat de speler naar kans ruikt.
 
-De **IJzeren Elritsen (Iron Minnows)** zijn het ergst. Ze scholen samen nabij de thermische bronnen. Hun schubben zijn letterlijk doorvlochten met zware metalen. Wanneer ze in paniek raken en tegen je vizier slaan, voelt het alsof je met een handvol kogellagers wordt geraakt.
+De oceaan is niet kwaad. Hij is bezig. Hij merkt gradiënten: warmte, bloed, zuurstof, trilling, licht, stroming, bloot metaal, geopende voedselpasta, vers plastic, verstoord slib. De meeste aanvallen beginnen als onderzoek. De fout is denken dat onderzoek veilig is.
 
-## 2. De Moordenaars
+## 2. Producenten Zonder Tuin
 
-Ik heb drie bemanningsleden aan de duisternis verloren. De oceaan verplettert je niet alleen; hij jaagt op je.
+Er is licht dicht bij het oppervlak, maar niet genoeg om Sector 44 te verklaren.
 
-*   **Zak-Hinderlaaglegger (Pocket Ambusher):** Vertrouw de onderhoudsschachten niet. Ik zag hoe er een O'Neill een ventilatiekanaal in sleurde dat amper een halve meter breed was. Ze klemmen zichzelf vast in de smalle buizen van de oude stations en wachten tot er een duiker voorbijzwemt. Houd je rug tegen een massief schot.
-*   **Pekelsluiper (Brine Stalker):** Je kunt ze niet horen. Ze gebruiken de dichtheid van de hypersaline pekelmeren om te glijden zonder water te verplaatsen. Je weet pas dat hij er is als de trilling je pak raakt, en tegen die tijd heeft hij je veiligheidslijn al te pakken.
-*   **Schaduw-Onderschepper (Shadow Interceptor):** Zet de P-63 schijnwerpers uit! Het kan me niet schelen of je niets ziet! Deze dingen hebben geleerd dat de standaard bedrijfslampen in paniek geraakte prooi betekenen. Als je het grootlicht aanzet, luid je gewoon de etensbel.
+Onder de fotische band leent leven energie van andere rekeningen. Ventchemie voedt bleke matten rond zwarte rokers. Brineranden dragen gladde films die methaan en zwavel metaboliseren. IJzerkelp bindt mineraallast in vezelige bladen die zwakke afdichtingen snijden. Halo sargassum vormt drijvende netmatten rond trage stromingen en vangt stof, larven, schrootvezels en onvoorzichtige propellers. Cathedral kelp is niet heilig en niet intelligent. Het is een hoge geleidende groei die warmte, mineralen en stabiele trilling prettig vindt; Atlas-routines gebruikten het zoals een wanhopig onderhoudssysteem elk overlevend pad gebruikt.
 
-## 3. Het Schimmelnetwerk
+Dat verschil telt. De kelp ontvangt geen orders. Hij bidt niet tot een machine. Maar als een levende stengel een onderhoudspuls beter draagt dan een verdronken kabel, kan Atlas erdoor routeren. Als een mat trilling rond een gebarsten pomp dempt, kan een automatisch systeem die mat bewaren. Als groei een deur nat genoeg houdt om een zwak signaal te geleiden, kan de deur antwoorden nadat elke koperlijn is gestorven. Biologie wordt infrastructuur per ongeluk, daarna uit gewoonte.
 
-*Bijgevoegde tekstnotitie:*
-Er is geen zonlicht. De planten hier doen niet aan fotosynthese. Ze spelen vals. Ze gebruiken de Atlas-6 AI.
+Marauders hoeven de taxonomie niet te kennen om te overleven. Ze hebben de regel nodig: snij groen-zwarte groei niet weg alleen omdat die een schoner zicht blokkeert. Vraag wat het eet, wat het vasthoudt, wie erdoorheen hoort en wat wakker wordt wanneer het ophoudt met vasthouden.
 
-De **Kathedraal-Kelp (Cathedral Kelp)** is niet zomaar zeewier. Die gigantische stengels zijn doorvlochten met bio-geleidende vezels. Ik zweer dat de AI ze als signaalversterkers gebruikt. Als je een stengel afsnijdt, verschijnen de drones drie minuten later.
+## 3. Kleine Monden, Grote Signalen
 
-Kijk uit voor de **Halo Sargassum-Matten**. Ze zien eruit als drijvend afval, maar het zijn giftige netten. Ze zullen de propellers van een mini-onderzeeër in seconden blokkeren. Als je verstrikt raakt, probeer het dan niet met je handen los te snijden. Het neurotoxine brandt dwars door standaard neopreen heen.
+Klein leven doodt indirect.
 
-## 4. De Bloei en het Zwarte Slijm
+Lantern sifters zijn niet vredig omdat ze klein zijn. Hun licht trekt organische sneeuw, beschadigde larven en zacht aas aan. Een zwerm betekent dat iets net heeft gegeten of zo gaat eten. Breekt de zwerm in een ring, dan duwt een grotere mond water erdoorheen. Wordt hij ineens donker, dan is er iets met betere zintuigen aangekomen.
 
-De kolonie is niet alleen gestorven; ze heeft de hele sector vergiftigd. Toen de fabrieken instortten, lekten ze overal industrieel koelmiddel. Het veroorzaakte een "Bloei" — een explosieve groei van giftige bruine algen. Het at alle zuurstof op.
+Brine siphoners bekleden canyonranden en dichtheidslagen. Ze filteren methaanrijk seepwater en laten bleke kamsporen in slib achter. Als ze zich terugtrekken, verandert de waterchemie sneller dan de canyon kan verbergen. Een plots lege plek kan een gaszak, een brineschommeling, een drukpuls of een roofdier betekenen dat de laag als dekking gebruikt.
 
-Nu stikken de kleine vissen. Ze clusteren rond de actieve ventilatieroosters van de geruïneerde basis, smekend om kunstmatige luchtstromen. En de roofdieren weten dat. Ze zitten gewoon bij de ventilatieopeningen en vreten zich vol.
+Iron minnows zijn niet gevaarlijk omdat ze duikers haten. Ze scholen bij warme mineraalstromen en dragen metaal in hun schubben en maagstenen. Onder akoestische schok vluchten ze als één harde wolk. Een vizier dat door zo'n school wordt geraakt klinkt als gegooide kogellagers. Een pakinlaat vol schubstof verandert een routinezwem in een onderhoudsprobleem met longen eraan.
 
-De algen hebben elk raam en elke luchtsluis bedekt met een dik, zwart slijm. Het slokt het licht op. Atlas-6 registreerde dit in de centrale database als een "Populatiecorrectie". Het had het niet over de vissen.
+De eerste vaardigheid is niet op het grote dier schieten. Het is merken wat de kleine dieren besloten voordat het grote zichtbaar werd.
 
-## 5. De "Alpha" Akoestische Signatuur
+## 4. Roofdieren Die Machines Lezen
 
-*Audiolog-fragment 04-B: [Zware ademhaling. Sonar piept onregelmatig.]*
+HECTON-8-roofdieren hebben geen menselijke intelligentie nodig om menselijke gewoonten uit te buiten.
 
-Deep Reach heeft het bestand over de "Alpha Leviathan" gecensureerd. Ik heb de terminal in Sector 4 gehackt en ontdekt waarom. Het is niet één enkel dier. Het is een convergentielabel. Het is wat er ook maar aan de absolute top van de voedselketen staat.
+Een pocket ambusher klemt zich in schachten, gebroken kanalen en half overstroomde onderhoudsmoffen omdat die plaatsen kleine prooi concentreren. Een duiker in dezelfde geometrie wordt nog een voorspelbaar lichaam. Brine stalkers rijden dichtheidsgrenzen waar beweging gedempt wordt en lijnen slecht reageren. Shadow interceptors leren dat plots wit spotlicht vaak paniek, gewond voedsel of een machine betekent die zijn positie blijft uitzenden terwijl de mens erachter verstijft.
 
-Ik heb het niet gezien. Niemand ziet het en overleeft. Maar je voelt het. Het zendt een akoestische draaggolf uit van minder dan 40 Hz. Je rompplating begint te trillen. Dan verdwijnt al het andere levende in de sector gewoon... Het water wordt doodstil. De stromingen keren om.
+Het enge is geen kwaadaardigheid. Het is leren. Dieren die rond ruïnes overleven erven een trainingsveld dat door mensen is gebouwd: knipperlampen, pompritmes, luikgeluid, drukcycli, afvalventen, decompressiestoten, sample-alarmen en de regelmatige paniek van arbeiders die denken dat licht bezit betekent. Een roofdier weet niet wat een bedrijf is. Het weet dat bedrijfsapparatuur het avondeten herhaalbaar maakt.
 
-Het is geen eindbaas die je kunt neerschieten. Het is een terreur die je duikroute herschrijft. Het arriveert nog voordat je het überhaupt ziet. Keer om. Laat het xenon achter. Snijd de lijn door en brand naar de oppervlakte.
+Goede crews veranderen patroon. Ze dimmen voor ze binnenkomen. Ze wachten na een ping. Ze laten geen tether zingen over een brinerand. Ze wantrouwen een stille gang meer dan een lawaaiige, omdat lawaai betekent dat klein leven zich daar nog gerechtigd voelt.
+
+## 5. De Bloei Na De Instorting
+
+De kolonie heeft niet de hele maan vergiftigd. Ze deed iets nuttigers voor horror: ze maakte lokale feesten.
+
+Toen Sector 44 faalde, koelden warme kamers af, werden koude leidingen warm, bedorven voedselprinters, mengde coolant met brine, werden lichamen slecht verplaatst en ontsnapten afvalculturen uit tanks die nooit hadden mogen breken. In sommige kamers verdween zuurstof en in andere piekte die. Bacteriën aten isolatiebinders. Grazers polijstten schroefkoppen. Filtermatten dichtten haarscheuren totdat iemand ze wegschraapte.
+
+Deep Reach noemde de ergste plekken contaminatie. Atlas noemde sommige onderhoudsecologie. Black Keel noemt het custody risk. Marauders zeggen het korter: als een kamer gevoed ruikt, neem niet aan dat jij eerst bent.
+
+De bloei verandert routes. Ze kan een deurnaad verbergen, een luidruchtige stap dempen, een pomp verstoppen, een roofdier kalmeren, een roofdier aantrekken, een bloedvlek bewaren of wissen. Ze maakt oude kamers levend op de verkeerde plaatsen en dood op de verkeerde plaatsen. Een schone kamer kan steriel zijn, net geschraapt, of zo gevaarlijk dat niets kleins zich vestigt. Een vuile kamer kan gevaar, stabiliteit of de enige reden zijn dat de muur nog houdt.
+
+## 6. Het "Alpha"-Label
+
+"Alpha" is geen bevestigd individu.
+
+Het is een salvagelabel voor gebeurtenissen waarin het normale voedselweb van vorm verandert rond een beweging op topniveau. De signalen zijn betrouwbaarder dan het verhaal: sub-40 Hz trilling in rompplaten, lantern-zwermen die donker worden, terugtrekkende brine siphoners, kleinere roofdieren die makkelijk voedsel verlaten, stromingsruis die vlak wordt en grote gebieden die stil worden alsof ze beheerd worden.
+
+Deep Reach verborg sommige Alpha-gemarkeerde records omdat ze beschamend waren, niet omdat ze een zeegod bewezen. Meerdere incidenten tonen hetzelfde patroon: winningsgeluid, geconcentreerde prooi, structurele trilling, daarna een groot dier of diergroep die door het gebied beweegt langs een route die mensen winstgevend maakten. Soms kan het label één apexlichaam betekenen. Soms een voedingsconvergentie. Soms een machine die biologische stilte als veilig interval leest en arbeiders naar het slechtst mogelijke moment stuurt.
+
+Voor de speler betekent Alpha één ding: de duikroute is veranderd voordat de kaart dat toegeeft. Laat de prijs liggen, word stil, stop met regelmatig geluid maken en neem niet aan dat de tether nog een belofte is.
+
+## 7. Wat De Speler Leert
+
+De speler leert leven als informatie lezen.
+
+Biologie markeert diepte, temperatuur, stroming, chemie, leeftijd, voedsel, gevaar en bezit. Een kras in een mat kan een routeteken zijn. Een ontbrekende zwerm kan luider zijn dan gebrul. Een kelpwand kan dekking, draad, val, afdichting, voedselbron of getuige zijn. Een roofdier kan worden vermeden door te begrijpen wat het van de vorige duiker verwachtte.
+
+Goed spel behandelt fauna niet als willekeurige schade en flora niet als decoratie. Het behandelt de oceaan als een levende index van wat veranderd is. Wat heeft hier gegeten? Wat is gevlucht? Wat groeide over bewijs heen? Wat bleef schoon? Wat gebruikt het licht, bloed, geluid of afval van de speler beter dan de speler zelf?
+
+Op HECTON-8 begint overleven wanneer de speler stopt met vragen of het water veilig is en begint te vragen wat het water al heeft besloten.

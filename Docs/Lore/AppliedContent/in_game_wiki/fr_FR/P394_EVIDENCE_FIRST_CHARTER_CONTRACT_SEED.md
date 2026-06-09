@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Evidence First Charter Contract Seed"
+title: "Graine de contrat charte preuves d'abord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Evidence First Charter Contract Seed
+# Graine de contrat charte preuves d'abord
 
-FR LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Charte Preuves d'Abord est une famille de contrats qui paie moins pour le salvage libre et réserve plus de capacité de route à la preuve. Dossiers d'accident, bandes d'état d'écoutille, journaux pinger et cassettes notaire passent avant les pièces lourdes quand la route commence à céder.
 
 ## Scanner
 
-FR LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Graine de contrat: charte preuves d'abord. Paiement matière plus bas, capacité notaire accrue et conflits de préservation plus durs.
 
 ## Terminal
 
-FR LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: paiement matière réduit, capacité cassette notaire relevée, priorité casier de preuve active, pénalité de démontage salvage active, poussée récepteur Deep Reach probable.
 
 ## Audio
 
-FR LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Le registre le plus propre paie tard et fâche tôt.
 
 ## Field Note
 
-FR LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Note de maraudeur: un casier de preuve ne pardonne pas la dette. Il empêche seulement la dette de choisir quelle preuve meurt d'abord.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/fr_FR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Seed-Role-Namensgrammatik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Seed-Role-Namensgrammatik
 
-DE LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Seed-Role-Namensgrammatik definiert, wie HECTON-8 prozedurale Variation nutzt, ohne geschriebene menschliche Textur zu verlieren. Replay darf ändern, wo der Beweis eines Arbeiters auftaucht, doch der Name muss an Arbeit, Genehmigung, Aufgabe und Objekt gebunden bleiben. So bleibt die Kolonie zwischen Läufen überraschend und bewahrt dennoch das Gefühl, dass jeder Datensatz jemandem gehörte, dessen Arbeit zählte.
 
 ## Scanner
 
-DE LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Ein Seed darf die Beweisreihenfolge verschieben. Er darf einen Arbeiter nicht in wegwerfbaren Text verwandeln.
 
 ## Terminal
 
-DE LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalisierung darf Crew-Begriffe zur Lesbarkeit erläutern, aber sie darf Identität nicht umschreiben, Arbeit nicht löschen und den Namen nicht von einem konkreten Objekt lösen.
 
 ## Audio
 
-DE LOC HOLD: Random is not authorship. Bind the name to a job.
+Zufall ist keine Autorenschaft. Binde den Namen an eine Arbeit.
 
 ## Field Note
 
-DE LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Jede Seed-Role-Identität kombiniert persönlichen Namen, Crew-Familie, Routengenehmigung, letzte Aufgabe und Objektvariante.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/de_DE. -->

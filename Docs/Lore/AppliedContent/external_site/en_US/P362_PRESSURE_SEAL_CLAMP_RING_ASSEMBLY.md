@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Pressure Seal Clamp Ring Assembly
 
-Pressure Seal Clamp Ring Assembly makes capsule repair a pressure bargain: deep-rated metal, glass seating and Atlas bio-sealant can save or trap the ascent path.
+The Pressure Seal Clamp Ring Assembly is the second hard limit in HECTON-8's ascent chain. The acoustic spine can make orbit listen, but the clamp ring decides whether the capsule can physically separate from the drowned structure.
 
-## Scanner
+The failure is believable because the wrong repair can look successful. A shallow seal may hold air, stop a leak and keep a room usable. It may also bridge the capsule's separation seam, foul the pressure-glass seat, or leave Atlas shell-sealant across a surface that must release under launch impulse. Static pressure is not the same test as ascent.
 
-Clamp-ring scar. The ascent sleeve survived impact by spending the seal that should have taken it home.
-
-## Terminal
-
-SEAL CERT: shallow patch holds compartment pressure only. Ascent seal requires deep-rated clamp ring, pressure-glass seat, shell-sealant map and verified Deep Reach profile. Atlas-grown sealant may preserve habitat while blocking clean separation.
-
-## Audio
-
-The useful seal is alive in the wrong direction.
-
-## Field Note
-
-A safe-room patch can buy an hour of air. It cannot hold a launch impulse.
+This component asks for deep-rated metal, verified crush profile, clean seat geometry and a sealant map with an intentional edge. It is not enough to make the capsule stop leaking. The repair has to know when to let go.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/en_US. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "오래된 절차 인식 단서"
+title: "옛 절차 인식 신호"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 오래된 절차 인식 단서
+# 옛 절차 인식 신호
 
-오래된 절차 인식은 주인공의 과거를 플레이 가능한 도구로 바꾼다. 플레이어는 신비한 단서나 개인적 예언을 따르는 것이 아니다. 한때 신뢰해야 했던 안전 양식을 읽고 있다. 경로-안전 도장은 그 선이 인증되었다고 말한다. 방 안의 증거는 작업자 수가 바뀌었다고 말한다. 두 번째 인간 확인을 강제하기 위한 수동 증인 칸은 연속성 사무소에 의해 봉인되었다. 그 모순이 고리다. Deep Reach는 단순히 경로를 숨긴 것이 아니다. 노동자 보호 언어를 사용해 버려진 사람들을 행정적으로 완료된 사건처럼 보이게 했다. 주인공의 이해관계는 전문적 인식에서 시작된다. 이 양식은 바로 이런 실패를 막기 위해 설계되었다.
+옛 절차 인식은 고백이 아니라 안전 양식에서 시작한다. route-safe certification은 복도를 인원수, 펌프실 태그 세트, 숫자가 맞지 않을 때의 두 번째 사람 확인에 묶어야 했다. 이 기록에서는 신고 occupants가 degraded-count로 받아들여졌고, 방의 태그 수는 여전히 반박하며, 2차 확인 칸은 Continuity Office가 봉인했다.
+
+그 모순이면 충분하다. 오퍼레이터가 이를 읽는 데 지휘 접근권은 필요 없다. Deep Reach는 작업자 보호 언어를 사용해 버려짐이 행정적으로 닫힌 것처럼 보이게 했다. 양식은 누군가 한 줄을 잊어서 실패한 것이 아니다. 수를 멈춰야 했던 줄이 claim을 보호하는 줄로 바뀌었기 때문에 실패했다.
 
 ## Scanner
 
-경로-안전 도장이 남아 있다. 작업자 수는 두 가지 잉크로 덮어쓴 상태다. 수동 증인 칸은 봉인됐다. 이 양식은 이런 거짓말을 잡기 위해 만들어졌지만, 누군가 그것을 정책으로 만들었다.
+ROUTE-SAFE 양식 // 신고 occupants가 degraded 처리됨. 펌프실 태그가 작업자 수와 맞지 않음. 수동 2차 확인 칸은 Continuity Office가 봉인.
 
 ## Terminal
 
-대피 연속성 양식 / 경로-안전 인증
-경로: 보조 탈출선
-신고 인원: 저하 산정 승인
-수동 증인: 연속성 사무소가 봉인
-현장 수정: 작업자 집계가 펌프실 태그와 불일치
-상태: 청구 보존, 추출 허가 아님.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-너는 이 양식을 안다. 아직 사람들이 숨 쉬는 방을 빈방으로 세지 못하게 하려던 양식이었다.
+너는 이 양식을 안다. 태그가 안 맞으면 그 방은 cleared가 아니다.
 
 ## Field Note
 
-그 양식은 한 번 더 세게 하려던 것이었다. 여기서는 침묵을 강제했다.
+이 양식은 다시 세게 만들기 위한 것이었다. 여기서는 잘못된 수를 완료처럼 만들었다.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/ko_KR. -->

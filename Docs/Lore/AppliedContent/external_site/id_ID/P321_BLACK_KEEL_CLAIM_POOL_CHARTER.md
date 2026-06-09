@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Piagam Claim-Pool Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Black Keel Claim-Pool Charter
+# Piagam Claim-Pool Black Keel
 
-ID LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel adalah jawaban hard-sci-fi HECTON-8 untuk masalah kapal pelarian. Pemain punya akses ke aset orbital, tetapi akses bukan kepemilikan dan kedekatan bukan penyelamatan. Carrier adalah infrastruktur utang: cukup berguna untuk membuat kabur terasa mungkin, cukup dibatasi untuk membuat setiap rute pulang terikat klaim, karantina, dan nilai recovery.
 
 ## Scanner
 
-ID LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel bukan kapalmu. Ia aset recovery claim-pool dengan namamu tertulis di buku utangnya.
 
 ## Terminal
 
-ID LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+KUTIPAN PIAGAM / BLACK KEEL: carrier salvage otonom / kustodi: Aegir Reclamation Pool / transport kontraktor: diizinkan / kepemilikan hull: ditolak / prioritas penyelamatan: tunduk pada insured receiver state, handshake karantina, dan claim value.
 
 ## Audio
 
-ID LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Carrier itu tidak datang untukmu. Ia datang untuk klaim yang ditempeli namamu.
 
 ## Field Note
 
-ID LOC HOLD: Use this on the first contract or carrier-status screen.
+Gunakan di layar status carrier pertama: akses diberikan, kepemilikan ditolak, prioritas penyelamatan bersyarat, lien aktif.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/id_ID. -->

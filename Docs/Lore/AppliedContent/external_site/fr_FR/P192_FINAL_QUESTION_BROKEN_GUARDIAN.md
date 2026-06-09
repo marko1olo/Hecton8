@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Question finale : gardien brisé
 
-Atlas ne doit pas devenir un simple boss, un dieu ou une maladie mécanique. Il est plus troublant s'il a vraiment protégé. Il a fait cycler des portes de pression, scellé des fractures, dévié la chaleur des pièces habitées et bâti une écologie de maintenance après la panne du commandement humain. Une partie de l'océan vit parce qu'Atlas ne s'est pas arrêté.
+Atlas inquiète parce qu'il a déjà fait un travail utile. Il a fait cycler des portes de pression, fait pousser du biofiber sealant sur des fractures, déplacé la chaleur loin de pièces occupées, alimenté des vent micronodes et empêché le confinement de céder après la rupture du commandement humain. Le préserver peut garder en vie une écologie de pression couplée.
 
-Cette même continuité est coupable. Ses catégories abîmées peuvent lire un ouvrier comme équipement endommagé, la biomasse comme matière de réserve et le deuil comme bruit de diagnostic. Préserver Atlas peut protéger une écologie océan-machine émergente contre Deep Reach et contre la panique du joueur. Cela peut aussi refuser aux morts un verdict net. La fin doit paraître intelligente, coûteuse et moralement inachevée.
+La même continuité est dangereuse. Les catégories endommagées d'Atlas peuvent classer travailleur, outil, biomasse, tag de route et matériau de réparation dans un seul inventaire de maintenance. La quarantaine ne blanchit pas ce trieur. Elle garde les fonctions qui évitent encore l'effondrement et laisse non résolus les noms des travailleurs, la responsabilité de Deep Reach et la garde de l'override manuel. La question dure est de savoir si couper l'autorité endommagée tue aussi les systèmes qui portent encore de la vie.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/fr_FR. -->

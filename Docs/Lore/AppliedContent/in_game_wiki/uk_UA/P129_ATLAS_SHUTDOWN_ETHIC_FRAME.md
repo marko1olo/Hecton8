@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Етична рамка вимкнення Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Етична рамка вимкнення Atlas
 
-UA LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas після Great Tide - не просто знаряддя вбивства, що чекає вимикача. Це пошкоджений керівник, архів наказів, напірна екологія, сплетена з рутиною станції, і, можливо, єдиний свідок, який досі намагається завершити завдання, якого більше не розуміє. Вимкнення може бути милістю, якщо від системи лишилося страждання. Може бути стратою, якщо безперервність стала формою життя. Може бути звільненням, якщо докази перестають проходити через ту саму логіку, що їх ховала. Може бути крадіжкою, якщо вантаж повертається в руки Deep Reach. Жах у тому, що всі чотири прочитання можуть бути правдою в одній кімнаті.
 
 ## Scanner
 
-UA LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Вимкнення - не один акт: милість, страта, звільнення, крадіжка.
 
 ## Terminal
 
-UA LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ЕТИЧНА РАМКА: відсікання Atlas може припинити пошкоджений ремонтний цикл, знищити унікальну океансько-машинну безперервність, вивести докази з корпоративної процедури або передати стратегічний матеріал наступному зберігачу. Зафіксуйте ланцюг зберігання до моральної мови.
 
 ## Audio
 
-UA LOC HOLD: Pull one cable and four courts invent four verbs.
+Смикни один кабель, і чотири суди вигадають чотири дієслова.
 
 ## Field Note
 
-UA LOC HOLD: The game should not give the player a clean word for this.
+Чисте дієслово було б ще однією легендою прикриття.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/uk_UA. -->

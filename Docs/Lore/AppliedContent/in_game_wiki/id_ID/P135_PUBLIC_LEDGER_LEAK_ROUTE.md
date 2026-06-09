@@ -19,11 +19,11 @@ localization_flags: 1
 
 # Kebocoran Ledger Publik
 
-Kebocoran Ledger Publik adalah ending kebenaran parsial. Pemain mengirim cukup bukti untuk membuat penghapusan lebih sulit, tetapi tidak cukup untuk mengontrol Atlas, pembalasan Deep Reach, atau apa yang akan dilakukan institusi publik dengan paket itu.
+Kebocoran ledger publik adalah rute kebenaran parsial. Paket pergi lewat jendela relay sempit dengan witness hash yang cukup untuk membuat penyangkalan mahal dan terlalu banyak celah untuk aman. Deep Reach tidak bisa lagi sekadar menghapus klaim, tetapi tidak ada seorang pun di HECTON-8 yang menentukan siapa memakai luka itu berikutnya. Asuransi, pengadilan sipil, domain saingan, pool Marauder, dan kantor korporat akan membaca bukti yang sama secara berbeda. Publikasi menyelamatkan kebenaran dari penguburan bersih. Ia tidak membuat kebenaran menjadi baik hati.
 
 ## Scanner
 
-Witness hash diterima. Kebenaran parsial pergi sebelum custody lengkap.
+Witness hash diterima. Kebenaran parsial pergi sebelum custody penuh.
 
 ## Terminal
 
@@ -31,7 +31,7 @@ RUTE LEDGER PUBLIK: Tau Ceti packet notary menerima witness hash; payload tidak 
 
 ## Audio
 
-Kebenaran pergi lebih dulu. Kau mungkin tidak suka siapa yang membacanya.
+Kebenaran pergi lebih dulu. Kontrol tidak ikut pergi.
 
 ## Field Note
 

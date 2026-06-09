@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ресурси й екологія
 
-Вузол ресурсів і екології: drowned crust, brine ladders, vent chemistry, living systems і пошкоджена repair logic Atlas.
+Вузол ресурсів та екології: Drowned Crust, соляні драбини, хімія вентів, blue debt, ознаки хижаків, позначена фауна і ремонти Atlas, що трактують живі системи як обладнання.
 
 ## Scanner
 
-Публікаційний вузол: geology, blue debt, граматика фауни і misuse ремонтної мережі Atlas.
+Публікаційний вузол: Drowned Crust, соляні драбини, історія тиску blue debt, ознаки фауни й хибне застосування ремонту Atlas.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology і encounter grammar як одна process map.
+SITE NAV: читати зразки за походженням, історією тиску, живим контактом, шкодою видобутку й цінністю custody.
 
 ## Audio
 
-Тут нічого не є просто loot.
+Тут ніщо не є просто здобиччю.
 
 ## Field Note
 
-Ресурси й екологія належать разом, коли матеріали, біота й evidence pressure ділять один маршрут.
+Чистий зразок рідко найбагатший. Спитай, що його сформувало, що його торкалося і що постраждало, коли його забрали.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/uk_UA. -->

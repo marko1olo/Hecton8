@@ -14,32 +14,32 @@ source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
 # Audit van claimtaal
 
-## Wat het dossier bewijst
+## Wat het record draagt
 
-Claimtaal is een van de stilste wapens van de kolonie. Ze hoeft de pompkamer, de gesloten triagedeur of de arbeidersmassa achter het servicerooster niet te ontkennen. Ze hoeft ze alleen te hernoemen voordat iemand met macht het bestand leest. Een wachtrij wordt een vrijgavetijdafwijking. Een gesloten deur wordt een quarantainecontrolepoort. Een lichaam dat niet terugkwam wordt betalingsblootstelling. Een beschadigde bergingsretour wordt gedeeltelijke geschiktheid.
+Deep Reach-papierwerk kan een record begraven zonder het te verwijderen. Het houdt de ruimte, tag, tijdstempel en lichaamstelling vast, en verwisselt daarna het zelfstandig naamwoord ernaast. In de Tau-spiegelcache wordt Pompruimte B, bezet gemarkeerd na overstromingstijd 03:18, gearchiveerd als afwijking in vrijgavevenster. Triage-deur 2, vergrendeld vanaf de bedieningszijde, wordt quarantainereview. Werkertag R-17 ontbreekt terwijl de pakring in de bergingsmassa ligt, en wordt Keelmark-blootstelling. Een retourbak met vier lege kithaken wordt gedeeltelijke vrachtgeschiktheid.
 
-De audit bestaat zodat de speler proceduretaal als handeling leest. Elke omgezette frase moet worden teruggeleid naar een persoon, kamer, gereedschap, routeklok of drukgebeurtenis. Deep Reach kan de getuige bewaren en de getuigenis toch begraven door het planklabel te wijzigen. Als de categorie blijft en het lichaam verdwijnt, is het bewijs al eens witgewassen.
+Lees het record vanaf de vloer omhoog: ruimte, grendel, tag, klok, aantal teruggebrachte objecten. Claimproceduretaal wordt pas bewijs wanneer ze aan een fysiek spoor kan worden vastgezet. Als een bestand de categorie behoudt en de werker laat verdwijnen, heeft het kantoor de route al één keer schoongemaakt.
 
 ## Hoe je het leest
 
-PAKKET-NOTARISINTERFACE: CLAIMTAAL-AUDIT
-Origineel: wachtrij pompkamer nog bezet.
-Conversie: vrijgavetijdafwijking.
-Origineel: triagedeur dichtgehouden.
-Conversie: quarantainecontrolepoort.
-Origineel: niet geborgen arbeidersmassa.
-Conversie: Keelmark-betalingsblootstelling.
-Origineel: terugkeer zonder volledige lading.
-Conversie: gedeeltelijke retourgeschiktheid.
-Een categorie is niet neutraal wanneer ze een persoon vervangt.
+AUDIT VAN CLAIMTAAL / TAU-SPIEGELINNAME
+Ruw spoor: wachtrij Pompruimte B bezet na overstromingsmarkering 03:18.
+Gearchiveerd als: afwijking in vrijgavevenster.
+Ruw spoor: Triage-deur 2 vergrendeld vanaf de bedieningszijde.
+Gearchiveerd als: quarantainereview.
+Ruw spoor: werkertag R-17 afwezig; pakring gelogd in bergingsmassa.
+Gearchiveerd als: Keelmark-blootstelling.
+Ruw spoor: retourbak mist vier persoonlijke kits.
+Gearchiveerd als: gedeeltelijke vrachtgeschiktheid.
+Weiger elke categorie die niet naar een ruimte, tag, grendel of klok wijst.
 
 ## Veldnotitie
 
-Categorieen laten een dode arbeider zwijgen zonder de factuur te verliezen. Lees het label en zoek wat moest worden weggesneden om het passend te maken.
+Als een bestand te schoon klinkt, tel haken, tags, grendels en klokken. Het ontbrekende zelfstandig naamwoord is meestal de werker.
 
 <!-- External Site; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/nl_NL. -->

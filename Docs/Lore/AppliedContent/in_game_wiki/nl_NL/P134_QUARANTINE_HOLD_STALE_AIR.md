@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Quarantaine-hold: muffe lucht
 
-Quarantaine-Hold redt het lichaam en schort agency op. De speler is aan de druk ontsnapt, maar niet aan custody. Elke adem wordt gemeten terwijl het bewijs achter review-taal wacht.
+Quarantaine-hold redt het lichaam en schort agency op. Er hoeft geen schurk in de kamer te staan. Het formulier zegt levend geborgen, de luchtteller zegt rantsoen actief, en de volgende deur opent pas na contaminatiereview, claimant-uitdaging en verliesaudit. Het bewijs wacht achter taal die redelijk moet klinken. Elke verklaring wordt langer vertraagd dan de arbeiders mochten leven. De oceaan is weg, maar de druk heeft geleerd papierwerk te dragen.
 
 ## Scanner
 
@@ -27,11 +27,11 @@ Lichaam geborgen. Getuige verzegeld. Luchtrantsoen actief.
 
 ## Terminal
 
-QUARANTAINE-HOLD: contractant levend geborgen; luchtrantsoen actief; sample custody onopgelost; externe getuigenis uitgesteld tot contaminatiereview, claimant-uitdaging en Keelmark-verliesreview.
+QUARANTAINE-HOLD: contractor levend geborgen; luchtrantsoen actief; sample-custody onopgelost; externe getuigenis vertraagd tot contaminatiereview, claimant-uitdaging en Keelmark-verliesaudit.
 
 ## Audio
 
-Het luik opent naar een ander gesloten luik.
+Het luik opent naar nog een gesloten luik.
 
 ## Field Note
 

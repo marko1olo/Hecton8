@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Contract Approach Act Gate"
+title: "שער גישה חוזית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Contract Approach Act Gate
+# שער גישה חוזית
 
-HE LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+השער הראשון הוא ניירת עם לחץ מאחוריה. Black Keel לא שולחת תייר למי Aegir. המפעיל מקבל העברת תביעה, חשיפת חוב, חלון bathydrop וחשבון כלים לפני הסריקה העמוקה הראשונה. פרופיל Deep Reach הישן חשוב כי זיהוי נהלים מתחיל לפני שהמסלול נראה אישי.
 
 ## Scanner
 
-HE LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+שער מסלול: חוזה התקבל. חשיפת שעבוד, תזמון bathydrop ונוהל Deep Reach ישן פעילים לפני הירידה.
 
 ## Terminal
 
-HE LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+מסלול קמפיין // גישה חוזית. בעלים: לוח תביעות Black Keel. קבל העברת תביעה, חשיפת שעבוד, חלון bathydrop וחוב כלים. שארית הרשאת Deep Reach זוהתה בפרופיל המפעיל. שחזור מותנה.
 
 ## Audio
 
-HE LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+באת בשביל עבודה. החוזה כבר יודע איפה עבדת קודם.
 
 ## Field Note
 
-HE LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+הערת בוזז: קרא את לוח החוזה פעמיים. הקריאה השנייה מראה אילו הרשאות ישנות עדיין יושבות לך בידיים.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/he_IL. -->

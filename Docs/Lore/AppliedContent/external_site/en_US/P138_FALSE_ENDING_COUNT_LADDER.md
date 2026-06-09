@@ -19,22 +19,22 @@ localization_flags: 0
 
 # False Ending Count Ladder
 
-False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+False Ending Count Ladder keeps replay scope readable: several exits, four major incomplete families, and the Atlas basin as the gravity center.
 
 ## Scanner
 
-Four major false families before the deep Atlas resolutions.
+ENDING LADDER // Material payout, partial return, corporate capture or quarantine, public ledger leak. Four false families before the deep Atlas answers.
 
 ## Terminal
 
-ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIER SCOPE: mark many exits, but group them into clear families. Material payout, partial exit/return, corporate capture/quarantine and public ledger leak sit below the Atlas basin payload resolutions.
 
 ## Audio
 
-The dossier can mark many exits before it marks an answer.
+The dossier can mark exits before it marks an answer.
 
 ## Field Note
 
-Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Enough endings to reward playstyles. Not enough to make truth cheap.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/en_US. -->

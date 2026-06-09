@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "마로더 법적 허점"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# 마로더 법적 허점
 
-KO LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+마라우더라는 말은 두 가지 진실을 동시에 담는다. 깨끗한 시민은 봉인된 폐허를 자르는 사람들을 그렇게 부르고, 인양 경제는 필요하다고 인정할 수 없는 노동을 그 이름으로 숨긴다. HECTON-8에서 모든 회수는 합법 노동, 기회주의적 절도, 혹은 수십 년 만에 식민지가 받은 첫 정직한 구조가 될 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: License valid in one lane, criminal in the next.
+한 항로에서는 유효한 면허가 다음 항로에서는 기소 사유가 된다.
 
 ## Terminal
 
-KO LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: Aegir Reclamation Pool custody 아래서는 licensed salvage contractor. Deep Reach 자산 문구에서는 묵인된 trespasser. 깨끗한 Sol 요약에서는 기소 가능한 raider. 회수된 기록이 중요한 사람을 곤란하게 만들지 않을 때만 emergency responder.
 
 ## Audio
 
-KO LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+같은 절단기가 도구, 범죄, 혹은 남은 유일한 구조 장비가 될 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder는 올바른 법정이 이익을 얻을 수 있을 때만 직함이다.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ko_KR. -->

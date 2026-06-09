@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Sanitized Accident Reply Window"
+title: "Janela de Resposta de Acidente Sanitizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Sanitized Accident Reply Window
+# Janela de Resposta de Acidente Sanitizada
 
-PT LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+A Janela de Resposta de Acidente Sanitizada mostra como Deep Reach mente antes de alguém começar a gritar. A mentira é procedural, familiar e velha: uma linha pública de perda colidindo com evidência física. O horror corporativo de HECTON-8 funciona melhor quando a resposta oficial é limpa demais para o lugar que a produziu.
 
 ## Scanner
 
-PT LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Janela de resposta aberta. Deep Reach repete colapso por tempestade, falha geológica e evacuação autônoma falha como se a sala ainda estivesse seca.
 
 ## Terminal
 
-PT LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure / RESTRICTED ADVICE: não transmitir Atlas continuity não verificada, body-category disputes ou basin-coordinate claims.
 
 ## Audio
 
-PT LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Eles responderam à sala que você deveria encontrar, não à sala onde você está.
 
 ## Field Note
 
-PT LOC HOLD: Place after first physical contradiction, not before.
+Colocar após a primeira contradição física: o jogador deve ter prova molhada antes de ouvir o script público velho.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/pt_BR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Tool Certification Board"
+title: "Tablica certyfikacji narzędzi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Tool Certification Board
+# Tablica certyfikacji narzędzi
 
-PL LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Tablica certyfikacji narzędzi zapisuje kulturę, która bardziej ufała znakom niż przemowom. Głowica tnąca zindeksowana. Kartusz uszczelniacza zważony. Rękawica ciśnieniowa podpisana podwójnie. Klucz pompy spóźniony. Zestaw zejściowy wstrzymany. Każda linia jest tępa, bo tępa procedura trzymała ludzi przy życiu tam, gdzie prawie poprawne narzędzie mogło zabić cicho.
 
-## Scanner
+Tablica wygląda rytualnie, bo niebezpieczna praca powtarza te same ruchy, aż strach ma gdzie pójść. Zważyć, sprawdzić, podpisać, zwrócić, sprawdzić ponownie. Drugi podpis nie był ozdobą; czynił zaufanie odpowiedzialnym. Jeśli rękawica zawiodła pod ciśnieniem, znak mówił, kto ją widział, kto poganiał i kto mimo wszystko próbował wysłać ją w dół.
 
-PL LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-PL LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-PL LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-PL LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+To robotnicza wiara bez mistyki. Kolonia nie modliła się nad cutterami. Kazała innemu zmęczonemu człowiekowi spojrzeć na krawędź, uszczelkę, wagę i zwrot klucza. Przetrwanie stawało się wspólne, bo każde narzędzie niosło cudze nazwisko, zanim dotknęło trasy.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/pl_PL. -->

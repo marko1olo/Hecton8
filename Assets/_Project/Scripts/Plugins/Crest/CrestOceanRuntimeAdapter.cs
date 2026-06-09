@@ -15,7 +15,7 @@ namespace Hecton8.Crest.Bridge
     public sealed class CrestOceanRuntimeAdapter : MonoBehaviour, Fluids.IHectonOceanKinematics
     {
         [SerializeField] private OceanRenderer oceanRenderer;
-        [SerializeField, Min(0f)] private float seaLevelFallback = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+        [SerializeField] private float seaLevelFallback = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
 
         private double3 _cachedOceanRootAUP;
         private float _cachedWaterLevel;
@@ -88,26 +88,17 @@ namespace Hecton8.Crest.Bridge
             if (hasAuthoritativeRootAUP == 0 || !math.isfinite(oceanRootAUP.y) || math.abs(oceanRootAUP.y) > 100000.0)
                 return safeFallback;
 
-            return AnalyticalGerstnerWaveConstants.ResolveSeaLevelY((float)oceanRootAUP.y);
+            return OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY((float)oceanRootAUP.y);
         }
 
         private static float SanitizeSeaLevel(float value)
         {
-            return TryResolveSeaLevel(value, out float seaLevel)
-                ? seaLevel
-                : AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(value);
         }
 
         private static bool TryResolveSeaLevel(float value, out float seaLevel)
         {
-            if (math.isfinite(value) && math.abs(value) > 0.0001f)
-            {
-                seaLevel = value;
-                return true;
-            }
-
-            seaLevel = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
-            return false;
+            return OceanKinematicsWaterlineUtility.TryResolveRuntimeSeaLevelY(value, out seaLevel);
         }
 
         private static int ResolveInnerLoopBatchCount(int count)

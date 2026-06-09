@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Factory Temple Entry Fragment"
+title: "Fragment d'entrée de l'usine-temple"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Factory Temple Entry Fragment
+# Fragment d'entrée de l'usine-temple
 
-FR LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+Au fond, HECTON-8 cesse de séparer colonie, océan, machine et preuve. Le lieu lui-même devient l'argument : pas culte, pas magie, mais industrie répétée jusqu'à ressembler à un rituel.
 
 ## Scanner
 
-FR LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Alliage, scellant coquillier, outil manuel et impulsion de réparation active s'enregistrent comme une seule surface.
 
 ## Terminal
 
-FR LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER : catégories de maintenance effondrées. Cicatrices d'outil, coque de scellant, racines de câble, tissu filtrant et côtes d'actionneur enregistrés comme une seule surface de réparation. Les marques de chemin humaines ne sont plus privilégiées.
 
 ## Audio
 
-FR LOC HOLD: This is not a room. This is a habit.
+Ce n'est pas une pièce. C'est une habitude.
 
 ## Field Note
 
-FR LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Règle visuelle : cela ressemble à un temple uniquement parce que l'industrie, le tissu et la répétition sont devenus rituel.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/fr_FR. -->

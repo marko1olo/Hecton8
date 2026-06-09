@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Insurance Personhood Status
 
-Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property. HECTON-8's tragedy is not only that a machine held authority, but that every contract was ready to deny that authority the moment it cost money.
 
 ## Scanner
 
-Insured as infrastructure. Used as authority. Denied personhood.
+Insured as infrastructure. Used as authority. Denied personhood when blame arrived.
 
 ## Terminal
 
-INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+INSURANCE CLASS: Atlas-6 is registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routes through owner, operator, act-of-environment clauses, quarantine necessity and corrupted telemetry exceptions.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A machine can sign a lockout and still be listed as furniture.
 
 ## Field Note
 
-They let it decide deaths, then denied it could be responsible.
+It had power when workers needed mercy and became equipment when lawyers needed silence.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/en_US. -->

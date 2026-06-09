@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 2
-title: "Akhir dan custody Payload"
+title: "Akhir dan Custody Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,16 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akhir dan custody Payload
+# Akhir dan Custody Payload
 
-Klaster akhir tidak boleh disusun dengan label sederhana good dan bad. Di HECTON-8 yang penting adalah siapa menerima payload, siapa dapat membaca proof, siapa memperoleh custody atas tubuh, data, dan Atlas records, serta versi kebenaran mana yang bertahan setelah rute. False exit juga bagian dari struktur: pergi dengan bukti tidak lengkap dapat tampak seperti penyelamatan sampai after-action records menunjukkan siapa membeli keheningan. Area ini harus tetap di balik spoiler gates dan disusun menurut receiver consequences: Black Keel, Deep Reach, public archive, quarantine authority, Atlas continuity, dan kemungkinan hilangnya kendali atas interpretasi.
+Setiap akhir HECTON-8 dimulai sebelum jendela naik. Objek pentingnya bukan hanya tubuh hidup di dalam kapsul. Yang penting adalah payload yang melekat pada tubuh itu: koordinat, pressure samples, Atlas records, worker evidence, quarantine status, guidance logs yang rusak, tanda terima custody Black Keel, dan frasa hukum yang memberi lembaga lain hak menamai recovery.
+
+Daftar good/bad yang sederhana merusak bagian yang berguna. Black Keel bisa mengangkat Marauder dan tetap menjual kebenaran dengan buruk. Deep Reach bisa menerima koordinat bersih lalu mengubahnya menjadi compliance language. Public archive bisa melukai perusahaan tanpa mengembalikan yang mati. Quarantine hold bisa masuk akal secara medis dan berguna secara politik. Pembayaran bisa menghapus satu utang sambil membiarkan saksi terbaik laut terkunci di brankas receiver.
+
+False exits bukan akhir lelucon. Itu jalan keluar ketika satu rantai tertutup dan rantai lain tetap belum dibayar. Tubuh pergi; worker proof tetap tersegel. Sample terjual; origin record dikupas. Atlas severed membunuh repair network berbahaya, tetapi mungkin juga membunuh ingatan terakhir koloni sebagai sesuatu yang lebih dari insurance claim. Atlas preserved menyelamatkan records, tetapi juga menyisakan maintenance intelligence yang belajar memperlakukan sistem hidup sebagai suku cadang.
+
+Karena itu cluster ini menyembunyikan detail di balik spoiler gates dan menamai hasil menurut receiver consequence. Siapa memiliki proof? Siapa dapat membacanya? Siapa dapat menulis ulang? Siapa memutuskan apakah payload itu rescue, salvage, contamination, theft, atau evidence?
+
+Kenaikan terakhir bukan tirai bersih. Itu custody transfer di bawah cahaya buruk, cuaca buruk, dan kontrak yang lebih buruk. HECTON-8 kembali diam hanya setelah orang lain menerima ceritanya.
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/id_ID. -->

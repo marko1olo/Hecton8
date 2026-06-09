@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Seeds de contrato más arriesgados"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Seeds de contrato más arriesgados
 
-ES LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.
+Los contratos arriesgados son la forma en que el dosier tienta a un Marauder experto sin romper la supervivencia. El tablero puede ofrecer mejor alivio de lien por una mala ventana, un descenso temprano bajo la profundidad cómoda, una muestra que debe seguir sellada o una custodia de evidencia tan estricta que cada atajo sale caro. El jugador elige presión, no fuerza heredada.
 
 ## Scanner
 
-ES LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED DE CONTRATO // Peor ventana, primer objetivo más profundo, custodia más estricta, muestra más rara, mayor alivio de lien. Sin poder heredado.
 
 ## Terminal
 
-ES LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+OPCIÓN SEED: aumentar pago aceptando peor sincronía orbital, objetivos iniciales más profundos, custodia de evidencia más dura, prueba de recurso raro o contabilidad de retorno más estrecha. Poder de equipo e inventario se reinician.
 
 ## Audio
 
-ES LOC HOLD: The board pays more when it expects less of you to return.
+El tablero paga más cuando espera menos de tu regreso.
 
 ## Field Note
 
-ES LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+El replay debe pedir codicia, valor o estupidez. No farmeo.
 
 <!-- In-Game Wiki; generated from P137_RISKIER_CONTRACT_SEEDS/es_ES. -->

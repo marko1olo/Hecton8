@@ -19,22 +19,22 @@ localization_flags: 1
 
 # להתחיל כאן: HECTON-8
 
-אשכול פתיחה: חוזה, תפקיד השחקן, לחץ ההישרדות של HECTON-8 והסתירה הראשונה בסיפור Deep Reach.
+להתחיל כאן: HECTON-8 מתחילה כ-salvage contract סביב מושבה טבועה, Marauder בחוב וסיפור Deep Reach נקי מדי.
 
 ## Scanner
 
-מרכז פרסום: הנחת היסוד, תפקיד השחקן, המגבלות הראשונות והשקר הראשון של Deep Reach.
+כניסה ציבורית: salvage contract, Marauder בחוב, capsule פגומה, סתירת Deep Reach ועקבות תיקון Atlas ראשונות.
 
 ## Terminal
 
-SITE NAV: כניסה דרך חוזה, מומחה Deep Reach לשעבר, Marauder בחוב, קפסולה פגועה, בלי וו משפחתי, עקבת תיקון Atlas ראשונה.
+SITE NAV: להתחיל משפת חוזה, הישרדות בלחץ, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-באת בשביל salvage. האוקיינוס יהפוך את המניע הזה לקטן מדי.
+הרשומה הראשונה אינה קריאה לעזרה. היא claim.
 
 ## Field Note
 
-ניווט spoiler-light מתחיל כאן: קודם premise, אחר כך evidence, וסופים רק אחרי שהשחקן מרוויח גישה.
+קרא קודם את הניירת. ב-HECTON-8 השקר שורד כי כל משפט מכיל משהו נכון.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/he_IL. -->

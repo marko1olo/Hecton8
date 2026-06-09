@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Blue Debt Sample Quality"
+title: "جودة عينة Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Blue Debt Sample Quality
+# جودة عينة Blue Debt
 
-AR LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+تحدد جودة عينة Blue Debt أخلاق الموارد في HECTON-8. أفضل العينات لا تساوي عملة أكثر فحسب. إنها تحمل سلاسل حيازة وتاريخ ضغط وقيمة دليل. لذلك يستطيع salvage والتصنيع والتجارة والنهايات أن تتكلم اللغة نفسها: ما ترفعه من المحيط يمكن أن يدفع لك، أو يتهم أحدا، أو يجعل إطلاقك أصعب.
 
 ## Scanner
 
-AR LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+جودة Blue Debt هي قيمة وخطر ودليل في رقم واحد. كلما ازدادت غنى، قلّت شبها بالغنيمة.
 
 ## Terminal
 
-AR LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+فئات الجودة / shard: حيازة منخفضة، تجارة آمنة / casketed bloom: قيمة مصنفة للضغط / harmonic glass: دليل صوتي واهتمام عال من Deep Reach / live-contaminated sample: أولوية دليل، تداول غير مستقر / dead contaminated glass: دفع منخفض، رائحة قانونية قوية.
 
 ## Audio
 
-AR LOC HOLD: The more it is worth, the less it is only loot.
+كلما ازدادت قيمته، قلّ كونه مجرد غنيمة.
 
 ## Field Note
 
-AR LOC HOLD: Quality should affect payout, containment and ending pressure.
+تغير الجودة الدفع وكلفة الاحتواء وضغط الطريق وقوة النهاية. الشظية النظيفة تدفع؛ العينة الحية الملوثة تجبر جهة ما على الرد.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/ar_SA. -->

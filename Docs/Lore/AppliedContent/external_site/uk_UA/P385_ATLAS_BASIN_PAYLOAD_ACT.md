@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Basin Payload Act"
+title: "Шлюз payload басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Basin Payload Act
+# Шлюз payload басейну Atlas
 
-UK LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Басейн Atlas - місце, де маршрут перестає питати, що сталося, і починає питати, хто отримає придатний пакет. Ланцюг доказів, вектор басейну, salvage class і proof hash не можуть усі лишитися недоторканими. Отримувача треба вибрати, відкинути або замінити локальним утриманням.
 
-## Scanner
-
-UK LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-UK LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-UK LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-UK LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Це фінальний тиск: жоден маршрут не очищає місце злочину. Продаж координат платить і відкриває басейн. Відсічення ріже шляхи повернення й убиває корисну структуру. Карантин зберігає й утримує. Публічний реєстр публікує без карти. Blind return відмовляє всім і ризикує втратити пакет. Кампанія закінчується custody, а не втіхою.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/uk_UA. -->

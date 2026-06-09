@@ -19,25 +19,10 @@ localization_flags: 0
 
 # Blue Debt Public Resource Article
 
-Blue debt is the frontier name for Xenon-Omega-bearing pressure substrate on HECTON-8. It can appear as brine-rich mineral, clathrate pocket, pressure glass contamination, biofilm-bound lattice or damaged industrial containment material. Its value comes from computation, containment and extreme-environment storage. Its danger comes from custody: every sample asks who owns it, who certified it and who gets blamed if it changes state.
+Blue debt is not magic ore. It is frontier slang for Xenon-Omega-bearing pressure substrate: brine-rich mineral pockets, clathrate layers, pressure glass contamination, biofilm-bound lattice and damaged containment material that survived conditions ordinary equipment could not. Its value comes from history under pressure. A sample may preserve computation traces, containment behavior, sensor memory or chemical states that only HECTON-8 could make.
 
-## Scanner
+The word debt matters. Blue debt is valuable because someone else has already paid for its formation with infrastructure, labor, time and risk. A clean-looking piece can carry quarantine exposure, Deep Reach custody, Black Keel mass penalties and evidence value in the same object. Taking it is never just mining. It is an argument with the route ledger.
 
-The slang is honest. The official name is what hides liability: Xenon-Omega-bearing pressure substrate.
-
-## Terminal
-
-PUBLIC ARTICLE TIER / BLUE DEBT
-allowed: sample behavior, pressure chemistry, clathrate and brine carriers, containment value, computation use, custody risk
-gated: exact recipe tables, payout tuning, late-game Atlas substrate routes
-editor note: no magic ore, no glowing loot fantasy, no clean ownership.
-
-## Audio
-
-They called it blue debt because every useful gram arrived already owing someone pressure, paperwork, or blood.
-
-## Field Note
-
-If it glows like treasure, rewrite it. Blue debt should feel useful, wet, regulated, unstable, and already disputed.
+Public resource text should make the material tempting without making it simple. Players should want to scan it, contain it, sell it, prove it and sometimes leave it behind. The best blue-debt object is not a glowing prize. It is a pressure record: useful enough to risk carrying, unstable enough to demand respect, and documented enough that its ownership can hurt.
 
 <!-- External Site; generated from P255_BLUE_DEBT_PUBLIC_RESOURCE_ARTICLE/en_US. -->

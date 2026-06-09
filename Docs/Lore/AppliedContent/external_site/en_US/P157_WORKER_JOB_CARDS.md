@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Worker Job Cards
 
-Worker Job Cards turn names into evidence objects.
+Worker Job Cards turn names into evidence objects: playable clues that make the colony human without stopping the survival loop.
 
 ## Scanner
 
-A job card is a face the budget could read.
+JOB CARD // Name, role, last task, route permission, tool certification. A face the budget could read.
 
 ## Terminal
 
-JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+EVIDENCE RULE: every recovered name should attach to something done: pump route, kitchen ledger, med bay call, cutter custody, pressure check, fabrication batch. A task turns a name into proof.
 
 ## Audio
 

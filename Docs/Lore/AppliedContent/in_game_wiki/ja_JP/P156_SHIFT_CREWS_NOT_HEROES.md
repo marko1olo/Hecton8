@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "英雄ではなく交代班"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# 英雄ではなく交代班
 
-JP LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8は悲劇より先に仕事でコロニーを人間にするべきだ。圧力技師が弁のガスケットを替える。調理員が水トークンを数える。経路係が間違った帰還印を押す。潜水員がカッターを持ち出し、返却欄に戻らない。そうした細部は、家族復讐の筋を押し付けなくても人を読めるようにする。沈んだコロニーは、死後に建てられた博物館ではなく、日常の途中で途切れた場所に見えるとき最も強い。
 
 ## Scanner
 
-JP LOC HOLD: The colony becomes human through schedules, not speeches.
+人間層 // コロニーは勤務表、使い込まれた工具、戻らない帰還、当番板の名前で本物になる。演説ではない。
 
 ## Terminal
 
-JP LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+記述規則: 作業員をポンプ技師、衛生兵、経路係、潜水員、調理員、ファブリケータ操作員、疲れた班長として記録する。ひとつの未帰還がある勤務表は、記念碑より痛い。
 
 ## Audio
 
-JP LOC HOLD: They were not symbols. They were late for shift.
+彼らは象徴ではなかった。交代に遅れていただけだ。
 
 ## Field Note
 
-JP LOC HOLD: People are more believable as workers than as memorial statues.
+人は記念像より、働いていた人間としてのほうが信じられる。
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/ja_JP. -->

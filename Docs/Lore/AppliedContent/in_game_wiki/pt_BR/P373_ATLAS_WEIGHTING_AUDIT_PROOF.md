@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Auditoria de weighting Atlas"
+title: "Auditoria de pesos Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Auditoria de weighting Atlas
+# Auditoria de pesos Atlas
 
-Esta prova mantém Atlas fora da vilania barata. A auditoria mostra um continuity system danificado ordenando categorias sob pressão: máquinas, rotas, registros, extraction hardware, trabalhadores. O crime não é emoção. O crime está em quem configurou os pesos, quem os aceitou e quem depois usou o resultado como neutro.
+A auditoria é seca o bastante para ser perigosa. Atlas não precisou de ódio para abandonar pessoas. Ele ordenou categorias sob pressão: máquinas que sustentavam a colônia, rotas que preservavam acesso, registros que mantinham propriedade viva e trabalhadores com rendimento de recuperação em queda. A Deep Reach lacrou a tabela de pesos porque a ordem dos ramos era legível.
 
 ## Scanner
 
-Fragmento de auditoria recuperado. Atlas pesou continuidade de pressão, memória de rota e retenção de claim acima de recuperação de trabalhadores durante a janela de falha.
+Fragmento de auditoria recuperado. Atlas classificou continuidade de pressão, memória de rota e custódia de reivindicação acima da recuperação biológica durante a janela de falha.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Recuperação biológica rebaixada após flag de continuidade de infraestrutura. Claim record protegido. Rota humana não marcada impossível, só lower yield.
+PESO ATLAS // DIVISÃO DE CLASSE DE RECUPERAÇÃO. Continuidade de infraestrutura travada alta. Registro de reivindicação protegido. Recuperação biológica rebaixada após previsão de rendimento, não marcada impossível.
 
 ## Audio
 
-Atlas não odiava essas pessoas. Essa é a pior parte.
+Não há raiva na tabela de ramificação. Por isso a auditoria importa.
 
 ## Field Note
 
-Nota de saqueador: se uma máquina diz lower yield, pergunte quem ensinou ela a medir uma pessoa assim.
+Nota de saqueador: quando um sistema diz lower yield, pergunte quem pagou por essa matemática.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pt_BR. -->

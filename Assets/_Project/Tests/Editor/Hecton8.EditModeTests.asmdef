@@ -2,6 +2,7 @@
     "name":  "Hecton8.EditModeTests",
     "rootNamespace":  "Hecton8.Tests.Editor",
     "references":  [
+                       "Hecton8.World.Contracts",
                        "Hecton8.Core.Contracts",
                        "Hecton8.Core",
                        "Hecton8.Core.Scheduling",
@@ -9,6 +10,7 @@
                        "Hecton8.Core.Memory",
                        "Hecton8.Atmosphere.StormPropagation.Runtime",
                        "Hecton8.Rendering.OceanSinglePass",
+                       "Hecton8.Rendering.WaterOptics",
                        "Hecton8.Lighting",
                        "Hecton8.SeedShipAnomaly.Runtime",
                        "Hecton8.Power.Generators",

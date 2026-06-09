@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Start-claimvarianten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Start-claimvarianten
 
-NL LOC HOLD: Starting claim variants are contract context, not alternate heroes. The player remains the ex-Deep-Reach Marauder. Variants adjust initial pressure, rumor access, evidence weighting and payout logic, giving replayable tone without fracturing the story.
+Een start-claim is de leugen bovenaan de werkorder. Schuld-salvage, bewijs-bounty, ontbrekende routehardware, gevaarlijke monsterbewaring, blacklist-verlichting: elke variant verandert waarom het bord de Marauder het water in laat. Het moet motief en eerste druk kleuren, niet de protagonist vervangen door een nieuw masker.
 
 ## Scanner
 
-NL LOC HOLD: Same protagonist. Different claim pressure.
+CLAIMVARIANT // Dezelfde ex-Deep-Reach Marauder. Andere eerste schuld, bounty, routehardware, monsterbewaring of blacklist-verlichting.
 
 ## Terminal
 
-NL LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+STARTREGEL: varianten veranderen begindruk, geruchtentoegang, bewijsweging en uitbetalingslogica. Ze maken geen alternatieve helden en wissen de voormalige Deep Reach-ruggengraat niet.
 
 ## Audio
 
-NL LOC HOLD: You can change the job without changing who took it.
+Je kunt de klus veranderen zonder degene die hem aannam te veranderen.
 
 ## Field Note
 
-NL LOC HOLD: Variants should color motive, not erase the canon character.
+Verander de claim. Bewaar het litteken.
 
 <!-- In-Game Wiki; generated from P139_STARTING_CLAIM_VARIANTS/nl_NL. -->

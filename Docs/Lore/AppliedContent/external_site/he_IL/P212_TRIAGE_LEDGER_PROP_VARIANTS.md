@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "וריאנטים של חפצי פנקס מיון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# וריאנטים של חפצי פנקס מיון
 
-HE LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+וריאנטים של חפצי פנקס מיון מגדירים ראיה רפואית כראיית תהליך. HECTON-8 משתמשת בפנקסים כדי לחבר פציעה, כשל לחץ, סירוב נתיב, מצב ציוד ופערי עדים. כך האימה נשארת מערכתית: השחקן לא רק קורא שאנשים נפגעו, אלא איך המושבה המירה נזק להחלטות ניתוב.
 
 ## Scanner
 
-HE LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+ראיה רפואית צריכה לחשוף עיכוב וניתוב, לא לקשט את החדר בסבל.
 
 ## Terminal
 
-HE LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: כל רשומת פנקס חייבת לקשור פציעה ללחץ, סירוב נתיב, מצב ציוד, עיכוב הסמכה או שרשרת עד חסרה. כאב לבדו אינו מספיק. החפץ חייב להראות מי יכול היה לזוז, מי הוחזק ואיזו מערכת גרמה לעיכוב להיראות פרוצדורלי.
 
 ## Audio
 
-HE LOC HOLD: Pain is not proof until the route bears the mark.
+כאב אינו ראיה עד שהנתיב נושא את הסימן.
 
 ## Field Note
 
-HE LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+וריאנטים: קיצור crush-status, סימן חוב חמצן, route hold מחוק, הערת ייצוב Atlas, פער witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/he_IL. -->

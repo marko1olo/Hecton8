@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Triage Ledger Prop Variants
 
-Triage Ledger Prop Variants keep colony harm procedural and readable.
+Triage Ledger Prop Variants keep harm readable without turning rooms into suffering displays. A triage ledger should show how injury moved through bureaucracy: crush-status shorthand, oxygen debt, route hold crossout, equipment state, Atlas stabilization note, and witness hash gap. The point is not to decorate the colony with pain. The point is to prove that delay had a path, and that the path had owners. Good triage props make the player ask why one worker was counted, another was held, and a third vanished into certification language.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Medical evidence should expose delay and routing, not decorate the room with suf
 
 ## Terminal
 
-TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state, certification delay, or missing witness chain. Pain alone is not enough. The prop must show who could move, who was held, and which system made delay look procedural.
 
 ## Audio
 

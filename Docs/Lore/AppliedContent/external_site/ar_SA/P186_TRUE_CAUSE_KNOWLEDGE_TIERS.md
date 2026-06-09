@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "طبقات معرفة السبب الحقيقي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# طبقات معرفة السبب الحقيقي
 
-AR LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+طبقات معرفة السبب الحقيقي هي خريطة المعرفة المؤسسية خلف HECTON-8. تقسم المقالة الأدلة حسب المكاتب لا لتبرئة Deep Reach، بل لجعل الجريمة أكثر قابلية للتصديق: بيانات المحيط، ووزن الذكاء الاصطناعي، وقانون الإخلاء، والتحويل التأميني، وامتثال الاسترداد حملت أجزاء مختلفة من السلسلة القاتلة نفسها. الرعب ليس أمراً مخفياً يقول «اقتلوا المستعمرة». الرعب هو شركة مبنية بحيث يرى كل مكتب حقيقة جزئية، ويحمي مقياسه، ويمرر الباقي الأخلاقي إلى أسفل حتى يصبح الإنقاذ حدث مسؤولية.
 
 ## Scanner
 
-AR LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+عرفت Deep Reach الحقيقة على شرائح: هوامش المد في مكتب، ووزن Atlas في آخر، وتأخير الإخلاء وتحويل المطالبات في مكان ثالث.
 
 ## Terminal
 
-AR LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: فرق المد سجلت فقدان الهامش؛ Risk قبل التعرض الطرفي؛ Atlas Safety رجحت الاستمرارية فوق الإخلاء؛ المستشارون حجزوا الإفراجات؛ Keelmark حول الوفيات إلى خسارة قابلة للاسترداد؛ Recovery Compliance طلب الحمولة قبل الإفصاح.
 
 ## Audio
 
-AR LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+لم يحتج أحد إلى كتابة «دعوهم يموتون». كان الجدول يعرف الطريقة بالفعل.
 
 ## Field Note
 
-AR LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+لم يكن الجهل الموزع براءة. كان بنية.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/ar_SA. -->

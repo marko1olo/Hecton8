@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Service Basin POI Kit"
+title: "Zestaw dowodowy basenu serwisowego Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Service Basin POI Kit
+# Zestaw dowodowy basenu serwisowego Atlas
 
-PL LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Basen serwisowy Atlas powinien osadzić finałową głębokość w inżynierii. Szyny konserwacyjne, żywe uszczelnienie i gniazda odbiornika pokazują system próbujący naprawić infrastrukturę ciśnienia z wciąż podpiętą złą tabelą kategorii.
 
 ## Scanner
 
-PL LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+Zestaw dowodowy POI: basen miesza szyny przemysłowe, żywe uszczelnienie, kategorie robotników i gniazda odbiornika.
 
 ## Terminal
 
-PL LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+ZESTAW BASENU SERWISOWEGO: szyna konserwacyjna, uszczelnienie tkanka-żelazo, stara tabela kategorii kolonii, gniazdo odbiornika ładunku, znacznik ryzyka odcięcia, zacisk wzrostu, kołyska narzędzia.
 
 ## Audio
 
-PL LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Nie modlił się. Planował konserwację, aż kategorie pękły.
 
 ## Field Note
 
-PL LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Notatka marodera: zeskanuj tabelę kategorii przed dotknięciem gniazda. Basen może naprawić trasę, zmieniając to, za co trasa cię uważa.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/pl_PL. -->

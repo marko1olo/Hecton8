@@ -244,6 +244,7 @@ namespace Hecton8.UI
         private ILocalizationStressPresentationReadModel _cachedLocalization;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILoreDatabaseReadModel _cachedLoreDatabase;
+        private uint _survivalVitalsSourceId;
         private SubtitleSource _currentSource;
         private SubtitleSource _lastEnqueuedSource;
         private float _lastEnqueueTime = -999f;
@@ -392,6 +393,8 @@ namespace Hecton8.UI
             TryUnregisterFromGlobalRegistry();
             ClearPendingAudioLogSubtitleEvents();
             ClearTimedAudioLogState();
+            _cachedPlayerContext = null;
+            _survivalVitalsSourceId = 0u;
 
             if (s_activeInstance == this)
                 s_activeInstance = null;
@@ -407,6 +410,8 @@ namespace Hecton8.UI
             TryUnregisterFromGlobalRegistry();
             ClearPendingAudioLogSubtitleEvents();
             ClearTimedAudioLogState();
+            _cachedPlayerContext = null;
+            _survivalVitalsSourceId = 0u;
 
             if (s_activeInstance == this)
                 s_activeInstance = null;
@@ -502,6 +507,7 @@ namespace Hecton8.UI
             _cachedLocalization = null;
             _cachedPlayerContext = null;
             _cachedLoreDatabase = null;
+            _survivalVitalsSourceId = 0u;
             if (ReferenceEquals(s_activeInstance, this))
                 s_activeInstance = null;
             enabled = false;
@@ -547,6 +553,7 @@ namespace Hecton8.UI
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                RefreshSurvivalVitalsSourceBinding(_cachedPlayerContext);
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
             {
@@ -585,10 +592,21 @@ namespace Hecton8.UI
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationStressPresentation;
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            RefreshSurvivalVitalsSourceBinding(_cachedPlayerContext);
             _cachedLoreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;
             IDataVault dataVault = Hecton8.Core.GlobalRegistry.DataVault;
             CharBufferPool.BindDataVaultCold(dataVault);
             BabelSubtitleSyncRuntime.BindDataVaultCold(dataVault);
+        }
+
+        private void RefreshSurvivalVitalsSourceBinding(IPlayerRuntimeContext playerContext)
+        {
+            HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _survivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         /// <summary>
@@ -1698,7 +1716,7 @@ namespace Hecton8.UI
                    (_powerTextGlitchPhase % (uint)cadenceFrames) == 0u;
         }
 
-        private static float ResolvePowerTextGlitchSignalTarget01()
+        private float ResolvePowerTextGlitchSignalTarget01()
         {
             float target = 0f;
             ReadOnlySpan<BatteryLevelSignal> batterySignals = SignalBus<BatteryLevelSignal>.GetFrameSnapshot();
@@ -1714,20 +1732,27 @@ namespace Hecton8.UI
                 target = math.max(target, severity);
             }
 
-            ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < vitalSignals.Length; i++)
+            uint survivalVitalsSourceId = _survivalVitalsSourceId;
+            if (survivalVitalsSourceId != 0u)
             {
-                SurvivalVitalsChangedSignal signal = vitalSignals[i];
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) == 0u)
-                    continue;
+                ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < vitalSignals.Length; i++)
+                {
+                    SurvivalVitalsChangedSignal signal = vitalSignals[i];
+                    if (signal.SourceId != survivalVitalsSourceId ||
+                        (signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) == 0u)
+                    {
+                        continue;
+                    }
 
-                float energy = math.saturate(math.select(0f, signal.Energy01, math.isfinite(signal.Energy01)));
-                if (energy >= PowerTextGlitchEnergyThreshold01)
-                    continue;
+                    float energy = math.saturate(math.select(0f, signal.Energy01, math.isfinite(signal.Energy01)));
+                    if (energy >= PowerTextGlitchEnergyThreshold01)
+                        continue;
 
-                float severity = (PowerTextGlitchEnergyThreshold01 - energy) *
-                                 (1f / PowerTextGlitchEnergyThreshold01);
-                target = math.max(target, severity);
+                    float severity = (PowerTextGlitchEnergyThreshold01 - energy) *
+                                     (1f / PowerTextGlitchEnergyThreshold01);
+                    target = math.max(target, severity);
+                }
             }
 
             return math.saturate(target);

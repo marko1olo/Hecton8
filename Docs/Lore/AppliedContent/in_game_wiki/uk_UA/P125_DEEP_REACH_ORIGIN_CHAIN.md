@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Ланцюг походження Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Ланцюг походження Deep Reach
 
-UA LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach була старою ще до того, як HECTON-8 потонув. Вона навчилася говорити акцентами кожного потрібного домену: гідністю хартій Centauri, страховою дисципліною Sol Core, практичністю утилізації Barnard, процедурами зберігання Luyten. Аегір не був першим стрибком компанії. Це було місце, де старі інструменти нарешті зустріли океан, досить глибокий, щоб сховати ціну. Тому катастрофа виглядає системною, а не випадковою.
 
 ## Scanner
 
-UA LOC HOLD: Old company. New disaster. Same charter language.
+Сплетіння хартій: слова Centauri, гроші Sol, тіла Аегіра.
 
 ## Terminal
 
-UA LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach зібрала пункти автономії, сумісні з Centauri, страхове фінансування Sol Core, логістичний борг Barnard і пізні оболонки проєкту Aegir. Atlas був затверджений як маршрутна інфраструктура ще до того, як став свідком масової смерті.
 
 ## Audio
 
-UA LOC HOLD: They brought the empire in filing cabinets.
+Вони привезли імперію в картотечних шафах і назвали це розширенням.
 
 ## Field Note
 
-UA LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach почалася не з катастрофи. Тому вона її пережила.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/uk_UA. -->

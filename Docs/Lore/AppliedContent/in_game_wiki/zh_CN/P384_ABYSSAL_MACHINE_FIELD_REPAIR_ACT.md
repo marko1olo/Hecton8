@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Abyssal Machine Field Repair Act"
+title: "深渊机器场修复门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Abyssal Machine Field Repair Act
+# 深渊机器场修复门
 
-ZH LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+深渊场迫使操作员使用损害索赔的系统。Atlas 生长可以桥接电力、修补路线硬件，并通过活材料传输信号。每次成功修复也会改变分类：工具、生物、资产、污染和证据不断跨过字段。
 
 ## Scanner
 
-ZH LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+路线门：深渊机器场。Atlas 修复生态变成可用路线硬件，并附带保管风险。
 
 ## Terminal
 
-ZH LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+战役路线 // 深渊机器场。需要：导电膜、声学器官、服务盆地、pressure-safe reroute。修复输出可在同一遍中恢复硬件，并污染所有权类别。
 
 ## Audio
 
-ZH LOC HOLD: It fixed the wall before it decided what the wall was.
+它先修好了墙，然后才给墙命名。
 
 ## Field Note
 
-ZH LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+拾荒者记录：如果它长过面板，切之前先扫描。也许面板还能工作只因为它。
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/zh_CN. -->

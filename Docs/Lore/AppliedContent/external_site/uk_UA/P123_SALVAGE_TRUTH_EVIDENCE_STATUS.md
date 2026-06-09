@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Статус доказів salvaged-правди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Статус доказів salvaged-правди
 
-UA LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Докази з утилізації дають HECTON-8 повільну змову без зручного зізнання. Колонія мовчить не тому, що нічого не сталося, а тому, що кожен предмет-доказ має ринкову, страхову й юридичну ціну. Правда спливає через маршрути зберігання та пошкоджені речі, а не через зручне зізнання.
 
 ## Scanner
 
-UA LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Пакет чорної скриньки: правда, доки його не торкнувся стіл претензій.
 
 ## Terminal
 
-UA LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: сирий salvage за замовчуванням стає матеріалом претензії. Публічний доказ потребує цілого хеша джерела, позначки тиску й часу, пакета свідка, ретрансляційного нотаріуса поза контролем заявника та ланцюга зберігання, що пережив втрату судна, розсіл і ручні правки.
 
 ## Audio
 
-UA LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Тіло стає доказом лише тоді, коли комусь не вдалося неправильно його підшити.
 
 ## Field Note
 
-UA LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Факт із глибини небезпечний лише тоді, коли зберігає своїх свідків.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/uk_UA. -->

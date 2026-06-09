@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Transit de rotation d'équipage humain"
+title: "Transit de rotation humaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Transit de rotation d'équipage humain
+# Transit de rotation humaine
 
-La rotation humaine rend l'abandon de HECTON-8 crédible. Ouvriers, spécialistes et équipes de remplacement bougent plus lentement que le langage de réclamation. Une personne peut quitter Sol sous un contrat, se réveiller sous un autre et découvrir que l'urgence prévue par sa formation est déjà devenue preuve.
+La rotation humaine était la promesse qui rendait Aegir vivable sur papier. Les travailleurs acceptaient de longs cycles parce que les fenêtres de retour existaient, la garde médicale existait, et le registre du transporteur les décrivait comme personnes récupérables plutôt que masse abandonnée. En pratique, chaque rotation dépendait des couchettes rares, de la dette de route, de l'autorisation juridique et du désir de Deep Reach de garder le témoin vivant.
 
 ## Scanner
 
-Les humains ne font pas la navette vers Aegir. Ils passent des années comme cargaison avec opinions.
+Planning d'équipage validé après que la moitié des noms étaient déjà injoignables.
 
 ## Terminal
 
-ROTATION ÉQUIPAGE : le transport humain utilise fenêtres lentes, sections habitat blindées, cycles bas métabolisme et rotations stagées. Un ouvrier manquant devient un problème de custody retardé.
+ROTATION HUMAINE : les transferts humains exigent masse de couchette, quota de radiation, surveillance du sommeil, dette médicale, garde juridique et assurance de fenêtre de retour. L'extraction d'urgence n'est pas un bouton ; c'est une exception préchiffrée que presque personne ne peut payer.
 
 ## Audio
 
-Quand la maison demande où tu es, la pièce est déjà noyée.
+Un plan de rotation n'est pas un plan de sauvetage. Ils se ressemblent seulement depuis un bureau.
 
 ## Field Note
 
-Un ouvrier de frontière vend du temps avant de vendre du travail.
+Les gens furent tournés comme inventaire jusqu'à ce que la route rappelle qu'ils étaient des corps.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/fr_FR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Blackout Window Signal Decay"
+title: "Decaimiento de señal en ventana de apagón"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Blackout Window Signal Decay
+# Decaimiento de señal en ventana de apagón
 
-ES LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+El decaimiento de señal da forma física a la escasez de comunicaciones. El jugador recibe ventanas raras, fragmentos de paquetes cortados y rutas acústicas submarinas en lugar de guía orbital constante.
 
 ## Scanner
 
-ES LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Ventana de señal colapsando: espina de relés mojada, sombra de Aegir, geometría de portador obsoleta, cola legal aún reintentando.
 
 ## Terminal
 
-ES LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: pérdida de uplink por encima de tolerancia. Canal de voz suspendido. Los fragmentos de texto pueden llegar por nodos acústicos reparados de la espina. La geometría del portador orbital se actualizará cuando despeje la sombra magnética de Aegir. Los temporizadores automáticos de gravamen y custodia continúan sin contacto de operador.
 
 ## Audio
 
-ES LOC HOLD: When the sky closes, the paperwork keeps breathing.
+El cielo calla primero. Los avisos de deuda siguen llamando.
 
 ## Field Note
 
-ES LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Vincular las ventanas de apagón al ritmo de la ruta: menos voz, más lectura de fragmentos, más valor para relés reparados y balizas locales.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/es_ES. -->

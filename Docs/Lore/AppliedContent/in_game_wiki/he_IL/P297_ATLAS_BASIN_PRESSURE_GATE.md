@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Basin Pressure Gate"
+title: "שער לחץ אגן Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Basin Pressure Gate
+# שער לחץ אגן Atlas
 
-HE LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+שער הלחץ מעגן את הסף הסופי בדרגת חליפה, הוכחת לחץ וסכסוך סמכות. הדלת אינה מיסטית; זו מערכת תעשייתית שמחליטה אם השחקן נחשב גישה, ראיה או זיהום.
 
 ## Scanner
 
-HE LOC HOLD: Basin gate requires pressure proof and authority response.
+שער האגן מבקש הוכחת לחץ, סמכות מסלול וגוף שניתן לסווג.
 
 ## Terminal
 
-HE LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: הוכחת לחץ לא שלמה. דרגת חליפה התקבלה מתחת לסף ירידה. מהדק הסמכות מזהה דפוס Deep Reach שבוטל, לא את התובע הנוכחי. עקיפה ידנית דורשת עומס מקומי, בחירת מקלט ו-payload עד.
 
 ## Audio
 
-HE LOC HOLD: It knows the old key. It does not know you.
+הוא מכיר את המפתח הישן. הוא לא מכיר אותך.
 
 ## Field Note
 
-HE LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+הסף הסופי צריך להיקרא כשער שירות למפעל חי, לא כפורטל פנטזיה.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/he_IL. -->

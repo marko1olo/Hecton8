@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ending Payout Data Boundary
 
-Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+Ending Payout Data Boundary keeps endings as tradeoff records, not victory scores. The payout matters, but so do custody, public proof, quarantine, debt, and the receiver's right to act after the player leaves.
 
 ## Scanner
 
-Ending boundary: receiver, custody, evidence state, payout, consequence.
+Ending row binds receiver, custody, evidence state, payout, and unresolved consequence.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, quarantine delay, and unresolved cost. Credits do not close a crime scene.
 
 ## Audio
 

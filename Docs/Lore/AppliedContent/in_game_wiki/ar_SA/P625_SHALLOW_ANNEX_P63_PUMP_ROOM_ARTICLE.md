@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: PDA First Shelter Note
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "غرفة مضخة الملحق الضحل P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# غرفة مضخة الملحق الضحل P-63
 
-P-63 becomes useful only after the pump room is repaired and the tool access dries.
+لا يصبح P-63 مفيدا إلا بعد إصلاح غرفة المضخة. النزح اليدوي يخفض الماء، يكشف خزائن الأدوات القديمة، ويبقي المصنع الميداني داخل نافذة صلاحية إصلاح آمنة.
 
 ## Scanner
 
-Pump-room intake blocked; manual bilge route available.
+مدخل غرفة المضخة // مسدود لكنه قابل للخدمة. مسار نزح يدوي متاح. صرّف أولا، واقطع ثانيا.
 
 ## Terminal
 
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
+صيانة P-63 // تم تسجيل تسرب ماء طفيف. النزح اليدوي مقبول. المصنع الميداني مقفل على طابور الحشيات والمشابك وقاطع التماس حتى ينفتح المدخل.
 
 ## Audio
 
-Crank the pump before cutting the locker route.
+أدر المضخة حتى يجيبك floor. إذا قطعت أولا، ستغرق خزانة الأدوات.
 
 ## Field Note
 
-A dry corner is thinking time, not safety.
+زاوية جافة ليست بيتا. إنها عشر دقائق للتفكير. خذها.
 
 <!-- In-Game Wiki; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/ar_SA. -->

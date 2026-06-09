@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "약탈자 dossier 지속성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# 약탈자 dossier 지속성
 
-KO LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+약탈자 dossier 지속성은 HECTON-8의 반복 플레이 계약을 정의한다. 플레이어가 물려받는 것은 힘이 아니라 맥락이다. dossier는 이후 시도에서 예전 실수를 더 빨리 읽고, 계약 함정을 더 일찍 알아보고, 어떤 엔딩이 미완성이었는지 이해하게 하지만 생존 압력을 깨는 기계적 이점으로 변하지 않는다.
 
 ## Scanner
 
-KO LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+dossier 스풀. 남는 것은 지식이지 초능력이 아니다.
 
 ## Terminal
 
-KO LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIER 지속 항목: 엔딩 기록, 발견한 계약 유형, 소문 계열, 증거 범주, 경로 경고, 공개 원장 결과 보존. 장비 출력, 세계 진실, 현지 압력 상태는 시드마다 초기화.
 
 ## Audio
 
-KO LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+다음 잠수는 슈트의 근육이 아니라 파일의 흉터에서 시작된다.
 
 ## Field Note
 
-KO LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+dossier는 증거와 경고를 기억한다. 압력을 관대하게 만들지는 않는다.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ko_KR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Preserve Quarantine Record"
+title: "Registro de preservação em quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Preserve Quarantine Record
+# Registro de preservação em quarentena
 
-PT-BR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+Este registro de quarentena importa porque lista o que foi retido, protegido e ainda pode quebrar depois: custódia da carga, coordenadas cegas, recibo público parcial, dano da Atlas, retenção ecológica, nomes de trabalhadores, responsabilidade e reivindicações cegas posteriores.
 
 ## Scanner
 
-PT-BR LOC HOLD: Payload withheld. Consequence deferred.
+REGISTRO DE PRESERVAÇÃO EM QUARENTENA // Carga retida da Deep Reach. Atlas segue danificada mas ativa; ordem de retenção ecológica bloqueia transferência limpa de propriedade.
 
 ## Terminal
 
-PT-BR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+REGISTRO DE FINAL / PRESERVAÇÃO EM QUARENTENA
+Carga: retida fora da custódia direta da Deep Reach.
+Ordem: retenção ecológica, coordenadas cegas, recibo público parcial.
+Estado da Atlas: lógica de reparo danificada ativa.
+Protegido: ecologia de pressão e vida de manutenção sobrevivente.
+Sem resolução: nomes de trabalhadores, responsabilidade da bacia, futuros envios salvage.
+Perda conhecida: preservação não vira inocência.
 
 ## Audio
 
-PT-BR LOC HOLD: Leaving something alive is not the same as saving it.
+Você deixou isso vivo. Não é o mesmo que salvar.
 
 ## Field Note
 
-PT-BR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Segurar o pacote protege alguns sistemas vivos e deixa a autoridade quebrada respirando. Vigie a fila de reivindicações cegas.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/pt_BR. -->

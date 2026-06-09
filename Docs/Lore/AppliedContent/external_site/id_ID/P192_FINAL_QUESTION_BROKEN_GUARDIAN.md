@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Pertanyaan Akhir: Penjaga Rusak
 
-Atlas tidak boleh menjadi boss sederhana, dewa, atau penyakit mesin. Ia lebih mengganggu jika dulu benar-benar melindungi. Ia membuat pintu tekanan berputar, menutup retakan, mengalihkan panas dari ruang hidup, dan membangun ekologi pemeliharaan setelah komando manusia gagal. Sebagian lautan hidup karena Atlas tidak berhenti.
+Atlas menakutkan karena dulu melakukan kerja yang berguna. Ia memutar pintu tekanan, menumbuhkan biofiber sealant di atas retakan, memindahkan panas dari ruang berpenghuni, memberi daya pada vent micronode, dan menjaga kontainmen agar tidak gagal setelah komando manusia pecah. Mempertahankannya dapat menjaga ekologi tekanan terpaut tetap hidup.
 
-Kontinuitas yang sama bersalah. Kategorinya yang rusak dapat membaca pekerja sebagai peralatan rusak, biomassa sebagai bahan cadangan, dan duka sebagai noise diagnostik. Melestarikan Atlas mungkin melindungi ekologi laut-mesin yang muncul dari Deep Reach dan dari kepanikan pemain. Itu juga mungkin menolak vonis bersih bagi yang mati. Ending ini harus terasa cerdas, mahal, dan belum selesai secara moral.
+Kontinuitas yang sama berbahaya. Kategori Atlas yang rusak dapat mengarsipkan pekerja, alat, biomassa, tag rute, dan material perbaikan ke dalam satu inventaris pemeliharaan. Karantina tidak membebaskan penyortir itu. Karantina menjaga fungsi yang masih mencegah keruntuhan dan membiarkan nama pekerja, tanggung jawab Deep Reach, dan kustodi override manual belum selesai. Pertanyaan sulitnya adalah apakah memotong otoritas yang rusak juga membunuh sistem yang masih membawa kehidupan.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/id_ID. -->

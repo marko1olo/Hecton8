@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 結末とpayload custody
 
-結末dossierハブ: custody、evidence、Atlasの未来、離脱の代価。
+結末 dossier hub: すべての出口は道徳色ではなくcustody transferである。
 
 ## Scanner
 
-Spoiler hub: payload receivers、false exits、custody、公開真実、Atlas continuity、after-action records。
+Spoiler hub: payload custody、receiver consequences、false exits、public proof、quarantine leverage、Atlas continuity。
 
 ## Terminal
 
-SITE NAV: final payload pagesはspoiler gatesの奥に置く。receiverとproof ownershipで整理する。
+SITE NAV: final pagesをspoiler gatesの奥に置き、身体、座標、samples、Atlas records、worker proofの支配者で整理する。
 
 ## Audio
 
-結末とは、上昇後に誰が証拠を所有するかだ。
+脱出は終わりではない。custodyの移動だ。
 
 ## Field Note
 
-結末はspoiler-gatedのまま、道徳ラベルではなくreceiverとcustody consequenceで整理する。
+身体が脱出してもproofが所有されているなら、海はまだ事件を終えていない。
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ja_JP. -->

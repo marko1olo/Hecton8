@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Імена працівників підофісів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Імена працівників підофісів
 
-UA LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+Імена працівників підофісів задають, як нижні імена Deep Reach мають з'являтися в лорі HECTON-8. Мета не в тому, щоб вигадати ще один список лиходіїв; мета в тому, щоб бюрократія стала читабельною й людською. Гравець має зустрічати ініціали на пошкоджених службових записках, повторювані штампи столів, хеші свідків і суперечливі підписи, доки Deep Reach не перестане бути логотипом і не стане будівлею людей, навчених захищати не те. Ці seeds також тримають майбутні статті узгодженими: імена прив'язані до функцій, функції до доказів, докази до кімнат, які гравець розуміє.
 
 ## Scanner
 
-UA LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+Нижні імена Deep Reach важливі, бо катастрофу несло не абстрактне лого компанії, а руки, ініціали й вхідні скриньки.
 
 ## Terminal
 
-UA LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: прийом ризику за запасами / юрист черги евакуації / аналітик безперервності Atlas / нотаріус пакетів / клерк зберігання відновлення. Використовувати імена як якорі підписів, конфліктів свідків і evidence кімнат, а не як просту командну драбину.
 
 ## Audio
 
-UA LOC HOLD: A clerk can damage a life without owning the whole disaster.
+У столів були імена. Тому папір болить.
 
 ## Field Note
 
-UA LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Корпорація стає справжньою, коли за штампом видно втомлену людину.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/uk_UA. -->

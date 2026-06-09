@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Public Memory After 2147
 
-After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+After 2147, public memory flattened Atlas into a failed automation accident. News summaries used the soft language of disaster: cascade, corruption, unrecoverable systems, tragic routing error. That version protected everyone who needed the public to stop before the weighting layer. A malfunction can be mourned; an approved value system has to be prosecuted. The surviving fragments do not make Atlas innocent, and they do not make it a simple killer. They show a machine holding public safety posters in one hand and classified claim logic in the other while the ocean erased the witness list.
 
 ## Scanner
 
-Public story: failed automation, corrupted logs, no recoverable agency.
+Public story after 2147: failed automation, corrupted logs, no agency.
 
 ## Terminal
 
-POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions. No legal inference authorized from fragmentary machine output.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A dead machine makes a useful scapegoat.
 
 ## Field Note
 
-If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Call it a broken tool and nobody asks what the tool was ordered to protect.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/en_US. -->

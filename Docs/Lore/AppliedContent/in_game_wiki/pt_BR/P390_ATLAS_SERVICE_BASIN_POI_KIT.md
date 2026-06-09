@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Service Basin POI Kit"
+title: "Kit de provas da bacia de serviço Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Service Basin POI Kit
+# Kit de provas da bacia de serviço Atlas
 
-PT LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+A bacia de serviço Atlas deve ancorar a profundidade final em engenharia. Trilhos de manutenção, selante vivo e soquetes receptores mostram um sistema tentando reparar infraestrutura de pressão com a tabela de categorias errada ainda presa.
 
 ## Scanner
 
-PT LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+Kit de provas de POI: a bacia mistura trilhos industriais, selante vivo, categorias operárias e soquetes receptores.
 
 ## Terminal
 
-PT LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+KIT BACIA DE SERVIÇO: trilho de manutenção, selo tecido-ferro, tabela antiga de categorias da colônia, soquete receptor de carga, marcador de risco de separação, grampo de crescimento, berço de ferramenta.
 
 ## Audio
 
-PT LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+Não rezou. Agendou manutenção até quebrar as categorias.
 
 ## Field Note
 
-PT LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+Nota de marauder: escaneie a tabela de categorias antes de tocar no soquete. A bacia pode reparar a rota mudando o que a rota pensa que você é.
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/pt_BR. -->

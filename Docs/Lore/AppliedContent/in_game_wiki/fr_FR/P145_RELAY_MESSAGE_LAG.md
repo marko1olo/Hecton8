@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Retard des messages relais"
+title: "Délai des messages relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retard des messages relais
+# Délai des messages relais
 
-Le retard relais permet à Deep Reach de menacer le joueur sans voix vivante dans la pièce. Machines contractuelles, notaires, fenêtres de réclamation et clauses de transporteur peuvent arriver avant la compassion parce qu'ils furent écrits plus tôt, mis en file plus tôt et tarifés pour survivre à la distance.
+Le délai relais permet à HECTON-8 de recevoir l'autorité sans recevoir le soin. Un paquet peut porter avertissement, dette, propriété, garde ou aveu à travers la distance, mais il ne peut pas porter des mains dans une pièce noyée. Cette séparation rend la communication effrayante : les systèmes distants restent puissants parce qu'ils furent écrits tôt, mis en file tôt, tarifés pour la distance et confiés à des machines qui ignorent que l'expéditeur est mort.
 
 ## Scanner
 
-Un message peut être juridiquement contraignant et arriver trop tard pour sauver l'air.
+Obligation du message valide. Réponse humaine absente. Air restant déterminé localement.
 
 ## Terminal
 
-RETARD RELAIS : les messages locaux d'Aegir peuvent prendre heures ou jours. Les paquets juridiques interdomaines peuvent prendre des années. La pression Deep Reach est périmée, automatisée, contractuelle et toujours dangereuse.
+DÉLAI RELAIS : les paquets locaux d'Aegir peuvent prendre heures ou jours. Les paquets juridiques interdomaines peuvent prendre des années. La pression de Deep Reach persiste parce que vieilles instructions, avis de privilège, réclamations de route et refus automatisés restent exécutables après la disparition de la personne qui les a écrits.
 
 ## Audio
 
-La réponse est tardive. Le privilège est à jour.
+La réponse est tardive. Le privilège est actuel.
 
 ## Field Note
 
-Sans ansible, la vérité se déplace comme du fret.
+Sans ansible, la vérité voyage comme du fret, mais le droit voyage comme un calendrier armé.
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/fr_FR. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Worker Name Pool Record"
+title: "רשומת מאגר שמות עובדים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Worker Name Pool Record
+# רשומת מאגר שמות עובדים
 
-HE LOC HOLD: Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
+רשומת מאגר שמות עובדים מגדירה כיצד HECTON-8 הופכת ראיות מבוססות seed לרציפות אנושית. כל זהות נבנית משם כתוב, פס מוצא, תפקיד עבודה בלחץ, שבר תג, היתר מסלול וסימן משמרת. המטרה אינה צבע אקראי אלא אחריות קריאה: מי היה יכול לפתוח פתח, מי טיפל במשאבה, מי קיבל סירוב לשחרור רפואי, ואת עקבותיו של מי Marauder מאוחר עומד להפריע.
+
+המערכת שומרת על זהות אישית ומאפשרת במקביל שינוי מיקום חפצים וזוגות ראיות. כך מתקבל replay בלי סתירה. עובד יכול להופיע דרך ארונית, לוח משימות, כרטיס מסלול או מניפסט, אבל העיקרון נשאר: בני אדם לא נעשים חומר מתכלה פרוצדורלי רק כי חדר ניתן ל-seed.
 
 ## Scanner
 
-HE LOC HOLD: Names are evidence, not collectible flavor.
+רצועת שם // פס מוצא, היתר מסלול, תפקיד משמרת וצלקת תג מצביעים על אותו עובד. קרא את השם לפני שהארונית הופכת לשלל חילוץ.
 
 ## Terminal
 
-HE LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+פרוטוקול מאגר שמות // זהויות עובדים נבנות משם אישי יציב, פס מוצא דומייני, תפקיד לחץ, אות משמרת, שבר תג והיתר מסלול. המערכת יכולה לשנות סדר וזיווגים לפי seed, אבל לא להפוך אנשים לתוויות שלל אקראיות. שמות אישיים נכתבים לכל שפה; התפקיד, המסלול והגישה נושאים את המשמעות המכנית.
 
 ## Audio
 
-HE LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+השם היה החפץ הראשון שהמושבה ניסתה לפרק לחלקים.
 
 ## Field Note
 
-HE LOC HOLD: Seed names must preserve identity without making family melodrama.
+שמות אינם קישוט. שם אומר מי הורשה להיות בחדר רטוב כשהתחנה התחילה לשקר.
 
 <!-- External Site; generated from P166_WORKER_NAME_POOL_PROTOCOL/he_IL. -->

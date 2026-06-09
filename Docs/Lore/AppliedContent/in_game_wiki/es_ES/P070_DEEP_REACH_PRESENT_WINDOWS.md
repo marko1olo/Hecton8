@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Ventanas actuales de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Ventanas actuales de Deep Reach
 
-ES LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+Ventanas actuales de Deep Reach explica cómo una corporación ausente puede seguir siendo un antagonista activo en 2190. No hay mesa de rescate más rápida que la luz ni ejecutivo vivo dirigiendo HECTON-8 desde una silla en los mundos centrales. La distancia es real: las ventanas son raras, tardías y filtradas por espinas de relé, proxies locales, avisos legales automáticos y lenguaje de reclamación Black Keel. Eso no vuelve inofensiva a Deep Reach. Para cuando una señal cruza el abismo, la colonia ya está moldeada por contratos viejos, valores de cuarentena por defecto, umbrales de pago y reglas de custodia. Cuando el jugador sostiene pruebas, la voz de la compañía se vuelve audible como oferta: entrega las claves de autoridad Atlas, acepta custodia de carga, sométete a revisión y quizá recibas recuperación en lugar de abandono.
 
 ## Scanner
 
-ES LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach no puede dirigir HECTON-8 por radio, pero sus ventanas retrasadas, avisos proxy y cláusulas Black Keel aún deciden cuánto cuesta la ayuda.
 
 ## Terminal
 
-ES LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / PROXY DEEP REACH: recuperación del operador negociable tras revisión de pruebas, custodia de carga, cumplimiento de cuarentena y transferencia de claves de autoridad Atlas. Rechazar preserva el estado de reclamante pero anula la prioridad de extracción inmediata.
 
 ## Audio
 
-ES LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Cuando su voz llega hasta ti, ya es un contrato.
 
 ## Field Note
 
-ES LOC HOLD: Their voice is delayed. Their leverage is already here.
+Su respuesta llega tarde. Sus condiciones llegaron hace años.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/es_ES. -->

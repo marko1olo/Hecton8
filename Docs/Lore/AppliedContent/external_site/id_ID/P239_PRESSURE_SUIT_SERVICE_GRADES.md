@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Suit Service Grades"
+title: "Tingkat Servis Baju Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Suit Service Grades
+# Tingkat Servis Baju Tekanan
 
-ID LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+Tingkat servis baju tekanan menjaga progres perlengkapan HECTON-8 tetap hard sci-fi: sertifikasi kedalaman, bahan habis pakai, margin termal, batas kontaminasi, dan riwayat perawatan yang tidak sempurna.
 
 ## Scanner
 
-ID LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Tag baju mencatat kedalaman servis, lelah seal, cadangan scrubber, toleransi termal, dan penanganan kontaminasi.
 
 ## Terminal
 
-ID LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-ID LOC HOLD: The suit does not make you brave. It only fails later.
+Baju itu tidak membuatmu berani. Ia hanya gagal lebih lambat.
 
 ## Field Note
 
-ID LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Baju yang lebih dalam bukan armor berwarna. Ia adalah dokumen, suku cadang, dan perawatan buruk.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/id_ID. -->

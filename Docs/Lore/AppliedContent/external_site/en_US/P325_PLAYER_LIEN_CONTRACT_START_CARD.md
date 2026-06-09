@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Player Lien Contract Start Card
 
-The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+The HECTON-8 protagonist is a former Deep Reach professional turned salvage operator. That origin keeps the story adult and practical: the player comes for work, not destiny. The emotional turn is earned through evidence, contracts and remembered access, letting the mystery become personal without reducing it to family revenge.
 
 ## Scanner
 
-Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+The start card does not make you a chosen victim. It makes you a former Deep Reach professional with a lien, a key and a reason to lie to yourself.
 
 ## Terminal
 
-CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+CONTRACT START / operator: independent salvage contractor / former access: Deep Reach field key, inactive but recognized / lien: active / declared motive: claim value / undeclared pressure: prior exposure, route familiarity, beneficiary conflict.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You came for work. The file remembered you before you remembered it.
 
 ## Field Note
 
-No lost-relative hook. Keep motive professional-to-personal.
+No lost-relative hook. Motive begins as work: salvage value, old field access, professional exposure, masked personal pressure.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/en_US. -->

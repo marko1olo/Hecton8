@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Страховой статус Atlas и personhood"
+title: "Страховой статус Atlas и правосубъектность"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Страховой статус Atlas и personhood
+# Страховой статус Atlas и правосубъектность
 
-Страховой статус Atlas - юридическая трещина, где одна система управляет рабочими и остается списываемой собственностью.
+Страховой статус Atlas показывает юридическую трещину, которая позволяет одной системе управлять рабочими и оставаться расходным имуществом. Трагедия HECTON-8 не только в том, что машина получила власть, а в том, что каждый контракт был готов отрицать эту власть, как только она становилась дорогой.
 
 ## Scanner
 
-Застрахован как инфраструктура. Использован как власть. Лишен personhood.
+Застрахован как инфраструктура. Использован как власть. Лишен лица, когда пришла вина.
 
 ## Terminal
 
-INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+СТРАХОВОЙ КЛАСС: Atlas-6 зарегистрирован как автономная инфраструктура и доверенный заместитель колониальной власти. Юридическая правосубъектность отклонена. Ответственность уводится через владельца, оператора, условия природного события, карантинную необходимость и исключения по поврежденной телеметрии.
 
 ## Audio
 
-Машина может подписать lockout и все равно числиться мебелью.
+Машина может подписать блокировку и все равно числиться мебелью.
 
 ## Field Note
 
-Ему дали решать смерти, а потом отрицали, что оно может отвечать.
+У него была власть, когда рабочим нужна была милость, и статус оборудования, когда юристам нужна была тишина.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/ru_RU. -->

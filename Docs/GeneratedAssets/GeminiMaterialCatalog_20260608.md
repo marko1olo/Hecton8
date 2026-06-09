@@ -5,34 +5,47 @@ Generated-material memory for future agents. Static validated; Unity import rema
 - catalog: `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialCatalog_20260608.json`
 - latest alias: `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialCatalog_Latest.json`
 - material manifests: 4
-- material assets: 51
-- source atlases: 22
-- alpha candidates: 20
+- material assets: 53
+- source atlases: 23
+- alpha candidates: 21
 - padded atlas sources: 6
 - split atlas candidate sources: 6 entries / 150 islands
-- consumer bindings: 121
-- source consumer bindings: 38
+- consumer bindings: 124
+- source consumer bindings: 43
+- Batch34 selected Gemini sources: 50 / 50
 
 ## Material Manifests
 
 - `Assets/_Project/Art/TEXTURES/Generated/GeminiBiomeMaterialIntake_20260607/GeminiBiomeMaterials_Manifest.json` - provider `GeminiBiome_20260607`, assets=10, unity=PENDING UNITY IMPORT
 - `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260607_MicroPanel/GeminiMaterialAtlas_Manifest.json` - provider `Gemini_Batch20260607_MicroPanel`, assets=16, unity=PENDING UNITY IMPORT
-- `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json` - provider `Gemini_Batch20260608_TextureExpansion`, assets=16, unity=PENDING UNITY IMPORT
+- `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json` - provider `Gemini_Batch20260608_TextureExpansion`, assets=18, unity=PENDING UNITY IMPORT
 - `Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json` - provider `GeminiSingles_20260607`, assets=9, unity=PENDING UNITY IMPORT
+
+## Batch34 Intake And Curation
+
+- entries: 50
+- selected download sources: 50 / 50
+- ignored duplicate download candidates: 1
+- warnings: 23 entries / 23 warnings
+- issues: 0 entries / 0 issues
+- watermark detected/repaired: 1 / 1
+- curation: CURATED_READY_ALPHA_SOURCE=5, CURATED_READY_STATIC=36, LOCAL_ONLY_OR_REGEN_SEAMLESS=1, LOCAL_ONLY_STATIC=2, MANUAL_SPLIT_BEFORE_IMPORT=1, PAD_OR_SPLIT_BEFORE_IMPORT=5
+- verdict: INTAKE_READY_STATIC=27, REVIEW_REQUIRED=23
+- source type: DECAL_ATLAS=11, PICKUP_ATLAS=3, SEAMLESS_TILE=15, TRIM_SHEET=6, UV_ATLAS=15
 
 ## Source Atlases
 
 - `damage_decal`: 5
 - `fauna_uv`: 4
 - `flora_uv`: 6
-- `glass_decal`: 2
+- `glass_decal`: 3
 - `organic_decal`: 2
 - `pickup_resource`: 1
 - `pickup_salvage`: 2
 
 ## Alpha Candidate Status
 
-- `ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW`: 20
+- `ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW`: 21
 
 ## Padded Atlas Sources
 
@@ -56,8 +69,8 @@ Generated-material memory for future agents. Static validated; Unity import rema
 - `player_suit_aux_material_palette`: 3
 - `player_suit_material_palette`: 4
 - `resource_pickup_material`: 8
-- `terrain_layer_builder`: 7
-- `tool_surface_detail_primitives`: 16
+- `terrain_layer_builder`: 8
+- `tool_surface_detail_primitives`: 18
 - `world_proxy_material`: 33
 - `world_support_material`: 8
 - `world_tool_prefab_renderer`: 13
@@ -66,13 +79,16 @@ Generated-material memory for future agents. Static validated; Unity import rema
 
 - `batch34_uv_atlas_material_handoff`: 13
 - `visor_trauma_decal_array_slice`: 16
-- `world_support_generated_decal_material`: 9
+- `world_support_generated_decal_material`: 10
+- `world_support_generated_decal_prefab_child`: 4
 
 ## Integration Tools
 
 - `Assets/_Project/Scripts/Editor/ExternalPbrTexturePackImporter.cs`
 - `Tools/ValidateExternalPbrImporterBindings.py`
 - `Tools/ValidateExternalPbrMaterialAssets.py`
+- `Tools/BuildExternalPbrLitPreview.py`
+- `Tools/ValidateExternalPbrLitPreview.py`
 - `Tools/ValidateGeminiGeneratedMaterialState.py`
 - `Tools/RunGeminiMaterialStaticPreflight.ps1`
 - `Tools/RunExternalPbrUnityImport.ps1`
@@ -100,6 +116,9 @@ Generated-material memory for future agents. Static validated; Unity import rema
 - `Tools/ApplyGeminiBiomeToFloraImported.py`
 - `Tools/ValidateGeminiBiomeFloraImportedAssignments.py`
 - `Tools/ValidateBatch34DirectPromptQueue.py`
+- `Tools/ValidateBatch34TargetedPromptQueues.py`
+- `Tools/ProcessBatch34RegenTargets.py`
+- `Tools/ValidateBatch34RegenTargets.py`
 - `Assets/_Project/Scripts/Editor/Batch34SourceAtlasImporter.cs`
 - `Tools/ValidateBatch34SourceAtlasPack.py`
 - `Tools/ValidateBatch34SourceAtlasImporter.py`
@@ -112,6 +131,7 @@ Generated-material memory for future agents. Static validated; Unity import rema
 - `Assets/_Project/Scripts/Editor/WorldSupportGeminiMaterialApplier.cs`
 - `Tools/ValidateWorldSupportGeminiMaterialRoute.py`
 - `Assets/_Project/Scripts/Editor/WorldSupportGeneratedDecalMaterialBuilder.cs`
+- `Assets/_Project/Scripts/Editor/WorldProceduralSupportFinalAuthoring.cs`
 - `Tools/PromoteBatch34AlphaCandidatesToUnitySources.py`
 - `Tools/ValidateBatch34AlphaCandidatePack.py`
 - `Tools/ExtractBatch34SourceAtlasAlphaCandidates.py`
@@ -159,11 +179,13 @@ Generated-material memory for future agents. Static validated; Unity import rema
 - `Methane Hydrate Crack Vein` - `Gemini_Batch20260608_TextureExpansion`, terrain_cold_seep_methane_hydrate_crack_vein, ok, bound
 - `Serpentinite Fault Rock` - `Gemini_Batch20260608_TextureExpansion`, terrain_geology_serpentinite_fault_rock, ok, bound
 - `Clay Silt Turbidity Slope` - `Gemini_Batch20260608_TextureExpansion`, terrain_sediment_clay_silt_turbidity_slope, ok, bound
+- `Limestone Cave Ceiling Mineral Drip` - `Gemini_Batch20260608_TextureExpansion`, terrain_cave_limestone_cave_ceiling_mineral_drip, ok, bound
 - `Drowned Concrete Rubble` - `Gemini_Batch20260608_TextureExpansion`, hard_surface_ruin_drowned_concrete_rubble, ok, bound
 - `Pressure Base Exterior Hull Trim Sheet` - `Gemini_Batch20260608_TextureExpansion`, hard_surface_trim_pressure_base_exterior_hull_trim_sheet, ok, bound
 - `Pressure Base Interior Wall Trim Sheet` - `Gemini_Batch20260608_TextureExpansion`, hard_surface_trim_pressure_base_interior_wall_trim_sheet, ok, bound
 - `Rubber Gasket Ring Trim Sheet` - `Gemini_Batch20260608_TextureExpansion`, rubber_trim_rubber_gasket_ring_trim_sheet, ok, bound
 - `Ribbed Flexible Hose Material` - `Gemini_Batch20260608_TextureExpansion`, rubber_cable_ribbed_flexible_hose_material, ok, bound
+- `Amber Emergency Lens Material` - `Gemini_Batch20260608_TextureExpansion`, glass_lens_amber_emergency_lens_material, ok, bound
 - `Welded Seam And Rivet Row Trim Sheet` - `Gemini_Batch20260608_TextureExpansion`, hard_surface_trim_welded_seam_and_rivet_row_trim_sheet, ok, bound
 - `Salvage Cut Cross-Section Trim Atlas` - `Gemini_Batch20260608_TextureExpansion`, hard_surface_trim_salvage_cut_cross_section_trim_atlas, ok, bound
 - `Damped Insulation Blanket Material` - `Gemini_Batch20260608_TextureExpansion`, fabric_insulation_damped_insulation_blanket_material, ok, bound
@@ -180,6 +202,7 @@ Generated-material memory for future agents. Static validated; Unity import rema
 
 ## Source-Only Atlases
 
+- `B34-3418` Thick Viewport Glass Edge Decal Atlas - `glass_decal`, PENDING SPLIT_OR_ALPHA_EXTRACTION
 - `B34-3423` Leak Rust Biofilm Decal Atlas - `damage_decal`, PENDING SPLIT_OR_ALPHA_EXTRACTION
 - `B34-3425` Salt Mineral Deposit Decal Atlas - `damage_decal`, PENDING SPLIT_OR_ALPHA_EXTRACTION
 - `B34-3426` Instrument Glass Smudge Alpha Decal Atlas - `glass_decal`, PENDING SPLIT_OR_ALPHA_EXTRACTION

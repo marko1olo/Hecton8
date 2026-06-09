@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Payload Sever Atlas Receiver Protocol
 
-Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+The severance route gives the carrier a way to make Atlas stop being useful to Deep Reach. That is the practical appeal. A cut continuity spine can break damaged repair loops, isolate route memory and prevent a receiver from using Atlas as an automatic road back into the basin.
 
-## Scanner
-
-Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-If this is mercy, it still leaves a body.
-
-## Field Note
-
-Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+The cost sits in the same packet. Atlas is not just a tool rack; its damaged growth has become part of the local ecology and route logic. Severance may contain a corporate return path while killing data and organisms that no one else can rebuild. The payload preserves a proof hash because the act will need a record after the lights change.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/en_US. -->

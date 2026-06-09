@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Tata Bahasa Nama Seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Tata Bahasa Nama Seed-role
 
-ID LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Tata Bahasa Nama Seed-role menentukan bagaimana HECTON-8 memakai variasi prosedural tanpa kehilangan tekstur manusia yang ditulis. Replay dapat mengubah tempat bukti pekerja muncul, tetapi nama harus tetap terikat pada pekerjaan, izin, tugas, dan objek. Ini membuat koloni tetap mengejutkan antar-run sambil mempertahankan rasa bahwa setiap catatan pernah menjadi milik seseorang yang pekerjaannya berarti.
 
 ## Scanner
 
-ID LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed boleh memindahkan urutan bukti. Ia tidak boleh mengubah pekerja menjadi teks sekali pakai.
 
 ## Terminal
 
-ID LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalisasi boleh memberi penjelasan istilah kru demi keterbacaan, tetapi tidak boleh menulis ulang identitas, menghapus pekerjaan, atau melepaskan nama dari objek konkret.
 
 ## Audio
 
-ID LOC HOLD: Random is not authorship. Bind the name to a job.
+Acak bukan kepengarangan. Ikat nama pada pekerjaan.
 
 ## Field Note
 
-ID LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Setiap identitas seed-role menggabungkan nama pribadi, keluarga kru, izin rute, tugas terakhir, dan varian objek.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/id_ID. -->

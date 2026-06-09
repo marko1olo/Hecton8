@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Czasy podróży pakietów sond"
+title: "Czasy lotu pakietów sond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Czasy podróży pakietów sond
+# Czasy lotu pakietów sond
 
-Czas pakietów sond uczynił Aegir wartościowym, zanim stał się znajomy. Wąska maszyna mogła przelecieć, zmierzyć i zameldować, gdy ludzkie instytucje nadal kłóciły się o budżety i odpowiedzialność. Kiedy Deep Reach sprzedawała pewność, pakiety były już stare, a modele ryzyka wypolerowane. To zagrożenie eksploracji najpierw maszynami: ocean można wycenić na przeterminowanej prawdzie długo przed tym, jak ktokolwiek zrozumie koszt pracy tam.
+Czas lotu pakietów sond to jedna z najmniej widowiskowych i najbardziej szkodliwych sił świata. Wczesne pakiety Ran-Aegir nie były kłamstwami. Niosły realne odczyty widmowe, szacunki masy, chemię lodu, geometrię przekaźników i nadzieję płytkich wód. Były po prostu stare, gdy ludzie potraktowali je jak pozwolenie.
+
+To wyostrza upadek kolonii. HECTON-8 nie założono na czystej fantazji. Założono go na danych, które lepiej przetrwały trasę niż czas. Kiedy nowsze odczyty zaprzeczyły pierwszej obietnicy, stara obietnica miała już doczepione długi, kontrakty, sprzęt i ludzkie plany.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/pl_PL. -->

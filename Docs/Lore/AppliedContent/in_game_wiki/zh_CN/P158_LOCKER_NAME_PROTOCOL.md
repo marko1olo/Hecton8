@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Locker Name Protocol"
+title: "储物柜姓名协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Locker Name Protocol
+# 储物柜姓名协议
 
-ZH LOC HOLD: Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+储物柜之所以个人化，是因为有人使用过它，而不是因为它解释了一整个人生。最好的储物柜证据很实用：一侧被磨亮的徽章、裂开的密封上贴的胶带、路线贴纸、工人速记写下的修正便条、后来被 payroll 抹掉的姓名牌。Marauder 通过使用痕迹和未完成任务把人找回来。殖民地不需要煽情才像人住过。它需要企业清理没能刮掉的小痕迹。
 
 ## Scanner
 
-ZH LOC HOLD: A locker is personal without needing a family plot.
+储物柜痕迹 // 姓名牌、工具磨损、pressure tape、修正便条、路线贴纸。没有家庭剧情的个人证据。
 
 ## Terminal
 
-ZH LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+储物柜规则：保存 Deep Reach 从 payroll 中移除的名字。储物柜应绑定徽章、角色、路线许可、维修习惯和留在里面的未完成之物。
 
 ## Audio
 
-ZH LOC HOLD: The company deleted the employee. The rust kept the label.
+公司删除了员工。锈迹留下了标签。
 
 ## Field Note
 
-ZH LOC HOLD: The smallest human trace should survive corporate cleanup.
+最小的人类痕迹也应该熬过企业清理。
 
 <!-- In-Game Wiki; generated from P158_LOCKER_NAME_PROTOCOL/zh_CN. -->

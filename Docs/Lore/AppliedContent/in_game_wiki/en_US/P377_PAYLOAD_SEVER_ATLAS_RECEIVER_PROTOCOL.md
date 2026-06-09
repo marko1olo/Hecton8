@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Payload Sever Atlas Receiver Protocol
 
-Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+The severance protocol is a destructive receiver route, not a clean release. It can stop damaged repair logic and deny Deep Reach a recovery vector. It can also destroy machine ecology, erase useful route memory and create an evidence trail that reads as containment, sabotage, theft or mercy depending on receiver law.
 
 ## Scanner
 
-Severance route armed. The target is not a boss; it is a damaged continuity system.
+Severance route armed. Payload carries cut keys for Atlas continuity, route memory isolation and proof-hash preservation.
 
 ## Terminal
 
-PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+PAYLOAD RECEIVER // ATLAS SEVERANCE. Target: Atlas continuity spine. Cut repair loop, isolate route memory, preserve proof hash, deny corporate recovery vector. Ecological cascade unresolved. Legal classification disputed.
 
 ## Audio
 
-If this is mercy, it still leaves a body.
+Atlas can be cut. The cut still leaves custody marks.
 
 ## Field Note
 
-Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Marauder note: a clean cut is still a cut. Photograph the custody marks before you pull it.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/en_US. -->

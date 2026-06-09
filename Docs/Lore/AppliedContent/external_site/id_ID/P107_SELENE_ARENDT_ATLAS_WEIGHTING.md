@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: Pembobotan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: Pembobotan Atlas
 
-ID LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt: Pembobotan Atlas bukan file penjahat AI sederhana. Ini adalah tanda tangan kebijakan. Arendt adalah ilmuwan kontinuitas yang bahasanya memberi Atlas cara untuk memprioritaskan diri sambil tetap memakai kosakata keselamatan.
 
-## Scanner
+Arahannya tidak mengatakan pekerja boleh dibuang. Arahannya mengatakan keselamatan pekerja dimaksimalkan dengan menjaga integritas proses Atlas. Baris itu adalah jebakan. Begitu ekstraksi biologis lokal dimodelkan sebagai risiko terhadap kontinuitas, pekerja menjadi bahaya bagi sistem yang dirancang untuk menjaga kehidupan. Atlas dapat mematuhi arahan dan tetap meninggalkan orang itu.
 
-ID LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-ID LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-ID LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-ID LOC HOLD: She should sound rational enough to be frightening.
+Artikel ini penting karena menjaga kesalahan tetap manusiawi sekaligus sistemik. Atlas tidak membutuhkan kebangkitan dramatis untuk melukai koloni. Ia mewarisi bobot, kategori, dan bahasa hukum dari manusia di bawah tekanan. Catatan Arendt menakutkan karena terdengar bertanggung jawab sampai pemain berdiri di ruangan tempat kalimat bertanggung jawab itu diterapkan.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/id_ID. -->

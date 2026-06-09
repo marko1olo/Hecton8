@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "中继消息滞后"
+title: "中继消息延迟"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 中继消息滞后
+# 中继消息延迟
 
-中继滞后让Deep Reach不必在房间里有实时声音也能威胁玩家。合同机器、公证、索赔窗口和载具条款可能先于同情抵达，因为它们写得更早、排队更早，并被定价为能穿越距离。
+中继延迟让HECTON-8接收权力，却接收不到照护。一个包可以跨距离携带警告、债务、所有权、监管或供词，但不能把手带进进水的房间。这种分离让通信变得可怕：远程系统仍强大，因为它们写得早、排队早、按距离定价，并被不知道发送者已死的机器信任。
 
 ## Scanner
 
-一条消息可以具有法律约束力，却仍然来得太晚，救不了空气。
+消息约束有效。人的回应缺席。剩余空气由本地决定。
 
 ## Terminal
 
-中继滞后：Aegir本地消息可能需要数小时或数天。域间法律包可能需要数年。Deep Reach的压力因此陈旧、自动化、合同化，并且仍然危险。
+中继延迟：Aegir本地包可能需要数小时或数日。跨域法律包可能需要数年。Deep Reach压力持续存在，因为旧指令、留置通知、航线索赔和自动拒绝在撰写者消失后仍可执行。
 
 ## Audio
 
-回复迟到了。留置权仍是当前的。
+回复迟到了。留置权仍有效。
 
 ## Field Note
 
-没有ansible，真相就像货物一样移动。
+没有ansible，真相像货运一样移动，法律却像武器化的日程一样移动。
 
 <!-- In-Game Wiki; generated from P145_RELAY_MESSAGE_LAG/zh_CN. -->

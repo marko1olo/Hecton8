@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "假结局分类"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# 假结局分类
 
-CN LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8把假结局和部分结局当作真实结果，而不是简单的欺骗。物资兑付可以进入字幕。部分撤离可以把玩家送回同一个世界种子，但保留档案里的知识。企业接管和隔离扣留会惩罚错误载荷或危险的证据流转。更深的结局需要公开证据、Atlas状态解决，以及玩家愿意用什么代价购买救援的选择。
 
 ## Scanner
 
-CN LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+结局板。有些出口真实到可以结算，也错误到会留下伤口。
 
 ## Terminal
 
-CN LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+结局族群：物资兑付；部分撤离并返回同一世界种子；企业接管；隔离扣留；公开账本释放；Atlas盆地解决。结局记录必须分开保存载荷、证据和债务状态。
 
 ## Audio
 
-CN LOC HOLD: Leaving is not the same as finishing.
+离开海水，不等于完成工作。
 
 ## Field Note
 
-CN LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+假结局不是骗局。它是一笔有效交易，只是缺少真相。
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/zh_CN. -->

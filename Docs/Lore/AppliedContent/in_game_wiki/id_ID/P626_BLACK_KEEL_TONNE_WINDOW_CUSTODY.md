@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Kustodi tonne-window Black Keel
 
-Tanda terima Keelmark menjelaskan mengapa Black Keel berbicara soal massa sebelum berbicara soal penyelamatan. Kapal pembawa berjalan dengan kustodi tonne-window: slot hukum yang dicocokkan dengan payload fisik, paparan asuransi, dan fase jam rute. Tubuh hidup, inti bukti tersegel, potongan material proses Xenon-Omega, dan peti lambung yang dapat dipulihkan bersaing untuk jendela yang sama jika kontrak menaruhnya pada baris yang sama. Sistem ini dingin, tetapi tidak acak. Ia memberi tahu pemain apa yang dihargai perbatasan dan pilihan mana yang akan pulang lebih dulu.
+Tonne-window adalah bentuk kejam frontier yang bersih. Terdengar seperti akuntansi karena memang akuntansi, tetapi yang dihitung fisik: massa melalui jendela recovery sempit. Black Keel tidak mengangkat semua dari laut, hanya yang diizinkan rute, asuransi, karantina, dan kustodi.
+
+Maka tiap payload tajam. Kontraktor hidup bernilai, tetapi inti bukti melawan Deep Reach juga. Xenon-Omega bisa lebih berharga dari salvage biasa dan meracuni karantina. Hull recoverable bisa memuaskan asuransi lebih cepat daripada dossier pekerja memuaskan keadilan.
 
 ## Scanner
 
-GARIS KUSTODI // Massa tonne-window yang diterima bisa berupa salvage, bukti, tubuh, atau objek utang. Paket yang terdengar tidak memberi prioritas angkat; ia memberi tanggung jawab.
+Tanda terima Keelmark. Satu tonne-window memetakan massa payload, fase rute, exposure asuransi, kelas karantina, dan prioritas recovery ke satu slot carrier.
 
 ## Terminal
 
-TANDA TERIMA MASSA KEELMARK // Jendela memberi kustodi pada slot, bukan belas kasihan pada orang. Muatan berlebih bergulir ke lintasan berikutnya kecuali nilai klaim, kelas karantina, dan geometri pembawa lolos bersama.
+KUSTODI TONNE-WINDOW // Lien 4.8 tonne-window aktif. Kontraktor hidup, inti bukti tersegel, potongan Xenon-Omega, dan crate hull recoverable berbagi kelas recovery kecuali proof custody memprioritaskan ulang. Status manusia saja tidak cukup.
 
 ## Audio
 
-Audio utang Black Keel: aku bisa membawa bukti, logam, atau kau. Buku besar akan bertanya mana yang menjaga kapal tetap solvent.
+Black Keel berbicara dalam ton karena ton itulah yang dapat dibawa jendela.
 
 ## Field Note
 
-Saat pembawa berkata massa diterima, itu bukan berarti orang diterima. Ikat buktimu ke setelan sebelum buku besar memintamu memilih.
+Tonne-window bukan uang. Itu izin bagi massa untuk pergi.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/id_ID. -->

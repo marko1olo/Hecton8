@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "轮班队，不是英雄"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# 轮班队，不是英雄
 
-CN LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+轮班队，不是英雄，是 HECTON-8 的人性写作规则：工人通过工作、疲惫、习惯和程序失败被记住。
 
 ## Scanner
 
-CN LOC HOLD: The colony becomes human through schedules, not speeches.
+人性层 // 殖民地通过排班、磨损工具、未返回记录和执勤板上的名字变得真实。不是靠演讲。
 
 ## Terminal
 
-CN LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+写作规则：把工人写成泵技师、医护、路线文员、潜水员、厨工、制造机操作员和疲惫的班长。一个缺失返回的排班表比纪念碑更痛。
 
 ## Audio
 
-CN LOC HOLD: They were not symbols. They were late for shift.
+他们不是象征。他们只是上班迟到了。
 
 ## Field Note
 
-CN LOC HOLD: People are more believable as workers than as memorial statues.
+人作为工作者比作为纪念雕像更可信。
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/zh_CN. -->

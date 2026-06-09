@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Vida de la plataforma fótica
 
-La plataforma fótica es la primera línea base viva tras la caída dañada. La luz de Ran-Aegir alcanza el agua superior, y la plataforma responde con tapetes alimentados por minerales, pastadores transparentes, pressureweed y algas de ruta. Los tapetes iluminan la roca y sostienen pequeñas bolsas de oxígeno; los pastadores de vidrio afeitan algas hasta formar carriles legibles; el pressureweed se dobla antes de que la marejada o el movimiento de un depredador llegue al jugador; las algas de ruta marcan corrientes que pueden llevar a un nadador de vuelta a la línea o alejarlo de ella. Esta zona debe sentirse bella porque HECTON-8 merecía ser deseada. También debe seguir siendo peligrosa: tormentas, mala visibilidad, depredadores someros y una línea de retorno rota pueden convertir el agua brillante en trampa antes de que aparezcan los arrecifes de cable o el tejido de reparación Atlas.
+La plataforma fótica es la primera línea base viva tras la caída dañada. La luz de Ran-Aegir alcanza los 0-250 m superiores, y la plataforma responde con objetos que un buzo puede leer: tapetes de oxígeno sobre basalto, carriles de pastadores de vidrio entre algas, pressureweed doblado antes de la marejada y algas de ruta que marcan una corriente de vuelta a la línea de refugio.
+
+Ninguna de esas señales es permiso. Un tapete de oxígeno brillante puede ocultar una junta contaminada. Un carril fresco de pastadores puede indicar paso seguro, o que el banco se dispersó ante un depredador somero. El pressureweed puede advertir de clima, desplazamiento de depredador o un pulso de presión desde infraestructura de servicio inferior. Las algas de ruta señalan el camino de vuelta hasta que el limo de tormenta o una línea floja mueven la corriente. Es el punto de comparación nativo antes de los arrecifes de cable y el tejido de reparación Atlas: la luna ya estaba viva, legible y peligrosa antes de que las máquinas empezaran a usar vida como material de mantenimiento.
 
 ## Scanner
 
-BIOTA DE PLATAFORMA FOTICA // Confirmados tapetes vivos, pastadores de vidrio, pressureweed y algas de ruta. El agua brillante da oxígeno e indicios de camino; no perdona mal clima, depredadores ni una línea de retorno perdida.
+ESCANEO DE PLATAFORMA FÓTICA // Tapete de oxígeno en borde de basalto. Carril fresco de pastador de vidrio corta el crecimiento verde. Pressureweed doblado al oeste antes de la marejada. Algas de ruta marcan corriente de vuelta a la línea de refugio. Riesgos: paso de depredador somero, limo de tormenta, línea de retorno floja.
 
 ## Terminal
 
-SONDEO DE PLATAFORMA: ecología fótica nativa fuera del dominio de reparación Atlas. Muestras base: tapete de oxígeno, rastro de pastador transparente, línea de flexión de pressureweed, estela de algas de ruta. Comparar con crecimiento de arrecife de cable y tejido de cicatriz de reparación antes de cosechar.
+SONDEO BASE DE PLATAFORMA
+Profundidad: 0-250 m
+Muestra A: tapete de oxígeno / alimentado por minerales / bolsillo respirable de bajo volumen
+Muestra B: carril de pastador de vidrio / corte fresco / dispersión por depredador desconocida
+Muestra C: flexión de pressureweed / curva oeste antes de marejada
+Muestra D: algas de ruta / corriente vuelve a línea de refugio
+Comparar con: mata raíz-cable, tejido de cicatriz de reparación, biofilm de compuerta de presión
 
 ## Audio
 
-La primera agua viva no es misericordia. Es una línea base por la que puedes nadar.
+Veo la corriente de retorno. Átate antes de seguir el color.
 
 ## Field Note
 
-El primer color no es misericordia. Es la luna mostrando cómo era lo normal antes de que las máquinas lo aprendieran.
+El agua brillante es útil antes de ser segura. Cuenta color del tapete, carriles de pastadores, curva del weed y tensión de línea antes de fiarte.
 
 <!-- In-Game Wiki; generated from P031_PHOTIC_SHELF_LIFE/es_ES. -->

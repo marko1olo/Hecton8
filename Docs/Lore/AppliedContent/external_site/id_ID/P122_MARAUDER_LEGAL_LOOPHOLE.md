@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Celah Hukum Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Celah Hukum Marauder
 
-ID LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+Kata marauder membawa dua kebenaran sekaligus. Begitulah warga bersih menyebut orang yang memotong reruntuhan tersegel, dan begitulah ekonomi salvase menyembunyikan tenaga yang tidak bisa diakui kebutuhannya. Di HECTON-8, setiap pengambilan bisa menjadi kerja sah, pencurian oportunis, atau penyelamatan jujur pertama yang dilihat koloni dalam puluhan tahun.
 
 ## Scanner
 
-ID LOC HOLD: License valid in one lane, criminal in the next.
+Lisensi sah di satu jalur, bisa jadi dakwaan di jalur berikutnya.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor di bawah custody Aegir Reclamation Pool; penyusup yang ditoleransi dalam bahasa aset Deep Reach; raider yang bisa dituntut dalam ringkasan bersih Sol; emergency responder hanya jika catatan yang dipulihkan tidak mempermalukan orang penting.
 
 ## Audio
 
-ID LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Pemotong yang sama bisa menjadi alat, kejahatan, atau satu-satunya perangkat penyelamat yang tersisa.
 
 ## Field Note
 
-ID LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder hanya jabatan selama pengadilan yang tepat bisa mengambil untung.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/id_ID. -->

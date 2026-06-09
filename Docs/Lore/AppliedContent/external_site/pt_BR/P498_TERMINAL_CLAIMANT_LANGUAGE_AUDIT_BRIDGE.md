@@ -9,37 +9,37 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Auditoria de Linguagem de Reclamantes"
+title: "Auditoria da linguagem de reivindicação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Auditoria de Linguagem de Reclamantes
+# Auditoria da linguagem de reivindicação
 
-## O que o registro prova
+## O que o registro carrega
 
-A linguagem de reclamantes e uma das armas mais silenciosas da colonia. Ela nao precisa negar a sala de bombas, a porta de triagem trancada ou a massa do trabalhador atras da grade de servico. So precisa renomear tudo antes que alguem com poder leia o arquivo. Uma fila vira variacao de tempo. Uma porta fechada vira portao de revisao. Um corpo que nao voltou vira exposicao de pagamento. Um retorno de salvamento danificado vira elegibilidade parcial.
+A papelada da Deep Reach pode enterrar um registro sem apagá-lo. Ela mantém a sala, a etiqueta, o horário e a contagem de corpos, e depois troca o substantivo ao lado deles. No cache espelho Tau, a Sala de Bombas B marcada como ocupada após o horário de inundação 03:18 vira variação de janela de liberação. A Porta de Triagem 2 travada pelo lado de controle vira revisão de quarentena. A etiqueta de trabalhador R-17 ausente enquanto o anel do traje aparece na massa de salvamento vira exposição Keelmark. Uma bandeja de retorno com quatro ganchos de kit vazios vira elegibilidade parcial de carga.
 
-A auditoria existe para o jogador ler linguagem de procedimento como acao. Cada frase convertida deve voltar a uma pessoa, uma sala, uma ferramenta, um relogio de rota ou um evento de pressao. A Deep Reach pode manter a testemunha e ainda enterrar o testemunho trocando a etiqueta da prateleira. Se a categoria sobrevive e o corpo some, a evidencia ja foi lavada uma vez.
+Leia o registro do chão para cima: sala, trava, etiqueta, relógio, contagem de objetos devolvidos. A linguagem de procedimento de reivindicação só vira evidência quando pode ser presa a um vestígio físico. Se um arquivo conserva a categoria e perde o trabalhador, o escritório já limpou a rota uma vez.
 
 ## Como ler
 
-INTERFACE NOTARIAL: AUDITORIA DE LINGUAGEM
-Linha original: fila da sala de bombas ainda ocupada.
-Conversao: variacao de tempo de liberacao.
-Linha original: porta de triagem mantida fechada.
-Conversao: portao de revisao de quarentena.
-Linha original: massa de trabalhador nao recuperada.
-Conversao: exposicao de pagamento Keelmark.
-Linha original: retorno sem carga completa.
-Conversao: elegibilidade de retorno parcial.
-Uma categoria nao e neutra quando substitui uma pessoa.
+AUDITORIA DE LINGUAGEM DE REIVINDICAÇÃO / ENTRADA DO ESPELHO TAU
+Vestígio bruto: fila da Sala de Bombas B ocupada após a marca de inundação 03:18.
+Arquivado como: variação de janela de liberação.
+Vestígio bruto: Porta de Triagem 2 travada pelo lado de controle.
+Arquivado como: revisão de quarentena.
+Vestígio bruto: etiqueta de trabalhador R-17 ausente; anel do traje registrado na massa de salvamento.
+Arquivado como: exposição Keelmark.
+Vestígio bruto: bandeja de retorno sem quatro kits pessoais.
+Arquivado como: elegibilidade parcial de carga.
+Rejeite qualquer categoria que não aponte para sala, etiqueta, trava ou relógio.
 
 ## Nota de campo
 
-Categorias fazem um trabalhador morto calar sem perder a fatura. Leia a etiqueta e procure o que teve que ser cortado para ela caber.
+Se um arquivo soa limpo demais, conte ganchos, etiquetas, travas e relógios. O substantivo ausente costuma ser o trabalhador.
 
 <!-- External Site; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/pt_BR. -->

@@ -123,56 +123,56 @@ Text: Shallow Annex P-63 becomes useful only after the pump room is repaired. Dr
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: Draft ar_SA: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: لا يصبح P-63 مفيدا إلا بعد إصلاح غرفة المضخة. النزح اليدوي يخفض الماء، يكشف خزائن الأدوات القديمة، ويبقي المصنع الميداني داخل نافذة صلاحية إصلاح آمنة.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Draft de_DE: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 wird erst nach der Reparatur des Pumpenraums nützlich. Manuelles Pumpen senkt das Wasser, legt alte Werkzeugschränke frei und hält den Feldfabrikator in einem sicheren Reparaturbefugnisfenster.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Draft es_ES: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 solo sirve después de reparar la sala de bombas. El bombeo manual baja el agua, expone viejos armarios de herramientas y mantiene el fabricador dentro de una ventana segura de autoridad de reparación.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Draft fr_FR: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 ne devient utile qu’après réparation de la salle des pompes. Le pompage manuel baisse l’eau, révèle d’anciens casiers à outils et maintient le fabricateur dans une fenêtre d’autorité de réparation sûre.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: Draft he_IL: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 נעשה שימושי רק אחרי תיקון חדר המשאבות. שאיבה ידנית מורידה את המים, חושפת ארונות כלים ישנים ושומרת את המייצר בתוך חלון סמכות תיקון בטוח.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Draft id_ID: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 baru berguna setelah ruang pompanya diperbaiki. Pemompaan manual menurunkan banjir, membuka loker alat lama, dan menjaga fabricator lapangan tetap dalam jendela otoritas perbaikan aman.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: Draft ja_JP: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63はポンプ室を直してから初めて役に立つ。手動排水で水位を下げ、古い工具ロッカーを露出させ、フィールドファブリケータを安全な修理権限の範囲に保つ。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: Draft ko_KR: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63은 펌프실을 수리한 뒤에야 쓸모가 생긴다. 수동 펌프질은 물을 낮추고, 오래된 도구 보관함을 드러내며, 현장 제작기를 안전한 수리 권한 창 안에 묶어 둔다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Draft nl_NL: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 wordt pas bruikbaar nadat de pompkamer is gerepareerd. Handmatig pompen verlaagt het water, legt oude gereedschapskasten bloot en houdt de veldfabricator binnen een veilig reparatiebevoegdheidsvenster.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Draft pl_PL: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 staje się użyteczny dopiero po naprawie pompowni. Ręczne pompowanie obniża wodę, odsłania stare szafki z narzędziami i utrzymuje fabrykator w bezpiecznym oknie uprawnień naprawczych.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Draft pt_BR: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: O P-63 só se torna útil depois que a sala de bombas é reparada. A bomba manual baixa a água, expõe armários antigos e mantém o fabricador dentro de uma janela segura de autoridade de reparo.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Draft ru_RU: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 становится полезным только после ремонта насосной. Ручная откачка снижает воду, открывает старые шкафы с инструментами и держит полевой фабрикатор внутри безопасного окна ремонтных полномочий.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Draft uk_UA: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 стає корисним лише після ремонту насосної. Ручна відкачка знижує воду, відкриває старі шафи з інструментами й тримає польовий фабрикатор у безпечному вікні ремонтних повноважень.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: Draft zh_CN: Shallow Annex P-63 becomes useful only after the pump room is repaired; drain first, then use the safe repair tools.
+Text: P-63 只有在泵房修好后才有用。手动抽水会降低积水，露出旧工具柜，并让现场制造器保持在安全维修权限窗口内。

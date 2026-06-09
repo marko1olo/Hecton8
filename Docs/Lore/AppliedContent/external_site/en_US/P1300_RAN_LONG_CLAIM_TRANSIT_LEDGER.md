@@ -19,12 +19,14 @@ localization_flags: 0
 
 # Ran Long Claim Transit Ledger
 
-HECTON-8 uses a hard rule that shapes every rescue fantasy: communication is cheap compared with mass. A Black Keel relay can answer a stranded Marauder because a packet rides light, relay mirrors and carrier queues. A tender cannot. Ships on the Ran route still obey acceleration, braking heat, pellet-lane scheduling, orbital storm geometry and the old economics of who pays for a risk window.
+HECTON-8 treats first contact as paperwork under pressure because that is what interstellar rescue becomes when faster-than-light travel does not exist. A Black Keel relay can acknowledge a stranded Marauder within the limits of carrier timing. It cannot make a ship appear. The long claim ledger sits between those facts.
 
-The long claim ledger is the administrative form of that physics. It does not ask whether a survivor is frightened. It asks whether the coordinate fix is trustworthy, whether the ascent package can survive transfer, whether the packet has a Luyten witness hash, whether Deep Reach can claim quarantine control, whether the payload is body, evidence, cargo or all three, and whether a route insurer can recover value if the pickup fails.
+            In-world, the ledger is not a formality. It is the first durable object the survivor owns outside the ocean. It says a human is alive, but it also says how reliable the coordinates are, how much mass must be lifted, whether the ascent package is sealed, whether Deep Reach has a quarantine argument, whether the cargo is personal gear or claim-changing evidence, and who accepts liability if the pickup burns, misses or returns contaminated.
 
-This makes Black Keel feel cruel, but it is more precise to call it non-sentimental infrastructure. The Keel can preserve a distress packet and still refuse to spend tender mass on it. It can price a rescue higher if the payload is only a person and lower if the person carries proof that changes a claim. It can answer while leaving you alone for days, weeks or longer because the answer is not the ship.
+            That structure lets HECTON-8 keep civilization present without using it as an escape hatch. People hear you. Offices stamp you. Relays preserve your packet. Insurers and route owners attach numbers to your body. The horror is not empty space. The horror is a system that can know exactly where you are and still ask what your recovery is worth.
 
-For game pacing, this is the hinge between survival and lore. The ocean is not isolated because civilization vanished. It is isolated because civilization is slow, owned and procedural. The player is not waiting for rescue; the player is building the packet, payload and leverage that can make rescue worth more than silence.
+            The player learns this through action. A broken relay gives only noise. A repaired relay gives one narrow burst. A careless burst buys sympathy and a queue entry. A disciplined burst can move proof, force a custody fight, or make a ship take risk because the payload changes more than one life.
+
+            The long claim ledger is therefore a survival mechanic in lore clothing. It explains why rescue is slow, why evidence matters, why salvage law follows the player into the water, and why the first real enemy beyond hunger and pressure is not silence, but a clean line answered by an institution that measures before it moves.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/en_US. -->

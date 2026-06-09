@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit de pruebas de la terminal de cola de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit de pruebas de la terminal de cola de evacuación
 
-ES LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+La terminal de cola de evacuación no vale porque diga que la gente esperó. Vale porque el estado de puerta, la deriva de reloj, el conteo obrero y la capacidad de ruta discrepan de formas comprobables en sitio.
 
 ## Scanner
 
-ES LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Kit de pruebas de POI: la terminal prueba demora mediante estado de puerta, deriva de reloj, desajuste de trabajadores y capacidad de ruta.
 
 ## Terminal
 
-ES LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+KIT TERMINAL DE COLA: lista de retención de ruta, demora de liberación de cuarentena, nota de ponderación Atlas, desajuste de conteo obrero, etiqueta de conflicto salvage, tira de estado de escotilla, residuo de credencial.
 
 ## Audio
 
-ES LOC HOLD: A queue is a body count with cleaner formatting.
+Una cola es un conteo de cuerpos con formato más limpio.
 
 ## Field Note
 
-ES LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Nota de merodeador: no arranques la tira de escotilla hasta escanear el residuo de credencial. El metal paga menos que la marca temporal.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/es_ES. -->

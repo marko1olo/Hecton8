@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "中继消息滞后"
+title: "中继消息延迟"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 中继消息滞后
+# 中继消息延迟
 
-relay lag让HECTON-8能够接收权威，却接收不到照料。packet可以在数小时、数天或数年里携带法律、债务、ownership或警告，但不能把人的手带进被淹没的房间。这个分裂就是通信压力的核心：远程系统仍然强大，因为它们写得早、排队早，并被定价为能活过距离。怜悯作为人抵达；合同作为数据抵达。数据太常胜利。
+中继消息延迟解释了为什么HECTON-8能同时被抛弃又被治理。没有魔法语音通道把距离压缩成安慰。只有窗口、队列、转发器、监管戳、压缩损失、法律回执，以及带着完美权威和无用时机抵达的数据包。
+
+Deep Reach的压力依赖这种不对称。医疗请求过期后，留置通知仍可有效。签署拒绝的经理轮换回家后，拒绝仍可执行。证人死后，供词才可能抵达。海洋是沉默的，但航线不是。它持续把旧决定送进那些需要活人帮助的房间。
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/zh_CN. -->

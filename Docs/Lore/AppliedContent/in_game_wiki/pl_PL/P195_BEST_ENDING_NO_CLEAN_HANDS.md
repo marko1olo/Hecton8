@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Najlepsze zakończenie: brak czystych rąk"
+title: "Najlepsza trasa: widoczny osad"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Najlepsze zakończenie: brak czystych rąk
+# Najlepsza trasa: widoczny osad
 
-Brak czystych rąk to reguła finałowego tonu. HECTON-8 nagradza zrozumienie, przygotowanie i pracę świadka, nie czystość. Najlepsze zakończenie powinno dać graczowi jednocześnie kompetencję i uwikłanie.
+Widoczny osad to standard najmocniejszej trasy. Finał ma uratować coś konkretnego bez zmiany HECTON-8 w ekran nagrody: publiczny zapis, odciętą trasę Deep Reach, zachowany basen, uwolnionego operatora, nazwiska pracowników albo Atlas proof hash. Zapis musi też zostawić otwarte pola depozytu odbiorcy, odpowiedzialności, brakujących nazwisk, szkody basenu, stanu Atlasa i osadu długu.
 
 ## Scanner
 
-Najlepsze zakończenie powinno ocalić coś prawdziwego, nie udając, że niewinność przeżyła zejście.
+REGUŁA NAJLEPSZEJ TRASY // Zachowaj konkretny wynik: depozyt operatora, publiczny zapis, odrzucony ładunek, żywy basen, pakiet nazwisk pracowników albo Atlas proof hash. Pola szkód pozostają otwarte.
 
 ## Terminal
 
-REGUŁA BRAKU CZYSTYCH RĄK: kryteria najlepszego znanego zakończenia wymagają sprawczości, dowodu, konsekwencji i osadu. Jeśli każda skrzywdzona strona jest zadowolona, zakończenie zapomniało HECTON-8.
+STANDARD ZAPISU FINAŁU
+Wymagany zachowany obiekt lub stan: wyjście operatora, publiczny zapis, odrzucony ładunek Deep Reach, zachowana ekologia basenu, pakiet nazwisk pracowników albo Atlas proof hash.
+Wymagane pola otwarte: depozyt odbiorcy, łańcuch odpowiedzialności, brakujące nazwiska, szkoda basenu, stan Atlasa, osad długu.
+Zapis nieważny: wszystkie koszty ukryte za wypłatą, ratunkiem albo zamknięciem korporacyjnym.
+Użycie zapisu: pokazać, co się zmieniło i co nadal ma stronę składającą.
 
 ## Audio
 
-Jeśli wydaje się czyste, zapomniało, gdzie jesteś.
+Jeśli każdy wiersz się zamyka, zapis kłamie.
 
 ## Field Note
 
-Silna droga może ujawnić prawdę, odmówić Deep Reach, zachować część ekologii i uwolnić gracza, ale koszt musi pozostać widoczny.
+Jeśli każdy wiersz się zamyka, finał ukrył pomieszczenie.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/pl_PL. -->

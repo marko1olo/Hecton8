@@ -19,6 +19,7 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/AssetAudit/ContactSheets/generated_source_only_contact_sheet.png` | Generated/source-only candidate overview | Static image review only | Treat as reference art only. |
 | `Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png` | Mandatory visual references: surface water, sky, Aegir, coastline, shallows, flora, cockpit | Static reference review only | Use as the comparison floor for h8_1475 and route-owner visual work; it is not scene/import proof. |
 | `Docs/AssetAudit/VISUAL_REFERENCE_PATH_CONTINUITY_20260605.csv` | Current path continuity for all mandatory reference images | Static path manifest only | Keep all 15 references reachable before any visual critique or owner handoff. |
+| `Docs/GeneratedAssets/AegirGasGiantProof/AegirGasGiantProofContactSheet_20260608.png` | Aegir gas giant surface, underwater-up, horizon, phase, fog, storm, and quality fallback proof sheet | Static generated image review only | Pair with Unity material binding, sky/water/lighting readback, and Frame Debugger proof before any runtime acceptance. |
 
 ## Diagnostic Screenshot Reviews
 
@@ -58,6 +59,7 @@ This index is a map of existing proof-adjacent artifacts. It is not product acce
 | `Docs/GeneratedAssets/AssetSystem_20260605/TEXTURE_AUTHORING_MANIFEST_3212_20260605.md` | Prior texture authoring pack summary | `STATIC_DOC` | Use as supporting context only; current queues and import matrix remain controlling. |
 | `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_contact_sheet.png` | Batch31 wet basalt and photic substrate PBR candidate overview | `SOURCE_ONLY_USEFUL` | Useful source direction only; direct import remains blocked by channel semantics and material-target proof. |
 | `Docs/GeneratedAssets/Batch31_LocalPBR/PromotionPrep_20260605/Batch31_PromotionPrep_INDEX.md` | Batch31 promotion-prep manifest | `BLOCKED_CHANNEL_SEMANTICS` | Keep blocked until the target shader layout and packed-channel route are proven. |
+| `Docs/GeneratedAssets/AegirGasGiantProof/AegirGasGiantProofContactSheet_20260608.json` | Aegir generated proof manifest with source textures, view profiles, phase/fog/cloud/storm coverage, and quality weights | `STATIC_DOC` | Keep as machine-readable proof contract for validator/tooling; it does not prove Unity import or runtime rendering. |
 
 ## Taxonomy Artifacts
 
@@ -88,6 +90,8 @@ CSV companion: `Docs/AssetAudit/ASSET_PROOF_ARTIFACT_INDEX_20260605.csv`.
 - Generated-source sheet: generated wet-basalt/sand sets are reference material only. Repetition, synthetic normals/MRAO, and source-cleanup debt block direct final import.
 - Mandatory visual reference sheet: surface target requires bright ocean readability, authored shoreline, large readable Aegir, detailed sky, rich photic shallows, dense attached flora/coral, and cockpit/instrument readability. Current h8_1914 imagery fails this floor.
 - Batch31 PromotionPrep sheet: wet basalt and photic substrate candidates are visibly stronger than checkerboard/placeholder terrain. Wet basalt still carries turquoise source-contamination/watermark-like streak risk; seabed and shell-sand are bright/detail-rich but near-duplicate until a biome/material role split is proven. Still static source only; MRAO/channel semantics and Unity import/material readback remain blocked.
+- AegirGasGiantProofContactSheet_20260608.png: generated contact sheet covers surface, underwater-up, horizon, crescent, heavy-fog/cloud, storm-emission, and low-quality fallback views. It is accepted only as static renderer/proof-tool evidence; Unity scene material binding, sky/water/lighting consumption, Frame Debugger, and runtime screenshots remain required.
+- AegirGasGiantProofContactSheet_20260608.json: manifest carries source texture paths and `qualityWeight` coverage for high and low tiers. It is a validator contract, not product acceptance.
 
 ## Manual Waveform QA Notes
 

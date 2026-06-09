@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Regels voor audiofragmentprops"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Regels voor audiofragmentprops
 
-NL LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Regels voor audiofragmentprops bepalen hoe HECTON-8 stem gebruikt zonder de wereld met monologen te overspoelen. Elk audiofragment heeft fysieke bron, beschadigde transcriptiestatus, tijdstempel en tegenspraak nodig. Stem mag omgevingsbewijs niet vervangen; ze moet het aanscherpen, zodat kamers, props en routerecords samen spreken.
 
 ## Scanner
 
-NL LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Stem is duur. Ze moet iets bewijzen dat de kamer ook kan bewijzen met metaal, water, tijdstempel of schade.
 
 ## Terminal
 
-NL LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: geen zwevende monologen. Stem hoort bij een hydrofoonstrip, pakrecorder, terminalcache, onderhoudshoorn of black-box-fragment. Elke afspeelbare regel moet een bron, beschadigde transcriptiestatus, routetijdstempel en één tegenspraak hebben die de speler kan inspecteren.
 
 ## Audio
 
-NL LOC HOLD: If the room cannot prove me, cut the line.
+Als de kamer mij niet kan bewijzen, knip de regel.
 
 ## Field Note
 
-NL LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Audiofragmenten hebben een bronprop, transcriptieschade, routetijdstempel en één fysieke tegenspraak nodig.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/nl_NL. -->

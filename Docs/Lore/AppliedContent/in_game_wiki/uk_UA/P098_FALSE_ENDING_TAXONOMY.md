@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Таксономія хибних фіналів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Таксономія хибних фіналів
 
-UK LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 трактує хибні й часткові фінали як реальні результати, а не як обманки. Матеріальна виплата може запустити титри. Частковий вихід може повернути гравця в той самий seed зі збереженим знанням досьє. Корпоративне захоплення й карантинне утримання карають поганий вантаж або небезпечний маршрут доказів. Глибші фінали потребують публічного доказу, розв'язання стану Atlas і вибору, яку ціну порятунку гравець готовий купити.
 
 ## Scanner
 
-UK LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Дошка фіналів. Деякі виходи достатньо справжні, щоб зарахуватися, і достатньо неправильні, щоб боліти.
 
 ## Terminal
 
-UK LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+РОДИНИ ФІНАЛІВ: матеріальна виплата; частковий вихід і повернення в той самий seed; корпоративне захоплення; карантинне утримання; випуск публічного реєстру; розв'язання басейну Atlas. Записи результату мають окремо тримати вантаж, доказ і стан боргу.
 
 ## Audio
 
-UK LOC HOLD: Leaving is not the same as finishing.
+Вийти з води не означає завершити роботу.
 
 ## Field Note
 
-UK LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Хибний фінал не є трюком. Це чинна угода, з якої прибрали правду.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/uk_UA. -->

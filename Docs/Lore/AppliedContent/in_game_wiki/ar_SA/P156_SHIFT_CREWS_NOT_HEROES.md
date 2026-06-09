@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "طواقم ورديات لا أبطال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# طواقم ورديات لا أبطال
 
-AR LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+يجب أن يجعل HECTON-8 المستعمرة بشرية عبر العمل قبل المأساة. تقني ضغط يبدل حشية صمام، طاهية تعد رموز الماء، كاتب مسار يختم عودة خاطئة، غواص يوقّع لأخذ قاطع ولا يرده إلى السجل: هذه التفاصيل تجعل الناس مقروئين من دون فرض حبكة ثأر عائلية. تكون المستعمرة الغارقة أقوى عندما تبدو كمكان قوطع في منتصف روتينه، لا كمتحف بُني بعد الموت.
 
 ## Scanner
 
-AR LOC HOLD: The colony becomes human through schedules, not speeches.
+طبقة بشرية // تصير المستعمرة حقيقية عبر الجداول، الأدوات البالية، العودات المفقودة، والأسماء على لوحات الوردية. لا عبر الخطب.
 
 ## Terminal
 
-AR LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+قاعدة كتابة: سجّل العمال كتقنيي مضخات، مسعفين، كتبة مسار، غواصين، طهاة، مشغلي fabricator ومشرفين متعبين. جدول وردية فيه عودة واحدة مفقودة يؤلم أكثر من نصب.
 
 ## Audio
 
-AR LOC HOLD: They were not symbols. They were late for shift.
+لم يكونوا رموزا. كانوا متأخرين عن الوردية.
 
 ## Field Note
 
-AR LOC HOLD: People are more believable as workers than as memorial statues.
+البشر أصدق كعمال منهم كتماثيل تذكارية.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/ar_SA. -->

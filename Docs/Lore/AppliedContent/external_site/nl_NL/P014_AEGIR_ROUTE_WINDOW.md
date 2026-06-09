@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Aegir-routevenster
 
-Op HECTON-8 is de hemel deel van de dungeon. De gasreus bepaalt straling, manen werpen schaduw en getijden bewegen door canyons en schachten.
-
-De speler leert wanneer een bericht klimt, wanneer een lichaam kan stijgen en wanneer open hemel een val is.
+HECTON-8 is een oceaanmaan, maar de lucht hoort bij de dungeon. Aegir-straling, maanschaduw, relayshutters, stormplume, getij en carriergeometrie beslissen of signaal, lichaam, sample of bewijskern weg kan. Belangrijk is scheiding: datavenster is geen reddingsvenster, reddingsvenster geen besmet cargovenster. Black Keel rekent, maar vraagt wie de massa bezit, wie quarantaine accepteert en welke clausule Deep Reach beschermt.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/nl_NL. -->

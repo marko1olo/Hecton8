@@ -127,56 +127,56 @@ Text: Blue debt is condition-dependent salvage. Stabilize the pressure casket be
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: Draft ar_SA: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: الدين الأزرق salvage يعتمد على الحالة. أبقه مختوما وباردا ومستقر الضغط قبل أن تقرر هل هو مادة أدوات، قيمة مطالبة، طعم، أم دليل.
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Draft de_DE: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Blaue Schuld ist zustandsabhängiges Bergungsgut. Halte sie versiegelt, kalt und druckstabil, bevor du über Werkzeugmaterial, Claim-Wert, Köder oder Beweis entscheidest.
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Draft es_ES: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: La deuda azul es salvage dependiente de estado. Mantenla sellada, fría y estable en presión antes de decidir si es material, valor de reclamación, cebo o prueba.
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Draft fr_FR: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: La dette bleue est un salvage dépendant de son état. Garde-la scellée, froide et stable en pression avant de choisir entre matériau, valeur de réclamation, appât ou preuve.
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: Draft he_IL: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: חוב כחול הוא salvage שתלוי במצב. שמור אותו אטום, קר ויציב בלחץ לפני שתחליט אם הוא חומר כלי, ערך תביעה, פיתיון או ראיה.
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Draft id_ID: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Blue debt adalah salvage yang bergantung pada kondisi. Jaga tetap tersegel, dingin, dan stabil tekanannya sebelum memutuskan apakah ia bahan alat, nilai klaim, umpan, atau bukti.
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: Draft ja_JP: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: 青い負債は状態依存のサルベージだ。工具材料、請求価値、餌、証拠のどれにするか決める前に、密封、低温、圧力安定を保て。
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: Draft ko_KR: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: 푸른 빚은 상태 의존 salvage다. 도구 재료, 클레임 가치, 미끼, 증거 중 무엇인지 결정하기 전에 봉인, 저온, 압력 안정 상태를 유지해야 한다.
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Draft nl_NL: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Blauwe schuld is toestand-afhankelijke salvage. Houd het verzegeld, koud en drukstabiel voordat je beslist of het gereedschapsmateriaal, claimwaarde, aas of bewijs is.
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Draft pl_PL: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Niebieski dług to salvage zależny od stanu. Utrzymaj go szczelny, zimny i stabilny ciśnieniowo, zanim zdecydujesz, czy jest materiałem, wartością roszczenia, przynętą czy dowodem.
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Draft pt_BR: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Dívida azul é salvage dependente de condição. Mantenha selada, fria e estável em pressão antes de decidir se é material de ferramenta, valor de reivindicação, isca ou prova.
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Draft ru_RU: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Синий долг - salvage, зависящий от состояния. Держи его запечатанным, холодным и стабильным по давлению, прежде чем решать: материал, ценность претензии, приманка или улика.
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Draft uk_UA: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: Синій борг - salvage, залежний від стану. Тримай його запечатаним, холодним і стабільним за тиском, перш ніж вирішувати: матеріал, цінність претензії, приманка чи доказ.
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: Draft zh_CN: Blue debt is condition-dependent salvage; stabilize the pressure casket before transport or upload.
+Text: 蓝债是依赖状态的 salvage。在决定把它当工具材料、索赔价值、诱饵或证据之前，必须保持密封、低温和压力稳定。

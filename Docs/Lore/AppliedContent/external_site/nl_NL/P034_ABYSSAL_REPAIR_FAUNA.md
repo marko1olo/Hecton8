@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Abyssale reparatiefauna
 
-Definieert biomechanische horror zonder Atlas tot simpele moordenaar te reduceren.
+Abyssal Repair Fauna toont Atlas-6-reparatiecriteria toegepast op levende predatoren: de wond wordt afgesloten, mobiliteit blijft, en de graft kan het onderhoudsnetwerk blijven roepen.
 
 ## Scanner
 
-Fauna draagt keramische patches, kabelletsels en dronesnede-symmetrie. Atlas doodt leven niet; hij bewerkt het.
+Specimen draagt een keramische ribpatch door oude bijtschade. Kabelfilament verbindt linker kieuwwaaier met een droneschaalplaat. Beweging: jachtpatroon intact. Gevaar: graft zendt actieve onderhoudsping uit.
 
 ## Terminal
 
-Specimen: wondranden machinaal schoon gesloten, drukstabiele inzetstukken groeien. Gedrag blijft dierlijk onder de graft.
+SPECIMEN-REPARATIELEZING
+Diepte: 3120 m / abyssale helling, servicehol
+Wond: drukscheur langs flank
+Inzetstuk: keramische beugel, kabelfilament, droneschaalplaat
+Atlas-reactie: wond sluiten, mobiliteit behouden, onderhoudsping uitzenden
+Gedrag: predatore achtervolging blijft actief
+Waarschuwing: ping kan nabije reparatiedrones wekken
 
 ## Audio
 
-Het jaagt nog. De machine veranderde alleen wat overleefde.
+Achteruit. De graft zendt uit; hij jaagt nog, en het dronehol heeft net geantwoord.
 
 ## Field Note
 
-Reparatie is geen zorg.
+Geen lijk met onderdelen erop. Een dier heeft de reparatie overleefd en de route in zijn kop gehouden.
 
 <!-- External Site; generated from P034_ABYSSAL_REPAIR_FAUNA/nl_NL. -->

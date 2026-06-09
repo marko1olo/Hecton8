@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "検疫解放保留"
+title: "検疫解放ホールド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 検疫解放保留
+# 検疫解放ホールド
 
-保留記録は検疫を悪にしない。時刻を見えるようにする。Deep Reachは不確実性を名付け、解放を遅らせ、保険上の立場を守り、経路が死ぬまで作業員を区域内に留めることができた。
+HECTON-8の汚染は実在する。圧力曝露、塩水化学、Atlas互換成長は、不注意な救助を致命的にする。ホールドプレートは、その本物の危険が隠れ蓑になった仕組みを示す。Deep Reachは出口経路がロックされた後に検疫を起動し、回収可能な資産質量を受理し、作業者解放を線より下に置いた。
 
 ## Scanner
 
-検疫保留プレート。出口経路がすでに施錠された後で、保護という言葉が現れる。
+ホールドプレートを回収。汚染審査は出口経路がすでにロックされた後に始まり、作業者解放は資産回収より下に残る。
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY。reviewまで保留。worker releaseより先にasset massをrecovery queueへ受理。insurance ping有効。
+解放ゲート // 生体圧不確定。委員会確認まで保持。作業者解放前に資産質量を回収キューへ受理。保険ping有効。
 
 ## Audio
 
-検疫は身体を救える。身体を紙になるまで待たせることもできる。
+検疫は誰かを救う前に、会社の時間を買った。
 
 ## Field Note
 
-Marauderメモ: protectionという言葉だけで保護は証明されない。時計を見ろ。
+略奪者メモ: 保護とは単語ではなく時計だ。いつ始まるかを見ろ。
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/ja_JP. -->

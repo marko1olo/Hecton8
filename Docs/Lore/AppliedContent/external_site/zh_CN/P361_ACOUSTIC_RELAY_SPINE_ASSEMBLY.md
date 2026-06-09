@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "声学中继脊柱组件"
+title: "声学中继脊组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 声学中继脊柱组件
+# 声学中继脊组件
 
-声学中继脊柱组件把 HECTON-8 的逃离循环扎进打捞工程：声音必须熬过压力、航路几何和 custody，轨道才会相信它。
+声学中继脊组件是 HECTON-8 逃离链中第一件把生存变成可测信号的部件。它不是无线电桅杆，也不是求救祷告。它是一条由陶瓷肋、电缆护套、压载 floats 和 pinger timing 组成的 pressure-code spine。
 
-## Scanner
+问题是信任。HECTON-8 的水携带撞击噪声、泵敲击、brine scatter 和路线回声。Black Keel 接收到的声音多于它能安全承认的声音。想要 recovery 的胶囊必须证明自己的 tap 属于路线、时钟和 custody chain，而不是一块松板在水淹框架上乱敲。
 
-破损的声学脊柱。它能把 pressure-code 敲进水里；轨道上听到的仍像受损的 custody noise。
-
-## Terminal
-
-ASCENT RELAY: 在 recovery window 前恢复低频声学脊柱。High-gain mast 丢失。Emergency buoy 不可靠。Black Keel 接收器只在 route proof 后接受 pressure-code。
-
-## Audio
-
-如果 Keel 听见我们，它听见的是伤口在敲管道。
-
-## Field Note
-
-胶囊的第一次呼叫不是声音，而是陶瓷肋、缆线外皮、pinger floats，以及足够让海洋正确复述你的时序纪律。
+修复声学脊会给上升胶囊一个狭窄的声音：坐标、生存状态、clock match、checksum。这足以开始 recovery 对话，但不能保证救援。海水仍会弯曲信号。carrier 仍可把 packet 当作 damaged claim noise。这个部件赢得第一次被听见；它不赢得裁决。
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/zh_CN. -->

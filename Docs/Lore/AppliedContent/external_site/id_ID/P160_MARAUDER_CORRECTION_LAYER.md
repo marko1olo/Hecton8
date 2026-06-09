@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Lapisan Koreksi Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Lapisan Koreksi Marauder
 
-ID LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Lapisan Koreksi Marauder menjembatani prosedur Deep Reach dan agensi pemain: anotasi pendek mengubah bahasa resmi menjadi kebenaran survival.
 
 ## Scanner
 
-ID LOC HOLD: Marauders turn corporate language back into survival facts.
+LAPISAN KOREKSI // Label korporat: temporary atmospheric variance. Catatan Marauder: CO2 memakan penilaian lebih dulu.
 
 ## Terminal
 
-ID LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ATURAN ANOTASI: terjemahkan bahasa Deep Reach kembali menjadi fakta bertahan hidup. Catatan harus pendek, praktis, marah, dan berguna di bawah tekanan.
 
 ## Audio
 
-ID LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Catatan bagus tidak terdengar pintar. Ia membuat seseorang tetap hidup.
 
 ## Field Note
 
-ID LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Pemain harus merasakan bahasa lama Deep Reach diterjemahkan menjadi hitungan tubuh.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/id_ID. -->

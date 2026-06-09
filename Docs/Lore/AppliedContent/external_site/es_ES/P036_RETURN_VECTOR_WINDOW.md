@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Ventana de vector de retorno
 
-Explica por qué abandonar HECTON-8 no es simple: el transportador existe, pero está lejos, automatizado y atado al clima orbital de Aegir.
+La Ventana de vector de retorno explica la extracción de HECTON-8 como procedimiento orbital, no como rescate instantáneo. Black Keel puede recibir una señal por ventanas estrechas de Aegir, pero la recogida depende de huecos de tormenta, calmas de partículas cargadas, integridad de relé y hardware de ascenso reconstruido. El packet une el primer contacto con el carrier y los registros posteriores de salida parcial: una respuesta prueba que la ruta puede existir, no que esté lista.
 
 ## Scanner
 
-La geometría orbital no es un botón de rescate. El Black Keel solo escucha en ventanas estrechas de Aegir.
+LECTURA DE VECTOR DE RETORNO // Ping de Black Keel recibido por hueco de tormenta de Aegir. Alcance del carrier: pista alta de transferencia. Línea de relé sucia bajo carga de nubes. Ascenso de cápsula rechazado hasta que núcleo de guiado, escudo térmico y handshake de retorno den verde.
 
 ## Terminal
 
-Predicción de comunicaciones: transportador alto sobre Aegir. Ascenso de cápsula exige hueco de tormenta, calma de partículas y línea limpia.
+PREDICTOR DE VENTANA DE RETORNO
+Carrier: BLACK KEEL / pista de transferencia automatizada
+Ventana: 17 min 40 s tras la próxima calma de partículas cargadas
+Clima: requiere hueco de borrasca superficial
+Relé: línea al cielo con ruido / mástil de refugio puede repetir una vez
+Hardware de ascenso: falta núcleo de guiado, escudo térmico sin certificar, reserva de batería baja
+Acción: reconstruir cadena de ascenso antes de tratar el ping del carrier como recogida
 
 ## Audio
 
-El Black Keel vive lo bastante para responder. No está lo bastante cerca para salvarte.
+Black Keel oyó el ping. Eso nos da una ventana, no una escalera.
 
 ## Field Note
 
-Una respuesta es sincronía, no misericordia.
+Una respuesta no es rescate. Es un reloj que puedes perder.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/es_ES. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Evidence First Charter Contract Seed"
+title: "Evidence-First-Charter-Vertragssamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Evidence First Charter Contract Seed
+# Evidence-First-Charter-Vertragssamen
 
-DE LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Evidence-First Charter ist eine Vertragsfamilie, die weniger für losen Salvage zahlt und mehr Routenkapazität für Beweis reserviert. Unfallpakete, Hatch-Zustandsstreifen, Pingerprotokolle und Notarkassetten kommen vor schweren Teilen, wenn die Route zu versagen beginnt.
 
 ## Scanner
 
-DE LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Vertragssamen: Evidence-First-Charter. Niedrigere Materialauszahlung, größere Notarkapazität und härtere Beweiserhalt-Konflikte.
 
 ## Terminal
 
-DE LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: Materialauszahlung reduziert, Notarkassettenkapazität erhöht, Beweislocker-Priorität aktiv, Salvage-Strip-Strafe aktiv, Deep-Reach-Receiver-Widerstand wahrscheinlich.
 
 ## Audio
 
-DE LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Der sauberste Datensatz zahlt spät und macht früh Leute wütend.
 
 ## Field Note
 
-DE LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Marauder-Notiz: Ein Beweislocker vergibt keine Schuld. Er verhindert nur, dass die Schuld entscheidet, welcher Beweis zuerst stirbt.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/de_DE. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Protocole blind return avec rétention payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Withhold Blind Return Protocol
+# Protocole blind return avec rétention payload
 
-FR LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Le protocole blind return refuse tous les récepteurs. Ni corporation, ni registre, ni voie quarantaine, ni cible de section ne reçoit le payload final. Le porteur garde carte et preuves en local, ce qui refuse à Deep Reach une route propre de retour. Cela laisse aussi la dette active, les preuves publiques non déposées et le paquet vulnérable à l'eau, à la mort ou au mauvais stockage.
 
 ## Scanner
 
-FR LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Route blind return armée. Aucun récepteur assigné. Vecteur de bassin, hashes de preuve et classe d'accès restent locaux; gage et fenêtre de récupération non résolus.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+RÉCEPTEUR PAYLOAD // BLIND RETURN WITHHOLD. Récepteur: aucun. Garder vecteur de bassin, hashes de preuve, classe salvage, paquet local de preuves. Refuser à Deep Reach carte d'accès, reçu de paiement et garde récepteur. Coût connu: gage non résolu, risque total de perte du paquet.
 
 ## Audio
 
-FR LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Pas de récepteur, pas de reçu. Si le sac prend l'eau, les preuves partent avec.
 
 ## Field Note
 
-FR LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Note de pillard: garder la carte est un choix. Il ne te laisse simplement aucun récepteur à blâmer si le sac se déchire.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/fr_FR. -->

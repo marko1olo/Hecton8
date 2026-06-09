@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Trwałość dossier szabrownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Trwałość dossier szabrownika
 
-PL LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+Trwałość dossier szabrownika definiuje kontrakt powtórek HECTON-8: gracz dziedziczy kontekst, nie moc. Dossier pozwala w kolejnych próbach szybciej odczytywać stare błędy, wcześniej rozpoznawać pułapki kontraktowe i rozumieć, które zakończenia były niepełne, bez zamieniania pamięci w mechaniczną przewagę niszczącą presję przetrwania.
 
 ## Scanner
 
-PL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Szpula dossier. Zachowujesz wiedzę, nie supermoce.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+TRWAŁOŚĆ DOSSIER: zapisane zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki publicznego rejestru zostają zachowane. Siła sprzętu, prawda świata i lokalny stan ciśnienia resetują się dla każdego seeda.
 
 ## Audio
 
-PL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+Następne podejście zaczyna się z bliznami w pliku, nie z mięśniami w skafandrze.
 
 ## Field Note
 
-PL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Dossier pamięta dowody i ostrzeżenia; nie sprawia, że ciśnienie wybacza.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/pl_PL. -->

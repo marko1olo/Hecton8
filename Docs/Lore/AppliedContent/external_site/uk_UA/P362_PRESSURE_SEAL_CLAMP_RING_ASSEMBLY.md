@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Збірка притискного кільця гермоущільнення"
+title: "Складання затискного кільця pressure seal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Збірка притискного кільця гермоущільнення
+# Складання затискного кільця pressure seal
 
-Збірка притискного кільця гермоущільнення перетворює ремонт капсули на торг із тиском: deep-rated метал, посадка скла й Atlas bio-sealant можуть урятувати або замкнути шлях підйому.
+Складання затискного кільця pressure seal - другий жорсткий ліміт в ascent-chain HECTON-8. Acoustic spine може змусити орбіту слухати, але clamp ring вирішує, чи зможе капсула фізично відокремитися від затопленої конструкції.
 
-## Scanner
+Відмова правдоподібна саме тому, що неправильний ремонт може виглядати успішним. Shallow seal може тримати повітря, зупинити течу і лишити кімнату робочою. Він також може перейти через separation seam капсули, забити pressure-glass seat або лишити Atlas shell-sealant на поверхні, яка мусить відпустити під launch impulse. Static pressure - не той самий тест, що ascent.
 
-Шрам clamp-ring. Підйомна муфта пережила удар, витративши ущільнення, яке мало повернути її додому.
-
-## Terminal
-
-SEAL CERT: shallow patch тримає лише тиск відсіку. Ascent seal потребує deep-rated clamp ring, pressure-glass seat, shell-sealant map і перевіреного профілю Deep Reach. Atlas-grown sealant може зберегти habitat, водночас блокуючи чисте відділення.
-
-## Audio
-
-Корисне ущільнення живе не в той бік.
-
-## Field Note
-
-Латка safe-room може купити годину повітря. Вона не витримає стартовий імпульс.
+Цьому компоненту потрібні deep-rated metal, перевірений crush profile, чиста seat geometry і sealant map з навмисним краєм. Недостатньо зробити так, щоб капсула перестала текти. Ремонт має знати, коли відпустити.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/uk_UA. -->

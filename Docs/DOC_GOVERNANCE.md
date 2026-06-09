@@ -1,6 +1,6 @@
 ﻿# Documentation Governance
 
-Date: 2026-05-26
+Date: 2026-06-09
 Status: STATIC POLICY
 Owner: DOCS_ACTUALIZATION
 Evidence class: STATIC_DOC / STATIC_SOURCE
@@ -45,6 +45,12 @@ Root may contain these active text anchors and standing route bibles:
 Active docs belong in `Docs/` or `Docs/ARCHITECTURE/`.
 
 Evidence snapshots belong in `Docs/Reports/`.
+
+Explicit tool, validator, dump, and telemetry outputs belong in `Docs/AgentLogs/` only when a current tool, report chain, or explicit task mode owns that path. `Docs/AgentLogs/` is not authority and must not become a work diary. Move only verified orphan one-off outputs to `Docs/DEPRECATED/` after exact filename/path searches.
+
+Explicit task status records belong in `Docs/Tasks/` only when a current explicit-mode task/controller workflow owns the path or a report/source cites the exact ID. `Docs/Tasks/` is not authority and must not be bulk-read as current context. Move stale status records only after exact path/name/ID searches prove they are no longer active inputs.
+
+Standalone dispatch packets belong in `taskslocal/` only for explicit local-agent batch work. `taskslocal/` is not authority and must not be bulk-read as current context. Do not archive old batch folders merely because they are historical; move a batch only after exact path/name/batch searches prove no active source, validator, report, status, or controller workflow still cites it. New or materially rewritten serious batches must pass the strict lane gate before distribution.
 
 Root reports, prompts, status files, work logs, generated evidence, task-progress prose, and temporary scan counters are forbidden as root doctrine.
 

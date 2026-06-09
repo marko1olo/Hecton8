@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Protocolo de receptor libro público del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Payload Public Ledger Receiver Protocol
+# Protocolo de receptor libro público del payload
 
-ES LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+El carril de libro público es el receptor menos privado y menos obediente. Rechaza venta de coordenadas, reclamación de recuperación directa y recibo de pago limpio. Acepta un paquete de incidente sin mapa de ruta: hashes de atestación, cadena de responsabilidad, digest de ponderación Atlas y marca temporal de receptor.
 
-## Scanner
-
-ES LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-ES LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-ES LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-ES LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+La demora importa. El paquete no llamará rescate inmediato ni justicia instantánea. Viajará por un carril lento construido para sobrevivir a mandatos, disputas de receptores y presión de custodia. Una vez aceptado, el portador no puede retirarlo. Esa pérdida de control es el precio de hacer que la prueba sea más difícil de comprar.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/es_ES. -->

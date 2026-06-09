@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: Rückführungsaktion"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: Rückführungsaktion
 
-DE LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: Rückführungsaktion ist die Brücke zwischen Deep Reachs alter Katastrophe und der Gegenwartskampagne des Spielers. Sie vertritt 2190 das Recovery Compliance Office, in dem Deep Reach nicht mehr im Raum stehen muss, um Druck auszuüben. Es sendet Rückführungspakete.
 
-## Scanner
+Das Paket verlangt Koordinaten, XO-Nachweis, Atlas-Zugriffszustand und Auftragnehmerschweigen innerhalb eines Verwahrungsfensters. Diese Form zählt. Die Drohung ist keine Rede. Die Drohung ist Timing. Wenn die Nutzlast bergbar ist, kann Deep Reach Rettung, Rechtsschutz oder Trägerzugang anbieten. Wenn das Beweisrisiko wächst, kann dasselbe System den Spieler zur Haftung machen.
 
-DE LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-DE LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-DE LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-DE LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Dieser Artikel hält die Fraktion geerdet. Deep Reach ist gefährlich, weil es weiterhin prozedural, zahlungsfähig und geduldig ist. Es will Bergung vor Rettung und Verwahrung vor Wahrheit. Sato-Ren ist die menschenförmige Kante dieser Maschinerie.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/de_DE. -->

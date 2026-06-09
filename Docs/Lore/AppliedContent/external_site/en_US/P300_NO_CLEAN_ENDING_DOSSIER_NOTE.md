@@ -19,7 +19,7 @@ localization_flags: 0
 
 # No Clean Ending Dossier Note
 
-Even HECTON-8's strongest ending leaves a scar: a protected ecology, a denied corporation, a witness record and an unresolved cost.
+HECTON-8's endings leave scars by design: protected ecology, denied corporation, released witness record, unpaid debt, and a player who changed the ocean without gaining the right to close it.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Dossier note: closure denied; consequence retained.
 
 ## Terminal
 
-DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: outcome stored. Clean closure unavailable under current evidence state. Debt, ecology, liability, and witness custody remain active records.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You saved something. That is not the same as clearing it.
 
 ## Field Note
 
-The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
 
 <!-- External Site; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/en_US. -->

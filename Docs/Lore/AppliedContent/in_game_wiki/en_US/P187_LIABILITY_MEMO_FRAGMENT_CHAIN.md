@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Liability Memo Fragment Chain
 
-Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+Liability Memo Fragment Chain teaches the player how Deep Reach evidence is meant to be read. No single memo contains the whole crime; each office preserved the sentence that made its own action look procedural. A risk table admits the tide margin was failing. An evacuation note turns delay into channel discipline. An Atlas override makes continuity sound safer than escape. A Keelmark fragment converts missing workers into recoverable loss. The player has to cross-check paper against flooded rooms, broken route clocks and worker names. The chain becomes readable only when the fragments stop defending their offices and start contradicting each other.
 
 ## Scanner
 
-Liability memos must be fragments that match physical rooms, not lore speeches.
+The liability memo survived as fragments because every office kept the paragraph that protected itself.
 
 ## Terminal
 
-MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: risk margin table / evacuation release note / Atlas continuity override / Keelmark loss conversion / recovery custody request. Cross-check route time, room damage and worker names before accepting the public summary.
 
 ## Audio
 
-Paper is weak alone. Put it against a flooded door.
+They did not hide the truth in a vault. They filed it in pieces.
 
 ## Field Note
 
-A useful memo names one margin, one delay, one office and one visible consequence.
+A torn memo is honest in the places it did not mean to be.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/en_US. -->

@@ -19,10 +19,14 @@ localization_flags: 1
 
 # 公開航路名
 
-## Names That Bill
+## 請求する名前
 
-公開航路名は暗闇の詩ではない。契約、船殻プレート、リレー待ち行列、法廷展示を生き残る作業ラベルだ。Sol-Centauri Charter Spine は正統性の言葉を運び、Barnard Breaker Run は解体場と debt labor を運ぶ。Luyten Packet Ladder は証拠を有効にも無価値にもする custody の鎖で、Tau Public Ledger Lane は遅い公開圧力だ。Ran Long Claim は HECTON-8 に最も近い汚れた端で、海が請求を始める前から仕事が高価だと告げる。
+HECTON-8の公開航路名は美しさのためにあるのではない。請求書、封印、保険表、サルベージ論争を生き残るためにある。航路名は、絵が消え契約だけが残った時にも効く地図の部分だ。
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spineは礼儀正しい線で、古い正統性と互換性の言葉を運ぶ。Deep Reachが辺境計画を文明的に見せたい時に引用する種類の文言でもある。Barnard Breaker Runはより醜く正直だ。船体解体、圧力装備、債務 crews、剥がされた船殻、そしてMarauderを可能にする実務文化の匂いがする。
+
+Luyten Packet Ladderはロマンチックな共同体ではない。パケット管理インフラだ。メッセージが証拠になる理由、証拠が遅れる理由、正直なパケットが助けと同じではない理由を示す。Tau Public Ledger Laneは、光が遅い仕事を終えた後で証拠が公開圧力になる場所だ。
+
+Ran Long ClaimはHECTON-8に最も近い名だ。高速路ではなく、距離、法、制動権、貨物費を横切る請求経路である。航路プレートは圧力痕として読まれるべきだ。誰の法が通り、誰の貨物が動き、誰の証拠が残り、誰の身体が帰還マニフェストから落とされたのか。
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/ja_JP. -->

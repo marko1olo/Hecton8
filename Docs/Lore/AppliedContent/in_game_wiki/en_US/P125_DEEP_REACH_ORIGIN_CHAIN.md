@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Origin Chain
 
-Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+Deep Reach was old before HECTON-8 drowned. It learned to speak in the accents of every domain it needed: Centauri charter dignity, Sol Core actuarial discipline, Barnard salvage practicality, Luyten custody procedure. Aegir was not the company's first leap. It was a place where old tools finally met an ocean deep enough to hide the cost. That makes the disaster systemic rather than accidental.
 
 ## Scanner
 
-Old company. New disaster. Same charter language.
+Charter braid: Centauri words, Sol money, Aegir bodies.
 
 ## Terminal
 
-CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach incorporated Centauri-compatible autonomy clauses, Sol Core insurance finance, Barnard logistics debt and later Aegir project shells. Atlas was authorized as route infrastructure before it became a witness to mass death.
 
 ## Audio
 
-They brought the empire in filing cabinets.
+They brought the empire in filing cabinets and called it expansion.
 
 ## Field Note
 
-Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach did not begin with the disaster. That is why it survived it.
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/en_US. -->

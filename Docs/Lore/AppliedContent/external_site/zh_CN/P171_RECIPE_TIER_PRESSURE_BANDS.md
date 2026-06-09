@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Recipe Tier Pressure Bands"
+title: "配方层级压力带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Recipe Tier Pressure Bands
+# 配方层级压力带
 
-ZH LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+配方层级压力带定义了 HECTON-8 如何避开普通生存制作。材料不是抽象花费，而是带有压力评级、路线历史、认证和法律后果的证据。同一套结构可以驱动配方、扫描警告、UI层级标签和背景文章，不必把玩法语言和世界语言拆开。
 
 ## Scanner
 
-ZH LOC HOLD: Recipes should be depth arguments, not shopping lists.
+HECTON-8 的配方不是购物清单，而是一段关于深度的论证。零件必须撑过它声称的压力带，才算零件。
 
 ## Terminal
 
-ZH LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+配方压力带 / T0 生存补片：浅层打捞、手工密封、无保管链 / T1 额定维修：货架工业件、泵房认证 / T2 压力硬件：盐水清洗、热泉固化、声学证明 / T3 上升或Atlas作业：深渊来源、合法接收端、封存收据。
 
 ## Audio
 
-ZH LOC HOLD: A recipe is a depth permission form with bolts.
+配方就是一张带螺栓的深度许可证。
 
 ## Field Note
 
-ZH LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+配方层级必须匹配压力评级、路线成本和保管风险。错误压力带里的廉价螺栓并不廉价；那只是未来的漏点。
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/zh_CN. -->

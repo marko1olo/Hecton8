@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Finale Frage: Verkauf des Tatorts
 
-Dieses Ende ist am stärksten, wenn es den Spieler mechanisch nicht bestraft. Ein verzweifelter Marauder kann alles liefern, was der Vertrag verlangte: das Becken erreichen, Koordinaten bergen, Probenwert beweisen, den XO-Datensatz intakt halten und ein Payload liefern, das Black Keel bewerten kann. Das Ergebnis soll legal und kalt wirken. Die Schuld verschwindet, weil das System Wert erkennt, nicht Gerechtigkeit.
+Das Verkaufsende soll rechtmäßig genug wirken, um weh zu tun. Ein verschuldeter Marauder kann den Vertrag erfüllen: das Becken erreichen, Koordinaten bergen, Probenwert belegen, den XO-Datensatz bewahren und eine Nutzlast liefern, die der Carrier bepreisen kann. Das Register antwortet, weil die Objekte wertvoll sind, nicht weil die Toten gehört wurden.
 
-Darin liegt der Schrecken. HECTON-8 ist nicht verloren, weil niemand die Beweise lesen kann. Es ist verloren, weil Beweise in Besitz umgewandelt werden können. Verkauft der Spieler den Tatort ohne öffentliche Zeugenkette, erhält Deep Reach saubere Akten, bessere Anfluggeometrie und einen Grund, mit Juristen vor den Rettungsteams zurückzukehren. Das Ende bezahlt den Spieler und zeigt, welche Zivilisation sich interstellares Salvage leisten kann.
+Die Quittung entscheidet, was weiterreist. Wenn Zeugenmaterial nicht separat beurkundet wird, erhält Deep Reach Annäherungsgeometrie, Probenbewertung und einen Verwahrungspfad ohne angehängtes Namensregister der Arbeiter. Keelmark kann zahlen. Der Operator kann gehen. Der Raum darunter wird zum Vermögensdatensatz, bevor er Zeugnis wird, und deshalb gehört die Auszahlungsroute in die finale Achse statt in einen Fehlerkorb.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/de_DE. -->

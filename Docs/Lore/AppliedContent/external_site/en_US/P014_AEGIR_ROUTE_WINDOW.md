@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Aegir Route Window
 
-HECTON-8 orbits inside a system where the sky is part of the dungeon. The gas giant sets radiation weather. Moons cast useful and dangerous shadows. Storms interfere with uplink. Tides move through canyons and wrecked colony shafts. Black Keel can only recover mass when geometry, fuel budget and contract priority line up.
+HECTON-8 is an ocean moon, but the sky is part of the dungeon. Aegir's radiation weather, moon shadows, relay shutters, storm plumes, tide shear and carrier transfer geometry all decide whether a signal, body, sample or evidence core can leave. The player does not wait for a picturesque sunrise. The player waits for several hostile systems to stop disagreeing long enough to spend mass.
 
-The result is a survival rhythm that reaches above the ocean. A good scanner reading is not enough. A good suit is not enough. The player has to learn when the system lets a message climb, when a body can rise and when the same open sky is a trap.
+The important rule is separation. A window for data is not automatically a window for rescue. A window for rescue is not automatically a window for contaminated cargo. A window for cargo is not automatically a public receipt. Black Keel can guide a calculation, but it also asks who owns the tonne-window, who accepts quarantine exposure and which clause wins if the payload embarrasses Deep Reach. Aegir makes physics and paperwork meet in the same minute.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/en_US. -->

@@ -16,6 +16,7 @@ namespace Hecton8.EditorTools
         private const string RuinApexStripeFrameChildName = "RuinApexStripe_Frame";
         private const string RuinApexStripeCrossSpanChildName = "RuinApexStripe_CrossSpan";
         private const string RuinApexScuffBaseChildName = "RuinApexScuff_Base";
+        private const string RuinApexViewportGlassEdgeChildName = "RuinApexGlassEdge_ViewportRim";
 
         [MenuItem("Hecton/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
         public static void RebuildWorldSupportFinals()
@@ -838,7 +839,8 @@ namespace Hecton8.EditorTools
 
             Material stripeMaterial = AssetDatabase.LoadAssetAtPath<Material>(WorldSupportGeneratedDecalMaterialBuilder.WarningStripeMaterialPath);
             Material scuffMaterial = AssetDatabase.LoadAssetAtPath<Material>(WorldSupportGeneratedDecalMaterialBuilder.CutterScorchMaterialPath);
-            if (stripeMaterial == null || scuffMaterial == null)
+            Material viewportGlassMaterial = AssetDatabase.LoadAssetAtPath<Material>(WorldSupportGeneratedDecalMaterialBuilder.ViewportGlassEdgeMaterialPath);
+            if (stripeMaterial == null || scuffMaterial == null || viewportGlassMaterial == null)
                 return;
 
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
@@ -869,6 +871,13 @@ namespace Hecton8.EditorTools
                     new Vector3(0.58f, 0.42f, 1.64f),
                     new Vector3(84f, 24f, 0f),
                     new Vector3(1.34f, 1.12f, 1f));
+                AttachSupportDecal(
+                    lod0,
+                    viewportGlassMaterial,
+                    RuinApexViewportGlassEdgeChildName,
+                    new Vector3(-1.84f, 4.84f, -3.96f),
+                    new Vector3(8f, -22f, 0f),
+                    new Vector3(1.20f, 0.32f, 1f));
 
                 SyncRuinApexIndustrialDecalRenderers(prefabRoot, lod0);
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
@@ -946,7 +955,8 @@ namespace Hecton8.EditorTools
                 lods[0].renderers,
                 ResolveRenderer(lod0, RuinApexStripeFrameChildName),
                 ResolveRenderer(lod0, RuinApexStripeCrossSpanChildName),
-                ResolveRenderer(lod0, RuinApexScuffBaseChildName));
+                ResolveRenderer(lod0, RuinApexScuffBaseChildName),
+                ResolveRenderer(lod0, RuinApexViewportGlassEdgeChildName));
 
             lodGroup.SetLODs(lods);
             lodGroup.RecalculateBounds();

@@ -205,6 +205,11 @@ MonoBehaviour:
     maximumInternalScale: 0.67
     ditherStrength: 0.82
     flowAdvectionStrength: 2.25
+    emptyAbyssalFlowTexture: {fileID: 0}
+    bakedFogDensityFlowTexture: {fileID: 0}
+    bakedFogVolumeCenterWs: {x: 0, y: 0, z: 0}
+    bakedFogVolumeWorldSize: 96
+    bakedFogFlowDetailWeight: 1
     siltDensityStrength: 1.2
     bilateralDepthScale: 24
     debugHeatmapWeight: 0
@@ -342,7 +347,7 @@ MonoBehaviour:
   m_Active: 1
   settings:
     material: {fileID: 2100000, guid: d1705deca1b04a45aa8e8f60cfb6a5b0, type: 2}
-    decalAtlas: {fileID: 0}
+    decalAtlas: {fileID: 18700000, guid: 2e883e20b5119ba47bfc6004e0cd783f, type: 2}
     maxDecals: 128
     baseFadeTimeSeconds: 7.5
     atlasSlices: 16
@@ -364,6 +369,15 @@ MonoBehaviour:
   settings:
     material: {fileID: 2100000, guid: ca1705d0efca4b7b92d44cbb8fb5b0c1, type: 2}
     injectionPoint: 450
+    causticFlipbookAtlas: {fileID: 0}
+    waterlineMask: {fileID: 0}
+    bakedAtlasWeight: 1
+    flipbookColumns: 8
+    flipbookRows: 8
+    flipbookFrames: 64
+    waterlineMaskWeight: 1
+    waterlineWorldMinY: -2
+    waterlineWorldMaxY: 2
 --- !u!114 &348348348000002
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Blackout Window Signal Decay"
+title: "Peluruhan Sinyal Jendela Blackout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Blackout Window Signal Decay
+# Peluruhan Sinyal Jendela Blackout
 
-ID LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+Kesunyian HECTON-8 adalah campuran astronomi, infrastruktur rusak, dan otomasi korporat. Bayangan Aegir, relai tenggelam, waktu carrier, dan antrean legal mengubah komunikasi menjadi cuaca: sesuatu yang harus direncanakan, ditakuti, diperbaiki, dan kadang dimanfaatkan pemain.
 
 ## Scanner
 
-ID LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Jendela sinyal runtuh: tulang punggung relai basah, bayangan Aegir, geometri carrier basi, antrean legal masih mencoba ulang.
 
 ## Terminal
 
-ID LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: kehilangan uplink di atas toleransi. Kanal suara ditangguhkan. Fragmen teks dapat tiba melalui node tulang punggung akustik yang telah diperbaiki. Geometri carrier orbital akan menyegar setelah bayangan magnetik Aegir bersih. Timer otomatis hak gadai dan penguasaan terus berjalan tanpa kontak operator.
 
 ## Audio
 
-ID LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Langit diam lebih dulu. Pemberitahuan utang tetap mengetuk.
 
 ## Field Note
 
-ID LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Ikat jendela blackout ke ritme rute: lebih sedikit suara, lebih banyak membaca fragmen, nilai lebih kuat untuk relai yang diperbaiki dan suar lokal.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/id_ID. -->

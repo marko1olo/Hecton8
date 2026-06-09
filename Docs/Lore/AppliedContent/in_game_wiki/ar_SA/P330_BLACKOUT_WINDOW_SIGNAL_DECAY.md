@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Blackout Window Signal Decay"
+title: "اضمحلال الإشارة في نافذة الانقطاع"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Blackout Window Signal Decay
+# اضمحلال الإشارة في نافذة الانقطاع
 
-AR LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+يعطي اضمحلال الإشارة شكلا ماديا لندرة الاتصال. يتلقى اللاعب نوافذ نادرة وشظايا حزم مقصوصة وبدائل صوتية تحت الماء بدلا من إرشاد مستمر من المدار.
 
 ## Scanner
 
-AR LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+نافذة الإشارة تنهار: عمود مرحلات مبتل، ظل Aegir، هندسة ناقل قديمة، والطابور القانوني لا يزال يعيد المحاولة.
 
 ## Terminal
 
-AR LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: فقدان uplink فوق حد السماح. قناة الصوت معلقة. قد تصل شظايا النص عبر عقد العمود الصوتية المرممة. ستتحدث هندسة الناقل المداري بعد زوال ظل Aegir المغناطيسي. تستمر مؤقتات الامتياز والحيازة الآلية بلا اتصال بمشغل.
 
 ## Audio
 
-AR LOC HOLD: When the sky closes, the paperwork keeps breathing.
+يصمت السماء أولا. إشعارات الدين تواصل الطرق.
 
 ## Field Note
 
-AR LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+اربط نوافذ الانقطاع بإيقاع المسار: صوت أقل، قراءة شظايا أكثر، وقيمة أكبر للمرحلات المرممة والمنارات المحلية.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/ar_SA. -->

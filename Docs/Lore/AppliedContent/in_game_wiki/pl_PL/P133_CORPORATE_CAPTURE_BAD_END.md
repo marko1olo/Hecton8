@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Korporacyjne przejęcie: czysty ratunek
 
-Korporacyjne przejęcie to złe zakończenie zbudowane z wiarygodnego ratunku. Gracz opuszcza ocean żywy, ale odpowiadająca władza traktuje świadka jak materiał containment, a payload jak prawdziwego pacjenta.
+Korporacyjne przejęcie zaczyna się dokładnie tak, jak powinna zaczynać się pomoc. Sygnał jest czysty, wektor pickup profesjonalny, a w pokoju jest powietrze do oddychania. Potem kolejność pytań odsłania ratunek: najpierw współrzędne, potem custody, potem dostęp Atlas, dobrostan po przeglądzie. Kontraktor opuszcza ocean żywy, lecz odpowiadająca władza traktuje świadka jak skażenie, a payload jak pacjenta. Zeznanie zostaje zapieczętowane, zanim może stać się rejestrem publicznym. Ciało przeżywa ciśnienie tylko po to, by wejść do cichszej maszyny kontroli dowodów.
 
 ## Scanner
 
-Źródło recovery zweryfikowane: proxy Deep Reach. Payload żądany przed kontrolą dobrostanu.
+Źródło odzysku potwierdzone: proxy Deep Reach. Payload żądany przed pulsem.
 
 ## Terminal
 
-PODJĘCIE DEEP REACH: recovery team przyjmuje współrzędne, custody XO i klucz dostępu Atlas przed przeglądem dobrostanu kontraktora. Zeznania kontraktora zapieczętowane pod protokołem skażenia.
+PICKUP DEEP REACH: zespół odzysku żąda współrzędnych, custody XO, klucza dostępu Atlas i pieczęci payload Seed przed oceną stanu kontraktora. Zeznanie świadka zapieczętowane protokołem skażenia.
 
 ## Audio
 
-Czysty pokój nie jest dla ciebie.
+Czysty pokój nie jest dla świadka.
 
 ## Field Note
 
-Czysty ratunek, który najpierw chce współrzędnych, to schwytanie z lepszym powietrzem.
+Czysty ratunek, który najpierw pyta o współrzędne, to custody z ciepłym powietrzem.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/pl_PL. -->

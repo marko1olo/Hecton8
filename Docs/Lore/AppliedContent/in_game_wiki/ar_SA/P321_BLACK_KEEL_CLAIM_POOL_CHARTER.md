@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Black Keel Claim-Pool Charter"
+title: "ميثاق حوض مطالبات Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Black Keel Claim-Pool Charter
+# ميثاق حوض مطالبات Black Keel
 
-AR LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+ميثاق حوض مطالبات Black Keel هو أول وثيقة يجب أن تجعل اللاعب يشك في كلمة سفينة. Black Keel مفيدة وقريبة وحقيقية، لكنها ليست سفينة وفية تنتظر في الأعلى. إنها أصل استرداد مستأجر داخل Aegir Reclamation Pool، صُمم لنقل المطالبات والأجساد والحمولة والقياس والدين عبر قناة قانونية من دون منح المتعاقد ملكية الهيكل. هذا الفرق مهم لأنه يشرح فخ HECTON-8 المركزي من دون سحر. يستطيع carrier سماع النبضات وبيع القياس وجدولة النوافذ وإسقاط مؤن منخفضة الخطر، ومع ذلك يرفض إنقاذا نظيفا لأن اللاعب لا يملك الطريق. النقل مسموح. أولوية الإنقاذ مشروطة. يبقى lien نشطا. يحول الميثاق المدار إلى ضغط لا حرية: يوجد شيء فوقك، لكنه يجيب المطالبة قبل أن يجيب الشخص.
 
 ## Scanner
 
-AR LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel ليست سفينتك. إنها أصل استرداد في حوض مطالبات، واسمك موجود في دفتر دينها.
 
 ## Terminal
 
-AR LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+مقتطف ميثاق / BLACK KEEL: carrier salvage ذاتي / الحيازة: Aegir Reclamation Pool / نقل المتعاقد: مسموح / ملكية الهيكل: مرفوضة / أولوية الإنقاذ: تابعة لحالة insured receiver وhandshake الحجر وclaim value.
 
 ## Audio
 
-AR LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+لم يأت carrier من أجلك. جاء من أجل مطالبة عُلّق بها اسمك.
 
 ## Field Note
 
-AR LOC HOLD: Use this on the first contract or carrier-status screen.
+يُستخدم على شاشة حالة carrier الأولى: الوصول ممنوح، الملكية مرفوضة، أولوية الإنقاذ مشروطة، lien نشط.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ar_SA. -->

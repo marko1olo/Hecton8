@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Ending Payout Data Boundary"
+title: "エンディング支払データ境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Ending Payout Data Boundary
+# エンディング支払データ境界
 
-JP LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+HECTON-8 のエンディングは、誰が証拠を受け取り、どんな保管を得て、何を支払い、どのコストが未解決かを記録する。数字は契約行を終わらせられる。海を終わらせることはできない。
 
 ## Scanner
 
-JP LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+エンディング行は受信者、保管、証拠状態、支払、未解決結果を結びつける。
 
 ## Terminal
 
-JP LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: 行には payload ルート、受信者、証拠状態、物質支払、法的結果、隔離遅延、未解決コストが必要。クレジットは犯罪現場を閉じない。
 
 ## Audio
 
-JA LOC HOLD: Credits do not close a crime scene.
+クレジットは犯罪現場を閉じない。
 
 ## Field Note
 
-JP LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value、quarantine delay、dossier flags は、受信者と証拠状態が明確になった後だけ記録。
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ja_JP. -->

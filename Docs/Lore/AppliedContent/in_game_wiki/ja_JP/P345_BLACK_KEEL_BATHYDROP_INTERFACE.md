@@ -35,6 +35,6 @@ Bathydropインターフェース損傷: 耐圧部品、リレータイミング
 
 ## Field Note
 
-初時間脱出記録: キャリアは存在するが、プレイヤー、海、水面、軌道を結ぶ鎖は名前のある部品で壊れている。
+初時間脱出記録: キャリアは存在するが、スーツ、海、水面、軌道を結ぶ鎖は名前のある部品で壊れている。
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/ja_JP. -->

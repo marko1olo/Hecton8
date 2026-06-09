@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Протокол публічного реєстру payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Public Ledger Receiver Protocol
+# Протокол публічного реєстру payload
 
-UK LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+Публічна лінія реєстру - найменш приватний і найменш слухняний отримувач. Вона відмовляє продажу координат, відмовляє прямій претензії відновлення й відмовляє чистій квитанції виплати. Вона приймає пакет інциденту з видаленою картою маршруту: attestation hashes, ланцюг відповідальності, digest ваг Atlas і позначку отримувача.
 
-## Scanner
-
-UK LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-UK LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-UK LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-UK LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Затримка важлива. Пакет не викличе негайний порятунок чи миттєве правосуддя. Він піде повільною лінією, розрахованою пережити судові заборони, спори отримувачів і тиск custody. Після приймання носій не зможе забрати його назад. Ця втрата контролю - ціна за те, щоб докази стало важче купити.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/uk_UA. -->

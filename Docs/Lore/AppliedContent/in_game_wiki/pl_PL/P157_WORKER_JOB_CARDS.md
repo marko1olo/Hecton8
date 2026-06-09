@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "Karty pracy robotników"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# Karty pracy robotników
 
-PL LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+Karta pracy to najmniejsza biografia kolonii. Nie potrzebuje dzieciństwa, romansu ani przemowy, żeby mieć wagę. Potrzebuje roli, stempla pozwolenia, ostatniego zadania i rzeczy, którą pracownik spodziewał się skończyć po następnym tonie. Gdy gracz znajduje takie karty, ludzie przestają być tłem strat i stają się dowodami trasy: ktoś trzymał klucz pompy, opóźnił właz, gotował dla brygady, wypisał przecinak, certyfikował uszczelkę albo nie wrócił, bo system kazał pomocy czekać.
 
 ## Scanner
 
-PL LOC HOLD: A job card is a face the budget could read.
+JOB CARD // Imię, rola, ostatnie zadanie, pozwolenie trasy, certyfikat narzędzia. Twarz, którą budżet potrafił przeczytać.
 
 ## Terminal
 
-PL LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+REGUŁA DOWODU: każde odzyskane imię powinno łączyć się z czymś wykonanym: trasą pompy, ledger kuchni, wezwaniem medycznym, depozytem przecinaka, kontrolą ciśnienia, partią fabrykacji. Zadanie zmienia imię w dowód.
 
 ## Audio
 
-PL LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+Imię bez zadania staje się kapliczką. Zadanie czyni je dowodem.
 
 ## Field Note
 
-PL LOC HOLD: Make names useful before making them tragic.
+Uczyń imiona użytecznymi, zanim uczynisz je tragicznymi.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/pl_PL. -->

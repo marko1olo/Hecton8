@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_ration_checks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS173_FIRST_RATION_CHECK_ARTICLES.md |
 | Speaker | Survival scanner, cold ration note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first ration checking |
@@ -72,17 +72,17 @@ WARM INSPECTION REQUIRED
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| ar_SA | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| de_DE | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| es_ES | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| fr_FR | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| he_IL | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| id_ID | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| ja_JP | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| ko_KR | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| nl_NL | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| pl_PL | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| pt_BR | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| ru_RU | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| uk_UA | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
-| zh_CN | draft_machine_or_llm | NUTRIENT GEL // Pale cold layer formed. Warm inspection required before stock use. |
+| ar_SA | draft_machine_or_llm | جل غذائي // تشكلت طبقة باردة باهتة. يلزم فحص دافئ قبل استخدام المخزون. |
+| de_DE | draft_machine_or_llm | NÄHRGEL // Blasse Kälteschicht gebildet. Vor Vorratsnutzung warm prüfen. |
+| es_ES | draft_machine_or_llm | GEL NUTRITIVO // Capa fría pálida formada. Inspección templada antes de usar el stock. |
+| fr_FR | draft_machine_or_llm | GEL NUTRITIF // Couche froide pâle formée. Inspection tiède requise avant usage du stock. |
+| he_IL | draft_machine_or_llm | ג'ל הזנה // נוצרה שכבה קרה וחיוורת. נדרשת בדיקה לאחר חימום לפני שימוש במלאי. |
+| id_ID | draft_machine_or_llm | GEL NUTRISI // Lapisan dingin pucat terbentuk. Periksa setelah dihangatkan sebelum stok dipakai. |
+| ja_JP | draft_machine_or_llm | 栄養ゲル // 淡い低温層が形成。備蓄使用前に温めて検査。 |
+| ko_KR | draft_machine_or_llm | 영양 젤 // 창백한 저온층이 생겼다. 재고 사용 전 따뜻하게 검사하라. |
+| nl_NL | draft_machine_or_llm | VOEDINGSGEL // Bleke koudelaag gevormd. Warm controleren voor voorraadgebruik. |
+| pl_PL | draft_machine_or_llm | ŻEL ODŻYWCZY // Powstała blada warstwa po wychłodzeniu. Przed użyciem zapasu sprawdź po ogrzaniu. |
+| pt_BR | draft_machine_or_llm | GEL NUTRITIVO // Camada fria pálida formada. Inspecione aquecido antes de usar o estoque. |
+| ru_RU | draft_machine_or_llm | ПИТАТЕЛЬНЫЙ ГЕЛЬ // Образовался бледный холодный слой. Перед использованием запаса осмотри после прогрева. |
+| uk_UA | draft_machine_or_llm | ПОЖИВНИЙ ГЕЛЬ // Утворився блідий холодний шар. Перед використанням запасу оглянь після прогріву. |
+| zh_CN | draft_machine_or_llm | 营养凝胶 // 形成浅色冷层。作为库存使用前需温热检查。 |

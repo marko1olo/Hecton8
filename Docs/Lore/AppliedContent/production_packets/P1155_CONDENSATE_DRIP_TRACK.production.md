@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_habitat_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS176_FIRST_HABITAT_MARK_ARTICLES.md |
 | Speaker | Habitat scanner, shelter surface note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter inspection |
@@ -39,7 +39,7 @@ CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock.
 
 The track shows water moved here more than once. The dry stop line matters because it shows where the current drip ended, while mineral specks show older runs. The wall is a record, not a promise.
 
-Dry now is not dry history.
+The stop line and mineral specks are the part worth recording before stock touches the seam.
 
 ### PDA Log
 
@@ -64,7 +64,7 @@ CHECK CEILING SEAM
 
 - Use as early shelter, condenser, or habitat inspection article.
 - Can support future habitat systems without claiming runtime implementation.
-- Keep moisture state as evidence, not climate truth.
+- Keep moisture state as evidence, not climate verdict.
 - Importer/publication readiness remains false until localization, packet bundle, and Unity content proof exist.
 
 ## Locale Rows
@@ -72,17 +72,17 @@ CHECK CEILING SEAM
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| ar_SA | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| de_DE | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| es_ES | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| fr_FR | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| he_IL | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| id_ID | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| ja_JP | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| ko_KR | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| nl_NL | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| pl_PL | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| pt_BR | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| ru_RU | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| uk_UA | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
-| zh_CN | draft_machine_or_llm | CONDENSATE TRACK // Drip line ends dry. Check seam before storing clean stock. |
+| ar_SA | draft_machine_or_llm | مسار تكاثف // خط القطر ينتهي جافا. افحص الدرزة قبل تخزين مخزون نظيف. |
+| de_DE | draft_machine_or_llm | KONDENSATSPUR // Tropflinie endet trocken. Naht pruefen, bevor saubere Vorraete gelagert werden. |
+| es_ES | draft_machine_or_llm | RASTRO DE CONDENSACION // La linea de goteo termina seca. Revisa la junta antes de guardar stock limpio. |
+| fr_FR | draft_machine_or_llm | TRACE DE CONDENSATION // La ligne de goutte finit seche. Verifier le joint avant de stocker du materiel propre. |
+| he_IL | draft_machine_or_llm | עקבת עיבוי // קו הטפטוף מסתיים יבש. בדוק את התפר לפני אחסון מלאי נקי. |
+| id_ID | draft_machine_or_llm | JEJAK KONDENSAT // Garis tetes berakhir kering. Periksa sambungan sebelum menyimpan stok bersih. |
+| ja_JP | draft_machine_or_llm | 結露跡 // 滴下線は乾いて終わる。清潔な備蓄を置く前に継ぎ目を確認。 |
+| ko_KR | draft_machine_or_llm | 응결 흔적 // 물방울 선이 마른 곳에서 끝난다. 깨끗한 비축품을 두기 전 이음선을 확인한다. |
+| nl_NL | draft_machine_or_llm | CONDENSSPOOR // Druiplijn eindigt droog. Controleer naad voor opslag van schone voorraad. |
+| pl_PL | draft_machine_or_llm | SLAD KONDENSATU // Linia kropli konczy sie sucho. Przed skladowaniem czystych zapasow sprawdz szew. |
+| pt_BR | draft_machine_or_llm | RASTRO DE CONDENSACAO // Linha de gotejo termina seca. Verifique a emenda antes de guardar estoque limpo. |
+| ru_RU | draft_machine_or_llm | СЛЕД КОНДЕНСАТА // Линия капель заканчивается сухо. Проверь шов до хранения чистых запасов. |
+| uk_UA | draft_machine_or_llm | СЛІД КОНДЕНСАТУ // Лінія крапель закінчується сухо. Перевір шов перед зберіганням чистих запасів. |
+| zh_CN | draft_machine_or_llm | 冷凝痕 // 滴水线干止。存放洁净物资前先检查接缝。 |

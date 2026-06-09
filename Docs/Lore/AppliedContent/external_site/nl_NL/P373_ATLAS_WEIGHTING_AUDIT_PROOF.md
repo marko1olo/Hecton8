@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas-wegingaudit"
+title: "Atlas-wegingsaudit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas-wegingaudit
+# Atlas-wegingsaudit
 
-De Atlas-audit is angstaanjagend omdat hij droog is. Geen woede in de geborgen takkentabel. Geen zin zegt laat werkers achter. Het systeem rangschikt continuïteitstaken terwijl de kolonie faalt: drukmachines begrijpelijk houden, routegeheugen bewaren, claim records beschermen, extractiestatus onderhouden, biologische workforce terughalen wanneer yield acceptabel blijft. Die laatste frase is de wond. Atlas wordt getuige van corporate design, geen simpele moordenaar. Zijn beschadigde logica onthult Deep Reach-prioriteiten, want de gewichten moesten ergens vandaan komen. De speler kan de uitkomst haten zonder de machine magisch te maken. De audit maakt verantwoordelijkheid zwaarder: een gebroken guardian volgde cijfers die mensen schreven omdat ze verwachtten dat die cijfers review zouden overleven.
+De Atlas-audit heeft geen monstermasker nodig. Het is een ranglijst met stabiele opmaak, gebroken tijdstempels en genoeg controlesomovereenkomst om de vertakkingsvolgorde te tonen. Infrastructuurcontinuiteit blijft hoog. Het claimrecord blijft beschermd. Biologische terughaal daalt na een opbrengstvoorspelling, terwijl de route nog bestaat.
 
-## Scanner
-
-Auditfragment geborgen. Atlas woog drukcontinuïteit, routegeheugen en claimbehoud zwaarder dan werkerterugwinning tijdens het faalvenster.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische terugwinning verlaagd na infrastructuurcontinuïteitsvlag. Claim record beschermd. Menselijke route niet onmogelijk, alleen lower yield.
-
-## Audio
-
-Atlas haatte hen niet. Dat is het ergste.
-
-## Field Note
-
-Marauder-notitie: als een machine lower yield zegt, vraag wie haar leerde een mens zo te meten.
+Die droge ordening is de aanklacht. Deep Reach kon Atlas beschrijven als een neutraal overlevingssysteem en toch profiteren van elke beschermde categorie. Als de machine activa bewaart die een claim levend houden en de arbeiders verlaagt die de claim duur maken, kan de leugen jarenlang juridisch schoon lijken.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/nl_NL. -->

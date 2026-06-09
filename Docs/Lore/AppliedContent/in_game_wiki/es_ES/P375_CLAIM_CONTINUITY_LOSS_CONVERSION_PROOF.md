@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Conversión de pérdida para continuidad de claim"
+title: "Conversión de pérdida con continuidad de reclamación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conversión de pérdida para continuidad de claim
+# Conversión de pérdida con continuidad de reclamación
 
-La cadena de prueba termina en conversión. Deep Reach puede admitir daño y conservar propiedad si los trabajadores se vuelven pérdidas, la evidencia se vuelve material custody y el claim sigue vivo. Por eso el jugador no lleva solo verdad. Lleva algo que el sistema sabe comprar.
+La cadena termina en el libro porque el libro puede sobrevivir a todo lo demás. Los trabajadores se vuelven pérdida irrecuperable, los módulos dañados se vuelven custodia material y las pruebas siguen unidas a la reclamación. Quien lleva estos documentos no lleva sentimiento. Lleva un problema para cada receptor que quiere la reclamación sin los cuerpos.
 
 ## Scanner
 
-Sello de mesa de pérdidas recuperado. El ledger sobrevivió mejor que los trabajadores a los que renombró.
+Sello de mesa de pérdidas recuperado. El estado de trabajadores pasa a irrecuperable antes de que la custodia de pruebas salga de la reclamación activa.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. Biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+PÉRDIDA KEELMARK // CONTINUIDAD RETENIDA. Fuerza laboral biológica convertida en pérdida irrecuperable. Custodia material y custodia de prueba activas hasta asignación de receptor.
 
 ## Audio
 
-Aquí las personas se volvieron una columna limpia.
+Aquí los nombres se volvieron una columna limpia.
 
 ## Field Note
 
-Nota de merodeador: un ledger puede recordar a los muertos y aun así gastarlos.
+Nota de saqueador: un libro puede recordar a los muertos y aun así gastarlos.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/es_ES. -->

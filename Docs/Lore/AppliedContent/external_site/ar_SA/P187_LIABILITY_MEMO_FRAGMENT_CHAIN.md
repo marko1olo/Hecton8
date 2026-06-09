@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "سلسلة شظايا مذكرة المسؤولية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# سلسلة شظايا مذكرة المسؤولية
 
-AR LOC HOLD: Liability Memo Fragment Chain defines how Deep Reach evidence works in HECTON-8.
+تعرّف سلسلة شظايا مذكرة المسؤولية أدلة HECTON-8 كإعادة بناء لا كشرح مباشر. تمنح المقالة اللاعب سبباً للاهتمام بالقصاصات والطوابع الزمنية والغرف الإدارية المتضررة: لم تترك Deep Reach اعترافاً واحداً، بل تركت وسائل حماية ذاتية غير متوافقة. كل شظية صغيرة بما يكفي لتبدو معقولة، وقبيحة بما يكفي لتهم. معاً تظهر كيف تستطيع الشركة أن تلوم علناً فيزياء المد، بينما تنقل المسؤولية داخلياً عبر المخاطر والإخلاء واستمرارية Atlas والتحويل التأميني وحيازة الحمولة.
 
 ## Scanner
 
-AR LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+نجت مذكرة المسؤولية كشظايا لأن كل مكتب احتفظ بالفقرة التي تحميه هو.
 
 ## Terminal
 
-AR LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: جدول هامش المخاطر / مذكرة إفراج الإخلاء / تجاوز استمرارية Atlas / تحويل خسارة Keelmark / طلب حيازة الاسترداد. قارن وقت المسار، وتلف الغرف، وأسماء العمال قبل قبول الملخص العام.
 
 ## Audio
 
-AR LOC HOLD: Paper is weak alone. Put it against a flooded door.
+لم يخفوا الحقيقة في خزنة. أرشفوها في قطع.
 
 ## Field Note
 
-AR LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+المذكرة الممزقة صادقة في المواضع التي لم تقصد أن تكون فيها صادقة.
 
 <!-- External Site; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/ar_SA. -->

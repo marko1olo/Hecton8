@@ -7,6 +7,7 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -195,6 +196,13 @@ namespace Hecton8.Audio
         private const uint FlagIoTransitionDelay = 1u << 2;
         private const uint FlagClipNotStreaming = 1u << 3;
         private const uint FlagNonFinite = 1u << 4;
+        public const uint TelemetryFlagCelestialLightBound = 1u << 5;
+        public const uint TelemetryFlagCelestialLightMissing = 1u << 6;
+        public const uint TelemetryFlagCelestialLightFallback = 1u << 7;
+        public const uint TelemetryFlagCelestialLightAbyssCritical = 1u << 8;
+        public const uint TelemetryFlagCelestialLightQualityReduced = 1u << 9;
+        public const uint TelemetryFlagCelestialLightTwilight = 1u << 10;
+        public const uint TelemetryFlagCelestialLightNight = 1u << 11;
         private const ulong DefaultBossNarrativeMask = 1ul << 7;
         private static readonly bool ProceduralSynthOwnsStemTransport = true;
         private const SystemID VaultOwner = SystemID.AudioStemMixer;
@@ -275,6 +283,7 @@ namespace Hecton8.Audio
         }
 
         private IDataVault _dataVault;
+        private ICelestialLightReadabilityReadModel _celestialLightReadModel;
         private VaultGenerationHandle<AudioStemStateDTO> _stemStateHandle;
         private VaultGenerationHandle<StemCommandDTO> _stemCommandsHandle;
         private VaultGenerationHandle<StemMixFrameDTO> _mixFrameHandle;
@@ -299,6 +308,7 @@ namespace Hecton8.Audio
         private float _lastDamage01;
         private float _lastOxygenDanger01;
         private float _cachedGlobalQualityWeight = 1f;
+        private uint _playerSurvivalVitalsSourceId;
         private uint _currentBiomeHash = DefaultBiomeHash;
         private uint _targetBiomeHash = DefaultBiomeHash;
         private ulong _narrativeStateMask;
@@ -327,6 +337,8 @@ namespace Hecton8.Audio
         private void Awake()
         {
             CacheDataVaultCold();
+            CacheCelestialLightReadabilityCold();
+            CachePlayerSurvivalVitalsSourceIdCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -339,6 +351,8 @@ namespace Hecton8.Audio
         private void OnEnable()
         {
             CacheDataVaultCold();
+            CacheCelestialLightReadabilityCold();
+            CachePlayerSurvivalVitalsSourceIdCold();
             EnsureVaultStorage();
 #if UNITY_EDITOR
             RefreshCsvPathCold();
@@ -413,6 +427,7 @@ namespace Hecton8.Audio
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
+            CachePlayerSurvivalVitalsSourceIdCold();
 #if UNITY_EDITOR
             PollCsvRulesCold();
 #endif
@@ -424,6 +439,15 @@ namespace Hecton8.Audio
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+                CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -583,11 +607,30 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _celestialLightReadModel = null;
+            _playerSurvivalVitalsSourceId = 0u;
         }
 
         private void CacheDataVaultCold()
         {
             RebindDataVaultCold(GlobalRegistry.DataVault);
+        }
+
+        private void CacheCelestialLightReadabilityCold()
+        {
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _celestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _celestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
         }
 
         private void RebindDataVaultCold(IDataVault nextVault)
@@ -976,6 +1019,21 @@ namespace Hecton8.Audio
                 _cachedGlobalQualityWeight = math.saturate(state.GlobalQualityWeight);
         }
 
+        private void CachePlayerSurvivalVitalsSourceIdCold()
+        {
+            RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
+        }
+
+        private void RefreshPlayerSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _playerSurvivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
+        }
+
         private void ConfigureSourceCold(AudioSource source)
         {
             if (source == null)
@@ -1114,18 +1172,23 @@ namespace Hecton8.Audio
                 _lastDamage01 = math.max(_lastDamage01, damage01);
             }
 
-            ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < vitalSignals.Length; i++)
+            uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;
+            if (playerSurvivalVitalsSourceId != 0u)
             {
-                ref readonly SurvivalVitalsChangedSignal signal = ref vitalSignals[i];
-                if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
-                    !math.isfinite(signal.Oxygen01))
+                ReadOnlySpan<SurvivalVitalsChangedSignal> vitalSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < vitalSignals.Length; i++)
                 {
-                    continue;
-                }
+                    ref readonly SurvivalVitalsChangedSignal signal = ref vitalSignals[i];
+                    if (signal.SourceId != playerSurvivalVitalsSourceId ||
+                        (signal.Flags & SurvivalVitalsChangedSignalFlags.Oxygen) == 0u ||
+                        !math.isfinite(signal.Oxygen01))
+                    {
+                        continue;
+                    }
 
-                float oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);
-                _lastOxygenDanger01 = math.max(_lastOxygenDanger01, oxygenDanger01);
+                    float oxygenDanger01 = 1f - math.saturate(signal.Oxygen01);
+                    _lastOxygenDanger01 = math.max(_lastOxygenDanger01, oxygenDanger01);
+                }
             }
 
             ReadOnlySpan<BiomeChangedSignal> biomeSignals = SignalBus<BiomeChangedSignal>.GetFrameSnapshot();
@@ -1284,6 +1347,8 @@ namespace Hecton8.Audio
                 float depthMeters = math.max(0f, math.isfinite(rule.MockDepthMeters) ? rule.MockDepthMeters : 0f);
                 float quality = math.saturate(math.isfinite(frame.QualityWeight) ? frame.QualityWeight : 1f);
                 float tension = math.saturate(math.isfinite(frame.TensionIndex) ? frame.TensionIndex : 0f);
+                CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadability();
+                ApplyCelestialLightToMusicSignal(in light, ref tension, ref depthMeters, ref quality);
                 PushDynamicMusicSignal(tension, depthMeters, quality);
                 return;
             }
@@ -1304,6 +1369,58 @@ namespace Hecton8.Audio
                 EnsurePlaying(_depthStemSource);
                 EnsurePlaying(_bossStemSource);
             }
+        }
+
+        private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
+        {
+            ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _celestialLightReadModel;
+                if (!IsCelestialLightReadModelUsable(readModel))
+                    return default;
+            }
+
+            return readModel.LightReadabilitySnapshot;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static void ApplyCelestialLightToMusicSignal(
+            in CelestialLightReadabilitySnapshot light,
+            ref float tension01,
+            ref float depthMeters,
+            ref float quality01)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u)
+                return;
+
+            if (math.isfinite(light.DepthMeters))
+                depthMeters = math.max(depthMeters, light.DepthMeters);
+
+            float darknessPressure = math.saturate(
+                light.DeepDarkness01 * 0.62f +
+                light.ArtificialLightWeight01 * 0.26f +
+                light.BiolumWeight01 * 0.12f);
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseNight) != 0u)
+                darknessPressure = math.max(darknessPressure, 0.18f);
+            else if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseTwilight) != 0u)
+                darknessPressure = math.max(darknessPressure, 0.08f);
+
+            tension01 = math.max(tension01, darknessPressure);
+
+            if (math.isfinite(light.Quality01))
+                quality01 = math.saturate(math.min(quality01, math.lerp(1f, light.Quality01, 0.35f)));
         }
 
         private static void EnsureDynamicMusicSignalLaneCold()
@@ -1378,11 +1495,12 @@ namespace Hecton8.Audio
             int cursor = views.TelemetryCursor[0];
             int capacity = math.min(TelemetryCapacity, views.TelemetryRing.Length);
             int index = cursor % capacity;
+            CelestialLightReadabilitySnapshot light = ResolveCelestialLightReadability();
             AudioStemTelemetryEntry entry = default;
             entry.Frame = frame.Frame != 0u ? frame.Frame : _simulationFrameCounter;
             entry.ActiveStemHash = frame.ActiveStemHash;
             entry.BiomeHash = frame.BiomeHash;
-            entry.Flags = frame.Flags;
+            entry.Flags = frame.Flags | BuildCelestialLightTelemetryFlags(in light);
             entry.TensionIndex = frame.TensionIndex;
             entry.DepthFilter = frame.DepthFilter;
             entry.CutoffHz = frame.CutoffHz;
@@ -1397,6 +1515,25 @@ namespace Hecton8.Audio
             entry.UpdateCadenceHz = 1f / math.max(MinAudioDeltaSeconds, rule.KernelCadenceSeconds);
             views.TelemetryRing[index] = entry;
             views.TelemetryCursor[0] = (cursor + 1) % capacity;
+        }
+
+        private static uint BuildCelestialLightTelemetryFlags(in CelestialLightReadabilitySnapshot light)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u)
+                return TelemetryFlagCelestialLightMissing;
+
+            uint flags = TelemetryFlagCelestialLightBound;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Fallback) != 0u)
+                flags |= TelemetryFlagCelestialLightFallback;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u)
+                flags |= TelemetryFlagCelestialLightAbyssCritical;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.QualityReduced) != 0u)
+                flags |= TelemetryFlagCelestialLightQualityReduced;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseTwilight) != 0u)
+                flags |= TelemetryFlagCelestialLightTwilight;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseNight) != 0u)
+                flags |= TelemetryFlagCelestialLightNight;
+            return flags;
         }
 
         private bool HasNonFiniteMixFrame(ref AdaptiveStemVaultViews views)

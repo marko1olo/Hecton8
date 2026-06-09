@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Contract Approach Act Gate"
+title: "合同接近门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Contract Approach Act Gate
+# 合同接近门
 
-ZH LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+第一道门是背后有压力的文书。Black Keel 不会把游客送进 Aegir 水域。操作员在第一次深层扫描前接受索赔转移、债务暴露、bathydrop 时隙和工具账单。旧 Deep Reach 档案重要，因为程序识别在路线显得私人之前就开始了。
 
 ## Scanner
 
-ZH LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+路线门：合同已接受。留置暴露、bathydrop 时间和旧 Deep Reach 程序在下降前已激活。
 
 ## Terminal
 
-ZH LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+战役路线 // 合同接近。所有方：Black Keel 索赔板。接受索赔转移、留置暴露、bathydrop 时隙和工具债务。操作员档案中检测到 Deep Reach 凭据残留。回收有条件。
 
 ## Audio
 
-ZH LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+你是来工作的。合同已经知道你以前在哪里工作。
 
 ## Field Note
 
-ZH LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+拾荒者记录：把合同板读两遍。第二遍会显示哪些旧许可仍然适合你的手。
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/zh_CN. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: No Clean Ending Dossier Note"
+title: "Catatan Dossier Tanpa Akhir Bersih"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: No Clean Ending Dossier Note
+# Catatan Dossier Tanpa Akhir Bersih
 
-ID LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+Catatan ini menentukan nada ingatan pasca-akhir. Bahkan akhir terkuat meninggalkan file hidup: sesuatu yang diselamatkan, sesuatu yang rusak, dan biaya yang menolak menjadi rapi.
 
 ## Scanner
 
-ID LOC HOLD: Dossier note: closure denied; consequence retained.
+Catatan dossier: penutupan ditolak; konsekuensi dipertahankan.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: hasil disimpan. Penutupan bersih tidak tersedia dalam keadaan bukti saat ini. Utang, ekologi, liabilitas, dan kustodi saksi tetap menjadi catatan aktif.
 
 ## Audio
 
-ID LOC HOLD: You saved something. That is not the same as clearing it.
+Kau menyelamatkan sesuatu. Itu tidak sama dengan membersihkannya.
 
 ## Field Note
 
-ID LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Dossier pasca-akhir menjaga jembatan tetap terbuka: hasil dicatat, utang dan bukti belum selesai, tidak ada kemenangan sempurna.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/id_ID. -->

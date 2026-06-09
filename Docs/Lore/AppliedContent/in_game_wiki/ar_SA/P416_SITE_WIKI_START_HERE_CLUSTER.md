@@ -19,22 +19,22 @@ localization_flags: 1
 
 # ابدأ هنا: HECTON-8
 
-عنقود البداية: العقد، دور اللاعب، ضغط النجاة في HECTON-8 وأول تناقض في رواية Deep Reach.
+ابدأ هنا: تبدأ HECTON-8 كـsalvage contract حول مستعمرة غارقة، Marauder مدين، وقصة Deep Reach مرتبة أكثر مما ينبغي.
 
 ## Scanner
 
-محور نشر: المقدمة، دور اللاعب، القيود الأولى وأول كذبة Deep Reach.
+مدخل عام: salvage contract، Marauder مدين، capsule تالفة، تناقض Deep Reach وأول أثر إصلاح Atlas.
 
 ## Terminal
 
-SITE NAV: دخول عبر العقد، اختصاصي Deep Reach سابق، Marauder مثقل بالدين، كبسولة متضررة، بلا خطاف عائلي، أول أثر إصلاح Atlas.
+SITE NAV: ابدأ بلغة العقد، النجاة تحت الضغط، no family hook، no instant rescue، evidence before endings.
 
 ## Audio
 
-جئت من أجل salvage. سيجعل المحيط هذا الدافع صغيرا جدا.
+السجل الأول ليس طلب نجدة. إنه claim.
 
 ## Field Note
 
-ملاحة spoiler-light تبدأ هنا: المقدمة أولا، ثم الدليل، والنهايات بعد أن يكسب اللاعب الوصول.
+اقرأ الأوراق أولا. في HECTON-8 تعيش الكذبة لأن كل جملة تحمل شيئا صحيحا.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/ar_SA. -->

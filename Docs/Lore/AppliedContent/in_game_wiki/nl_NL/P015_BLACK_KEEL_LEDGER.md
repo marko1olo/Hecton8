@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Black Keel-ledger
 
-Black Keel is de orbitale levenslijn, maar geen reddingsfantasie. Het hoort bij claim-pool-infrastructuur: bewaringsledgers, verzekeringsschuld, bergingsvensters, quarantaine en carrierautoriteit.
-
-Het leidt omdat leiding waarde beschermt. Het vertraagt omdat vertraging ook waarde beschermt. Hulp betekent geen partij kiezen.
+Black Keel is de orbitale levenslijn van de speler, maar niet het schip van de speler. Publiek hoort het bij de Aegir Reclamation Pool; juridisch wikkelt Keelmark Mutual het in verzekering, schuld en recovery exposure. Oude Deep Reach-prioriteitshaken kunnen payloadvolgorde, quarantainetaal en routecertificaten buigen. Het ledger is koud omdat het praktisch is: lichaam, bewijskern, blue-debt, gereedschapskist en rompstuk vechten om hetzelfde tonne-window.
 
 ## Scanner
 
-Claim-pool tenderledger. Publieke carrierbewaring, verzekeringsschuld, opstijgmassastraf en verborgen Deep Reach-prioriteitshaken.
+Claim-pool tenderledger. Aegir Reclamation Pool custody, Keelmark Mutual exposure, 4.8 tonne-window lien en gemaskeerde Deep Reach-prioriteitshaken.
 
 ## Terminal
 
-BLACK KEEL-LEDGER // Bergingsdienst voorwaardelijk. Claimvrijgave onvolledig. Diepe prioriteitsroute gemaskeerd. Payloadautoriteit blijft carrierzijde. Contractor-overleving overstijgt verzekerde lading niet zonder bijgewerkte opstijgwaarde.
+BLACK KEEL LEDGER // Contractor-overleving geregistreerd als bergbare biologische payload. Bewijskern wacht op custodyklasse. Blue-debt-materiaal vereist containment review. Diepe prioriteitsbegunstigde gemaskeerd. Tonne-window schuld actief tot recoverywaarde verzekerde cargo-exposure overschrijdt.
 
 ## Audio
 
-Black Keel is niet jouw schip. Het is de machine die weet wat je schuldig bent.
+Black Keel kan je uit de oceaan redden en toch elke seconde lift verkopen.
 
 ## Field Note
 
-Het schip kan je helpen zonder aan jouw kant te staan.
+Het schip kan helpen zonder aan jouw kant te staan.
 
 <!-- In-Game Wiki; generated from P015_BLACK_KEEL_LEDGER/nl_NL. -->

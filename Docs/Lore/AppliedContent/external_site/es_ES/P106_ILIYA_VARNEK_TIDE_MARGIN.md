@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: margen de marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: margen de marea
 
-ES LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+Iliya Varnek: margen de marea es uno de los primeros artículos donde HECTON-8 muestra con claridad cómo funciona la responsabilidad de Deep Reach. Evita la versión fácil del mal corporativo. Varnek no necesita pulsar un botón de inundación. Firma una interpretación del riesgo.
 
-## Scanner
+En 2147, el modelo de la Gran Marea todavía aprobaba en promedio. Esa es la palabra peligrosa. El comportamiento promedio mantenía vivo el calendario de producción mientras el extremo quedaba dentro de la exposición laboral: ventanas de marea de Aegir, rebote de la plataforma de hielo, tráfico de rutas presurizadas e incertidumbre de compensación de Atlas. Una ruta puede ser estadísticamente aceptable y aun así mortal para quienes se encuentran con la cola de la curva.
 
-ES LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-ES LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-ES LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-ES LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Para el jugador, esta evidencia cambia el desastre de accidente a cadena de decisiones. El memo de Varnek no es una confesión. Es un documento que vuelve legible la culpa: la incertidumbre se conoció, se descontó y se empujó hacia abajo. El horror es burocrático sin volverse seco. El margen se hizo lo bastante pequeño para que los trabajadores murieran dentro.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/es_ES. -->

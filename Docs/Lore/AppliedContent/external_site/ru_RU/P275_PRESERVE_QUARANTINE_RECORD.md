@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Запись сохранения и карантина"
+title: "Запись сохранения карантина"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Запись сохранения и карантина
+# Запись сохранения карантина
 
-Эта статья объясняет отказ HECTON-8 от чистых концовок.
+Эта запись карантина полезна тем, что перечисляет удержанное, защищенное и способное сломаться позже: хранение полезной нагрузки, закрытые координаты, частичную публичную квитанцию, повреждение Atlas, экологическое удержание, имена рабочих, ответственность и слепые последующие претензии.
 
 ## Scanner
 
-Payload withheld. Consequence deferred.
+ЗАПИСЬ СОХРАНЕНИЯ КАРАНТИНА // Полезная нагрузка удержана от Deep Reach. Atlas поврежден, но активен; приказ экологического удержания блокирует чистую передачу владения.
 
 ## Terminal
 
-ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+ЗАПИСЬ ФИНАЛА / СОХРАНЕНИЕ КАРАНТИНА
+Полезная нагрузка: удержана от прямого хранения Deep Reach.
+Приказ: экологическое удержание, закрытые координаты, частичная публичная квитанция.
+Состояние Atlas: поврежденная ремонтная логика активна.
+Защищено: экология давления и выжившая ремонтная жизнь.
+Не решено: имена рабочих, ответственность бассейна, будущие salvage-подачи.
+Известная потеря: сохранение не становится невиновностью.
 
 ## Audio
 
-Оставить что-то живым не то же самое, что спасти.
+Ты оставил это живым. Это не то же самое, что спасти.
 
 ## Field Note
 
-Fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial, future pressure unresolved.
+Удержание пакета защищает часть живых систем и оставляет сломанную власть дышать. Следи за очередью слепых претензий.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/ru_RU. -->

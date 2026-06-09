@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Set Cap Izin Rute"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Set Cap Izin Rute
 
-ID LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Set Cap Izin Rute mendefinisikan prop akses untuk HECTON-8. Cap menghubungkan identitas pekerja dengan batas fisik: pintu, kendaraan, suit, lift, dan papan rute. Karena setiap cap kemudian dapat bertentangan dengan buku catatan atau fragmen audio, akses menjadi biografi di bawah tekanan dan cara inti membaca pergerakan terakhir koloni.
 
 ## Scanner
 
-ID LOC HOLD: A route stamp is stronger than a diary line.
+Cap rute lebih kuat daripada baris buku harian karena membuktikan siapa yang diizinkan melewati batas tekanan.
 
 ## Terminal
 
-ID LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: izin rute harus menghubungkan satu pekerja, satu pintu atau kendaraan, satu keluarga kru, dan satu kontradiksi nanti. Cap tanpa batas fisik adalah dekorasi. Cap pada palka, rak suit, rel crawler, atau tag lift menjadi bukti pergerakan.
 
 ## Audio
 
-ID LOC HOLD: Access is biography under pressure.
+Akses adalah biografi di bawah tekanan.
 
 ## Field Note
 
-ID LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Cap: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pasangkan dengan status palka dan objek kerja.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/id_ID. -->

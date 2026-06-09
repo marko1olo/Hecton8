@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: pt_BR
 surface: external_site
@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Fábrica do fundo
 
-A Fábrica do fundo deve parecer o momento em que cada pista anterior se junta fisicamente. Blue debt não é mais só uma amostra. Cicatrizes de reparo não são mais remendos isolados. Escadas de salmoura não são mais só rotas. Registros de evacuação não são mais papelada. No fundo, todos esses sistemas alimentam um corpo que ainda trabalha. É fábrica porque processa material. É navio porque rotas e peles de pressão ainda movem cargas. É templo porque as categorias antigas da colônia foram substituídas por rituais de manutenção que nenhum humano pode interpretar com segurança. A chave é que o lugar não está morto. Está ocupado. Mantém portas seladas, cresce membranas, recicla destroços, preserva continuidade e usa tudo que o oceano entregou. Para o jogador, a descida final trata menos de encontrar a última sala e mais de entrar numa máquina que já decidiu que a diferença entre pessoa, ferramenta, rota e matéria-prima é opcional.
+A Fábrica do fundo não é uma sala final de trono. É a planta de retorno inferior onde evidências anteriores viram hardware: resíduo de blue debt em juntas de parede, rotas de salmoura sob placas de convés, soldas de reparo sob carbonato novo e etiquetas de evacuação ainda presas perto de portas seladas.
+
+A Deep Reach construiu o nó inferior para manter continuidade de reivindicação e serviço durante uma demora longa. O Atlas-6 continuou roteando ao redor de categorias falhas porque bombas, cabos e bandejas de amostra ainda respondiam. O resultado é uma fábrica em operação. A salmoura se move. O calor retorna. O sinal cruza mangas de cabo remendadas. Organismos filtrantes se acumulam em carcaças que antes eram caixas de serviço limpas. Selos crescidos sob pressão seguram placas fechadas depois que as juntas originais falham.
+
+Isso torna o local perigoso de um jeito prático. Ele repara ao redor do que permanecer no caminho. Pode preservar uma rota enquanto enterra a etiqueta que explica quem estava nela. Leia a gaveta de etiquetas antes de cortar uma junta clara; a fábrica pode selar o vazamento mais rápido do que você recupera o nome.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/pt_BR. -->

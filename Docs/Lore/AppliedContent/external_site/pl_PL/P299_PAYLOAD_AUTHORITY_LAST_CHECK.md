@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Authority Last Check"
+title: "Ostatnia kontrola autorytetu payloadu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Authority Last Check
+# Ostatnia kontrola autorytetu payloadu
 
-PL LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+Zakończenie HECTON-8 nie pyta tylko, czy gracz przeżyje. Pyta, kto otrzyma dowód i co ten odbiorca będzie mógł zrobić z oceanem po odejściu świadka.
 
 ## Scanner
 
-PL LOC HOLD: Payload check: receiver changes meaning, not only reward.
+Kontrola payloadu: wybór odbiorcy zmienia własność, nie tylko nagrodę.
 
 ## Terminal
 
-PL LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: wybrać odbiorcę, masę, dozór dowodów, konsekwencję ekologiczną i odpowiedzialność po powrocie. Wybór odbiorcy określa, kto może działać na podstawie dowodu po odejściu.
 
 ## Audio
 
-PL LOC HOLD: What leaves will own what remains.
+To, co odejdzie, posiądzie to, co zostanie.
 
 ## Field Note
 
-PL LOC HOLD: Use immediately before irreversible ending route selection.
+Użyć bezpośrednio przed nieodwracalnym wyborem trasy zakończenia.
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/pl_PL. -->

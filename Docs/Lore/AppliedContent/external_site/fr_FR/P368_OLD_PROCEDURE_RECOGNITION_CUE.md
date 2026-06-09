@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Indice de reconnaissance d’ancienne procédure"
+title: "Signal de Reconnaissance d'Ancienne Procédure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Indice de reconnaissance d’ancienne procédure
+# Signal de Reconnaissance d'Ancienne Procédure
 
-HECTON-8 ancre la motivation du personnage dans la procédure. Le protagoniste reconnaît un ancien formulaire de sécurité d’évacuation et voit comment il a été inversé: comptages dégradés, champs de témoins scellés, langage route-sûre utilisé pour préserver des réclamations plutôt que des vies.
+Le Signal de Reconnaissance d'Ancienne Procédure ancre le motif du personnage dans un document que l'opérateur sait lire. Le formulaire est volontairement ordinaire: certification route-safe, occupants déclarés, tags de salle des pompes, champ de seconde vérification, sceau Continuity Office.
 
-## Scanner
-
-Tampon route-sûre présent. Comptage des travailleurs réécrit avec deux encres. Champ de témoin manuel scellé. Le formulaire avait été conçu pour attraper ce genre de mensonge avant qu’on en fasse une politique.
-
-## Terminal
-
-FORMULAIRE DE CONTINUITÉ D’ÉVACUATION / CERTIFICATION ROUTE-SÛRE
-route: ligne d’issue auxiliaire
-occupants déclarés: comptage dégradé accepté
-témoin manuel: scellé par le bureau de continuité
-correction terrain: décompte des travailleurs incohérent avec les étiquettes de salle des pompes
-statut: préservation de réclamation, pas d’autorisation d’extraction.
-
-## Audio
-
-Tu connais ce formulaire. Il devait empêcher qu’une pièce soit comptée vide pendant que des gens y respiraient encore.
-
-## Field Note
-
-Le formulaire devait imposer un autre comptage. Ici, il a imposé le silence.
+Le dommage est dans l'écart. Le compte accepté dit que la route est close. Les tags disent que des personnes restaient attachées à la salle. Le sceau du bureau dit qu'aucune seconde vérification ne sera permise. HECTON-8 utilise cette contradiction procédurale comme preuve: pas un aveu spectaculaire, mais un formulaire qui ruine quelqu'un parce qu'il comprend chaque champ.
 
 <!-- External Site; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/fr_FR. -->

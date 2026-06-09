@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cargo_handling |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; Lore_Localization_Model.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS177_FIRST_CARGO_HANDLING_ARTICLES.md |
 | Speaker | Cargo scanner, stencil reliability note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first cargo handling |
@@ -18,7 +18,7 @@
 | Unlock context | Player scans a weight stencil split by salt bloom |
 | Evidence object | Weight stencil, salt split, paint island, scratched checksum dot |
 | Connected packets | P1160_LOAD_ARROW_RUB_MARK; P1153_FUSE_BAND_HEAT_FADE; P930_CRATE_SEAL_CUSTODY_TAB |
-| First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: prevents early cargo labels from being read as clean truth |
+| First-20 route moment | FIRST_20_ROUTE_BLOCKER_REMOVED: prevents early cargo labels from being read as clean records |
 | Content status | source_complete_unimported |
 
 ## Source Brief
@@ -39,7 +39,7 @@ WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone.
 
 The stencil still wants to look official, but salt has split the number through the middle. The scratched checksum dot is less readable and more useful because it was added after the paint.
 
-Numbers can survive as shapes and fail as facts.
+The checksum dot is the safer mark after salt cuts the number.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CHECK DOT FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| ar_SA | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| de_DE | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| es_ES | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| fr_FR | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| he_IL | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| id_ID | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| ja_JP | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| ko_KR | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| nl_NL | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| pl_PL | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| pt_BR | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| ru_RU | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| uk_UA | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
-| zh_CN | draft_machine_or_llm | WEIGHT STENCIL // Salt split through number. Use checksum dot, not label alone. |
+| ar_SA | draft_machine_or_llm | استنسل وزن // الملح شق الرقم. استخدم نقطة التحقق لا الملصق وحده. |
+| de_DE | draft_machine_or_llm | GEWICHTSSCHABLONE // Salz spaltet Zahl. Pruefpunkt nutzen, nicht nur Beschriftung. |
+| es_ES | draft_machine_or_llm | PLANTILLA DE PESO // La sal parte el numero. Usa el punto de control, no solo la etiqueta. |
+| fr_FR | draft_machine_or_llm | POCHOIR DE POIDS // Sel fend le numero. Utiliser le point de controle, pas l'etiquette seule. |
+| he_IL | draft_machine_or_llm | שבלונת משקל // מלח חוצה את המספר. השתמש בנקודת הבדיקה, לא בתווית לבדה. |
+| id_ID | draft_machine_or_llm | STENSIL BERAT // Garam membelah angka. Pakai titik checksum, bukan label saja. |
+| ja_JP | draft_machine_or_llm | 重量ステンシル // 数字を塩が割っている。ラベルだけでなく検査点を使う。 |
+| ko_KR | draft_machine_or_llm | 중량 스텐실 // 소금이 숫자를 갈랐다. 표지만 말고 체크섬 점을 쓴다. |
+| nl_NL | draft_machine_or_llm | GEWICHTSJABLOON // Zout splijt cijfer. Gebruik controlepunt, niet alleen label. |
+| pl_PL | draft_machine_or_llm | SZABLON MASY // Sol rozcina numer. Uzyj punktu kontrolnego, nie samej etykiety. |
+| pt_BR | draft_machine_or_llm | ESTENCIL DE PESO // Sal abre o numero. Use o ponto de verificacao, nao so a etiqueta. |
+| ru_RU | draft_machine_or_llm | ТРАФАРЕТ ВЕСА // Соль рассекла номер. Используй контрольную точку, не одну надпись. |
+| uk_UA | draft_machine_or_llm | ТРАФАРЕТ ВАГИ // Сіль розсікла номер. Використай контрольну точку, не сам напис. |
+| zh_CN | draft_machine_or_llm | 重量喷码 // 盐蚀割开数字。用校验点，不只看标签。 |

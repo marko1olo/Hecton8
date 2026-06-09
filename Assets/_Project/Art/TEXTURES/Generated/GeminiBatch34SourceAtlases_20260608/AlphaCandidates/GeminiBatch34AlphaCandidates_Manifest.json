@@ -7,6 +7,26 @@
   "policy": "Unity-visible source alpha candidates only. Do not auto-create Lit materials.",
   "entries": [
     {
+      "id": "B34-3418",
+      "title": "Thick Viewport Glass Edge Decal Atlas",
+      "sourceType": "DECAL_ATLAS",
+      "family": "glass_decal",
+      "sourceAtlas": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaMaskSources/B34-3418-R1_viewport_glass_jpeg_timestamp.jpeg",
+      "alphaCandidate": "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3418_thick_viewport_glass_edge_decal_atlas_AlphaCandidate.png",
+      "sourceAlphaCandidate": "Docs/GeneratedAssets/Gemini/Outputs/Batch34_TextureExpansion/AlphaCandidates/decal_atlas/B34-3418-R1_viewport_glass_jpeg_timestamp_AlphaCandidate.png",
+      "status": "ALPHA_CANDIDATE_UNITY_SOURCE_PENDING_REVIEW",
+      "productionBindingStatus": "PENDING DECAL_SPLIT_OR_UV_BINDING",
+      "unityImportStatus": "PENDING UNITY IMPORT",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "alphaStats": {
+        "alphaNonZeroPct": 13.175,
+        "alphaOpaquePct": 1.517,
+        "alphaMean": 12.321
+      }
+    },
+    {
       "id": "B34-3423",
       "title": "Leak Rust Biofilm Decal Atlas",
       "sourceType": "DECAL_ATLAS",

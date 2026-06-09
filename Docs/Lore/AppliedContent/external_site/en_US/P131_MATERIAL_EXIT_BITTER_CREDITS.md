@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Material Exit: Bitter Credits
 
-A material exit should feel coldly legitimate. The player recovers pressure material, keeps custody intact, satisfies Black Keel's mass-through-window accounting and receives a real reduction on the lien. No alarm declares failure; the system behaves exactly as designed.
+Material Exit should feel legally cold, not cartoon-evil. The contractor did the work, recovered pressure material, kept enough custody intact for Black Keel accounting, and earned a real reduction on the lien. The ship does not scream failure because the commercial system has no reason to call this failure.
 
-The damage is in what the receipt excludes. Missing-worker names remain unresolved, the evidence chain is incomplete, and Deep Reach gains a cleaner commercial reason to return. HECTON-8 does not punish the player for being a professional. It shows what professional success costs when the job site is also a grave.
+The bitter part is what the receipt cannot be forced to remember. Worker names remain in dispute, the evidence payload is incomplete, and Deep Reach receives a better commercial pretext to return than the colony workers ever received to leave. HECTON-8 does not punish professionalism. It shows what professionalism costs when the work site is also a grave.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/en_US. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Protokol Penerima Buku Publik Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Public Ledger Receiver Protocol
+# Protokol Penerima Buku Publik Payload
 
-ID LOC HOLD: Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+Jalur buku publik adalah penerima yang paling tidak privat dan paling tidak patuh. Ia menolak penjualan koordinat, menolak klaim pemulihan langsung, dan menolak tanda terima pembayaran bersih. Yang diterimanya adalah paket insiden tanpa peta rute: attestation hashes, rantai liabilitas, digest pembobotan Atlas, dan cap waktu penerima.
 
-## Scanner
-
-ID LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-ID LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-ID LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-ID LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Penundaan penting. Paket tidak akan memanggil penyelamatan segera atau keadilan instan. Ia akan berjalan lewat jalur lambat yang dirancang untuk bertahan dari injungsi, sengketa penerima, dan tekanan kustodi. Setelah diterima, pembawa tidak dapat menariknya kembali. Kehilangan kendali itu adalah harga agar bukti lebih sulit dibeli.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/id_ID. -->

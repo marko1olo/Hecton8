@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "トリアージ台帳小道具変種"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# トリアージ台帳小道具変種
 
-JP LOC HOLD: Triage Ledger Prop Variants keep colony harm procedural and readable.
+トリアージ台帳小道具変種は、部屋を苦痛の展示にせず、被害を読めるものにする。トリアージ台帳は、負傷が官僚制を通ってどう移動したかを示すべきだ。圧潰状態略記、酸素債務、ルート保留取消線、装備状態、Atlas 安定化メモ、witness hash 欠落。目的はコロニーを痛みで飾ることではない。遅延には経路があり、その経路には所有者がいたと証明することだ。良いトリアージ小道具は、一人が数えられ、別の一人が保留され、三人目が認証文言に消えた理由をプレイヤーに問わせる。
 
 ## Scanner
 
-JP LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+医療証拠は遅延と経路を露出させるべきで、苦痛で部屋を飾るべきではない。
 
 ## Terminal
 
-JP LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: すべての台帳項目は、負傷を圧力、ルート拒否、装備状態、認証遅延、または失われた証人連鎖へ結びつける必要がある。痛みだけでは足りない。小道具は、誰が移動でき、誰が保留され、どのシステムが遅延を手続きに見せたかを示すべきだ。
 
 ## Audio
 
-JP LOC HOLD: Pain is not proof until the route bears the mark.
+ルートに印がつくまで、痛みは証拠ではない。
 
 ## Field Note
 
-JP LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+変種: 圧潰状態略記、酸素債務印、ルート保留取消線、Atlas 安定化メモ、witness hash 欠落。
 
 <!-- In-Game Wiki; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/ja_JP. -->

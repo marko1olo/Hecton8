@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "Black Keel tonne-window托管"
+title: "Black Keel tonne-window 托管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel tonne-window托管
+# Black Keel tonne-window 托管
 
-一张Keelmark回执解释了为什么Black Keel先谈质量，再谈救援。承运船依靠tonne-window托管运作：一个法律槽位，匹配物理payload、保险暴露和航路时钟相位。活体、封存证据核心、一块Xenon-Omega工艺材料、以及一箱可回收船壳，如果合同把它们写在同一行，就会争夺同一个窗口。系统冰冷，但并非随机。它告诉玩家边疆重视什么，以及哪个选择会最先回家。
+tonne-window 是边疆残酷最清晰的表达。它听起来像会计，因为它就是会计，但被计算的是物理：穿过狭窄回收窗口的质量。Black Keel 不能把海里的一切都吊走，只能吊走航路、保险、检疫和托管记录允许的东西。
+
+因此每个 payload 选择都更尖锐。活着的承包者有价值，但能伤害 Deep Reach 的证据核心也有价值。Xenon-Omega 切片可能比普通 salvage 更值钱，也可能污染检疫等级。可回收船壳可能比 worker dossier 满足正义更快满足保险方。
 
 ## Scanner
 
-托管线 // 已接受的tonne-window质量可以是salvage、证据、身体或债务物。听见的数据包不会分配升运优先级；它分配责任。
+Keelmark 回执。一个 tonne-window 把 payload 质量、航路相位、保险风险、检疫等级和回收优先级映射到单一 carrier 槽位。
 
 ## Terminal
 
-KEELMARK质量回执 // 窗口给槽位托管权，不给人慈悲。超质量payload会滚入下一趟，除非索赔价值、检疫类别和承运几何同时放行。
+TONNE-WINDOW 托管 // 4.8 tonne-window 留置权有效。活体承包者、封存证据核心、Xenon-Omega 工艺切片和可回收船壳箱共享回收等级，除非 custody proof 重新排序。仅有人类状态不足以 full-window override。
 
 ## Audio
 
-Black Keel债务音频：我能载证据、金属或你。账本会问哪一个能让船保持偿付。
+Black Keel 用吨说话，因为窗口能承载的就是吨。
 
 ## Field Note
 
-当承运船说已接受质量，它不是在说已接受的人。账本要求你选择前，把证据绑到潜水服上。
+Tonne-window 不是钱。它是质量离开的许可。
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/zh_CN. -->

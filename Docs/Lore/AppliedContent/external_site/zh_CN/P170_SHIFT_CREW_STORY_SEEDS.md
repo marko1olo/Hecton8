@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "班组故事种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# 班组故事种子
 
-CN LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
+班组故事种子定义工人证据的安全变化层。名单顺序、物品位置、岗位配对、储物柜道具、拒绝表和 Marauder 批注可以按 seed 改变。核心历史不变：Great Tide 时间、Deep Reach 责任、Atlas weighting 和撤离失败都锁定。
 
 ## Scanner
 
-CN LOC HOLD: Microstories should change route evidence, not canon truth.
+班次 seed // 名单可以变，罪责不能变。
 
 ## Terminal
 
-CN LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+班组 seed // 一次 run 可以改变名单顺序、工人配对、储物柜内容、拒绝单、路线粉笔、工牌碎片和后来的 Marauder 修正。seed 只能改变玩家如何遇见证据，不能改变证据证明什么。
 
 ## Audio
 
-CN LOC HOLD: A different locker can hurt the same truth again.
+另一个储物柜可以从另一侧切入同一个真相。
 
 ## Field Note
 
-CN LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+seed 变化可以改变物品顺序、岗位配对和 Marauder 批注，但不能改变 Great Tide 或 Deep Reach 的责任。
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/zh_CN. -->

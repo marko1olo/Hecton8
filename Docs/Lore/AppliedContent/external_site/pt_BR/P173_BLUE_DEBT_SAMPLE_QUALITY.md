@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Blue Debt Sample Quality"
+title: "Qualidade de Amostra Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Blue Debt Sample Quality
+# Qualidade de Amostra Blue Debt
 
-PT LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+Qualidade de Amostra Blue Debt define a moralidade dos recursos de HECTON-8. As melhores amostras não valem apenas mais moeda. Elas carregam cadeias de custódia, histórico de pressão e valor de evidência. Isso permite que salvage, crafting, comércio e finais falem a mesma língua: o que você tira do oceano pode pagar você, acusar alguém ou tornar sua liberação mais difícil.
 
 ## Scanner
 
-PT LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Qualidade de Blue Debt é valor, risco e evidência em um só número. Quanto mais rica a amostra, menos ela se comporta como loot.
 
 ## Terminal
 
-PT LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+CLASSES DE QUALIDADE / shard: baixa custódia, troca segura / casketed bloom: valor classificado por pressão / harmonic glass: prova acústica e alto interesse da Deep Reach / live-contaminated sample: prioridade de evidência, manejo instável / dead contaminated glass: baixo pagamento, forte cheiro legal.
 
 ## Audio
 
-PT LOC HOLD: The more it is worth, the less it is only loot.
+Quanto mais vale, menos é só loot.
 
 ## Field Note
 
-PT LOC HOLD: Quality should affect payout, containment and ending pressure.
+A qualidade muda pagamento, custo de contenção, pressão de rota e força no final. Um fragmento limpo paga; uma amostra viva contaminada faz alguém responder.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/pt_BR. -->

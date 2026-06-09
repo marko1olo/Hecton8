@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Limiares de Falha por Pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Limiares de Falha por Pressão
 
-PT LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Limiares de Falha por Pressão definem a borda legível entre recurso e perigo. Eles permitem que HECTON-8 transforme profundidade em gramática para o jogador: estresse visual, tiques de áudio, alertas de scanner, risco de salvage e consequências de crafting apontam para a mesma regra física. Uma amostra falha porque o mundo está pressionando, não porque um número de inventário expirou em silêncio.
 
 ## Scanner
 
-PT LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Uma boa amostra vira perigo ao cruzar a linha de pressão errada. O oceano não liga se o rótulo estava quase certo.
 
 ## Terminal
 
-PT LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+FALHA DE PRESSÃO / shallow-rated: tique de vedação e água rastejando / industrial-rated: deriva de gasket e tremor de braçadeira / brine-rated: fissura fina e bloom de sal / abyssal-rated: fantasma acústico, névoa de amostra morta / Atlas-rated: bloqueio de custódia antes de perda estrutural.
 
 ## Audio
 
-PT LOC HOLD: Pressure does not care that the label was almost right.
+A pressão não liga se o rótulo estava quase certo.
 
 ## Field Note
 
-PT LOC HOLD: Failure thresholds should be readable before they punish.
+Limiares de falha precisam ser legíveis antes da punição: tique, deriva, fissura fina, bloom de sal, névoa de amostra morta. Se o jogador só aprende após perder, o mundo está trapaceando.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/pt_BR. -->

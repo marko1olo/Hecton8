@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Ankerarbeidersnamenset A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# Ankerarbeidersnamenset A
 
-NL LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+Ankerarbeidersnamenset A definieert de vroege terugkerende kolonienamen voor HECTON-8. Deze acht arbeiders zijn geen loretrivia; ze zijn geheugenhandvatten. De speler ontmoet ze eerst via objecten en arbeid en ziet daarna langzaam hoe dezelfde namen onderhoudsrecords, vergunningen, schaderapporten en audiofragmenten kruisen. Set A houdt de eerste uren menselijk zonder het spel stil te zetten voor expositie.
 
 ## Scanner
 
-NL LOC HOLD: Anchor names should reappear through work, not personal exposition.
+Vroege namen moeten via werk terugkeren, niet via toespraken. De ondiepe route leert geheugen door herhaling.
 
 ## Terminal
 
-NL LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: herhaling in ondiepten en industriële shelf. Elke naam moet binden aan één gereedschap, één routevergunning, één beschadigd werkobject en één latere tegenspraak. Deze namen zijn het eerste bewijs van de speler dat de kolonie een werkplek was voordat ze salvage werd.
 
 ## Audio
 
-NL LOC HOLD: Do not mourn the name until the tool tells you why.
+Rouw niet om de naam tot het gereedschap vertelt waarom.
 
 ## Field Note
 
-NL LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Set A-ankers: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/nl_NL. -->

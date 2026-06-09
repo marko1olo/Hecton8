@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Transit Rotasi Kru Manusia
 
-Transit manusia adalah tempat rute berhenti menjadi abstrak. Pekerja tidak diteleportasi ke Aegir; mereka dijadwalkan, didinginkan, diasuransikan, diindeks, dan diserahkan antarotoritas selama bertahun-tahun. Kontrak menua ke satu arah, orang di dalamnya ke arah lain. Saat kru bangun, pemberi kerja, pemilik liabilitas, dan keadaan darurat yang dilatih bisa sudah berubah.
+Transit rotasi kru manusia adalah tempat rute berhenti menjadi astronomi dan menjadi kendali tenaga kerja. Seseorang di HECTON-8 bukan sekadar penumpang. Ia volume ranjang, beban oksigen, paparan radiasi, risiko psikiatris, gadai upah, berkas medis, kategori kustodi, dan kemungkinan saksi. Setiap jendela pulang menyortir nilai-nilai itu sebelum menyortir rasa takut.
+
+Tragedinya, sistem rotasi tidak sepenuhnya palsu. Ada orang yang meninggalkan Aegir. Ada yang pulang dengan bekas luka tekanan, tabungan, dan cerita yang diedit untuk publik. Riwayat itu membuat janji berikutnya terasa masuk akal. Saat koloni mulai gagal, Deep Reach tidak perlu menolak kepulangan. Cukup menunda, mengklasifikasi ulang, memberi harga, dan meminta satu siklus lagi.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/id_ID. -->

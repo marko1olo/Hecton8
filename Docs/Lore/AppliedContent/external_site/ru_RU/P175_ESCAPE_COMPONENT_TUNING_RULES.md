@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правила настройки escape components"
+title: "Правила настройки компонентов побега"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правила настройки escape components
+# Правила настройки компонентов побега
 
-Правила настройки escape components дают crafting и endings единую route grammar.
+Правила настройки компонентов побега дают HECTON-8 общий язык для крафта и концовок. Игрок не гриндит произвольные редкие детали. Он собирает физический, навигационный и юридический аргумент, почему нечто из бездны должно быть принято над океаном.
 
 ## Scanner
 
-Escape parts должны требовать глубину и evidence, а не grind.
+Компоненты побега должны требовать глубину и доказательства, а не гринд. Уход с HECTON-8 - это цепочка доказательств, а не один дорогой craft.
 
 ## Terminal
 
-ESCAPE RULES: relay spine доказывает contact, clamp rings доказывают pressure rating, guidance core доказывает timing, ascent charge доказывает energy, legal handshake решает, кто отвечает, evidence payload меняет consequence.
+КОМПОНЕНТЫ ПОБЕГА / relay spine доказывает связь / clamp rings доказывают рейтинг давления / guidance core доказывает тайминг / ascent charge доказывает энергию / legal handshake решает, кто ответит / evidence payload меняет последствия и удержание.
 
 ## Audio
 
@@ -35,6 +35,6 @@ ESCAPE RULES: relay spine доказывает contact, clamp rings доказы
 
 ## Field Note
 
-Каждый ascent component должен иметь физическую и юридическую причину.
+Каждый компонент подъема должен иметь физическую и юридическую причину: связь, рейтинг, тайминг, энергия, приемник, payload. Отсутствие одной должно менять концовку, а не только блокировать кнопку.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/ru_RU. -->

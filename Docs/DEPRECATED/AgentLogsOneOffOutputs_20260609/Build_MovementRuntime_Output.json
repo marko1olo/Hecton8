@@ -1,0 +1,15 @@
+﻿{
+    "generatedAt":  "2026-06-07T05:42:36.0771452+04:00",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "solutionPath":  "Hecton8.slnx",
+    "logPath":  "Docs/AgentLogs/Build_MovementRuntime_Output.log",
+    "cpuLoadPercent":  82,
+    "compilerProcesses":  [
+
+                          ],
+    "exitCode":  -1,
+    "durationMilliseconds":  0,
+    "warnings":  null,
+    "errors":  null,
+    "message":  "BLOCKED_BY_CONTENTION: cpu=82 compilerProcessCount=0"
+}

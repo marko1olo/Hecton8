@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: P-63 Fabricator Authority Limits"
+title: "Limity uprawnień fabrykatora P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: P-63 Fabricator Authority Limits
+# Limity uprawnień fabrykatora P-63
 
-PL LOC HOLD: P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.
+P-63 to pierwszy warsztat, nie droga z planety. Potrafi łatać przecieki, składać klamry, ratować narzędzia i robić tanie pinger. Tuleje wynurzania, uszczelnienia z certyfikatem głębokości i styki napędu pozostają zamknięte, dopóki gracz nie przyniesie głębszych materiałów, stempli uprawnień i historii ciśnienia. Crafting staje się dowodem i inżynierią, nie menu wygody.
 
 ## Scanner
 
-PL LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+P-63 przyjmuje uszczelki, klamry, pinger i styki palnika, ale odrzuca części do wynurzania bez głębszego dowodu.
 
 ## Terminal
 
-PL LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair wymaga pressure certificate, materiału z wentów albo route authority stamp.
 
 ## Audio
 
-PL LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+Maszyna może uratować poranek. Orbity ci nie wybaczy.
 
 ## Field Note
 
-PL LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+To nie jest arbitralna ściana craftingu. Maszyna nie robi części ucieczkowych bez dowodu ciśnienia.
 
 <!-- In-Game Wiki; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/pl_PL. -->

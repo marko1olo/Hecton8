@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Interfaz bathydrop de Black Keel
 
-La interfaz bathydrop es donde el escenario espacial toca el juego oceánico. No basta con que Black Keel exista en órbita. El jugador necesita una cadena: integridad de cápsula, control de flotabilidad, mástil com, pestillo de ascenso, sellos de presión, matemática de relé, timing de superficie y aceptación del portador. Rompe un enlace y todo el rescate se vuelve teoría. Así la apertura se mantiene honesta. El jugador no está atrapado porque la historia olvidó la nave. Está atrapado porque la única máquina que conecta abismo, superficie y órbita falló de maneras que el agua empeora cada hora.
+La interfaz bathydrop es donde la economía de rutas toca el océano. No basta con que Black Keel exista en órbita. Un ascenso funcional necesita una cadena: integridad de cápsula, control de flotabilidad, mástil de comunicaciones, pestillo de ascenso, sellos de presión, matemática de relé, sincronía de superficie y aceptación del portador.
+
+Rompe un eslabón y todo el rescate se vuelve teoría. Eso mantiene honesto el inicio. Nadie está atrapado porque el portador haya desaparecido del mundo. La trampa existe porque la única máquina capaz de conectar abismo, superficie y órbita falló en piezas con nombre, y el agua puede empeorar cada pieza fallada por horas.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/es_ES. -->

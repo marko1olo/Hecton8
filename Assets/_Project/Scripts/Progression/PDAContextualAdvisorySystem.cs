@@ -177,6 +177,7 @@ namespace Hecton8.Progression
             InventoryEvents.Unregister(this);
             BaseIntegrityEvents.Unregister(this);
             UnbindOwnerSubscriptions();
+            ClearRuntimeOwnerCaches();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
@@ -189,6 +190,7 @@ namespace Hecton8.Progression
             BaseIntegrityEvents.Unregister(this);
             BaseIntegrityEvents.AssertUnregistered(this, nameof(PDAContextualAdvisorySystem));
             UnbindOwnerSubscriptions();
+            ClearRuntimeOwnerCaches();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
@@ -345,7 +347,7 @@ namespace Hecton8.Progression
             if (sourceId == 0u)
                 return;
 
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)
@@ -444,12 +446,22 @@ namespace Hecton8.Progression
 
         private void RebindOwnerSubscriptionsFromCachedOwners()
         {
+            _survivalSystem = null;
+            TryGetComponent(out _survivalSystem);
             CacheSurvivalFromPlayerContext();
             RefreshSurvivalSignalBinding();
         }
 
         private void UnbindOwnerSubscriptions()
         {
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
+        }
+
+        private void ClearRuntimeOwnerCaches()
+        {
+            _cachedPlayerContext = null;
+            _survivalSystem = null;
             _survivalSignalSourceId = 0u;
             _lastSurvivalDeathSignalSequence = 0;
         }
@@ -490,7 +502,8 @@ namespace Hecton8.Progression
                 return;
 
             _survivalSignalSourceId = sourceId;
-            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
                 ? sequence
                 : 0;
         }

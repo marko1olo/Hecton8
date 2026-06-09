@@ -103,9 +103,10 @@ namespace Hecton8.World
     /// </summary>
     public static class WorldMacroGeologyFields
     {
+        public const int DefaultAuthoringSeed = 880031;
         public const float MinimumWorldExtentMeters = 30000f;
         public const float DefaultChunkSizeMeters = 512f;
-        public const uint ArtifactVersion = 5u;
+        public const uint ArtifactVersion = 6u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint CombineWorldSeed(uint authoringSeed, int runtimeWorldSeed)
@@ -224,6 +225,45 @@ namespace Hecton8.World
             return Mix64(value);
         }
 
+        public static void ResolveMinimumChunkRange(
+            float chunkSizeMeters,
+            out int minX,
+            out int minZ,
+            out int maxX,
+            out int maxZ)
+        {
+            float safeChunkSize = math.max(1f, chunkSizeMeters);
+            float halfExtentMeters = MinimumWorldExtentMeters * 0.5f;
+            minX = (int)math.floor(-halfExtentMeters / safeChunkSize);
+            minZ = minX;
+            maxX = (int)math.floor((halfExtentMeters - 0.001f) / safeChunkSize);
+            maxZ = maxX;
+        }
+
+        public static uint BuildChunkArtifactRangeHash(
+            uint authoringSeed,
+            int runtimeSeed,
+            int worldGenerationVersionId,
+            uint macroArtifactVersion,
+            float chunkSizeMeters,
+            int chunkMinX,
+            int chunkMinZ,
+            int chunkMaxX,
+            int chunkMaxZ)
+        {
+            uint hash = 2166136261u;
+            MixHash(ref hash, authoringSeed);
+            MixHash(ref hash, unchecked((uint)runtimeSeed));
+            MixHash(ref hash, unchecked((uint)worldGenerationVersionId));
+            MixHash(ref hash, macroArtifactVersion);
+            MixHash(ref hash, math.asuint(chunkSizeMeters));
+            MixHash(ref hash, unchecked((uint)chunkMinX));
+            MixHash(ref hash, unchecked((uint)chunkMinZ));
+            MixHash(ref hash, unchecked((uint)chunkMaxX));
+            MixHash(ref hash, unchecked((uint)chunkMaxZ));
+            return hash != 0u ? hash : 1u;
+        }
+
         public static WorldMacroGeologyZone ResolveZone(in WorldMacroGeologySample sample)
         {
             if ((sample.TrenchMask > 0.92f && sample.DepthMeters > 500f) || sample.DepthMeters > 4450f)
@@ -232,7 +272,7 @@ namespace Hecton8.World
             if (sample.ShelfMask > 0.68f && sample.DepthMeters < 260f)
                 return WorldMacroGeologyZone.PhoticShelf;
 
-            if (sample.ShelfBreakMask > 0.42f &&
+            if (sample.ShelfBreakMask > 0.35f &&
                 sample.DepthMeters > 150f &&
                 sample.DepthMeters < 2400f)
             {
@@ -256,7 +296,7 @@ namespace Hecton8.World
             if (sample.RidgeMask > 0.72f || (sample.FaultMask > 0.82f && sample.Slope01 > 0.48f))
                 return WorldMacroGeologyZone.FaultRidge;
 
-            if (sample.DepthMeters > 4000f)
+            if (sample.DepthMeters > 3900f && sample.TrenchMask < 0.76f)
                 return WorldMacroGeologyZone.HadalBasin;
 
             return WorldMacroGeologyZone.AbyssalPlain;
@@ -377,17 +417,17 @@ namespace Hecton8.World
                     (networkX * 0.72f + networkZ * 0.20f) * 0.000044f - 16.4f,
                     (networkZ * 0.88f - networkX * 0.12f) * 0.000044f + 5.9f),
                 p.Seed ^ 0x7E2C4D55u);
-            float networkActivity = math.smoothstep(0.34f, 0.82f, FractalNoise01(new float2(networkX * 0.000082f + 4.4f, networkZ * 0.000082f - 19.1f), p.Seed ^ 0x92E4B77Du));
+            float networkActivity = math.smoothstep(0.26f, 0.78f, FractalNoise01(new float2(networkX * 0.000082f + 4.4f, networkZ * 0.000082f - 19.1f), p.Seed ^ 0x92E4B77Du));
             float braidedNetwork = math.max(
-                math.smoothstep(0.34f, 0.90f, networkEdgeA),
-                math.smoothstep(0.40f, 0.94f, networkEdgeB) * 0.66f);
+                math.smoothstep(0.28f, 0.86f, networkEdgeA),
+                math.smoothstep(0.34f, 0.90f, networkEdgeB) * 0.74f);
             float networkTexture = FractalNoise01(new float2(networkX * 0.000115f - 2.7f, networkZ * 0.000115f + 8.9f), p.Seed ^ 0xCA97D1F3u);
             float tectonicNetwork = math.saturate(
                 braidedNetwork *
-                (0.36f + networkActivity * 0.48f) *
+                (0.44f + networkActivity * 0.50f) *
                 (0.78f + networkTexture * 0.22f) +
-                provinceRelief * 0.04f);
-            float networkNode = math.smoothstep(0.78f, 0.98f, networkEdgeA) * math.smoothstep(0.60f, 0.94f, networkEdgeB) * networkActivity;
+                provinceRelief * 0.06f);
+            float networkNode = math.smoothstep(0.72f, 0.96f, networkEdgeA) * math.smoothstep(0.52f, 0.90f, networkEdgeB) * networkActivity;
             float highlandPlate = math.smoothstep(0.56f, 0.84f, FractalNoise01(pos * 0.000047f + new float2(-31.6f, 7.3f), p.Seed ^ 0xE35A9217u));
             float shallowProvince = math.smoothstep(
                 0.50f,
@@ -409,8 +449,8 @@ namespace Hecton8.World
             float distributedHighs = math.max(
                 math.smoothstep(0.52f, 0.82f, distributedHighsNoise),
                 math.smoothstep(0.70f, 0.96f, distributedHighsWave) * 0.72f) *
-                (0.58f + networkActivity * 0.24f + provinceRelief * 0.18f);
-            float upliftNetwork = math.saturate(math.max(math.max(math.max(math.max(tectonicNetwork * 0.50f, highlandPlate * 0.48f), shallowProvince * 0.58f), directedUplift), distributedHighs * 0.52f) + provinceRelief * 0.04f + ridgeChainHills * 0.10f + networkNode * 0.08f);
+                (0.54f + networkActivity * 0.32f + provinceRelief * 0.18f);
+            float upliftNetwork = math.saturate(math.max(math.max(math.max(math.max(tectonicNetwork * 0.62f, highlandPlate * 0.48f), shallowProvince * 0.58f), directedUplift), distributedHighs * 0.58f) + provinceRelief * 0.04f + ridgeChainHills * 0.12f + networkNode * 0.12f);
             float basinWave = 0.5f + 0.5f * math.sin((absoluteX * 0.68f - absoluteZ * 0.74f + regionalWarpB * 0.72f) * 0.00012f + HashToUnitFloat(p.Seed ^ 0x53C9E2B1u) * 6.283185f);
             float recurringBasin = math.saturate(math.smoothstep(0.72f, 0.98f, basinWave) * (1f - upliftNetwork * 0.62f));
             float fractureNoise = CellularEdge01(pos * 0.00018f + new float2(19.3f, -7.1f), p.Seed ^ 0x51633E2Du);
@@ -418,7 +458,7 @@ namespace Hecton8.World
             depth += trenchMask * p.TrenchDepthMeters * math.smoothstep(0.24f, 1f, descent01);
             depth += secondaryDepression * 520f * math.smoothstep(0.18f, 0.95f, descent01);
             basinMask = math.max(basinMask, recurringBasin * 0.34f);
-            ridgeMask = math.max(ridgeMask, math.max(upliftNetwork * 0.32f, tectonicNetwork * 0.34f));
+            ridgeMask = math.max(ridgeMask, math.max(upliftNetwork * 0.38f, tectonicNetwork * 0.48f));
             depth += basinMask * p.BasinDepthMeters;
             depth -= ridgeMask * p.RidgeHeightMeters * math.smoothstep(0.16f, 0.90f, descent01);
             depth -= ridgeChainHills * math.lerp(260f, 980f, math.saturate(shelfMask * 0.18f + shelfBreakMask * 0.24f + ridgeMask * 0.58f));
@@ -427,7 +467,7 @@ namespace Hecton8.World
             depth += regionalBreakup * 320f * math.saturate(0.25f + descent01 * 0.65f + shelfBreakMask * 0.12f);
             depth += regionalSwell * 170f * math.saturate(0.20f + shelfMask * 0.35f + descent01 * 0.45f);
             depth += provinceRelief * 145f * math.saturate(0.18f + descent01 * 0.50f + shelfBreakMask * 0.18f + ridgeMask * 0.18f);
-            depth -= upliftNetwork * math.lerp(240f, 1240f, math.saturate(descent01 * 0.82f + ridgeMask * 0.16f + shelfBreakMask * 0.10f));
+            depth -= upliftNetwork * math.lerp(260f, 1480f, math.saturate(descent01 * 0.82f + ridgeMask * 0.16f + shelfBreakMask * 0.10f));
             depth -= highlandPlate * math.lerp(120f, 720f, math.saturate(descent01 * 0.75f + shelfBreakMask * 0.12f));
             depth -= shallowProvince * math.lerp(220f, 1850f, math.saturate(descent01 * 0.88f + shelfBreakMask * 0.10f));
             depth -= distributedHighs * math.lerp(180f, 1150f, math.saturate(descent01 * 0.90f + shelfBreakMask * 0.08f + ridgeMask * 0.08f));
@@ -537,6 +577,13 @@ namespace Hecton8.World
             value *= 0x94D049BB133111EBul;
             value ^= value >> 31;
             return value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void MixHash(ref uint hash, uint value)
+        {
+            hash ^= value;
+            hash *= 16777619u;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

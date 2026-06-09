@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Orbital Recovery Window Protocol"
+title: "פרוטוקול חלון שחזור מסלולי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Orbital Recovery Window Protocol
+# פרוטוקול חלון שחזור מסלולי
 
-HE LOC HOLD: Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.
+פרוטוקול חלון השחזור המסלולי הוא הגבול הקשה שהופך חילוץ להנדסה במקום לתקווה. Black Keel יכולה לעבור מעל HECTON-8 לעיתים קרובות מספיק כדי להיות חשובה, אבל ה-carrier אינו יכול פשוט לאסוף אובייקט רטוב ולא מאומת מתוך שדה סערה בגודל ירח. האטמוספרה העליונה של Aegir קורעת זוויות עלייה גרועות, רעש מגנטי אוכל הנחיה חלשה, והמקלט לא מקבל מסה שנכשלת ב-handshake הסגר. לכן הפרוטוקול מבקש כמה הוכחות יחד: rated ascent object, guidance core שיכול לפגוע בחלון, היסטוריית לחץ שהמקלט סומך עליה, ומצב משמורת חוקי שאומר ל-carrier מה מותר לו לתפוס. לכן בריחה שכמעט עובדת עדיין מסוכנת. שגר מוקדם מדי והסערה תיקח את האובייקט. שגר מאוחר מדי ו-Black Keel יהפוך לקול שמתרחק מעל שכבת העננים. שגר בלי סנכרון הסגר וה-carrier עשוי לשמוע אותך, לסמן אותך ועדיין לסרב למסה. החלון הופך את השמיים לאמיתיים: נראים, ניתנים להגעה, מתוזמנים ולא רחמנים.
 
 ## Scanner
 
-HE LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel קרובה מספיק לשמוע אותך ומוגבלת מדי לתפוס אותך בכל פעם שתבקש. Aegir פותח רק חלונות שחזור צרים.
 
 ## Terminal
 
-HE LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+חלון שחזור / מקלט Black Keel מקבל rated ascent object רק בעת storm-top shear נמוך, רעש מגנטי מופחת של Aegir, guidance core מאומת, quarantine handshake תואם ו-receiver custody state. סחיפת חלון מבטלת launch ידני.
 
 ## Audio
 
-HE LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+הספינה קרובה מספיק כדי לשנות, ורחוקה מדי כדי להציל אותך מהר.
 
 ## Field Note
 
-HE LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+לטיימרי נתיב, UI של carrier והסבר יציאה כוזבת: גזירת סערה, רעש מגנטי, גיאומטריית עלייה, handshake הסגר.
 
 <!-- In-Game Wiki; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/he_IL. -->

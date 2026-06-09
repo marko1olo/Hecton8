@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правило размера worker roster"
+title: "Правило размера рабочего списка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правило размера worker roster
+# Правило размера рабочего списка
 
-RU LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise.
+Правило размера рабочего списка это договор о населении для читаемых улик колонии. Оно дает HECTON-8 72 личности рабочих: 24 якоря для повторяющихся сюжетных доказательств и 48 seed-role личностей для вариативности повторных прохождений. Игрок должен постепенно узнавать имена, потому что мир повторяет их вместе с работой: шкафчик, инструмент, маршрутный штамп, ремонтный приказ, последний аудиотег. Колония кажется больше своего списка, но улика остается достаточно авторской, чтобы ее запомнить.
 
 ## Scanner
 
-Список колонии достаточно большой, чтобы место было населенным, и достаточно малый, чтобы остаться авторским.
+Семьдесят два имени это не вкусовой текст. Это бюджет памяти колонии: достаточно рук, чтобы место казалось работавшим, и достаточно мало, чтобы шкафчик, ремонтная бирка и последняя смена указывали на одного человека.
 
 ## Terminal
 
-RU LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: Живой список держит 72 личности рабочих. Двадцать четыре это якорные имена, которые могут возвращаться в шкафчиках, реестрах, поврежденных инструментах, штампах допуска и аудиофрагментах. Сорок восемь это seed-role имена для вариативности повторных прохождений. Сгенерированное имя может менять порядок улик; оно не может становиться одноразовым наполнителем.
 
 ## Audio
 
-Имя становится доказательством только когда комната доказывает работу.
+Имя становится уликой, когда помещение может доказать работу.
 
 ## Field Note
 
-RU LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+Если имя не может вернуться позже вместе с работой, вырежи его из списка.
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/ru_RU. -->

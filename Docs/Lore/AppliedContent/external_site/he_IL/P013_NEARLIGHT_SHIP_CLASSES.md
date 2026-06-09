@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מחלקות ספינות קרובות-אור"
+title: "סוגי ספינות קרוב-אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מחלקות ספינות קרובות-אור
+# סוגי ספינות קרוב-אור
 
-HECTON-8 לא צריכה FTL כדי להרגיש עצומה. גשושיות אפשר לאבד, ספינות זרע נושאות הוראות, ומובילי Atlas מזיזים את המסה היקרה.
+ספינת קרוב-אור ב-HECTON-8 אינה מנוע פלא בתוך גוף. היא הקצה הנראה של כלכלת דרך. מערכי אלומה מוציאים כוח לפני שהרכב עוזב. מסלולי pellets מזינים מסת תגובה בדיוק אכזרי. גרונות fusion-electric, קרח מגן, רדיאטורים ומערכות שינה מונעים מהמטען להפוך לשגיאה זוהרת. Magsails, עורות aerobrake וחלונות מקלט מחליטים אם מותר לספינה לעצור.
 
-הגעה קשה כמו יציאה. צריך לאבד מהירות במפרשים מגנטיים ובגאומטריית ענקי גז. לכן התביעה יכולה להיות אנושית והשחקן עדיין לבד במים.
+לכן טבלת הסוגים שימושית. Needleprobe מסבירה למה Aegir היה ידוע לפני שהיה בטוח. Seed ship מסבירה למה מכונות הגיעו לפני קהילה. Atlas מסבירה חוב ופשרות. Tender מסביר את גבולות Black Keel: היא עובדת את claim Aegir, לא כותבת מחדש מרחק בין-כוכבי.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/he_IL. -->

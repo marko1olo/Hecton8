@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Akustische Relaisspinen-Baugruppe"
+title: "Akustische Relaisspine-Baugruppe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akustische Relaisspinen-Baugruppe
+# Akustische Relaisspine-Baugruppe
 
-Flucht beginnt unter Wasser. Die akustische Relaisspine lässt eine beschädigte Kapsel Position, Uhr und Überlebenszustand beweisen, bevor Orbit-Empfänger sie als recoverable mass behandeln.
+Die akustische Relaisspine ist der erste Beweis, dass die Kapsel existiert. Ein Sprachkanal ist nach Aufprall, Mastverlust und Sturmrauschen zu fragil. Die Spine sendet low-band pressure-code durch Wasser: Keramikrippen, Kabelhaut, pinger floats und eine Uhr stabil genug, um Position zu wiederholen, ohne wie zufälliger Wracklärm zu wirken.
+
+Das zählt, weil der Orbit nicht jedes Geräusch rettet. Black Keel kann Druckereignisse von HECTON-8 hören, filtert sie aber weiter durch claim custody, Routengeometrie und Empfangstiming. Ein beschädigter tap ohne route proof wird Hintergrund. Ein sauberer tap zur falschen Uhr wird evidence loss. Die Baugruppe macht Klang zu einem rückholbaren Objekt: Position, survival state, Uhr, checksum.
+
+Salvage an der Spine ist eng und unerbittlich. Ein Marauder kann Kabelmantel ersetzen, gerissene Rippen setzen, pinger floats ballastieren und packet cadence ausrichten, aber der Ozean fügt weiter multipath delay, brine distortion und Rumpfklopfen hinzu. Die reparierte Spine bittet nicht um Mitleid. Sie gibt dem Empfänger genug wiederholte Fakten, um ein recovery window zu riskieren.
 
 ## Scanner
 
-Gebrochene akustische Spine. Sie kann pressure-code durch Wasser klopfen; der Orbit hört es trotzdem als beschädigtes custody noise.
+GEBROCHENE AKUSTIKSPINE // Keramikrippenstapel, gespaltene Kabelhaut, zwei pinger floats. Low-band tap möglich; Orbitalempfänger ignoriert ihn ohne passendes Timing und route proof.
 
 ## Terminal
 
-ASCENT RELAY: niederbandige Akustikspine vor recovery window wiederherstellen. High-gain mast verloren. Emergency buoy unzuverlässig. Black-Keel-Empfänger akzeptiert pressure-code erst nach route proof.
+ASCENT RELAY: low-band acoustic spine vor recovery window wiederherstellen. High-gain mast verloren. Emergency buoy unzuverlässig. Black-Keel-Empfänger akzeptiert pressure-code nur mit route proof, clock match und custody checksum.
 
 ## Audio
 
-Wenn der Keel uns hört, hört er eine Wunde, die an ein Rohr klopft.
+Wenn die Keel uns hört, hört sie Keramik, die Koordinaten durch schlechtes Wasser klopft.
 
 ## Field Note
 
-Der erste Ruf der Kapsel ist keine Stimme. Es sind Keramikrippen, Kabelhaut, pinger floats und genug Timingdisziplin, damit der Ozean dich korrekt wiederholt.
+Der erste Ruf aus der Kapsel ist keine Stimme. Es sind Rippen, Kabelmantel, Ballast-float und genug Uhrdisziplin, damit das Wasser denselben Fakt zweimal wiederholt.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/de_DE. -->

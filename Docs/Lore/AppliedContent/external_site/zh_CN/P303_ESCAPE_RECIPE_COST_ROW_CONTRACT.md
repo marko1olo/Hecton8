@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Escape Recipe Cost Boundary"
+title: "逃离配方成本边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Escape Recipe Cost Boundary
+# 逃离配方成本边界
 
-ZH LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+离开 HECTON-8 首先是维修问题：信号、密封、导航、上升能量、法律握手和 payload 监管。配方表保存精确成本；lore 说明每个成本为什么带牙。
 
 ## Scanner
 
-CN LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+逃离配方行绑定部件类别、压力层级、路线证明和权限状态。
 
 ## Terminal
 
-CN LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT：合格成本必须标明中继、密封、导航、上升能量、法律握手、payload 权限和接收器风险。上去的路有部件；部件有主人。
 
 ## Audio
 
-ZH LOC HOLD: The way up has parts. The parts have owners.
+上去的路有部件。部件有主人。
 
 ## Field Note
 
-CN LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure band 来自封存规则；精确成本属于 recipe table。
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/zh_CN. -->

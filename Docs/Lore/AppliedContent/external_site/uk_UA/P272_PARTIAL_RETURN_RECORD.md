@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Partial Return Record"
+title: "Запис часткового повернення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Partial Return Record
+# Запис часткового повернення
 
-UA LOC HOLD: Partial Return Record explains HECTON-8's bitter early extraction ladder.
+Цей запис позначає вдих кампанії, а не скидання. Він потрібен, коли маршрут має залізо евакуації й живе вікно перевізника, але бракує закритого зберігання, щоб підйом став свободою.
 
 ## Scanner
 
-UA LOC HOLD: Extraction granted. Claim unresolved.
+ЗАПИС ЧАСТКОВОГО ПОВЕРНЕННЯ // Підйом Black Keel прийнято. Повернення в той самий seed дозволено під продовженою заставою; пам'ять сканів і відкриті доказові пакети зберігаються.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+ЗАПИС ФІНАЛУ / ЧАСТКОВЕ ПОВЕРНЕННЯ
+Підйом: тимчасова евакуація Black Keel.
+Мета: ремонт костюма, поповнення повітря, декон, синхронізація реєстру.
+Стан зберігання: заставу продовжено; карантинний строк додано.
+Право повернення: той самий seed, той самий океан, попередження маршруту збережено.
+Дані, що лишаються: пам'ять сканів, відкриті доказові пакети, невирішений вантаж.
+Відома втрата: полегшення виставляють у рахунок раніше, ніж воно стає свободою.
 
 ## Audio
 
-UA LOC HOLD: Out is not away.
+Тиск відпустив. Контракт залишив крісло зайнятим.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Чистий костюм і один цикл сну не закривають контракт. Маршрут унизу тримає старі попередження.
 
 <!-- External Site; generated from P272_PARTIAL_RETURN_RECORD/uk_UA. -->

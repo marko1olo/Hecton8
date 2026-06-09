@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Black Keel-bathydropinterface
 
-De bathydropinterface is waar de ruimtesetting het oceaanspel raakt. Het is niet genoeg dat Black Keel in orbit bestaat. De speler heeft een keten nodig: capsule-integriteit, drijfcontrole, commmast, opstijggrendel, drukseals, relaiswiskunde, oppervlaktetiming en carrieracceptatie. Eén gebroken schakel maakt redding theorie. Zo blijft de opening eerlijk. De speler zit niet vast omdat het verhaal het schip vergat. De speler zit vast omdat de enige machine die abyss, oppervlak en orbit verbindt heeft gefaald op manieren die water elk uur erger maakt.
+De bathydropinterface is waar de route-economie de oceaan raakt. Het is niet genoeg dat Black Keel in orbit bestaat. Een werkende opstijging vraagt een keten: capsule-integriteit, drijfcontrole, commmast, opstijggrendel, drukseals, relaiswiskunde, oppervlaktetiming en carrieracceptatie.
+
+Breek één schakel en de hele redding wordt theorie. Dat houdt het begin eerlijk. Niemand zit vast omdat de carrier uit de wereld verdween. De val bestaat omdat de enige machine die abyss, oppervlak en orbit kan verbinden in benoemde delen heeft gefaald, en water elk gefaald deel per uur erger kan maken.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/nl_NL. -->

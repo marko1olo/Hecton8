@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Photic Shelf Survival Act"
+title: "Brama szelfu fotycznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Photic Shelf Survival Act
+# Brama szelfu fotycznego
 
-PL LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Szelf fotyczny uczy przez przedmioty, nie przez komfort. Operator sprawdza, które obudowy pomp nadal trzymają powietrze, które łaty kupują minuty i które jasne organizmy brudzą narzędzie. Atlas pojawia się najpierw jako pozostałość naprawy: użyteczna, miejscami błędna i dość bliska, by jej dotknąć.
 
 ## Scanner
 
-PL LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Brama trasy: szelf fotyczny. Kieszenie tlenu, pomieszczenia pomp, pierwsze cięcia i płytka pozostałość naprawy Atlas są czytelne w dziennej wodzie.
 
 ## Terminal
 
-PL LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+TRASA KAMPANII // SZELF FOTYCZNY. Wymagane: restart pompy, łata uszczelnienia, cięcie kabla, ping skanera. Sprzęt wynurzenia niedostępny; zużyte ogniwa przekierowane do systemów przetrwania. Pozostałość Atlas sklasyfikowana jako użyteczna z ostrzeżeniem skażenia.
 
 ## Audio
 
-PL LOC HOLD: The shallow water is not safe. It is only readable.
+Płytka woda nie jest bezpieczna. Jest czytelna.
 
 ## Field Note
 
-PL LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Notatka szabrownika: światło dnia pomaga. Nie czyni pękniętej linii tlenu hojną.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/pl_PL. -->

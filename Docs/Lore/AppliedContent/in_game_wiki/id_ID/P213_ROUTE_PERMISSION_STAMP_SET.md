@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Set Cap Izin Rute"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Set Cap Izin Rute
 
-ID LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+Set Cap Izin Rute memberi bahasa visual pada pergerakan. Cap PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, dan WITNESS bukan lencana pangkat. Itu izin tekanan: siapa yang boleh melewati palka, mengambil suit, melepas crawler, atau memasuki kunci perawatan ketika koloni gagal. Cap harus selalu dipasangkan dengan status fisik: terbuka, tersegel, ditolak, ditimpa, kebanjiran, atau kemudian dikoreksi tangan Marauder. Ini memungkinkan pemain merekonstruksi pergerakan koloni tanpa karakter yang menjelaskannya.
 
 ## Scanner
 
-ID LOC HOLD: A route stamp is stronger than a diary line.
+Cap rute lebih kuat daripada baris buku harian karena membuktikan siapa yang diizinkan melewati batas tekanan.
 
 ## Terminal
 
-ID LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: izin rute harus menghubungkan satu pekerja, satu pintu atau kendaraan, satu keluarga kru, dan satu kontradiksi nanti. Cap tanpa batas fisik adalah dekorasi. Cap pada palka, rak suit, rel crawler, atau tag lift menjadi bukti pergerakan.
 
 ## Audio
 
-ID LOC HOLD: Access is biography under pressure.
+Akses adalah biografi di bawah tekanan.
 
 ## Field Note
 
-ID LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Cap: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pasangkan dengan status palka dan objek kerja.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/id_ID. -->

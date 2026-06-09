@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Legal Insurance Automated Ping"
+title: "法律保险自动 ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Legal Insurance Automated Ping
+# 法律保险自动 ping
 
-ZH LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+法律保险自动 ping 是 HECTON-8 官僚恐怖的紧凑表达。现时的 Deep Reach 可以通过自动保险保管系统说话，和通过人说话一样有效。系统先问幸存者携带了什么，然后才问幸存者是否应被拯救。
 
 ## Scanner
 
-ZH LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+收到自动 ping。救援语言已被接收器证明、质量类别和保管状态取代。
 
 ## Terminal
 
-ZH LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status：insufficient / 分配 recovery-window 前需要：mass class、contamination state、coordinate proof、claim priority、receiver custody acceptance。
 
 ## Audio
 
-ZH LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+他们最先问的不是你是否活着，而是你携带了什么。
 
 ## Field Note
 
-ZH LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+路线阈值处的短 bark 候选。少用；残酷之处在于系统最先问什么。
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/zh_CN. -->

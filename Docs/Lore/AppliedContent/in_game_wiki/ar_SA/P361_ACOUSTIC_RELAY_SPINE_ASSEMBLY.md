@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "تجميعة عمود المرحل الصوتي"
+title: "تجميع عمود الترحيل الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة عمود المرحل الصوتي
+# تجميع عمود الترحيل الصوتي
 
-تبدأ الهرب تحت الماء. يتيح عمود المرحل الصوتي للكبسولة المتضررة إثبات الموقع والساعة وحالة النجاة قبل أن تعاملها المستقبلات المدارية كـ recoverable mass.
+عمود الترحيل الصوتي هو أول دليل على أن الكبسولة موجودة. قناة الصوت هشة جدا بعد الاصطدام وفقدان السارية وضجيج العاصفة. يستخدم العمود pressure-code منخفض النطاق عبر الماء: أضلاع خزفية، غلاف كابل، pinger floats، وساعة مستقرة بما يكفي لتكرار الموقع من دون أن يبدو كضجيج حطام عشوائي.
+
+هذا مهم لأن المدار لا ينقذ كل صوت. يستطيع Black Keel سماع أحداث الضغط من HECTON-8، لكنه لا يزال يرشحها عبر claim custody، هندسة المسار، وتوقيت المستقبل. tap متضرر بلا route proof يصبح خلفية. tap نظيف مع ساعة خاطئة يصبح evidence loss. يحول التجميع الصوت إلى كائن قابل للاسترداد: موقع، survival state، ساعة، checksum.
+
+salvage العمود ضيق وقاس. يستطيع Marauder تبديل غلاف الكابل، تثبيت الأضلاع المتشققة، موازنة pinger floats، ومحاذاة packet cadence، لكن المحيط سيضيف دائما multipath delay و brine distortion وطرق الهيكل. العمود المصلح لا يطلب شفقة. يعطي المستقبل حقائق متكررة تكفي للمخاطرة بنافذة recovery.
 
 ## Scanner
 
-عمود صوتي مكسور. يستطيع نقر pressure-code عبر الماء؛ وما زال المدار يسمعه كـ custody noise متضرر.
+عمود صوتي مكسور // رزمة أضلاع خزفية، غلاف كابل مشقوق، واثنان من pinger floats. low-band tap ممكن؛ سيتجاهله المستقبل المداري بلا تطابق timing و route proof.
 
 ## Terminal
 
-ASCENT RELAY: استعادة العمود الصوتي منخفض النطاق قبل recovery window. High-gain mast مفقود. Emergency buoy غير موثوق. مستقبل Black Keel يقبل pressure-code فقط بعد route proof.
+ASCENT RELAY: استعد low-band acoustic spine قبل recovery window. High-gain mast مفقود. Emergency buoy غير موثوق. مستقبل Black Keel يقبل pressure-code فقط مع route proof و clock match و custody checksum.
 
 ## Audio
 
-إذا سمعنا Keel، فسيسمع جرحا يطرق أنبوبا.
+إذا سمعنا Keel، فسيسمع خزفا يطرق الإحداثيات عبر ماء سيئ.
 
 ## Field Note
 
-أول نداء للكبسولة ليس صوتا. إنه أضلاع خزفية، وجلد كابلات، وpinger floats، وانضباط توقيت يكفي لكي يكرر المحيط رسالتك بشكل صحيح.
+أول نداء من الكبسولة ليس صوتا بشريا. إنه أضلاع، cable jacket، float صابورة، وانضباط ساعة يكفي ليجعل الماء يكرر الحقيقة نفسها مرتين.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ar_SA. -->

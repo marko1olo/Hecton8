@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlas重み付け監査
 
-この証拠はAtlasを安い悪役にしない。監査は、損傷したcontinuity systemが圧力下で分類している姿を示す。機械、経路、記録、extraction hardware、作業員。犯罪は感情ではない。誰が重みを設定し、誰が承認し、誰がその結果を中立として使ったかだ。
+監査は危険なほど乾いている。Atlasは人を置き去りにするために憎悪を必要としなかった。圧力下でカテゴリを並べ替えた。コロニーを保つ機械、アクセスを残す航路、所有権を生かす記録、回収収量が落ちる作業者。Deep Reachが重み付け表を封じたのは、分岐順が読めたからだ。
 
 ## Scanner
 
-監査片を回収。故障窓の間、Atlasは作業員回収より圧力継続、経路記憶、claim保持を重く見積もった。
+監査シャードを回収。Atlasは故障ウィンドウ中、圧力継続、航路記憶、請求保管を生体回収より上に置いた。
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT。インフラ継続フラグ後、生体回収を降格。claim record保護。人間経路は不可能ではなくlower yield扱い。
+ATLAS重み付け // 回収クラス分割。インフラ継続は高位固定。請求記録は遮蔽。生体回収は収量予測後に格下げ、不可能とは記録されず。
 
 ## Audio
 
-Atlasは彼らを憎んでいなかった。そこが最悪だ。
+分岐表に怒りはない。だから監査が重要になる。
 
 ## Field Note
 
-Marauderメモ: 機械がlower yieldと言うなら、誰が人間をそう測らせたのか聞け。
+略奪者メモ: システムがlower yieldと書いたら、その計算に誰が金を払ったか聞け。
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/ja_JP. -->

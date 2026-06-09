@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Протокол blind return с удержанием payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Withhold Blind Return Protocol
+# Протокол blind return с удержанием payload
 
-RU LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Протокол blind return отказывает каждому получателю. Ни корпорация, ни реестр, ни карантинная линия, ни цель отсечения не получают финальный payload. Носитель держит карту и доказательства локально, что отказывает Deep Reach чистому пути обратно. Это также оставляет долг активным, публичные доказательства неподанными, а пакет уязвимым к воде, смерти или плохому хранению.
 
 ## Scanner
 
-RU LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Маршрут blind return взведен. Получатель не назначен. Вектор бассейна, proof hashes и класс доступа остаются локальными; залог и окно восстановления не решены.
 
 ## Terminal
 
-RU LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+ПОЛУЧАТЕЛЬ PAYLOAD // BLIND RETURN WITHHOLD. Получатель: none. Удерживать вектор бассейна, proof hashes, salvage class, локальный пакет доказательств. Отказать Deep Reach в карте доступа, квитанции выплаты и custody получателя. Известная цена: залог не решен, риск потери пакета полный.
 
 ## Audio
 
-RU LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Нет получателя, нет квитанции. Если сумку зальет, доказательства уйдут с ней.
 
 ## Field Note
 
-RU LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Заметка мародера: держать карту - это выбор. Просто тебе некого обвинить, если сумка порвется.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ru_RU. -->

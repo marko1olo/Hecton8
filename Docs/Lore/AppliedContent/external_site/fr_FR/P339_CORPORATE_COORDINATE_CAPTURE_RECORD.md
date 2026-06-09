@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Corporate Coordinate Capture Record"
+title: "Dossier de capture corporative des coordonnées"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Corporate Coordinate Capture Record
+# Dossier de capture corporative des coordonnées
 
-FR LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+La question n'est pas seulement de savoir si le joueur quitte HECTON-8. C'est de savoir qui reçoit la carte après son départ, et si la survie a été achetée en donnant à l'ancien propriétaire un chemin de retour.
 
 ## Scanner
 
-FR LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Charge de coordonnées acceptée. Priorité récepteur Deep Reach restaurée ; rapport public inchangé.
 
 ## Terminal
 
-FR LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE : vecteur du bassin Atlas transféré au récepteur Deep Reach. Récupération accordée sous note de coopération. Rapport public d'accident inchangé. Les opérations futures récupèrent l'autorité de route corporative.
 
 ## Audio
 
-FR LOC HOLD: You opened the door from the inside.
+Tu as ouvert la porte de l'intérieur.
 
 ## Field Note
 
-FR LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Fin partielle corporative : les coordonnées achètent la récupération en rouvrant la scène de crime au contrôle de Deep Reach.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/fr_FR. -->

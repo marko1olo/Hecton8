@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "最终选择 payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# 最终选择 payload
 
-CN LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+最终选择 payload 定义 HECTON-8 的结局哲学：玩家选择什么离开月球，谁接收它，以及这让 Deep Reach、公共法律、Atlas 和海洋机器生态获得什么可能。
 
 ## Scanner
 
-CN LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+最终 PAYLOAD // 坐标、样本、姓名、Atlas 访问权、隔离命令、公共证明。离开 HECTON-8 的东西决定之后谁能行动。
 
 ## Terminal
 
-CN LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOAD 矩阵：出售坐标和 XO 证明；切断 Atlas 连续性；保存或隔离海洋机器生态；把证据发布到公共 ledger；扣留 payload，让 Deep Reach 继续失明。
 
 ## Audio
 
-CN LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+一个学会呼吸的犯罪现场，没有干净的所有权。
 
 ## Field Note
 
-CN LOC HOLD: The best ending should be defensible, not clean.
+最好的结局应该可辩护，而不是干净。
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/zh_CN. -->

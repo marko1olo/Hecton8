@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Waktu Perjalanan Paket Probe"
+title: "Waktu Tempuh Paket Probe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Waktu Perjalanan Paket Probe
+# Waktu Tempuh Paket Probe
 
-Waktu paket probe membuat Aegir bernilai sebelum menjadi akrab. Mesin kecil bisa menyeberang, mengukur, dan melapor saat institusi manusia masih berdebat soal anggaran dan liabilitas. Saat Deep Reach menjual keyakinan, paket sudah tua dan model risiko sudah dipoles. Itulah bahaya eksplorasi yang dimulai mesin: samudra bisa diberi harga dari kebenaran basi jauh sebelum orang memahami biaya bekerja di sana.
+Waktu tempuh paket probe adalah salah satu gaya paling tidak dramatis dan paling merusak dalam latar ini. Paket Ran-Aegir awal bukan kebohongan. Mereka membawa pembacaan spektral, perkiraan massa, kimia es, geometri relai, dan harapan air dangkal. Mereka hanya sudah tua ketika orang memperlakukannya sebagai izin.
+
+Itu membuat kegagalan koloni lebih tajam. HECTON-8 tidak didirikan di atas fantasi murni. Ia didirikan di atas data yang lebih tahan terhadap rute daripada terhadap waktu. Ketika bacaan baru membantah janji pertama, janji lama sudah ditempeli utang, kontrak, peralatan, dan rencana manusia.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/id_ID. -->

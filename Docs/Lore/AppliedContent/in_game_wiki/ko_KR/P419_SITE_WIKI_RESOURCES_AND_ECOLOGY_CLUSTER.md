@@ -19,15 +19,15 @@ localization_flags: 1
 
 # 자원과 생태
 
-자원/생태 허브: drowned crust, brine ladders, vent chemistry, living systems, 손상된 Atlas repair logic.
+자원과 생태 허브: Drowned Crust, 염수 사다리, 분출구 화학, blue debt, 포식자 단서, 표식 동물, 살아 있는 체계를 하드웨어처럼 다루는 Atlas 수리.
 
 ## Scanner
 
-공개 허브: geology, blue debt, fauna grammar, Atlas 수리 네트워크 misuse.
+공개 허브: Drowned Crust, 염수 사다리, blue debt 압력 이력, 동물 단서, Atlas 수리 오용.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology, encounter grammar를 하나의 process map으로.
+SITE NAV: 샘플을 기원, 압력 이력, 살아 있는 접촉, 채취 손상, custody 가치로 읽어라.
 
 ## Audio
 
@@ -35,6 +35,6 @@ SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ec
 
 ## Field Note
 
-자원과 생태는 material, biota, evidence pressure가 같은 루트를 공유할 때 함께 속한다.
+깨끗한 샘플이 가장 풍부한 경우는 드물다. 무엇이 만들었고, 무엇이 닿았고, 가져갈 때 무엇이 다쳤는지 물어라.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/ko_KR. -->

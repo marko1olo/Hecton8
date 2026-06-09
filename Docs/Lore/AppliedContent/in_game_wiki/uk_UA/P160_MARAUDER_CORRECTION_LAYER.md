@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Шар правок Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Шар правок Marauder
 
-UA LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+Шар правок Marauder - місце, де стара корпоративна мова втрачає владу. Deep Reach пише variance, custody, hold, asset, exposure. Marauder пише те, що водолаз має знати до наступного вдиху: CO2 спершу сповільнює руки, brine ховає сходинку, seal tape ламається на згині, чистому люку не вір. Ці помітки мають відчуватися як культура, що збирає себе заново з людей, навчених системою, а потім змушених ненавидіти її словник.
 
 ## Scanner
 
-UA LOC HOLD: Marauders turn corporate language back into survival facts.
+ШАР ПРАВОК // Корпоративна мітка: temporary atmospheric variance. Помітка Marauder: CO2 першим з'їдає судження.
 
 ## Terminal
 
-UA LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ПРАВИЛО АНОТАЦІЇ: перекладати мову Deep Reach назад у факти виживання. Нотатки мають бути короткі, практичні, злі й корисні під тиском.
 
 ## Audio
 
-UA LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Добра нотатка не звучить розумно. Вона тримає когось живим.
 
 ## Field Note
 
-UA LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+Гравець має відчувати, як стара мова Deep Reach перекладається в рахунок тіл.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/uk_UA. -->

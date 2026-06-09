@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Faixas de dano de transcrição de áudio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Faixas de dano de transcrição de áudio
 
-PT LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Um log de voz de HECTON-8 não está completo só porque tem som. A transcrição precisa mostrar suas feridas.
 
-## Scanner
+Faixas de dano tornam essas feridas honestas. Podem marcar estática, perda de pacote, redação legal, distorção por pressão, separação ruim de falantes, tradução automática falha ou edição posterior. Sem essa camada, toda gravação quebrada vira clareza falsa ou mistério falso. Com ela, o jogador vê a diferença entre o que o mundo perdeu e o que alguém escolheu remover.
 
-PT LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+A regra é rígida porque o jogo depende de provas. O dano pode esconder nomes, números e cargas com spoiler. Pode criar suspeita. Pode fazer uma rota parecer perigosa antes de o jogador ver a porta. Mas a transcrição restante ainda deve carregar a ação: não abra a eclusa, volte pela escada de serviço, conte oxigênio manualmente, ignore a luz verde de status, deixe a linha oficial visível.
 
-## Terminal
-
-PT LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-PT LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-PT LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Para localização e acessibilidade, a faixa é parte do conteúdo. Uma transcrição traduzida deve preservar o papel de quem fala, a pressão do tempo e avisos legíveis. Redação só é atmosfera quando o jogador ainda consegue agir. Caso contrário, é só uma interface quebrada fingindo ser lore.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/pt_BR. -->

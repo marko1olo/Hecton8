@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "ערכת ראיות למסוף תור הפינוי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Evacuation Queue Terminal POI Kit
+# ערכת ראיות למסוף תור הפינוי
 
-HE LOC HOLD: Deep Reach liability is best shown through procedure. A queue can be more damning than a confession.
+מסוף התור צריך להרגיש כמו חדר שנבנה כדי להפוך סבל למסודר מנהלית. המסוף מפרט החזקות מסלול, עיכוב שחרור הסגר, שקלול Atlas וספירות עובדים, אבל הקירות נושאים את הרשומה המלוכלכת יותר: פס מצב צוהר, שאריות תג, סימני קיבולת חסרה ותג salvage על לוח שמישהו עדיין רוצה למכור.
 
-## Scanner
-
-HE LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
-
-## Terminal
-
-HE LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
-
-## Audio
-
-HE LOC HOLD: A queue is a body count with cleaner formatting.
-
-## Field Note
-
-HE LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+נקודת העניין מקבלת משקל דרך סכסוך. שליפת חלק יכולה לפתוח נתיב או לשלם חוב, אבל גם להרוס את המשטח שמוכיח עיכוב. הקריאה הנכונה אינה הודאה. היא מערכת עצמים לא תואמים שמכריחה את המפעיל לבחור מה ישרוד את הצלילה.
 
 <!-- External Site; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/he_IL. -->

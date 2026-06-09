@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Publieke Routennamen
 
-## Names That Bill
+## Namen die factureren
 
-Publieke routenamen zijn geen poëzie in het donker. Het zijn werklabels die contracten, rompplaten, relaiswachtrijen en rechtbankstukken overleven. Sol-Centauri Charter Spine draagt legitimiteit, Barnard Breaker Run ruikt naar sloopwerven en schuldarbeid. Luyten Packet Ladder is de custody-keten die bewijs geldig of nutteloos maakt, Tau Public Ledger Lane is trage publieke druk, en Ran Long Claim zegt dat het werk al duur is voordat de oceaan factureert.
+De publieke routes van HECTON-8 zijn niet bedoeld om mooi te zijn. Ze moeten facturen, zegels, verzekeringstabellen en salvage-geschillen overleven. Een routenaam is het deel van de kaart dat nog telt wanneer het beeld weg is en alleen het contract blijft.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+De Sol-Centauri Charter Spine is de respectabele lijn. Hij draagt oude legitimiteit, compatibiliteitstaal en het soort formulering dat Deep Reach citeert wanneer een grensproject beschaafd moet lijken. Barnard Breaker Run is lelijker en eerlijker: scheepssloop, drukhardware, schuldcrews, gestript staal en de praktische cultuur die Marauders mogelijk maakt.
+
+De Luyten Packet Ladder is geen romantische samenleving. Het is infrastructuur voor pakketbewaring. Ze verklaart waarom een bericht bewijs kan worden, waarom bewijs vertraagd kan zijn en waarom een eerlijk pakket geen hulp is. Tau Public Ledger Lane is waar bewijs publieke druk wordt nadat licht zijn trage werk heeft gedaan.
+
+Ran Long Claim is de naam die het dichtst bij HECTON-8 hoort. Het is geen snelweg, maar een claimpad door afstand, recht, remrechten en vrachtkosten. Een routeplaat moet lezen als een drukspoor: wiens recht hier reist, wiens vracht beweegt, wiens bewijs overleeft en wiens lichaam van het terugkeermanifest viel.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/nl_NL. -->

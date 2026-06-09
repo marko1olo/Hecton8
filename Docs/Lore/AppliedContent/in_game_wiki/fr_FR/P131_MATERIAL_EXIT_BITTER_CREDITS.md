@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Sortie matérielle : crédits amers
 
-La Sortie matérielle est une vraie fin pour un Marauder qui traite HECTON-8 comme un travail payé. Le joueur peut partir avec une dette réduite et un registre de carrier satisfait. Le coût reste visible : la colonie demeure une scène de crime convertie en valeur de réclamation, et Deep Reach reçoit un meilleur chemin de retour que celui accordé aux ouvriers vers la sortie.
+C'est la sortie légitime la plus froide de HECTON-8. Un Marauder rapporte du matériau de pression que Black Keel peut peser, facturer et faire passer par une fenêtre d'ascension ; la dette baisse, le registre du transporteur s'équilibre, et le dossier de travail peut se fermer sans falsifier les chiffres. Rien dans le reçu n'est faux. L'échantillon est réel. La chaîne de custody est assez propre. L'échec vit dans la colonne omise : noms d'ouvriers non rapprochés, preuves trop minces pour accuser, colonie noyée convertie en valeur de créance, données de route donnant à Deep Reach une raison plus propre de revenir. La réussite professionnelle survit ici, mais elle a le goût du métal et de l'air vieux.
 
 ## Scanner
 
-Matériau de pression accepté. Fenêtre de sortie achetable. Noms des ouvriers toujours non rapprochés.
+Matériau de pression accepté. Fenêtre de sortie vendue. Les noms restent impayés.
 
 ## Terminal
 
-REÇU DE SORTIE MATÉRIELLE : matériau de pression custody-grade accepté ; lien réduit ; payload de preuve incomplet ; registre des ouvriers disparus toujours contesté par le réclamant ; priorité Recovery Compliance relevée.
+REÇU DE SORTIE MATÉRIELLE : matériau de pression custody-grade accepté ; lien réduit ; masse d'ascension autorisée ; payload de preuve incomplet ; registre des ouvriers disparus non résolu ; intérêt de récupération Deep Reach relevé.
 
 ## Audio
 
-La facture se solde avant les noms.
+La facture atteint l'air avant les noms.
 
 ## Field Note
 
-Black Keel valorisera l'échantillon avant les morts. Ce n'est pas une anomalie du contrat.
+Black Keel solde la masse avant la mémoire ; le contrat appelle cela une réussite.
 
 <!-- In-Game Wiki; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/fr_FR. -->

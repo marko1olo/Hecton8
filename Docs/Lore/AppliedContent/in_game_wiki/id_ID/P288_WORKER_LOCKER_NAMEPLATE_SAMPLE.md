@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Worker Locker Nameplate Sample"
+title: "Sampel Plat Nama Loker Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Worker Locker Nameplate Sample
+# Sampel Plat Nama Loker Pekerja
 
-ID LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+Sampel Plat Nama Loker Pekerja menunjukkan bagaimana HECTON-8 mengingat orang melalui objek yang masih punya pekerjaan. Ren Okoye tidak diperkenalkan lewat biografi. Plat loker memberi rute, sertifikasi alat, token makan, tanda ukuran sarung tangan, dan stripe payroll yang diamplas oleh seseorang yang tidak tahu detail mana yang penting. Itulah sebabnya artefak ini bekerja. Ia membuktikan bahwa penghapusan korporat bisa ceroboh: payline hilang, tetapi clamp route tetap ada; status ditimpa, tetapi tanda ukuran sarung tangan masih cocok dengan tangan nyata. Pemain harus membaca nama melalui kerja terlebih dahulu, lalu merasakan kekerasan dari baris akun yang hilang.
 
 ## Scanner
 
-ID LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Plat Ren Okoye mempertahankan nama karena baris gaji lebih mudah dihapus daripada pekerjaan.
 
 ## Terminal
 
-ID LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-ID LOC HOLD: Name retained. Payline erased.
+Nama tertahan. Baris gaji dihapus. Pekerjaan masih menempel.
 
 ## Field Note
 
-ID LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / token makan dijepit di bawah tape. Stripe payroll diamplas; tanda ukuran sarung tangan masih terlihat.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/id_ID. -->

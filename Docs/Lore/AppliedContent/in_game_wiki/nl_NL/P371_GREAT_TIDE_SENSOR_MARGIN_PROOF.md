@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Margepoor van de Grote Getijde"
+title: "Spoor van getijdemarge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Margepoor van de Grote Getijde
+# Spoor van getijdemarge
 
-De trace bewijst twee dingen tegelijk: de Grote Getijde was echt, en de dodelijke marge was zichtbaar voordat het rapport haar toegaf. Deep Reach beval het water niet te stijgen. Het bedrijf accepteerde een routevenster terwijl de drukomhulling van de kolonie al geen speling meer had, en publiceerde daarna de cascade zonder sign-off.
+Deze sensor maakt de Grote Getijde niet vals. Hij legt de timing vast. De ontwerpreserve van de kolonie was weg voordat Deep Reach het risico in het openbare rapport toegaf. De routeautoriteit hield het venster open onder een commerciele uitzondering en publiceerde daarna een cascadeketen zonder die uitzondering.
 
 ## Scanner
 
-Geborgen getijdensensor. Piekshear overschreed het koloniedesign, maar de waarschuwingsmargebreuk werd gelogd vóór het publieke cascade-tijdstempel.
+Getijdensensor geborgen. De schuifpiek is echt; de margebreuk verschijnt zestien minuten voor Deep Reachs openbare cascadeklok.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Tail-riskdrempel geaccepteerd door routeautoriteit. Operatornotitie uit publieke incidentketen verwijderd. Ruwe trace bewaard in brine-buffergeheugen.
+GETIJDE-ARRAY // P-63 NOORDRUG. Restmarge onder stopvloer. Routevenster onder commerciele uitzondering opengehouden. Openbare incidentketen laat uitzonderingsnotitie weg. Brine-buffer-controlesom intact.
 
 ## Audio
 
-De oceaan loog niet. Het rapport wel.
+Het getij brak de corridor. De leugen begint met de klok.
 
 ## Field Note
 
-Marauder-notitie: zoek geen schurkenspeech. Zoek de regel die iemand heeft verwijderd.
+Plunderaarsnotitie: bewaar het ruwe spoor. Een verwijderde margeregel verslaat elke toespraak.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/nl_NL. -->

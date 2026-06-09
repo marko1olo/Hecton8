@@ -229,7 +229,8 @@ def validate_static(errors: list[str], warnings: list[str]) -> list[dict]:
         runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
         if "Hecton8.EditorTools.Batch34UvAtlasMaterialHandoffBuilder.Apply" in runner_text:
             errors.append("Unity apply-all runner must not launch Batch34UvAtlasMaterialHandoffBuilder separately; central applier owns this stage")
-        if "ValidateBatch34UvAtlasMaterialHandoff.py" not in runner_text:
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $uvAtlasMaterialHandoffValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
             errors.append("Unity apply-all runner must post-apply validate Batch34 UV atlas handoff")
 
     if not STATIC_PREFLIGHT.exists():

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel 窗口价格"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel 窗口价格
 
-Black Keel can answer without granting immediate rescue.
+Black Keel 可以确认你还活着，却不等于立即救援。强轨道窗口只能送出一个有用数据包，而索赔账本决定这个数据包值多少。
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+中继桅杆 // 已对准微弱轨道窗口。天气噪声爬升前选择一个数据包。
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+联系缓冲 // 操作员存活；索赔开放；回收等待窗口。安排撤离前请求样本状态和坐标置信度。
 
 ## Audio
 
-One clean burst; choose what to send.
+窗口只够一次清晰 burst。说你在哪里，或者说你找到了什么。
 
 ## Field Note
 
-A priced packet is not mercy.
+当 carrier 按数据包给你的呼吸定价时，不要浪费数据包去问它在不在乎。
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/zh_CN. -->

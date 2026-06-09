@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Preserve Quarantine Record"
+title: "سجل حفظ الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Preserve Quarantine Record
+# سجل حفظ الحجر
 
-AR LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+يفيد سجل الحجر هذا لأنه يسرد ما حُجب وما حُمي وما قد ينكسر لاحقاً: عهدة الحمولة، الإحداثيات العمياء، الإيصال العام الجزئي، ضرر Atlas، الاحتجاز البيئي، أسماء العمال، المسؤولية، والمطالبات العمياء اللاحقة.
 
 ## Scanner
 
-AR LOC HOLD: Payload withheld. Consequence deferred.
+سجل حفظ الحجر // حُجبت الحمولة عن Deep Reach. Atlas متضرر لكنه نشط؛ أمر احتجاز بيئي يمنع نقل ملكية نظيف.
 
 ## Terminal
 
-AR LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+سجل النهاية / حفظ الحجر
+الحمولة: محجوبة عن عهدة Deep Reach المباشرة.
+الأمر: احتجاز بيئي، إحداثيات عمياء، إيصال عام جزئي.
+حالة Atlas: منطق إصلاح متضرر نشط.
+المحمي: بيئة الضغط وحياة الصيانة الباقية.
+غير محسوم: أسماء العمال، مسؤولية الحوض، إيداعات salvage مستقبلية.
+الخسارة المعروفة: الحفظ لا يصبح براءة.
 
 ## Audio
 
-AR LOC HOLD: Leaving something alive is not the same as saving it.
+تركتها حية. هذا ليس إنقاذاً.
 
 ## Field Note
 
-AR LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+إمساك الحزمة يحمي بعض الأنظمة الحية ويترك السلطة المكسورة تتنفس. راقب طابور المطالبات العمياء.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/ar_SA. -->

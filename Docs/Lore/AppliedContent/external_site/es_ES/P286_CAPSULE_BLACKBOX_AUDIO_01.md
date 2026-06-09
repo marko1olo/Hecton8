@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Capsule Blackbox Audio 01"
+title: "Audio de caja negra de cápsula 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Capsule Blackbox Audio 01
+# Audio de caja negra de cápsula 01
 
-ES LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+El Audio de caja negra de cápsula 01 es el primer artefacto técnico honesto de HECTON-8. Replantea la supervivencia como deuda: el aterrizaje se compró consumiendo hardware de retorno. El registro da a los jugadores una razón física para la trampa oceánica antes de que aparezca el misterio corporativo.
 
 ## Scanner
 
-ES LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+La primera caja negra no dice que chocaste. Dice que la cápsula sobrevivió gastando el hardware destinado a subirla de vuelta.
 
 ## Terminal
 
-ES LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; impacto de descenso absorbido; ascent sleeve gastado; recovery ring sin bloqueo; boya no fiable; frames 12-19 perdidos durante pressure shear. Ascenso manual no recomendado sin reemplazo externo de sleeve.
 
 ## Audio
 
-ES LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Evento caja negra. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-ES LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: crush-frame inferior agrietado; ascent sleeve quemado; recovery ring no-lock; la boya repite una solicitud de ascenso muerta.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/es_ES. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Guide du verre de pression et du mastic
 
-Le pressure glass est l'endroit où la géologie rencontre Atlas. Le repair network utilise fractures existantes, bords minéraux et pressure memories comme routes, donc une lentille utile peut aussi être une frontière vivante.
+Le verre de pression est l'endroit où la géologie rencontre Atlas. Vieilles fractures, bords minéraux, coutures de biofilm et mémoire de contrainte deviennent des routes pour la chimie de réparation, donc une lentille utile peut aussi être une frontière vivante.
 
 ## Scanner
 
-Fracture de pressure-glass scellée par chimie Atlas. Stock de lentilles sûr seulement si la seal map reste intacte.
+Fracture de verre de pression scellée par chimie Atlas. Le stock de lentilles reste sûr seulement tant que la carte de scellement demeure intacte.
 
 ## Terminal
 
-FIELD GUIDE : le pressure glass enregistre ancien tide stress. L'Atlas sealant suit ces fissures parce qu'elles décrivent déjà les lignes de défaillance du système.
+GUIDE DE TERRAIN : le verre de pression enregistre les anciennes contraintes de marée. Le mastic Atlas suit ces fissures parce qu'elles décrivent déjà les lignes de défaillance du système.
 
 ## Audio
 
-Le réseau de réparation lit les fractures comme tu lis une carte.
+Le réseau de réparation lit les fractures comme vous lisez une carte.
 
 ## Field Note
 
-Ne meule pas le joli bord. Suis la fracture map et coupe depuis le côté mort du seal.
+Ne polissez pas le beau bord. Suivez la carte des fractures et coupez depuis le côté mort du joint.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/fr_FR. -->

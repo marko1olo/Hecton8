@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Faction Message Split"
+title: "División de mensajes de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Faction Message Split
+# División de mensajes de Deep Reach
 
-ES LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+El jugador debe oír a Deep Reach como un sistema bajo tensión: control de responsabilidad, recuperación de salvamento, vieja culpa de ingeniería, presión aseguradora y automatización de caja negra cruzando cables sobre una colonia ahogada. El conflicto no absuelve a la compañía. La vuelve más peligrosa porque ninguna voz la controla del todo.
 
 ## Scanner
 
-ES LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Tres fuentes de Deep Reach discrepan: Recuperación quiere coordenadas, Legal quiere silencio, ingeniería heredada advierte que la cuenca responderá.
 
 ## Terminal
 
-ES LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance solicita coordenadas navegables. Asset Silence ordena contener pruebas y no reconocer nada en público. Legacy Engineering Node 4 repite una advertencia anterior al colapso: no perturbar los relés de la cuenca inferior durante la sombra de Aegir. No son rebeldes. Son departamentos protegiendo pérdidas distintas.
 
 ## Audio
 
-ES LOC HOLD: A company can be one logo and three knives.
+Un logotipo. Tres voces. Ninguna limpia.
 
 ## Field Note
 
-ES LOC HOLD: This is not redemption. It is pressure-source readability.
+Usar después de que el jugador haya oído al menos dos tonos de Deep Reach. El golpe es ambigüedad con dientes: instrucciones contradictorias, propiedad compartida, ningún aliado limpio.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/es_ES. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Abyssal Machine Field Warning"
+title: "Warnung vor dem abyssalen Maschinenfeld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Abyssal Machine Field Warning
+# Warnung vor dem abyssalen Maschinenfeld
 
-DE LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+Vor dem finalen Becken sieht HECTON-8 nicht mehr verlassen aus, sondern wie eine Maschine, die zu groß ist, um ihren ganzen Körper zu zeigen. Die Warnung bleibt leise, weil der Schrecken keine Verfolgung ist. Er ist Maßstab.
 
 ## Scanner
 
-DE LOC HOLD: Machine field warning: silt motion does not match current.
+Schlick bewegt sich gegen die Strömung. Filterkörper verlagern sich unter den Lichtern.
 
 ## Terminal
 
-DE LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: Schlickbewegung im abyssalen Maschinenfeld übersteigt Strömungsmodell. Filterkörper und vergrabene Aktuatorrippen als bewegliche Infrastruktur registriert. Abstand halten; nicht im weichen Boden ankern.
 
 ## Audio
 
-DE LOC HOLD: The floor is not still.
+Der Boden ist nicht still.
 
 ## Field Note
 
-DE LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Spätspielwarnung: leise, objektive Furcht. Das finale Feld ist erwachende Infrastruktur, kein Bossaufbau.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/de_DE. -->

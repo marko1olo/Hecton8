@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Iliya Varnek Tide Margin
 
-Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+The Iliya Varnek Tide Margin article is one of HECTON-8's first clear looks at how Deep Reach responsibility works. It avoids the easy version of corporate evil. Varnek does not need to press a flood button. He signs a risk interpretation.
 
-## Scanner
+In 2147, the Great Tide model still passed on average. That is the dangerous word. Average behavior kept the production schedule alive while the extreme stack remained inside worker exposure: Aegir tide windows, ice-shelf rebound, pressure-route traffic and Atlas compensation uncertainty. A route can be statistically acceptable and still be fatal to the people who meet the tail of the curve.
 
-Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+For players, this evidence changes the disaster from an accident into a chain of decisions. Varnek's memo is not a confession. It is a document that makes blame readable: uncertainty was known, discounted and handed downward. The horror is bureaucratic without becoming dry. A margin was made small enough for workers to die inside it.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/en_US. -->

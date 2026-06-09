@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Deep Reach の現在通信窓"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Deep Reach の現在通信窓
 
-JP LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+Deep Reach の現在通信窓は、2190 年に不在の企業がどうやって能動的な敵対者であり続けるかを説明する。ここには超光速の救助窓口も、コアワールドの椅子から HECTON-8 を操る生身の重役もいない。距離は本物だ。通信窓はまれで、遅延し、リレースパイン、現地プロキシ、自動法務通知、Black Keel の請求文言によって濾過される。だからといって Deep Reach が無害になるわけではない。信号が深い隔たりを渡るころには、植民地はすでに古い契約、隔離既定値、支払しきい値、保管規則に形作られている。プレイヤーが証拠を握ったとき、企業の声は取引として聞こえる。Atlas 権限キーを渡し、ペイロード保管を認め、審査を受け入れれば、放棄ではなく回収が得られるかもしれない。
 
 ## Scanner
 
-JP LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach は無線で HECTON-8 を操縦できない。それでも遅延した通信窓、代理通知、Black Keel 条項が、救助の代価を決め続ける。
 
 ## Terminal
 
-JP LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH PROXY: 作業者回収は、証拠審査、ペイロード保管、隔離遵守、Atlas 権限キー移管後に交渉可能。拒否した場合、請求者資格は維持されるが即時抽出優先度は無効となる。
 
 ## Audio
 
-JP LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+彼らの声が届くころには、それはもう契約になっている。
 
 ## Field Note
 
-JP LOC HOLD: Their voice is delayed. Their leverage is already here.
+彼らの返答は遅れて届く。条件だけは何年も前からここにあった。
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/ja_JP. -->

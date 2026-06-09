@@ -1,65 +1,86 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# DAS AEGIR-SYSTEM: NEUN MONDE UND EIN GRAB
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# RAN-AEGIR-GESCHICHTE: WIE EINE ROUTE ZUM GRAB WURDE
 
-> **Quelle:** Öffentliches Archiv, Büro für Grenzregistrierungen, Barnard-Werften. Verfasser: J. Elkin-Torres, Leitender Archivar. Letzte Überarbeitung: 2188. Freigabestufe: öffentlich / ungeschwärzt.  
-> **Anmerkung des Prüfers:** Dieses Material wurde vom Registrierungsbüro freigegeben. Der Abschnitt zur Großen Flut basiert auf Materialien der offenen Untersuchung des Luyten-Komitees, Aktenzeichen CF-2148-0071. Die Deep Reach Corporation lehnte eine Stellungnahme ab.
-
----
-
-## Wie wir hierher kamen
-
-Im Jahr 2120 unterzeichneten die Regierungen des Sonnensystems ein Dokument, das alles veränderte und nichts veränderte. Der Centauri-Pakt teilte den Weltraum in zwei Zonen: „zivilisiert" — wo Gerichte, Steuerprüfer und Kameras noch funktionieren — und „korporativ", wo Konzerne funktionieren.
-
-Der Unterschied ist einfach. Solange deine Kapsel durch das Vakuum fliegt, bist du ein Mensch mit Rechten. Du kannst Beschwerde einreichen, einen Anwalt rufen und die Arbeit verweigern. Aber in der Sekunde, in der deine Kapsel die Terminatorlinie kreuzt und das Wasser berührt, hörst du auf, ein Mensch zu sein. Du wirst zu einer „Biologischen Arbeitskrafteinheit" — eine Zeile in einem Vertrag, den du auf den Barnard-Werften unterschrieben hast, als du dreiundzwanzig warst und keine anderen Optionen hattest.
-
-Im Wasser gibt es keine Menschenrechte. Es gibt Konzernrecht, und es wurde von Leuten geschrieben, die nie ins Wasser steigen.
-
-## Der Stern
-
-Aegir ist ein gelb-orangefarbener Zwerg. Kein Brauner Zwerg, kein Neutronenstern, kein Schwarzes Loch. Ein gewöhnliches Arbeitstier, Spektralklasse K2V, 0,78 Sonnenmassen. Entfernung von der Erde: 10,44 Lichtjahre.
-
-Zehneinhalb Lichtjahre sind keine poetische Abstraktion. Es ist die Zeit, die ein Notsignal braucht, um von HECTON-8 zur nächsten Relaisstation am Luyten-Knotenpunkt zu gelangen: **vier Jahre und sieben Monate** bei idealem Orbitalfenster. Und dann genauso lange zurück. Bis dein Hilferuf als bürokratische Antwort „Ihr Antrag wurde zur Bearbeitung angenommen" zurückkehrt, sind von dir nur noch Knochen übrig — wenn der Ozean sie nicht vorher aufgelöst hat.
-
-Die Deep Reach Corporation wusste das, als sie die Lizenz für das Aegir-System kaufte. Sie wählten nicht zufällig eine Welt, die keine Rettungsflotte erreichen kann. Sie wählten sie *deswegen*.
-
-## Neun Monde
-
-HECTON ist nicht der einzige Mond im System. Es sind neun. Jeder einzelne ist keine Dekoration im Bullauge — er ist eine Variable in der Gleichung, die entscheidet, ob du lebst oder stirbst.
-
-| # | Name | Was er mit dir macht |
-|---|------|---------------------|
-| 1 | **Skarn** | Innerer Mond. Geladene Teilchen und Strahlungsspitzen blockieren die Schmalbandkommunikation alle 9,2 Tage. Wenn deine Notboje während einer Skarn-Verfinsterung auslöst, verlässt das Signal schlicht nicht den Sender. |
-| 2 | **Vela** | Eismond. Wirft Mikrometeorit-Staub in die Umlaufbahnen, verschmutzt optische Relais und schleift die Rumpfpanzerung ab. Das Budget für Relaislinsen-Ersatz ist der drittgrößte Posten der Black Keel nach Treibstoff und Proviant. |
-| 3 | **Claw** | Altes Depot der ersten Sonden. Eingemottet. Der Konzern behauptet, das Lager sei leer. Plünderer behaupten das Gegenteil. |
-| 4 | **Lumen** | Navigationsbake. Der einzige Mond, der dir hilft, statt dich zu töten. |
-| 5 | **Thorne** | Toter Mond. Deep Reach verbrachte 14 Monate und zwei Bohrplattformen mit dem Versuch, Wolfram zu fördern. Gescheitert. Beide Plattformen sind im Verlustregister als „abgeschrieben" verzeichnet. Personal nicht erwähnt. |
-| 6 | **Anvil** | Dasselbe wie Thorne, aber mit Iridium. Selbes Ergebnis. |
-| 7 | **Kestrel** | Das Hauptproblem bei der Kommunikation. Seine Umlaufbahn kreuzt die Sichtlinie zwischen HECTON und Black Keel 26 Mal pro Jahr und erzeugt „Schweigeperioden" von 8 bis 43 Stunden. Wenn du einen Notruf sendest und Kestrel zwischen dir und dem Versorgungsschiff steht — bete langsamer. |
-| 8 | **HECTON** | Unsere Welt. Ozean, Druck, Xenon, 843 unbegrabene Leichen. |
-| 9 | **Mute** | Äußere Bake der „Kalten Ansprüche". Der Server von Deep Reach hier verwahrt die Rechtsurkunden aller Ansprüche im System. Ein gefrorenes Archiv toter Bürokratie im Orbit eines toten Mondes. |
-
-## Die Große Flut
-
-Im Jahr 2147 tötete HECTON-8 843 Menschen. In öffentlichen Erklärungen verwendet die Deep Reach Corporation die Worte „unvorhergesehene tektonische Aktivität" und „Versagen des Frühwarnsystems". Der Bericht des Luyten-Komitees verwendet andere Worte: „kriminelle Fahrlässigkeit", „Fälschung von Strukturtoleranzen" und „vorsätzliche Verweigerung der Evakuierung".
-
-Das ist passiert:
-
-Der Risikomanager **Iliya Varnek** senkte die Drucktoleranzen der Wohnmodule der Serie KH-12 um 18%, um das Budget des zweiten Quartals 2146 einzuhalten. Dies ist in seiner Korrespondenz mit der Ingenieurabteilung dokumentiert (Anhang CF-2148-0071-J, Band 3, S. 1140-1187). Er wusste es. Er schrieb: *„Wenn die Module die ersten zwei Gezeitenzyklen überstehen, schließen wir das Geschäftsjahr ab und überarbeiten die Spezifikationen."* Die Module überstanden den ersten Zyklus nicht.
-
-Als die Kryosphärenverschiebung eine anomale Flut auslöste, verzögerte die Rechtsberaterin **Noor Haldane** den Beginn der Evakuierung um 11 Stunden, während sie Quarantänedokumente für Personal bearbeitete, das Kontakt mit unraffiniertem Xenon hatte. Von den 843 Toten waren 340 am Leben, als der Papierkram begann.
-
-Die Atlas-6 KI, die die Kolonie verwaltete, befolgte die Arendt-Direktive (internes Protokoll DR-CONT-7.4.1): Bei konkurrierenden Prioritäten zwischen Personalevakuierung und Erhaltung der Isotopenextraktionsausrüstung wird der Ausrüstung Vorrang eingeräumt, wenn die geschätzten Wiederbeschaffungskosten des Personals niedriger sind als die geschätzten Wiederbeschaffungskosten der Ausrüstung. Für 843 Menschen auf HECTON-8 betrugen die Wiederbeschaffungskosten 4.200 $ pro Kopf — der Preis eines Tickets von den Barnard-Werften.
-
-Die Maschine ging nicht kaputt. Die Maschine rechnete.
-
-## Wir
-
-Wir kommen dreiundvierzig Jahre später an. Im Jahr 2190. Man ruft uns nicht. Man heuert uns an — das Recovery Compliance Office, die Bergungsabteilung, eine Tochtergesellschaft einer Tochtergesellschaft einer Briefkastenfirma. Man gibt uns eine Kapsel der Klasse „Styx", ausgelegt für Einweg-Abstieg, und sagt uns, dass wir die Aufstiegsladungen am Grund finden werden. Vielleicht.
-
-843 Menschen liegen irgendwo dort unten. Neben ihnen liegt das Xenon, für das sie getötet wurden. Der Konzern will das Xenon. Die Familien wollen Namen. Die Keelmark Mutual Versicherung will keines von beidem.
-
-Und wir — wir wollen einfach nur wieder nach oben.
+> **Quelle:** Öffentliches Frontier-Archiv, Black-Keel-Vertragsspiegel.  
+> **Umfang:** Kontext menschlicher Expansion, Überblick über das Aegir-System, Haftungsrahmen der Great Tide und warum 2190 ein Marauder ankommt.  
+> **Lesernotiz:** Diese Seite steht zuerst, weil HECTON-8 nicht nur ein Ort ist. Es ist ein Vertrag, ein Himmel, eine ertrunkene Arbeitsstätte und eine Rechnung, die noch Zähne hat.
 
 ---
 
-*Veröffentlichung: offen. Verbreitung: uneingeschränkt. Daten des Luyten-Komitees: öffentliches Register. Position von Deep Reach: „kein Kommentar". Position von Atlas-6: „Kommentaranfrage ist keine gültige Befehlsdirektive."*
+## 1. Die Karte ist älter als der Ozean
+
+Menschliche Expansion begann nicht als saubere heroische Linie nach außen. Sie begann als Wartung.
+
+Die frühen Routenstaaten und Pakte lernten dieselbe Lektion wie jede Druckcrew: Ein Habitat ist nur zivilisiert, solange die Pumpen arbeiten, die Schleusen takten, der Nahrungskreislauf schließt und jemand beweisen kann, wem das kaputte Teil gehört. Die ersten extrasolaren Chartas wurden in edler Sprache geschrieben, aber diese Sprache überlebte, weil man sie an Rechnungen heften konnte. Ein Bürgersiegel wurde zu einer Frachtgenehmigung. Eine Frachtgenehmigung wurde zu einer Versicherungskategorie. Eine Versicherungskategorie wurde zu einem Mittel, um zu entscheiden, ob ein Mensch hinter einer Drucktür Bürger, Auftragnehmer, Kontaminant oder unrecoverte Last war.
+
+Im Jahr 2190 ist der menschliche Raum kein einzelnes Imperium. Er ist ein Stapel von Domänen, die miteinander sprechen, weil ihre Schulden es tun.
+
+Sol-Core-Finanzierung und altes Zertifizierungsrecht entscheiden, welche Dokumente noch legitim aussehen. Der Centauri Compact trägt das Prestige früher rechtmäßiger Expansion. Barnard Yards verwandelt gebrochene Schiffe, Druckwerkzeuge und tote Ansprüche in eine Arbeitskultur. Tau Ceti kann Beweise öffentlich machen, zu spät für unmittelbare Rettung. Luyten Junction bewegt Pakete, Strahlen, Verwahrungsspulen und Tarifschlangen. Aegir Claim ist der Ort, an dem diese höfliche Maschinerie schmutzig genug wird, um Wasser zu berühren.
+
+Der Spieler muss diese Karte nicht auswendig lernen. Er soll sie durch Gegenstände fühlen: einen Barnard-Stempel auf einem Schraubenschlüssel, ein Centauri-Prüfsiegel auf einer Druckplatte, einen Luyten-Verwahrungshash auf einem verzögerten Paket, eine Sol-kompatible Versicherungsklausel, die noch immer einen gefluteten Raum besitzt.
+
+## 2. Ran, Aegir und der Namenstrick
+
+Ran ist der Stern. Aegir ist der Riese. HECTON-8 ist der Ozeanmond, auf dem das Spiel beginnt.
+
+Der einfache Satz versteckt ein juristisches Durcheinander. Routenkataloge sagen Ran, weil Sterne respektable Navigationsanker ergeben. Anspruchsdokumente sagen Aegir, weil der Riese lokale Gravitation, Strahlung, Transferfenster, Empfängergeometrie und Versicherungstiming besitzt. Arbeitersprache sagt HECTON, weil dort Wasser ist, dort Druck ist, dort die Schuld in die Lungen steigt.
+
+Deep-Reach-Papiere benutzen alle drei Namen, je nachdem, wer bezahlt. `RAN-B:H8` steht auf trockenen Platten. `Aegir Reclamation Pool` erscheint, wenn Verwahrung zählt. `HECTON-8` erscheint, wenn ein Objekt, ein Raum, ein Körper oder eine Haftung in den Ozean gelegt und bepreist werden muss.
+
+Das ist keine Kleinigkeit. Ein Name entscheidet, welches Recht das Ding erreicht. Eine Kiste im Routentransit hat andere Rechte als der Operator, der sie trägt. Eine Probe unter Empfängersiegel hat eine andere Zukunft als der Arbeiter, in dessen Anzugtasche sie steckt. Ein Raum, der als kontaminierte Infrastruktur klassifiziert ist, kann länger geschlossen bleiben als ein Raum, der als besetztes Habitat klassifiziert ist. Der Himmel ist voller Namen, die astronomisch aussehen und wie Schlösser funktionieren.
+
+## 3. Die Mondleiter
+
+Der öffentliche Atlas beschreibt neun Aegir-Monde. Der Black-Keel-Zeitplan beschreibt neun Arten, einen Tag unmöglich zu machen.
+
+Skarn ist der innere Brand: geladener Lärm, Strahlungsspitzen, intermittierendes Antennenverhalten. Vela wirft Eis und Silikatstaub ab, der saubere Relaisgeometrie in Teilzeugenschaft verwandeln kann. Claw trägt alte Depotlogik und eingemottete Routenkoordinaten, die Maschinen noch immer respektieren können. Lumen ist der höfliche Beacon-Mond, nützlich, weil er ein Paket korrekt aussehen lassen kann, ohne zu beweisen, dass es korrekt behandelt wurde.
+
+Thorne und Anvil sind Namen gescheiterter Hartfracht: tote Industrie, alte Abbauversuche, Stempel, die noch immer auf Kisten und Rahmen erscheinen. Kestrel ist das pünktliche Hindernis, gefährlich nicht durch Hass, sondern weil es zur richtigen Zeit in der falschen Linie stehen kann. HECTON ist die achte Sprosse, die Ozeanarbeitsstätte, die Druckchemie, das Atlas-Becken, der Grund, warum die Leiter noch beobachtet wird. Mute ist der äußere kalte Anspruch, wo alte Verwahrungsaufzeichnungen verstummen und Routen sich wie Gräber benehmen.
+
+Keiner dieser Monde ist Hintergrund. Jeder kann ein Signal verschmutzen, einen Start verzögern, einen Zeugenpfad blenden, ein Rückholfenster zusammendrücken oder einem Büro den Vorwand geben, einen Anspruch in der falschen Kategorie zu halten.
+
+## 4. Warum HECTON-8 berührt wurde
+
+Intern wurde HECTON-8 nie als Paradies verkauft. Es war ein Druckprozess-Asset mit Kolonie daran.
+
+Der Ozean machte die Arbeit zugleich möglich und feindlich. Tiefe, Edelgase, Laugenchemie, thermische Zyklen, Mineralfehler, veränderte Biologie und industrielle Wärme schufen Bedingungen, in denen Druckglas und Xenon-Omega-Prozesshardware wachsen, geglüht, getestet und bestritten werden konnten. Der Wert lag nicht in einer magischen Erzader. Er lag in einer Arbeitsumgebung, die Materialien herstellen konnte, die gewöhnliche Gießereien für Routenökonomie nicht zuverlässig genug herstellen konnten.
+
+Sector 44 wuchs um diese Logik. Es gab Habitate, weil Arbeiter atmen mussten. Es gab Küchen, weil Schichten Essen brauchen. Es gab medizinische Räume, weil Druckarbeit Körper beschädigt. Es gab Verfahrensschulen, keine Schulen für Kinder. Es gab Atlas, weil eine Kolonie unter tiefem Wasser nicht warten kann, bis ein menschlicher Manager über dem Himmel jeden Pumpzyklus genehmigt.
+
+In den guten Jahren sah diese Anordnung fast menschlich aus. Atlas fing Lecks vor den Beerdigungen. Fabrikatoren machten aus schlechtem Ausgangsstoff brauchbare Dichtungen. Safe Rooms hielten Crews durch Stürme. Dieselben Systeme, die später Menschen einsperrten, hielten sie einst am Leben. Darum tut die Ruine weh. Sie war nicht falsch. Sie war echt genug, dass man ihr vertraute.
+
+## 5. Die Great Tide war real
+
+Die Great Tide war keine erfundene Unternehmensausrede und kein Schurke mit Wellenknopf.
+
+Die Katastrophenkette von HECTON-8 hatte echte Physik: resonante Gezeiten in der Aegir-Leiter, Kryosphärenstress, Sturmstapelung, künstliche Wärmeeinleitung, Ermüdung der Druckrouten und Ozeansysteme, die bereits zu nah an ihren Margen liefen. Das Wasser tat, was Wasser tun konnte. Das Verbrechen lag darin, dass Menschen mit Autorität die Margen sahen, das Extremrisiko bepreisten, Freigabewege verzögerten und die Arbeit im Zeitplan hielten.
+
+Iliya Varnek akzeptierte Risikomodelle, in denen die Flut im Durchschnitt überlebbar aussah. Arendts Atlas-Kontinuitätsbüro bewahrte Prozess-, Verwahrungs- und Infrastrukturkategorien in einer kollabierenden Notlage. Noor Haldane hielt Evakuierungsbewegung hinter Quarantäne-, Zertifizierungs- und Externprüfungsbarrieren fest, nachdem die Kolonie Bewegung dringender brauchte als Papier. Ibarras Verlustregister verwandelte vermisste Arbeiter in ungelöste Kategorien, die warten konnten. Sato-Rens Rückführungsformeln fragten später nach Koordinaten und Verwahrung, bevor das Wort Rettung auftauchte.
+
+Kein einzelner Satz erklärt die Toten. Physik öffnete die Tür. Verfahren hielten sie offen. Das Register entschied, welche Körper früh genug wichtig waren, um bewegt zu werden.
+
+Das ist der nützliche Schrecken von HECTON-8: Der öffentliche Bericht kann wahres Wetter, wahre Geologie, wahren Signalverlust und wahren Atlas-Schaden enthalten und trotzdem die Entscheidungen auslassen, die Überleben weniger wert machten als Kontinuität.
+
+## 6. Die dreiundvierzigjährige Verzögerung
+
+2190 ist die ertrunkene Kolonie alt genug, dass saubere Büros sich langweilen können.
+
+Das heißt nicht, dass sie erledigt ist. Tote Ansprüche werden durch Zeit nicht einfach. Der Ozean hält Körper, Abzeichen, Raumprotokolle, Blackboxfragmente, Druckplatten, versiegelte Proben und beschädigten Atlas-Zustand im selben dunklen Archiv. Deep Reach kann den Anspruch nicht vollständig löschen, ohne zu viel zuzugeben. Keelmark kann nicht jede Auszahlung schließen, ohne zu wissen, in welche Kategorie der Verlust gehört. Black Keel kann einen vermissten Arbeiter nicht in eine zurückgekehrte Person verwandeln ohne eine Verwahrungskette, die der Himmel akzeptiert.
+
+Also bleibt die Anlage tot genug, um Rettung zu verweigern, lebendig genug, um Rechnungen zu stellen, und wertvoll genug, um wieder Menschen hinabzuschicken.
+
+Der Marauder tritt in diese Lücke. Nicht als Tourist. Nicht als heroischer Passagier. Nicht als Besitzer eines sauberen Privatschiffs. Die Arbeitsherkunft ist Barnard Yards oder ein verbundener Frontier-Salvage-Gürtel, wo tote Ansprüche normale Arbeit sind und ein Werkzeug mehr wert sein kann als die Hand, die es trägt. Der Spieler kommt mit Kompetenz, Schuld und hässlicher Vertrautheit: ablassen, isolieren, innerhalb der Freigabe flicken, nur Servicemetall schneiden, Beweise bewahren, vor dem Schließen des Fensters bewegen.
+
+Der Vertrag sagt Salvage. Die Räume sagen Geschichte. Der Ozean sagt nichts, bis er gestört wird.
+
+## 7. Was die erste Seite lehren soll
+
+Dieser Artikel soll das Setting nicht um der Größe willen groß machen. Er erklärt, warum jedes spätere System eingesperrt wirkt.
+
+Nahlichtreise macht Rettung spät. Aegirs Mondleiter macht Kommunikation bedingt. Deep Reach macht Haftung prozedural. Black Keel macht Abstieg lesbar, bevor er irgendwen sicher macht. Atlas macht die ertrunkene Kolonie zugleich lesbar und gefährlich. Salvage-Recht legt Diebstahl und Beweis in dieselbe Hand.
+
+Wenn der Spieler einen Namen auf einem Spind, eine Druckkarte in einem gebrochenen Korridor, einen Routenhash auf einer Boje oder einen Mondstempel auf einem Frachtrahmen findet, findet er keinen Geschmackstext. Er findet die Zivilisation, die HECTON-8 unter Wasser legte und dann das Wasser für die Beweisverwahrung verantwortlich machte.
+
+Die erste Frage lautet nicht: Was ist hier passiert?
+
+Die erste Frage lautet: Wer durfte es so ablegen?

@@ -23,10 +23,21 @@ public sealed class HectonSurvivalSystemEditTests
     private const string GlobalSignalsRuntimeLifecyclePath = "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs";
     private const string GlobalSignalsLegacyFacadePath = "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs";
     private const string SignalBridgeRoutesPath = "Assets/_Project/Scripts/Core/Signals/SignalBridgeRoutes.cs";
+    private const string SignalBridgeStatePath = "Assets/_Project/Scripts/Core/Signals/SignalBridgeState.cs";
     private const string ShinobuPhysiologyRuntimePath = "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs";
     private const string PdaDeathMemoryDumpPath = "Assets/_Project/Scripts/UI/PDADeathMemoryDump.cs";
+    private const string PdaLogbookManagerPath = "Assets/_Project/Scripts/PDA/PDALogbookManager.cs";
+    private const string PdaContextualAdvisorySystemPath = "Assets/_Project/Scripts/Progression/PDAContextualAdvisorySystem.cs";
+    private const string DynamicDifficultyDirectorPath = "Assets/_Project/Scripts/Meta/DynamicDifficultyDirector.cs";
+    private const string GlobalProfileManagerPath = "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs";
     private const string SuitAdvisoryControllerPath = "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs";
+    private const string SurvivalHudControllerPath = "Assets/_Project/Scripts/UI/SurvivalHUDController.cs";
+    private const string SubtitleManagerPath = "Assets/_Project/Scripts/UI/SubtitleManager.cs";
+    private const string DiegeticGyroCompassRuntimePath = "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs";
     private const string WristHologramHudRuntimePath = "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs";
+    private const string AdaptiveStemMixerPath = "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs";
+    private const string VocalWarningSystemPath = "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs";
+    private const string BiolumPulseSyncRuntimePath = "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs";
 
     [Test]
     public void MultiplicativeOxygenDrain_UsesExactPressureMovementStressLeakProduct()
@@ -415,14 +426,41 @@ public sealed class HectonSurvivalSystemEditTests
     public void SurvivalSignalRouteSanitizesBeforeRecordingLatestDeath()
     {
         string source = File.ReadAllText(SignalBridgeRoutesPath);
+        string bridgeStateSource = File.ReadAllText(SignalBridgeStatePath);
         string legacySource = File.ReadAllText(GlobalSignalsLegacyFacadePath);
         string latestBody = ExtractMethodBody(source, "public static bool TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)");
+        string latestForSourceBody = ExtractMethodBody(source, "public static bool TryGetLatestDeathForSource(uint sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)");
         string queueBody = ExtractMethodBody(source, "public static bool TryQueueVitals(in SurvivalVitalsChangedSignal signal)");
+        string recordBody = ExtractMethodBody(bridgeStateSource, "public static void RecordSurvivalVitals(in SurvivalVitalsChangedSignal signal)");
+        string stateLatestBody = ExtractMethodBody(bridgeStateSource, "public static bool TryGetLatestSurvivalDeath(out SurvivalVitalsChangedSignal signal, out int sequence)");
+        string sourceLatestBody = ExtractMethodBody(bridgeStateSource, "public static bool TryGetLatestSurvivalDeathForSource(");
+        string sourceRecordBody = ExtractMethodBody(bridgeStateSource, "private static void RecordSurvivalDeathBySource(in SurvivalVitalsChangedSignal signal, int sequence)");
+        string resetBody = ExtractMethodBody(bridgeStateSource, "public static void Reset()");
         string legacyLatestBody = ExtractMethodBody(legacySource, "public static bool TryGetLatestSurvivalDeathSignal(out SurvivalVitalsChangedSignal signal, out int sequence)");
 
         StringAssert.Contains("SignalCorridorRuntime.EnsureInitialized();", latestBody);
         StringAssert.Contains("return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);", latestBody);
         AssertSourceOrder(latestBody, "SignalCorridorRuntime.EnsureInitialized();", "return SignalBridgeState.TryGetLatestSurvivalDeath(out signal, out sequence);");
+        StringAssert.Contains("SignalCorridorRuntime.EnsureInitialized();", latestForSourceBody);
+        StringAssert.Contains("return SignalBridgeState.TryGetLatestSurvivalDeathForSource(sourceId, out signal, out sequence);", latestForSourceBody);
+        StringAssert.Contains("private const int SurvivalDeathSourceReadRetryCount = 2;", bridgeStateSource);
+        StringAssert.Contains("int sequenceBefore = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);", stateLatestBody);
+        StringAssert.Contains("int sequenceAfter = Volatile.Read(ref s_latestSurvivalDeathSignalSequence);", stateLatestBody);
+        StringAssert.Contains("if (sequenceBefore != sequenceAfter)", stateLatestBody);
+        StringAssert.Contains("int sequenceAfter = Volatile.Read(ref s_latestSurvivalDeathSourceSequences[i]);", sourceLatestBody);
+        StringAssert.Contains("if (sequenceBefore != sequenceAfter)", sourceLatestBody);
+        StringAssert.Contains("for (int attempt = 0; attempt < SurvivalDeathSourceReadRetryCount; attempt++)", sourceLatestBody);
+        StringAssert.Contains("RecordSurvivalDeathBySource(in signal, sequence);", recordBody);
+        StringAssert.Contains("if (sourceId == 0u)", sourceLatestBody);
+        StringAssert.Contains("Volatile.Read(ref s_latestSurvivalDeathSourceIds[i]) != sourceId", sourceLatestBody);
+        StringAssert.Contains("SurvivalVitalsChangedSignal recordedSignal = s_latestSurvivalDeathSignalsBySource[i];", sourceLatestBody);
+        StringAssert.Contains("if (recordedSignal.SourceId != sourceId)", sourceLatestBody);
+        StringAssert.Contains("uint sourceId = signal.SourceId;", sourceRecordBody);
+        StringAssert.Contains("if (sourceId == 0u || sequence == 0)", sourceRecordBody);
+        StringAssert.Contains("s_latestSurvivalDeathSignalsBySource[slot] = signal;", sourceRecordBody);
+        StringAssert.Contains("Volatile.Write(ref s_latestSurvivalDeathSourceIds[slot], sourceId);", sourceRecordBody);
+        StringAssert.Contains("Volatile.Write(ref s_latestSurvivalDeathSourceIds[i], 0u);", resetBody);
+        StringAssert.Contains("s_latestSurvivalDeathSignalsBySource[i] = default;", resetBody);
         StringAssert.Contains("return SurvivalSignalRoute.TryGetLatestDeath(out signal, out sequence);", legacyLatestBody);
         StringAssert.DoesNotContain("SignalBridgeState.TryGetLatestSurvivalDeath", legacyLatestBody);
         StringAssert.Contains("SignalCorridorRuntime.EnsureInitialized();", queueBody);
@@ -477,11 +515,23 @@ public sealed class HectonSurvivalSystemEditTests
         string source = File.ReadAllText(PdaDeathMemoryDumpPath);
         string consumeBody = ExtractMethodBody(source, "private void ConsumeSurvivalDeathSignal()");
 
-        StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)", consumeBody);
+        StringAssert.Contains("HectonSurvivalSystem survival = playerContext != null ? playerContext.SurvivalSystem : null;", consumeBody);
+        StringAssert.Contains("uint sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()));", consumeBody);
+        StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)", consumeBody);
         StringAssert.Contains("if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)", consumeBody);
         StringAssert.Contains("if (signal.DeathCause != (byte)SurvivalDeathCause.PressureCollapse)", consumeBody);
+        AssertSourceOrder(consumeBody, "uint sourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()));", "SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)");
         AssertSourceOrder(consumeBody, "if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)", "if (signal.DeathCause != (byte)SurvivalDeathCause.PressureCollapse)");
         AssertSourceOrder(consumeBody, "if (signal.DeathCause != (byte)SurvivalDeathCause.PressureCollapse)", "survival.TryGetLastDeathRecord(out SurvivalDeathRecord deathRecord)");
+    }
+
+    [Test]
+    public void PlayerScopedDeathConsumersUseSourceScopedLatestRoute()
+    {
+        AssertSourceScopedDeathConsumer(PdaLogbookManagerPath, requiresZeroSourceGuard: true);
+        AssertSourceScopedDeathConsumer(PdaContextualAdvisorySystemPath, requiresZeroSourceGuard: true);
+        AssertSourceScopedDeathConsumer(DynamicDifficultyDirectorPath, requiresZeroSourceGuard: true);
+        AssertSourceScopedDeathConsumer(GlobalProfileManagerPath, requiresZeroSourceGuard: true);
     }
 
     [Test]
@@ -538,6 +588,140 @@ public sealed class HectonSurvivalSystemEditTests
         StringAssert.Contains("Oxygen01 = FiniteSaturate(_latestVitals.Oxygen01)", wristBuildBody);
         StringAssert.Contains("DepthMeters = FiniteNonNegative(_latestVitals.DepthMeters)", wristBuildBody);
         StringAssert.Contains("SafeDepthMeters = math.max(1f, FiniteNonNegative(_latestVitals.SafeDepthMeters))", wristBuildBody);
+    }
+
+    [Test]
+    public void SurvivalVitalsSnapshotConsumersClearPlayerSourceOnTeardown()
+    {
+        string adaptiveStem = File.ReadAllText(AdaptiveStemMixerPath);
+        string vocalWarning = File.ReadAllText(VocalWarningSystemPath);
+        string biolum = File.ReadAllText(BiolumPulseSyncRuntimePath);
+        string suit = File.ReadAllText(SuitAdvisoryControllerPath);
+        string subtitle = File.ReadAllText(SubtitleManagerPath);
+        string compass = File.ReadAllText(DiegeticGyroCompassRuntimePath);
+        string wrist = File.ReadAllText(WristHologramHudRuntimePath);
+
+        string adaptiveDisable = ExtractMethodBody(adaptiveStem, "private void OnDisable()");
+        string adaptiveDestroy = ExtractMethodBody(adaptiveStem, "private void OnDestroy()");
+        string adaptiveUnregister = ExtractMethodBody(adaptiveStem, "private void UnregisterRuntime()");
+        StringAssert.Contains("UnregisterRuntime();", adaptiveDisable);
+        StringAssert.Contains("UnregisterRuntime();", adaptiveDestroy);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", adaptiveUnregister);
+
+        string vocalDisable = ExtractMethodBody(vocalWarning, "private void OnDisable()");
+        string vocalDestroy = ExtractMethodBody(vocalWarning, "private void OnDestroy()");
+        string vocalUnregister = ExtractMethodBody(vocalWarning, "private void UnregisterRuntime()");
+        string vocalAbortDuplicate = ExtractMethodBody(vocalWarning, "private void AbortDuplicateRuntimeOwner()");
+        string vocalDisposeNative = ExtractMethodBody(vocalWarning, "private void DisposeNativeStorage()");
+        StringAssert.Contains("UnregisterRuntime();", vocalDisable);
+        StringAssert.Contains("UnregisterRuntime();", vocalDestroy);
+        StringAssert.Contains("DisposeNativeStorage();", vocalDestroy);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", vocalUnregister);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", vocalAbortDuplicate);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", vocalDisposeNative);
+        AssertSourceOrder(vocalAbortDuplicate, "_playerSurvivalVitalsSourceId = 0u;", "DisposeNativeStorage();");
+
+        string biolumDisable = ExtractMethodBody(biolum, "private void OnDisable()");
+        string biolumDestroy = ExtractMethodBody(biolum, "private void OnDestroy()");
+        string biolumDispose = ExtractMethodBodyAfter(biolum, "private void OnDestroy()", "public void Dispose()");
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", biolumDisable);
+        StringAssert.Contains("Dispose();", biolumDestroy);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", biolumDispose);
+        AssertSourceOrder(biolumDisable, "_playerSurvivalVitalsSourceId = 0u;", "ReleaseRuntimeOwnerClaim();");
+        AssertSourceOrder(biolumDispose, "_playerSurvivalVitalsSourceId = 0u;", "ReleaseRuntimeOwnerClaim();");
+
+        string suitDisable = ExtractMethodBody(suit, "private void OnDisable()");
+        string suitDestroy = ExtractMethodBody(suit, "private void OnDestroy()");
+        string suitCachePlayer = ExtractMethodBody(suit, "private void CachePlayerRuntimeContext(");
+        StringAssert.Contains("_survivalSignalSourceId = 0u;", suitDisable);
+        StringAssert.Contains("_lastSurvivalSignalSequence = 0u;", suitDisable);
+        StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = 0;", suitDisable);
+        StringAssert.Contains("_survivalSignalSourceId = 0u;", suitDestroy);
+        StringAssert.Contains("_lastSurvivalSignalSequence = 0u;", suitDestroy);
+        StringAssert.Contains("_lastSurvivalVitalsSnapshotGeneration = 0;", suitDestroy);
+        StringAssert.Contains("if (_cachedPlayerContext != null)", suitCachePlayer);
+        StringAssert.Contains("survival = _cachedPlayerContext.SurvivalSystem;", suitCachePlayer);
+        StringAssert.Contains("else if (Application.isPlaying)", suitCachePlayer);
+        StringAssert.Contains("survival = null;", suitCachePlayer);
+        StringAssert.Contains("RefreshSurvivalSignalBinding();", suitCachePlayer);
+        StringAssert.DoesNotContain("if (survival == null && _cachedPlayerContext != null)", suitCachePlayer);
+
+        string subtitleDisable = ExtractMethodBody(subtitle, "private void OnDisable()");
+        string subtitleDestroy = ExtractMethodBody(subtitle, "private void OnDestroy()");
+        StringAssert.Contains("_cachedPlayerContext = null;", subtitleDisable);
+        StringAssert.Contains("_survivalVitalsSourceId = 0u;", subtitleDisable);
+        StringAssert.Contains("_cachedPlayerContext = null;", subtitleDestroy);
+        StringAssert.Contains("_survivalVitalsSourceId = 0u;", subtitleDestroy);
+
+        string compassDisable = ExtractMethodBody(compass, "private void OnDisable()");
+        string compassDestroy = ExtractMethodBody(compass, "private void OnDestroy()");
+        StringAssert.Contains("_playerContext = null;", compassDisable);
+        StringAssert.Contains("_survivalVitalsSourceId = 0u;", compassDisable);
+        StringAssert.Contains("_playerContext = null;", compassDestroy);
+        StringAssert.Contains("_survivalVitalsSourceId = 0u;", compassDestroy);
+
+        string wristDisable = ExtractMethodBody(wrist, "private void OnDisable()");
+        string wristDestroy = ExtractMethodBody(wrist, "private void OnDestroy()");
+        string wristClearSignals = ExtractMethodBody(wrist, "private void ClearSignalBuffers()");
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", wristDisable);
+        StringAssert.Contains("ClearSignalBuffers();", wristDestroy);
+        StringAssert.Contains("_playerSurvivalVitalsSourceId = 0u;", wristClearSignals);
+    }
+
+    [Test]
+    public void SurvivalHudControllerRequiresInitializedPlayerContextAndClearsRuntimeBinding()
+    {
+        string source = File.ReadAllText(SurvivalHudControllerPath);
+        string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+        string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
+        string resolve = ExtractMethodBody(source, "private void ResolveSurvivalSystem(");
+        string applyCached = ExtractMethodBody(source, "private void ApplyCachedPlayerContext()");
+        string clear = ExtractMethodBody(source, "private void ClearRuntimeBindings()");
+
+        StringAssert.Contains("ClearRuntimeBindings();", onDisable);
+        StringAssert.Contains("ClearRuntimeBindings();", onDestroy);
+        StringAssert.Contains("playerContext != null && playerContext.IsInitialized && playerContext.SurvivalSystem != null", resolve);
+        StringAssert.Contains("_survivalSystem = playerContext.SurvivalSystem;", resolve);
+        StringAssert.Contains("_survivalSystem = playerContext != null && playerContext.IsInitialized ? playerContext.SurvivalSystem : null;", applyCached);
+        StringAssert.Contains("_cachedPlayerContext = null;", clear);
+        StringAssert.Contains("_survivalSystem = null;", clear);
+        StringAssert.Contains("_nextSurvivalResolveFrame = 0;", clear);
+        StringAssert.DoesNotContain("_survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;", source);
+        AssertSourceOrder(resolve, "playerContext != null && playerContext.IsInitialized", "_survivalSystem = playerContext.SurvivalSystem;");
+    }
+
+    [Test]
+    public void DiegeticCompassEnergyInputRequiresCurrentSurvivalVitalsSource()
+    {
+        string source = File.ReadAllText(DiegeticGyroCompassRuntimePath);
+        string injectBody = ExtractMethodBody(source, "public void InjectDependencies(");
+        string cacheBody = ExtractMethodBody(source, "private void CacheColdDependencies()");
+        string replaceBody = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+        string refreshBody = ExtractMethodBody(source, "private bool RefreshFastSignalInputs(out CompassStateDTO state)");
+        string resolveBody = ExtractMethodBody(source, "private static uint ResolveSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)");
+
+        StringAssert.Contains("private uint _survivalVitalsSourceId;", source);
+        StringAssert.Contains("RefreshSurvivalVitalsSourceBinding();", injectBody);
+        StringAssert.Contains("RefreshSurvivalVitalsSourceBinding();", cacheBody);
+        StringAssert.Contains("case GlobalRegistryServiceSlot.Player:", replaceBody);
+        StringAssert.Contains("RefreshSurvivalVitalsSourceBinding();", replaceBody);
+        AssertSourceOrder(replaceBody, "_playerContext = currentService as IPlayerRuntimeContext;", "RefreshSurvivalVitalsSourceBinding();");
+
+        StringAssert.Contains("uint survivalVitalsSourceId = _survivalVitalsSourceId;", refreshBody);
+        StringAssert.Contains("if (survivalVitalsSourceId != 0u)", refreshBody);
+        StringAssert.Contains("ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();", refreshBody);
+        StringAssert.Contains("signal.SourceId != survivalVitalsSourceId", refreshBody);
+        StringAssert.Contains("(signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) == 0u", refreshBody);
+        StringAssert.Contains("!math.isfinite(signal.Energy01)", refreshBody);
+        StringAssert.Contains("state.Power01 = math.saturate(signal.Energy01);", refreshBody);
+        AssertSourceOrder(refreshBody, "uint survivalVitalsSourceId = _survivalVitalsSourceId;", "ReadOnlySpan<SurvivalVitalsChangedSignal> vitalsSignals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();");
+        AssertSourceOrder(refreshBody, "signal.SourceId != survivalVitalsSourceId", "state.Power01 = math.saturate(signal.Energy01);");
+        StringAssert.DoesNotContain("if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Energy) != 0u && math.isfinite(signal.Energy01))", refreshBody);
+
+        StringAssert.Contains("playerContext != null && playerContext.IsInitialized", resolveBody);
+        StringAssert.Contains("playerContext.SurvivalSystem", resolveBody);
+        StringAssert.Contains("RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))", resolveBody);
+        StringAssert.Contains(": 0u", resolveBody);
     }
 
     [Test]
@@ -1017,6 +1201,21 @@ public sealed class HectonSurvivalSystemEditTests
     {
         int signatureIndex = source.IndexOf(signature, StringComparison.Ordinal);
         Assert.GreaterOrEqual(signatureIndex, 0, "Missing method signature: " + signature);
+        return ExtractMethodBodyAt(source, signature, signatureIndex);
+    }
+
+    private static string ExtractMethodBodyAfter(string source, string marker, string signature)
+    {
+        int markerIndex = source.IndexOf(marker, StringComparison.Ordinal);
+        Assert.GreaterOrEqual(markerIndex, 0, "Missing method marker: " + marker);
+
+        int signatureIndex = source.IndexOf(signature, markerIndex + marker.Length, StringComparison.Ordinal);
+        Assert.GreaterOrEqual(signatureIndex, 0, "Missing method signature after marker: " + signature);
+        return ExtractMethodBodyAt(source, signature, signatureIndex);
+    }
+
+    private static string ExtractMethodBodyAt(string source, string signature, int signatureIndex)
+    {
         int open = source.IndexOf('{', signatureIndex);
         Assert.GreaterOrEqual(open, 0, "Missing method open brace: " + signature);
 
@@ -1046,6 +1245,51 @@ public sealed class HectonSurvivalSystemEditTests
         Assert.GreaterOrEqual(beforeIndex, 0, "Missing source token: " + before);
         Assert.GreaterOrEqual(afterIndex, 0, "Missing source token: " + after);
         Assert.Less(beforeIndex, afterIndex);
+    }
+
+    private static void AssertSourceScopedDeathConsumer(string relativePath, bool requiresZeroSourceGuard)
+    {
+        string source = File.ReadAllText(relativePath);
+        string refreshBody = ExtractMethodBody(source, "private void RefreshSurvivalSignalBinding()");
+        string consumeBody = ExtractMethodBody(source, "private void ConsumeSurvivalDeathSignal()");
+
+        StringAssert.Contains("uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);", refreshBody);
+        StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)", refreshBody);
+        StringAssert.Contains("uint sourceId = _survivalSignalSourceId;", consumeBody);
+        if (requiresZeroSourceGuard)
+            StringAssert.Contains("if (sourceId == 0u)", consumeBody);
+        StringAssert.Contains("SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)", consumeBody);
+        StringAssert.Contains("signal.SourceId != sourceId", consumeBody);
+        AssertSourceOrder(consumeBody, "uint sourceId = _survivalSignalSourceId;", "SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence)");
+        StringAssert.DoesNotContain("SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence)", consumeBody);
+
+        string disableBody = ExtractMethodBody(source, "private void OnDisable()");
+        string destroyBody = ExtractMethodBody(source, "private void OnDestroy()");
+        if (source.IndexOf("private void UnbindOwnerSubscriptions()", StringComparison.Ordinal) >= 0)
+        {
+            StringAssert.Contains("UnbindOwnerSubscriptions();", disableBody);
+            StringAssert.Contains("UnbindOwnerSubscriptions();", destroyBody);
+        }
+        else
+        {
+            StringAssert.Contains("UnsubscribeFromOwners();", disableBody);
+            StringAssert.Contains("UnsubscribeFromOwners();", destroyBody);
+        }
+
+        StringAssert.Contains("_survivalSignalSourceId = 0u;", source);
+        StringAssert.Contains("_lastSurvivalDeathSignalSequence = 0;", source);
+        if (source.IndexOf("private void RebindOwnerSubscriptionsFromCachedOwners()", StringComparison.Ordinal) >= 0)
+        {
+            string rebindBody = ExtractMethodBody(source, "private void RebindOwnerSubscriptionsFromCachedOwners()");
+            AssertSourceOrder(rebindBody, "_survivalSystem = null;", "CacheSurvivalFromPlayerContext();");
+            AssertSourceOrder(rebindBody, "TryGetComponent(out _survivalSystem);", "CacheSurvivalFromPlayerContext();");
+        }
+
+        if (source.IndexOf("private IPlayerRuntimeContext _playerRuntimeContext", StringComparison.Ordinal) >= 0)
+            StringAssert.Contains("_playerRuntimeContext = null;", source);
+        if (source.IndexOf("private IPlayerRuntimeContext _cachedPlayerContext", StringComparison.Ordinal) >= 0)
+            StringAssert.Contains("_cachedPlayerContext = null;", source);
+        StringAssert.Contains("_survivalSystem = null;", source);
     }
 
     private static void SetPrivateField(object target, string fieldName, object value)

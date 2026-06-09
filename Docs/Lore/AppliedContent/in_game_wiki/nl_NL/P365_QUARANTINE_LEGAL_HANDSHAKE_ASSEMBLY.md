@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantaine-juridische handshakeassemblage"
+title: "Assemblage van de Quarantainejuridische Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantaine-juridische handshakeassemblage
+# Assemblage van de Quarantainejuridische Handshake
 
-Het laatste ontsnappingsonderdeel is juridisch, medisch en bewijsgerelateerd tegelijk. Quarantine status, receiver identity, payload custody en evidence state bepalen of ascent redding, claim capture of public proof wordt.
+De quarantainejuridische handshake is het laatste ontsnappingsonderdeel omdat HECTON-8 aankomst niet als puur mechanische gebeurtenis behandelt. Een capsule kan een dichte ring, geladen wieg, werkend relais en juiste timing hebben en toch onder de verkeerde autoriteit aankomen.
+
+De handshake draagt ontvangersidentiteit, quarantainestaat, payload-custody-klasse, lien-openbaarmaking en vertraging van het publieke ledger. Keelmark kan massa en schuld accepteren voordat het een persoon accepteert. Recovery Compliance kan coördinaten accepteren terwijl het luik medisch vergrendeld blijft. Een publiek ledger kan bewijs pas accepteren nadat het pakket vertraging en beoordeling overleeft.
+
+Deze assemblage maakt de laatste keuze concreet. Een snelle sleutel kan het luik openen naar een bedrijfsclaim. Een compliance-sleutel kan overleving in quarantainehouding veranderen. Een publieke route kan bewijs beschermen terwijl het lichaam wacht. De motor tilt de capsule; de handshake beslist wat recovered bij koppeling betekent.
 
 ## Scanner
 
-Handshake-socket. De capsule kan mechanisch klaar zijn en toch bij de verkeerde receiver horen.
+HANDSHAKE-SOCKET // Ontvangersleutel afwezig. Mechanica kan lanceerpad certificeren; de custody-stack kiest nog wie de aankomst recovered mag noemen.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key vereist. Keelmark accepteert mass en lien. Recovery Compliance accepteert coordinates en quarantine status. Public ledger accepteert proof na vertraging. Unkeyed launch wordt standaard custody dispute.
+RECOVERY HANDSHAKE: laad ontvangersleutelset, quarantainestaat, payload-custody-klasse, publieke-ledgervertraging en lien-openbaarmaking. Lancering zonder sleutel gaat na schone opstijging naar geschilwachtrij.
 
 ## Audio
 
-Wie antwoordt, beslist wat redding betekent.
+De motor kan je optillen. De socket beslist wie het luik opent.
 
 ## Field Note
 
-Het laatste onderdeel is geen metaal. Het is de naam van het systeem dat jou recovered mag noemen.
+Het laatste slot is een naam, een quarantainestaat en een grootboekhandtekening. Staal beslist niet welke antwoordt.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/nl_NL. -->

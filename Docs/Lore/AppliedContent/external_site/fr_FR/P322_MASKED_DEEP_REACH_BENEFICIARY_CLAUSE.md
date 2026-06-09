@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Clause bénéficiaire Deep Reach masquée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Clause bénéficiaire Deep Reach masquée
 
-FR LOC HOLD: Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+La Clause bénéficiaire Deep Reach masquée définit la forme moderne de la conspiration de HECTON-8. Deep Reach n'est pas un marionnettiste omnipotent. C'est un bénéficiaire caché dans la priorité de récupération, le routage d'assurance et la garde par shell. Le résultat fait plus peur parce qu'il est ordinaire : de la paperasse avec des dents autour d'une catastrophe qui n'a jamais cessé de payer.
 
 ## Scanner
 
-FR LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach n'est pas imprimé sur la fiche d'embauche. Il apparaît là où argent, priorité de receveur et accès aux coordonnées convergent.
 
 ## Terminal
 
-FR LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+TRACE BÉNÉFICIAIRE / embauche visible : proxy loss desk / bénéficiaire masqué : shell liée à Deep Reach / responsabilité : isolée / accès coordonnées : préservé / canal prioritaire récupération : s'ouvre avant la voie de détresse contractant.
 
 ## Audio
 
-FR LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Si le nom manque mais que le canal s'ouvre en premier, le propriétaire est encore dans la pièce.
 
 ## Field Note
 
-FR LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Rester procédural : caviardage, proxy loss desk, trace bénéficiaire, canal de récupération. Laisser le joueur déduire la pression.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/fr_FR. -->

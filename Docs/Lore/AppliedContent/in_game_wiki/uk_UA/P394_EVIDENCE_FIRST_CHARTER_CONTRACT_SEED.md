@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Evidence First Charter Contract Seed"
+title: "Зерно контракту Хартії доказів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Evidence First Charter Contract Seed
+# Зерно контракту Хартії доказів
 
-UK LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Хартія доказів - сімейство контрактів, яке платить менше за вільний salvage і резервує більше ємності маршруту під докази. Пакети аварій, смуги стану люків, журнали pinger і нотаріальні касети йдуть попереду важких деталей, коли маршрут починає сипатися.
 
 ## Scanner
 
-UK LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Зерно контракту: докази перед матеріалами. Нижча виплата за матеріал, більша нотаріальна ємність і жорсткіші конфлікти збереження доказів.
 
 ## Terminal
 
-UK LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: виплата за матеріал знижена, ємність нотаріальної касети піднята, пріоритет шафи доказів активний, штраф за salvage-розбір активний, тиск receiver Deep Reach імовірний.
 
 ## Audio
 
-UK LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+Найчистіший запис платить пізно й рано злить людей.
 
 ## Field Note
 
-UK LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Нотатка мародера: шафа доказів не пробачає борг. Вона тільки заважає боргу вибрати, який доказ помре першим.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/uk_UA. -->

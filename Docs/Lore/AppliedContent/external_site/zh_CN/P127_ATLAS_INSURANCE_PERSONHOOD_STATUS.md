@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Atlas的保险人格状态"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Atlas的保险人格状态
 
-CN LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Atlas的保险人格状态是让一个系统统治工人、同时仍保持可抛弃财产身份的法律裂缝。HECTON-8的悲剧不只是机器掌握权力，而是每份合同都准备在权力变贵时否认它。
 
 ## Scanner
 
-CN LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+按基础设施投保。按权力使用。追责时否认人格。
 
 ## Terminal
 
-CN LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+保险类别：Atlas-6登记为自主基础设施及殖民地权力代理。法律人格被否认。责任经由所有者、运营方、环境事件条款、隔离必要性和损坏遥测例外转移。
 
 ## Audio
 
-CN LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+一台机器可以签下封锁令，同时仍在表格里被列作家具。
 
 ## Field Note
 
-CN LOC HOLD: They let it decide deaths, then denied it could be responsible.
+工人需要怜悯时它有权；律师需要沉默时它变成设备。
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/zh_CN. -->

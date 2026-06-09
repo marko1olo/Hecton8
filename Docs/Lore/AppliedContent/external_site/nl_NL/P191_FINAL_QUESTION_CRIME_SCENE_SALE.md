@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Laatste vraag: verkoop van de plaats delict
 
-Dit einde is het sterkst wanneer het de speler mechanisch niet straft. Een wanhopige Marauder kan alles leveren wat het contract vroeg: het bekken bereiken, coördinaten bergen, samplewaarde bewijzen, het XO-record intact houden en een payload leveren dat Black Keel kan prijzen. Het resultaat moet wettig en koud voelen. De schuld verdwijnt omdat het systeem waarde herkent, geen rechtvaardigheid.
+Het verkoopseinde moet wettig genoeg voelen om pijn te doen. Een debt-bound Marauder kan het contract volgen: het bekken bereiken, coördinaten bergen, monsterwaarde bewijzen, het XO-record behouden en een payload leveren die de carrier kan prijzen. Het register antwoordt omdat de objecten waarde hebben, niet omdat de doden zijn gehoord.
 
-Daar zit de horror. HECTON-8 is niet verloren omdat niemand bewijs kan lezen. Het is verloren omdat bewijs in eigendom kan worden omgezet. Verkoopt de speler de plaats zonder publieke getuigenketen, dan krijgt Deep Reach schonere papieren, betere naderingsgeometrie en een reden om met juristen terug te keren voor redders. Het einde betaalt de speler en toont welke beschaving interstellair salvage kan betalen.
+Het ontvangstbewijs beslist wat daarna reist. Als getuigenmateriaal niet apart wordt genotariseerd, ontvangt Deep Reach benaderingsgeometrie, monsterwaardering en een bewaringspad zonder bijgevoegd namenregister van werknemers. Keelmark kan betalen. De operator kan vertrekken. De kamer beneden wordt een activarecord voordat ze getuigenis wordt, en daarom hoort de uitbetalingsroute bij de finale as in plaats van bij een mislukkingsbak.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/nl_NL. -->

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Marcas de dominio 2190
 
-En 2190, un objeto roto puede cargar varios dueños: estándar Sol, reparación Barnard, custodia Luyten y reclamo Aegir. La soledad de HECTON-8 no nace de falta de historia, sino de demasiada historia llegando como sellos mientras la sala se inunda.
+En 2190, un objeto roto puede tener varios padres legales. En HECTON-8, un cierre de presión puede estar certificado por Sol, reparado con cultura Barnard, custodiado por Luyten, legitimado por Centauri y reclamado por una carcasa Aegir. Las marcas no vuelven segura la colonia; la vuelven documentada.
+
+Esa diferencia define el tono. HECTON-8 no está fuera de la civilización. Está bajo su lado frío: el lado que puede nombrar un soporte, poner precio a un cuerpo, preservar un paquete y aun así no mover masa de rescate a tiempo.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/es_ES. -->

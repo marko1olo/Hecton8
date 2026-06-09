@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren: return action"
+title: "Вера Сато-Рен: возвратное действие"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren: return action
+# Вера Сато-Рен: возвратное действие
 
-Vera Sato-Ren: return action дает текущей кампании активное лицо Deep Reach, не ломая hard-sci-fi delay. Она действует через packets, clauses, carrier custody и recovery windows.
+«Вера Сато-Рен: возвратное действие» — мост между старой катастрофой Deep Reach и текущей кампанией игрока. Она представляет Офис восстановительного соответствия в 2190 году, где Deep Reach уже не нужно стоять в комнате, чтобы применять силу. Компания отправляет пакеты возвратного действия.
 
-## Scanner
+Пакет требует координаты, XO-доказательство, состояние доступа к Atlas и молчание подрядчика в пределах окна опеки. Форма важна. Угроза — не речь. Угроза — время. Если payload можно восстановить, Deep Reach может предложить спасение, юридическое прикрытие или доступ перевозчика. Если риск доказательств растет, та же система может превратить игрока в ответственность.
 
-Return-action packet. V. Sato-Ren хочет recovery раньше rescue.
-
-## Terminal
-
-SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-Ей не нужно угрожать тебе. Окно уже угрожает.
-
-## Field Note
-
-Современный Deep Reach должен приходить как рычаг, а не villain monologue.
+Статья удерживает фракцию приземленной. Deep Reach опасна потому, что она все еще процедурная, платежеспособная и терпеливая. Ей нужно восстановление до спасения и опека до правды. Сато-Рен — человекообразная кромка этой машины.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/ru_RU. -->

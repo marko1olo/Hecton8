@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guía de historial de presión de deuda azul
 
-Xenon-Omega, llamado blue debt por salvagers, une la geología de HECTON-8 con computation, debt law y la razón por la que Deep Reach aún quiere recuperar una reclamación ahogada.
+La deuda azul no es una gema ni un mineral mágico. Es el nombre de campo para un sustrato estable a presión con Xenon-Omega: una estructura mineral que solo se vuelve valiosa después de que el océano la ha comprimido, calentado, enfriado y marcado eléctricamente en el orden correcto. Una muestra brillante puede no valer nada. Un bulto opaco y sellado puede pagar un mes de oxígeno si su historial de presión está limpio y su deriva de señal permanece callada.
 
-## Scanner
-
-Muestra de blue debt etiquetada. Verifica pressure history, containment stage y signal drift antes de export.
-
-## Terminal
-
-MARAUDER NOTE: blue debt es jerga de salvage para Xenon-Omega-bearing pressure-stable substrate. Vale porque extreme computation y energy isolation lo quieren, no porque brille.
-
-## Audio
-
-Deuda azul es como la llama la gente después de que llega la factura.
-
-## Field Note
-
-El color no es grade. Un contenedor callado con custody limpia paga; uno que canta te compra un drone wake.
+Por eso cada hallazgo de deuda azul se convierte de inmediato en material legal. Atlas quiere la deriva. Deep Reach quiere el historial de reclamación. Las cuadrillas salvage quieren un contenedor que no cante lo bastante fuerte para despertar drones. El recurso es peligroso porque cruza geología, computación, custodia y deuda. Demuestra que HECTON-8 nunca fue solo una colonia hundida. Fue un libro contable enterrado donde la presión escribía los números.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/es_ES. -->

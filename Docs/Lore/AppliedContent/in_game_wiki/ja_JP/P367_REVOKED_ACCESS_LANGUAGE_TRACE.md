@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "取り消されたアクセス文言の痕跡"
+title: "剥奪アクセス言語痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 取り消されたアクセス文言の痕跡
+# 剥奪アクセス言語痕跡
 
-取り消されたアクセス文言は、Deep Reachの静かな錠前の一つになった。扉は元作業員を拒み、その要求を通常保守として記録しながら、隠された避難経路を名指す正確な語句だけを漏らすことができた。HECTON-8では、それだけで十分な手掛かりになる。プレイヤーにはきれいな自白はいらない。古い言い回し、劣化人数算定、代替証人、ルート安全アーカイブ、請求保全経路があれば足りる。これらの言葉は救助ではなく責任審査のために作られた。拒否は同時に二つの事実を示す。資格は死んだ。だが、その奥の手順はまだ生きている。
+剥奪アクセス言語は、Deep Reachの静かな錠前の一つだ。元作業員は扉で拒否されるが、拒否文は封じられたルートの背後にある手順をまだ露出する。ロックは自白しなくていい。間違った古い言葉を使うだけで足りる。
+
+Maintenance reclassificationは、人間用ルートがサービス資材のように扱われたことを意味する。Degraded-countは、再確認すべき人数表が受理されたことを意味する。Claim-preservation routingは、会社が線路内の身体より線路の所有権を先に守ったことを意味する。どの語句も事務言葉として通るほど小さく、埋められた廊下を示すほど具体的だ。
+
+だから死んだ資格は限定的に役立つ。ハッチは開けない。だがアーカイブに古い責任方言で話させることはできる。その方言は地図になる。
 
 ## Scanner
 
-ロックアウトは「禁止」とは言わない。保守再分類、継続性保留、経路資料と記す。古いDeep Reachの言い回しだ。拒否でありながら、埋められた扉を指している。
+LOCKOUT痕跡 // 拒否文がmaintenance reclassification、continuity hold、route materialsを名指しする。扉はバッジを拒むが、埋められたルートを漏らす。
 
 ## Terminal
 
-アクセス応答 / ルート安全アーカイブ
-資格情報: 取り消し済み
-理由: 避難継続性資料は認定済みDeep Reach職員に限定
-表示語句: 劣化人数算定、代替証人、請求保全経路、保守再分類
-注記: 旧現場職員は事故照合の目的に限り拒否文言を閲覧できる。
+ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
+credential: revoked
+reason: evacuation-continuity materials restricted to certified Deep Reach staff
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
+note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-彼らは通路を消していない。罪を知る職員だけが今も読める語彙で包んだだけだ。
+彼らは廊下を消していない。罪ある職員がまだ読める語彙で包んだだけだ。
 
 ## Field Note
 
-バッジは死んだ。ロックアウトは、経路を埋めた事務方言をまだ話す。
+バッジは死んだ。ロックアウトはまだ、ルートを埋めた事務所方言で話す。
 
 <!-- In-Game Wiki; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ja_JP. -->

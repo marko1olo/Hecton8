@@ -69,6 +69,26 @@ Do not ask a writer to "make lore for this area" without a scene packet. Do not 
 
 If a task asks for an encyclopedia entry, survivor diary, scanner fact, audio log, terminal note, website article, wiki page, or technical/mineral/engine article, the output must include the actual readable artifact text through `writing.md`. Scenario notes alone are not enough. For production or AppliedContent packets, preserve the 15-locale route through `localization.md` and the lore localization docs.
 
+## 1C. Evidence-First Prose Firewall
+
+A scenario packet may not hand the writer an abstract thesis and call it lore. Reject the handoff before prose if the beat is primarily:
+
+- category collapse: infrastructure, ocean, biology, workers, debt, and Atlas described as "one body", "one skin", "one tissue", "one system", or equivalent without a specific room, machine, organism, document, and route consequence;
+- organ metaphor in place of blocking: corridor as gut, wall as valve, cable as flower, base as organism, or similar language when the scene has no literal biological/mechanical operation to inspect;
+- all-caps machine prophecy instead of a terminal record with source, timestamp, owner, field names, values, and failure state;
+- corporate/legal abstraction that hides the actual event but has no recoverable human, room, shift, queue, door, pressure state, cargo return, or custody trail;
+- "the player learns that..." or "this represents..." instead of a player action, contradiction, and consequence.
+
+The recovery is not a prettier sentence. Replace the beat with a physical operation:
+
+- where it happens;
+- what equipment or organism is involved;
+- which human procedure or automated route mislabels it;
+- what evidence the player sees first;
+- what decision, risk, route, debt, salvage value, or distrust changes afterward.
+
+If that recovery cannot be written from canon, mark the beat `BLOCKED_SOURCE_BRIEF` with the missing fact. Do not ask the writer to make it sound deep.
+
 ## 2. Evidence Stack
 
 A narrative beat should use at least two evidence channels:

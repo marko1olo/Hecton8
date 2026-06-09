@@ -19,15 +19,21 @@ localization_flags: 0
 
 # Last Normal Day Evidence Set
 
-Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+The last normal day is not a date. It is the shape a room keeps when work is interrupted. A locker plate waits for a hand that never came back. A correction note lacks a signature because somebody meant to return after descent. A pump task remains open. A lunch token stays clipped under tape. The route clock keeps expecting a stamp because the clock has no category for silence.
+
+These objects are more reliable than speeches. Nobody arranged them for memory. The board was still trying to run a shift, feed a crew, clear a sump, count a tool and keep a route honest. That is why the evidence hurts. The colony was not finished becoming a disaster. It was still normal enough for people to argue about cups, keys and late signatures while the failure had already entered the walls.
+
+For a Marauder, the set is also a warning against lazy salvage. A valuable plate can be stripped in seconds, but an unsigned correction may explain why an official cause field was left blank. A clipped meal token may prove a worker expected to return before a door clock stopped. A body category may look clean until the pump certificate and shift count disagree.
+
+Read the interruption before taking the object. HECTON-8's drowned rooms do not need perfect final messages. Their strongest testimony is smaller: work left open, duty not handed over, a clock waiting for a person the ocean had already removed.
 
 ## Scanner
 
-Last-normal-day set. The strongest evidence is unfinished ordinary work.
+LAST-NORMAL-DAY SET // Locker plate unclaimed, correction note unsigned, pump task open, lunch token still clipped, route clock waiting for return. The strongest evidence is unfinished work.
 
 ## Terminal
 
-EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock waiting. Official cause blank. Marauder correction: compare pump cert, shift count, body category and door-clock mismatch before salvage removal.
 
 ## Audio
 
@@ -35,6 +41,6 @@ The last day did not know it was last.
 
 ## Field Note
 
-Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Nobody packed the room for history. Leave the contradiction intact: open task, clipped meal token, blank cause field, route clock still expecting a person.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/en_US. -->

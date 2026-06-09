@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Règles des marques de correction maraudeuses"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Règles des marques de correction maraudeuses
 
-FR LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+Les Règles des marques de correction maraudeuses définissent la seconde main humaine sur les preuves de la colonie. Deep Reach écrivait des catégories pour enterrer les ouvriers ; les équipes de réclamation venues plus tard écrivaient par-dessus pour survivre, négocier ou se prévenir. Une marque de correction n'est utile que si elle change ce que le joueur peut déduire. Un nom encerclé peut sauver une personne d'une catégorie de perte. Un tampon de route barré peut rendre suspecte une porte sûre. Un prix peut transformer un échantillon biologique en objet de dette. Une marque de témoin cachée peut protéger un fragment vocal jusqu'au bon contexte. Les marques doivent sembler rapides, pratiques et fatiguées, pas théâtrales. Ce ne sont pas des graffitis d'ambiance. C'est le travail de gens qui savaient que le registre était sale et devaient encore manger.
 
 ## Scanner
 
-FR LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Une marque de correction peut sauver un nom, contaminer une réclamation ou prévenir le prochain plongeur que la catégorie officielle ment.
 
 ## Terminal
 
-FR LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE : les marques maraudeuses doivent changer l'interprétation d'une preuve, le risque de route ou la pression de paiement. Les marques valides préservent un nom ouvrier, contestent une catégorie d'assurance, avertissent une route, chiffrent un échantillon, cachent un témoin ou marquent une dette. Le graffiti vide brise la chaîne de preuve.
 
 ## Audio
 
-FR LOC HOLD: Somebody came before you and still failed to leave clean.
+Quelqu'un est venu avant vous et n'a quand même pas réussi à partir propre.
 
 ## Field Note
 
-FR LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Marques : préserver nom, contester catégorie, avertir route, chiffrer échantillon, cacher témoin, marquer dette. L'écriture doit changer la lecture, pas décorer le prop.
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/fr_FR. -->

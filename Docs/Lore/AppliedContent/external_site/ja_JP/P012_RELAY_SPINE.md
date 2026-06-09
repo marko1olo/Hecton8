@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "リレースパイン"
+title: "リレー・スパイン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# リレースパイン
+# リレー・スパイン
 
-人類空間は奇跡ではなくリレーでつながる。ハッシュは受信を証明し、法的連鎖は請求を生かす。
+HECTON-8にはansibleも、魔法の緊急チャンネルも、海上で生中継する中核世界の裁判所もない。人類圏はリレー・スパインでつながる。予定ビーム、パケット保管、証人ハッシュ、ローカルバッファ、受領鎖だ。事実を保存するには強力な機械だが、今空気を必要とする人間を救うにはひどく向かない。
 
-その網は強いが冷たい。プレイヤーは真実を送り、それが役立つ前に死ぬことがある。
+プレイヤーは本物のファイルを見つけ、出所を証明し、キューへ押し込み、それでも現地が悪化するのを見る。Black Keelはバーストを聞いて債権に変える。Luytenは窓の後で認証する。no-FTLは脚注ではない。即時の選択が水中の人間に属する理由だ。
 
 <!-- External Site; generated from P012_RELAY_SPINE/ja_JP. -->

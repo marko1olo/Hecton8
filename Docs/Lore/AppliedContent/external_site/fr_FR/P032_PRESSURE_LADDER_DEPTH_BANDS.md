@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Échelle de pression
 
-Elle transforme la progression de profondeur en structure de survie hard-sci-fi pour une exploration longue.
+L'Échelle de pression définit l'accès aux profondeurs de HECTON-8 comme une chaîne de service plutôt qu'un verrou arbitraire : chaque bande ne s'ouvre que si joint de pression, grade de combinaison, énergie, oxygène, isolation, signal et retour passent ensemble.
 
 ## Scanner
 
-La profondeur se divise par classes de pression, pas par noms de niveaux. Chaque bande exige une réponse technique.
+LECTURE DE PORTE DE PROFONDEUR // Bande : descente de service 250-1200 m. Marge du joint 11 %. La plaque de combinaison accepte le Grade C seulement après verrouillage du bloc batterie B2. Ping de retour faible sous le troisième collier. Ne pas ouvrir le sas inférieur au courage.
 
 ## Terminal
 
-Échelle: équipement de plateau, renfort canyon, isolation saumure, discipline de coque abyssale, durcissement signal d'usine.
+TABLEAU D'ACCES PROFONDEUR
+0-250 m : plateau photique / travail court avec équipement abîmé accepté
+250-1200 m : plateau de service / joint de combinaison Grade C, batterie verrouillée, ping de câble requis
+1200-2800 m : canyon de saumure / enveloppe isolante et trim de flottabilité requis
+2800-4300 m : champ machine abyssal / signal durci et discipline de coque requis
+4300-5600 m : bassin Atlas / plan de retour capable de survivre à la perte de pression et au bruit de bus
+Échec : bande suivante verrouillée jusqu'à réparation de la lecture la plus faible
 
 ## Audio
 
-On ne descend pas par bravoure. On descend parce que le prochain joint tient.
+Arrête de discuter avec la porte. La marge du joint est rouge, et ton ping de retour est déjà en retard.
 
 ## Field Note
 
-L'océan verrouille la progression par les mathématiques.
+La porte ne demande pas pourquoi la route est nécessaire. Elle lit joint, énergie, oxygène, isolation, signal, puis donne le vert ou enterre l'idée.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/fr_FR. -->

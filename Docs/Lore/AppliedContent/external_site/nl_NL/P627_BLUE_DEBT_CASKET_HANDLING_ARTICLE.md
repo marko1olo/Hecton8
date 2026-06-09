@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Behandeling van blauweschuld-casket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Behandeling van blauweschuld-casket
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Blauwe schuld wordt niet nuttig wanneer je het vindt. Het wordt nuttig als het in de toestand blijft die het waardevol maakte. Een verzegelde drukcasket is deels container, deels waarschuwing en deels ontvangstbewijs; hij voorkomt dat Xenon-Omega-residu, drukgegroeid rooster of besmet substraat verandert in ruis, poeder, bewijsverlies of een signaal dat het verkeerde systeem kan horen.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+De eerste veilige keuze is niet verkopen, maken of verbergen. Het is stabiliseren. Een casket met koude intacte strip kan bewegen. Een casket met warme seal maakt bewijs verdacht. Slechte hantering verandert uitbetaling in besmetting, ruis en routerisico.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Payload Public Ledger Receiver Protocol
 
-The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+The public ledger protocol sends proof where Deep Reach cannot quietly own it. It redacts coordinates, seals attestation hashes, attaches route custody and Atlas weighting digest, then enters a delayed relay. The sender loses control at acceptance. The packet becomes harder to buy, harder to bury and slower to use.
 
 ## Scanner
 
-Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Public ledger route armed. Coordinates redact before delayed relay; attestation hash stack and liability chain seal on acceptance.
 
 ## Terminal
 
-PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+PAYLOAD RECEIVER // PUBLIC LEDGER LANE. Receiver: distributed public ledger, delayed Tau lane. Accept coordinate-redacted incident packet, attestation hashes, route custody, Atlas weighting digest, receiver timestamp. Reject private payout and direct recovery claim. Recall ends at relay acceptance.
 
 ## Audio
 
-Once it leaves, it is no longer your truth. That is the point and the cost.
+Ledger took the packet. Coordinates masked. Recall window closed.
 
 ## Field Note
 
-Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Marauder note: redact the route before the relay accepts. After acceptance, the packet is no longer yours.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/en_US. -->

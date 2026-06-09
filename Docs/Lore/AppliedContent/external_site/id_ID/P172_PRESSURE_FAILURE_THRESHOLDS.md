@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Ambang Kegagalan Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Ambang Kegagalan Tekanan
 
-ID LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Ambang Kegagalan Tekanan menentukan batas yang terbaca antara sumber daya dan bahaya. Ia membuat HECTON-8 mengubah kedalaman menjadi tata bahasa untuk pemain: stres visual, bunyi tik, peringatan scanner, risiko salvage, dan konsekuensi crafting semuanya menunjuk pada aturan fisik yang sama. Sampel gagal karena dunia menekannya, bukan karena angka inventaris diam-diam kedaluwarsa.
 
 ## Scanner
 
-ID LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Sampel bagus menjadi bahaya ketika melewati garis tekanan yang salah. Laut tidak peduli bahwa labelnya hampir benar.
 
 ## Terminal
 
-ID LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+KEGAGALAN TEKANAN / shallow-rated: tik segel dan rambatan air / industrial-rated: drift gasket dan gemetar clamp / brine-rated: retak rambut dan bloom garam / abyssal-rated: ghosting akustik, kabut sampel mati / Atlas-rated: lockout kustodi sebelum rugi struktur.
 
 ## Audio
 
-ID LOC HOLD: Pressure does not care that the label was almost right.
+Tekanan tidak peduli labelnya hampir benar.
 
 ## Field Note
 
-ID LOC HOLD: Failure thresholds should be readable before they punish.
+Ambang kegagalan harus terbaca sebelum hukuman: tik, drift, retak rambut, bloom garam, kabut sampel mati. Jika pemain baru belajar setelah kehilangan, dunia sedang curang.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/id_ID. -->

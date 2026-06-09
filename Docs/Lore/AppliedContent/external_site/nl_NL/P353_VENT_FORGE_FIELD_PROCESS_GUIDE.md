@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Veldprocesgids voor vent-forge"
+title: "Veldprocesgids voor ventsmederijen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Veldprocesgids voor vent-forge
+# Veldprocesgids voor ventsmederijen
 
-De Veldprocesgids voor vent-forge verbindt grondstofwaarde met veldbehandeling: belangrijk is niet alleen wat gevonden wordt, maar hoe pressure en cooling het recovery laat overleven.
+Een ventsmederij is geen schatkist op de zeebodem. Het is een trage reactor van hete seep-stroom, pekeldichtheid, vermalen mineraalvoer en druk die haast niet vergeeft. Nuttig materiaal zit vaak halverwege natuurlijke afzetting en geruïneerde industriële batch: keramiekkorrels groeien in minerale kelen, sealantvoorlopers bakken in scheuren, geladen films blijven alleen stabiel als koeling in de juiste volgorde gebeurt.
 
-## Scanner
-
-Vent-forge chemistry actief. Kwaliteit volgt pressure history, heat pulse en langzame koeling, niet de glans van het monster.
-
-## Terminal
-
-FIELD GUIDE: vent forges koken sulfides, noble-gas pockets, ceramics en sealant precursors. De route van een monster door heat, brine en pressure telt meer dan zijn naam.
-
-## Audio
-
-De vent maakte geen erts. Hij maakte een proces dat jij onderbrak.
-
-## Field Note
-
-Til een verse partij niet direct in koud water. Laat de vent de anneal afmaken of de shell craqueleert.
+Daarmee wordt veldbehandeling deel van de resource. Trek een verse partij in koud water en de schaal craqueleert. Ventileer hitte te snel en een schoon monster wordt poeder. Wacht te lang en de vent schrijft een andere chemie over de laag die je wilde. Salvageploegen waarderen ventsmederijen omdat ze HECTON-8 laten voelen als een planeet die zelf blijft werken: de oceaan verbergt materialen niet alleen, hij maakt ze nog steeds.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/nl_NL. -->

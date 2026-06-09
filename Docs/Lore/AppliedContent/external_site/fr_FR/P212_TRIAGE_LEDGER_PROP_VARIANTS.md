@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Variantes de props de registre de triage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Variantes de props de registre de triage
 
-FR LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Les Variantes de props de registre de triage définissent la preuve médicale comme preuve de processus. HECTON-8 utilise les registres pour relier blessure, rupture de pression, refus de route, état d'équipement et trous de témoin. L'horreur reste systémique : le joueur ne lit pas seulement que des gens ont souffert, mais comment la colonie a converti le dommage en décisions de routage.
 
 ## Scanner
 
-FR LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+La preuve médicale doit exposer délai et routage, pas décorer la pièce avec de la souffrance.
 
 ## Terminal
 
-FR LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE : chaque entrée de registre doit lier la blessure à la pression, au refus de route, à l'état d'équipement, au délai de certification ou à une chaîne de témoin manquante. La douleur seule ne suffit pas. Le prop doit montrer qui pouvait bouger, qui était retenu et quel système a rendu le délai procédural.
 
 ## Audio
 
-FR LOC HOLD: Pain is not proof until the route bears the mark.
+La douleur n'est pas preuve tant que la route ne porte pas la marque.
 
 ## Field Note
 
-FR LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Variantes : sténographie crush-status, marque de dette oxygène, route hold barré, note de stabilisation Atlas, trou de witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/fr_FR. -->

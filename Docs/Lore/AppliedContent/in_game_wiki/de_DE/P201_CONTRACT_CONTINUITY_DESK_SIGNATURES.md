@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Contract Continuity Desk Signatures"
+title: "Unterschriften des Vertragskontinuitäts-Schreibtischs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Contract Continuity Desk Signatures
+# Unterschriften des Vertragskontinuitäts-Schreibtischs
 
-DE LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+Unterschriften des Vertragskontinuitäts-Schreibtischs zeigen, wie der Anfangsauftrag des Spielers zu rechtlichem Druck wird, bevor der Spieler das Meer versteht. Die Falle ist kein einzelner böswilliger Satz. Sie wird aus Routineunterschriften gebaut, die langweilig genug aussehen, um durchzugehen: Pfandzusammenlegung des Aegir Reclamation Pool, Black-Keel-Bergungsklausel, Sauerstoffkredit-Anhang, Blacklist-Risikohinweis und Nutzlastverwahrung. Jede Unterschrift ist klein. Zusammen machen sie Ablehnung teuer, Schweigen profitabel und Rettung bedingt. Das ist das untere Bürogesicht von Deep Reach: kein Thron, sondern Schreibtische, die Überleben in Vertragsbruch verwandeln können.
 
 ## Scanner
 
-DE LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Die Anfangsfalle des Vertrags entsteht aus unteren Unterschriften: Pfandzusammenlegung, Sauerstoffanhang, Blacklist-Risiko und Nutzlastverwahrung.
 
 ## Terminal
 
-DE LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Pfandbedingungen des Aegir Reclamation Pool mit Black-Keel-Bergungsklauseln zusammenführen. Sauerstoffkredit-Anhang, Blacklist-Risikohinweis und Nutzlastverwahrung anhängen. Eskalation nicht erforderlich, wenn Operator akzeptiert.
 
 ## Audio
 
-DE LOC HOLD: Nobody says trap. They say continuity.
+Eine Unterschrift kann eine Drucktür sein, wenn jede Klausel danach verriegelt.
 
 ## Field Note
 
-DE LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Niemand stempelt eine Falle. Man stempelt Kontinuität.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/de_DE. -->

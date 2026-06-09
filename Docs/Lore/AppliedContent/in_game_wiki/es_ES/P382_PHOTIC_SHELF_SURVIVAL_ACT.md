@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Photic Shelf Survival Act"
+title: "Puerta del estante fótico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Photic Shelf Survival Act
+# Puerta del estante fótico
 
-ES LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+El estante fótico enseña con objetos, no con comodidad. El operador aprende qué carcasas de bomba aún guardan aire, qué parches compran minutos y qué organismos brillantes ensucian una herramienta. Atlas aparece primero como residuo de reparación: útil, equivocado en sitios y lo bastante cerca para tocarlo.
 
 ## Scanner
 
-ES LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Puerta de ruta: estante fótico. Bolsas de oxígeno, salas de bombas, primeros cortes y residuo de reparación Atlas poco profundo son legibles en agua diurna.
 
 ## Terminal
 
-ES LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+RUTA DE CAMPAÑA // ESTANTE FÓTICO. Requerido: reiniciar bomba, parchear sello, cortar cable, ping de escáner. Hardware de ascenso no disponible; celdas gastadas enrutadas a sistemas de supervivencia. Residuo Atlas clasificado útil con aviso de contaminación.
 
 ## Audio
 
-ES LOC HOLD: The shallow water is not safe. It is only readable.
+El agua somera no es segura. Es legible.
 
 ## Field Note
 
-ES LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Nota de saqueador: la luz ayuda. No vuelve generosa una línea de oxígeno agrietada.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/es_ES. -->

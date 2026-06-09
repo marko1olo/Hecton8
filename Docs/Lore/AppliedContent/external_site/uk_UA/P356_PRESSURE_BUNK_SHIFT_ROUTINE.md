@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Pressure Bunk Shift Routine"
+title: "Змінний розпорядок койки тиску"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Pressure Bunk Shift Routine
+# Змінний розпорядок койки тиску
 
-UK LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+Pressure Bunk Shift Routine показує затоплену колонію HECTON-8 через звичку, а не сповідь. Slate робочого ряду перелічує тон пробудження, перевірку шва костюма, pressure note, meal-water token, custody інструмента і призначення спуску. На станції без світанку такий список замінює ранок, табель, медичне попередження і доказ повернення.
 
-## Scanner
+Сила в тому, як мало slate вдає. Він не каже, що хтось був сміливим. Він каже, що ключ насоса має повернутися до їжі. Каже, що шви перевіряють о 03:52. Каже, що сон ділила машина, бо океану байдуже, чи розуміє тіло годину.
 
-UK LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-UK LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-UK LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-UK LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Простеж slate, і колонія стає читабельною. Одне ім'я може бути койкою, ключем, водним жетоном, маршрутним штампом і пропущеним поверненням. Це не мотлох. Це нервова система поселення під тиском, записана найменшими позначками.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/uk_UA. -->

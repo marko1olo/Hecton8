@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Pressure Job Title Table"
+title: "Tabelle der Druckberufe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Pressure Job Title Table
+# Tabelle der Druckberufe
 
-DE LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+Die Berufstabelle ist das Arbeitsskelett der Kolonie. Sie bindet Personen an Pumpen, Dichtungen, Relais, medlocks, Fabrikatoren, Routentafeln, vent-kilns und Atlas-Konsolen.
+
+Ein Titel muss physische Spuren versprechen. Dichtungsrigging hinterlässt Dichtungskreide, Clamp-Narben und Lukentagebücher. Brine-Tauchen hinterlässt Dichtenotizen, geschnittene Gewichtleinen und Spülspuren am Anzug. Relaisaufsicht hinterlässt Timingzettel und Zugangsverweigerungen. medlock-Hilfe hinterlässt Formulare, die zeigen, dass Besetzung wichtiger war als Erholung.
 
 ## Scanner
 
-DE LOC HOLD: Job titles should explain what kept the colony alive.
+JOBTAFEL // Der Titel ist kein HR-Schmuck. Er sagt, welches System ausfiel, als der Arbeiter nicht mehr antwortete.
 
 ## Terminal
 
-DE LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+DRUCKBERUFE // Pumpentechnik, Dichtungsrigging, Routenschreiberei, Brine-Tauchen, Fabrikatorbetrieb, medlock-Hilfe, Relaisaufsicht, vent-kiln-Arbeit, Atlas-Sicherheitslesen und Schichtleitung sind keine soziale Farbe. Sie sind Zugriffslogik. Der Titel definiert Wissen, akzeptierte Panels, Werkzeugräume und den Fehler, der nach Great Tide zugeschoben wird.
 
 ## Audio
 
-DE LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Niemand starb als Mitarbeiter 438. Sie starben mit einer Arbeit, die der Ozean noch brauchte.
 
 ## Field Note
 
-DE LOC HOLD: Every title should imply a tool, route or failure.
+Jeder Titel soll auf Werkzeug, Raum, Routenerlaubnis oder einen Grund verweisen, warum der Körper nicht gehen durfte.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/de_DE. -->

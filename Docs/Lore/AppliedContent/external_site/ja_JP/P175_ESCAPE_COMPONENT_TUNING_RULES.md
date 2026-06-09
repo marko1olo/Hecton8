@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "脱出部品調整規則"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# 脱出部品調整規則
 
-JP LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+脱出部品調整規則は、HECTON-8のクラフトとエンディングに共通文法を与える。プレイヤーは恣意的なレア部品を周回しているのではない。深淵から来たものが海上で受け入れられるべき理由を、物理、航法、法の三方向から組み立てている。
 
 ## Scanner
 
-JP LOC HOLD: Escape parts should force depth and evidence, not grind.
+脱出部品はグラインドではなく、深度と証拠を要求するべきだ。HECTON-8を離れることは、高価なクラフト一回ではなく証明の連鎖だ。
 
 ## Terminal
 
-JP LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+脱出部品 / relay spine は通信を証明 / clamp rings は圧力定格を証明 / guidance core はタイミングを証明 / ascent charge はエネルギーを証明 / legal handshake は誰が応答するかを決める / evidence payload は結果と保管を変える。
 
 ## Audio
 
-JP LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+離脱は一つのクラフトではない。証明の連鎖だ。
 
 ## Field Note
 
-JP LOC HOLD: Every ascent component must have a physical and legal reason.
+各上昇部品には物理的理由と法的理由が必要だ。通信、定格、タイミング、エネルギー、受信者、ペイロード。一つ欠ければボタンを止めるだけでなく、結末が変わるべきだ。
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/ja_JP. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Vent Forge Process Steps"
+title: "Етапи вент-кування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Vent Forge Process Steps
+# Етапи вент-кування
 
-UK LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Етапи вент-кування перетворюють крафт HECTON-8 на індустріальний ритуал, який лишається фізичним. Гравець не носить у кишені казкову піч. Кузня - це місце, де океан, геотермальний вент і зламане колоніальне обладнання на короткий час погоджуються. Спочатку заготовку продувають, щоб старий розсіл не закипів усередині. Потім її затискають до підйому імпульсу, прогрівають на зростанні тиску, запечатують у короткому провалі й гартують у холодній зворотній течії. Фінальний акустичний дзвін не прикраса; він доводить, що деталь звучить одним чистим тілом, а не ховає тріщини. Так крафт отримує ритм, який світ може підтримати через VFX, звук і UI. Тепло важливе, але таймінг важливіший. Пропущене вікно не створює загадковий fail state. Воно створює гнутий брухт, сольовий bloom або тріснутий компонент, який точно каже гравцю, що пішло не так.
 
 ## Scanner
 
-UK LOC HOLD: Vent forging should feel like using the planet against itself.
+Вент-кування - не магічна металургія. Це позика тепла, тиску і ритму планети без права дати планеті забрати деталь.
 
 ## Terminal
 
-UK LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ЕТАПИ ВЕНТ-КУВАННЯ / 01 видути розсіл із заготовки / 02 затиснути до імпульсу / 03 прогріти на підйомі вента / 04 запечатати у провалі тиску / 05 загартувати в холодній зворотній течії / 06 підтвердити акустичним дзвоном / відмова: гнутий брухт, сольовий bloom або тріснута від тиску деталь.
 
 ## Audio
 
-UK LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Місяць - це піч. Тобі лише дозволили позичити її.
 
 ## Field Note
 
-UK LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Процес має читатися як продувка, затиск, прогрів, герметизація, гартування, ring-test. Ризик не у вогні; ризик у пропущеному провалі тиску.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/uk_UA. -->

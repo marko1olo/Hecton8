@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Material Payout Record"
+title: "Catatan Pembayaran Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Material Payout Record
+# Catatan Pembayaran Material
 
-ID LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Catatan pembayaran ini berguna karena kolom tanda terimanya: apa yang dibeli penerima, apa yang tidak ada, koordinat mana diterima, sampel apa yang keluar, bagaimana tanggungan berubah, nama mana hilang, dan jalur kembali apa yang didapat Deep Reach.
 
 ## Scanner
 
-ID LOC HOLD: Paid. Not cleared.
+CATATAN PEMBAYARAN MATERIAL // Keelmark/Recovery Compliance menerima koordinat cekungan dan sampel utang biru. Hak tanggungan operator dikurangi; bukti pekerja tetap di luar kustodi notarial.
 
 ## Terminal
 
-ID LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+CATATAN AKHIR / PEMBAYARAN MATERIAL
+Penerima: Keelmark/Recovery Compliance.
+Diterima: koordinat cekungan Atlas, sampel utang biru, hash kustodi carrier.
+Tidak dilampirkan: paket saksi notarial, ledger nama pekerja, audit massa penyelamatan.
+Dampak tanggungan: dikurangi atau ditutup oleh tabel kontrak.
+Dampak Deep Reach: jalur kembali yang lebih bersih ke HECTON-8.
+Kehilangan diketahui: bukti dapat diberi harga tanpa didengar.
 
 ## Audio
 
-ID LOC HOLD: The receipt is clean because it ignores the room.
+Ledger membayar peta kubur. Ruangnya tidak dibuka.
 
 ## Field Note
 
-ID LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Tanda terima membersihkan kolom tanggungan, bukan ruangnya. Nama yang tidak masuk kustodi tetap hilang setelah pembayaran.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/id_ID. -->

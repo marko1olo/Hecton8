@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Van Professionele Schuld naar Persoonlijke Inzet"
+title: "Van Beroepsschuld naar Persoonlijk Belang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Van Professionele Schuld naar Persoonlijke Inzet
+# Van Beroepsschuld naar Persoonlijk Belang
 
-Professionele schuld wordt persoonlijke inzet zonder de protagonist tot oorzaak van de ramp te maken. De speler heeft geen verloren familielid nodig, geen bloedlijn van wraak en geen geheime rol als gekozen getuige. De druk is kouder en volwassener. Die herkent de procedure. Die weet waarom een getuigenveld telt, waarom een route-veilig-stempel kan liegen, waarom een drager je kan horen en je toch niet uitlicht. HECTON-8 wordt persoonlijk omdat de oude Deep Reach-taal voor hem niet abstract is. Het is werk dat hij ooit moest vertrouwen, werk waar hij ooit naast opereerde, en werk dat nu vastzit aan namen uit verdronken kamers. De boog is geen bekentenis. Het is weigering: zodra de speler de achterlatingsmachine kan lezen, wordt haar begraven laten nog een vorm van deelname.
+Beroepsschuld wordt persoonlijk belang zonder de operator oorzaak van de ramp te maken. De druk is smaller en moeilijker weg te duwen. Die herkent het formulier, de route-safe omission, het verzegelde controleveld en de ontvangertaal die een kamer in een afgehandelde claim verandert.
+
+Familiewraak is niet nodig. Een verborgen commandorol is niet nodig. De teruggevonden tags hangen namen aan een procedure die de operator ooit als werk vertrouwde. Zodra dat patroon leesbaar is, wordt het begraven laten een nieuwe omission in dezelfde machine. Het belang is geen bloedlijn. Het is vakkennis die bewijs uit verdronken kamers raakt.
 
 ## Scanner
 
-Het handtekeningpatroon komt overeen met de oude procedurecache. De namen veranderden. De kamer faalde op dezelfde manier. Expertise is geen afstand meer.
+PROCEDURE MATCH // Oude volgorde verschijnt in nieuw faalrecord. Namen veranderd; dezelfde route-safe omission. Expertise is geen afstand meer.
 
 ## Terminal
 
-DOSSIERAFRONDING / PROFESSIONELE INZET
-triggerbewijs: procedureherkenning, teruggevonden werknemertags, conflict met claimontvanger
-uitgesloten motief: familieband, wraaklijn, status als gekozen getuige
-actief motief: voormalig systeemwerker herkent voorkombare achterlating en kan de machine die haar archiveerde nog lezen.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Je kwam voor een claim. Je bleef omdat het papierwerk je handen kende.
+Je kwam voor een claim. Het formulier gebruikte je oude handen.
 
 ## Field Note
 
-Niet jouw handtekening. Nog steeds jouw vak. Daarom blijft de kamer niet stil.
+Niet jouw handtekening. Wel jouw vak. Daarom blijft de kamer niet begraven.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/nl_NL. -->

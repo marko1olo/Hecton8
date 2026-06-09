@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Quiet Salvage Contract Seed"
+title: "Graine de contrat de salvage calme"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Quiet Salvage Contract Seed
+# Graine de contrat de salvage calme
 
-FR LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Salvage calme est une famille de contrats avec moins d'alarmes précoces et un langage de propriété plus dur. La route donne à l'opérateur le temps de réparer, respirer et lire, mais tags d'échantillon, journaux pinger et casiers de preuve se lient à un récepteur avant le premier gros paiement.
 
 ## Scanner
 
-FR LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+Graine de contrat: salvage calme. Faible exposition aux tempêtes, premier paiement propre et garde restreinte sur tout ce qui prouve l'historique de route.
 
 ## Terminal
 
-FR LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+GRAINE QUIET: fenêtre de tempête calme, créneau bathydrop prévalidé, contact faune précoce réduit, verrou de garde renforcé, clause d'audit récepteur d'abord active.
 
 ## Audio
 
-FR LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+Une eau calme signifie que quelqu'un a déjà déplacé le risque dans les papiers.
 
 ## Field Note
 
-FR LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+Note de maraudeur: l'eau calme te laisse entendre le mensonge du tableau de contrat avec une meilleure diction.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/fr_FR. -->

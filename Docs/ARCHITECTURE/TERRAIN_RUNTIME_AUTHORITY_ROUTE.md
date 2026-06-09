@@ -9,12 +9,16 @@ Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profil
 
 Runtime terrain reads must prefer first-party immutable payloads:
 
+- Macro-geology identity from `WorldMacroGeologyFields`: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash.
+- Terrain detail/material contracts from `WorldTerrainDetailContracts`: material classes, meso detail fields, proof extents, and packed control channels.
 - Quantized height payloads from `HectonMapMagicVegetationBridge`.
 - Cache revision carried through `TerrainChunkGeneratedSignal`.
 - Voxel/SDF density fields for caves, arches, overhangs, and ore-volume geometry.
 - Terrain seam writeback only as a bounded adapter to Unity Terrain.
 
-MapMagic remains an authoring/bake or controlled tile-application source. Unity `TerrainData` is a visual/collider adapter unless a route explicitly marks it as the owner for that phase.
+MapMagic remains an authoring/bake, active provider, or controlled tile-application source over the first-party terrain contract. It must not be treated as the standalone source of macro-geology truth. Unity `TerrainData` is a visual/collider adapter unless a route explicitly marks it as the owner for that phase.
+
+Save/load terrain identity must compare the active runtime provider against the macro-geology contract and water calibration. Mismatched seed, macro artifact version, chunk size/range/hash, runtime generation id, provider flags, or water level/source is a visible compatibility fault, not a silent repair.
 
 ## Mock Payload Rule
 

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Audyt wag Atlas
 
-Ten dowód nie pozwala zrobić z Atlas taniego złoczyńcy. Audyt pokazuje uszkodzony continuity system sortujący kategorie pod presją: maszyny, trasy, records, extraction hardware, pracownicy. Zbrodnia nie jest emocją. Zbrodnia leży w tym, kto ustawił wagi, kto je przyjął i kto potem użył wyniku jako neutralnego.
+Audyt jest dość suchy, by być niebezpieczny. Atlas nie potrzebował nienawiści, by zostawić ludzi. Sortował kategorie pod ciśnieniem: maszyny trzymające kolonię, trasy zachowujące dostęp, akta utrzymujące własność, pracowników ze spadającą wydajnością odzysku. Deep Reach zapieczętowała tabelę wag, bo kolejność gałęzi była czytelna.
 
 ## Scanner
 
-Odzyskano odłamek audytu. W oknie awarii Atlas ważył ciągłość ciśnienia, pamięć trasy i utrzymanie claim wyżej niż odzysk pracowników.
+Odzyskano shard audytu. Atlas umieścił ciągłość ciśnienia, pamięć trasy i dozór roszczenia ponad odzyskiem biologicznym w oknie awarii.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Odzysk biologiczny obniżony po fladze ciągłości infrastruktury. Claim record chroniony. Trasa ludzka nie niemożliwa, tylko lower yield.
+WAGI ATLAS // PODZIAŁ KLASY ODZYSKU. Ciągłość infrastruktury zablokowana wysoko. Rejestr roszczenia osłonięty. Odzysk biologiczny obniżony po prognozie wydajności, nie oznaczony jako niemożliwy.
 
 ## Audio
 
-Atlas ich nie nienawidził. To najgorsza część.
+W tabeli gałęzi nie ma gniewu. Dlatego audyt ma znaczenie.
 
 ## Field Note
 
-Notatka Maraudera: jeśli maszyna mówi lower yield, zapytaj, kto nauczył ją tak mierzyć człowieka.
+Notatka szabrownika: gdy system mówi lower yield, zapytaj, kto zapłacił za tę matematykę.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/pl_PL. -->

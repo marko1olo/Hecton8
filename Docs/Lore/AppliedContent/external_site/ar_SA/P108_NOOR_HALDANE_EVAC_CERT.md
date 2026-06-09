@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "نور هالدين: شهادة الإخلاء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# نور هالدين: شهادة الإخلاء
 
-AR LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+نور هالدين: شهادة الإخلاء مقالة دليل من Deep Reach عن الامتثال كشيء قاتل. هالدين ليست شريرة تصرخ. إنها توقيع المستشارة الذي يبقي الإخلاء قابلا للدفاع قانونيا بينما يفشل المسار المادي.
 
-## Scanner
+تعليقها مبني من متطلبات معقولة: حجر ضغط-بيولوجي، حيازة الناقل، مراجعة خارجية للمسار، قبول ميناء لاحق، وسلسلة مسؤولية. لا كلمة من هذه الكلمات عبثية. هذه هي الفكرة. يستطيع النظام أن يكون صحيحا داخل إطاره وأن يقتل مع ذلك بالانتظار.
 
-AR LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-AR LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-AR LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-AR LOC HOLD: This is the paper signature players should hate.
+تمنح المقالة اللاعبين طريقة لقراءة أبواب المستعمرة القديمة ولوحات المسارات. مسار إخلاء مغلق ليس آلة مكسورة فقط. قد يكون قرارا قانونيا ما زال ينتظر المراجعة. نوير HECTON-8 يأتي من هذا التأخير: لا يحتاج أحد إلى قول «دعوهم يموتون» إذا استطاعت الشهادة أن تقول «ليس بعد» زمنا كافيا.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/ar_SA. -->

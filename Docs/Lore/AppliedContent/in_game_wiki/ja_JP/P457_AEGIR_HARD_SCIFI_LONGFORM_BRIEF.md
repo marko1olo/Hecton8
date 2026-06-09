@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir：救助を拒む空"
+title: "Aegir: 救助を拒む空"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir：救助を拒む空
+# Aegir: 救助を拒む空
 
-Aegirは運用される空だ。月の階段は、表面を永久の闇にせず、清潔なパケットを遅延または破損させる。救助は距離、幾何、法、費用で失敗する。
+AegirはHECTON-8上空の軌道機械だ。moon ladder、relay shadow、storm permission、debris weather、mass window、そしてrescueが書類より遅い理由。
 
 ## Scanner
 
-天体ルート入門。FTLもansibleも存在しない。Aegir窓は月、デブリ、中継custody、嵐、Black Keelの質量会計を通る。
+公開天文学: FTLなし、ansibleなし、Aegir relay geometry、moon ladder hazards、Black Keel orbital custody、law以前のroute windows。
 
 ## Terminal
 
-AEGIR航法入門 // 公開帯域。最終定数ではなく危険クラスを使う: route-shadow、charged surge、ice scatter、storm plume、guidance lag、receiver custody。
+SITE LONGFORM: 空を実用的で敵対的にする。packet、drop、pickup、claimにはphysics、timing、mass、custodyがある。
 
 ## Audio
 
-Black Keel予定抜粋:「真の信号は有用な信号ではない。窓は質量、天候、custody、受信者ロックで成立する。」
+HECTON-8の上の空は空っぽではない。歯を持つscheduleだ。
 
 ## Field Note
 
-Marauderの空の規則: 信号を送ったかではない。どの月が遮り、どのledgerが捕まえ、受信者が人間か質量クラスのどちらを聞いたかを問え。
+慰めではなくtimingを求めて上を見る。HECTON-8のmoonlightはrelay opening、storm warning、claim clockになり得る。
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/ja_JP. -->

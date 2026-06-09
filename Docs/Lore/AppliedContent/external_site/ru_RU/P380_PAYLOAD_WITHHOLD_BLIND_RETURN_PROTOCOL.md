@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Протокол blind return с удержанием payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Withhold Blind Return Protocol
+# Протокол blind return с удержанием payload
 
-RU LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return - маршрут отказа. Он удерживает payload вне всех формальных получателей и оставляет вектор бассейна локальным. Deep Reach не получает карту доступа. Публичный реестр не получает пакет инцидента. Карантин не получает escrow assignment. Atlas не получает ключ разреза.
 
-## Scanner
-
-RU LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-RU LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-RU LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-RU LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+У отказа есть зубы и цена. Он может удержать хищников вдали от бассейна еще на один интервал, но также оставляет доказательства в хрупком контейнере у хрупкого человека. Долг остается открытым. Custody остается неформальным. Если пакет зальет или носитель умрет в коридоре, цепочка может исчезнуть без всякого подавления.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ru_RU. -->

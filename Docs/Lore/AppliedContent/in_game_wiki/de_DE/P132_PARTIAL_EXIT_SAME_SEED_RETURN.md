@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Teilweiser Ausstieg: Rückkehr in denselben Seed"
+title: "Teilweiser Ausstieg: Rückkehr im selben Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Teilweiser Ausstieg: Rückkehr in denselben Seed
+# Teilweiser Ausstieg: Rückkehr im selben Seed
 
-Der teilweise Ausstieg ist ein Bergungsfenster, kein Reset. Der Spieler bekommt Luft, Reparaturzeit und Abstand zum Wasser, kehrt dann aber nach demselben HECTON-8 zurück, mit denselben Routen, Narben und ungelösten Beweisen. Wissen bleibt als Druck bestehen, nicht als vererbte Macht.
+Teilweiser Ausstieg ist kein Reset. Black Keel kann den Operator für Anzugreparatur, Luft, Deko und Ledger-Synchronisierung hochholen und denselben Körper unter verlängertem lien wieder zum selben Ozean schicken. Die Station darunter wird nicht sauberer, nur weil jemand über ihr geschlafen hat. Die Brine Stair behält ihre Falle. Das Relay behält seinen schlechten Winkel. Die Beweise behalten ihre Zähne. Dieses Ende gibt Erleichterung ohne Absolution: volle Lungen, geflickte Werkzeuge, lebendige Schuld und Wissen, das als Druck zurückkehrt, nicht als Macht.
 
 ## Scanner
 
-Temporärer Abholvektor bestätigt. Derselbe Ozean bleibt unter demselben Vertrag.
+Temporärer Pickup bestätigt. Derselbe Ozean bleibt unter demselben Vertrag.
 
 ## Terminal
 
-HINWEIS TEILWEISER AUSSTIEG: temporäre Black-Keel-Abholung angenommen; Rückkehr in denselben Seed unter lien-Verlängerung autorisiert; Routenwarnungen, custody-Datensätze und offene Beweispakete bleiben; Geologie und Weltwahrheit unverändert.
+TEILAUSSTIEGS-HINWEIS: temporärer Black-Keel-Pickup akzeptiert; Rückkehr im selben Seed unter lien-Erweiterung autorisiert; Routenwarnungen, custody-Daten, Scan-Gedächtnis und offene Beweispakete bleiben bestehen.
 
 ## Audio
 
-Du hast den Druck verlassen. Der Vertrag hielt deinen Stuhl warm.
+Der Druck lässt los. Der Vertrag hält den Stuhl warm.
 
 ## Field Note
 

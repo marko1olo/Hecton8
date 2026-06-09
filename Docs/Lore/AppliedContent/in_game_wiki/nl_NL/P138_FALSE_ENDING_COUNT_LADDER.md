@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Ladder van valse eindes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Ladder van valse eindes
 
-NL LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 kan veel wegen naar buiten hebben zonder waarheid in ruis te veranderen. Het dossier moet valse of gedeeltelijke uitkomsten sorteren in een klein aantal leesbare families: material pakken en vertrekken, ontsnappen om teruggesleept te worden, in bedrijfsbewaring of quarantaine vallen, of genoeg ledger-waarheid lekken om de machine te verwonden zonder haar te stoppen. Elke uitgang is echt. Geen enkele is de bodem.
 
 ## Scanner
 
-NL LOC HOLD: Four major false families before the deep Atlas resolutions.
+EINDLADDER // Material-uitbetaling, gedeeltelijke terugkeer, bedrijfsgevangenschap of quarantaine, openbaar ledger-lek. Vier valse families vóór de diepe Atlas-antwoorden.
 
 ## Terminal
 
-NL LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIERBEREIK: markeer veel uitgangen, maar groepeer ze in duidelijke families. Material-uitbetaling, gedeeltelijke exit/terugkeer, bedrijfsgevangenschap/quarantaine en openbaar ledger-lek staan onder de payload-resoluties in het Atlas-bekken.
 
 ## Audio
 
-NL LOC HOLD: The dossier can mark many exits before it marks an answer.
+Het dossier kan uitgangen markeren voordat het een antwoord markeert.
 
 ## Field Note
 
-NL LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Genoeg eindes voor speelstijlen. Niet genoeg om waarheid goedkoop te maken.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/nl_NL. -->

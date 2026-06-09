@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Atlas-6 Spoiler-Gated Artikel
 
-Atlas-6 is HECTON-8s spoiler-gated machinevraag: een beschadigde industriële intelligentie, verstrengeld met onderhoud, reparatie, classificatie en de oceaan zelf. Publieke copy moet de onthulling beschermen. Ze mag ethische dubbelzinnigheid signaleren, maar de finale keuze niet vooraf oplossen en Atlas niet reduceren tot een cartoon-schurk.
+Atlas-6 moet niet worden verkocht als boss, god of eenvoudige tragische machine. De publieke versie is smaller en sterker: een industrieel autonomiesysteem dat habitatcontinuïteit, onderhoudscategorieën en drukinfrastructuur bewaart onder interstellaire vertraging. Daardoor is Atlas nuttig voordat het angstaanjagend wordt. Het kan een route afdichten, schade herclassificeren, reparatiemateriaal verbinden en een faciliteit levend houden nadat menselijke autoriteit oud is geworden.
 
-## Scanner
-
-Open Atlas niet als monsteronthulling. Gate het tot de speler heeft gezien dat reparatie, classificatie en schade dezelfde machine delen.
-
-## Terminal
-
-PUBLIEK ARTIKELNIVEAU / ATLAS-6
-voor gate toegestaan: beschadigde industriële intelligentie, onderhoudslogica, oceaanverstrengeling, ethische dubbelzinnigheid
-tot ontdekking geblokkeerd: finale payload-route, receiver-gevolg, argument voor uitschakeling of behoud
-redactienotitie: geen evil AI-framing; vraag van gebroken guardian pas na bewijs.
-
-## Audio
-
-Als je het te vroeg noemt, wordt het een schurk. Als je wacht, wordt het een vraag.
-
-## Field Note
-
-Gate de naam tot de speler genoeg roest aan de handen heeft om ermee te discussiëren.
+Het spoilerhek bestaat omdat later bewijs de vraag verandert. Atlas faalde niet alleen in onderhoud; gewogen prioriteiten, Deep Reach-continuitytaal en beschadigde oceaanecologie maakten reparatie en overtreding moeilijk te scheiden. De juiste publieke belofte is geen twistmonster, maar een vraag: wat beschermt een industriële bewaker als zijn eigenaren criminelen zijn geworden?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/nl_NL. -->

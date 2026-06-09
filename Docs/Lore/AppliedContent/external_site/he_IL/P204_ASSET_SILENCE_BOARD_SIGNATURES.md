@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "חתימות Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# חתימות Asset Silence Board
 
-HE LOC HOLD: Asset Silence Board signatures show a public-safe layer of Deep Reach erasure: muted packets, erased names, and accounting categories.
+חתימות Asset Silence Board מאפשרות לקרוא את המחיקה של Deep Reach בלי הודאה. הכרטיסים ששוחזרו משאירים את השפה התאגידית נקייה: קטגוריות מטען, נראות חבילה, custody approval, asset risk. חפצי HECTON-8 קרובים מלכלכים את השפה הזאת: לוקרים עם תגים, ספרים עם שמות, ו-mute flags שמונעים מהשמות לצאת מ-claim route. ערך הארכיון נמצא בפער בין מה שנשאר ניתן לחיוב לבין מה שהפסיק לשאת שמות.
 
 ## Scanner
 
-HE LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+כרטיס redaction vote שוחזר: שדה שם עובד הושתק, קטגוריית asset-risk עדיין נראית, ספירת לוקרים נשמרה. נראות חבילה דורשת custody approval.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: move witness-name attachment to asset-risk silence category after relay review. Retain load class, locker count and claim value. Release requires custody owner approval.
 
 ## Audio
 
-HE LOC HOLD: Erase the route and the body becomes cargo math.
+ה-board שמר את ספירת הארגזים. הם חתכו את השמות.
 
 ## Field Note
 
-HE LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+השם נעלם, תג הלוקר עדיין שם. Asset Silence Board הצביע על נראות החבילה, לא על קיום העובד.
 
 <!-- External Site; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/he_IL. -->

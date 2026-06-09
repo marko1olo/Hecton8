@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Pressure Suit Service Grades"
+title: "압력복 서비스 등급"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Pressure Suit Service Grades
+# 압력복 서비스 등급
 
-KO LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+압력복 서비스 등급은 HECTON-8의 장비 진행을 하드 SF로 묶는다. 더 좋은 압력복은 심도 인증, 소모품, 열 여유, 오염 한계, 불완전한 정비 이력이다.
 
 ## Scanner
 
-KO LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+압력복 태그는 운용 심도, 실 피로, 스크러버 여유, 열 허용치, 오염 처리를 분류한다.
 
 ## Terminal
 
-KO LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-KO LOC HOLD: The suit does not make you brave. It only fails later.
+압력복은 널 용감하게 만들지 않는다. 더 늦게 망가질 뿐이다.
 
 ## Field Note
 
-KO LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+더 깊은 압력복은 색이 다른 갑옷이 아니다. 서류, 부품, 보기 싫은 정비다.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/ko_KR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guía de escalera de densidad de cañones de salmuera"
+title: "Guía de escalera de densidad de cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guía de escalera de densidad de cañones de salmuera
+# Guía de escalera de densidad de cañón de salmuera
 
-La Guía de escalera de densidad de cañones de salmuera trata las fosas de HECTON-8 como geografía de ingeniería: el camino hacia abajo está hecho de densidad, no de paisaje.
+Un cañón de salmuera parece agua vacía hasta que el borde de una lámpara se curva, un medidor duda o una herramienta caída deja de caer donde no debería. Las capas densas de HECTON-8 convierten la profundidad en arquitectura. Agua fresca, carga de sal, residuo de filtración fría, limo arcilloso y película química se apilan en pisos invisibles que pueden sostener una nube de escamas minerales o tragarse entera la señal de un dron.
 
-## Scanner
-
-Brine ladder detectada: densidad en capas, falso suelo, curvatura de sonar. Sigue los bordes; el agua abierta miente aquí.
-
-## Terminal
-
-FIELD GUIDE: los cañones de brine esconden pressure shelves, current ledges, resource pockets y scanner false positives. Hull rating y density transition deciden qué cornisa es ruta y cuál es caída.
-
-## Audio
-
-Un cañón es una escalera si tu casco puede pagar cada peldaño.
-
-## Field Note
-
-Usa las sombras de vane como escalones. Una lectura vacía en brine no es espacio vacío; es el instrumento perdiendo la discusión.
+El cañón enseña supervivencia antes que beneficio. Sigue sombras de aletas. Mira la línea de lodo. Dentro de salmuera, confía menos en un instrumento tranquilo que fuera de ella. Las bolsas de recursos se juntan donde la densidad frena la caída de materia útil, pero esas mismas bolsas esconden gas detenido, sensores muertos y cambios de presión bastante bruscos para castigar cascos baratos. Bajar nunca es solo ir más hondo. Es cruzar acuerdos entre fluidos.
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/es_ES. -->

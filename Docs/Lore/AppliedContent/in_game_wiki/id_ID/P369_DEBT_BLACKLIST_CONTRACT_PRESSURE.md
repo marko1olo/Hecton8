@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tekanan Kontrak Utang dan Daftar Hitam"
+title: "Tekanan Kontrak Blacklist Utang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tekanan Kontrak Utang dan Daftar Hitam
+# Tekanan Kontrak Blacklist Utang
 
-Tekanan utang membuat pembuka tetap jujur. Protagonis tidak diseret ke HECTON-8 oleh melodrama, dan juga tidak bebas dalam arti yang berguna. Black Keel dapat menawarkan kontrak karena claim-pool, jendela utang, kredit oksigen, akses ranjang, dan bukti kustodi berada dalam ekonomi perbatasan yang sama. Menolak klaim itu legal. Itu juga akan membuat pemain tetap masuk daftar hitam, tertahan, dan tidak mampu membeli rute. Menerimanya tidak menjadikan Black Keel penjahat berwajah. Itu menjadikan pengangkut sebagai mesin untuk mengubah risiko menjadi dokumen. Pemain menyelam karena kontraknya buruk, masih bisa dilalui, dan masuk akal sebagai satu-satunya rute kembali ke gerak.
+Tekanan utang menjaga kontrak tetap buruk tanpa menjadikannya teatrikal. Operator tidak diseret ke HECTON-8 dengan rantai, tetapi jalur penolakan dirancang untuk menutup di sekelilingnya. Black Keel bisa menawarkan claim karena jendela utang, oxygen credit, akses berth, waktu rute, dan custody proof berada di ledger frontier yang sama.
+
+Penolakan tetap legal. Itu juga membuat Marauder tetap masuk blacklist, tertahan, dan terlalu mahal untuk jendela rute Aegir berikutnya. Menerima memberi gerak, bukan belas kasihan: recoverable mass harus dikirim, custody harus bertahan, dan receiver compliance menentukan nilai claim. Carrier tidak perlu wajah penjahat. Kontrak sudah tahu cara mengubah risiko menjadi dokumen.
 
 ## Scanner
 
-Pemberitahuan hak tanggungan terikat pada kustodi Black Keel. Menolak tetap legal, tetapi membuatmu tertahan: tanpa ranjang, tanpa kredit oksigen bersih, tanpa jendela rute keluar dari Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. Penolakan tetap legal; akses berth, oxygen credit, dan jendela rute Aegir tetap tertutup.
 
 ## Terminal
 
-PENERIMAAN KLAIM / JENDELA KERINGANAN DAFTAR HITAM
-status kontraktor: Marauder terikat utang
-pengangkut: kustodi claim-pool Black Keel
-syarat keringanan: massa dapat dipulihkan, bukti kustodi, kepatuhan penerima
-status gagal: daftar hitam tetap aktif; akses ranjang ditolak; dukungan kesejahteraan oksigen menjadi layanan tertagih.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-Ini bukan penculikan. Ini jenis pilihan yang dijual perbatasan sebagai kebebasan: tanda tangan, menyelam, atau tetap bersih di kertas dan terjebak dalam praktik.
+Tanda tangan, menyelam, atau jaga tangan bersih sementara daftar berth menutup.
 
 ## Field Note
 
-Hak tanggungan tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar ranjang, dan jendela rute berikutnya.
+Lien tidak menodongkan senjata. Ia menunjuk tagihan udara, daftar berth, dan jendela rute berikutnya.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/id_ID. -->

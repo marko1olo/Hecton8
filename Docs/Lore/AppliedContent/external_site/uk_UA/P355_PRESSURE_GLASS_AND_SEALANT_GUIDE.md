@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Довідник pressure glass і sealant"
+title: "Польовий довідник давленого скла і герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Довідник pressure glass і sealant
+# Польовий довідник давленого скла і герметика
 
-Довідник pressure glass і sealant заземлює biomechanical horror HECTON-8 у логіці ремонту: Atlas слідує тріщинам, кабелям, biofilms і pressure scars, бо зламані системи вже дають шляхи.
+Давлене скло починалося як практичний колоніальний матеріал: достатньо прозорий для ілюмінаторів, достатньо міцний для гермодверей і достатньо дешевий, щоб лити його в сервісні шви. Роки під водою змінили його роль. Припливи записали напругу в панелі. Мінерали замутили краї. Біоплівка вивчила тріщини. Коли прийшла хімія Atlas, їй не довелося винаходити шлях через колонію. Зламане скло вже намалювало його.
 
-## Scanner
-
-Тріщина pressure-glass запечатана хімією Atlas. Безпечний lens stock можливий лише якщо seal map лишається цілою.
-
-## Terminal
-
-FIELD GUIDE: pressure glass записує старий tide stress. Atlas sealant іде цими тріщинами, бо тріщини вже описують лінії відмови системи.
-
-## Audio
-
-Ремонтна мережа читає тріщини так само, як ти читаєш карту.
-
-## Field Note
-
-Не шліфуй гарний край. Іди за fracture map і ріж з мертвого боку seal.
+Тому склад лінз може бути цінним і небезпечним одночасно. Ріж із мертвого боку герметика - і скло стає salvage. Шліфуй живий край - і ремонтна мережа отримує чистіший маршрут. Герметик у HECTON-8 не просто клей. Це рішення про те, яким відмовам дозволено закритися, які лишаються на карті і які стають дверима для чогось, що досі намагається ремонтувати неправильне тіло.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/uk_UA. -->

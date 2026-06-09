@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Verzögerungsakte der Evakuierungswarteschlange"
+title: "Evakuierungswarteschlangen-Verzug"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Verzögerungsakte der Evakuierungswarteschlange
+# Evakuierungswarteschlangen-Verzug
 
-Ein ertrunkener Raum kann Timing bewahren. Die geborgene Queue-Uhr zeigt eine grausame Reihenfolge: Alarm, Review, Verzögerung, Überschreitung der Siegelklasse, Wasser. Deep-Reach-Sprache macht daraus unvollständige Evakuierung bei plötzlichem Strukturversagen. Der Raum widerspricht. Sein Queue-Record hält ein leeres Zeugenfeld und eine offene Quarantäneprüfung über den Zeitpunkt hinaus, an dem ein Rettungspfad noch physisch nützlich war. Es geht nicht darum, dass alle hätten gerettet werden können. Es ist präziser und schlimmer: Autorisierung wartete, bis weniger Menschen rettbar waren. Wer den Record findet, hört Rettung nicht mehr als Versprechen, sondern als Berechtigungssystem.
+Evakuierungsprotokolle lassen sich leicht mildern, wenn die Körper fort sind. In öffentlicher Sprache kann Deep Reach sagen, eine Route sei unvollständig, unterbrochen oder degradiert gewesen. Die geborgene Warteschlangenuhr ist weniger biegsam. Sie zeigt ein Tor, das noch auf Verwaltungsstatus reagierte, nachdem der Druckalarm bereits besetzte Abschnitte erreicht hatte.
 
-## Scanner
-
-Queue-Uhr geborgen. Das Freigabetor blieb verriegelt, nachdem Druckalarme von Prognose zu Korridor wechselten.
-
-## Terminal
-
-EVAC QUEUE // WITNESS SLOT EMPTY. Manuelle Bestätigung fehlt. Quarantäneprüfung offen. Routendruck überschritt Siegelklasse vor Abschluss der Autorisierung.
-
-## Audio
-
-Sie scheiterten nicht daran, alle zu retten. Sie warteten, bis irgendwen zu retten schwerer wurde.
-
-## Field Note
-
-Marauder-Notiz: Ein geschlossenes Tor mit offenem Feld ist kein Unfall. Es ist eine Entscheidung, die auf Unterschrift wartet.
+Der wichtige Punkt ist nicht, dass alle hätten gerettet werden können. Das verspricht der Datensatz nicht. Er zeigt, dass die Firma noch einen Steuerpfad hatte und ihn zum Warten nutzte. Manuelle Bestätigung blieb leer. Das Quarantänegremium blieb ausstehend. Die Dichtungsklasse überschritt ihr Limit vor der Freigabe. Verzögerung wurde Infrastruktur.
 
 <!-- External Site; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/de_DE. -->

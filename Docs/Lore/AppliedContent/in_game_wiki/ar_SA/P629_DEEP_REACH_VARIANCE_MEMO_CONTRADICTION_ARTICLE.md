@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "تناقض مذكرة variance في Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# تناقض مذكرة variance في Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+مذكرة variance ليست دليلا وحدها. تصبح مفيدة عندما تعارض آثار غرفة المضخة والطوابع الزمنية وأختام accepted-margin لغة المكتب النظيفة.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+وسم تناقض // المذكرة تقول variance. أثر المضخة يثبت تدخلا يدويا متأخرا.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // يبقى دخول الماء ضمن سماحية مدارة حتى مراجعة إجراء العودة. يمكن لطابور الإصلاح المحلي تأجيل لغة التصعيد غير الحرجة.
 
 ## Audio
 
-Trust the room before the clean word.
+لا أحد يكتب variance على جدار ما زال يقطر.
 
 ## Field Note
 
-Trust the wet room first.
+إذا كانت كلمة المكتب أنظف من الغرفة، صدق الغرفة أولا.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/ar_SA. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Retención de liberación por cuarentena"
+title: "Retención de salida por cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retención de liberación por cuarentena
+# Retención de salida por cuarentena
 
-La cuarentena es creíble en HECTON-8 porque la contaminación no es falsa. Exposición a presión, química de salmuera y crecimiento compatible con Atlas pueden volver letal un rescate descuidado. Esa verdad da cobertura a Deep Reach. La retención muestra cómo el lenguaje de protección atravesó el sistema después de que la salida práctica ya se estrechara. La puerta no dijo ejecuten a nadie. Dijo hold until review, retengan incertidumbre biológica, acepten masa de activo, mantengan insurance ping activo. Cada frase se defiende sola. Juntas, en una colonia que se ahoga, se vuelven custody. Este packet debe inquietar porque la herramienta es real: cuarentena puede ser necesaria y aun así usarse para retrasar personas hasta que solo quede su claim.
+Los registros de cuarentena son de los documentos más fáciles de defender para Deep Reach. En HECTON-8, la contaminación no es política decorativa. Crecimiento reactivo a salmuera, daño por presión y biopelículas compatibles con Atlas pueden convertir un corredor de rescate en una segunda zona de bajas. Un sistema real de salida necesita retenciones.
 
-## Scanner
-
-Placa de retención de cuarentena. El lenguaje de protección aparece cuando la ruta de salida ya está cerrada.
-
-## Terminal
-
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Retener hasta revisión. La cola recovery acepta masa de activo antes de liberar trabajador. Insurance ping activo.
-
-## Audio
-
-La cuarentena puede salvar un cuerpo. También puede hacerlo esperar hasta volverse papeleo.
-
-## Field Note
-
-Nota de merodeador: protección no se prueba con la palabra protección. Mira el reloj.
+La placa recuperada muestra una retención usada después de que la ruta ya se cerrara. La salida de trabajadores espera confirmación de junta. La masa de activos entra primero en la cola de recuperación. El ping de seguro sigue activo. La compañía no tuvo que falsificar peligro; tuvo que colocarlo en el reloj donde la demora servía a la reclamación.
 
 <!-- External Site; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/es_ES. -->

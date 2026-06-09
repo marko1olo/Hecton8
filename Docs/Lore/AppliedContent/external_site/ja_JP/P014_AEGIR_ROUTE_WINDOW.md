@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Aegir航路窓
 
-HECTON-8では空もダンジョンの一部だ。巨星は放射線を決め、月は影を落とし、潮汐は峡谷とシャフトを通る。
-
-プレイヤーは、メッセージが登る時、身体が登れる時、そして開いた空が罠になる時を覚える。
+HECTON-8は海の月だが、空はダンジョンの一部だ。Aegirの放射線、月影、リレーshutter、嵐のplume、潮汐、carrier幾何が、信号、身体、試料、証拠コアの出発可否を決める。重要なのは分離だ。データ窓は救助窓ではなく、救助窓は汚染貨物窓ではない。Black Keelは計算するが、誰が質量を所有し、誰が検疫を受け、どの条項がDeep Reachを守るかを問う。
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/ja_JP. -->

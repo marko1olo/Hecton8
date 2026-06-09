@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Akte eines Feldsystem-Spezialisten"
+title: "Akte des Feldsystem-Spezialisten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akte eines Feldsystem-Spezialisten
+# Akte des Feldsystem-Spezialisten
 
-Die Spielerfigur von HECTON-8 betritt den Ozean mit einer praktischen Narbe: frühere Deep-Reach-Feldsystemarbeit, Zugriff auf Evakuierungsinfrastruktur, widerrufene Freigabe und genug Prozedurgedächtnis, um ertrunkene Maschinen als Beweise zu lesen. Jetzt ist sie Marauder, kein Firmenoffizier und kein Passagierheld. Eine kaputte Pumpe, ein Routenstempel oder eine Haftungsformel zählt, weil der Operator versteht, wie diese Systeme Arbeiter schützen sollten, bevor sie zu Papier wurden.
+Die Akte des Feldsystem-Spezialisten gibt HECTON-8s zentralem Operator eine nützliche Vergangenheit, ohne diese Vergangenheit zu sauber zu machen. Er gehörte nicht zum Kommando und war kein geheimer Architekt der Katastrophe. Er arbeitete nahe an Systemen, die Evakuierungsrouten, Pumpen, Dichtungen und Relaisräume ehrlich halten sollten.
 
-## Scanner
+Das zählt, weil die verlassene Kolonie voller Verfahren ist, nicht nur voller Trümmer. Ein route-safe-Stempel, ein clamp-Wert oder eine maintenance-Formel kann stärker belasten als eine dramatische Aufnahme. Der Operator weiß, wie solche Akten aussehen, wenn sie Menschen schützen, und wie sie aussehen, wenn ein Konzern Schutz in Papier verwandeln will.
 
-Alte Feldsystem-Berechtigung. Kein Führungspersonal. Infrastrukturarbeit mit genug Zugriff, um zu erkennen, wo eine Route begraben wurde.
-
-## Terminal
-
-PERSONALSPUR: Feldsysteme, Evakuierungsinfrastruktur, route-safe-Zertifizierung. Freigabe nach Aegir-Schweigeprüfung widerrufen. Prozedurcache passt weiterhin zur Sequenz des Operators.
-
-## Audio
-
-Du hast die Lüge nie unterschrieben. Du kanntest die Grammatik, mit der sie durch die Prüfung kam.
-
-## Field Note
-
-Der Ausweis öffnete keine Türen mehr. Er löschte nicht die Reihenfolge des Versagens.
+Der widerrufene Zugang schärft die Geschichte. Der alte Ausweis gibt keine Kontrolle mehr, aber er lässt die Fähigkeit, den Dialekt des Versagens zu erkennen. HECTON-8 macht aus diesem Berufs­gedächtnis ein Motiv: nicht Schuld an der Katastrophe, sondern Verantwortung, nachdem lesbar wurde, wie vermeidbare Räume abgelegt wurden.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "Насосна мілководного анекса P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# Насосна мілководного анекса P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+Мілководний анекс P-63 - перша кімната, яку можна повернути до користі. Це не кімната винагороди, а втомлена машина: ручна трюмна рукоять, заїла горловина клапана, слід холодного герметика і фабрикатор, що визнає лише малоризиковий ремонт, поки вода не впаде нижче лінії впуску.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+Кімната вчить першого правила salvage на HECTON-8: повітря приходить із ремонту, не з удачі. Робочий насос прибирає воду по кісточки, відкриває старі шафи з інструментами й дає фізичну причину довіряти анексу ще кілька хвилин. Термінал досі називає завдання малим проникненням води. Стіни кажуть інше.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/uk_UA. -->

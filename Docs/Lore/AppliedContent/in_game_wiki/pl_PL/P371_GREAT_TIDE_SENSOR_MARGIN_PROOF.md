@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ślad marginesu Wielkiego Pływu"
+title: "Ślad marginesu pływu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ślad marginesu Wielkiego Pływu
+# Ślad marginesu pływu
 
-Ślad dowodzi dwóch rzeczy naraz: Wielki Pływ był realny, a śmiertelny margines był widoczny, zanim raport go uznał. Deep Reach nie kazało wodzie rosnąć. Firma zaakceptowała okno trasy, gdy osłona ciśnieniowa kolonii nie miała już zapasu, a potem opublikowała cascade bez podpisu ostrzeżenia.
+Ten czujnik nie czyni Wielkiego Pływu fałszem. Ustala czas. Rezerwa projektowa kolonii zniknęła, zanim Deep Reach przyznała ryzyko w raporcie publicznym. Władza trasy utrzymała okno otwarte wyjątkiem komercyjnym, a potem opublikowała łańcuch kaskady bez tego wyjątku.
 
 ## Scanner
 
-Odzyskany czujnik pływu. Szczytowe ścinanie przekroczyło projekt kolonii, lecz naruszenie marginesu ostrzegawczego zapisano przed publicznym znacznikiem cascade.
+Odzyskany czujnik pływu. Skok ścinania jest prawdziwy; naruszenie marginesu pojawia się szesnaście minut przed publicznym zegarem kaskady Deep Reach.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Próg tail-risk zaakceptowany przez władzę trasy. Notatka operatora usunięta z publicznego łańcucha incydentu. Surowy ślad zachowany w pamięci brine-buffer.
+MACIERZ PŁYWU // PÓŁNOCNY GRZBIET P-63. Margines ogonowy poniżej progu zatrzymania. Okno trasy utrzymane wyjątkiem komercyjnym. Publiczny łańcuch incydentu pomija notę wyjątku. Suma brine-buffer nienaruszona.
 
 ## Audio
 
-Ocean nie kłamał. Raport tak.
+Pływ złamał korytarz. Kłamstwo zaczyna się od zegara.
 
 ## Field Note
 
-Notatka Maraudera: nie szukaj mowy złoczyńcy. Szukaj usuniętej linii.
+Notatka szabrownika: zachowaj surowy ślad. Usunięta linia marginesu pokona każdą mowę.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/pl_PL. -->

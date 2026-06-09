@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "항로 허가 도장 세트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# 항로 허가 도장 세트
 
-KO LOC HOLD: Route Permission Stamp Set lets the player reconstruct colony movement through physical access evidence.
+항로 허가 도장 세트는 이동에 시각 언어를 부여한다. PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS 도장은 계급장이 아니다. 그것들은 압력 허가다. 식민지가 무너질 때 누가 해치를 넘고, 슈트를 청구하고, crawler를 풀고, 정비 락에 들어갈 수 있었는지를 보여준다. 도장은 항상 물리 상태와 짝을 이뤄야 한다. 열림, 봉인, 거부, 덮어쓰기, 침수, 또는 나중에 Marauder 손으로 수정됨. 이를 통해 플레이어는 설명하는 인물 없이 식민지 이동을 재구성할 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: A route stamp is stronger than a diary line.
+항로 도장은 일기 한 줄보다 강하다. 누가 압력 경계를 통과할 수 있었는지 증명하기 때문이다.
 
 ## Terminal
 
-KO LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: 항로 허가는 한 작업자, 한 문 또는 차량, 한 작업반 계열, 한 후반 모순을 연결해야 한다. 물리 경계가 없는 도장은 장식이다. 해치, 슈트 랙, crawler 레일, 리프트 태그 위의 도장은 이동 증거가 된다.
 
 ## Audio
 
-KO LOC HOLD: Access is biography under pressure.
+접근 권한은 압력 아래의 전기다.
 
 ## Field Note
 
-KO LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+도장: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. 해치 상태와 작업 오브젝트와 짝지어라.
 
 <!-- In-Game Wiki; generated from P213_ROUTE_PERMISSION_STAMP_SET/ko_KR. -->

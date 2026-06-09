@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Набор доказательств терминала эвакуационной очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Evacuation Queue Terminal POI Kit
+# Набор доказательств терминала эвакуационной очереди
 
-RU LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Терминал эвакуационной очереди ценен не потому, что сообщает об ожидании. Он ценен потому, что состояние двери, дрейф часов, число рабочих и пропускная способность маршрута расходятся так, что это можно проверить на месте.
 
 ## Scanner
 
-RU LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Набор доказательств POI: терминал очереди доказывает задержку через состояние двери, дрейф часов, несостыковку рабочих и пропускную способность маршрута.
 
 ## Terminal
 
-RU LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+НАБОР ТЕРМИНАЛА ОЧЕРЕДИ: список удержания маршрута, задержка снятия карантина, заметка весов Atlas, несостыковка числа рабочих, метка salvage-конфликта, полоса состояния люка, остаток бейджа.
 
 ## Audio
 
-RU LOC HOLD: A queue is a body count with cleaner formatting.
+Очередь - это счет тел в более чистом формате.
 
 ## Field Note
 
-RU LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Заметка мародера: не отрывай полосу люка, пока не просканирован остаток бейджа. Металл заплатит меньше, чем временная метка.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/ru_RU. -->

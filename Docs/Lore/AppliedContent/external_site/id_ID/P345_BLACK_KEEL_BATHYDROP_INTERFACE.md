@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Antarmuka Bathydrop Black Keel
 
-Antarmuka bathydrop adalah tempat latar ruang angkasa menyentuh game samudra. Tidak cukup Black Keel ada di orbit. Pemain butuh rantai: integritas kapsul, kontrol apung, tiang komunikasi, kait naik, segel rating tekanan, matematika relai, timing permukaan, dan penerimaan carrier. Putus satu tautan dan seluruh penyelamatan menjadi teori. Ini membuat pembukaan jujur. Pemain bukan terjebak karena cerita lupa kapal. Pemain terjebak karena satu-satunya mesin yang bisa menghubungkan abyss, permukaan, dan orbit gagal dengan cara yang bisa dibuat lebih buruk oleh air setiap jam.
+Antarmuka bathydrop adalah tempat ekonomi rute menyentuh samudra. Tidak cukup Black Keel hanya ada di orbit. Kenaikan yang bekerja membutuhkan rantai: integritas kapsul, kontrol apung, tiang komunikasi, kait naik, segel rating tekanan, matematika relai, timing permukaan, dan penerimaan carrier.
+
+Patahkan satu tautan dan seluruh penyelamatan menjadi teori. Itu membuat awal tetap jujur. Tidak ada yang terdampar karena carrier menghilang dari dunia. Perangkap itu ada karena satu-satunya mesin yang dapat menghubungkan abyss, permukaan, dan orbit gagal pada bagian-bagian bernama, dan air dapat memperburuk setiap bagian gagal dari jam ke jam.
 
 <!-- External Site; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/id_ID. -->

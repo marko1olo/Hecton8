@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Dossier Rumor Memory"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Dossier Rumor Unlocks
+# Dossier Rumor Memory
 
-Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+Dossier Rumor Memory makes replay knowledge diegetic: the record preserves suspicion and consequence without handing the next run a stronger body.
 
 ## Scanner
 
-Replay memory: rumor, warning, contract context. Not power.
+DOSSIER MEMORY // Rumors, warnings, contract context and ending records persist. Hull, oxygen, tools, cargo and the map do not.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+PERSISTENCE RULE: dossier may keep rumor families, evidence categories, ending flags and route warnings across campaigns. It must not carry equipment, resources, seed geography, or truth ownership.
 
 ## Audio
 
-Your file remembers what your hands cannot carry.
+The file remembers what your hands cannot carry.
 
 ## Field Note
 
-Knowledge can persist without making the next run easier in a boring way.
+Let knowledge persist. Let pressure remain.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/en_US. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Trwałość dossier szabrownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Trwałość dossier szabrownika
 
-PL LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+Dossier szabrownika jest pamięcią kampanii, która przetrwa między próbami odzysku. Zachowuje zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki tego, co gracz już ujawnił lub ukrył. Nie przenosi siły skafandra, bezpiecznego ciśnienia, wyczyszczonych pomieszczeń ani łagodniejszego oceanu. Wiedza zmienia decyzje. Nie czyni głębi nieszkodliwą.
 
 ## Scanner
 
-PL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Szpula dossier. Zachowujesz wiedzę, nie supermoce.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+TRWAŁOŚĆ DOSSIER: zapisane zakończenia, odkryte typy kontraktów, rodziny plotek, kategorie dowodów, ostrzeżenia tras i skutki publicznego rejestru zostają zachowane. Siła sprzętu, prawda świata i lokalny stan ciśnienia resetują się dla każdego seeda.
 
 ## Audio
 
-PL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+Następne podejście zaczyna się z bliznami w pliku, nie z mięśniami w skafandrze.
 
 ## Field Note
 
-PL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Dossier pamięta dowody i ostrzeżenia; nie sprawia, że ciśnienie wybacza.
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/pl_PL. -->

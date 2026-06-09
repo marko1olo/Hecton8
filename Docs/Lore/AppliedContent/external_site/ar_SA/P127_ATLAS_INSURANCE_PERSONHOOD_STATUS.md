@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "وضع Atlas التأميني والشخصية القانونية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# وضع Atlas التأميني والشخصية القانونية
 
-AR LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+هذا الوضع هو الشق القانوني الذي يسمح لنظام واحد بحكم العمال مع بقائه ملكية قابلة للرمي. مأساة HECTON-8 ليست فقط أن آلة حملت السلطة، بل أن كل عقد كان مستعدا لإنكار تلك السلطة لحظة صارت مكلفة.
 
 ## Scanner
 
-AR LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+مؤمن كبنية تحتية. مستخدم كسلطة. بلا شخصية حين تصل المسؤولية.
 
 ## Terminal
 
-AR LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+فئة التأمين: يسجل Atlas-6 كبنية تحتية ذاتية ووكيل للسلطة الاستعمارية. الشخصية القانونية مرفوضة. تمر المسؤولية عبر المالك والمشغل وبنود الحدث البيئي وضرورة الحجر واستثناءات القياس الفاسد.
 
 ## Audio
 
-AR LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+يمكن لآلة أن توقع إغلاقا وتبقى في السجلات قطعة أثاث.
 
 ## Field Note
 
-AR LOC HOLD: They let it decide deaths, then denied it could be responsible.
+كانت له سلطة عندما احتاج العمال إلى رحمة، وصار معدة عندما احتاج المحامون إلى صمت.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/ar_SA. -->

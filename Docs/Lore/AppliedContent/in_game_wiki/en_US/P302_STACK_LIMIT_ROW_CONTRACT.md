@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Stack Limit Data Boundary
 
-Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+Stack Limit Data Boundary keeps inventory physical. Items stack only when the container, pressure rating, mass, and contamination state can survive the same route without lying to the save file.
 
 ## Scanner
 
-Stack boundary: vessel class and contamination stage beat icon count.
+Stack row rejects icon piles: vessel class, pressure rating, contamination, and mass decide count.
 
 ## Terminal
 
-STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: stack count requires vessel type, pressure rating, contamination stage, mass class, warning tier, and save-stable identity. A crate is not a pressure vessel.
 
 ## Audio
 

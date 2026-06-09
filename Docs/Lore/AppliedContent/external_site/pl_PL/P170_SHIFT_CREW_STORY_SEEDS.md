@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Seedy historii załóg zmianowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Seedy historii załóg zmianowych
 
-PL LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
+System definiuje bezpieczną warstwę wariacji: kolejność rosteru, obiekty, pary stanowisk, propsy szafek, odmowy i notatki Marauder. Historia centralna pozostaje zablokowana: Great Tide, wina Deep Reach, weighting Atlas i porażka ewakuacji.
 
 ## Scanner
 
-PL LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // Lista może się zmienić. Wina nie.
 
 ## Terminal
 
-PL LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEEDY ZAŁOGI // Run może zmieniać kolejność rosteru, pary, zawartość szafek, odmowy, kredę tras, fragmenty identyfikatorów i późniejsze poprawki Marauder. Seed zmienia spotkanie z dowodem, nie to, co dowód udowadnia.
 
 ## Audio
 
-PL LOC HOLD: A different locker can hurt the same truth again.
+Inna szafka może naciąć tę samą prawdę z innej strony.
 
 ## Field Note
 
-PL LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Różnorodność seed zmienia kolejność obiektów, pary pracy i notatki Marauder. Nigdy nie zmienia Great Tide ani odpowiedzialności Deep Reach.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/pl_PL. -->

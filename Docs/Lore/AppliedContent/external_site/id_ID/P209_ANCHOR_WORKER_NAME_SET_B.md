@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "Set Nama Pekerja Jangkar B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# Set Nama Pekerja Jangkar B
 
-ID LOC HOLD: Anchor Worker Name Set B links brine canyon and abyssal machine-field records to workers whose evidence appears after the shallow route is understood.
+Set Nama Pekerja Jangkar B adalah lapisan pekerja berulang yang lebih dalam untuk HECTON-8. Nama-nama ini tidak boleh melembutkan horor; mereka harus membuat sistem lebih terbaca. Saat pemain melihat Set B, kegagalan tekanan, penahanan rute, dan penundaan triase sudah memiliki pola. Nama yang berulang menghubungkan pola itu ke manusia, lalu ke tanggung jawab Deep Reach.
 
 ## Scanner
 
-ID LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+Nama yang lebih dalam harus datang setelah pemain sudah memahami pola kerusakan. Harganya lebih mahal karena air mulai membuktikan kejahatan.
 
 ## Terminal
 
-ID LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: kemunculan ulang di ngarai brine dan medan mesin abisal. Ikat nama-nama ini pada witness hashes, penahanan rute, pengecualian triase, kontradiksi perbaikan Atlas, dan jejak utang salvage. Set B adalah tempat bukti pekerja berhenti menjadi tragedi lokal dan menjadi sebab korporat.
 
 ## Audio
 
-ID LOC HOLD: A deep name costs more because the water has already proved what happened.
+Nama yang dalam lebih mahal karena air sudah membuktikan apa yang terjadi.
 
 ## Field Note
 
-ID LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Jangkar Set B: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- External Site; generated from P209_ANCHOR_WORKER_NAME_SET_B/id_ID. -->

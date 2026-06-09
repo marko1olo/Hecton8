@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Cleanupbod op bewijsmarkt"
+title: "Bod voor bewijsopschoning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,25 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Cleanupbod op bewijsmarkt
+# Bod voor bewijsopschoning
 
-## Wat het bewijst
+## Wat het dossier bewijst
 
-Een cleanupbod is een betaalde poging om de reis van een bewijsfragment te veranderen: reinigen, hernoemen, onderdrukken, aan een bergingslot hangen of naar een veilige categorie verplaatsen. Het bewijst dat iemand de papierroute waardevol genoeg vond om in te grijpen, niet waarheid, leugen of schuld van de koper. In HECTON-8 volg je betaling, origineel label, schoon label, claimherschrijving en bewaring.
+Een opschoningsbod is geen oordeel. Het is een aankooporder tegen een bewijsroute. Het verzoek kan een tussenpersoon vragen een label te drogen, een naam te normaliseren, een fragment naar een bergingslot te verplaatsen, publicatie uit te stellen, een werkersnaam om te zetten in een uitbetalingscategorie of het ruwe object achter een claimant-veilige samenvatting te begraven. Het is belangrijk omdat geld verschijnt voordat het dossier verandert. De betaler kan schuldig, bang, slordig of tijd aan het kopen zijn; het bod zelf bewijst druk op het spoor, niet de waarheid van het fragment.
 
-## Hoe je het leest
+Lees het bod als volgorde. Oorspronkelijk label, herkomst van het bod, escrowblokkade, handler-account, schoon label, bewaaroverdracht en objectroute moeten samen blijven. Verschijnt een schoon label voor betaling, dan kan het normale archiefverwerking zijn. Komt betaling voor de naamswijziging, dan heeft iemand de routewijziging gekocht. Bewaar het oorspronkelijke label naast het schone, anders wordt het archief onderdeel van de opschoning.
 
-BEWIJS-CLEANUPBOD
-Lees een betaalregel niet als vonnis.
-Volgend bewijs: oorsprong bod, betaalhold, bewaaroverdracht, claimherschrijving en objectroute.
-Bewaar origineel label naast schoon label.
+## Hoe je dit leest
+
+BOD VOOR BEWIJSOPSCHONING
+Behandel betaling niet als oordeel.
+Betaling voor naamswijziging = gekochte routewijziging.
+Naamswijziging voor betaling = mogelijke archiefverwerking.
+Volgend bewijs: escrowblokkade, handler-account, bewaaroverdracht, oud label, schoon label, objectroute.
+Actie: bewaar beide labels tot de objectroute is opgelost.
 
 ## Veldnotitie
 
-Een bod is geur, geen vonnis. Houd het vuile label naast het schone.
+Archiveer nooit alleen het schone label. Het oude label en de betaal klok zijn het bewijs.
 
 <!-- External Site; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/nl_NL. -->

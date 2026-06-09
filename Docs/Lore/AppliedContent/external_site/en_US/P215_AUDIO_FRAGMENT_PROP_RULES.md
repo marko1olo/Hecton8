@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Audio Fragment Prop Rules
 
-Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Audio Fragment Prop Rules define how HECTON-8 uses voice without flooding the world with monologues. Every audio fragment needs a physical source, damaged transcript state, timestamp, and contradiction. Voice should not replace environmental evidence; it should sharpen it, making rooms, props, and route records speak together.
 
 ## Scanner
 
-Voice is expensive. It must prove something the room also proves.
+Voice is expensive. It must prove something the room can also prove with metal, water, timestamp, or damage.
 
 ## Terminal
 
-AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: no free-floating monologues. Voice belongs to a hydrophone strip, suit recorder, terminal cache, maintenance handset, or black-box fragment. Every playable line must have a source, damaged transcript state, route timestamp, and one contradiction the player can inspect.
 
 ## Audio
 

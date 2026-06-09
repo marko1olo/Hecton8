@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 from BuildWorldMacroGeologyPreview import ARTIFACT_VERSION
@@ -22,6 +23,7 @@ REQUIRED_FILES = {
     "depth_strata",
     "waterline_sweep",
     "material_regions",
+    "terrain_control_rgba_fold",
     "slope",
     "curvature",
     "erosion_flow",
@@ -35,6 +37,16 @@ REQUIRED_FILES = {
     "contact_sheet",
     "terrain_contact_sheet",
     "chunk_manifest",
+}
+REQUIRED_SURFACE_MATERIAL_CLASSES = {
+    "shellSand",
+    "limestoneShelf",
+    "claySilt",
+    "hardRock",
+    "brineSaltCrust",
+    "manganeseNodulePlain",
+    "reefRubble",
+    "seepCrust",
 }
 REQUIRED_ZONES = {
     "PhoticShelf": 1000,
@@ -64,6 +76,7 @@ REQUIRED_WAYPOINTS = {
 }
 MIN_CONTINUATION_HEIGHT_RANGE_METERS = 650.0
 MAX_UNKNOWN_ZONE_PERCENT = 0.5
+REFERENCE_RESOLUTION = 128
 
 
 def fail(errors: list[str], message: str) -> None:
@@ -72,6 +85,11 @@ def fail(errors: list[str], message: str) -> None:
 
 def load_manifest(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def scale_minimum_count(reference_count: int, total_pixels: int) -> int:
+    reference_pixels = REFERENCE_RESOLUTION * REFERENCE_RESOLUTION
+    return max(1, int(math.ceil(reference_count * total_pixels / reference_pixels)))
 
 
 def validate(path: Path) -> int:
@@ -124,6 +142,40 @@ def validate(path: Path) -> int:
         if hashes.get(key) != digest:
             fail(errors, f"{key} sha256 mismatch")
 
+    surface_contract = manifest.get("surfaceMaterialContract", {})
+    if not isinstance(surface_contract, dict):
+        fail(errors, "surfaceMaterialContract must be an object")
+    else:
+        if int(surface_contract.get("version", 0)) < 1:
+            fail(errors, "surfaceMaterialContract version must be at least 1")
+        if surface_contract.get("source") != "WorldTerrainSurfaceMaterialResolver":
+            fail(errors, "surfaceMaterialContract source must be WorldTerrainSurfaceMaterialResolver")
+        logical_classes = set(surface_contract.get("logicalClasses", []))
+        missing_surface_classes = sorted(REQUIRED_SURFACE_MATERIAL_CLASSES - logical_classes)
+        if missing_surface_classes:
+            fail(errors, "surfaceMaterialContract missing logical classes: " + ", ".join(missing_surface_classes))
+        dominant_counts = surface_contract.get("dominantCounts", {})
+        if not isinstance(dominant_counts, dict):
+            fail(errors, "surfaceMaterialContract dominantCounts must be an object")
+        else:
+            non_zero_materials = [
+                material
+                for material, count in dominant_counts.items()
+                if material in REQUIRED_SURFACE_MATERIAL_CLASSES and int(count) > 0
+            ]
+            if is_authored_window and len(non_zero_materials) < 4:
+                fail(errors, "authored preview must contain at least four dominant terrain surface materials")
+            if not is_authored_window and len(non_zero_materials) < 2:
+                fail(errors, "continuation preview must contain at least two dominant terrain surface materials")
+        fold_description = str(surface_contract.get("terrainControlFold", ""))
+        for channel_name in ("R=rock", "G=sand", "B=silt", "A=deposition"):
+            if channel_name not in fold_description:
+                fail(errors, f"surfaceMaterialContract terrainControlFold missing {channel_name}")
+        runtime_path = str(surface_contract.get("runtimePath", ""))
+        for path_part in ("WorldProceduralTerrainSlopeCavitySplatmapJob", "HectonTerrainSplatmapMapMagicNode"):
+            if path_part not in runtime_path:
+                fail(errors, f"surfaceMaterialContract runtimePath missing {path_part}")
+
     chunk_manifest_rel = files.get("chunk_manifest")
     if chunk_manifest_rel:
         chunk_manifest_path = ROOT / Path(chunk_manifest_rel)
@@ -173,16 +225,18 @@ def validate(path: Path) -> int:
     non_zero_zones = [zone for zone, count in zone_counts.items() if zone != "Unknown" and int(count) > 0]
     if is_authored_window:
         for zone, minimum in REQUIRED_ZONES.items():
-            if int(zone_counts.get(zone, 0)) < minimum:
-                fail(errors, f"{zone} count below minimum {minimum}")
+            scaled_minimum = scale_minimum_count(minimum, total_pixels)
+            if int(zone_counts.get(zone, 0)) < scaled_minimum:
+                fail(errors, f"{zone} count below minimum {scaled_minimum}")
     elif len(non_zero_zones) < 2:
         fail(errors, "continuation preview must contain at least two resolved geology zones")
 
     strata_counts = manifest.get("depthStrataCounts", {})
     if is_authored_window:
         for stratum, minimum in REQUIRED_STRATA.items():
-            if int(strata_counts.get(stratum, 0)) < minimum:
-                fail(errors, f"{stratum} depth stratum count below minimum {minimum}")
+            scaled_minimum = scale_minimum_count(minimum, total_pixels)
+            if int(strata_counts.get(stratum, 0)) < scaled_minimum:
+                fail(errors, f"{stratum} depth stratum count below minimum {scaled_minimum}")
 
     hadal_pixels = int(strata_counts.get("Hadal", 0))
     if is_authored_window and hadal_pixels > total_pixels * 0.15:

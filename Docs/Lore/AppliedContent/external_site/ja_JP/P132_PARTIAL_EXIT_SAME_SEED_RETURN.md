@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "部分退出：同一シード帰還"
+title: "部分退出: 同一seed帰還"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 部分退出：同一シード帰還
+# 部分退出: 同一seed帰還
 
-部分退出は長いキャンペーンを偽の終結から守る。Black Keelは限られた窓で操作者を引き上げ、スーツを補修し、回収パケットを記録し、その休止を福祉として売ることができる。下の世界は清潔な別版へ入れ替わらない。
+部分退出は長編サバイバルのための圧力弁だ。請負者はpickup窓を得て、傷を閉じ、装備を補修され、壊れかけたスーツ越しではない空気の音を聞く。その安堵は本物だからこそ、帰還が痛む。
 
-プレイヤーが戻る時、同じシードはまだそこにある。塩水階段には同じ罠があり、同じリレーには同じ悪い角度があり、同じ証拠はまだ危険である。この結末は免罪なき安堵を与える。肺の空気、契約上の追加債務、そして見つけたものを消さないこと。
+Black Keelはこの休止を福利とlien維持として記録する。同じworld seedは動いたまま、同じ証拠は未解決のまま、同じ海が発見済みの経路ごと待っている。部分退出はシステムの慈悲ではない。まだ潜ることを期待された資産の整備だ。
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/ja_JP. -->

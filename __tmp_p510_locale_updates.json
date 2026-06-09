@@ -1,0 +1,167 @@
+{
+  "en_US": {
+    "title": "Scanner Confidence Downgrade Reason",
+    "website_article": "A HECTON-8 scanner lowers confidence when the same object carries incompatible handling marks. The sensor is not judging the case. It is reporting a conflict between evidence lanes: a receiver label on the shell, an older office stamp under salt, a witness hash repeated under another category, or a terminal receipt that still carries the previous drawer route.\n\nThe downgrade protects the route from a clean but incomplete label. High confidence requires one lane: material mark, custody line, timestamp, and receipt agree. Partial confidence means the object can be used, but the next action must be comparison. Scan the seal, read the stamp, keep the hash, and look for the receipt that explains why the label was changed.",
+    "wiki_article": "Scanner confidence downgrade: a scanner state triggered by contradictory object, custody, timestamp, label, or receipt data. The downgrade does not reject the object. It prevents the archive, PDA, or wiki layer from treating one clean label as settled handling. Required follow-up evidence usually includes seal damage, witness hash, relay timestamp, receipt route, or custody sequence.",
+    "pda_codex": "Scanner rule: partial confidence is not junk. It means the object still has useful marks, but at least one label does not match the handling record. Keep the scan and collect the missing lane before building a relation edge.",
+    "scanner_entry": "CONFIDENCE DOWNGRADE // Object has conflicting label, seal, timestamp, or receipt lane. Confidence: partial. Action: preserve hash, compare custody sequence, rescan after receipt match.",
+    "terminal_note": "SCANNER CONFIDENCE DOWNGRADE\nReason: evidence lanes disagree.\nReject object: no.\nUse as final receiver: no.\nRequired fields: seal state, witness hash, relay timestamp, receipt route, custody sequence.",
+    "evidence_caption": "Scanner downgrade record. The object remains usable evidence, but label, seal, timestamp, or receipt data must be compared before assigning a receiver.",
+    "spoiler_policy": "Scanner downgrade reasons may appear early. Final receiver, protected claimant, Atlas consequence, legal result, and route branch remain masked until the missing evidence lane is found.",
+    "locale_status": "source_authority"
+  },
+  "ar_SA": {
+    "title": "سبب خفض ثقة الماسح",
+    "website_article": "يخفض ماسح HECTON-8 الثقة عندما يحمل الجسم نفسه علامات تعامل غير متوافقة. الحساس لا يحكم في القضية. إنه يبلغ عن تعارض بين مسارات الدليل: وسم مستلم على الغلاف، ختم مكتب أقدم تحت الملح، هاش شاهد مكرر تحت فئة أخرى، أو إيصال طرفي ما زال يحمل طريق الدرج السابق.\n\nيحمي الخفض الطريق من وسم نظيف لكنه ناقص. الثقة العالية تحتاج مسارا واحدا: علامة المادة، خط الحيازة، الوقت، والإيصال كلها متفقة. الثقة الجزئية تعني أن الجسم صالح للاستخدام، لكن الفعل التالي هو المقارنة. امسح الختم، اقرأ وسم المكتب، احتفظ بالهاش، وابحث عن الإيصال الذي يشرح سبب تغيير الوسم.",
+    "wiki_article": "خفض ثقة الماسح: حالة ماسح تنتج عن تعارض بيانات الجسم أو الحيازة أو الوقت أو الوسم أو الإيصال. الخفض لا يرفض الجسم. إنه يمنع الأرشيف أو PDA أو طبقة wiki من معاملة وسم نظيف واحد كتعامل محسوم. الدليل اللاحق عادة يشمل ضرر الختم أو هاش شاهد أو وقت ترحيل أو طريق إيصال أو تسلسل حيازة.",
+    "pda_codex": "قاعدة الماسح: الثقة الجزئية ليست نفاية. هذا يعني أن الجسم ما زال يحمل علامات مفيدة، لكن وسما واحدا على الأقل لا يطابق سجل التعامل. احتفظ بالمسح واجمع المسار الناقص قبل بناء رابط علاقة.",
+    "scanner_entry": "خفض ثقة // للجسم مسار وسم أو ختم أو وقت أو إيصال متعارض. الثقة: جزئية. الإجراء: حفظ الهاش، مقارنة تسلسل الحيازة، إعادة المسح بعد مطابقة الإيصال.",
+    "terminal_note": "خفض ثقة الماسح\nالسبب: مسارات الدليل غير متفقة.\nرفض الجسم: لا.\nاستخدامه كمستلم نهائي: لا.\nالحقول المطلوبة: حالة الختم، هاش شاهد، وقت ترحيل، طريق إيصال، تسلسل حيازة.",
+    "evidence_caption": "سجل خفض الماسح. يبقى الجسم دليلا صالحا، لكن الوسم أو الختم أو الوقت أو بيانات الإيصال يجب أن تقارن قبل تعيين مستلم.",
+    "spoiler_policy": "يمكن عرض أسباب خفض الماسح مبكرا. يبقى المستلم النهائي، والمدعي المحمي، ونتيجة Atlas، والنتيجة القانونية، وفرع الطريق محجوبة حتى يعثر على مسار الدليل الناقص.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "de_DE": {
+    "title": "Grund für Scanner-Vertrauensabstufung",
+    "website_article": "Ein HECTON-8-Scanner senkt das Vertrauen, wenn dasselbe Objekt unvereinbare Bearbeitungsmarken trägt. Der Sensor entscheidet keinen Fall. Er meldet einen Konflikt zwischen Beweisspuren: Empfängerlabel auf der Hülle, älterer Amtsstempel unter Salz, Zeugenhash unter einer anderen Kategorie oder ein Terminalbeleg mit der vorherigen Ladenroute.\n\nDie Abstufung schützt die Route vor einem sauberen, aber unvollständigen Label. Hohes Vertrauen braucht eine Spur: Materialmarke, Verwahrungszeile, Zeit und Beleg stimmen überein. Teilvertrauen heißt, das Objekt bleibt verwendbar, aber der nächste Schritt ist Vergleich. Siegel scannen, Stempel lesen, Hash behalten und den Beleg suchen, der die Änderung erklärt.",
+    "wiki_article": "Scanner-Vertrauensabstufung: Scannerzustand bei widersprüchlichen Objekt-, Verwahrungs-, Zeit-, Label- oder Belegdaten. Die Abstufung verwirft das Objekt nicht. Sie verhindert, dass Archiv, PDA oder Wiki ein sauberes Label als abgeschlossene Bearbeitung behandeln. Nötige Anschlussbelege sind meist Siegelschaden, Zeugenhash, Relaiszeit, Belegroute oder Verwahrungsfolge.",
+    "pda_codex": "Scannerregel: Teilvertrauen ist kein Ausschuss. Das Objekt hat noch brauchbare Marken, aber mindestens ein Label passt nicht zum Bearbeitungsdatensatz. Scan behalten und die fehlende Spur sammeln, bevor eine Beziehungskante gebaut wird.",
+    "scanner_entry": "VERTRAUEN ABGESTUFT // Objekt hat widersprüchliche Label-, Siegel-, Zeit- oder Belegspur. Vertrauen: teilweise. Aktion: Hash sichern, Verwahrungsfolge vergleichen, nach Belegtreffer erneut scannen.",
+    "terminal_note": "SCANNER-VERTRAUEN ABGESTUFT\nGrund: Beweisspuren widersprechen sich.\nObjekt verwerfen: nein.\nAls Endempfänger nutzen: nein.\nPflichtfelder: Siegelzustand, Zeugenhash, Relaiszeit, Belegroute, Verwahrungsfolge.",
+    "evidence_caption": "Scanner-Abstufungsdatensatz. Das Objekt bleibt verwendbarer Beleg, aber Label, Siegel, Zeit oder Belegdaten müssen vor einer Empfängerzuweisung verglichen werden.",
+    "spoiler_policy": "Gründe für Scanner-Abstufung dürfen früh erscheinen. Endempfänger, geschützte Person, Atlas-Folge, Rechtsausgang und Routenzweig bleiben verdeckt, bis die fehlende Beweisspur gefunden ist.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "es_ES": {
+    "title": "Motivo de reducción de confianza del escáner",
+    "website_article": "Un escáner de HECTON-8 reduce la confianza cuando el mismo objeto lleva marcas de manejo incompatibles. El sensor no juzga el caso. Informa de un conflicto entre vías de evidencia: una etiqueta de receptor en la carcasa, un sello de oficina más antiguo bajo la sal, un hash de testigo repetido bajo otra categoría o un recibo de terminal que conserva la ruta de cajón anterior.\n\nLa reducción protege la ruta de una etiqueta limpia pero incompleta. La confianza alta necesita una vía: marca material, línea de custodia, hora y recibo coinciden. La confianza parcial significa que el objeto puede usarse, pero la siguiente acción debe ser comparar. Escanea el sello, lee la marca, conserva el hash y busca el recibo que explique por qué se cambió la etiqueta.",
+    "wiki_article": "Reducción de confianza del escáner: estado activado por datos contradictorios de objeto, custodia, hora, etiqueta o recibo. La reducción no rechaza el objeto. Impide que archivo, PDA o wiki traten una etiqueta limpia como manejo resuelto. La evidencia siguiente suele incluir daño del sello, hash de testigo, hora de relé, ruta de recibo o secuencia de custodia.",
+    "pda_codex": "Regla del escáner: confianza parcial no significa basura. El objeto aún tiene marcas útiles, pero al menos una etiqueta no coincide con el registro de manejo. Conserva el escaneo y reúne la vía que falta antes de crear una relación.",
+    "scanner_entry": "CONFIANZA REDUCIDA // El objeto tiene vía de etiqueta, sello, hora o recibo en conflicto. Confianza: parcial. Acción: conservar hash, comparar secuencia de custodia, reescanear tras coincidencia de recibo.",
+    "terminal_note": "REDUCCIÓN DE CONFIANZA DEL ESCÁNER\nMotivo: las vías de evidencia no coinciden.\nRechazar objeto: no.\nUsar como receptor final: no.\nCampos requeridos: estado del sello, hash de testigo, hora de relé, ruta de recibo, secuencia de custodia.",
+    "evidence_caption": "Registro de reducción del escáner. El objeto sigue siendo evidencia usable, pero etiqueta, sello, hora o datos de recibo deben compararse antes de asignar receptor.",
+    "spoiler_policy": "Los motivos de reducción del escáner pueden aparecer pronto. Receptor final, reclamante protegido, consecuencia de Atlas, resultado legal y rama de ruta permanecen ocultos hasta encontrar la vía de evidencia que falta.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "fr_FR": {
+    "title": "Motif de baisse de confiance du scanner",
+    "website_article": "Un scanner HECTON-8 baisse la confiance quand le même objet porte des marques de traitement incompatibles. Le capteur ne juge pas le dossier. Il signale un conflit entre voies de preuve : étiquette de destinataire sur la coque, cachet de bureau plus ancien sous le sel, hash de témoin répété sous une autre catégorie, ou reçu terminal qui conserve l'ancienne route de tiroir.\n\nLa baisse protège la route contre une étiquette propre mais incomplète. Une confiance haute demande une seule voie : marque matérielle, ligne de garde, heure et reçu concordent. Une confiance partielle signifie que l'objet reste utilisable, mais que l'action suivante est la comparaison. Scannez le sceau, lisez le cachet, gardez le hash et cherchez le reçu qui explique le changement d'étiquette.",
+    "wiki_article": "Baisse de confiance du scanner : état déclenché par des données contradictoires d'objet, de garde, d'heure, d'étiquette ou de reçu. La baisse ne rejette pas l'objet. Elle empêche l'archive, le PDA ou le wiki de traiter une étiquette propre comme un traitement réglé. Les preuves suivantes sont souvent : dommage du sceau, hash de témoin, heure de relais, route de reçu ou séquence de garde.",
+    "pda_codex": "Règle du scanner : confiance partielle ne veut pas dire rebut. L'objet porte encore des marques utiles, mais au moins une étiquette ne correspond pas au traitement. Gardez le scan et collectez la voie manquante avant de créer une relation.",
+    "scanner_entry": "CONFIANCE ABAISSÉE // L'objet a une voie d'étiquette, de sceau, d'heure ou de reçu en conflit. Confiance : partielle. Action : conserver le hash, comparer la séquence de garde, rescanner après correspondance du reçu.",
+    "terminal_note": "BAISSE DE CONFIANCE DU SCANNER\nMotif : les voies de preuve ne concordent pas.\nRejeter l'objet : non.\nUtiliser comme destinataire final : non.\nChamps requis : état du sceau, hash de témoin, heure de relais, route de reçu, séquence de garde.",
+    "evidence_caption": "Enregistrement de baisse du scanner. L'objet reste une preuve utilisable, mais étiquette, sceau, heure ou données de reçu doivent être comparés avant d'assigner un destinataire.",
+    "spoiler_policy": "Les motifs de baisse du scanner peuvent apparaître tôt. Destinataire final, demandeur protégé, conséquence Atlas, résultat légal et branche de route restent masqués jusqu'à découverte de la voie de preuve manquante.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "he_IL": {
+    "title": "סיבת הורדת אמון בסורק",
+    "website_article": "סורק HECTON-8 מוריד אמון כאשר אותו חפץ נושא סימני טיפול שאינם מתאימים. החיישן אינו שופט את התיק. הוא מדווח על סתירה בין נתיבי ראיה: תווית מקבל על המעטפת, חותמת משרד ישנה מתחת למלח, האש עד שחוזר תחת קטגוריה אחרת, או קבלת מסוף שעדיין נושאת את דרך המגירה הקודמת.\n\nההורדה מגינה על הדרך מפני תווית נקייה אך חסרה. אמון גבוה דורש נתיב אחד: סימן חומר, שורת משמורת, זמן וקבלה מסכימים. אמון חלקי אומר שהחפץ עדיין שימושי, אבל הפעולה הבאה היא השוואה. סרוק את החותם, קרא את החותמת, שמור את ההאש וחפש את הקבלה שמסבירה למה התווית שונתה.",
+    "wiki_article": "הורדת אמון בסורק: מצב סורק שנגרם מנתוני חפץ, משמורת, זמן, תווית או קבלה שסותרים זה את זה. ההורדה אינה דוחה את החפץ. היא מונעת מהארכיון, ה-PDA או שכבת ה-wiki להתייחס לתווית נקייה כטיפול סגור. ראיות המשך כוללות בדרך כלל נזק לחותם, האש עד, זמן ממסר, דרך קבלה או רצף משמורת.",
+    "pda_codex": "כלל סורק: אמון חלקי אינו פסולת. החפץ עדיין נושא סימנים שימושיים, אבל לפחות תווית אחת אינה תואמת לרשומת הטיפול. שמור את הסריקה ואסוף את הנתיב החסר לפני יצירת קשר.",
+    "scanner_entry": "אמון הורד // לחפץ יש נתיב תווית, חותם, זמן או קבלה בסתירה. אמון: חלקי. פעולה: לשמור האש, להשוות רצף משמורת, לסרוק שוב אחרי התאמת קבלה.",
+    "terminal_note": "הורדת אמון בסורק\nסיבה: נתיבי ראיה אינם מסכימים.\nלדחות חפץ: לא.\nלהשתמש כמקבל סופי: לא.\nשדות נדרשים: מצב חותם, האש עד, זמן ממסר, דרך קבלה, רצף משמורת.",
+    "evidence_caption": "רשומת הורדת סורק. החפץ נשאר ראיה שימושית, אך תווית, חותם, זמן או נתוני קבלה חייבים השוואה לפני שיוך מקבל.",
+    "spoiler_policy": "סיבות הורדת סורק יכולות להופיע מוקדם. המקבל הסופי, מגיש הבקשה המוגן, תוצאת Atlas, התוצאה המשפטית וענף הדרך נשארים מוסתרים עד שנתיב הראיה החסר נמצא.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "id_ID": {
+    "title": "Alasan Penurunan Keyakinan Pemindai",
+    "website_article": "Pemindai HECTON-8 menurunkan keyakinan ketika objek yang sama membawa tanda penanganan yang tidak cocok. Sensor tidak mengadili kasus. Sensor melaporkan konflik antar-jalur bukti: label penerima pada cangkang, cap kantor lama di bawah garam, hash saksi yang berulang di kategori lain, atau resi terminal yang masih membawa rute laci sebelumnya.\n\nPenurunan itu melindungi rute dari label yang bersih tetapi belum lengkap. Keyakinan tinggi membutuhkan satu jalur: tanda material, garis kustodi, waktu, dan resi cocok. Keyakinan sebagian berarti objek masih dapat dipakai, tetapi tindakan berikutnya adalah membandingkan. Pindai segel, baca cap, simpan hash, dan cari resi yang menjelaskan mengapa label diganti.",
+    "wiki_article": "Penurunan keyakinan pemindai: keadaan pemindai yang dipicu data objek, kustodi, waktu, label, atau resi yang bertentangan. Penurunan tidak menolak objek. Penurunan mencegah arsip, PDA, atau lapisan wiki memperlakukan satu label bersih sebagai penanganan yang selesai. Bukti lanjutan biasanya mencakup kerusakan segel, hash saksi, waktu relai, rute resi, atau urutan kustodi.",
+    "pda_codex": "Aturan pemindai: keyakinan sebagian bukan sampah. Objek masih punya tanda berguna, tetapi setidaknya satu label tidak cocok dengan catatan penanganan. Simpan hasil pindai dan kumpulkan jalur yang hilang sebelum membuat hubungan.",
+    "scanner_entry": "KEYAKINAN TURUN // Objek memiliki jalur label, segel, waktu, atau resi yang bertentangan. Keyakinan: sebagian. Tindakan: simpan hash, bandingkan urutan kustodi, pindai ulang setelah resi cocok.",
+    "terminal_note": "PENURUNAN KEYAKINAN PEMINDAI\nAlasan: jalur bukti tidak sepakat.\nTolak objek: tidak.\nGunakan sebagai penerima akhir: tidak.\nKolom wajib: keadaan segel, hash saksi, waktu relai, rute resi, urutan kustodi.",
+    "evidence_caption": "Catatan penurunan pemindai. Objek tetap menjadi bukti yang dapat dipakai, tetapi label, segel, waktu, atau data resi harus dibandingkan sebelum penerima ditetapkan.",
+    "spoiler_policy": "Alasan penurunan pemindai boleh muncul lebih awal. Penerima akhir, pengaju klaim yang dilindungi, konsekuensi Atlas, hasil legal, dan cabang rute tetap disembunyikan sampai jalur bukti yang hilang ditemukan.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "ja_JP": {
+    "title": "スキャナー信頼度低下の理由",
+    "website_article": "HECTON-8のスキャナーは、同じ物品に一致しない扱い痕があると信頼度を下げる。センサーは案件を裁定しない。証拠経路の衝突を報告する。外装の受取先ラベル、塩の下に残った古い事務所印、別カテゴリで繰り返された証人ハッシュ、または前の引き出し経路を残した端末レシートである。\n\n低下は、きれいだが不完全なラベルから経路を守る。高い信頼度には一つの経路が必要だ。物質痕、保管行、時刻、レシートが一致していること。部分信頼度は、物品が使えないという意味ではない。次の行動は比較である。封印をスキャンし、印を読み、ハッシュを残し、ラベル変更の理由を示すレシートを探す。",
+    "wiki_article": "スキャナー信頼度低下: 物品、保管、時刻、ラベル、レシートのデータが矛盾したときのスキャナー状態。低下は物品を拒否しない。公開アーカイブ、PDA、wiki層がきれいな一つのラベルを確定扱いにすることを防ぐ。次に必要な証拠は、多くの場合、封印損傷、証人ハッシュ、中継時刻、レシート経路、または保管順序である。",
+    "pda_codex": "スキャナー規則: 部分信頼度は廃棄ではない。物品にはまだ使える痕がある。ただし少なくとも一つのラベルが扱い記録と一致しない。スキャンを残し、関係線を作る前に欠けている経路を集める。",
+    "scanner_entry": "信頼度低下 // 物品にラベル、封印、時刻、またはレシート経路の衝突あり。信頼度: 部分。処理: ハッシュ保持、保管順序比較、レシート一致後に再スキャン。",
+    "terminal_note": "スキャナー信頼度低下\n理由: 証拠経路が一致しない。\n物品拒否: いいえ。\n最終受取先として使用: いいえ。\n必須フィールド: 封印状態、証人ハッシュ、中継時刻、レシート経路、保管順序。",
+    "evidence_caption": "スキャナー低下記録。物品は証拠として使えるが、受取先を割り当てる前にラベル、封印、時刻、レシートデータを比較する必要がある。",
+    "spoiler_policy": "スキャナー信頼度低下の理由は早期に表示できる。最終受取先、保護対象の請求者、Atlasの結果、法的結果、経路分岐は、欠けている証拠経路が見つかるまで隠す。",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "ko_KR": {
+    "title": "스캐너 신뢰도 하향 이유",
+    "website_article": "HECTON-8 스캐너는 같은 물건에 서로 맞지 않는 처리 흔적이 붙어 있으면 신뢰도를 낮춘다. 센서는 사건을 판정하지 않는다. 증거 경로의 충돌을 보고한다. 외장에 붙은 수령자 라벨, 소금 아래 남은 오래된 사무실 도장, 다른 분류에서 반복된 증인 해시, 또는 이전 서랍 경로를 아직 가진 터미널 영수증 같은 충돌이다.\n\n하향은 깨끗하지만 불완전한 라벨에서 경로를 보호한다. 높은 신뢰도에는 하나의 경로가 필요하다. 물질 흔적, 보관 줄, 시각, 영수증이 맞아야 한다. 부분 신뢰도는 물건을 버리라는 뜻이 아니다. 다음 행동은 비교다. 봉인을 스캔하고, 도장을 읽고, 해시를 보존하고, 라벨이 바뀐 이유를 설명하는 영수증을 찾는다.",
+    "wiki_article": "스캐너 신뢰도 하향: 물건, 보관, 시각, 라벨, 영수증 데이터가 서로 모순될 때 생기는 스캐너 상태. 하향은 물건을 거부하지 않는다. 기록, PDA, wiki 계층이 깨끗한 라벨 하나를 완료된 처리로 취급하지 못하게 한다. 후속 증거는 보통 봉인 손상, 증인 해시, 중계 시각, 영수증 경로, 보관 순서다.",
+    "pda_codex": "스캐너 규칙: 부분 신뢰도는 폐기물이 아니다. 물건에는 아직 쓸 수 있는 흔적이 있다. 다만 적어도 하나의 라벨이 처리 기록과 맞지 않는다. 스캔을 보존하고 관계선을 만들기 전에 빠진 경로를 모은다.",
+    "scanner_entry": "신뢰도 하향 // 물건에 라벨, 봉인, 시각, 또는 영수증 경로 충돌이 있다. 신뢰도: 부분. 조치: 해시 보존, 보관 순서 비교, 영수증 일치 후 재스캔.",
+    "terminal_note": "스캐너 신뢰도 하향\n이유: 증거 경로가 일치하지 않음.\n물건 거부: 아니오.\n최종 수령자로 사용: 아니오.\n필수 필드: 봉인 상태, 증인 해시, 중계 시각, 영수증 경로, 보관 순서.",
+    "evidence_caption": "스캐너 하향 기록. 물건은 증거로 사용할 수 있지만 수령자를 배정하기 전에 라벨, 봉인, 시각, 영수증 데이터를 비교해야 한다.",
+    "spoiler_policy": "스캐너 하향 이유는 초기에 표시될 수 있다. 최종 수령자, 보호 대상 청구인, Atlas 결과, 법적 결과, 경로 분기는 빠진 증거 경로를 찾을 때까지 숨긴다.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "nl_NL": {
+    "title": "Reden voor lagere scannerscore",
+    "website_article": "Een HECTON-8-scanner verlaagt vertrouwen wanneer hetzelfde object onverenigbare behandelingssporen draagt. De sensor beoordeelt geen zaak. Hij meldt een conflict tussen bewijslijnen: een ontvangerslabel op de behuizing, een oudere kantoorstempel onder zout, een getuigehash die terugkomt onder een andere categorie, of een terminalbon met de vorige laderoute.\n\nDe verlaging beschermt de route tegen een schoon maar onvolledig label. Hoog vertrouwen vraagt één lijn: materiaalspoor, bewaarlijn, tijd en bon komen overeen. Gedeeltelijk vertrouwen betekent dat het object bruikbaar blijft, maar dat de volgende actie vergelijken is. Scan het zegel, lees de stempel, bewaar de hash en zoek de bon die uitlegt waarom het label veranderde.",
+    "wiki_article": "Lagere scannerscore: scannerstatus door tegenstrijdige object-, bewaar-, tijd-, label- of bongegevens. De verlaging wijst het object niet af. Ze voorkomt dat archief, PDA of wiki-laag één schoon label als afgehandeld behandelen. Vervolg bewijs is meestal zegelschade, getuigehash, relaytijd, bonroute of bewaarvolgorde.",
+    "pda_codex": "Scannerregel: gedeeltelijk vertrouwen is geen afval. Het object heeft nog bruikbare sporen, maar minstens één label past niet bij het behandelingsrecord. Bewaar de scan en verzamel de ontbrekende lijn voordat je een relatie legt.",
+    "scanner_entry": "VERTROUWEN VERLAAGD // Object heeft conflicterende label-, zegel-, tijd- of bonlijn. Vertrouwen: gedeeltelijk. Actie: hash bewaren, bewaarvolgorde vergelijken, opnieuw scannen na bonmatch.",
+    "terminal_note": "SCANNERVERTROUWEN VERLAAGD\nReden: bewijslijnen spreken elkaar tegen.\nObject afwijzen: nee.\nAls eindontvanger gebruiken: nee.\nVereiste velden: zegelstaat, getuigehash, relaytijd, bonroute, bewaarvolgorde.",
+    "evidence_caption": "Record van lagere scannerscore. Het object blijft bruikbaar bewijs, maar label, zegel, tijd of bongegevens moeten worden vergeleken voordat een ontvanger wordt toegewezen.",
+    "spoiler_policy": "Redenen voor lagere scannerscore mogen vroeg verschijnen. Eindontvanger, beschermde aanvrager, Atlas-gevolg, juridische uitkomst en routetak blijven verborgen tot de ontbrekende bewijslijn is gevonden.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "pl_PL": {
+    "title": "Powód obniżenia pewności skanera",
+    "website_article": "Skaner HECTON-8 obniża pewność, gdy ten sam obiekt niesie niezgodne ślady obsługi. Czujnik nie ocenia sprawy. Zgłasza konflikt między liniami dowodu: etykietę odbiorcy na obudowie, starszy stempel biura pod solą, hash świadka powtórzony pod inną kategorią albo paragon terminala z poprzednią trasą szuflady.\n\nObniżenie chroni trasę przed czystą, ale niepełną etykietą. Wysoka pewność wymaga jednej linii: ślad materiału, linia depozytu, czas i paragon zgadzają się. Częściowa pewność znaczy, że obiekt nadal się nadaje, ale następna czynność to porównanie. Zeskanuj pieczęć, przeczytaj stempel, zachowaj hash i znajdź paragon wyjaśniający zmianę etykiety.",
+    "wiki_article": "Obniżenie pewności skanera: stan skanera wywołany sprzecznymi danymi obiektu, depozytu, czasu, etykiety albo paragonu. Obniżenie nie odrzuca obiektu. Nie pozwala archiwum, PDA ani warstwie wiki traktować jednej czystej etykiety jako zamkniętej obsługi. Kolejny dowód to zwykle uszkodzenie pieczęci, hash świadka, czas przekaźnika, trasa paragonu albo sekwencja depozytu.",
+    "pda_codex": "Reguła skanera: częściowa pewność to nie śmieć. Obiekt nadal ma użyteczne ślady, ale co najmniej jedna etykieta nie pasuje do rekordu obsługi. Zachowaj skan i zbierz brakującą linię przed utworzeniem relacji.",
+    "scanner_entry": "PEWNOŚĆ OBNIŻONA // Obiekt ma konflikt etykiety, pieczęci, czasu albo trasy paragonu. Pewność: częściowa. Działanie: zachować hash, porównać sekwencję depozytu, skanować ponownie po zgodnym paragonie.",
+    "terminal_note": "PEWNOŚĆ SKANERA OBNIŻONA\nPowód: linie dowodu się nie zgadzają.\nOdrzucić obiekt: nie.\nUżyć jako odbiorcy końcowego: nie.\nWymagane pola: stan pieczęci, hash świadka, czas przekaźnika, trasa paragonu, sekwencja depozytu.",
+    "evidence_caption": "Rekord obniżenia skanera. Obiekt pozostaje użytecznym dowodem, ale etykieta, pieczęć, czas albo dane paragonu muszą zostać porównane przed przypisaniem odbiorcy.",
+    "spoiler_policy": "Powody obniżenia skanera mogą pojawić się wcześnie. Odbiorca końcowy, chroniony wnioskodawca, skutek Atlas, wynik prawny i gałąź trasy pozostają ukryte do znalezienia brakującej linii dowodu.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "pt_BR": {
+    "title": "Motivo de redução de confiança do scanner",
+    "website_article": "Um scanner de HECTON-8 reduz a confiança quando o mesmo objeto carrega marcas de manuseio incompatíveis. O sensor não julga o caso. Ele informa um conflito entre linhas de evidência: etiqueta de receptor na carcaça, carimbo de escritório mais antigo sob sal, hash de testemunha repetido em outra categoria ou recibo de terminal ainda com a rota de gaveta anterior.\n\nA redução protege a rota contra uma etiqueta limpa, mas incompleta. Confiança alta exige uma linha: marca material, linha de custódia, horário e recibo combinam. Confiança parcial significa que o objeto pode ser usado, mas a próxima ação deve ser comparar. Escaneie o selo, leia o carimbo, preserve o hash e procure o recibo que explica por que a etiqueta mudou.",
+    "wiki_article": "Redução de confiança do scanner: estado disparado por dados contraditórios de objeto, custódia, horário, etiqueta ou recibo. A redução não rejeita o objeto. Ela impede que arquivo, PDA ou camada wiki tratem uma etiqueta limpa como manuseio resolvido. A evidência seguinte costuma incluir dano no selo, hash de testemunha, horário de relé, rota de recibo ou sequência de custódia.",
+    "pda_codex": "Regra do scanner: confiança parcial não é descarte. O objeto ainda tem marcas úteis, mas pelo menos uma etiqueta não combina com o registro de manuseio. Preserve o escaneamento e colete a linha faltante antes de criar uma relação.",
+    "scanner_entry": "CONFIANÇA REDUZIDA // Objeto tem linha de etiqueta, selo, horário ou recibo em conflito. Confiança: parcial. Ação: preservar hash, comparar sequência de custódia, escanear novamente após recibo compatível.",
+    "terminal_note": "REDUÇÃO DE CONFIANÇA DO SCANNER\nMotivo: linhas de evidência discordam.\nRejeitar objeto: não.\nUsar como receptor final: não.\nCampos exigidos: estado do selo, hash de testemunha, horário de relé, rota de recibo, sequência de custódia.",
+    "evidence_caption": "Registro de redução do scanner. O objeto continua sendo evidência utilizável, mas etiqueta, selo, horário ou dados de recibo precisam ser comparados antes de atribuir receptor.",
+    "spoiler_policy": "Motivos de redução do scanner podem aparecer cedo. Receptor final, reclamante protegido, consequência de Atlas, resultado legal e ramo de rota ficam ocultos até a linha de evidência faltante ser encontrada.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "ru_RU": {
+    "title": "Причина снижения уверенности сканера",
+    "website_article": "Сканер HECTON-8 снижает уверенность, когда один объект несет несовместимые следы обработки. Датчик не выносит решение по делу. Он сообщает конфликт между линиями улик: метка получателя на корпусе, более старая офисная печать под солью, хэш свидетеля в другой категории или терминальная квитанция с прежним маршрутом ящика.\n\nСнижение защищает маршрут от чистой, но неполной метки. Высокая уверенность требует одной линии: материальный след, строка хранения, время и квитанция сходятся. Частичная уверенность значит, что объект можно использовать, но следующим действием должно быть сравнение. Отсканируй пломбу, прочитай печать, сохрани хэш и найди квитанцию, которая объясняет замену метки.",
+    "wiki_article": "Снижение уверенности сканера: состояние, вызванное противоречивыми данными объекта, хранения, времени, метки или квитанции. Снижение не отбраковывает объект. Оно не дает архиву, PDA или wiki-слою принять одну чистую метку за завершенную обработку. Следующая улика обычно включает повреждение пломбы, хэш свидетеля, релейную метку, маршрут квитанции или последовательность хранения.",
+    "pda_codex": "Правило сканера: частичная уверенность не означает мусор. На объекте еще есть полезные следы, но хотя бы одна метка не совпадает с записью обработки. Сохрани скан и собери недостающую линию, прежде чем строить связь.",
+    "scanner_entry": "УВЕРЕННОСТЬ СНИЖЕНА // У объекта конфликтует линия метки, пломбы, времени или квитанции. Уверенность: частичная. Действие: сохранить хэш, сравнить последовательность хранения, пересканировать после совпадения квитанции.",
+    "terminal_note": "СНИЖЕНИЕ УВЕРЕННОСТИ СКАНЕРА\nПричина: линии улик расходятся.\nОтбросить объект: нет.\nИспользовать как конечного получателя: нет.\nНужные поля: состояние пломбы, хэш свидетеля, релейная метка, маршрут квитанции, последовательность хранения.",
+    "evidence_caption": "Запись снижения сканера. Объект остается пригодной уликой, но метку, пломбу, время или данные квитанции нужно сравнить до назначения получателя.",
+    "spoiler_policy": "Причины снижения сканера могут появляться рано. Конечный получатель, защищенный заявитель, последствие Atlas, юридический исход и ветка маршрута скрыты до нахождения недостающей линии улик.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "uk_UA": {
+    "title": "Причина зниження впевненості сканера",
+    "website_article": "Сканер HECTON-8 знижує впевненість, коли один об'єкт несе несумісні сліди обробки. Датчик не ухвалює рішення у справі. Він повідомляє конфлікт між лініями доказів: мітка отримувача на корпусі, старіша офісна печатка під сіллю, хеш свідка в іншій категорії або термінальна квитанція з попереднім маршрутом шухляди.\n\nЗниження захищає маршрут від чистої, але неповної мітки. Висока впевненість потребує однієї лінії: матеріальний слід, рядок зберігання, час і квитанція сходяться. Часткова впевненість означає, що об'єкт можна використати, але наступною дією має бути порівняння. Відскануй пломбу, прочитай печатку, збережи хеш і знайди квитанцію, яка пояснює заміну мітки.",
+    "wiki_article": "Зниження впевненості сканера: стан, викликаний суперечливими даними об'єкта, зберігання, часу, мітки або квитанції. Зниження не бракує об'єкт. Воно не дає архіву, PDA або wiki-шару прийняти одну чисту мітку за завершену обробку. Наступний доказ зазвичай включає пошкодження пломби, хеш свідка, релейну мітку, маршрут квитанції або послідовність зберігання.",
+    "pda_codex": "Правило сканера: часткова впевненість не означає сміття. На об'єкті ще є корисні сліди, але хоча б одна мітка не збігається із записом обробки. Збережи скан і збери відсутню лінію, перш ніж будувати зв'язок.",
+    "scanner_entry": "ВПЕВНЕНІСТЬ ЗНИЖЕНА // В об'єкта конфліктує лінія мітки, пломби, часу або квитанції. Упевненість: часткова. Дія: зберегти хеш, порівняти послідовність зберігання, пересканувати після збігу квитанції.",
+    "terminal_note": "ЗНИЖЕННЯ ВПЕВНЕНОСТІ СКАНЕРА\nПричина: лінії доказів розходяться.\nВідкинути об'єкт: ні.\nВикористати як кінцевого отримувача: ні.\nПотрібні поля: стан пломби, хеш свідка, релейна мітка, маршрут квитанції, послідовність зберігання.",
+    "evidence_caption": "Запис зниження сканера. Об'єкт лишається придатним доказом, але мітку, пломбу, час або дані квитанції треба порівняти до призначення отримувача.",
+    "spoiler_policy": "Причини зниження сканера можуть з'являтися рано. Кінцевий отримувач, захищений заявник, наслідок Atlas, юридичний результат і гілка маршруту приховані до знаходження відсутньої лінії доказів.",
+    "locale_status": "draft_machine_or_llm"
+  },
+  "zh_CN": {
+    "title": "扫描器置信度下调原因",
+    "website_article": "HECTON-8 扫描器在同一物件带有互相冲突的处理痕迹时会下调置信度。传感器不是在裁定案件。它报告证据线之间的冲突：外壳上的接收者标签、盐层下更早的办公室印章、在另一类别下重复出现的见证哈希，或仍带有上一条抽屉路线的终端收据。\n\n下调是为了保护路线，不让干净但不完整的标签直接盖过物件。高置信度需要一条线：材料痕迹、保管行、时间和收据一致。部分置信度表示物件仍可使用，但下一步必须比较。扫描封签，读取印章，保留哈希，寻找能解释标签为何更改的收据。",
+    "wiki_article": "扫描器置信度下调：由物件、保管、时间、标签或收据数据互相矛盾触发的扫描器状态。下调不拒绝物件。它防止档案、PDA 或 wiki 层把一个干净标签当成已完成处理。后续证据通常包括封签损伤、见证哈希、中继时间、收据路线或保管顺序。",
+    "pda_codex": "扫描器规则：部分置信度不是废件。物件仍有可用痕迹，但至少一个标签与处理记录不一致。保留扫描结果，在建立关系线前收集缺失的证据线。",
+    "scanner_entry": "置信度下调 // 物件存在标签、封签、时间或收据线冲突。置信度：部分。操作：保留哈希，比较保管顺序，在收据匹配后重新扫描。",
+    "terminal_note": "扫描器置信度下调\n原因：证据线不一致。\n拒绝物件：否。\n作为最终接收者使用：否。\n必需字段：封签状态、见证哈希、中继时间、收据路线、保管顺序。",
+    "evidence_caption": "扫描器下调记录。物件仍是可用证据，但在指定接收者前必须比较标签、封签、时间或收据数据。",
+    "spoiler_policy": "扫描器下调原因可以较早出现。最终接收者、受保护申诉人、Atlas 后果、法律结果和路线分支保持隐藏，直到找到缺失的证据线。",
+    "locale_status": "draft_machine_or_llm"
+  }
+}

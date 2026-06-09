@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Vazamento para ledger público
 
-O vazamento para ledger público não é uma fantasia perfeita de denunciante. É um pacote saindo por uma janela relay estreita com witness hash, custody suficiente para ser difícil de negar e peças demais faltando para ser seguro. Tau Ceti pode tornar o registro público muito depois de conseguir salvar alguém na água.
+Vazamento para ledger público não é uma fantasia perfeita de denunciante. É um pacote danificado saindo antes de custody completa, com provas suficientes para tornar a negação cara e contexto faltando o bastante para fazer todo leitor perigoso. Tau Ceti pode tornar o registro público muito depois de poder salvar alguém na água.
 
-Esse atraso é o ponto. Deep Reach não pode simplesmente deletar o claim, mas o jogador também não pode decidir quem o usa depois. Seguradoras, rivais, cortes cívicas, pools Marauder e escritórios corporativos vão ler a mesma ferida de formas diferentes. Esse final torna a verdade mais difícil de enterrar e mais difícil de possuir.
+Esse atraso é o ponto. A Deep Reach perde o cover-up mais limpo, mas a testemunha também perde posse. O mesmo registro pode virar acusação, alavanca, matemática de seguro, propaganda de domain ou novo contrato. Essa rota torna a verdade mais difícil de enterrar e mais difícil de possuir.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/pt_BR. -->

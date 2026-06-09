@@ -164,14 +164,16 @@ public sealed class HectonSuitHUDExtensions : ImmediateModeShapeDrawer, ITickabl
             {
                 _notifications[i].TimeRemaining -= deltaTime;
 
+                float safeFadeSpeed = Mathf.Max(0.001f, notificationFadeSpeed);
+                float fadeWindowSeconds = 1f / safeFadeSpeed;
                 float elapsed = notificationDuration - _notifications[i].TimeRemaining;
-                if (elapsed < 0.3f)
+                if (elapsed < fadeWindowSeconds)
                 {
-                    _notifications[i].Alpha = Mathf.Min(1f, elapsed / 0.3f);
+                    _notifications[i].Alpha = Mathf.Min(1f, elapsed * safeFadeSpeed);
                 }
-                else if (_notifications[i].TimeRemaining < 0.5f)
+                else if (_notifications[i].TimeRemaining < fadeWindowSeconds)
                 {
-                    _notifications[i].Alpha = Mathf.Max(0f, _notifications[i].TimeRemaining / 0.5f);
+                    _notifications[i].Alpha = Mathf.Max(0f, _notifications[i].TimeRemaining * safeFadeSpeed);
                 }
                 else
                 {

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Abyssal Machine Field Warning"
+title: "Waarschuwing voor abyssaal machineveld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Abyssal Machine Field Warning
+# Waarschuwing voor abyssaal machineveld
 
-NL LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+De waarschuwing verbindt diepe ecologie met de laatste Atlas-benadering. De speler kruist niet langer ruïnes met toevallig leven erin; hij kruist leven dat heeft geleerd machines te dragen.
 
 ## Scanner
 
-NL LOC HOLD: Machine field warning: silt motion does not match current.
+Slib beweegt tegen de stroming in. Filterlichamen verplaatsen zich onder de lichten.
 
 ## Terminal
 
-NL LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: slibbeweging in abyssaal machineveld overschrijdt stroommodel. Filterlichamen en begraven actuatorribben geregistreerd als bewegende infrastructuur. Afstand houden; niet ankeren in zachte vloer.
 
 ## Audio
 
-NL LOC HOLD: The floor is not still.
+De vloer staat niet stil.
 
 ## Field Note
 
-NL LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Late-game waarschuwing: stille objectieve dreiging. Het finale veld is ontwakende infrastructuur, geen bossopbouw.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/nl_NL. -->

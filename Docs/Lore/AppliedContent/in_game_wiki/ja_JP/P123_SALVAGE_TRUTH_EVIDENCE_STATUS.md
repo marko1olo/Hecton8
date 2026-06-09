@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "サルベージ真実の証拠状態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# サルベージ真実の証拠状態
 
-JP LOC HOLD: Salvage truth is not automatically justice. The same black-box packet can be treated as claim valuation, contamination record or public evidence. The player must preserve custody paths if they want Tau Ceti or another public authority to matter.
+Aegir の真実は物理的だ。隔壁に半ば溶け込んだ記録装置、接点に塩が詰まったヘルメットカメラ、反対側から開いた圧力扉。見つかっただけでは正義にならない。Deep Reach は評価データと呼べる。保険会社は汚染記録と呼べる。保管鎖が切れれば、航路事務所は証拠能力なしと呼べる。仕事は証拠を回収するだけではなく、それを貨物に変えさせないことだ。
 
 ## Scanner
 
-JP LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+ブラックボックスのパケット: 請求部署が触れるまでは真実。
 
 ## Terminal
 
-JP LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: 生のサルベージ品は既定で請求材料となる。公的証拠には、完全なソースハッシュ、圧力時刻印、証人パケット、請求者支配外のリレー公証、船体喪失、塩水曝露、手動編集を越えて残る保管経路が必要。
 
 ## Audio
 
-JP LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+遺体は、誰かが誤ファイルに失敗して初めて証拠になる。
 
 ## Field Note
 
-JP LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+深海から来た事実は、証人を保てた時だけ危険になる。
 
 <!-- In-Game Wiki; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/ja_JP. -->

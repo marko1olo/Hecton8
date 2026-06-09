@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Pressure Suit Service Grades"
+title: "Servicegraden van drukpakken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Pressure Suit Service Grades
+# Servicegraden van drukpakken
 
-NL LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Drukpakgraden zijn servicedossiers, geen uitrustingskleuren. Elke diepte vraagt traceerbare afdichtingen, scrubberreserve, thermische voering, contaminatiegrenzen en oude servicestempels. De speler komt dieper omdat hij een veiligheidsnorm herstelt en bewijst, niet omdat hij een magisch pantser vindt.
 
 ## Scanner
 
-NL LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Paklabels classificeren servicediepte, afdichtingsmoeheid, scrubberreserve, thermische tolerantie en contaminatie.
 
 ## Terminal
 
-NL LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-NL LOC HOLD: The suit does not make you brave. It only fails later.
+Het pak maakt je niet dapper. Het faalt alleen later.
 
 ## Field Note
 
-NL LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Een dieper pak is geen gekleurd pantser. Het is papierwerk, onderdelen en smerig onderhoud.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/nl_NL. -->

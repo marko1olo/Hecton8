@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Kehidupan Paparan Fotik
 
-Kehidupan Paparan Fotik adalah garis dasar ekologi pembuka untuk HECTON-8. Ini bukan akuarium aman, dan bukan samudra mati yang menunggu horor datang. Lapisan 0-250 meter atas masih menerima cahaya, perubahan panas, dan ritme langit, sehingga kehidupan alami menulis bahasa rute pertama dengan warna: matras oksigen di atas batu, grazer transparan yang membuka jalur di alga, pressureweed yang condong sebelum gelombang, dan alga rute yang menggambar arus di sekitar puing. Keindahan itu penting. Ia memberi pemain alasan untuk memahami mengapa Deep Reach menginginkan bulan ini dan mengapa Marauder yang terdampar mungkin berjuang untuk membacanya, bukan hanya menjarahnya. Paparan juga mengajarkan aturan inti dunia ini: terbaca bukan berarti tidak berbahaya. Matras cerah bisa menahan air bernapas sekaligus menyembunyikan sambungan tercemar. Kawanan glass grazer bisa menandai jalur aman atau menghilang karena sesuatu yang lebih besar lewat. Pressureweed bisa memperingatkan cuaca, perpindahan predator, atau pulsa tekanan dari infrastruktur di bawah. Sebelum karang kabel, sebelum luka perbaikan, sebelum Atlas mengubah kehidupan menjadi logika pemeliharaan, bulan menunjukkan apa yang ia lakukan sendiri.
+Kehidupan Paparan Fotik adalah garis dasar ekologi air atas HECTON-8. Pita permukaan masih menerima cahaya, perubahan panas, dan ritme langit, sehingga kehidupan asli meninggalkan bukti rute yang bisa dibaca sebelum logika perbaikan Atlas muncul di bawah: mat oksigen, jalur glass-grazer, lentur pressureweed, dan alga rute di sekitar bangkai. Paparan ini menjelaskan mengapa Deep Reach menginginkan bulan itu tanpa membuatnya tampak aman. Setiap petunjuk berguna punya jalur gagal. Mat yang memberi napas bisa menyembunyikan kontaminasi; jalur alga yang menandai arus balik bisa bergeser oleh lumpur badai atau tekanan predator.
 
 ## Scanner
 
-BIOTA PAPARAN FOTIK // Matras hidup, glass grazer, pressureweed, dan alga rute terkonfirmasi. Air terang memberi oksigen dan petunjuk jalur; ia tidak memaafkan cuaca buruk, predator, atau tali balik yang hilang.
+PINDAI PAPARAN FOTIK // Mat oksigen di bibir basalt. Jalur glass-grazer segar memotong tumbuhan hijau. Pressureweed bengkok ke barat sebelum gelombang. Alga rute menandai arus kembali ke garis shelter. Bahaya: predator dangkal lewat, lumpur badai, garis balik longgar.
 
 ## Terminal
 
-SURVEI PAPARAN: ekologi fotik alami di luar dominasi perbaikan Atlas. Sampel dasar: matras oksigen, jejak grazer transparan, garis lentur pressureweed, arus bekas alga rute. Bandingkan dengan pertumbuhan karang kabel dan jaringan luka perbaikan sebelum memanen.
+SURVEI GARIS DASAR PAPARAN
+Kedalaman: 0-250 m
+Sampel A: mat oksigen / makan mineral / kantong napas volume rendah
+Sampel B: jalur glass-grazer / potongan segar / sebaran predator belum diketahui
+Sampel C: lentur pressureweed / bengkok barat sebelum gelombang
+Sampel D: alga rute / arus kembali ke garis shelter
+Bandingkan dengan: mat akar kabel, jaringan bekas perbaikan, biofilm gerbang tekanan
 
 ## Audio
 
-Air hidup pertama bukan belas kasihan. Itu garis dasar yang bisa kamu renangi.
+Aku melihat arus balik. Ikat dulu sebelum mengikuti warna.
 
 ## Field Note
 
-Warna pertama bukan belas kasihan. Itu bulan menunjukkan seperti apa normal sebelum mesin mempelajarinya.
+Air terang berguna sebelum aman. Hitung warna mat, jalur grazers, bengkok weed, dan tegangan garis sebelum kau percaya.
 
 <!-- External Site; generated from P031_PHOTIC_SHELF_LIFE/id_ID. -->

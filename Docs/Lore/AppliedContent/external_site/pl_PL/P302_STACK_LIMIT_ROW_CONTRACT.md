@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Stack Limit Data Boundary"
+title: "Granica danych limitu stosu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Stack Limit Data Boundary
+# Granica danych limitu stosu
 
-PL LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+Presja ekwipunku w HECTON-8 pochodzi z zamknięcia, certyfikacji i skażonej masy. Gra może pokazać proste stosy, ale lore mówi, czemu stos jest bezpieczny, czemu pęka i czemu ocean nie dba o ikony.
 
 ## Scanner
 
-PL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Wiersz stosu odrzuca kupy ikon: klasa naczynia, ciśnienie, skażenie i masa decydują o liczbie.
 
 ## Terminal
 
-PL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: liczba w stosie wymaga typu naczynia, ratingu ciśnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia i stabilnej tożsamości zapisu. Skrzynia nie jest naczyniem ciśnieniowym.
 
 ## Audio
 
-PL LOC HOLD: A crate is not a pressure vessel.
+Skrzynia nie jest naczyniem ciśnieniowym.
 
 ## Field Note
 
-PL LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Limity stosów pozostają table-owned i stabilne dla save identity.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/pl_PL. -->

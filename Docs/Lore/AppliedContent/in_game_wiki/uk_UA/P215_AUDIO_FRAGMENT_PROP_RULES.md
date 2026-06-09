@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Правила реквізиту аудіофрагментів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Правила реквізиту аудіофрагментів
 
-UA LOC HOLD: Audio Fragment Prop Rules keep voice logs useful and restrained.
+Правила реквізиту аудіофрагментів роблять голосові журнали рідкісними, корисними й заземленими. HECTON-8 не музей останніх промов. Голосовий фрагмент має змусити гравця нахилитися ближче, бо кімната вже підказує частину правди. Гідрофонна стрічка може нести шум тиску й маршрутну мітку часу. Костюмний реєстратор може довести, хто перетнув люк після відмови дозволу. Термінальний кеш може тримати пошкоджену розшифровку, що суперечить чистому реєстру. Фрагмент чорної скриньки може зберегти мить, коли машинний пріоритет перекрив людське прохання. Якщо голос каже те, що не підтримує жоден предмет, він стає дешевою експозицією. Якщо предмет і голос розходяться, гравець отримує розслідування.
 
 ## Scanner
 
-UA LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Голос дорогий. Він має доводити те, що кімната теж може довести металом, водою, часом або пошкодженням.
 
 ## Terminal
 
-UA LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: жодних монологів у повітрі. Голос належить гідрофонній стрічці, костюмному реєстратору, термінальному кешу, ремонтній слухавці або фрагменту чорної скриньки. Кожен відтворюваний рядок має мати джерело, стан пошкодженої розшифровки, маршрутну мітку часу й одну суперечність, яку гравець може оглянути.
 
 ## Audio
 
-UA LOC HOLD: If the room cannot prove me, cut the line.
+Якщо кімната не може мене довести, виріж рядок.
 
 ## Field Note
 
-UA LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Аудіофрагментам потрібні предмет-джерело, пошкодження розшифровки, маршрутна мітка часу й одна фізична суперечність.
 
 <!-- In-Game Wiki; generated from P215_AUDIO_FRAGMENT_PROP_RULES/uk_UA. -->

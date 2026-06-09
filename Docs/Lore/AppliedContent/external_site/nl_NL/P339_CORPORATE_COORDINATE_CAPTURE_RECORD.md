@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Corporate Coordinate Capture Record"
+title: "Record van corporate coördinatenvangst"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Corporate Coordinate Capture Record
+# Record van corporate coördinatenvangst
 
-NL LOC HOLD: The question is not only whether the player leaves HECTON-8. It is who receives the map after they leave.
+De vraag is niet alleen of de speler HECTON-8 verlaat. Het gaat erom wie de kaart ontvangt nadat hij vertrekt, en of overleven is gekocht door de oude eigenaar een weg terug naar binnen te geven.
 
 ## Scanner
 
-NL LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Coördinaten-payload geaccepteerd. Deep Reach-ontvangerprioriteit hersteld; openbaar rapport ongewijzigd.
 
 ## Terminal
 
-NL LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: Atlas-bekkenvector overgedragen aan Deep Reach-ontvanger. Berging toegekend onder samenwerkingsnotitie. Openbaar ongevalsrapport ongewijzigd. Toekomstige operaties krijgen corporate routeautoriteit terug.
 
 ## Audio
 
-NL LOC HOLD: You opened the door from the inside.
+Je opende de deur van binnenuit.
 
 ## Field Note
 
-NL LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Corporate gedeeltelijk einde: coördinaten kopen berging door de plaats delict opnieuw onder Deep Reach-controle te openen.
 
 <!-- External Site; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/nl_NL. -->

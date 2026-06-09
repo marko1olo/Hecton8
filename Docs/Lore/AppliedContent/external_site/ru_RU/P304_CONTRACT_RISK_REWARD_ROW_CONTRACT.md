@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Contract Risk Reward Boundary"
+title: "Граница риска и награды контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Contract Risk Reward Boundary
+# Граница риска и награды контракта
 
-Реиграбельность здесь не наследуемая сила, а худший контракт и более дорогой маршрут.
+Replayability в HECTON-8 — не унаследованная сила. Это худший контракт, более тесное окно, более ранний запрос доказательств и носитель, который помнит, какие части тебя все еще залог.
 
 ## Scanner
 
-RU LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Строка контракта связывает удержание, штормовое окно, порядок хранения, потолок выплаты и вес пункта.
 
 ## Terminal
 
-RU LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+КОНТРАКТ РИСКА: строки требуют тяжесть удержания, потолок выплаты, штормовое окно, хранение образца, порядок доказательств и вес пункта Deep Reach. Контракт — первый хищник.
 
 ## Audio
 
-Контракт - первый хищник.
+Контракт — первый хищник.
 
 ## Field Note
 
-RU LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Изменения награды принадлежат строке контракта, а не импровизированному lore-тексту.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ru_RU. -->

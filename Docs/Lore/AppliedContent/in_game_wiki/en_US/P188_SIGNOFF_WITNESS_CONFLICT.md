@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Signoff Witness Conflict
 
-Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Signoff Witness Conflict is the moment the official Deep Reach story stops being merely incomplete and starts becoming false. The public signoff presents HECTON-8 as a tide disaster with no actionable contradiction before the evacuation delay. Local witness hashes say otherwise: evacuation counsel, Atlas Safety and route operations were in the same review room while margin loss, worker distress and route timing were already visible. The conflict gives the player a strong evidence shape. It is not enough to find a bad signature; the signature has to be placed beside door logs, damaged clocks and name stamps until the alibi breaks.
 
 ## Scanner
 
-Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+The signoff says evacuation review had no live contradiction. The witness hashes say the contradiction was in the room.
 
 ## Terminal
 
-CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: public signoff marks tide failure as sole cause. Local witness hash places evacuation counsel, Atlas Safety and route operations in the review room before release hold. Compare door log, name stamp and broken route clock.
 
 ## Audio
 
-The signatures line up. The bodies do not.
+The report says nobody could know. The door log disagrees.
 
 ## Field Note
 
-The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+A signature is clean only until the room remembers who stood beside it.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/en_US. -->

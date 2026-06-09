@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Quarantäne-Hold: abgestandene Luft
 
-Quarantäne-Hold rettet den Körper und suspendiert die agency. Der Spieler ist dem Druck entkommen, aber nicht der custody. Jeder Atemzug wird gemessen, während der Beweis hinter Prüfungssprache wartet.
+Quarantäne-Hold rettet den Körper und suspendiert die Handlungsfähigkeit. Es muss kein Bösewicht im Raum stehen. Das Formular sagt lebend geborgen, der Luftzähler sagt Ration aktiv, und die nächste Tür öffnet sich erst nach Kontaminationsprüfung, Anspruchsanfechtung und Verlustaudit. Der Beweis wartet hinter Sprache, die vernünftig klingen soll. Jede Aussage wird länger verzögert, als die Arbeiter leben durften. Der Ozean ist weg, aber der Druck hat gelernt, Papierkram zu tragen.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Körper geborgen. Zeuge versiegelt. Luftration aktiv.
 
 ## Terminal
 
-QUARANTÄNE-HOLD: Auftragnehmer lebend geborgen; Luftration aktiv; sample custody ungelöst; externe Aussage verzögert bis Kontaminationsprüfung, claimant-Anfechtung und Keelmark-Verlustprüfung.
+QUARANTÄNE-HOLD: Auftragnehmer lebend geborgen; Luftration aktiv; Proben-custody ungelöst; externe Aussage verzögert bis Kontaminationsprüfung, Anspruchsanfechtung und Keelmark-Verlustaudit.
 
 ## Audio
 

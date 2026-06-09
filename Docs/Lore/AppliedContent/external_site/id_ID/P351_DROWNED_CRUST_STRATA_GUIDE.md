@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Panduan Lapisan Kerak Tenggelam
 
-Panduan Lapisan Kerak Tenggelam membuat dasar laut HECTON-8 terasa dibangun sekaligus rusak: terrain, salvage routes, dan sampel mineral semua berasal dari riwayat tekanan berlapis yang sama.
+Kerak HECTON-8 tidak berperilaku seperti dasar laut yang belum tersentuh. Koloni memotongnya, memanaskannya, menyegelnya, membebaninya dengan kaca tekanan, lalu meninggalkannya pada samudra yang terus bekerja setelah daftar gaji berhenti. Satu dinding bisa menunjukkan bekas alat dari bor layanan, rak pucat runtuhan es, pita mineral hijau-hitam dari aliran seep, dan sambungan setipis rambut tempat Atlas kemudian menemukan jalan.
 
-## Scanner
-
-Lapisan banjir membuka bekas potong lama, sambungan pressure-glass, dan pita mineral yang tidak gagal dua kali ke arah yang sama.
-
-## Terminal
-
-FIELD GUIDE: kerak tenggelam HECTON-8 adalah batu permukiman bertumpuk, ingatan es runtuh, pressure glass, dan extraction scars di bawah brine bergerak. Garis retakan lebih penting daripada permukaan bersih.
-
-## Audio
-
-Peta bukan medan. Itu tumpukan tenggelam.
-
-## Field Note
-
-Jika sebuah pita berbunyi kosong, jangan percaya muka datarnya. Tandai retakan, ambil sampel, biarkan dinding tetap menahan.
+Bagi tim salvage, lapisan adalah navigasi. Permukaan rata bisa berdenting kosong. Tepi mineral indah bisa menjadi satu-satunya hal yang masih menahan ngarai layanan. Membaca rute dengan baik berarti mengambil sampel tanpa mengajari dinding cara jatuh. Karena itu kerak tenggelam penting di lapangan: dasar laut bukan latar. Ia arsip, jalan, dan kadang perangkap.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/id_ID. -->

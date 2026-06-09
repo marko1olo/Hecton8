@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Konflik Ringkasan Aman Penggugat"
+title: "Konflik Ringkasan Aman Klaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Konflik Ringkasan Aman Penggugat
+# Konflik Ringkasan Aman Klaim
 
-Ringkasan aman bagi penggugat bukan versi pendek netral, melainkan rewrite terlindungi. Ia dapat menghapus nama, membulatkan koordinat, mengganti luka menjadi kategori, melunakkan verba rute, atau mengganti kantor yang boleh menjawab. Itu bisa melindungi orang; Deep Reach juga bisa memakai bahasa aman untuk mengubur daya tawar. Konflik dengan objek mentah adalah bukti jalur penghilangan.
+Ringkasan aman klaim bukan kebenaran yang dipendekkan. Itu adalah redaksi resmi untuk rute klaim. Ia dapat menghapus nama pekerja, mengaburkan koordinat, mengganti detail cedera dengan kategori pembayaran, mengubah ditahan menjadi antre, atau hanya menampilkan kantor yang boleh menjawab surat publik. Sebagian penghapusan melindungi kru yang masih hidup, privasi medis, atau rute pemulihan yang belum selesai. Sebagian lain melindungi Deep Reach dari masalah kustodi. Konflik antara ringkasan dan objek mentah adalah bukti, karena potongan itu sendiri punya pemilik, tanda waktu, dan pihak yang diuntungkan.
+
+Baca ringkasan di sebelah objek yang memaksanya: sarung tag, kaset audio, kantong sampel, log pintu tekanan, cincin pakaian, atau foto baki. Biarkan daftar penghilangan terlihat. Tanyakan apa yang dihapus, penanda risiko hukum mana yang dipakai, siapa yang meminta redaksi, dan apakah objek dapat memulihkan konteks tanpa mengarang nama atau koordinat. Jika objek mentah membuktikan lebih banyak daripada ringkasan, simpan celahnya. Jangan isi dengan kalimat yang rapi.
 
 ## Scanner
 
-KONFLIK RINGKASAN // Bahasa publik menghapus atau melunakkan fakta yang masih disiratkan bukti mentah. Penghilangan adalah jalur bukti.
+KONFLIK RINGKASAN AMAN // Ringkasan publik menghilangkan kolom yang masih ada pada objek mentah. Dibutuhkan: daftar penghilangan, peminta redaksi, penanda risiko hukum, rute objek.
 
 ## Terminal
 
-KONFLIK RINGKASAN AMAN
-Ringkasan aman untuk publik. Objek mentah mungkin tidak aman.
-Jangan pulihkan nama atau koordinat dari tebakan.
-Simpan daftar penghilangan, bukti rute, dan penanda risiko.
+KONFLIK RINGKASAN AMAN KLAIM
+Ringkasan boleh ditangani publik. Objek mentah tidak.
+Jangan pulihkan nama, koordinat, atau detail cedera dari tebakan.
+Bukti berikutnya: daftar penghilangan, peminta, penanda risiko hukum, rute objek, waktu kustodi.
+Tindakan: pertahankan tautan ringkasan dan objek mentah sampai penghilangan memiliki pemilik.
 
 ## Audio
 
-Jika ringkasan berkata aman, tanya aman untuk siapa. Simpan daftar yang hilang.
+Ringkasan sudah boleh dibaca publik. Objek mentah belum. Biarkan kolom yang hilang tetap di layar.
 
 ## Field Note
 
-Jika ringkasan berkata aman, tanya aman untuk siapa. Simpan daftar yang hilang.
+Ringkasan bisa melindungi pekerja atau melindungi meja. Rute objek yang membedakannya.
 
 <!-- In-Game Wiki; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/id_ID. -->

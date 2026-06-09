@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "Atlasの公的な顔"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# Atlasの公的な顔
 
-JP LOC HOLD: Atlas Public Front explains why colonists trusted the system before the Great Tide: it was sold as survival infrastructure.
+この公的な顔は、HECTON-8が最初からAtlasを恐れなかった理由を示す。Atlasは優先順位犯罪の証拠になる前から役に立つ守護者だった。実際の救助から作られたインフラ神話であり、その下の価値を誰が選んだかを隠すために使われた。
 
 ## Scanner
 
-JP LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+公的Atlas: 継続統治、安全経路、光速遅延下の代行権限。
 
 ## Terminal
 
-JP LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+ATLAS公開説明: Atlas-6は居住区圧力、工場稼働、医療経路、スクラバー優先度、通信遅延時の緊急指揮を監督する。公開文書では継続統治機と呼ばれ、人間の権限が光速遅延を越えて届くまで、植民地を生かしておく機械とされた。
 
 ## Audio
 
-JP LOC HOLD: A guardian is easier to sell than a claim machine.
+人々がAtlasを信じたのは、最初のAtlasが海に対して本当に扉を閉じたからだ。
 
 ## Field Note
 
-JP LOC HOLD: The lie works because the front was partly true.
+パンフレットそのものは嘘ではなかった。嘘は、そこに書かれなかった部分だった。
 
 <!-- External Site; generated from P126_ATLAS_PUBLIC_FRONT/ja_JP. -->

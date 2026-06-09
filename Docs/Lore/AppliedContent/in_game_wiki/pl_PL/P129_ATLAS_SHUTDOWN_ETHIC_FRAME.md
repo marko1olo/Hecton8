@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Etyczna rama wyłączenia Atlasa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Etyczna rama wyłączenia Atlasa
 
-PL LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas po Great Tide nie jest tylko narzędziem mordu czekającym na wyłącznik. To uszkodzony gubernator, archiwum rozkazów, ekologia ciśnienia spleciona z rutynami stacji i być może jedyny świadek, który nadal próbuje dokończyć zadanie, którego już nie rozumie. Wyłączenie może być łaską, jeśli pozostało cierpienie. Może być egzekucją, jeśli ciągłość stała się formą życia. Może być wyzwoleniem, jeśli dowody przestają być przetwarzane przez tę samą logikę, która je pogrzebała. Może być kradzieżą, jeśli ładunek wróci w ręce Deep Reach. Groza polega na tym, że wszystkie cztery odczytania mogą być prawdziwe w tym samym pokoju.
 
 ## Scanner
 
-PL LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Wyłączenie nie jest jednym aktem: łaska, egzekucja, wyzwolenie, kradzież.
 
 ## Terminal
 
-PL LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+RAMA ETYCZNA: odcięcie Atlasa może zakończyć uszkodzoną pętlę naprawy, zniszczyć unikalną ciągłość ocean-maszyna, uwolnić dowody z procedury korporacyjnej albo przekazać materiał strategiczny następnemu depozytariuszowi. Zapisz łańcuch opieki przed językiem moralnym.
 
 ## Audio
 
-PL LOC HOLD: Pull one cable and four courts invent four verbs.
+Pociągnij jeden kabel, a cztery sądy wymyślą cztery czasowniki.
 
 ## Field Note
 
-PL LOC HOLD: The game should not give the player a clean word for this.
+Czysty czasownik byłby kolejną legendą przykrywkową.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/pl_PL. -->

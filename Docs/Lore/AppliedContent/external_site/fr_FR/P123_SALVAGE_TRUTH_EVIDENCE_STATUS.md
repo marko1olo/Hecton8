@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Statut probatoire de la vérité récupérée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Statut probatoire de la vérité récupérée
 
-FR LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Les preuves récupérées donnent à HECTON-8 son complot à combustion lente. La colonie ne se tait pas parce que rien ne s'est passé, mais parce que chaque objet-preuve possède une valeur marchande, une valeur de responsabilité et une valeur juridique. La vérité remonte par les routes de garde et les objets abîmés, pas par une confession commode.
 
 ## Scanner
 
-FR LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paquet de boîte noire : vérité jusqu'au contact du bureau des créances.
 
 ## Terminal
 
-FR LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS : la récupération brute devient par défaut matière à créance. La preuve publique exige un hachage source intact, un horodatage de pression, un paquet témoin, un notaire de relais hors contrôle du réclamant et une chaîne de garde survivant à la perte du navire, à la saumure et aux éditions manuelles.
 
 ## Audio
 
-FR LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Un corps n'est preuve qu'après l'échec de ceux qui voulaient le mal classer.
 
 ## Field Note
 
-FR LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Un fait venu du fond n'est dangereux que s'il garde ses témoins.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/fr_FR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Zestaw dowodowy katedry pomp kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Zestaw dowodowy katedry pomp kanionu solanki
 
-PL LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+Katedra pomp kanionu solanki to przemysłowa objętość zbudowana wokół ciśnienia, gęstości i opóźnienia. Same maszyny nikogo nie oskarżają, lecz wziernik, zegar wstrzymania, ślady pomp i rejestr kolejki układają się w użyteczny łańcuch odpowiedzialności.
 
 ## Scanner
 
-PL LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Zestaw dowodowy POI: katedra pomp zestawia szkło gęstości, uszkodzenia pomp, zegary trasy i rejestry kolejki robotników.
 
 ## Terminal
 
-PL LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+ZESTAW KATEDRY POMP: wziernik gęstości, rysa pompy solanki, notatka przyjętego marginesu, zegar wstrzymania trasy, rejestr kolejki robotników, klucz startu pompy, znak zalanego pomostu.
 
 ## Audio
 
-PL LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Pompy ruszały wodę. Sala prowadziła lepsze akta niż biuro.
 
 ## Field Note
 
-PL LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Notatka marodera: sfotografuj wziernik przed opróżnieniem kieszeni. Gdy solanka ruszy, linia marginesu wygląda płasko.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/pl_PL. -->

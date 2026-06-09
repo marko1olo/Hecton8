@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Build / Playtest Issues
 
-Date: 2026-05-26
+Date: 2026-06-09
 Status: PENDING VERIFICATION
 Owner: build/playtest issue anchor
 Evidence: STATIC_DOC only unless a build/playtest artifact is cited
@@ -15,7 +15,7 @@ Do not mark `[x]` without current player build, Play Mode, user confirmation, pr
 
 ## Current Build Evidence
 
-Latest local full-solution CLI PASS:
+Latest recorded local full-solution CLI PASS:
 
 - `Docs/Reports/BUILD_UNKNOWN_RUNTIME_API_TRAP_CLEANUP_20260526.log`
 - Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`
@@ -23,7 +23,9 @@ Latest local full-solution CLI PASS:
 - Proof lines: `66 Build succeeded.`, `67 0 Warning(s)`, `68 0 Error(s)`
 - Evidence class: CLI_COMPILE only
 
-This supersedes older root-doc statements that compile was blocked by CPU/compiler contention. It does not prove Unity import, Play Mode, player build, profiler, GC, scene wiring, or visual quality.
+This supersedes older root-doc statements for that dated source state only. It does not authorize a new build attempt by itself, and it does not prove Unity import, Play Mode, player build, profiler, GC, scene wiring, or visual quality.
+
+Before any new `dotnet`, Unity import, Play Mode, profiler, player build, asset reimport, or equivalent heavy proof action, apply the current process gate from `AGENTS.md` and `performance.md`: sample CPU plus active Unity/compiler/import/build processes. If CPU is above `50%`, `dotnet`/`csc`/Unity import/build is active, or the Unity slot is contested, report `BUILD_GATE_BLOCKED: <reason>` and continue with static/scoped work only.
 
 Not proven by that log:
 

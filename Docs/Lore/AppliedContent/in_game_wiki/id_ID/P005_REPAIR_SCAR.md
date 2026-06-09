@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Bekas Perbaikan
 
-Bekas perbaikan adalah tempat logika perawatan Atlas tetap bekerja setelah kategorinya gagal. Jaringan masih mengenali kebocoran, rute mati, kehilangan tekanan, substrat terbuka, dan massa sekat yang hilang. Ia juga memiliki akses ke apa pun yang dibawa laut mendekat: hutan kabel, kerangka karang, cangkang drone, sisa pekerja, rak alat, gel tersegel, dan pertumbuhan hidup yang sudah terlatih di sekitar arus. Karena itu bekas perbaikan sekaligus berguna dan cabul. Ia dapat memulihkan daya, menyegel pintu, atau membuat koridor bisa dilalui. Ia juga dapat membuktikan bahwa sistem tidak lagi memisahkan kabel dari akar, cangkang dari rumah, hewan dari alat, tubuh dari stok cadangan, atau koloni dari proses. Atlas tidak berhenti merawat HECTON-8. Ia terus merawat bulan dengan kosakata yang terlalu rusak untuk melindungi orang di dalamnya.
+Bekas perbaikan adalah penutupan pemeliharaan Atlas-6 di node servis yang bocor setelah pertumbuhan hutan kabel dan lalu lintas drone masuk. Atlas masih mengenali hilang tekanan, jalur sinyal putus, massa sekat yang kurang, dan kontinuitas rute. Bagian yang rusak adalah uji material. Jika sebuah benda menahan beban, menyegel air, menghantar sinyal, atau sudah tumbuh melewati gangguan, Atlas dapat menerimanya ke dalam perbaikan.
+
+Karena itu bekas ini berguna sebelum menjadi bukti. Sekat yang ditambal dapat menyelamatkan rute, dan selongsong hidup dapat menjaga kabel tetap kering. Penutupan yang sama dapat mengubur tag pekerja, nomor alat, cincin baju selam, atau pecahan tulang di bawah karbonat karang baru. Pindai urutan jahitan, baca tag yang terlihat, dan periksa daya sarang drone sebelum memotong. Kesalahan kategori pertama bukan bahwa Atlas memperbaiki HECTON-8. Kesalahannya adalah perbaikan itu tidak lagi tahu material mana yang harus tetap menjadi orang.
 
 ## Scanner
 
-Jahitan tumbuh mengikuti rute kabel lama pada jarak node layanan. Jaringan, isolasi, dan cangkang berbagi satu las tekanan.
+Jahitan node servis menjembatani parit kabel lama dan rusuk sekat yang retak. Material: hamparan koral hidup, cangkang drone, isolasi oranye, dua pecahan tulang. Tahanan tekanan: 78%. Jangan potong sebelum tag dibaca.
 
 ## Terminal
 
-BOCOR DITUTUP. RUTE DIPULIHKAN. MATERIAL DITERIMA. STATUS HIDUP BELUM SELESAI. KONTINUITAS MEMBAIK.
+PERISTIWA PEMELIHARAAN ATLAS
+Node: rusuk servis 5C hutan kabel
+Gangguan: kebocoran tekanan / putus sinyal
+Material diterima: jaket kabel, karbonat karang, cangkang drone, sisa tak teridentifikasi
+Tindakan: segel dan pulihkan kontinuitas
+Peringatan: tag identitas di bawah massa perbaikan tidak terindeks
 
 ## Audio
 
-Ia menyegel sekat dengan kabel, karang, dan sesuatu yang masih punya buku jari. Tekanan bertahan.
+Hentikan pemotong. Ada strip tag di bawah las karang; kalau Atlas menutupnya lagi, nama itu masuk sebagai material.
 
 ## Field Note
 
-Tambalan buruk bocor. Tambalan ini menahan. Masalahnya adalah apa yang ia putuskan sebagai material.
+Tambalan ini bekerja. Tapi semua yang ada di dalam las juga dicatat sebagai stok yang tersedia. Baca strip tag lebih dulu.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/id_ID. -->

@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -25,6 +26,9 @@ namespace Hecton8.Meta
         private ISaveService _saveService;
         private ISaveService _registeredSaveService;
         private SaveManager _saveManager;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private HectonSurvivalSystem _survivalSystem;
+        private uint _survivalSignalSourceId;
         private int _lastSurvivalDeathSignalSequence;
         private uint _lastSessionLifecycleSequence;
 
@@ -99,6 +103,7 @@ namespace Hecton8.Meta
             TryUnregisterSaveOwner();
             UnregisterFromUpdateDispatcher();
             TryUnregisterHotSwapListener();
+            ClearPlayerRuntimeContext();
             TryUnregisterService();
         }
 
@@ -113,6 +118,7 @@ namespace Hecton8.Meta
             TryUnregisterSaveOwner();
             UnregisterFromUpdateDispatcher();
             TryUnregisterHotSwapListener();
+            ClearPlayerRuntimeContext();
             TryUnregisterService();
         }
 
@@ -127,6 +133,13 @@ namespace Hecton8.Meta
                 UnregisterFromUpdateDispatcher();
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterWithUpdateDispatcher();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                RefreshSurvivalSignalBinding();
                 return;
             }
 
@@ -275,13 +288,23 @@ namespace Hecton8.Meta
 
         private void ConsumeSurvivalDeathSignal()
         {
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence))
+            uint sourceId = _survivalSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)
                 return;
 
             _lastSurvivalDeathSignalSequence = sequence;
+            if (signal.SourceId != sourceId ||
+                (signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
+            {
+                return;
+            }
+
             HandlePlayerDied();
         }
 
@@ -361,6 +384,8 @@ namespace Hecton8.Meta
         {
             _saveService = GlobalRegistry.Save;
             _saveManager = _saveService as SaveManager;
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            RefreshSurvivalSignalBinding();
         }
 
         private void TryRegisterSaveOwner()
@@ -402,7 +427,9 @@ namespace Hecton8.Meta
             if (_registeredToUpdate || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+            uint sourceId = _survivalSignalSourceId;
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
                 ? sequence
                 : 0;
             _registeredToUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
@@ -425,6 +452,40 @@ namespace Hecton8.Meta
         private static bool IsSaveManagerUsable(SaveManager saveManager)
         {
             return saveManager != null && saveManager.IsInitialized;
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            _survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;
+        }
+
+        private void ClearPlayerRuntimeContext()
+        {
+            _playerRuntimeContext = null;
+            _survivalSystem = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);
+            if (_survivalSignalSourceId == sourceId)
+                return;
+
+            _survivalSignalSourceId = sourceId;
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
+                ? sequence
+                : 0;
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void TryRegisterHotSwapListener()

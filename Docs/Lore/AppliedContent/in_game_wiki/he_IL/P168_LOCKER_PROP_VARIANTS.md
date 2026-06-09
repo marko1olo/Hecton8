@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "וריאציות ראיות בארונית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# וריאציות ראיות בארונית
 
-HE LOC HOLD: Locker variants let procedural placement carry human texture without custom cutscenes.
+ארונית ב-HECTON-8 אינה ערימת חפצים סנטימנטלית. היא ארכיון קטן של חדר לחץ: במה העובד נגע, מה הורשה לשאת, מה הסתיר ממנהל המשמרת ומה Marauder מאוחר יותר חשב שצריך לתקן.
+
+וריאציות טובות מדברות בצירופים. סרט לחץ ליד כפפה מצביע על עבודת דליפה. אטם שחוק בין כלים אישיים אומר שהעובד טיפל בדלתות לעיתים כה קרובות עד שכבר לא סמך על חלפים. רצועת קרדיט ארוחה ליד גיר מסלול אומרת שהוא עדיין ציפה למשמרת הבאה. סירוב medlock הופך את החדר מרקע לראיה: הגוף כבר היה בעיית עלות, אבל הלו"ז המשיך להשתמש בו.
+
+במשחק, הארונית היא עקבה אנושית שניתן לזרוע. התוכן יכול להשתנות בין ריצות בלי לשנות את הקאנון הגדול. הכלל יציב: לקרוא לפני שבוזזים. אם השחקן לוקח אסימון, אטם ופתק כגרוטאות, החדר מאבד את הדקדוק שהפך עובד לנוכח בלי סצנה.
 
 ## Scanner
 
-HE LOC HOLD: A locker should say what a worker touched before the flood.
+ארונית // סרט לחץ, אטם שחוק, רצועת קרדיט ארוחה, אסימון מחסן כלים, גיר מסלול וסירוב medlock על אותו מדף. זה מלאי שימושי אחרון של עובד, לא קישוט.
 
 ## Terminal
 
-HE LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+וריאציות ארונית // קרא סדר לפני salvage: סרט ליד כפפות פירושו עבודת דליפה; אטם שחוק - פתחים חוזרים; קרדיט ארוחה - חוב משמרת; גיר - ניווט מאולתר; סירוב medlock - עבודה בזמן מחלה; הערת Marauder - מחלוקת ראיה מאוחרת.
 
 ## Audio
 
-HE LOC HOLD: The best memorial is a tool still dirty from the last shift.
+האנדרטה הטובה ביותר אינה לוחית. היא כלי שעוד יודע איזו יד הייתה עייפה.
 
 ## Field Note
 
-HE LOC HOLD: Avoid sentimental clutter. Use work marks.
+אל תקשט ארוניות. בנה אותן מדברים שליד עייפה הייתה סיבה אמיתית לגעת בהם.
 
 <!-- In-Game Wiki; generated from P168_LOCKER_PROP_VARIANTS/he_IL. -->

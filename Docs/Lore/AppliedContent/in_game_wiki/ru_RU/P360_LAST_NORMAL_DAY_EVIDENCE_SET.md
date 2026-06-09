@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Last Normal Day Evidence Set"
+title: "Набор улик последнего нормального дня"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Last Normal Day Evidence Set
+# Набор улик последнего нормального дня
 
-RU LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+Последний нормальный день - не дата. Это форма, которую комната сохраняет, когда работу прерывают. Табличка шкафчика ждет руку, которая не вернулась. Правка без подписи осталась такой, потому что кто-то собирался подписать ее после спуска. Задача насоса не закрыта. Обеденный token все еще зажат под лентой. Маршрутные часы ждут штамп возврата, потому что у часов нет категории для тишины.
+
+Эти предметы надежнее речей. Их никто не раскладывал для памяти. Доска все еще пыталась вести смену, кормить людей, чистить sump, считать инструмент и держать маршрут честным. Поэтому улика бьет сильнее. Колония еще не закончила превращаться в катастрофу. Она оставалась достаточно нормальной, чтобы спорить о стаканах, ключах и поздних подписях, пока отказ уже вошел в стены.
+
+Для Marauder этот набор еще и предупреждение против ленивого salvage. Ценную табличку можно снять за секунды, но неподписанная правка может объяснить, почему официальное поле причины оставили пустым. Зажатый жетон еды может доказать, что работник ждал возвращения до остановки дверных часов. Категория тела может выглядеть чисто, пока сертификат насоса и счет смены не начинают спорить.
+
+Прочитай прерывание до того, как заберешь предмет. Затонувшим комнатам HECTON-8 не нужны идеальные последние сообщения. Их самое сильное свидетельство меньше: открытая работа, не переданная обязанность, часы, ожидающие человека, которого океан уже убрал.
 
 ## Scanner
 
-RU LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+НАБОР ПОСЛЕДНЕГО НОРМАЛЬНОГО ДНЯ // Невзятая табличка шкафчика, неподписанная правка, открытая задача насоса, обеденный token все еще под зажимом, маршрутные часы ждут возврата. Самая сильная улика - незавершенная работа.
 
 ## Terminal
 
-RU LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+НАБОР УЛИК: табличка шкафчика не забрана; правка не подписана; задача насоса открыта; обеденный token зажат; маршрутные часы ждут. Официальная причина пуста. Поправка Marauder: сверить сертификат насоса, счет смены, категорию тела и несовпадение часов двери до снятия salvage.
 
 ## Audio
 
-RU LOC HOLD: The last day did not know it was last.
+Последний день не знал, что он последний.
 
 ## Field Note
 
-RU LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Комнату не готовили для истории. Оставь противоречие целым: открытая задача, зажатый жетон еды, пустая причина, маршрутные часы все еще ждут человека.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ru_RU. -->

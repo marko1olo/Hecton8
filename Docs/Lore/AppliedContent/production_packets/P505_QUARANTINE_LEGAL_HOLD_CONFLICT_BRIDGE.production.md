@@ -40,7 +40,7 @@ Runtime layer: Narrative
 
 Surface targets: public article, wiki policy note, PDA/codex warning, scanner tag, terminal hold notice, evidence caption
 
-Spoiler level: conflict type visible at level 1; exact office conflict, claimant identity, final legal result, and consequence held behind later proof gates.
+Spoiler level: conflict type visible at level 1; exact office conflict, claimant identity, final legal result, and consequence held behind later evidence records.
 
 Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
@@ -66,7 +66,7 @@ Player use: teaches the player to separate health/safety quarantine from liabili
 
 Forbidden facts: no final legal result, no final receiver, no claimant identity, no final-route branch, no Atlas consequence, no rescue promise, no native review, no source insertion, no h8bin state, no DataMonolith state, no public deployment state.
 
-Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, quarantine review, legal hold, public archive redaction, claimant-safe summary, scanner gate.
+Required proper nouns/terms: HECTON-8, Deep Reach, Atlas, Marauder, quarantine review, legal hold, public archive redaction, claimant-safe summary, scanner evidence marker.
 
 LocIDs: proposed in Future Integration Notes.
 
@@ -76,45 +76,41 @@ Localization status: English authority row; non-English draft rows require futur
 
 **Website article seed:**
 
-A quarantine hold and a legal hold can look identical to a public reader: the packet does not move. The reasons are different. Quarantine review claims safety, contamination, biohazard, pressure, or claimant exposure. Legal hold claims liability, testimony, settlement risk, office privilege, or jurisdiction. In HECTON-8 records those holds overlap often enough that the delay itself becomes evidence.
+A quarantine hold and a legal hold look the same from the outside: the packet stops moving. The reason matters. Quarantine review speaks in contamination, pressure exposure, biohazard, crew contact, and claimant risk. Legal hold speaks in testimony, liability, settlement exposure, office privilege, and jurisdiction. HECTON-8 records overlap these holds often enough that the delay becomes evidence by itself.
 
-The delay is not automatically corruption. A hold can protect living people or preserve dangerous material. The same hold can also keep a bad office from answering. The public archive should name the hold conflict, preserve timestamps, and resist turning a delay into either a verdict or an excuse.
+Do not turn a double hold into a verdict. Delay can protect living people and preserve dangerous material. The same delay can also let a bad office avoid answering. Keep the quarantine code, legal code, timestamps, redaction header, and denying office separate until the physical object explains why it was held.
 
 **Wiki article seed:**
 
-Quarantine legal hold conflict: a packet state where safety review and legal release control both claim authority over evidence movement. Required fields include quarantine code, legal hold code, redaction header, claimant-safe field, release denial timestamp, and next proof target.
+Quarantine legal hold conflict: a packet state where safety review and legal release control both claim authority over evidence movement. A complete entry keeps quarantine code, legal hold code, redaction header, claimant-safe field, release denial timestamp, denying office, and next proof target.
 
 **PDA / codex entry:**
 
-Codex warning: double hold found. Quarantine and legal language are separate. Health risk, claimant risk, office liability, and jurisdiction can all stop the same packet. Follow which desk extended the delay and what object remained locked.
+Double hold found. Quarantine and legal language are not the same thing. Health risk, claimant risk, office liability, and jurisdiction can all stop one packet. Follow which desk extended the delay and which object remained locked.
 
 **Scanner entry:**
 
-Quarantine/legal hold conflict. Safety code and legal hold code both active. Confidence: partial. Required next proof: release denial, redaction header, claimant-safe field, custody transfer, or witness hash.
+QUARANTINE / LEGAL HOLD // Safety code and legal hold code both active. Confidence: partial. Required next proof: release denial, redaction header, claimant-safe field, custody transfer, or witness hash.
 
 **Terminal note:**
 
 QUARANTINE LEGAL HOLD CONFLICT
-
 Safety desk: hold active.
-
 Legal desk: hold active.
-
 Do not merge reasons.
-
 Action: preserve both codes, timestamps, and denying office.
 
 **Evidence caption:**
 
-Double-hold notice. The packet was stopped by quarantine and legal authority. The overlap proves procedural conflict, not final guilt or final safety.
+Double-hold notice. The packet was stopped by quarantine and legal authority. The overlap proves procedural conflict; guilt, safety, and legal result remain unresolved.
 
 **Spoiler policy:**
 
-Double-hold language may appear early. Protected claimant, final legal result, final receiver, Atlas consequence, and ending branch stay masked until later proof gates.
+Double-hold language may appear early. Protected claimant, final legal result, final receiver, Atlas consequence, and ending branch stay hidden until later evidence records open.
 
 **String-pool key plan:**
 
-Use hashed LocIDs in the Narrative layer. Keep hold labels compact for scanner/PDA and longer source rows for public/wiki/terminal surfaces. Runtime must not parse this Markdown.
+Use hashed LocIDs in the Narrative layer. Runtime must not parse this Markdown. Live all-locale surface rows are stored in `Docs/Lore/AppliedContent/packets/RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE.packets.json`.
 
 ## Future Integration Notes
 
@@ -151,65 +147,27 @@ Ultra: add dense hold timeline and archive comparison. Ultra changes presentatio
 
 ## Localization
 
-### en_US
-Status: source_authority
-Text: Quarantine legal hold conflict means a packet is stopped by both safety review and legal release control. The overlap can protect people, preserve dangerous material, or hide office liability. It proves procedural conflict, not final guilt, final safety, rescue, or legal result. Keep quarantine code, legal code, timestamps, redaction header, and denying office separate.
+Live localized source rows are maintained in `Docs/Lore/AppliedContent/packets/RS101_COUNTER_INDEX_ALIAS_HOLD_BRIDGE.packets.json`, packet `P505_QUARANTINE_LEGAL_HOLD_CONFLICT_BRIDGE`. Do not copy one-paragraph locale summaries from old briefs; every locale has separate website, wiki, PDA, scanner, terminal, caption, and spoiler-policy text.
 
-### ar_SA
-Status: draft_machine_or_llm
-Text: تعارض الحجر والوقف القانوني يعني أن الحزمة موقوفة من مراجعة السلامة ومن سلطة الإفراج القانوني معا. قد يحمي التداخل أشخاصا أو مادة خطرة، أو يخفي مسؤولية مكتب. إنه يثبت تعارضا إجرائيا، لا ذنبا نهائيا أو أمانا نهائيا أو إنقاذا أو نتيجة قانونية. أبق رمز الحجر والرمز القانوني والطوابع الزمنية ورأس الحجب والمكتب الرافض منفصلة.
+Locale status:
 
-### de_DE
-Status: draft_machine_or_llm
-Text: Quarantaene-Rechtshold-Konflikt bedeutet, dass ein Paket von Sicherheitspruefung und rechtlicher Freigabekontrolle zugleich gestoppt wird. Die Ueberlappung kann Menschen schuetzen, gefaehrliches Material sichern oder Buerohaftung verbergen. Sie beweist Verfahrenskonflikt, nicht Schuld, Sicherheit, Rettung oder Rechtsfolge. Halte Quarantaenecode, Legalcode, Zeitstempel, Redaktionskopf und verweigerndes Buero getrennt.
+- en_US: source_authority
+- ar_SA: draft_machine_or_llm
+- de_DE: draft_machine_or_llm
+- es_ES: draft_machine_or_llm
+- fr_FR: draft_machine_or_llm
+- he_IL: draft_machine_or_llm
+- id_ID: draft_machine_or_llm
+- ja_JP: draft_machine_or_llm
+- ko_KR: draft_machine_or_llm
+- nl_NL: draft_machine_or_llm
+- pl_PL: draft_machine_or_llm
+- pt_BR: draft_machine_or_llm
+- ru_RU: draft_machine_or_llm
+- uk_UA: draft_machine_or_llm
+- zh_CN: draft_machine_or_llm
 
-### es_ES
-Status: draft_machine_or_llm
-Text: Conflicto de cuarentena y retencion legal significa que un paquete esta detenido por revision de seguridad y control de liberacion legal a la vez. La superposicion puede proteger personas, preservar material peligroso u ocultar responsabilidad de oficina. Prueba conflicto de procedimiento, no culpa final, seguridad final, rescate ni resultado legal. Mantén codigo de cuarentena, codigo legal, tiempos, encabezado de redaccion y oficina que niega separados.
-
-### fr_FR
-Status: draft_machine_or_llm
-Text: Un conflit entre quarantaine et retenue legale signifie qu'un paquet est bloque par la revue de securite et le controle de liberation legale. Le chevauchement peut proteger des personnes, conserver une matiere dangereuse ou cacher une responsabilite de bureau. Il prouve un conflit de procedure, pas culpabilite, securite, sauvetage ou resultat legal. Gardez code quarantaine, code legal, horodatages, en-tete caviarde et bureau refusant separes.
-
-### he_IL
-Status: draft_machine_or_llm
-Text: סתירת הסגר והחזקה משפטית פירושה שחבילה נעצרת גם בידי בדיקת בטיחות וגם בידי בקרת שחרור משפטית. החפיפה יכולה להגן על אנשים, לשמר חומר מסוכן או להסתיר אחריות משרדית. היא מוכיחה סכסוך הליך, לא אשמה סופית, בטיחות סופית, חילוץ או תוצאה משפטית. שמרו בנפרד קוד הסגר, קוד משפטי, חותמות זמן, כותרת הסתרה והמשרד המסרב.
-
-### id_ID
-Status: draft_machine_or_llm
-Text: Konflik karantina dan penahanan hukum berarti paket dihentikan oleh tinjauan keselamatan dan kontrol pelepasan hukum sekaligus. Tumpang tindih itu dapat melindungi orang, menjaga bahan berbahaya, atau menyembunyikan tanggung jawab kantor. Itu membuktikan konflik prosedur, bukan kesalahan akhir, keselamatan akhir, penyelamatan, atau hasil hukum. Pisahkan kode karantina, kode hukum, cap waktu, header redaksi, dan kantor penolak.
-
-### ja_JP
-Status: draft_machine_or_llm
-Text: 隔離と法的保留の衝突とは、パケットが安全審査と法的解放管理の両方で止められている状態をいう。重なりは人を守り、危険物を保持し、または部署の責任を隠すことがある。これは手続き上の衝突を示すもので、最終的な罪、安全、救助、法的結果の証明ではない。隔離コード、法的コード、時刻、秘匿見出し、拒否部署を分けて保持する。
-
-### ko_KR
-Status: draft_machine_or_llm
-Text: 격리 법적 보류 충돌은 패킷이 안전 검토와 법적 공개 통제에 동시에 멈춘 상태를 뜻한다. 그 중첩은 사람을 보호하거나 위험 물질을 보존하거나 사무소 책임을 숨길 수 있다. 절차 충돌의 증거이지 최종 유죄, 최종 안전, 구조, 법적 결과의 증거가 아니다. 격리 코드, 법적 코드, 시간표시, 수정 헤더, 거부 사무소를 분리해 보존해야 한다.
-
-### nl_NL
-Status: draft_machine_or_llm
-Text: Conflict tussen quarantaine en juridische hold betekent dat een pakket tegelijk door veiligheidsreview en juridische vrijgavecontrole wordt gestopt. De overlap kan mensen beschermen, gevaarlijk materiaal bewaren of kantooraansprakelijkheid verbergen. Het bewijst procedureconflict, geen schuld, veiligheid, redding of juridische uitkomst. Houd quarantainecode, juridische code, tijdstempels, redactiekop en weigerend kantoor gescheiden.
-
-### pl_PL
-Status: draft_machine_or_llm
-Text: Konflikt kwarantanny i blokady prawnej oznacza, ze pakiet zatrzymuje jednoczesnie przeglad bezpieczenstwa i kontrola prawnego uwolnienia. Nakladanie moze chronic ludzi, zachowac niebezpieczny material albo ukryc odpowiedzialnosc biura. Dowodzi konfliktu procedury, nie winy, bezpieczenstwa, ratunku ani wyniku prawnego. Oddziel kod kwarantanny, kod prawny, czasy, naglowek redakcji i biuro odmowy.
-
-### pt_BR
-Status: draft_machine_or_llm
-Text: Conflito de quarentena e retencao legal significa que um pacote foi parado por revisao de seguranca e controle juridico de liberacao ao mesmo tempo. A sobreposicao pode proteger pessoas, preservar material perigoso ou ocultar responsabilidade de escritorio. Prova conflito procedural, nao culpa final, seguranca final, resgate ou resultado legal. Mantenha codigo de quarentena, codigo legal, tempos, cabecalho de redacao e escritorio negador separados.
-
-### ru_RU
-Status: draft_machine_or_llm
-Text: Конфликт карантина и юридического удержания означает, что пакет остановлен и проверкой безопасности, и правовым контролем выпуска. Пересечение может защищать людей, сохранять опасный материал или скрывать ответственность офиса. Оно доказывает процедурный конфликт, а не финальную вину, безопасность, спасение или юридический итог. Держи отдельно код карантина, юридический код, метки времени, заголовок редактуры и отказавший офис.
-
-### uk_UA
-Status: draft_machine_or_llm
-Text: Конфлікт карантину й юридичного утримання означає, що пакет зупинено і перевіркою безпеки, і правовим контролем випуску. Перетин може захищати людей, зберігати небезпечний матеріал або приховувати відповідальність офісу. Він доводить процедурний конфлікт, а не фінальну вину, безпеку, порятунок чи юридичний результат. Тримай окремо код карантину, юридичний код, часові мітки, заголовок редагування і офіс відмови.
-
-### zh_CN
-Status: draft_machine_or_llm
-Text: 隔离与法律扣留冲突表示同一个数据包同时被安全审查和法律释放控制拦下。重叠可能保护人员、保存危险材料，也可能隐藏办公室责任。它证明程序冲突，不证明最终罪责、最终安全、救援或法律结果。应分开保留隔离代码、法律代码、时间戳、删节标题和拒绝办公室。
+Native review is still absent for non-English rows; draft status is honest and must not be upgraded without review.
 
 ## QA Notes
 

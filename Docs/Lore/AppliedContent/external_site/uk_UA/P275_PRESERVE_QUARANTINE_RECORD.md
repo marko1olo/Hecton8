@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Preserve Quarantine Record"
+title: "Запис збереження карантину"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Preserve Quarantine Record
+# Запис збереження карантину
 
-UA LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+Цей запис карантину корисний тим, що перелічує утримане, захищене й здатне зламатися пізніше: зберігання вантажу, закриті координати, часткову публічну квитанцію, пошкодження Atlas, екологічне утримання, імена робітників, відповідальність і сліпі наступні претензії.
 
 ## Scanner
 
-UA LOC HOLD: Payload withheld. Consequence deferred.
+ЗАПИС ЗБЕРЕЖЕННЯ КАРАНТИНУ // Вантаж утримано від Deep Reach. Atlas пошкоджений, але активний; наказ екологічного утримання блокує чисту передачу володіння.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+ЗАПИС ФІНАЛУ / ЗБЕРЕЖЕННЯ КАРАНТИНУ
+Вантаж: утримано від прямого зберігання Deep Reach.
+Наказ: екологічне утримання, закриті координати, часткова публічна квитанція.
+Стан Atlas: пошкоджена ремонтна логіка активна.
+Захищено: екологія тиску й уціліле ремонтне життя.
+Не вирішено: імена робітників, відповідальність басейну, майбутні salvage-подання.
+Відома втрата: збереження не стає невинністю.
 
 ## Audio
 
-UA LOC HOLD: Leaving something alive is not the same as saving it.
+Ти лишив це живим. Це не те саме, що врятувати.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Утримання пакета захищає частину живих систем і лишає зламану владу дихати. Стеж за чергою сліпих претензій.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/uk_UA. -->

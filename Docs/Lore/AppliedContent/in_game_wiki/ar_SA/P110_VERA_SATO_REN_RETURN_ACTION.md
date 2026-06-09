@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "فيرا ساتو-رين: إجراء العودة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# فيرا ساتو-رين: إجراء العودة
 
-AR LOC HOLD: Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+فيرا ساتو-رين هي توقيع مكتب امتثال الاسترداد لعام 2190 الذي يمنح Deep Reach الحاضر وجها من دون جعله حاضرا جسديا في كل مكان. تعمل عبر الحزم ونوافذ الحيازة وبنود الناقلين والتعليمات المؤجلة. الضغط إجرائي: استرداد الإحداثيات، إثبات سلسلة XO، الإبلاغ عن حالة وصول Atlas، والحفاظ على صمت المتعاقد إذا ظلت الحمولة قابلة للتحكم.
+
+لغة إجراء العودة خطرة لأنها قد تبدو مساعدة. يبقى الإنقاذ ممكنا، لكن بعد حيازة الحمولة فقط. يمكن عرض المساعدة، لكن فقط ما دام خطر انكشاف الأدلة قابلا للإدارة. Marauder الذي يقرأ الحزمة لا يتلقى صراخ شرير. إنه يُقاس مقابل نافذة تغلق سواء أجاب أم لا.
+
+بالنسبة إلى اللاعب، تحول ساتو-رين Deep Reach من ذنب تاريخي إلى ضغط حاضر. المستعمرة القديمة ليست قبرا فقط. إنها موقع مطالبات نشط. كل سجل مستعاد يمكن أن يصبح دليلا أو فدية أو بند صمت أو وزنا تفاوضيا حسب من يستلمه أولا. هذا هو تهديد Deep Reach الحديث: ليس أسطولا عدوا نظيفا، بل خلية ضغط قانونية تحاول امتلاك العودة قبل أن تخرج الحقيقة من الماء.
 
 ## Scanner
 
-AR LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
+حزمة إجراء عودة // تعطي V. ساتو-رين الأولوية للحمولة القابلة للاسترداد وحالة وصول Atlas وصمت المتعاقد داخل نافذة حيازة ضيقة.
 
 ## Terminal
 
-AR LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. // مكتب امتثال الاسترداد // الأولوية: الإحداثيات، دليل XO، حالة وصول Atlas، صمت المتعاقد إذا كان قابلا للاسترداد داخل النافذة. تبقى مساعدة الإنقاذ مشروطة بحيازة الحمولة وخطر انكشاف الأدلة.
 
 ## Audio
 
-AR LOC HOLD: She does not need to threaten you. The window already does.
+لا تحتاج إلى تهديدك. النافذة تفعل ذلك بالفعل.
 
 ## Field Note
 
-AR LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+يجب أن يصل Deep Reach الحاضر كرافعة ضغط، لا كمونولوج شرير. النافذة هي التهديد.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/ar_SA. -->

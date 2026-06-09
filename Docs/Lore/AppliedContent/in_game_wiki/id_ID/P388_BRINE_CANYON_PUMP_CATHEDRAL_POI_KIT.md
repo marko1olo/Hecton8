@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit Bukti Katedral Pompa Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit Bukti Katedral Pompa Ngarai Brine
 
-ID LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+Katedral Pompa Ngarai Brine adalah volume industri yang dibangun di sekitar tekanan, densitas, dan penundaan. Mesinnya tidak menuduh siapa pun sendirian, tetapi sightglass, jam tahan, bekas pompa, dan buku antrean berbaris menjadi rantai tanggung jawab yang dapat dipakai.
 
 ## Scanner
 
-ID LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Kit bukti POI: katedral pompa menyelaraskan kaca densitas, kerusakan pompa, jam rute, dan catatan antrean pekerja.
 
 ## Terminal
 
-ID LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+KIT KATEDRAL POMPA: sightglass densitas, gores pompa brine, catatan margin diterima, jam tahan rute, buku antrean pekerja, kunci start pompa, tanda gantri banjir.
 
 ## Audio
 
-ID LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Pompa memindahkan air. Ruangan menyimpan catatan lebih baik daripada kantor.
 
 ## Field Note
 
-ID LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Catatan marauder: foto sightglass sebelum menguras kantong. Setelah brine bergerak, garis margin terlihat lebih rata.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/id_ID. -->

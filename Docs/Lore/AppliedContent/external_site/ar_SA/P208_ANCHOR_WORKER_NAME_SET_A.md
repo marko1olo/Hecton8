@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "مجموعة أسماء العمال المرساة A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# مجموعة أسماء العمال المرساة A
 
-AR LOC HOLD: Anchor Worker Name Set A carries early colony identity through lockers, ledgers, tools, route permissions, and damaged work objects.
+تحدد مجموعة أسماء العمال المرساة A أسماء المستعمرة المبكرة المتكررة في HECTON-8. هؤلاء العمال الثمانية ليسوا معلومات جانبية؛ إنهم مقابض ذاكرة. يلتقيهم اللاعب أولا عبر الأشياء والعمل، ثم يرى تدريجيا كيف تعبر الأسماء نفسها سجلات الصيانة والتصاريح وتقارير الضرر وشظايا الصوت. تحفظ Set A الساعات الأولى إنسانية من دون إيقاف اللعب للشرح.
 
 ## Scanner
 
-AR LOC HOLD: Anchor names should reappear through work, not personal exposition.
+يجب أن تعود الأسماء المبكرة عبر العمل، لا عبر الخطب. يعلّم المسار الضحل الذاكرة بالتكرار.
 
 ## Terminal
 
-AR LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: تكرار في الضحل والرف الصناعي. يجب أن يرتبط كل اسم بأداة واحدة، وتصريح مسار واحد، وجسم عمل متضرر واحد، وتناقض لاحق واحد. هذه الأسماء هي أول دليل للاعب على أن المستعمرة كانت مكان عمل قبل أن تصير غنيمة إنقاذ.
 
 ## Audio
 
-AR LOC HOLD: Do not mourn the name until the tool tells you why.
+لا ترث الاسم قبل أن تخبرك الأداة لماذا.
 
 ## Field Note
 
-AR LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+مراسي Set A: Mara Venn وJuno Kade وRen Okoye وSahana Iqbal وLian Torres وOskar Neumann وAya Morita وPavel Sorn.
 
 <!-- External Site; generated from P208_ANCHOR_WORKER_NAME_SET_A/ar_SA. -->

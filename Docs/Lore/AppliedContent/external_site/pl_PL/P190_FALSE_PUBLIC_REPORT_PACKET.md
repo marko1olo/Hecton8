@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Pakiet fałszywego raportu publicznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Pakiet fałszywego raportu publicznego
 
-PL LOC HOLD: False Public Report Packet states the Deep Reach public version and the hidden omissions.
+Pakiet fałszywego raportu publicznego przedstawia publiczną wersję Deep Reach o utracie kolonii oraz pominięcia, które czynią ją fałszywą. To nie propaganda zaprzeczająca katastrofie; to propaganda montująca katastrofę w wypadek bez odpowiedzialnych rąk. Artykuł jest ważny, bo pozwala HECTON-8 zachować twardonaukową katastrofę, a jednocześnie udowodnić historię osłonową. Fizyka oceanu wyjaśnia, dlaczego kolonia była podatna. Brakujące notatki wyjaśniają, dlaczego podatność stała się porzuceniem.
 
 ## Scanner
 
-PL LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Raport publiczny zadziałał, bo zostawił prawdziwy ocean i usunął ludzkie decyzje wewnątrz niego.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: utrata HECTON-8 przypisana wyjątkowej kaskadzie pływów, opóźnieniu przekaźnika i niepewności kwarantanny. Pominięto: zaakceptowane marginesy ryzyka, wstrzymanie zwolnienia ewakuacji, override ciągłości Atlas, konwersję roszczeń i żądanie odzysku najpierw ładunku.
 
 ## Audio
 
-PL LOC HOLD: They did not fake the storm. They buried the choice.
+Powiedzieli prawdę o wodzie i skłamali o rękach.
 
 ## Field Note
 
-PL LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+Najlepsze kłamstwo nie zaprzeczyło pływowi. Użyło pływu jako osłony.
 
 <!-- External Site; generated from P190_FALSE_PUBLIC_REPORT_PACKET/pl_PL. -->

@@ -1,32 +1,90 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# SKAFANDRY NURKOWE KLASY IV I SPRZĘT GŁĘBINOWY
+<!-- localization_status: draft_machine_or_llm_pl_PL -->
+# SKAFANDRY CIŚNIENIOWE CLASS-IV I SPRZĘT ABISALNY
 
-> **Źródło:** Megakorporacja Deep Reach, Instrukcja Kwatermistrza ds. Sprzętu.
-> **Mówiący:** Jednostka SI Kwatermistrza.
-> **Uwaga recenzenta:** Techniczna analiza jedynej rzeczy, która stoi pomiędzy Szabrownikiem a natychmiastowym zmiażdżeniem przez ciśnienie 400 atmosfer.
+> **Źródło:** rejestr klatek skafandrów Black Keel, fragmenty certyfikacji nurkowania przemysłowego Deep Reach, tagi konserwacyjne kontraktorów.  
+> **Głos:** głos serwisowy kwatermistrza po usunięciu niebezpiecznego języka zakupowego.  
+> **Uwaga redakcyjna:** To techniczna anatomia systemu roboczego Class-IV. O kulturze noszenia go w praktyce mówi artykuł o pracy abisalnej.
 
----
+Class-IV nie jest nazwą marki. To pas certyfikacji pracy pod ciśnieniem.
 
-## 1. "Żelazna Trumna" Klasy IV
+Ta różnica ratuje życie. Marauder, który traktuje skafander jak model, szuka złych obietnic: oceny pancerza, slotu broni, reklamowanej głębokości, poziomu ulepszenia. Handler, który widzi w nim pas certyfikacji, zadaje lepsze pytania. Które uszczelki wymieniono? Które cykle ciśnienia nadal liczą się jako ważne? Który staw przekroczył tolerancję asysty? Która płytka scrubbera została opłacona, a którą tylko ponownie ostemplowano? Pod którą krawędzią wizjera siedzi sól pod laminatem?
 
-Standardowym wyposażeniem każdego Szabrownika schodzącego w głębinowe rowy HECTON-8 jest Mechaniczny Skafander Nurkowy Klasy IV.
+Skafander nie jest jedną maszyną. Jest stosem argumentów, które na chwilę zgadzają się trzymać człowieka osobno od oceanu.
 
-Potocznie nazywany przez Szabrowników "Żelazną Trumną", skafander ten to w zasadzie łódź podwodna, którą można na siebie założyć. Zbudowany jest z nakładających się na siebie płyt z napromieniowanego wolframu i spolimeryzowanego stopu tytanu, zaprojektowanych tak, aby wytrzymać miażdżące ciśnienie 400 atmosfer na dnie oceanu. Skafander jest nieporęczny, powolny i poważnie ogranicza widzenie peryferyjne, wykorzystując pojedynczy, wzmocniony kwarcowy wizjer.
+## Powłoka ciśnienia
 
-## 2. Systemy Podtrzymywania Życia i Grzałki Chemiczne
+To, co obcy zauważają najpierw, to twarda rama: żebrowana skorupa torsu, jarzmo barków, pierścień bioder, klatki stawów, buty balastowe, mocowanie kręgosłupa i korona wizjera. Te elementy dają skafandrowi powolną sylwetkę, ale powłoka ciśnienia jest większa i dziwniejsza niż widoczny pancerz.
 
-Ocean na HECTON-8 jest pogrążony w kompletnych ciemnościach, a jego temperatura oscyluje tuż powyżej punktu zamarzania. Systemy podtrzymywania życia w skafandrze są prymitywne, ale skuteczne.
+Prawdziwa powłoka obejmuje miękkie pęcherze, wargi uszczelek, łożyska rękawic, ścieżki kondensatu, zasilanie hełmu, uszczelki scrubbera, przesłony portów narzędzi i małe powierzchnie kompresyjne, których nikt nie chwali, dopóki nie zawiodą. Class-IV może wyglądać na cały i już przegrywać spór. Farba przeżywa zaufanie. Wypolerowana płyta może ukrywać pełzającą uszczelkę. Wgnieciona osłona może być nieszkodliwa, jeśli uszczelka za nią nigdy się nie ruszyła.
 
-Tlen jest dostarczany przez zautomatyzowany system chemicznych skruberów (płuczek), który poddaje recyklingowi wydychany dwutlenek węgla. Jednak te skrubery z czasem ulegają degradacji i muszą być regularnie wymieniane — jest to wydatek, który Szabrownicy muszą pokrywać z własnej kieszeni. Aby zapobiec zamarznięciu nurka w wodach o temperaturze poniżej zera, wnętrze skafandra wyłożone jest chemiczną siatką termiczną. Kiedy główna bateria skafandra jest na wyczerpaniu, siatka termiczna jest pierwszym systemem, który jest automatycznie wyłączany w celu oszczędzania energii dla skruberów podtrzymujących życie.
+Podręczniki Deep Reach nazywają powłokę "redundantną". Marauderzy wolą "wynegocjowaną". Redundancja sugeruje zapasowy system czekający grzecznie. Negocjacja jest bliższa prawdy: jedna uszczelka przyjmuje większy ładunek, bo inna się postarzała; jeden zawias klei się, bo sól wybrała stronę; jeden plaster pęcherza trzyma, bo pracownik na poprzedniej trasie nie skręcił zbyt szybko.
 
-## 3. Mobilność i Napęd
+Ocean nie łamie skafandra naraz, jeśli może najpierw nauczyć każdy element kłamać.
 
-Chodzenie po dnie oceanu w środowisku o tak ogromnym ciśnieniu jest powolnym, wyczerpującym procesem.
+## Oddech, ciepło i odpady
 
-Skafander Klasy IV polega na zmotoryzowanych serwomechanizmach w stawach, które wspomagają ruch, nadając Szabrownikowi nienaturalny, chwiejny chód. Buty są obciążone solidnym wolframowym balastem, aby utrzymać nurka mocno przytwierdzonego do dna morskiego i zapobiec porwaniu go przez nagłe prądy głębinowe. W celu zapewnienia mobilności w pionie, skafander wyposażony jest w podwójne silniki hydro-odrzutowe zamontowane na plecach. Pędniki te nie są przeznaczone do długotrwałego lotu; zapewniają krótkie, potężne impulsy, pozwalające Szabrownikowi przeskakiwać przez rozpadliny lub wspinać się po zawalonej architekturze Sektora 44.
+Black Keel nie wydaje powietrza. Wydaje tymczasową umowę między butlami, zaworami mieszanki, scrubberami węgla, pułapkami wilgoci, siatką termiczną, progami firmware i płucami kogoś zadłużonego.
 
-## 4. Uzbrojenie Głębinowe
+Stos oddechowy jest celowo nieromantyczny. Mieszanka wchodzi przez certyfikowane butle, transfer z kapsuły, napełnienie odbiornikiem albo awaryjny kartridż, zależnie od trasy i kontraktu. Wydychany dwutlenek węgla przechodzi przez wymienne płytki, które zaczynają jako chemia, a kończą jako rachunek. Wilgoć skrapla się tam, gdzie powinna, chyba że skafander jest zimny w złym miejscu, brudny w złym rowku albo przechylony dość długo, by woda znalazła cierpliwą ścieżkę.
 
-Tradycyjna kinetyczna broń palna jest na HECTON-8 całkowicie bezużyteczna ze względu na ekstremalną gęstość wody i ciężko opancerzone pancerze lokalnej fauny.
+Ciepło nie jest komfortem. Ciepło jest osądem. Zimne palce źle czytają narzędzia. Zimne żebra źle oddychają. Zimna panika wydaje tlen. Siatka termiczna konkuruje więc z lampami, serwami, odbiornikami i chłodzeniem próbek. Dobry skafander nie trzyma nurka w cieple. Trzyma osąd ledwie dość ciepły, by pozostał użyteczny.
 
-Główną bronią Szabrownika jest Lanca Termiczna. Działając w zasadzie jak podwodny miotacz ognia, zapala skoncentrowany strumień termitu magnezowego, który płonie w temperaturze 4000°C. Jest to jedyna broń zdolna do stopienia chitynowego pancerza Prześladowcy z Rowów (Trench Stalker) lub przecięcia zaciętej tytanowej grodzi. Do walki na dystans Szabrownicy używają pneumatycznych harpunów kinetycznych. Harpuny te wystrzeliwują solidne wolframowe kolce, których celem jest przybicie agresywnej fauny do dna morskiego, zyskując Szabrownikowi wystarczająco dużo czasu na ucieczkę.
+Odpady to temat żartów kontraktorów aż do pierwszego długiego opóźnienia. Skafander ma obsługę moczu, kanały potu, warstwy chłonne, wychwyt zapachu i systemy prywatności, które przeważnie działają na normalnej trasie. Gdy odzysk się przesuwa, te systemy stają się morale, kontrolą infekcji i kolejnym sposobem wystawienia ciału faktury za pozostanie żywym.
+
+## Ruch, balast i zła gracja
+
+Class-IV nie pływa. Stoi, zapiera się, szura, wspina, opada i spiera z podłogą.
+
+Buty niosą balast etapami, bo nagła lekkość może zabić równie czysto jak nagły ciężar. Zwolnienie, które ratuje pracownika przed wciągnięciem w muł, może rzucić go w ruiny nad głową. Zamek balastu, który nie chce się otworzyć, może zamienić płytki krok w pogrzeb. Dlatego doświadczeni nurkowie słuchają stóp. But, który ląduje źle, często jest pierwszym uczciwym sensorem.
+
+Asysta serw jest z założenia ostrożna. Skafander mógłby być silniejszy na sposoby, które zraniłyby noszącego. Aktuator dłoni, który nigdy nie ustępuje, może zmiażdżyć rękawicę o właz. Kolano korygujące za mocno może zmienić poślizg w zerwane więzadło. Bark pomagający zbyt chętnie może wykręcić pracownika, gdy narzędzie zostaje nieruchome. Ruch Class-IV jest brzydki, bo brzydota jest bezpieczniejsza niż elegancka pewność siebie.
+
+Do krótkiej pracy pionowej niektóre skafandry noszą burst jets albo butle podnoszące. To nie systemy lotu. To błędy z uchwytami: przekroczyć szczelinę, wspiąć się na zawaloną krawędź, wyczyścić półkę solanki, uciec z podłogi, która przestała być podłogą. Każde użycie zmienia ciepło, bąble, dźwięk, muł i dług.
+
+## Widzieć, nie wierząc szkłu
+
+Wizjer jest mały z powodów starszych niż handel Marauderów. Więcej szkła oznacza więcej widzenia, więcej stresu, więcej czyszczenia, większą powierzchnię awarii i więcej wiary w zły zmysł.
+
+Pracownik Class-IV widzi warstwami: bezpośrednie szkło, sonar skafandra, mapy ciśnienia, wibracje narzędzia, pingi odbiornika, napięcie tethera, zachowanie mułu, rozpraszanie lampy i małą mechaniczną szczerość oporu uchwytu pod ręką. Żadnej warstwie nie wierzy się samej. Szkło potwierdza. Nie rządzi.
+
+System ostrzeżeń działa tak samo. Głośne alarmy są dla ludzi, którzy już są spóźnieni. Lepsi operatorzy zauważają cichsze zmiany: ton wentylatora robiący się cienki, wilgoć rękawicy rosnącą po skręcie, deltę ciśnienia, która nie chce opaść, pobór grzałki zbyt czysty, powrót sonaru z pustą krawędzią. Uczciwość maszyny rzadko jest dramatyczna. Dramat zwykle znaczy, że ocean przestał negocjować.
+
+Nowoczesne HUD-y Marauderów unikają fantazyjnej klarowności. Są ciasne, warstwowe i czasem brzydkie, bo prawda pod wodą jest częściowa. Czysty interfejs usuwający dwuznaczność może usunąć też wskazówkę, która utrzymuje kogoś przy życiu.
+
+## Narzędzia jako część skafandra
+
+Sprzętu Class-IV nie nosi się jak ekwipunku kempingowego. Jest montowany, blokowany, prowadzony, zasilany, równoważony i logowany jako część roboczego ciała skafandra.
+
+Typowe porty nie są efektowne: mocowanie cutter, mocowanie wiertła, rękaw próbki, hak tethera, szyna zacisku, gniazdo lampy, gniazdo odbiornika, rozłupywacz śrub, pick uszczelki, purge odpadów, zaczep zewnętrznej butli. Każdy ma konsekwencje custody. Próbka pobrana przez zły rękaw może być chemicznie ważna i prawnie brudna. Cutter użyty przed zapisaniem wstrząsu mocowania może zmienić czyste cięcie salvage w sporne. Hak ratunkowy, który ratuje pracownika, może też dowieść, w jakim kierunku poruszał się, gdy trasa zawiodła.
+
+Marauderzy nazywają narzędzia czasownikami, bo rzeczowniki to język, w którym kwatermistrzowie wyceniają. Ciąć. Trzymać. Oznaczać. Wentylować. Skrobać. Podeprzeć. Podnieść. Zapakować. Przepalić. Dowieść. Najlepszy sprzęt jest nudny do dokładnej sekundy, w której staje się różnicą między trasą a plikiem claim.
+
+Broń istnieje, ale skafander nie rozumie różnicy moralnej. Widzi pobór, odrzut, ciepło, naprężenie mocowania, status custody i biometrię operatora. Jeśli narzędzie staje się bronią, system zapisuje konsekwencje przed powodami.
+
+## Awarie, które mają znaczenie
+
+Większość awarii Class-IV zaczyna się mniejsza, niż strach by chciał.
+
+Pełzanie uszczelki oznacza, że uszczelka wciąż jest, ale nie jest już szczera. Może przejść precheck i zawieść po uklęknięciu, skręcie lub przekroczeniu pasma ciśnienia. Nadassist stawu oznacza, że skafander próbuje pomagać szybciej, niż ciało znosi. Kanałowanie scrubbera oznacza, że dwutlenek węgla znajduje tańszą drogę, niż przewidziała chemia. Cień cieplny oznacza, że jedna część ciała jest dość ciepła, by kłamać, podczas gdy inna już traci zręczność.
+
+Mleko wizjera nie jest kosmetyką. Może oznaczać stres laminatu, solną mgłę, mikropęknięcie albo wcześniejsze złe czyszczenie. Mokra paszcza odbiornika oznacza, że gniazdo akustyczne przyjęło solankę i może zacząć wymyślać pewność. Piasek w porcie narzędzia znaczy, że przesłona zamknęła się, ale nie czysto. Cisza martwego sensora jest gorsza niż alarm, bo może brzmieć jak pozwolenie.
+
+Najgorsze awarie są mieszane. Zimna ręka chybia pickiem uszczelki. Zła uszczelka zmienia wilgoć. Wilgoć czyni ostrzeżenie hałaśliwym. Operator wycisza je, żeby usłyszeć ping. Ping był spóźniony. Podłoga nie była podłogą. Raport później nazywa stratę środowiskową.
+
+## Ulepszenia są wymianą
+
+Publiczna strona sklepu nazwałaby ulepszenia postępem. Marauderzy nazywają je nowymi sposobami zadłużenia.
+
+Lepsze uszczelki otwierają trasy i czynią każdą późniejszą inspekcję ostrzejszą. Silniejsze serwa przenoszą cięższy salvage i mogą karać złą postawę. Czystsze odbiorniki akustyczne ujawniają więcej, w tym rozkazy, które carrier wolałby formułować miękko. Większe baterie kupują ciepło, światło albo czas narzędzia, ale nie wszystkie trzy. Lepsze rękawy próbek chronią dowody i sprawiają, że carrier bardziej interesuje się tym, co niesiesz. Lepsze zwolnienie balastu ratuje życie i może też zostawić pracownika przy suficie, pod występem albo poza geometrią odzysku.
+
+Żadne ulepszenie nie wynosi nurka poza konsekwencje. Celem sprzętu Class-IV nie jest stać się niewrażliwym. Jest nim przesunięcie linii, na której zawodzi uwaga.
+
+Dlatego starzy handlerzy oglądają ulepszone skafandry z większą podejrzliwością, nie mniejszą. Tani skafander zawodzi uczciwie. Mocno przerobiony może zawieść w języku, który rozumiał tylko jego ostatni właściciel.
+
+## Co zabiera gracz
+
+Class-IV jest najbardziej intymnym elementem worldbuildingu gry, bo gracz w nim mieszka.
+
+Każdy syk, alarm, wolny krok, zaparowana krawędź, mocowanie narzędzia i fakturowalny materiał zużywalny powinny uczyć tej samej lekcji: przetrwanie jest zaprojektowane, wynajęte i zapisane. Skafander jest granicą ciśnienia, miejscem pracy, świadkiem i instrumentem długu. Chroni gracza przed oceanem, jednocześnie wystawiając go na każdy system, który uznał, że ochronę można odmierzać.
+
+Dobry Class-IV nie czyni HECTON-8 mniej wrogim. Czyni wrogość czytelną dość długo, by gracz wybrał, jakie dowody, salvage i ciało wrócą.

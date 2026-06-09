@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_locker_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS182_FIRST_LOCKER_TRACE_ARTICLES.md |
 | Speaker | Locker scanner, mess shelf note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter locker |
@@ -72,17 +72,17 @@ ORDINARY WEAR
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| ru_RU | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| ja_JP | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| zh_CN | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| fr_FR | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| es_ES | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| de_DE | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| pl_PL | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| uk_UA | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| ar_SA | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| id_ID | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| ko_KR | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| he_IL | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| pt_BR | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
-| nl_NL | draft_machine_or_llm | MUG HANDLE // Chip holds dark stain. Work break object, not clean evidence. |
+| ar_SA | draft_machine_or_llm | مقبض كوب // الشظية تحمل بقعة داكنة. غرض استراحة عمل، لا دليل صاف. |
+| de_DE | draft_machine_or_llm | BECHERGRIFF // Abplatzer haelt dunklen Fleck. Pausenobjekt, kein sauberer Beweis. |
+| es_ES | draft_machine_or_llm | ASA DE TAZA // Muesca retiene mancha oscura. Objeto de pausa, no prueba limpia. |
+| fr_FR | draft_machine_or_llm | ANSE DE MUG // Eclat retient une tache sombre. Objet de pause, pas preuve nette. |
+| he_IL | draft_machine_or_llm | ידית ספל // שבב מחזיק כתם כהה. חפץ הפסקת עבודה, לא ראיה נקייה. |
+| id_ID | draft_machine_or_llm | GAGANG MUG // Retak kecil menahan noda gelap. Benda jeda kerja, bukan bukti bersih. |
+| ja_JP | draft_machine_or_llm | マグ取っ手 // 欠けに黒い染み。休憩用品であり、明確な証拠ではない。 |
+| ko_KR | draft_machine_or_llm | 머그 손잡이 // 깨진 곳에 어두운 얼룩이 고였다. 작업 휴식 물건이지 명확한 증거는 아니다. |
+| nl_NL | draft_machine_or_llm | MOKOOR // Chip houdt donkere vlek. Pauzevoorwerp, geen zuiver bewijs. |
+| pl_PL | draft_machine_or_llm | UCHO KUBKA // Odprysk trzyma ciemna plame. Przedmiot przerwy w pracy, nie czysty dowod. |
+| pt_BR | draft_machine_or_llm | ALCA DE CANECA // Lasca segura mancha escura. Objeto de pausa de trabalho, nao prova limpa. |
+| ru_RU | draft_machine_or_llm | РУЧКА КРУЖКИ // Скол держит темное пятно. Предмет рабочего перерыва, не чистая улика. |
+| uk_UA | draft_machine_or_llm | РУЧКА КУХЛЯ // Скол тримає темну пляму. Річ робочої перерви, не чистий доказ. |
+| zh_CN | draft_machine_or_llm | 杯柄 // 缺口积着暗渍。工间物件，不是明确证据。 |

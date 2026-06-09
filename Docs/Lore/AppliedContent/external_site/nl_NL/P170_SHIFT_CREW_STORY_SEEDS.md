@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Story-seeds voor shiftcrews"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Story-seeds voor shiftcrews
 
-NL LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
+Dit systeem definieert de veilige variatielaag: roostervolgorde, objectplaatsing, jobparen, lockerprops, weigeringen en Marauder-notities. De kernhistorie blijft vast: Great Tide, Deep-Reach-schuld, Atlas-weighting en evacuatiemislukking.
 
 ## Scanner
 
-NL LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // Het rooster mag veranderen. De schuld niet.
 
 ## Terminal
 
-NL LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SHIFTCREW-SEEDS // Een run mag roostervolgorde, arbeidersparen, lockerinhoud, weigeringen, routekrijt, badgefragmenten en latere Marauder-correcties variëren. De seed verandert hoe de speler bewijs ontmoet, niet wat het bewijs bewijst.
 
 ## Audio
 
-NL LOC HOLD: A different locker can hurt the same truth again.
+Een andere locker kan dezelfde waarheid van een andere kant opensnijden.
 
 ## Field Note
 
-NL LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Seedvariatie verandert objectvolgorde, jobkoppelingen en Marauder-notities. Ze verandert nooit Great Tide of Deep-Reach-aansprakelijkheid.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/nl_NL. -->

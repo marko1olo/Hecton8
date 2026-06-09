@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "잠긴 지각 지층 안내서"
+title: "침수 지각 지층 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 잠긴 지각 지층 안내서
+# 침수 지각 지층 가이드
 
-잠긴 지각은 HECTON-8의 읽을 수 있는 역사다. 오래된 식민지 절단, 얼음 붕괴 선반, pressure-glass 이음, 광물 띠가 어디서 항로가 버티고, 전단되고, 접촉만으로 실패하는지 보여준다.
+침수 지각은 HECTON-8의 읽을 수 있는 역사다. 오래된 식민지 절단면, 얼음 붕괴 선반, 압력 유리 이음부, 광물 띠가 어느 경로가 버티고, 전단되고, 손대면 무너지는지 보여 준다. Salvage 팀은 그것을 손상된 장부처럼 읽는다. 무엇이 지어졌고, 무엇이 떨어졌으며, 바다가 그 뒤로 무엇을 갈아 왔는지.
 
 ## Scanner
 

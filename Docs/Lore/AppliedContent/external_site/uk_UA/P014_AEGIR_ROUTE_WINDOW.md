@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Маршрутне вікно Aegir"
+title: "Вікно маршруту Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Маршрутне вікно Aegir
+# Вікно маршруту Aegir
 
-На HECTON-8 небо - частина підземелля. Газовий гігант задає радіацію, місяці дають тінь, припливи йдуть крізь каньйони й шахти.
-
-Гравець вчиться, коли повідомлення піднімається, коли може піднятися тіло і коли відкрите небо є пасткою.
+HECTON-8 — океанічна місяць, але небо тут частина підземелля. Радіація Aegir, місячні тіні, relay shutters, storm plume, припливи й геометрія carrier вирішують, що може піти: сигнал, тіло, зразок чи ядро доказу. Головне правило — розділення. Вікно даних не дорівнює порятунку. Вікно порятунку не дорівнює забрудненому вантажу. Black Keel рахує, але питає, хто володіє масою, хто приймає карантин і яка умова захищає Deep Reach.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/uk_UA. -->

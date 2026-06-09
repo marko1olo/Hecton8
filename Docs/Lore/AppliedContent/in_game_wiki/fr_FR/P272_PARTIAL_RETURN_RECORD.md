@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Partial Return Record"
+title: "Enregistrement de retour partiel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Partial Return Record
+# Enregistrement de retour partiel
 
-FR LOC HOLD: Partial Return Record defines the non-final escape that can pull the player back into the same world.
+L'Enregistrement de retour partiel consigne un répit sans fuite. Black Keel peut remonter l'opérateur pour réparer la combinaison, refaire l'air, décontaminer et synchroniser le registre, mais l'ordre de retour au même seed garde gage, quarantaine, mémoire de scan, paquets de preuves ouverts et charge non résolue attachés au même océan.
 
 ## Scanner
 
-FR LOC HOLD: Extraction granted. Claim unresolved.
+ENREGISTREMENT DE RETOUR PARTIEL // Prise en charge Black Keel acceptée. Retour au même seed autorisé sous gage prolongé ; mémoire de scan et paquets de preuves ouverts persistent.
 
 ## Terminal
 
-FR LOC HOLD: ENDING RECORD: partial return; same seed eligible for reentry under extended custody.
+ENREGISTREMENT DE FIN / RETOUR PARTIEL
+Prise en charge : extraction temporaire Black Keel.
+Objet : réparation combinaison, recharge d'air, décontamination, synchronisation registre.
+État de garde : gage prolongé ; terme de quarantaine joint.
+Autorité de retour : même seed, même océan, avertissements de route conservés.
+Données persistantes : mémoire de scan, paquets de preuves ouverts, charge non résolue.
+Perte connue : le soulagement est facturé avant de devenir liberté.
 
 ## Audio
 
-FR LOC HOLD: Out is not away.
+La pression a lâché. Le contrat a gardé le siège.
 
 ## Field Note
 
-FR LOC HOLD: Record fields: recovered body or capsule, lien extension, quarantine term, unresolved payload and reentry authority.
+Une combinaison propre et un cycle de sommeil ne ferment pas un contrat. La route dessous garde ses anciens avertissements.
 
 <!-- In-Game Wiki; generated from P272_PARTIAL_RETURN_RECORD/fr_FR. -->

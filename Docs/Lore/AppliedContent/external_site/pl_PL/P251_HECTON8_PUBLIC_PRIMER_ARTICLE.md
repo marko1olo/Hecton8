@@ -19,25 +19,10 @@ localization_flags: 1
 
 # Publiczny wstęp do HECTON-8
 
-HECTON-8 to zatopiony przemysłowy księżyc oceaniczny w systemie Aegir. Jest piękny, zanim staje się obciążający: jasne półki, żywe płycizny, twarde niebieskie światło, ciśnieniowe kości kolonii i głębsze ruiny, gdzie papiery Deep Reach wciąż kłócą się z maszynami. Przybywasz jako Marauder pod presją kontraktu, nie turysta i nie wybrany wybawca. Publiczna przesłanka jest prosta: przetrwaj ocean, czytaj wrak, odzyskaj to, co jeszcze może mówić, i dowiedz się, dlaczego ratunek może cię usłyszeć długo przed tym, zanim zdoła dotrzeć.
+HECTON-8 nie zaczyna jako martwa ruina. Zaczyna jako miejsce warte międzygwiezdnej odległości: jasne półki photic, twarda niebieska woda, kości kolonii ciśnieniowej i płycizny, gdzie stare maszyny widać przez żywy ocean. Pierwszą obietnicą jest piękno. Pierwszym zagrożeniem jest to, że piękno już wyceniono.
 
-## Scanner
+Grywalna przesłanka zaczyna się od Maraudera pod presją kontraktu, nie turysty, wybranego dziedzica ani rodzinnego mściciela. Schodzisz, bo dług, ryzyko blacklist i prawo salvage Aegir czynią pracę możliwą i niebezpieczną naraz. Drop idzie źle. Ocean nie dba, czy kontrakt był uczciwy. Pierwsze godziny są praktyczne: schron, pompy, uszczelki, tlen, narzędzia, sygnał. Historia wchodzi przez przedmioty, które nadal mają właścicieli.
 
-Zgoda na publiczny primer: najpierw pokazać księżyc jako piękny. Nie sprzedawać oceanu przez ukrywanie zbrodni.
-
-## Terminal
-
-PUBLICZNY PRIMER / BEZ SPOILERÓW
-dozwolone: oceaniczny księżyc Aegir, jasne półki, zatopiona kolonia przemysłowa, powrót Maraudera po salvage, ruiny Deep Reach
-zablokowane: końcowa trasa payload, rozwiązanie Atlas, konsekwencje odbiorcy zakończenia
-uwaga redakcyjna: najpierw piękno, potem dowód, żadnej fałszywej obietnicy ratunku.
-
-## Audio
-
-Płytka woda nie jest maską. To jest to, co niemal zdołali zbudować, zanim głębia zachowała rachunki.
-
-## Field Note
-
-Najpierw sprzedaj ocean. Potem niech rdza, tagi i stemple tras dowiodą, że ocean nie jest niewinny.
+To publiczna twarz HECTON-8: przetrwanie oceaniczne z przemysłową pamięcią. Deep Reach zbudowało tu trasy ciśnienia i habitacje pracowników. Black Keel może odpowiedzieć z orbity, ale nie usunie dystansu, pogody ani prawa opieki. Księżyc jest dość piękny, by strata miała znaczenie, i dość udokumentowany, by każdy znak stał się dowodem.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Presión contractual de deuda y lista negra"
+title: "Presión de Contrato de Blacklist por Deuda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Presión contractual de deuda y lista negra
+# Presión de Contrato de Blacklist por Deuda
 
-HECTON-8 enmarca a su protagonista mediante economía de frontera, no destino. Deuda, listas negras, custodia de fondo de reclamaciones, crédito de oxígeno, acceso a literas y viejas credenciales de Deep Reach hacen que el contrato de salvamento sea coercitivo sin volver indefenso al jugador.
+La Presión de Contrato de Blacklist por Deuda explica por qué un antiguo trabajador capaz de Deep Reach se convierte en Marauder en HECTON-8. El contrato no necesita secuestro. Necesita una blacklist, un libro de berth, oxygen credit y una ventana de ruta que no espera.
 
-## Scanner
-
-Aviso de gravamen ligado a custodia de Black Keel. Negarse sigue siendo legal, pero deja en tierra: sin litera, sin crédito de oxígeno limpio, sin ventana de ruta fuera de Aegir.
-
-## Terminal
-
-ACEPTACIÓN DE RECLAMACIÓN / VENTANA DE ALIVIO DE LISTA NEGRA
-estado del contratista: Marauder atado por deuda
-transportista: custodia de fondo de reclamaciones Black Keel
-términos de alivio: masa recuperable, prueba de custodia, cumplimiento del receptor
-estado de fallo: lista negra activa; acceso a litera denegado; apoyo de oxígeno convertido en servicio facturable.
-
-## Audio
-
-No fue un secuestro. Fue la clase de elección que la frontera vende como libertad: firma, bucea, o quédate limpio en el papel y atrapado en la práctica.
-
-## Field Note
-
-El gravamen no apuntó un arma. Apuntó a la factura de aire, la lista de literas y la próxima ventana de ruta.
+Black Keel ofrece trabajo dentro de esa presión. Aceptar el claim le da al operador una ruta de vuelta al movimiento, pero cada parte de la ruta se mide: recoverable mass, custody proof, receiver compliance, debt relief. Rechazar mantiene las manos limpias sobre papel mientras las rutas prácticas se cierran. Esa es la crueldad del contrato: deja una elección y encarece un lado hasta que apenas lo es.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/es_ES. -->

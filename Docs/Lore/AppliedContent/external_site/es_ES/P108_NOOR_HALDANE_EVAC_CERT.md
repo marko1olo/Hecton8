@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Noor Haldane Evac Cert"
+title: "Noor Haldane: certificado de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Noor Haldane Evac Cert
+# Noor Haldane: certificado de evacuación
 
-ES LOC HOLD: Noor Haldane's evacuation certificate shows a legal hold that reads defensible on paper and deadly inside a flooded room.
+Noor Haldane: certificado de evacuación es un artículo de evidencia de Deep Reach sobre el cumplimiento como objeto letal. Haldane no es una villana que grita. Es la firma de asesoría que mantiene la evacuación defendible legalmente mientras la ruta física falla.
 
-## Scanner
+Su retención está hecha de requisitos plausibles: cuarentena presión-biológica, custodia del transportista, revisión externa de ruta, aceptación portuaria posterior, cadena de responsabilidad. Ninguna palabra es absurda. Ese es el punto. El sistema puede tener razón dentro de su propio marco y aun así matar esperando.
 
-ES LOC HOLD: Certification hold. N. Haldane kept the route legal while the route died.
-
-## Terminal
-
-ES LOC HOLD: HALDANE, N. Evacuation Certification Counsel. Release denied until pressure-biological quarantine and carrier custody requirements clear external review.
-
-## Audio
-
-ES LOC HOLD: The door was not locked by fear. It was locked by compliance.
-
-## Field Note
-
-ES LOC HOLD: This is the paper signature players should hate.
+El artículo da a los jugadores una forma de leer puertas viejas de la colonia y paneles de ruta. Un camino de evacuación cerrado no es solo una máquina rota. Puede ser una decisión legal todavía esperando revisión. El noir de HECTON-8 nace de esa demora: nadie tiene que decir «que mueran» si el certificado puede decir «todavía no» durante suficiente tiempo.
 
 <!-- External Site; generated from P108_NOOR_HALDANE_EVAC_CERT/es_ES. -->

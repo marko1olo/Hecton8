@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "蓝债压力史指南"
+title: "蓝债压力历史指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 蓝债压力史指南
+# 蓝债压力历史指南
 
-blue debt 是裹在危险 substrate 外面的合同语言。Pressure history、custody marks 和 signal drift 决定它会成为干净付款、Atlas leverage，还是 Deep Reach 回来的理由。
+蓝债是缠在危险基质外的合同语言。压力历史、托管标记和信号漂移决定它会成为干净付款、Atlas的杠杆，还是Deep Reach重新索回沉没权益的动机。
 
 ## Scanner
 
-blue debt 样本已标记。export 前核验 pressure history、containment stage 和 signal drift。
+蓝债样本已标记。外运前核对压力历史、封存阶段、托管链和信号漂移。
 
 ## Terminal
 
-MARAUDER NOTE: blue debt 是打捞者对 Xenon-Omega-bearing pressure-stable substrate 的黑话。它有价值，是因为 extreme computation 和 energy isolation 喜欢它，不是因为它发光。
+掠夺者备注：蓝债是含Xenon-Omega压力稳定基质的salvage黑话。它值钱不是因为会发光，而是因为极端计算和能量隔离需要它。
 
 ## Audio
 
-blue debt 是人们在账单到来后给它起的名字。
+账单抵达以后，人们才叫它蓝债。
 
 ## Field Note
 
-颜色不是 grade。clean custody 的安静容器会付款；会唱的容器会给你买来 drone wake。
+颜色不是等级。托管干净、安静的容器会付款；会唱的容器会替你买来无人机尾迹。
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/zh_CN. -->

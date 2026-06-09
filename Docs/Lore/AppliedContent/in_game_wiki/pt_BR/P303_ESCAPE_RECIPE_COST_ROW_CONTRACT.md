@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Escape Recipe Cost Boundary"
+title: "Limite de Custo da Receita de Escape"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Escape Recipe Cost Boundary
+# Limite de Custo da Receita de Escape
 
-PT LOC HOLD: Escape Recipe Cost Boundary keeps the exit chain mechanical rather than arbitrary quest gating.
+O limite mantém a cadeia de saída mecânica, não arbitrária. Toda peça de subida tem histórico de pressão, dono e requisitos de prova, então escapar parece reparo sob lei, não tokens de missão num menu.
 
 ## Scanner
 
-PT LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+A linha da receita liga classe de componente, tier de pressão, prova de rota e estado de autoridade.
 
 ## Terminal
 
-PT LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: custos qualificados precisam nomear relé, selo, orientação, energia de subida, handshake legal, autoridade de payload e risco do receptor. O caminho para cima tem peças; as peças têm donos.
 
 ## Audio
 
-PT LOC HOLD: The way up has parts. The parts have owners.
+O caminho para cima tem peças. As peças têm donos.
 
 ## Field Note
 
-PT LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Faixas de pressão vêm de regras de contenção; custos exatos pertencem às tabelas de receita.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/pt_BR. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Relay Fragment"
+title: "شظية مرحّل الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Relay Fragment
+# شظية مرحّل الحجر
 
-AR LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+تحدد شظية مرحّل الحجر الحافة المرّة للنجاة في HECTON-8. المكان لا يدور فقط حول الهروب من ضغط الماء؛ بل حول الهروب من السجلات وسلاسل الحجز ومطالبات الملكية التي تنجو من الطوفان. تعطي الشظية للنهايات شكلا أقسى: يمكن انتشال شخص من المحيط من دون أن يصبح حرا.
 
 ## Scanner
 
-AR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+حزمة المرحّل نفسها توافق على الاستخراج وترفض الإفراج. المحيط يترك الجسد قبل أن تترك المستعمرة الشخص.
 
 ## Terminal
 
-AR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+حجز المرحّل QRF-17 / الاستخراج: مقبول / الإفراج: مرفوض / الأسباب: حيازة العينة غير محسومة، مراجعة الهواء قديمة، نزاع المطالب نشط، صفة الشاهد مؤقتة.
 
 ## Audio
 
-AR LOC HOLD: You are out of the water. You are not out of custody.
+حجز مرحّل. الاستخراج مقبول. الإفراج مرفوض. أنت خارج الماء، لا خارج الحجز.
 
 ## Field Note
 
-AR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+ختمان: الجسد مستعاد، الشخص محتجز. مراجعة الهواء أقدم من إيصال الإنقاذ؛ نزاع المطالب لا يزال مفتوحا.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/ar_SA. -->

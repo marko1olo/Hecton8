@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "掠夺者档案持久性"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# 掠夺者档案持久性
 
-CN LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+掠夺者档案持久性定义了HECTON-8的重复游玩契约：玩家继承的是语境，不是力量。档案让后续尝试更快读懂旧错误，更早识别合同陷阱，并理解哪些结局仍不完整，同时不会把记忆变成破坏生存压力的机械优势。
 
 ## Scanner
 
-CN LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+档案卷轴。你保留的是知识，不是超能力。
 
 ## Terminal
 
-CN LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+档案持久项：结局记录、已发现合同类型、传闻族群、证据类别、路线警告以及公开账本后果保留。装备强度、世界真相和局部压力状态按世界种子重置。
 
 ## Audio
 
-CN LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+下一轮开始时，伤痕在文件里，不在潜服肌肉里。
 
 ## Field Note
 
-CN LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+档案记住证据和警告；它不会让压力变得仁慈。
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/zh_CN. -->

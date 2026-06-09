@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Keelmark损失柜台"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Keelmark损失柜台
 
-CN LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark是算术房间。它把灾难翻译成可以投保、争议、出售或忽略的损失类别。它的危险不在戏剧化残酷，而在于能平静地把一个人藏进unrecoverable exposure这样的类别里。
 
 ## Scanner
 
-CN LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+发现损失表：一列给设备，一列给劳工，一列给不方便的证词。
 
 ## Terminal
 
-CN LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+KEELMARK损失柜台：保险侧分诊在任何公开声明点名死者之前，先分配货物损失、栖居损失、劳动力损伤、证人暴露和可回收材料类别。
 
 ## Audio
 
-CN LOC HOLD: The ledger is dry because the room was not.
+他们先数失踪，再数姓名。
 
 ## Field Note
 
-CN LOC HOLD: A loss category is a grave with better stationery.
+损失柜台不会哀悼。它决定哪种缺席可以开票。
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/zh_CN. -->

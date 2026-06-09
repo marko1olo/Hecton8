@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Authority Last Check"
+title: "载荷权限最终检查"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Authority Last Check
+# 载荷权限最终检查
 
-ZH LOC HOLD: HECTON-8's ending is not whether the player survives. It is who receives the proof and what that receiver is allowed to do with it.
+HECTON-8 的结局不只是玩家是否生还。它是谁接收证据，以及证人离开后该接收者被允许对海洋做什么。
 
 ## Scanner
 
-ZH LOC HOLD: Payload check: receiver changes meaning, not only reward.
+载荷检查：接收器选择改变所有权，不只是奖励。
 
 ## Terminal
 
-ZH LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK：选择接收器、质量、证据监管、生态后果和返回后责任。接收器选择定义离开后谁可以根据证据行动。
 
 ## Audio
 
-ZH LOC HOLD: What leaves will own what remains.
+离开的东西将拥有留下的东西。
 
 ## Field Note
 
-ZH LOC HOLD: Use immediately before irreversible ending route selection.
+用于不可逆结局路线选择之前。
 
 <!-- External Site; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/zh_CN. -->

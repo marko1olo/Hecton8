@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protocolo de ventana de recuperación orbital"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Orbital Recovery Window Protocol
+# Protocolo de ventana de recuperación orbital
 
-ES LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+El Protocolo de ventana de recuperación orbital ancla el bucle de escape de HECTON-8 en astronomía local e ingeniería de sistemas. El jugador no está varado porque la historia lo diga. Está varado porque la cizalla de Aegir, la interferencia magnética, la cadena de ascenso dañada y el estado legal del receptor solo se alinean en ventanas estrechas. El rescate se convierte en una ruta que construir, no en un botón que pulsar.
 
 ## Scanner
 
-ES LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel está lo bastante cerca para oírte y demasiado condicionado para atraparte cuando lo pidas. Aegir solo abre ventanas de recuperación estrechas.
 
 ## Terminal
 
-ES LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+VENTANA DE RECUPERACIÓN / el receptor Black Keel acepta un rated ascent object solo con bajo storm-top shear, ruido magnético de Aegir reducido, guidance core verificado, quarantine handshake coincidente y receiver custody state. La deriva de ventana invalida el launch manual.
 
 ## Audio
 
-ES LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+La nave está lo bastante cerca para importar y demasiado lejos para salvarte rápido.
 
 ## Field Note
 
-ES LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Para temporizadores de ruta, UI del carrier y explicación de falsa salida: cizalla de tormenta, ruido magnético, geometría de ascenso, handshake de cuarentena.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/es_ES. -->

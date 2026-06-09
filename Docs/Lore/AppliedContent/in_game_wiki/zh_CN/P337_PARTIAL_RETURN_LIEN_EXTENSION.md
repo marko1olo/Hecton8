@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Partial Return Lien Extension"
+title: "部分返回留置权延长"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Partial Return Lien Extension
+# 部分返回留置权延长
 
-ZH LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+部分返回留置权延长把重玩持续性锁定为知识，而不是装备强度。玩家能返回，是因为档案和债务改变了，不是因为 HECTON-8 变简单了。
 
 ## Scanner
 
-ZH LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+返回在延长留置权下获准。知识标记保留；装备库存被隔离并剥离。
 
 ## Terminal
 
-ZH LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+PARTIAL RETURN 命令：在延长留置权、修订风暴窗口和保留知识档案下，允许同 seed 重入。实体库存由监管隔离重置；工具在证据审查结束前仍属载舰财产。
 
 ## Audio
 
-ZH LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+路线记得你证明过什么。海洋留下其余的一切。
 
 ## Field Note
 
-ZH LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+重入记录：同 seed 返回携带知识、债务压力、风暴变化和监管重置，而不是继承装备。
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/zh_CN. -->

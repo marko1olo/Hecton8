@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Atlas Basin Payload Act"
+title: "Porte payload du bassin Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Atlas Basin Payload Act
+# Porte payload du bassin Atlas
 
-FR LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+Le bassin Atlas est l'endroit où la route cesse de demander ce qui s'est passé et demande qui reçoit le paquet utilisable. Chaîne de preuves, vecteur de bassin, classe salvage et proof hash ne peuvent pas tous rester intacts. Il faut choisir un récepteur, le refuser ou le remplacer par une retenue locale.
 
-## Scanner
-
-FR LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-FR LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-FR LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-FR LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Voilà la pression finale: aucune route ne nettoie la scène. La vente de coordonnées paie et expose le bassin. La section coupe les retours et tue une structure utile. La quarantaine préserve et détient. Le registre public publie sans carte. Blind return refuse tout le monde et risque de perdre le paquet. La campagne se termine par la garde, pas par le réconfort.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/fr_FR. -->

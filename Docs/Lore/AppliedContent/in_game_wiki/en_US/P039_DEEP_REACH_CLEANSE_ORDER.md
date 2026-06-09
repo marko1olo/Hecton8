@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Cleanse Order"
+title: "Deep Reach Live Cleanup Order"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Deep Reach Cleanse Order
+# Deep Reach Live Cleanup Order
 
-This order reframes Deep Reach as a current antagonist: not a historical villain only, but an active cleanup and extraction pressure.
+Deep Reach Live Cleanup Order is a current work order, not an archive note. It shows resource custody, Atlas access and proof deletion being scheduled through proxy contractors after the evacuation hold.
 
 ## Scanner
 
-Order stack recovered: resource, Atlas access, evidence deletion. Survivor recovery ranks below asset control.
+Live order recovered: seize certified samples, open Atlas channel, quarantine survivors, delete liability proof.
 
 ## Terminal
 
-Proxy directive: mark contractor deniable. Preserve samples. Open Atlas channel if local risk acceptable. Purge liability corpus.
+Proxy work order DR-CLEANSE-19 remains active. Deniable contractors get sample custody first, Atlas access second, witness recovery last. If Black Keel or the site ledger exposes liability, the purge queue moves proof archives to cold delete and retags field deaths as weather loss.
 
 ## Audio
 
-Deep Reach is not chasing you. It is using you as a cheaper probe.
+That voice is not rescue traffic. It is a cleanup bid.
 
 ## Field Note
 
-They did not come back to apologize.
+The apology field is blank.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/en_US. -->

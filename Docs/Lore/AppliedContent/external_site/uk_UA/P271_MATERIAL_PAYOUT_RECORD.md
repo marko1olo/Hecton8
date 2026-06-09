@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Material Payout Record"
+title: "Запис матеріальної виплати"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Material Payout Record
+# Запис матеріальної виплати
 
-UA LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Цей запис виплати важливий полями квитанції: що купив одержувач, чого немає в додатку, які координати прийнято, який зразок пішов, як змінилася застава, які імена відсутні й який зворотний шлях отримала Deep Reach.
 
 ## Scanner
 
-UA LOC HOLD: Paid. Not cleared.
+ЗАПИС МАТЕРІАЛЬНОЇ ВИПЛАТИ // Keelmark/Recovery Compliance прийняла координати басейну й зразок синього боргу. Заставу оператора знижено; докази щодо робітників лишилися поза нотаріальним ланцюгом.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+ЗАПИС ФІНАЛУ / МАТЕРІАЛЬНА ВИПЛАТА
+Одержувач: Keelmark/Recovery Compliance.
+Прийнято: координати басейну Atlas, зразок синього боргу, хеш зберігання перевізника.
+Не додано: нотаріальний свідчий пакет, реєстр імен робітників, аудит рятувальної маси.
+Вплив на заставу: знижено або закрито за контрактною таблицею.
+Вплив для Deep Reach: чистіший зворотний шлях до HECTON-8.
+Відома втрата: доказ можна оцінити грошима й не вислухати.
 
 ## Audio
 
-UA LOC HOLD: The receipt is clean because it ignores the room.
+Реєстр заплатив за карту могили. Кімнату він не відкрив.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Квитанція закриває графу застави, а не кімнату. Імена, які не потрапили до зберігання, після виплати не з'являються.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/uk_UA. -->

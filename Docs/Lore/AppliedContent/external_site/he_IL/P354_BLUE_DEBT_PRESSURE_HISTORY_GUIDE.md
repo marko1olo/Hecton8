@@ -19,22 +19,8 @@ localization_flags: 1
 
 # מדריך היסטוריית לחץ של חוב כחול
 
-Xenon-Omega, שנקרא blue debt בפי salvagers, קושר את הגיאולוגיה של HECTON-8 ל-computation, debt law ולסיבה ש-Deep Reach עדיין רוצה להחזיר תביעה שטבעה.
+חוב כחול אינו אבן חן ואינו עפרת קסם. זה שם השטח למצע יציב לחץ הנושא Xenon-Omega: מבנה מינרלי שמקבל ערך רק לאחר שהאוקיינוס לחץ, חימם, קירר וצילק אותו חשמלית בסדר הנכון. דגימה בוהקת יכולה להיות חסרת ערך. גוש עמום ואטום יכול לשלם חודש חמצן אם היסטוריית הלחץ שלו נקייה וסטיית האות שלו שקטה.
 
-## Scanner
-
-דגימת blue debt סומנה. אמת pressure history, containment stage ו-signal drift לפני export.
-
-## Terminal
-
-MARAUDER NOTE: blue debt הוא סלנג salvage ל-Xenon-Omega-bearing pressure-stable substrate. הוא יקר כי extreme computation ו-energy isolation אוהבים אותו, לא כי הוא זוהר.
-
-## Audio
-
-חוב כחול הוא השם שאנשים נותנים לו אחרי שהחשבונית מגיעה.
-
-## Field Note
-
-צבע אינו grade. מיכל שקט עם custody נקייה משלם; מיכל שר מזמין לך drone wake.
+לכן כל מציאת חוב כחול נעשית מיד חומר משפטי. Atlas רוצה את הסטייה. Deep Reach רוצה את היסטוריית התביעה. צוותי salvage רוצים מכל שאינו שר חזק מספיק להעיר רחפנים. המשאב מסוכן כי הוא נמצא בצומת של גאולוגיה, חישוב, משמורת וחוב. הוא מוכיח ש-HECTON-8 מעולם לא הייתה רק מושבה שטבעה. היא הייתה ספר חשבונות קבור, והלחץ כתב בו את המספרים.
 
 <!-- External Site; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/he_IL. -->

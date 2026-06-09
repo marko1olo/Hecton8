@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vertragingsrecord Evacuatiewachtrij"
+title: "Vertragingsrecord evacuatiewachtrij"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vertragingsrecord Evacuatiewachtrij
+# Vertragingsrecord evacuatiewachtrij
 
-Dit bewijs maakt van evacuatie een volgorde. De poort was niet alleen door water afgesneden; zij bleef in review terwijl drukalarmen bezette gangen bereikten. Het lege getuigenveld telt omdat het systeem menselijke bevestiging vroeg nadat mensen het paneel al niet meer konden bereiken.
+Dit record maakt van evacuatie geen ontbrekende uitkomst, maar een geordende vertraging. Eerst alarm, dan beoordeling, dan afdichtoverschrijding, dan te late vrijgave. Deep Reach kan de evacuatie onvolledig noemen; de wachtrijklok toont een poort die door procedure gesloten bleef nadat corridordruk de veilige lijn passeerde.
 
 ## Scanner
 
-Wachtrijklok geborgen. De vrijgavepoort bleef vergrendeld nadat drukalarmen van prognose naar corridor gingen.
+Wachtrijklok geborgen. De vrijgavepoort bleef in handmatige beoordeling nadat drukalarmen bezette corridorsecties bereikten.
 
 ## Terminal
 
-EVAC QUEUE // WITNESS SLOT EMPTY. Handmatige bevestiging ontbreekt. Quarantainereview open. Routendruk overschreed sealklasse voordat autorisatie rond was.
+EVAC-WACHTRIJ // DOK E-7. Handmatige bevestiging leeg. Quarantainecommissie in behandeling. Afdichtklasse overschreden voor vrijgave. Poortslot reageerde op wachtrijstatus, niet op waterschade.
 
 ## Audio
 
-Ze faalden niet om iedereen te redden. Ze wachtten tot iemand redden moeilijker werd.
+Ze wachtten op goedkeuring terwijl de route lucht verloor.
 
 ## Field Note
 
-Marauder-notitie: een gesloten poort met een open veld is geen ongeluk. Het is een beslissing die op handtekening wacht.
+Plunderaarsnotitie: een gesloten poort met leeg bevestigingsveld is een besluit dat wacht op een naam.
 
 <!-- In-Game Wiki; generated from P372_EVACUATION_QUEUE_DELAY_PROOF/nl_NL. -->

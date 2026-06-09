@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Ran-Aegir Distance Model
 
-Ran-Aegir distance is the number that converts isolation into physics. Ten-light-year-class reach is close enough for probes, freight, old law, and corporate appetite, but too far for mercy to arrive on a human breathing schedule. HECTON-8 uses that gap as pressure: messages move faster than ships, claims move faster than people, and a flooded room dies before an inner-world answer becomes relevant. The distance should feel small to an astronomer and enormous to anyone waiting under a leaking hatch.
+The Ran-Aegir distance model is the quiet foundation of HECTON-8's pressure. Aegir sits in the cruel middle range: near enough that corporations can justify route plates, seed hardware, cargo liens, remote notaries, and a permanent extraction colony; far enough that nobody can improvise mercy when a pressure door fails.
+
+That distinction matters. Messages, legal claims, carrier schedules, rescue vessels, and human bodies do not share one clock. A warning can move while the ship that should answer it is still locked behind fuel, window, mass, and ownership approval. Deep Reach learned to use that gap. The colony lived inside it.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/en_US. -->

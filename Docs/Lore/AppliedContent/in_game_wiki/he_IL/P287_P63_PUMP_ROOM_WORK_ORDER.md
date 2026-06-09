@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: P-63 Pump Room Work Order"
+title: "פקודת עבודה חדר משאבות P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: P-63 Pump Room Work Order
+# פקודת עבודה חדר משאבות P-63
 
-HE LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+פקודת עבודה חדר משאבות P-63 גורמת לתיקון הראשון להרגיש כמו נוהל מושבה שעבר בירושה, לא טקסט הדרכה. היא רטובה, מעשית ומפוחדת בדרכים קטנות. הפקודה אומרת לנקות sump, לטלא cold seam, להמתין ל-return pinger ולחתוך fused latch רק אחרי שהלחץ מחזיק. הרצף הזה מלמד איך עובדי HECTON-8 חשבו: מים קודם, איטום אחר כך, קול לפני כוח, אמון בנתיב אחרון. ראשי התיבות החסרים של המפקח והעיגול הכפול סביב שורת החיתוך גורמים לנייר להרגיש משומש, לא כתוב בשביל השחקן. זה ארטיפקט קטן, אבל הוא נושא את כל לולאת המשחק בזעיר אנפין: קרא את החדר, החזר מערכת, אל תבטח בחיתוך הקל.
 
 ## Scanner
 
-HE LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+התיקון הראשון נקרא כמו הרגל של מושבה: לשאוב, לאטום, להקשיב, לחתוך רק אם החדר מפסיק לשקר.
 
 ## Terminal
 
-HE LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: לנקות sump; לטלא cold seam; לאמת return pinger; לחתוך fused latch רק אחרי שהלחץ מחזיק; להדפיס gasket ממלאי מקומי; לסמן route safe אחרי שלושה חזרות acoustic return. ראשי התיבות של המפקח חסרים תחת כתם מים.
 
 ## Audio
 
-HE LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+משאבה קודם. איטום שני. אם זה שר, תפסיק לחתוך.
 
 ## Field Note
 
-HE LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+החצי התחתון של הלוח ספוג מים. שורת החיתוך עדיין קריאה כי מישהו הקיף אותה פעמיים וכתב אם זה שר, עצור.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/he_IL. -->

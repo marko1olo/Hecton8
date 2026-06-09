@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Pressure Bunk Shift Routine"
+title: "Rutinitas Ranjang Tekanan Giliran Kerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Pressure Bunk Shift Routine
+# Rutinitas Ranjang Tekanan Giliran Kerja
 
-ID LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+Pressure Bunk Shift Routine menunjukkan koloni tenggelam HECTON-8 lewat kebiasaan, bukan pengakuan. Slate baris pekerja mencatat nada bangun, pemeriksaan segel, catatan tekanan, token air-makan, kustodi alat, dan tugas turun. Di stasiun tanpa matahari terbit, daftar itu adalah pagi, gaji, peringatan medis, dan bukti pulang.
 
-## Scanner
+Kekuatan emosionalnya ada pada sikapnya yang tidak berpose. Ia tidak mengatakan seseorang berani. Ia mengatakan kunci pompa harus kembali sebelum makan. Ia mengatakan segel diperiksa pada 03:52. Ia mengatakan tidur dibagi mesin karena samudra tidak peduli apakah tubuh memahami jam.
 
-ID LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-ID LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-ID LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-ID LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Ikuti slate itu dan koloni menjadi terbaca. Nama yang sama bisa muncul sebagai ranjang, kunci, token air, cap rute, dan kepulangan yang terlewat. Itu bukan kekacauan. Itu sistem saraf permukiman tekanan, ditulis dalam tanda-tanda terkecil.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/id_ID. -->

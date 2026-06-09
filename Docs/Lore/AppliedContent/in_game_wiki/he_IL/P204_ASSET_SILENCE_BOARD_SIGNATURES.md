@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "חתימות Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# חתימות Asset Silence Board
 
-HE LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+רשומות Asset Silence Board יושבות בין ספר עובדים לדוח ציבורי. הן לא יוצרות את האובדן; הן מחליטות אילו חלקים ממנו יכולים לנוע. redaction vote יכול להשאיר load class, locker count ו-claim value גלויים בזמן שהוא משתיק שמות עדים ונספחי מסלול. לכן החתימות האלה שייכות ליד לוקרים, redaction cards ו-packet mute flags. החתימה של Brigit Senn לא הופכת אותה למפקדת נסתרת. היא מזהה את המשרד התחתון שהמיר עובדות אנושיות הניתנות לשחזור לקטגוריות asset-risk אחרי relay review.
 
 ## Scanner
 
-HE LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+כרטיס redaction vote שוחזר: שדה שם עובד הושתק, קטגוריית asset-risk עדיין נראית, ספירת לוקרים נשמרה. נראות חבילה דורשת custody approval.
 
 ## Terminal
 
-HE LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: move witness-name attachment to asset-risk silence category after relay review. Retain load class, locker count and claim value. Release requires custody owner approval.
 
 ## Audio
 
-HE LOC HOLD: Erase the route and the body becomes cargo math.
+ה-board שמר את ספירת הארגזים. הם חתכו את השמות.
 
 ## Field Note
 
-HE LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+השם נעלם, תג הלוקר עדיין שם. Asset Silence Board הצביע על נראות החבילה, לא על קיום העובד.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/he_IL. -->

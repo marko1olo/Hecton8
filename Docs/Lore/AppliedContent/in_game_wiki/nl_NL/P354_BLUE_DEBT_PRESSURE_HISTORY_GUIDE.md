@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Gids voor drukgeschiedenis van blue debt"
+title: "Gids voor drukgeschiedenis van blauwe schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gids voor drukgeschiedenis van blue debt
+# Gids voor drukgeschiedenis van blauwe schuld
 
-Blue debt is contracttaal rond een gevaarlijk substrate. Pressure history, custody marks en signal drift bepalen of het schone uitbetaling, Atlas-hefboom of Deep Reach-terugkeermotief wordt.
+Blauwe schuld is contracttaal rond een gevaarlijk substraat. Drukgeschiedenis, custodymarkeringen en signaaldrift bepalen of het schone uitbetaling, Atlas-hefboom of Deep Reach-terugkeermotief wordt.
 
 ## Scanner
 
-Blue debt-monster gelabeld. Controleer pressure history, containment stage en signal drift vóór export.
+Blauwe-schuldmonster getagd. Controleer drukgeschiedenis, containmentfase, bewaarketen en signaaldrift voor export.
 
 ## Terminal
 
-MARAUDER NOTE: blue debt is salvage-slang voor Xenon-Omega-bearing pressure-stable substrate. Het is waardevol omdat extreme computation en energy isolation het willen, niet omdat het gloeit.
+MARAUDERNOTITIE: blauwe schuld is salvage-slang voor Xenon-Omega-dragend drukstabiel substraat. Het is waardevol omdat extreme berekening en energie-isolatie het willen, niet omdat het gloeit.
 
 ## Audio
 
-Blue debt is hoe mensen het noemen nadat de factuur arriveert.
+Blauwe schuld heet het nadat de factuur aankomt.
 
 ## Field Note
 
-Kleur is geen grade. Een stille container met schone custody betaalt; een zingende koopt je een drone wake.
+Kleur is geen klasse. Een stille container met schone custody betaalt; een zingende koopt een dronespoor.
 
 <!-- In-Game Wiki; generated from P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE/nl_NL. -->

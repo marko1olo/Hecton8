@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "دليل عملية حقل forge-vent"
+title: "دليل عملية حقلية للمطرقة الحرارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# دليل عملية حقل forge-vent
+# دليل عملية حقلية للمطرقة الحرارية
 
-يربط دليل عملية حقل forge-vent قيمة المورد بطريقة التعامل معه في الميدان: المهم ليس فقط ما عثر عليه، بل كيف تسمح له pressure وcooling بالنجاة حتى recovery.
+المطرقة الحرارية ليست صندوق كنز على القاع. إنها مفاعل بطيء من تدفق seep ساخن، وكثافة محلول ملحي، وغذاء معدني مسحوق، وضغط لا يغفر العجلة. غالبا ما تقع المادة المفيدة بين ترسب طبيعي ودفعة صناعية تالفة: حبيبات سيراميك تنمو في حناجر معدنية، وسلائف مانع تسرب تخبز داخل الشقوق، وأغشية مشحونة لا تبقى مستقرة إلا إذا حدث التبريد بالترتيب الصحيح.
 
-## Scanner
-
-كيمياء vent-forge نشطة. تتبع الجودة pressure history وheat pulse والتبريد البطيء، لا لمعان العينة.
-
-## Terminal
-
-FIELD GUIDE: تطهو vent forges الـ sulfides وnoble-gas pockets وceramics وsealant precursors. مسار العينة عبر heat وbrine وpressure أهم من اسمها.
-
-## Audio
-
-لم يصنع vent خاما. صنع عملية قطعتها أنت.
-
-## Field Note
-
-لا ترفع دفعة جديدة مباشرة إلى ماء بارد. دع vent ينهي anneal وإلا ستتشقق shell.
+لذلك يصبح التعامل الميداني جزءا من المورد. اسحب دفعة جديدة إلى ماء بارد فتتشقق القشرة. نفّس الحرارة بسرعة فيتحول العينة النظيفة إلى مسحوق. انتظر طويلا فتكتب الفتحة كيمياء أخرى فوق الطبقة المطلوبة. تقدّر فرق salvage المطارق الحرارية لأنها تجعل HECTON-8 يبدو كوكبا لا يزال يعمل بنفسه: المحيط لا يخفي المواد فقط، بل ما زال يصنعها.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/ar_SA. -->

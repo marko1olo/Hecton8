@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Legal Insurance Automated Ping"
+title: "פינג משפטי-ביטוחי אוטומטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Legal Insurance Automated Ping
+# פינג משפטי-ביטוחי אוטומטי
 
-HE LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+הפינג המשפטי-ביטוחי האוטומטי הופך לחץ תאגידי לניתן למשחק מפני שהוא מגיע כהודעה קטנה, מועילה ושנואה. המערכת אינה מבזבזת מילים על השאלה אם השחקן חי. היא מבקשת mass class, contamination state, coordinate proof, claim priority ו-receiver custody acceptance. זה עושה שתי עבודות בבת אחת. מכנית, זה אומר לשחקן אילו קטגוריות חשובות לשחזור. נרטיבית, זה מראה לו היכן הוא עומד בכלכלת החילוץ: החיים אינם מתעלמים מהם, אבל הם לא ראשונים בתור. הפינג צריך להיות נדיר מספיק כדי לעקוץ. אם הוא חוזר ללא הרף, הוא הופך לרעש. אם הוא מגיע בספי נתיב, אחרי שהשחקן סיכן את עצמו לשאת ראיה או sample payload, הוא הופך ליד תאגידית נקייה המושיטה עצמה דרך הרדיו כדי לשקול את הגוף לפני הצלתו.
 
 ## Scanner
 
-HE LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+התקבל פינג אוטומטי. שפת החילוץ הוחלפה בהוכחת מקלט, סיווג מסה ומצב משמורת.
 
 ## Terminal
 
-HE LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / נדרש לפני recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-HE LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+הדבר הראשון שהם שואלים אינו אם אתה חי. הוא מה אתה נושא.
 
 ## Field Note
 
-HE LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+מועמד bark קצר בספי נתיב. להשתמש במשורה; האכזריות היא במה שהמערכת שואלת קודם.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/he_IL. -->

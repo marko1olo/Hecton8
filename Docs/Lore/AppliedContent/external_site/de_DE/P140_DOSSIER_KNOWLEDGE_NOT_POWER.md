@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Dossierwissen, keine Macht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Dossierwissen, keine Macht
 
-DE LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Dossierwissen, keine Macht ist die Replay-Regel, die HECTON-8 lang, gefährlich und erzählerisch ehrlich hält.
 
 ## Scanner
 
-DE LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Kein geerbter Sauerstoff, Rumpfrating, Waffen, Inventar, Routenautorität oder magische Abkürzung. Das Dossier behält Warnungen, keine Muskeln.
 
 ## Terminal
 
-DE LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+HARTE GRENZE: Persistente Dossierdaten dürfen Warnungen, Gerüchtefamilien, Claim-Varianten und Endkontext freischalten. Sie dürfen Ausrüstungsmacht, Ressourceninventar, Besitz der Weltwahrheit oder Routenerlaubnis nicht bewahren.
 
 ## Audio
 
-DE LOC HOLD: Memory does not reinforce a cracked hull.
+Erinnerung verstärkt keinen gerissenen Rumpf.
 
 ## Field Note
 
-DE LOC HOLD: The player can become wiser. The ocean should not become smaller.
+Der Spieler darf klüger werden. Der Ozean darf nicht kleiner werden.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/de_DE. -->

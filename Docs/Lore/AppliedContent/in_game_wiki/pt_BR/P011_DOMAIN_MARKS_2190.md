@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Marcas de domínio 2190
 
-Marcas de domínio mostram a esfera humana por objetos: placas, marcas de torque, códigos de custódia e permissões antigas. Cada marca prende uma porta, ferramenta ou carga a uma autoridade distante.
+Marcas de domínio são pequenas cicatrizes legais que fazem HECTON-8 parecer distante sem parecer primitiva. Um único suporte pode carregar gramática de segurança Sol Core, frase de carta Centauri, mordida de reparo Barnard Yards, hash de custódia Luyten e código de claim local Aegir. Nada disso é decoração. Cada marca diz quem certificou a peça, quem reparou, quem pode provar um pacote, quem segura a perda e quem vai brigar pelo salvage quando a sala alagar.
 
-A colônia é distante, não primitiva. Lei, indústria e dívida chegaram à água. Resgate ainda precisa de massa, nave e janela.
+O detalhe útil não é a lista de domínios, mas a pilha deles sobre metal cansado. Sol pode certificar um objeto que não consegue salvar. Barnard torna normal o trabalho de claims mortos. Luyten preserva custódia sem se importar com misericórdia. Aegir executa lei local suja sob papelada alheia. Quando um Marauder lê essas marcas, o oceano deixa de ser vazio. Autoridade humana chegou antes de calor humano.
 
 ## Scanner
 
-Marcas humanas misturadas: placa de segurança Sol, carimbo de ferramenta Barnard, rota de custódia Luyten e código de reivindicação Aegir no mesmo suporte corroído.
+Marcas humanas misturadas num suporte corroído: formato de segurança Sol Core, selo de carta Centauri, mordida de reparo Barnard, hash de custódia Luyten e código de claim Aegir.
 
 ## Terminal
 
-RECONCILIAÇÃO DE DOMÍNIO // Formato de segurança Sol Core aceito. Carimbo Barnard Yards válido. Custódia Luyten Junction anexada. Lei local Aegir substitui prioridade de recuperação após perda de descida.
+RECONCILIAÇÃO DE DOMÍNIO // Formato de segurança Sol Core aceito. Linguagem de carta Centauri presente. Autoridade de reparo Barnard Yards válida. Custódia Luyten Packet Ladder anexada. Lei local Aegir supera salvage aberto após perda de descida.
 
 ## Audio
 
-Este lugar não está além da civilização. É a civilização depois que a distância tirou suas partes quentes.
+A civilização chegou a esta sala. Veio primeiro como carimbos, depois como dívida, e só por último como ajuda.
 
 ## Field Note
 
-A humanidade ficou grande. O resgate ainda precisa viajar.
+A humanidade ficou larga. O resgate ainda precisa viajar.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/pt_BR. -->

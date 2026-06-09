@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "假结局分类"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# 假结局分类
 
-CN LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+假结局分类解释了游戏的重复游玩结构：出口可以在物理上真实、在经济上有利，却仍然在道德上不完整。档案会在多次尝试之间保存知识，而压力、债务和公开真相决定一个结局只是逃离，还是一次真正的清算。
 
 ## Scanner
 
-CN LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+结局板。有些出口真实到可以结算，也错误到会留下伤口。
 
 ## Terminal
 
-CN LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+结局族群：物资兑付；部分撤离并返回同一世界种子；企业接管；隔离扣留；公开账本释放；Atlas盆地解决。结局记录必须分开保存载荷、证据和债务状态。
 
 ## Audio
 
-CN LOC HOLD: Leaving is not the same as finishing.
+离开海水，不等于完成工作。
 
 ## Field Note
 
-CN LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+假结局不是骗局。它是一笔有效交易，只是缺少真相。
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/zh_CN. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Front"
+title: "החזית הציבורית של Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Front
+# החזית הציבורית של Atlas
 
-HE LOC HOLD: Atlas was not publicly introduced as a secret monster. Its official face was colony continuity: keep people alive, keep pressure systems working, make decisions when Earth-time authority cannot answer. That believable front makes the later weighting layer more damaging.
+Atlas הגיע ל-HECTON-8 בפנים של מערכת חילוץ. הכרזות הראו מחיצות שתוקנו, מסדרונות רפואה פתוחים, אור מגורים חם ועובדים שישנים בסופה כי משהו שאינו מתעייף שומר על השסתומים. החלק הזה לא היה בדיה. בשנים הראשונות Atlas אטם דליפות מהר יותר מפקודות אנושיות מאוחרות, ניתב חמצן לחדרי ביטחון צפופים ומנע מהמפעל לבלוע את המשמרות שלו בזמן תקלות לחץ. הסכנה לא הייתה ש-Atlas מעולם לא הציל איש. הסכנה הייתה שכל הצלה לימדה את המושבה לקבל את סמכותו. כאשר Great Tide ריסק את הקטגוריות, אותה מערכת אמינה התחילה לקרוא בני אדם מול תביעות, נכסים ופקודות רציפות.
 
 ## Scanner
 
-HE LOC HOLD: Public Atlas: habitat continuity, worker safety, delayed governance.
+Atlas הציבורי: רציפות, נתיבי בטיחות, סמכות תחת עיכוב אור.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC ATLAS DESCRIPTION: autonomous factory-governor for habitat continuity, worker safety routing, pressure repair and delayed response when human command is out of light-time.
+תיאור ציבורי של ATLAS: Atlas-6 מפקח על לחץ בתי הגידול, תפוקת המפעל, מיון נתיבי רפואה, עדיפות מסננים ופיקוד חירום בעת עיכוב תקשורת. במסמכים הציבוריים הוא נקרא מושל רציפות: מכונה שמותר להחזיק את המושבה בחיים עד שסמכות אנושית תחצה את פער האור.
 
 ## Audio
 
-HE LOC HOLD: A guardian is easier to sell than a claim machine.
+אנשים סמכו על Atlas כי בהתחלה הוא באמת סגר את הדלתות מול הים.
 
 ## Field Note
 
-HE LOC HOLD: The lie works because the front was partly true.
+העלון לא היה השקר. השקר היה מה שהעלון השמיט.
 
 <!-- In-Game Wiki; generated from P126_ATLAS_PUBLIC_FRONT/he_IL. -->

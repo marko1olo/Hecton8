@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "המרת אובדן לרציפות claim"
+title: "המרת אובדן עם רציפות תביעה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# המרת אובדן לרציפות claim
+# המרת אובדן עם רציפות תביעה
 
-שרשרת הראיות מסתיימת בהמרה. Deep Reach יכולה להודות בנזק ולשמור בעלות אם עובדים נעשים הפסדים, ראיה נעשית material custody, וה-claim נשאר חי. לכן השחקן לא נושא רק אמת. הוא נושא משהו שהמערכת יודעת לקנות.
+השרשרת מסתיימת בספר החשבונות מפני שהוא יכול לשרוד את כל השאר. עובדים הופכים לאובדן בלתי ניתן לשחזור, מודולים פגומים הופכים למשמורת חומר, והראיות נשארות קשורות לתביעה. מי שנושא את המסמכים האלה אינו נושא רגש. הוא נושא בעיה לכל מקבל שרוצה את התביעה בלי הגופות.
 
 ## Scanner
 
-חותמת שולחן הפסדים חולצה. ה-ledger שרד טוב יותר מהעובדים ששינה את שמם.
+חותמת שולחן אובדן חולצה. סטטוס עובדים מומר לבלתי ניתן לשחזור לפני שמשמורת הראיות יוצאת מן התביעה הפעילה.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. biological workforce הומרה ל-unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+אובדן KEELMARK // רציפות נשמרה. כוח עבודה ביולוגי הומר לאובדן בלתי ניתן לשחזור. משמורת חומר ומשמורת ראיות פעילות עד שיוך מקבל.
 
 ## Audio
 
-כאן אנשים נעשו עמודה נקייה.
+כאן שמות הפכו לעמודה נקייה.
 
 ## Field Note
 
-הערת בוזז: ledger יכול לזכור את המתים ועדיין לבזבז אותם.
+הערת בוזז: ספר חשבונות יכול לזכור את המתים ועדיין להוציא אותם.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/he_IL. -->

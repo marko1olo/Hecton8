@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Status Bukti Kebenaran Salvase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Status Bukti Kebenaran Salvase
 
-ID LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Bukti yang dipulihkan memberi HECTON-8 konspirasi yang terbakar pelan. Koloni ini diam bukan karena tidak terjadi apa-apa, melainkan karena setiap benda bukti punya nilai pasar, nilai liabilitas, dan nilai hukum. Kebenaran muncul lewat rute kustodi dan benda rusak, bukan lewat satu pengakuan yang terlalu nyaman.
 
 ## Scanner
 
-ID LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paket kotak hitam: kebenaran sampai meja klaim menyentuhnya.
 
 ## Terminal
 
-ID LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: salvase mentah secara default menjadi bahan klaim. Bukti publik membutuhkan hash sumber utuh, cap tekanan-waktu, paket saksi, notaris relay di luar kendali pengklaim, dan jalur kustodi yang bertahan dari hilangnya kapal, paparan brine, dan suntingan manual.
 
 ## Audio
 
-ID LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Mayat baru menjadi bukti setelah seseorang gagal salah mengarsipkannya.
 
 ## Field Note
 
-ID LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Fakta dari kedalaman hanya berbahaya jika saksi-saksinya tetap ada.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/id_ID. -->

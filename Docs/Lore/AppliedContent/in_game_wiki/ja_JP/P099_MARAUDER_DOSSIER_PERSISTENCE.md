@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "略奪者ドシエの永続性"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# 略奪者ドシエの永続性
 
-JP LOC HOLD: The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+略奪者ドシエは、サルベージの試行をまたいで残るキャンペーン記憶だ。結末、発見済みの契約種別、噂系統、証拠カテゴリ、航路警告、そしてプレイヤーが公開または隠蔽した結果を保持する。だがスーツの強さ、安全な圧力、掃除済みの部屋、優しい海は持ち越さない。知識は判断を変える。深度を無害にはしない。
 
 ## Scanner
 
-JP LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+ドシエスプール。残るのは知識であって、超能力ではない。
 
 ## Terminal
 
-JP LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+ドシエ永続項目: 結末記録、発見済み契約種別、噂系統、証拠カテゴリ、航路警告、公開台帳の影響を保持。装備出力、世界の真相、局所圧力状態はシードごとにリセット。
 
 ## Audio
 
-JP LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+次の潜行は、スーツの筋肉ではなくファイルの傷跡から始まる。
 
 ## Field Note
 
-JP LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+ドシエは証拠と警告を覚える。圧力を優しくするわけではない。
 
 <!-- In-Game Wiki; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/ja_JP. -->

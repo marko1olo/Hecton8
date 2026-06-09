@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Storm Window Rush Contract Seed"
+title: "Stormvenster Rush Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Storm Window Rush Contract Seed
+# Stormvenster Rush Contractseed
 
-NL LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Stormvenster Rush is een contractfamilie waarin weer en baan de eerste druksystemen worden. De route voegt geen geërfde macht toe; zij verkort veilige werktijd, vernauwt herstelgeometrie en straft slordige reparaties eerder.
 
 ## Scanner
 
-NL LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Contractseed: rushvenster. Hogere uitbetaling gebonden aan sluitende stormdekking, orbitale shuttertijd en minder reparatiespeling.
 
 ## Terminal
 
-NL LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: stormvenster gecomprimeerd, orbitale relaisshutter vijandig, uitbetalingsplafond omhoog, bathydrop-terugroep vroeger, reparatietolerantie lager.
 
 ## Audio
 
-NL LOC HOLD: This contract pays because it hates waiting.
+Dit contract betaalt omdat het venster sluit.
 
 ## Field Note
 
-NL LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Marauder-notitie: rushbetaling lijkt groter omdat het contract elke minuut twee keer rekent.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/nl_NL. -->

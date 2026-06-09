@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правила audio fragments"
+title: "Правила реквизита аудиофрагментов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правила audio fragments
+# Правила реквизита аудиофрагментов
 
-RU LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Правила реквизита аудиофрагментов определяют, как HECTON-8 использует голос, не затапливая мир монологами. Каждому аудиофрагменту нужны физический источник, состояние поврежденной расшифровки, отметка времени и противоречие. Голос не должен заменять environmental evidence; он должен точить ее, заставляя комнаты, предметы и маршрутные записи говорить вместе.
 
 ## Scanner
 
-Voice дорогой. Он должен доказать то, что комната тоже доказывает.
+Голос дорог. Он должен доказывать то, что комната тоже может доказать металлом, водой, временем или повреждением.
 
 ## Terminal
 
-AUDIO RULE: без free-floating monologues. Voice принадлежит hydrophone strip, suit recorder, terminal cache или black-box fragment.
+AUDIO RULE: никаких монологов в воздухе. Голос принадлежит гидрофонной ленте, костюмному регистратору, терминальному кэшу, ремонтной трубке или фрагменту черного ящика. Каждая воспроизводимая строка должна иметь источник, состояние поврежденной расшифровки, маршрутную отметку времени и одно противоречие, которое игрок может осмотреть.
 
 ## Audio
 
-Если комната не может доказать меня, режь линию.
+Если комната не может меня доказать, вырежи строку.
 
 ## Field Note
 
-RU LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Аудиофрагменту нужны предмет-источник, повреждение расшифровки, маршрутная отметка времени и одно физическое противоречие.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/ru_RU. -->

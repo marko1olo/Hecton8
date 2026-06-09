@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Вера Сато-Рен: зворотна дія"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Вера Сато-Рен: зворотна дія
 
-UA LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+«Вера Сато-Рен: зворотна дія» — міст між старою катастрофою Deep Reach і поточною кампанією гравця. Вона представляє Офіс відновлювальної відповідності у 2190 році, де Deep Reach уже не мусить стояти в кімнаті, щоб застосовувати силу. Він надсилає пакети зворотної дії.
 
-## Scanner
+Пакет вимагає координати, XO-доказ, стан доступу до Atlas і мовчання підрядника в межах вікна опіки. Форма важлива. Загроза — не промова. Загроза — час. Якщо payload можна відновити, Deep Reach може запропонувати порятунок, юридичне прикриття або доступ перевізника. Якщо ризик доказів зростає, та сама система може перетворити гравця на відповідальність.
 
-UA LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-UA LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-UA LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-UA LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Стаття тримає фракцію приземленою. Deep Reach небезпечна, бо вона досі процедурна, платоспроможна і терпляча. Вона хоче відновлення до порятунку й опіку до правди. Сато-Рен — людиноподібна кромка цієї машини.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/uk_UA. -->

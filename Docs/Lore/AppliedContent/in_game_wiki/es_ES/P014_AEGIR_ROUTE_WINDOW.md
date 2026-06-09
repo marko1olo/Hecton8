@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Ventana de ruta Aegir
 
-Una ventana Aegir es el momento en que relojes hostiles coinciden: radiación del gigante gaseoso, sombra lunar, ruido de tormenta, marea, calidad del enlace, masa de ascenso y geometría Black Keel.
-
-Por eso el cielo entra en la supervivencia. Los datos pueden subir cuando los cuerpos no deben. El ascenso puede estar abierto mientras el ruido pudre la evidencia.
+Una ventana de ruta Aegir no es un parte meteorológico bonito. Es el momento breve en que varios relojes hostiles coinciden: radiación, sombra lunar, pluma de tormenta, cizalla de marea, enlace acústico, geometría de Black Keel y custodia de tonne-window. Puede abrirse para datos y cerrarse para un cuerpo. Un núcleo de evidencia puede pasar cuarentena mientras una muestra blue-debt se retrasa. El rescate no es un botón; es un cruce de supervivencia, ley y masa.
 
 ## Scanner
 
-Tabla de efemérides local. Comunicación, marea, radiación, sombra lunar y geometría del carrier comparten una ventana estrecha de ascenso.
+Tabla local de efemérides. Radiación Aegir, sombra lunar, pluma de tormenta, cizalla de marea, enlace acústico, geometría Black Keel y custodia tonne-window se alinean brevemente.
 
 ## Terminal
 
-ACTUALIZACIÓN DE VENTANA AEGIR // Sombra Kestrel despejando. Ruido de enlace bajando. Conteo de radiación subiendo. Cizalla de marea en cañones de servicio aumentando. Geometría de recuperación Black Keel pendiente de masa de ascenso.
+SOLVER DE VENTANA AEGIR // Uplink de datos parcial. Recuperación de cuerpo cerrada. Ascenso de payload condicional. Oleada de radiación en banda de deriva. Moon relay shutter activo en próximo ciclo local. Geometría Black Keel requiere handshake legal y de cuarentena antes de comprometer masa.
 
 ## Audio
 
-Un cielo claro no es seguro. Revisa el gigante.
+El cielo aquí no es paisaje. Es otra cerradura en la puerta.
 
 ## Field Note
 
-En HECTON-8, el clima es local y orbital a la vez.
+Abierto para señal no es abierto para cuerpo.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/es_ES. -->

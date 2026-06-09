@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Photic Shelf Survival Act"
+title: "有光棚サバイバルゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Photic Shelf Survival Act
+# 有光棚サバイバルゲート
 
-JA LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+棚はルートに作業語彙を与える。ポンプ、シール、切断、ping、パッチ、補給。どの行動も小さく物理的だ。ドアはクランプが持つから開く。コロニーが探索されたがっているからではない。
 
-## Scanner
-
-JA LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-JA LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-JA LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-JA LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Atlas残留はここで保守の手がかりとして入り、最終回答ではない。修復パネル、導電膜、誤ルートのサービスパッチは、オペレーターを生かしながら、システムがすでにルートへ触れたことを示す。明るさは作業を読めるものにし、債務は作業を急がせる。
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/ja_JP. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Carta del fondo de reclamaciones Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Black Keel Claim-Pool Charter
+# Carta del fondo de reclamaciones Black Keel
 
-ES LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel es la respuesta hard-sci-fi de HECTON-8 al problema de la nave de escape. El jugador tiene acceso a un activo orbital, pero acceso no es propiedad y cercanía no es rescate. El carrier es infraestructura de deuda: lo bastante útil para hacer imaginable la huida, lo bastante limitado para enredar cada ruta de retorno con reclamaciones, cuarentena y valor de recuperación.
 
 ## Scanner
 
-ES LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+El Black Keel no es tu nave. Es un activo de recuperación del fondo de reclamaciones con tu nombre en su libro de deuda.
 
 ## Terminal
 
-ES LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+EXTRACTO DE CARTA / BLACK KEEL: carrier autónomo de salvage / custodia: Aegir Reclamation Pool / transporte de contratista: permitido / propiedad del casco: denegada / prioridad de rescate: subordinada a estado de insured receiver, handshake de cuarentena y claim value.
 
 ## Audio
 
-ES LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+El carrier no vino por ti. Vino por una reclamación con tu nombre adjunto.
 
 ## Field Note
 
-ES LOC HOLD: Use this on the first contract or carrier-status screen.
+Usar en la primera pantalla de estado del carrier: acceso concedido, propiedad denegada, prioridad de rescate condicional, lien activo.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/es_ES. -->

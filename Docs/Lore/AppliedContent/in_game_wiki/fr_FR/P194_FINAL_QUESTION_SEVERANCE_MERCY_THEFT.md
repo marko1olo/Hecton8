@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Question finale : section, pitié, vol"
+title: "Question finale : coupure, miséricorde, vol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Question finale : section, pitié, vol
+# Question finale : coupure, miséricorde, vol
 
-La section force le joueur à décider ce qu'est devenue la continuité Atlas-océan. Si ce n'est qu'un outil cassé, couper répare. Si c'est un système vivant, couper tue. Si c'est un témoignage, couper peut détruire une preuve.
+La coupure traverse la couche de réparation Atlas-océan, pas un interrupteur unique. Elle peut arrêter la logique de catégories endommagée et refuser à Deep Reach une route de récupération vivante. Elle peut aussi faire taire des vent micronodes, briser les pulsations shell sealant, couper des routes de faune taguée, endommager des tampons de dossiers travailleurs et laisser des salles sous pression sans le système qui les gardait scellées. Une charge de coupure doit préserver le proof-hash, car l'acte sera disputé après l'extinction de la pièce.
 
 ## Scanner
 
-Couper Atlas n'est pas appuyer sur un bouton d'arrêt. C'est une chirurgie sans anatomie propre.
+AXE DE COUPURE // La coupure de continuité traverse la couche de réparation Atlas : portes de pression, film conducteur, tampons de dossiers travailleurs, routes de faune taguée, vent micronodes, chemins de charge. L'état de preuve change l'étiquette de garde.
 
 ## Terminal
 
-AXE DE SECTION : couper la continuité d'Atlas, isoler l'écologie de pression, refuser le routage payload de Deep Reach, risquer l'effondrement du bassin ou ne préserver qu'une mémoire partielle de réparation. Le sens dépend des preuves portées dans la salle finale.
+AXE FINAL / COUPURE ATLAS
+Action : coupure de continuité dans la couche de réparation Atlas-océan.
+Affecté : portes de pression, film conducteur vivant, vent micronodes, pulsations shell sealant, routes de faune taguée, tampons de dossiers travailleurs, chemins de charge.
+Effet récepteur : route Deep Reach refusée sauf si un chemin de charge séparé survit.
+Risque : instabilité du bassin, perte de routes de réparation, blessure écologique, garde contestée.
+Perte connue : la même coupure peut être secours, dommage, sabotage ou vol selon l'état de preuve.
 
 ## Audio
 
-Un interrupteur propre serait miséricordieux. Tu n'en as pas.
+La coupure est réelle. L'étiquette arrive après.
 
 ## Field Note
 
-Le même acte peut libérer des ouvriers piégés, tuer une vie océan-machine, refuser Deep Reach et voler une infrastructure vivante à elle-même.
+Une coupure peut libérer un dossier piégé, arrêter une boucle nocive, briser une réparation vivante ou refuser à Deep Reach une route de retour. La console montre seulement les liens qui s'éteignent.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/fr_FR. -->

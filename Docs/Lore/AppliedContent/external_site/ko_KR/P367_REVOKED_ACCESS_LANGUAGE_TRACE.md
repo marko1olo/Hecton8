@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "철회된 접근 문구 흔적"
+title: "취소된 접근 언어 흔적"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 철회된 접근 문구 흔적
+# 취소된 접근 언어 흔적
 
-주인공은 Deep Reach 잠금을 증거로 읽는다. 철회된 자격은 접근을 막지만, 문구는 여전히 묻힌 경로를 드러낸다. 저하 인원 산정, 대체 증인, 유지보수 재분류, 청구 보존 언어가 남아 있다.
+취소된 접근 언어 흔적은 HECTON-8의 단순한 규칙 위에 세워져 있다. 잠긴 문도 자신을 누설할 수 있다. Deep Reach 시스템은 조심스러운 언어로 거부하고 분류하고 청구권을 보호하도록 설계되었다. 오래된 credential이 실패해도 그 언어는 남는다.
 
-## Scanner
+쓸모 있는 단서는 비밀번호가 아니다. 물리적 결과를 가진 기업 문구들이다. maintenance reclassification, degraded counts, substitute checks, claim-preservation routes. 평범한 방문자는 거부를 본다. 전직 field systems worker는 문이 무엇을 숨기라는 명령을 받았는지의 기록을 본다.
 
-잠금은 금지라고 말하지 않는다. 유지보수 재분류, 연속성 보류, 경로 자료라고 적는다. 오래된 Deep Reach 문구다. 거부이면서도 묻힌 문을 가리킨다.
-
-## Terminal
-
-접근 응답 / 경로-안전 기록보관소
-자격: 철회됨
-사유: 대피 연속성 자료는 인증된 Deep Reach 직원에게만 제한됨
-표시 용어: 저하 인원 산정, 대체 증인, 청구 보존 경로, 유지보수 재분류
-비고: 전 현장 인력은 사고 대조 목적에 한해 거부 문구를 볼 수 있음.
-
-## Audio
-
-그들은 복도를 지우지 않았다. 죄를 아는 직원들만 아직 이해하는 어휘로 감쌌을 뿐이다.
-
-## Field Note
-
-배지는 죽었다. 잠금은 아직 그 경로를 묻은 사무실 방언으로 말한다.
+이것은 조사를 노동과 책임에 붙들어 둔다. 오퍼레이터에게 마법 열쇠나 악당의 고백은 필요 없다. 죽은 배지, 거부 화면, 잘못된 maintenance 용어만으로도 Deep Reach가 절차 아래 묻으려던 경로를 따라가기 시작할 수 있다.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/ko_KR. -->

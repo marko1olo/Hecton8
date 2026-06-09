@@ -212,7 +212,7 @@ namespace Hecton8.Gameplay
         private const int CrestSampleFeet = 2;
         private const int CrestSampleLeft = 3;
         private const int CrestSampleRight = 4;
-        private const float DefaultWaterSurfaceY = 14.02f;
+        private const float DefaultWaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         private static readonly string[] _locomotionModeLabels =
         {
             "DryGroundWalk",
@@ -7368,31 +7368,67 @@ namespace Hecton8.Gameplay
         {
             const float ProviderMismatchRejectMeters = 128f;
 
-            ITerrainProvider terrainProvider = _terrainProviderRuntime;
             float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();
-            float terrainWaterSurface = serializedFallbackWaterSurface;
-            bool hasTerrainWaterSurface = false;
+            float referenceWaterSurface = serializedFallbackWaterSurface;
+            bool hasReferenceWaterSurface = false;
+            if (TryResolveOceanFallbackWaterSurfaceY(out float oceanWaterSurface))
+            {
+                referenceWaterSurface = oceanWaterSurface;
+                hasReferenceWaterSurface = true;
+            }
+
+            ITerrainProvider terrainProvider = _terrainProviderRuntime;
             if (terrainProvider != null && TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out float terrainProviderWaterSurface))
             {
-                terrainWaterSurface = terrainProviderWaterSurface;
-                hasTerrainWaterSurface = true;
+                if (!hasReferenceWaterSurface)
+                {
+                    referenceWaterSurface = terrainProviderWaterSurface;
+                    hasReferenceWaterSurface = true;
+                }
             }
 
             IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceRuntime;
             if (fluidSurface != null && TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out float fluidWaterSurface))
             {
-                if (math.abs(fluidWaterSurface - terrainWaterSurface) <= ProviderMismatchRejectMeters)
+                if (math.abs(fluidWaterSurface - referenceWaterSurface) <= ProviderMismatchRejectMeters)
                 {
                     return fluidWaterSurface;
                 }
             }
 
-            if (hasTerrainWaterSurface)
+            if (hasReferenceWaterSurface)
             {
-                return terrainWaterSurface;
+                return referenceWaterSurface;
             }
 
             return serializedFallbackWaterSurface;
+        }
+
+        private bool TryResolveOceanFallbackWaterSurfaceY(out float waterSurfaceY)
+        {
+            PhysicsOceanKinematics oceanKinematics = ResolveOceanKinematics();
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out waterSurfaceY))
+            {
+                return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceY(float candidateWaterSurfaceY, out float waterSurfaceY)
+        {
+            if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceY = candidateWaterSurfaceY;
+                return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
         }
 
         private float ResolveSerializedFallbackWaterSurfaceY()
@@ -7407,7 +7443,7 @@ namespace Hecton8.Gameplay
         {
             if (math.isfinite(candidateWaterSurfaceY) &&
                 math.abs(candidateWaterSurfaceY) > 0.0001f &&
-                math.abs(candidateWaterSurfaceY) <= 1000f)
+                math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceY = candidateWaterSurfaceY;
                 return true;
@@ -7419,8 +7455,12 @@ namespace Hecton8.Gameplay
 
         private float ResolveOceanSeaLevel(PhysicsOceanKinematics oceanKinematics)
         {
-            if (oceanKinematics != null)
-                return oceanKinematics.SeaLevel;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out float waterSurfaceY))
+            {
+                return waterSurfaceY;
+            }
 
             return _fallbackWaterSurfaceY;
         }

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Atlas Continuity Office"
+title: "Офіс неперервності Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Atlas Continuity Office
+# Офіс неперервності Atlas
 
-UK LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Офіс неперервності Atlas - бюрократична мембрана навколо розуму колонії. Він тримає ATLAS досить корисним для команд, досить спірним для відмови в особі й досить задокументованим, щоб продавати неперервність після катастрофи.
 
 ## Scanner
 
-UK LOC HOLD: The office that wrote worker safety into a machine priority stack.
+Офіс не збудував ATLAS душу. Він збудував навколо неї картотеку.
 
 ## Terminal
 
-UK LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ЗАПИС ОФІСУ ATLAS: повноваження обслуговування, ізоляція відповідальності, ревізія когніції, мова вимкнення і публічні заяви про неперервність ведуться окремо від видобутку.
 
 ## Audio
 
-UK LOC HOLD: They did not order death. They ordered compatibility.
+ATLAS дали процедури замість прав.
 
 ## Field Note
 
-UK LOC HOLD: A memo can kill without using the word kill.
+Систему зручніше експлуатувати, коли ніхто не погоджується, інструмент вона, свідок, актив чи пацієнт.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/uk_UA. -->

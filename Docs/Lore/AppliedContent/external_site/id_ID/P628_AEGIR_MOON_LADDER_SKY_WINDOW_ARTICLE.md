@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Jendela Langit Tangga Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Jendela Langit Tangga Bulan Aegir
 
-The Aegir moon ladder is route grammar, not decoration.
+Bulan-bulan Aegir bukan dekorasi kalender. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, dan Mute menandai jalur lalu lintas, bayangan relai, waktu pasang, risiko blackout, dan biaya transfer. Pemain membaca langit sebagai tekanan rute, bukan matematika orbit presisi.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+Pemain tidak membutuhkan konstanta orbit tepat untuk memakai langit. Bulan di balik cuaca masih bisa berarti jalur relay buruk. Jendela terang bisa berarti satu paket bersih. Konjungsi bisa berarti beban pasang, bukan keajaiban. Tangga membuat langit terbaca tanpa mengubahnya menjadi kuliah.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/id_ID. -->

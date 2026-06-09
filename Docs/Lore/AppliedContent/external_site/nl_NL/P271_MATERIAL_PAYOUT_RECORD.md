@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Material Payout Record"
+title: "Materieel uitbetalingsrecord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Material Payout Record
+# Materieel uitbetalingsrecord
 
-NL LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Dit uitbetalingsrecord telt door de ontvangstvelden: wat de ontvanger kocht, wat ontbreekt, welke coördinaten werden geaccepteerd, welk monster vertrok, hoe het pand veranderde, welke namen missen en welke terugroute Deep Reach kreeg.
 
 ## Scanner
 
-NL LOC HOLD: Paid. Not cleared.
+MATERIEEL UITBETALINGSRECORD // Keelmark/Recovery Compliance accepteerde bekken-coördinaten en blauw-schuldmonster. Operatorpand verlaagd; werknemersbewijs bleef buiten notariële bewaring.
 
 ## Terminal
 
-NL LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+EINDRECORD / MATERIËLE UITBETALING
+Ontvanger: Keelmark/Recovery Compliance.
+Geaccepteerd: Atlas-bekkencoördinaten, blauw-schuldmonster, carrier-bewaringshash.
+Niet bijgevoegd: notarieel getuigenpakket, namenregister van werknemers, reddingsmassa-audit.
+Pandeffect: verlaagd of gesloten volgens contracttabel.
+Deep Reach-effect: schonere terugroute naar HECTON-8.
+Bekend verlies: bewijs kan worden geprijsd zonder gehoord te worden.
 
 ## Audio
 
-NL LOC HOLD: The receipt is clean because it ignores the room.
+Het register betaalde voor de grafkaart. De kamer ging niet open.
 
 ## Field Note
 
-NL LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Het ontvangstbewijs maakt de pandkolom leeg, niet de kamer. Namen die de bewaring niet haalden, ontbreken ook na betaling.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/nl_NL. -->

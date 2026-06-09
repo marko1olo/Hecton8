@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Gewone burgerherinnering aan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Gewone burgerherinnering aan Aegir
 
-NL LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Voor gewone burgers is Aegir geen verboden geheim. Het is erger: een oud item in schoolteksten, verzekeringswaarschuwingen en routetarief-tabellen. Mensen herinneren zich de oceaanplaneet, de verloren kolonie en het woord quarantaine, maar niet de ploegendiensten, kinderen, koks, druktechnici of voornamen op dodenmanifesten. Die afstand laat Deep Reach overleven in het openbare leven. Een bekende ramp kan achtergrond worden als niemand naar de lichamen hoeft te kijken.
 
 ## Scanner
 
-NL LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Openbaar archiefstompje: iedereen heeft van Aegir gehoord, bijna niemand herinnert zich een naam.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: HECTON-8-verliesgebeurtenis, 2147. Officiële oorzaken: stormcascade, evacuatiestoring, automatiseringscorruptie, biologische quarantaine, onbetrouwbare telemetrie. Huidige status: slapende claim, verzekeringsindex actief, burgerverkeer afgeraden.
 
 ## Audio
 
-NL LOC HOLD: Most people know the place as a line under insurance rates.
+De meeste mensen kennen Aegir als een regel onder hun verzekeringspremie.
 
 ## Field Note
 
-NL LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Een ramp wordt gewoon wanneer hij in de rekening is verwerkt.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/nl_NL. -->

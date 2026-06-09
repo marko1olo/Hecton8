@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Stack Limit Data Boundary"
+title: "Frontière de données de limite de pile"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Stack Limit Data Boundary
+# Frontière de données de limite de pile
 
-FR LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+La frontière garde l'inventaire physique. Les objets ne se superposent que si le contenant, la pression, la masse et la contamination peuvent survivre à la même route sans mentir au fichier de sauvegarde.
 
 ## Scanner
 
-FR LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+La ligne de pile rejette les tas d'icônes : classe de contenant, pression, contamination et masse décident du compte.
 
 ## Terminal
 
-FR LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT : le compte de pile exige type de contenant, pression certifiée, stade de contamination, classe de masse, tier d'alerte et identité stable en sauvegarde. Une caisse n'est pas un récipient sous pression.
 
 ## Audio
 
-FR LOC HOLD: A crate is not a pressure vessel.
+Une caisse n'est pas un récipient sous pression.
 
 ## Field Note
 
-FR LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Les limites de pile restent table-owned et stables pour l'identité de sauvegarde.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/fr_FR. -->

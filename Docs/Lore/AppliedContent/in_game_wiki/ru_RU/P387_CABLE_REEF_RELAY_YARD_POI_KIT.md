@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Набор доказательств релейного двора кабельного рифа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Cable Reef Relay Yard POI Kit
+# Набор доказательств релейного двора кабельного рифа
 
-RU LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+Релейный двор кабельного рифа - ремонтная площадка, которая доросла до собственного режима отказа. Проводящая пленка, оболочки кабелей и акустические гнезда могут вернуть сигнал, но тот же мост отправит маршрут в старую сервисную ветвь, если оператор режет без скана.
 
 ## Scanner
 
-RU LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+Набор доказательств POI: релейный двор проводит сигнал через живую пленку-мост и сбивает маршрут через поврежденную память кабеля.
 
 ## Terminal
 
-RU LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+НАБОР РЕЛЕЙНОГО ДВОРА: гнездо акустического хребта, мост биопленки, предупреждение о резке, ответ пингера, сервисная метка Atlas, содранная изоляция, релейная развилка, карта мертвой ветви.
 
 ## Audio
 
-RU LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Не сдирай весь нарост. Часть его несет твой сигнал.
 
 ## Field Note
 
-RU LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Заметка мародера: если пленка гудит под зондом, пометь ее до резки. Красивый кабель часто мертвый кабель.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ru_RU. -->

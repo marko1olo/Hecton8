@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "隔離保留：よどんだ空気"
+title: "隔離保持: よどんだ空気"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 隔離保留：よどんだ空気
+# 隔離保持: よどんだ空気
 
-隔離保留は最も静かな偽退出である。部屋に悪役はいらない。書式は生存回収と示し、空気カウンターは配給作動中と示し、次の扉は汚染審査、claimant異議、保険損失審査の後でしか開かない。
+隔離保持は最も静かな偽の出口だ。脅しも、見える警備員も、劇的な裏切りもいらない。システムは請負者を生きて回収し、証人を封じ、空気を計り、次の一歩をすぐ終わらない審査に結びつければいい。
 
-この結果が残酷なのは、防御可能だからだ。誰も証人を殺していない。誰もサンプルを破壊していない。システムはただ、すべての声明を、死体が待てた時間より長く待たせる。プレイヤーは海を生き延び、手続きで作られた密閉通路へ入る。
+その残酷さは一行ずつ弁護できる。サンプルは破壊されていない。証人は処刑されていない。真実が嘘だとも言われていない。手続きはただ、すべての呼吸を条件付きにし、すべての文を死者を救えなくなるまで待たせる。
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/ja_JP. -->

@@ -7,6 +7,7 @@
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
         "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.World.Contracts",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

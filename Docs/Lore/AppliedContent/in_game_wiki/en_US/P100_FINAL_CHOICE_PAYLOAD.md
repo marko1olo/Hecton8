@@ -19,19 +19,19 @@ localization_flags: 0
 
 # Final Choice Payload
 
-The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.
 
 ## Scanner
 
-Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+FINAL PAYLOAD // Coordinates, samples, names, Atlas access, quarantine orders, public proof. What leaves HECTON-8 decides who can act afterward.
 
 ## Terminal
 
-FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOAD MATRIX: sell coordinates and XO proof; sever Atlas continuity; preserve or quarantine the ocean-machine ecology; publish evidence to the public ledger; withhold the payload and leave Deep Reach blind.
 
 ## Audio
 
-There is no clean ownership for a crime scene that became alive in the wrong way.
+There is no clean ownership for a crime scene that learned to breathe.
 
 ## Field Note
 

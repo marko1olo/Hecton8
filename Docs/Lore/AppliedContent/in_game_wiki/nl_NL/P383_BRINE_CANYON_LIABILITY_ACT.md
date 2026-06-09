@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Canyon Liability Act"
+title: "Aansprakelijkheidspoort brinecanyon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Canyon Liability Act
+# Aansprakelijkheidspoort brinecanyon
 
-NL LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+De brinecanyon maakt tijd tot bewijs. Sensoren, klokken, wachtrijstatus en gebroken routeplaten tonen dat de overstroming echt was en het geaccepteerde risico ook. De operator stopt met geruchten verzamelen en draagt een documentketen die ontvangerbeoordeling kan overleven.
 
 ## Scanner
 
-NL LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Routepoort: brinecanyon. Dichtheidslagen, beschadigde klokken en geaccepteerde marges worden fysiek aansprakelijkheidsbewijs.
 
 ## Terminal
 
-NL LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+CAMPAGNEROUTE // BRINECANYON. Vereist: marge-spoor, evacuatiewachtrij, routebreuk en drukklok vergelijken. Great Tide bevestigd. Commerciële uitzondering en Atlas-weging betwist.
 
 ## Audio
 
-NL LOC HOLD: The ocean did not lie. The timetable did.
+De oceaan brak de muur. Het tijdschema brak de mensen.
 
 ## Field Note
 
-NL LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Plunderaarsnotitie: maak geen ruzie met het getij. Maak ruzie met de tijdstempel waarvoor iemand betaalde om hem te verwijderen.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/nl_NL. -->

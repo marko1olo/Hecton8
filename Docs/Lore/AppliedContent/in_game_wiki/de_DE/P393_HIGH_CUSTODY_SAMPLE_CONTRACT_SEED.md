@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: High Custody Sample Contract Seed"
+title: "High-Custody-Proben-Vertragssamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: High Custody Sample Contract Seed
+# High-Custody-Proben-Vertragssamen
 
-DE LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+High-Custody-Probe ist eine Vertragsfamilie, in der Ressourcenwert und Beweisführung früh kollidieren. Blue debt, Gewebe-Eisen-Rückstand, versiegeltes Wasser und kontaminierte Filterpacks zahlen nur mehr, solange Behälter, Tag, Masse und Routencustody intakt bleiben.
 
 ## Scanner
 
-DE LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Vertragssamen: High-Custody-Probe. Größere Auszahlung an Massenbuch, Quarantäneverzug und receiver-zertifizierte Behälter gebunden.
 
 ## Terminal
 
-DE LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: Custody-grade Proben aktiv, Probenmassenbuch streng, Quarantäneverzug erhöht, Receiver-Siegel erforderlich, Routenauswurfstrafe aktiv.
 
 ## Audio
 
-DE LOC HOLD: A sample can weigh more after it enters the ledger.
+Eine Probe wird schwerer, nachdem das Ledger sie annimmt.
 
 ## Field Note
 
-DE LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Marauder-Notiz: Wiege den Beutel, bevor du ihn Gewinn nennst. Der Receiver kann fehlende Gramm härter berechnen, als der Ozean zuschlagen kann.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/de_DE. -->

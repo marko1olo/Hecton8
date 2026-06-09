@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Liability Memo Fragment Chain"
+title: "Łańcuch fragmentów noty odpowiedzialności"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Liability Memo Fragment Chain
+# Łańcuch fragmentów noty odpowiedzialności
 
-PL LOC HOLD: Liability memo fragments teach players to cross-check corporate language against damaged rooms and worker evidence.
+Łańcuch fragmentów noty odpowiedzialności uczy gracza czytać dowody Deep Reach. Żadna pojedyncza nota nie zawiera całej zbrodni; każde biuro zachowało zdanie, które sprawiało, że jego własne działanie wyglądało proceduralnie. Tabela ryzyka przyznaje, że margines pływu zawodził. Notatka ewakuacyjna zmienia zwłokę w dyscyplinę kanału. Override Atlas sprawia, że ciągłość brzmi bezpieczniej niż ucieczka. Fragment Keelmark zmienia zaginionych pracowników w odzyskiwalną stratę. Gracz musi porównać papier z zalanymi pomieszczeniami, zepsutymi zegarami trasy i nazwiskami pracowników. Łańcuch staje się czytelny dopiero wtedy, gdy fragmenty przestają bronić swoich biur i zaczynają sobie przeczyć.
 
 ## Scanner
 
-PL LOC HOLD: Liability memos must be fragments that match physical rooms, not lore speeches.
+Nota odpowiedzialności przetrwała jako fragmenty, bo każde biuro zachowało akapit chroniący właśnie je.
 
 ## Terminal
 
-PL LOC HOLD: MEMO CHAIN: tide margin note, Atlas priority waiver, evacuation hold, loss conversion, packet notary seal and present return-action clause. A single memo is suspicion. The chain is evidence.
+FRAGMENT CHAIN: tabela marginesu ryzyka / notatka zwolnienia ewakuacji / override ciągłości Atlas / konwersja straty Keelmark / wniosek o depozyt odzysku. Sprawdzić czas trasy, uszkodzenia pomieszczeń i nazwiska pracowników przed przyjęciem publicznego streszczenia.
 
 ## Audio
 
-PL LOC HOLD: Paper is weak alone. Put it against a flooded door.
+Nie ukryli prawdy w sejfie. Złożyli ją w kawałkach.
 
 ## Field Note
 
-PL LOC HOLD: A useful memo names one margin, one delay, one office and one visible consequence.
+Podarta nota jest szczera tam, gdzie nie zamierzała taka być.
 
 <!-- In-Game Wiki; generated from P187_LIABILITY_MEMO_FRAGMENT_CHAIN/pl_PL. -->

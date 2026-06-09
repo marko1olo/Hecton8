@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-ES LOC HOLD: Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.
+Aegir Continuity Holdings es la carcasa que permite a Deep Reach conservar valor sin admitir nada. Retiene arrendamientos dormidos, opciones de hábitat, reclamaciones minerales, títulos de equipo dañado y derechos de recuperación mientras el combinado público habla de servicio.
 
 ## Scanner
 
-ES LOC HOLD: The dirty project needs a clean owner with no face.
+Aegir Continuity Holdings posee la supervivencia como verbo contable.
 
 ## Terminal
 
-ES LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+REGISTRO HOLDINGS: arrendamientos de ruta, reclamaciones de hábitat, opciones de sitio fallido y derechos de continuidad de activos se mantienen fuera del combinado público.
 
 ## Audio
 
-ES LOC HOLD: No one works there. Everyone signs through it.
+La colonia falló. La holding continuó.
 
 ## Field Note
 
-ES LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+Continuidad significa que los gravámenes sobreviven a tripulaciones, hábitats y ventanas de disculpa.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/es_ES. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Public Archive Survival Primer
 spoiler_tier: 0
-title: "Shallow Annex P-63 Pump Room"
+title: "غرفة مضخة الملحق الضحل P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shallow Annex P-63 Pump Room
+# غرفة مضخة الملحق الضحل P-63
 
-Shallow Annex P-63 is the first practical shelter gate because repair, not luck, creates air and access.
+الملحق الضحل P-63 هو أول غرفة يمكن جعلها نافعة من جديد. ليست غرفة مكافأة، بل آلة متعبة: ذراع نزح يدوي، حلق صمام عالق، أثر مشبك مانع تسرب بارد، ومصنع ميداني لا يقبل إلا أعمال إصلاح قليلة الخطر حتى يهبط الماء تحت خط المدخل.
 
-## Scanner
-
-Pump-room intake blocked; manual bilge route available.
-
-## Terminal
-
-P-63 maintenance log keeps the repair inside gasket, clamp and cutter authority until drainage clears.
-
-## Audio
-
-Crank the pump before cutting the locker route.
-
-## Field Note
-
-A dry corner is thinking time, not safety.
+تعلّم الغرفة أول قاعدة في salvage على HECTON-8: الهواء يأتي من الإصلاح لا من الحظ. المضخة العاملة تخفض ماء الكاحل، وتكشف خزائن أدوات قديمة، وتعطي سببا ماديا للثقة بالملحق لبضع دقائق أخرى. ما زال الطرفية تسمي المهمة تسربا بسيطا. الجدران تقول غير ذلك.
 
 <!-- External Site; generated from P625_SHALLOW_ANNEX_P63_PUMP_ROOM_ARTICLE/ar_SA. -->

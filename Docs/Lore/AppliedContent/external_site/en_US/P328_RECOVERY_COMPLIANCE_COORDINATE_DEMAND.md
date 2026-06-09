@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Recovery Compliance Coordinate Demand
 
-Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+After the colony vanished, Deep Reach did not return with a hand outstretched. Its first clean channel asks where the asset is, who can prove ownership, and whether the living witness will submit to quarantine and lien review. In HECTON-8, rescue is not denied; it is delayed until it becomes leverage.
 
 ## Scanner
 
-Compliance packet: coordinates requested before medical recovery language.
+Packet authenticated as Deep Reach Recovery Compliance: rescue language wrapped around coordinate, custody, and contamination demands.
 
 ## Terminal
 
-RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+RECOVERY COMPLIANCE NOTICE DR-RC-8: transmit Atlas access vector, Xenon-Omega custody proof, biological contamination status, and current basin coordinates. Medical retrieval remains pending until asset chain, salvage lien, and site-control rights are reconciled. Unauthorized broadcast may downgrade survivor priority to evidentiary hold.
 
 ## Audio
 
-They can say rescue without meaning rescue.
+They found a way to make rescue sound like a warrant.
 
 ## Field Note
 
-Use near payload authority decisions and receiver selection.
+Place where the player can choose what to transmit. The threat should feel procedural, not theatrical: no villain speech, just a queue that can bury a body.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/en_US. -->

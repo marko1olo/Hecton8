@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Marauder Correction Note Sample"
+title: "Sampel Catatan Koreksi Penjarah"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Marauder Correction Note Sample
+# Sampel Catatan Koreksi Penjarah
 
-ID LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Sampel Catatan Koreksi Penjarah bukan pengakuan, dan justru karena itu ia lebih berguna. Ini coretan kotor di atas formulir kecelakaan resmi, ditulis oleh orang yang sudah belajar tidak percaya pada penyebab yang terlalu rapi. Catatan itu tidak mengatakan siapa membunuh siapa. Ia mengatakan apa yang harus diperiksa sebelum kata kecelakaan boleh bertahan di berkas: sertifikat pompa, jumlah sif, kategori jasad, selisih jam pintu, dan antrean otorisasi yang menahan penyelamatan cukup lama sampai ruangan berubah menjadi bukti. Di HECTON-8, benda ini menjembatani bukti lingkungan dan suara faksi. Catatan koloni mencoba menutup cerita dengan cuaca. Tangan penjarah mendorong pemain kembali ke ruangan.
 
 ## Scanner
 
-ID LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Koreksi pensil minyak di atas formulir kecelakaan: bukan cuaca, bukan panik, melainkan tunda otorisasi dengan hitungan jasad di dalamnya.
 
 ## Terminal
 
-ID LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+CATATAN PENJARAH / PENYEBAB RESMI: DITOLAK / SEBELUM KLAIM PERIKSA: sertifikat pompa, jumlah sif, kategori jasad, selisih jam pintu, antrean otorisasi penyelamatan.
 
 ## Audio
 
-ID LOC HOLD: Someone else smelled the paperwork rot.
+Seseorang mencium busuknya berkas sebelum ruangan itu kering.
 
 ## Field Note
 
-ID LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+BUKAN CUACA. OTORISASI TERTUNDA. Periksa sertifikat pompa, jumlah sif, kategori jasad. Jam pintu enam menit lebih maju dari cap klaim.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/id_ID. -->

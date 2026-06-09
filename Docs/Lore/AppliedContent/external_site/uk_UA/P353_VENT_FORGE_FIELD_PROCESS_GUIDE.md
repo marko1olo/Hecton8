@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Польовий довідник процесу vent-forge"
+title: "Польовий довідник vent-forge процесу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Польовий довідник процесу vent-forge
+# Польовий довідник vent-forge процесу
 
-Польовий довідник процесу vent-forge пов'язує цінність ресурсу з польовим поводженням: важливо не лише те, що знайдено, а й те, як pressure і cooling дадуть йому пережити recovery.
+Vent-forge - не скриня зі скарбами на дні. Це повільний реактор із гарячого seep-потоку, brine-щільності, розмеленої мінеральної подачі й тиску, який не пробачає поспіху. Корисний матеріал часто лежить між природним відкладенням і зіпсованою промисловою партією: керамічні зерна ростуть у мінеральних горловинах, прекурсори герметика запікаються в тріщинах, зарядні плівки лишаються стабільними тільки за правильного порядку охолодження.
 
-## Scanner
-
-Vent-forge chemistry активна. Якість залежить від pressure history, heat pulse і повільного охолодження, а не від блиску зразка.
-
-## Terminal
-
-FIELD GUIDE: vent forges варять sulfides, noble-gas pockets, ceramics і sealant precursors. Шлях зразка через heat, brine і pressure важливіший за його назву.
-
-## Audio
-
-Vent не зробив руду. Він зробив процес, який ти перервав.
-
-## Field Note
-
-Не піднімай свіжу партію просто в холодну воду. Дай vent завершити anneal, інакше shell піде тріщинами.
+Тому польове поводження стає частиною ресурсу. Витягни свіжу партію в холодну воду - оболонка піде сіткою. Страви тепло надто швидко - чистий зразок стане порошком. Чекай надто довго - vent запише поверх потрібного шару іншу хімію. Salvage-команди цінують vent-forge тому, що він змушує HECTON-8 відчуватися планетою, яка сама продовжує працювати: океан не просто ховає матеріали, він досі їх виробляє.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/uk_UA. -->

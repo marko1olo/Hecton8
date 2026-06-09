@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Photic Shelf Survival Act"
+title: "Gerbang Paparan Fotik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Photic Shelf Survival Act
+# Gerbang Paparan Fotik
 
-ID LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Paparan fotik mengajar lewat benda, bukan kenyamanan. Operator belajar rumah pompa mana yang masih menyimpan udara, tambalan mana yang membeli menit, dan organisme terang mana yang mengotori alat. Atlas muncul pertama sebagai residu perbaikan: berguna, salah di beberapa tempat, dan cukup dekat untuk disentuh.
 
 ## Scanner
 
-ID LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Gerbang rute: paparan fotik. Kantong oksigen, ruang pompa, potongan pertama, dan residu perbaikan Atlas dangkal terbaca di air terang.
 
 ## Terminal
 
-ID LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+RUTE KAMPANYE // PAPARAN FOTIK. Wajib: hidupkan ulang pompa, tambal segel, potong kabel, ping pemindai. Perangkat naik tidak tersedia; sel terpakai dialihkan ke sistem bertahan hidup. Residu Atlas diklasifikasi berguna dengan peringatan kontaminasi.
 
 ## Audio
 
-ID LOC HOLD: The shallow water is not safe. It is only readable.
+Air dangkal tidak aman. Ia hanya terbaca.
 
 ## Field Note
 
-ID LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Catatan perompak: cahaya siang membantu. Itu tidak membuat jalur oksigen retak menjadi murah hati.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/id_ID. -->

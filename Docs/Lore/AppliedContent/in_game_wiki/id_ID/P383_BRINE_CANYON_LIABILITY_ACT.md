@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Brine Canyon Liability Act"
+title: "Gerbang Liabilitas Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Brine Canyon Liability Act
+# Gerbang Liabilitas Ngarai Brine
 
-ID LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+Ngarai brine mengubah waktu menjadi bukti. Sensor, jam, status antrean, dan pelat rute patah menunjukkan banjir itu nyata dan risiko yang diterima juga nyata. Operator berhenti mengumpulkan rumor dan mulai membawa rantai dokumen yang dapat bertahan dari tinjauan penerima.
 
 ## Scanner
 
-ID LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Gerbang rute: ngarai brine. Lapisan densitas, jam rusak, dan margin diterima menjadi bukti liabilitas fisik.
 
 ## Terminal
 
-ID LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+RUTE KAMPANYE // NGARAI BRINE. Wajib: bandingkan jejak margin, antrean evakuasi, retakan rute, dan jam tekanan. Peristiwa Pasang Besar dikonfirmasi. Pengecualian komersial dan pembobotan Atlas tetap disengketakan.
 
 ## Audio
 
-ID LOC HOLD: The ocean did not lie. The timetable did.
+Samudra mematahkan dinding. Jadwal mematahkan orang.
 
 ## Field Note
 
-ID LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Catatan perompak: jangan berdebat dengan pasang. Berdebatlah dengan cap waktu yang dibayar seseorang untuk dihapus.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/id_ID. -->

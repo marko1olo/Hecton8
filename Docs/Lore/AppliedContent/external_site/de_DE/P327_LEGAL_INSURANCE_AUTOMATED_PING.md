@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Legal Insurance Automated Ping"
+title: "Automatischer Rechtsversicherungs-Ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Legal Insurance Automated Ping
+# Automatischer Rechtsversicherungs-Ping
 
-DE LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+Der Automatische Rechtsversicherungs-Ping ist ein komprimierter Ausdruck von HECTON-8s bürokratischem Horror. Gegenwärtiges Deep Reach kann durch automatisierte Versicherungsverwahrung genauso wirksam sprechen wie durch Menschen. Das System fragt, was der Überlebende trägt, bevor es fragt, ob er gerettet werden soll.
 
 ## Scanner
 
-DE LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Automatischer Ping empfangen. Rettungssprache wurde durch Empfängernachweis, Massenklasse und Verwahrungsstatus ersetzt.
 
 ## Terminal
 
-DE LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / erforderlich vor recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-DE LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Das Erste, was sie fragen, ist nicht, ob du lebst. Es ist, was du trägst.
 
 ## Field Note
 
-DE LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Kurzer Bark-Kandidat an Routenschwellen. Sparsam verwenden; die Grausamkeit liegt darin, was das System zuerst fragt.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/de_DE. -->

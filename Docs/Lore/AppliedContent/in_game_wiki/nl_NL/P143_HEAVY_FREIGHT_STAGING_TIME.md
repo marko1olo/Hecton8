@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Stagingtijd voor zware vracht
 
-Timing van zware vracht beschermt de no-FTL-tijdlijn. Atlas-hardware kan vóór massale vestiging aankomen omdat bedrijven precursorvracht vroeg lanceren, vooruit stagen, onbemand risico accepteren en faalvensters in programmataal begraven. Redding kan die truc niet lenen nadat de nood begint.
+Zware vracht veranderde HECTON-8 van onderzoeksdoel in schuldobject. Grote vracht kon veranderende waarheid niet najagen; zij moest worden gestaged, gebonden, verzekerd, geparkeerd, afgeremd en ontvangen door iemand met gezag. Tegen de tijd dat een modulentrein de route kruiste, had het contract erachter meer traagheid dan de bezwaren van de kolonie.
 
 ## Scanner
 
-Atlas-klasse vracht is vooruitbetaald geduld in pantser.
+Manifeststapel: vracht toegezegd voordat de ontvangende site levend was bewezen.
 
 ## Terminal
 
-VRACHTNOTITIE: Atlas- en seed-vracht gebruiken staging, pelletfusiehulp, lange drifts en reminfrastructuur. Publieke data kunnen precursorlanceringen en forward-domain-vertrekken verbergen.
+VRACHTSTAGING: drukhullen, keramische afscherming, reactormassa, seed-voorraad, crawlerframes en habitatringen vereisen lanceervensters met jaren ertussen. Eenmaal gebonden wordt vracht een juridisch argument in beweging.
 
 ## Audio
 
-Een schip zo zwaar reist niet zomaar. Het wordt een factuur met kielzog.
+De zending was al betaald. Daardoor werd stoppen moeilijker dan mensen redden.
 
 ## Field Note
 
-Een zware route wordt gebouwd uit depots, bundelvensters, remmassa en politieke lef.
+Vracht haast zich niet. Zij maakt haast duur voor iedereen anders.
 
 <!-- In-Game Wiki; generated from P143_HEAVY_FREIGHT_STAGING_TIME/nl_NL. -->

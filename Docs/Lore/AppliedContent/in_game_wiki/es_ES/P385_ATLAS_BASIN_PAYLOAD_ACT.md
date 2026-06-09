@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Atlas Basin Payload Act"
+title: "Puerta payload de la cuenca Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Atlas Basin Payload Act
+# Puerta payload de la cuenca Atlas
 
-ES LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+La puerta de cuenca es una decisión de receptor bajo presión. El payload puede vender coordenadas, cortar Atlas, preservar cuarentena, publicar un paquete de libro redactado o quedar local sin recibo. Cada ruta cambia custodia, deuda, ecología y acceso a pruebas. Ninguna devuelve la cuenca a un estado intacto.
 
 ## Scanner
 
-ES LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Puerta de ruta: cuenca Atlas. El payload final requiere ruta, receptor, proof hash, estado ecológico, estado de gravamen y ventana de supervivencia.
 
 ## Terminal
 
-ES LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+RUTA DE CAMPAÑA // PAYLOAD CUENCA ATLAS. Resolver o rechazar: venta de coordenadas, corte Atlas, escrow de cuarentena, libro público, blind return. El sello receptor cambia custodia. No hay estado limpio de reclamación disponible.
 
 ## Audio
 
-ES LOC HOLD: The last question is not what happened. It is who you send it to.
+La última pregunta de ruta es quién recibe el paquete.
 
 ## Field Note
 
-ES LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Nota de saqueador: elige receptor antes de que la bolsa tome agua. Una respuesta perfecta no cabe en esta bolsa.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/es_ES. -->

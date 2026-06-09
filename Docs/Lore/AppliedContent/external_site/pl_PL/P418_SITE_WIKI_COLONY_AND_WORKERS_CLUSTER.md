@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Kolonia i pracownicy
 
-Klaster kolonii i pracowników nie pozwala, by HECTON-8 stał się mapą pustych sal. Oficjalna wersja Deep Reach wciska ludzi w kategorie strat, ale ocalałe zapisy trzymają ich przy pracy: pump chief w pressure board, relay operator w witness trays, brine crew w trasach soli i ration ledgers, triage technician w repair tags, forge shift w rejects, których nikt nie zdążył ukryć. To nie są rodzinne haki protagonisty. To dowody pracy. Marauder czyta, czemu drzwi zostały otwarte, czemu pompa ruszyła za późno i czemu mały name tag może ważyć więcej niż czysty loss summary.
+Linia kolonii i pracowników nie pozwala, by HECTON-8 stało się ładną ruiną pełną bezimiennych pomieszczeń. Deep Reach wpisało katastrofę jako storm, collapse, failed autonomy, Atlas rescue i lost data. Te słowa są wygodne, bo ściskają odpowiedzialność. Ocalałe worker records robią odwrotnie. Trzymają nazwiska przy decyzjach.
+
+Pump chief pozostaje widoczny przez pressure board, która nie zresetowała się wtedy, kiedy powinna. Relay hand pozostaje widoczny w tacy witness tags wyjętych, zanim linia oślepła. Brine crew zostawia kształt w route stamps, ration ledgers i rękawicach spalonych solą. Triage technician pojawia się tam, gdzie repair tag mówi, komu pozwolono wydać tlen na obcego. Vent-forge operator przeżywa w rejected parts, które powinny zniknąć, gdyby loss report był czysty.
+
+Dlatego worker cluster odrzuca cheap family hook. HECTON-8 nie potrzebuje tajnego rodzica protagonisty, zaginionego rodzeństwa ani sentymentalnego zdjęcia, żeby kolonia była ludzka. Człowiek staje się czytelny, gdy drzwi zostały otwarte przez nazwisko na pump card, gdy shift swap zmienił tego, kto zginął w korytarzu, gdy podpis przesunął quarantine delay z safety do liability.
+
+Marauder czyta ludzi jako pressure evidence. Każde dobre dossier powinno najpierw odpowiedzieć na praktyczne pytanie: co ten pracownik posiadał, opóźnił, naprawił, odrzucił, sfałszował albo ochronił? Kiedy odpowiedź jest jasna, emocja przychodzi sama.
+
+Kolonia nie była pusta, zanim wszedł ocean. Była pełna rutyny, uraz, kompetencji, shortcuts, strachu i zawodowej dumy. Pozostałe zapisy nie są tablicami pamiątkowymi. To nadal dokumenty robocze, a niektóre wciąż mogą oskarżać.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/pl_PL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Material Exit Receipt Audit"
+title: "Audit du reçu de sortie matérielle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Material Exit Receipt Audit
+# Audit du reçu de sortie matérielle
 
-FR LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+L'audit du reçu rend la fin argent légitime et amère. Le joueur a extrait de la valeur et survécu au contrat, mais l'institution possède encore le dossier, les noms et la forme officielle du désastre.
 
 ## Scanner
 
-FR LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Le reçu de sortie valide la masse récupérée. La garde des preuves est brisée ; les noms des ouvriers restent refusés.
 
 ## Terminal
 
-FR LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+REÇU AFTER-ACTION : paiement de sauvetage libéré pour masse récupérable et risque contractuel. Vérité des coordonnées non résolue. Statut de responsabilité Deep Reach inchangé. Registre des noms d'ouvriers rejeté comme preuve hors garde. Sortie accordée ; le dossier reste propriété du transporteur.
 
 ## Audio
 
-FR LOC HOLD: You got paid. That is not the same as getting out clean.
+Tu as été payé. Ce n'est pas sortir propre.
 
 ## Field Note
 
-FR LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Dossier d'après-action pour une sortie payée mais moralement incomplète : la récompense passe, la chaîne de preuve échoue, les noms restent hors garde officielle.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/fr_FR. -->

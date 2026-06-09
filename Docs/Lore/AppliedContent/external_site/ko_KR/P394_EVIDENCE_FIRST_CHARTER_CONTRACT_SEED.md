@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Evidence First Charter Contract Seed"
+title: "증거 우선 차터 계약 시드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Evidence First Charter Contract Seed
+# 증거 우선 차터 계약 시드
 
-KO LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+증거 우선 차터는 하강 전에 계약 보드를 바꾼다. 재료 지급은 내려가고, 공증 용량은 올라가며, 증거 로커가 우선되고, salvage 분해에는 벌점이 붙는다. 오퍼레이터는 부품보다 기록을 더 잘 보호하는 경로로 들어간다.
 
-## Scanner
-
-KO LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-KO LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-KO LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-KO LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+압력은 작은 선택에서 나타난다. 해치 상태 스트립은 패널 판매를 막을 수 있다. 젖은 사고 패킷은 마지막 마른 슬롯을 차지할 수 있다. pinger 로그는 원래 수리에 전력을 줄 살아 있는 릴레이를 요구할 수 있다. 차터는 늦게 지급한다. Black Keel 밖의 receiver가 읽을 만큼 오래, 불편한 물건을 온전하게 유지하라고 요구하기 때문이다.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ko_KR. -->

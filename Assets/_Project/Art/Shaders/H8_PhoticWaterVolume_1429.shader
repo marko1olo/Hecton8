@@ -52,6 +52,11 @@ Shader "HECTON/World/H8_PhoticWaterVolume_1429"
                 float4 _Flow;
             CBUFFER_END
 
+            float4 _HectonCelestialLightReadability0; // x depth, y direct sun, z ambient readability, w visibility meters
+            float4 _HectonCelestialLightReadability1; // x mesophotic, y deep darkness, z artificial light, w biolum
+            float4 _HectonCelestialLightReadability2; // x caustic, y fog, z scattering, w exposure
+            float4 _HectonCelestialLightReadability3; // x stratum, y flags, z sequence, w black-crush floor
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -111,7 +116,23 @@ Shader "HECTON/World/H8_PhoticWaterVolume_1429"
                 half noise = saturate(lerp(1.0h, n * 0.63h + n2 * 0.37h, _NoiseStrength));
                 half depthFade = saturate(pow((half)input.uv.y, _VerticalFade));
                 half4 color = lerp(_NearColor, _FarColor, depthFade);
-                half alpha = saturate(color.a * _Alpha * input.color.a * noise);
+                half lightSignal = (half)(
+                    abs(_HectonCelestialLightReadability0.x) +
+                    abs(_HectonCelestialLightReadability0.w) +
+                    abs(_HectonCelestialLightReadability1.y) +
+                    abs(_HectonCelestialLightReadability2.y) +
+                    abs(_HectonCelestialLightReadability3.z));
+                half lightKnown = step(0.0001h, lightSignal);
+                half visibility01 = (half)saturate(_HectonCelestialLightReadability0.w / 112.0);
+                half deepDarkness = (half)saturate(_HectonCelestialLightReadability1.y);
+                half fogPressure = (half)saturate((_HectonCelestialLightReadability2.y - 0.72) * 0.24271844);
+                half scattering = (half)saturate(_HectonCelestialLightReadability2.z * 0.3125);
+                half playableFloor = max(0.055h, (half)_HectonCelestialLightReadability3.w);
+                half hazePressure = saturate(max(fogPressure, deepDarkness * 0.74h) * (1.0h - visibility01 * 0.28h));
+                half3 abyssTint = max(_FarColor.rgb * (0.62h + scattering * 0.45h), half3(playableFloor, playableFloor * 1.28h, playableFloor * 1.48h));
+                color.rgb = lerp(color.rgb, lerp(color.rgb, abyssTint, hazePressure), lightKnown);
+                half alphaScale = lerp(1.0h, saturate(0.78h + hazePressure * 0.52h), lightKnown);
+                half alpha = min(0.82h, saturate(color.a * _Alpha * input.color.a * noise * alphaScale));
                 return half4(color.rgb, alpha);
             }
             ENDHLSL

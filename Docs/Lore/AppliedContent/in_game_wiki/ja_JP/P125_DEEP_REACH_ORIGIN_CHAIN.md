@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "Deep Reach の起源連鎖"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# Deep Reach の起源連鎖
 
-JP LOC HOLD: Deep Reach predates the Aegir project. It used earlier extrasolar legitimacy and route finance to make HECTON-8 look like a normal high-risk colony. That matters because the crime is systemic: old institutions made the catastrophe administratively easy.
+HECTON-8 が沈む前から、Deep Reach は古い企業だった。必要な各ドメインの口調を覚えていた。Centauri の憲章の品位、Sol Core の保険数理の規律、Barnard のサルベージ実務、Luyten の保管手続き。Aegir は同社の最初の跳躍ではない。古い道具が、ついに代価を隠せるほど深い海に出会った場所だった。だから災害は偶然ではなく、制度として見える。
 
 ## Scanner
 
-JP LOC HOLD: Old company. New disaster. Same charter language.
+憲章の編み紐: Centauri の言葉、Sol の金、Aegir の遺体。
 
 ## Terminal
 
-JP LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: Deep Reach は Centauri 互換の自治条項、Sol Core の保険金融、Barnard の物流債務、後期 Aegir 事業シェルを組み合わせた。Atlas は大量死の証人になる前に、航路インフラとして承認されていた。
 
 ## Audio
 
-JP LOC HOLD: They brought the empire in filing cabinets.
+彼らは書類棚で帝国を運び、それを拡張と呼んだ。
 
 ## Field Note
 
-JP LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+Deep Reach は災害から始まったのではない。だから災害を生き延びた。
 
 <!-- In-Game Wiki; generated from P125_DEEP_REACH_ORIGIN_CHAIN/ja_JP. -->

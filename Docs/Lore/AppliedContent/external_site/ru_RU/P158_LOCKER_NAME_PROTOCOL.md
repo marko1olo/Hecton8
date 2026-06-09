@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Locker Name Protocol"
+title: "Протокол именных шкафчиков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Locker Name Protocol
+# Протокол именных шкафчиков
 
-RU LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+Протокол именных шкафчиков делает личные улики игровыми: имена выживают через предметы, износ, маршрутный допуск и пометки Marauder.
 
 ## Scanner
 
-RU LOC HOLD: A locker is personal without needing a family plot.
+СЛЕД ШКАФЧИКА // Табличка имени, износ инструмента, pressure tape, правка, маршрутная наклейка. Личная улика без семейной мелодрамы.
 
 ## Terminal
 
-RU LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+ПРАВИЛО ШКАФЧИКА: сохранять имена, которые Deep Reach убрал из payroll. Шкафчик должен связывать бейдж, роль, маршрутный допуск, привычку ремонта и незавершенную вещь внутри.
 
 ## Audio
 
-RU LOC HOLD: The company deleted the employee. The rust kept the label.
+Компания удалила сотрудника. Ржавчина сохранила ярлык.
 
 ## Field Note
 
-RU LOC HOLD: The smallest human trace should survive corporate cleanup.
+Самый маленький человеческий след должен пережить корпоративную зачистку.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/ru_RU. -->

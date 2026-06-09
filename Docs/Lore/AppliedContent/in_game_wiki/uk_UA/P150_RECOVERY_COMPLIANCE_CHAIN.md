@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Ланцюг recovery compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Ланцюг recovery compliance
 
-UA LOC HOLD: Recovery Compliance Chain defines how Deep Reach is alive in 2190 without needing impossible real-time command.
+Ланцюг recovery compliance перетворює місце катастрофи на контрольоване поле активів. Він може дозволити вхід, різання, проби, збір свідків, запечатування даних і масу повернення. Він також може далі питати, жива людина - це доказ, відповідальність, вантаж чи перешкода.
 
 ## Scanner
 
-UA LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
+Наказ recovery прийнято. Мови порятунку в ланцюгу немає.
 
 ## Terminal
 
-UA LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
+ЛАНЦЮГ RECOVERY: дія після інциденту проходить через допуск підрядників, опіку доказів, salvage-права, поводження зі свідками, маршрутне страхування і публічні формули без визнання. Порятунок не керівне дієслово.
 
 ## Audio
 
-UA LOC HOLD: You are not rescued. You are classified.
+Вони прийшли виконати recovery. Це не те саме, що повернутися по нас.
 
 ## Field Note
 
-UA LOC HOLD: Delay does not make an order harmless.
+Compliance приходить у рукавичках, з пломбами й без обіцянки, що хтось іще є людиною.
 
 <!-- In-Game Wiki; generated from P150_RECOVERY_COMPLIANCE_CHAIN/uk_UA. -->

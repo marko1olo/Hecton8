@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Marauder 法律漏洞"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Marauder 法律漏洞
 
-CN LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+“掠夺者”这个词同时带着两种真相。干净的公民用它形容切开封存废墟的人，打捞经济则用它隐藏自己离不开的劳力。在 HECTON-8，每一次回收都可能是合法工作、顺手偷窃，或几十年来这座殖民地第一次真正得到的救援。
 
 ## Scanner
 
-CN LOC HOLD: License valid in one lane, criminal in the next.
+许可证在一条航道有效，到了下一条就能成为起诉材料。
 
 ## Terminal
 
-CN LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: 在 Aegir Reclamation Pool custody 下是 licensed salvage contractor；在 Deep Reach 资产措辞下是被容忍的 trespasser；在干净的 Sol 摘要里是可起诉的 raider；只有回收记录不会让重要人物难堪时，才算 emergency responder。
 
 ## Audio
 
-CN LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+同一把切割器可以是工具、罪证，也可以是仅剩的救援设备。
 
 ## Field Note
 
-CN LOC HOLD: Marauder is a job title only when the right court is listening.
+只有当正确的法庭能从中获利时，Marauder 才是职称。
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/zh_CN. -->

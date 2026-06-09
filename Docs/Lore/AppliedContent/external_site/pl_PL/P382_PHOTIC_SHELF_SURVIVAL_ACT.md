@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Photic Shelf Survival Act"
+title: "Brama szelfu fotycznego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Photic Shelf Survival Act
+# Brama szelfu fotycznego
 
-PL LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+Szelf daje trasie roboczy słownik: pompa, uszczelnienie, cięcie, ping, łata, uzupełnienie. Każde działanie jest małe i fizyczne. Drzwi otwierają się, bo obejma trzyma, nie dlatego, że kolonia chce być badana.
 
-## Scanner
-
-PL LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-PL LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-PL LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-PL LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Pozostałość Atlas wchodzi tutaj jako wskazówka utrzymania, nie jako ostateczna odpowiedź. Naprawiony panel, przewodzący film albo źle poprowadzona łata serwisowa mogą pomóc operatorowi przeżyć i zarazem dowieść, że system już dotknął trasy. Jasność czyni pracę czytelną; dług czyni ją pilną.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/pl_PL. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cargo_handling |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS177_FIRST_CARGO_HANDLING_ARTICLES.md |
 | Speaker | Cargo scanner, pallet support note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first cargo handling |
@@ -39,7 +39,7 @@ PALLET PAD // Compression ring uneven. Check shifted corner before stacking.
 
 The pad kept the shape of the load after the load moved. One side of the compression ring is darker and deeper, pointing to a shifted corner or soft floor below it.
 
-Pressure history outlasts the crate.
+The darker low side is the part to check before another crate goes on top.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CHECK SHIFTED CORNER
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| ar_SA | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| de_DE | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| es_ES | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| fr_FR | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| he_IL | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| id_ID | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| ja_JP | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| ko_KR | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| nl_NL | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| pl_PL | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| pt_BR | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| ru_RU | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| uk_UA | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
-| zh_CN | draft_machine_or_llm | PALLET PAD // Compression ring uneven. Check shifted corner before stacking. |
+| ar_SA | draft_machine_or_llm | وسادة منصة // حلقة الضغط غير مستوية. افحص الزاوية المزاحة قبل التكديس. |
+| de_DE | draft_machine_or_llm | PALETTENPAD // Druckring ungleich. Verschobene Ecke vor dem Stapeln pruefen. |
+| es_ES | draft_machine_or_llm | ALMOHADILLA DE PALET // Anillo de compresion desigual. Revisa la esquina desplazada antes de apilar. |
+| fr_FR | draft_machine_or_llm | PATIN DE PALETTE // Anneau de compression irregulier. Verifier le coin decale avant empilage. |
+| he_IL | draft_machine_or_llm | רפידת משטח // טבעת הדחיסה לא אחידה. בדוק את הפינה שזזה לפני ערימה. |
+| id_ID | draft_machine_or_llm | BANTALAN PALET // Cincin tekan tidak rata. Periksa sudut bergeser sebelum menumpuk. |
+| ja_JP | draft_machine_or_llm | パレットパッド // 圧縮リングが不均一。積む前にずれた角を確認。 |
+| ko_KR | draft_machine_or_llm | 팔레트 패드 // 압축 고리가 고르지 않다. 쌓기 전 밀린 모서리를 확인한다. |
+| nl_NL | draft_machine_or_llm | PALLETPAD // Compressiering ongelijk. Controleer verschoven hoek voor stapelen. |
+| pl_PL | draft_machine_or_llm | PODKLADKA PALETY // Pierscien nacisku nierowny. Przed pietrzeniem sprawdz przesuniety rog. |
+| pt_BR | draft_machine_or_llm | ALMOFADA DO PALETE // Anel de compressao irregular. Verifique o canto deslocado antes de empilhar. |
+| ru_RU | draft_machine_or_llm | ПОДКЛАДКА ПАЛЛЕТЫ // Кольцо сжатия неровное. Проверь смещенный угол до штабелирования. |
+| uk_UA | draft_machine_or_llm | ПІДКЛАДКА ПАЛЕТИ // Кільце стиску нерівне. Перевір зміщений кут перед штабелюванням. |
+| zh_CN | draft_machine_or_llm | 托盘垫 // 压痕环不均。堆叠前检查移位角。 |

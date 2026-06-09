@@ -19,22 +19,26 @@ localization_flags: 1
 
 # Assemblage de colonne relais acoustique
 
-La fuite commence sous l'eau. La colonne relais acoustique permet à une capsule endommagée de prouver position, horloge et état de survie avant que les récepteurs orbitaux la traitent comme recoverable mass.
+La colonne relais acoustique est la première preuve d'existence de la capsule. Un canal vocal est trop fragile après impact, perte de mât et bruit de tempête. La colonne envoie du pressure-code bas-bande dans l'eau: nervures céramiques, gaine de câble, pinger floats et horloge assez stable pour répéter une position sans ressembler à du bruit d'épave.
+
+C'est important parce que l'orbite ne sauve pas chaque son. Black Keel peut entendre les événements de pression de HECTON-8, mais le carrier les filtre encore par claim custody, géométrie de route et timing de réception. Un tap endommagé sans route proof devient fond. Un tap propre au mauvais horaire devient evidence loss. L'assemblage transforme le son en objet récupérable: position, survival state, horloge, checksum.
+
+Le salvage de la colonne est étroit et sévère. Un Marauder peut remplacer la gaine, asseoir des nervures fissurées, lester les pinger floats et aligner la cadence des paquets, mais l'océan ajoute encore multipath delay, brine distortion et coups de coque. La colonne réparée ne demande pas de pitié. Elle donne au récepteur assez de faits répétés pour risquer une recovery window.
 
 ## Scanner
 
-Colonne acoustique brisée. Elle peut frapper un pressure-code dans l'eau ; l'orbite l'entend encore comme du custody noise endommagé.
+COLONNE ACOUSTIQUE BRISÉE // Empilement de nervures céramiques, gaine de câble fendue, deux pinger floats. Tap bas-bande possible; le récepteur orbital l'ignorera sans accord de timing et route proof.
 
 ## Terminal
 
-ASCENT RELAY : restaurer la colonne acoustique bas débit avant la recovery window. High-gain mast perdue. Emergency buoy peu fiable. Le récepteur Black Keel n'accepte le pressure-code qu'après route proof.
+ASCENT RELAY: restaurer low-band acoustic spine avant recovery window. High-gain mast perdu. Emergency buoy peu fiable. Le récepteur Black Keel accepte pressure-code seulement avec route proof, clock match et custody checksum.
 
 ## Audio
 
-Si le Keel nous entend, il entend une plaie qui tape sur un tuyau.
+Si le Keel nous entend, il entend de la céramique taper des coordonnées dans une mauvaise eau.
 
 ## Field Note
 
-Le premier appel de la capsule n'est pas une voix. Ce sont des nervures céramiques, une peau de câble, des pinger floats et assez de discipline de timing pour que l'océan te répète correctement.
+Le premier appel de la capsule n'est pas une voix. Ce sont des nervures, une gaine de câble, un float de ballast et assez de discipline d'horloge pour faire répéter le même fait par l'eau.
 
 <!-- In-Game Wiki; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/fr_FR. -->

@@ -1,66 +1,94 @@
-<!-- localization_status: draft_machine_or_llm -->
-# SZAFY KWARANTANNY, ŁAŃCUCHY PRÓBEK I BRUDNY SPRZĘT
+<!-- localization_status: draft_machine_or_llm_pl_PL -->
+# SZAFKI KWARANTANNY, ŁAŃCUCHY PRÓBEK I BRUDNY SPRZĘT
 
-> **Źródło:** zasady przyjęcia na Black Keel, prawo Deep Reach dotyczące skażeń, notatki pokładowe Marauders o sprzęcie, który nie powinien był wrócić na pokład.  
-> **Głos:** oficer przyjęcia roszczeń, poprawiony przez kontraktorów, którzy częściej tracili narzędzia w kwarantannie niż przez drapieżniki.  
-> **Nota recenzenta:** kwarantanna w lore HECTON-8 ma być odczuwalna fizycznie. To nie papier unoszący się nad grą. To zamknięta skrzynia, licznik czasu, rachunek, zapach i czasem jedyny powód, dla którego statek nie staje się następną ruiną.
+> **Źródło:** zasady przyjęć Black Keel, prawo skażeniowe Deep Reach, notatki pokładowe Marauderów o sprzęcie, który nie powinien wrócić na pokład.  
+> **Zakres:** jak odzyskana materia po przekroczeniu linii przyjęcia staje się dowodem, długiem, ryzykiem zakażenia, wartością aukcyjną i zamkniętą własnością.  
+> **Użycie w terenie:** przeczytać przed otwarciem odzyskanego pojemnika, wytarciem narzędzia, zerwaniem pieczęci próbki albo sporem z kwarantanną o szafkę, w której leży jedyny przecinak.
 
 ---
 
-## 1. Nic nie wraca czyste
+## 1. Linia przyjęcia
 
-Black Keel nie przyjmuje skarbów. Przyjmuje problemy, które mają masę.
+Black Keel nie przyjmuje skarbów. Przyjmuje mokre przedmioty o nieznanych biografiach.
 
-Każdy przedmiot podniesiony z HECTON-8 przynosi ze sobą część oceanu. Sól chowa się w łbach śrub. Biofilm siedzi pod uchwytami. Solanka poci się z izolacji, kiedy przedmiot zaczyna się ogrzewać. Szkło ciśnieniowe trzyma mikroskopijny pył w wyszczerbionej krawędzi. Zapieczętowana próbka niesie więcej niż materiał; niesie miejsce, czas, trasę, kontakt, opiekę dowodową i wszystko, o co osoba zamykająca pojemnik miała nadzieję, że następna nie zapyta.
+Linia przyjęcia to pomalowany szew na pokładzie, ale wszyscy traktują ją jak przejście graniczne. Poniżej tej linii przedmiot jest łupem. Powyżej ten sam przedmiot staje się masą, zapachem, wodą, odpowiedzialnością i dowodem. Sól chowa się w łbach śrub. Solanka poci się z izolacji po ogrzaniu. Biofilm siedzi pod uchwytami. Szkło ciśnieniowe trzyma drobny grit w wyszczerbionych krawędziach. Probówka niesie nie tylko materiał, lecz także miejsce, przekazanie, historię ciśnienia, trasę, świadka i wszystko, o co osoba ją pieczętująca miała nadzieję, że nikt nie zapyta.
 
-Deep Reach traktowała skażenie jak kategorię. Black Keel traktuje je jak dźwignię. Brudny przecinak może stać się opłatą kwarantannową. Mokry rdzeń pamięci może stać się zatrzymaniem dowodowym. Żywa warstwa na pompie może stać się zagrożeniem biologicznym, stabilizującym systemem powierzchniowym albo premią aukcyjną, zależnie od tego, które biuro pierwsze zobaczy zysk. Przedmiot się nie zmienia. Zmienia się etykieta.
+Deep Reach traktował skażenie jako kategorię. Black Keel traktuje je jak dźwignię. Brudny przecinak może stać się opłatą. Mokry rdzeń pamięci może stać się zatrzymaniem dowodu. Żywa błona na pompie może stać się biozagrożeniem, stabilizującym systemem powierzchniowym albo premią aukcyjną, zależnie od tego, które biuro pierwsze zobaczy zysk. Przedmiot nie zmienia się, gdy przekracza linię. Zmienia się orzeczenie.
 
-Marauders uczą się, że powrót żywym jest tylko pierwszym powrotem. Musi wrócić sprzęt. Muszą wrócić próbki. Muszą wrócić roszczenia w stanie, który ktoś może wycenić. Człowiek, który wygramolił się z oceanu z niewłaściwym brudem na niewłaściwej rękawicy, może być bezpieczniejszy niż na dole, ale nie jest jeszcze wolny.
+Członek załogi, który wychodzi z oceanu żywy, ukończył tylko pierwszy powrót. Sprzęt musi wrócić. Próbki muszą wrócić. Roszczenia muszą wrócić w stanie, który ktoś potrafi wycenić. Na Black Keel czystość nie jest stanem. Czystość jest decyzją podbitą przez kogoś, kto ma klucz od szafki.
 
-Na Black Keel czystość nie jest stanem. Czystość jest orzeczeniem.
+## 2. Co trafia na pokład
 
-## 2. Szafa kwarantanny
+Każda odzyskana rzecz wnosi ze sobą część HECTON-8.
 
-Szafa kwarantanny to miejsce, w którym statek zamienia niepewność w czas.
+Pęknięty hełm wnosi kierunek rys, pas soli, stary oddech i wszystko, co ocierało się o rant podczas wynurzania. Generator wnosi muł z podłogi, która go trzymała, metaliczny pył po cięciu, historię ciepła w swojej błonie i zapach, który może przetrwać pokwitowanie. Zapieczętowany worek wnosi wodę, która dotknęła znaleziska, rękawicy, noża, pokładu i wnętrza osoby, która spanikowała przy zamykaniu.
 
-Dobre szafy są odporne na ciśnienie, mają odpływy z tyłu, wykładzinę czujników i złośliwy charakter. Wąchają lotne związki, mierzą wzrost wilgotności, obserwują krzywe cieplne, słuchają drobnego ruchu i porównują chemię powierzchni ze starymi tabelami ryzyka. Złe szafy to tańsze pudła z pewnymi siebie etykietami. Black Keel posiada oba rodzaje i pobiera opłatę tak, jakby każde pudło było dobre.
+Ten ładunek może być użyteczny. Brud może dowieść trasy. Plama może dowieść kontaktu. Żywa błona może powstrzymać martwą uszczelkę przed otwarciem. Smuga na rękawicy może powiedzieć, do którego pokoju wejście nastąpiło, gdy znak roszczenia twierdzi inaczej. Ten sam ładunek może też wejść w stojaki skafandrów, zakwasić drukarki żywności, zabrudzić filtry powietrza, zasiać zamrażarkę próbek albo zmienić skrót jednej załogi w problem płucny drugiej.
 
-Załogi nienawidzą szaf, bo szaf nie obchodzi potrzeba. Uszczelka naprawcza może siedzieć za szkłem, gdy habitat poniżej przecieka. Osobisty nóż może zostać zatrzymany, bo dotknął niewycenionej warstwy. Próbka, która dowiodłaby roszczenia, może czekać, podczas gdy automatyczne ramię decyduje, czy pojemnik się poci, czy tylko się wstydzi. Rękawica skafandra może oblać kwarantannę i zamknąć za sobą cały zestaw narzędzi.
+Dlatego doświadczone załogi nie pytają najpierw, czy znalezisko ma wartość. Pytają, co zrobi po ogrzaniu.
 
-Logika statku jest brutalna, ale nie głupia. Zły powrót może rozejść się po filtrach powietrza, drukarkach żywności, stojakach skafandrów, zamrażarkach próbek i płucach załogi. Żywy czynnik skażający na pokładzie zamkniętego transportowca odzysku nie jest niedogodnością. Jest drugim oceanem, który uczy się statku.
+## 3. Szafka kwarantanny
 
-Marauders znaczą szafy tak, jak więźniowie znaczą ściany: daty, zapachy, ostrzeżenia, ceny, który czujnik kłamie, który zawias się zacina, który technik ma litość i który urzędnik odsprzedaje tę litość jako usługę.
+Szafka kwarantanny zmienia niepewność w czas.
 
-## 3. Łańcuchy próbek
+Dobre szafki są ciśnieniowe, drenowane od tyłu, wyłożone czujnikami i złośliwe. Wąchają lotne związki, obserwują wzrost wilgoci, porównują krzywe ciepła, słuchają drobnego ruchu i zestawiają chemię powierzchni ze starymi tabelami ryzyka. Złe szafki to tańsze pudła z pewnymi siebie etykietami. Black Keel ma oba rodzaje i pobiera opłatę tak, jakby każde pudło było dobre.
 
-Próbka ma wartość tylko wtedy, gdy przetrwa jej historia.
+Załogi nienawidzą szafek, bo szafki nie przejmują się potrzebą. Uszczelka naprawcza może leżeć za szkłem, podczas gdy niżej przecieka habitat. Osobisty nóż może zostać zatrzymany, bo dotknął niewycenionej błony. Próbka dowodowa może czekać, aż automatyczne ramię zdecyduje, czy pojemnik się poci, czy tylko nierówno stygnie. Rękawica skafandra może oblać kwarantannę i zamknąć za sobą cały zestaw narzędzi.
 
-Deep Reach kochała zapieczętowane probówki dowodowe, bo sprawiały, że świat wyglądał na uporządkowany. Probówka, znacznik, czas, lokalizacja, operator, świadek, przekazanie. Black Keel zachował strukturę i usunął pociechę. Łańcuch próbki nie istnieje po to, by chronić prawdę. Istnieje po to, by zdecydować, za którą prawdę można wystawić rachunek.
+Logika jest brutalna, nie głupia. Zamknięty tender to mały świat. Zły powrót może rozlać się do filtrów, koi, zamrażarek, schowków, pęknięć skóry i oddechu. Jeden żywy kontaminant na statku ratowniczym nie jest niedogodnością. To drugi ocean próbujący nauczyć się hydrauliki.
 
-Dobry łańcuch próbki mówi, gdzie znaleziono rzecz, kto jej dotknął, jak ją zamknięto, jaka woda weszła do pojemnika, jakie ciśnienie przetrwała, który czujnik widział przekazanie i jaki znak roszczenia był w pobliżu. Zły łańcuch mówi "znalezione w Sektorze 44" i liczy, że nikt nie spyta, w której części sektora, przed czy po cyklu pompy, nad czy pod warstwą solanki, czystym narzędziem czy pożyczoną rękawicą.
+Marauderzy znakują szafki jak więźniowie ściany: daty, zapachy, opłaty, kłamstwa, który zawias zacina, który czujnik przesadza, który technik ma litość i który urzędnik sprzedaje litość jako usługę.
 
-Gracze mogą używać łańcuchów próbek jak broni. Zachowane zeskrobanie może dowieść, że inna załoga weszła pierwsza. Skażona uszczelka może zniszczyć skargę kupca. Brakujący impuls wilgotności może pokazać, że pojemnik otwarto po przejęciu pod opiekę. Idealny łańcuch może uczynić maleńką fiolkę cenniejszą od ciężkiej maszyny, bo fiolka przetrwa sąd.
+## 4. Łańcuchy próbek
 
-Dlatego część najmniejszych przedmiotów na HECTON-8 jest najniebezpieczniejsza do noszenia.
+Próbka ma wartość tylko wtedy, gdy przeżyje jej historia.
 
-## 4. Brudny sprzęt jako dług
+Deep Reach lubił zapieczętowane tuby, bo sprawiały, że chaos wyglądał na uporządkowany: tuba, znacznik, czas, miejsce, operator, świadek, przekazanie. Black Keel zachował strukturę i usunął komfort. Łańcuch próbki nie istnieje po to, by chronić prawdę. Istnieje po to, by zdecydować, którą prawdę można zafakturować.
+
+Mocny łańcuch zapisuje, gdzie rzecz znaleziono, kto jej dotknął, jakie narzędzie ją zeskrobało, jaka woda weszła do pojemnika, jakie ciśnienie przeszła, który czujnik widział przekazanie i jaki znak roszczenia był w pobliżu. Słaby łańcuch mówi `znalezione w sektorze 44` i liczy, że nikt nie zapyta, która półka, przed czy po cyklu pompy, nad czy pod warstwą solanki, czystym narzędziem czy pożyczoną rękawicą.
+
+Zachowany zeskrob może dowieść, że inna załoga weszła pierwsza. Skażona pieczęć może zniszczyć skargę kupca. Brakujący tik wilgoci może pokazać, że pojemnik otwarto po przejęciu. Idealny łańcuch może sprawić, że mała fiolka będzie warta więcej niż ciężka maszyna, bo fiolka przetrwa sąd.
+
+Najmniejsze przedmioty na HECTON-8 często są najniebezpieczniejsze do noszenia. Są dość lekkie, by je ukraść, i dość precyzyjne, by skazać.
+
+## 5. Brudny sprzęt jako dług
 
 Brudny sprzęt zmienia to, co człowiek jest winien.
 
-Black Keel wypożycza narzędzia z warunkami zwrotu. Skafander wraca czysty albo pracownik płaci. Przecinak wraca z certyfikowanym osadem albo pracownik płaci. Worek na próbki wraca nienaruszony albo pracownik płaci. Jeśli pracownik umiera, dług nie staje się tragiczny. Staje się przenoszalny.
+Black Keel wynajmuje narzędzia z warunkami zwrotu. Skafander wraca czysty albo pracownik płaci. Przecinak wraca z certyfikowanym osadem albo pracownik płaci. Worek próbki wraca nienaruszony albo pracownik płaci. Jeśli pracownik umiera, dług w księdze nie staje się tragedią. Staje się przenoszalny.
 
-System tworzy brzydkie nawyki. Załogi wycierają narzędzia, zanim pomogą sobie nawzajem. Chowają plamy, które mogłyby dowieść trasy, bo opłata za trasę jest tańsza niż opłata za skażenie. Wymieniają czyste rękawice jak walutę. Trzymają jedną ofiarną sakiewkę na rzeczy pachnące sądem i jedną zaufaną sakiewkę na rzeczy pachnące pieniędzmi. Wiedzą, który brud można sprzedać, który trzeba ukryć i który powinien zostać na dnie, bo jego powrót da Black Keel nowy uchwyt.
+System tworzy brzydkie nawyki. Załogi wycierają narzędzia, zanim sobie pomogą. Ukrywają plamy, które mogłyby dowieść trasy, bo opłata trasowa jest tańsza niż opłata skażeniowa. Wymieniają czyste rękawice jak walutę. Trzymają jeden woreczek ofiarny na rzeczy pachnące sądem i jeden zaufany woreczek na rzeczy pachnące pieniędzmi. Uczą się, który brud można sprzedać, który trzeba ukryć i który powinien zostać na dnie, bo sprowadzenie go daje Black Keel nowy uchwyt.
 
-Brudny sprzęt jest też pamięcią. Wzór rys na hełmie może powiedzieć, którego włazu użyto. Sól w szwie buta może wskazać warstwę solanki. Pył rdzy w zębie przecinaka może dowieść, że drzwi przecięto po zalaniu. Smuga na rękawicy może połączyć gracza z pomieszczeniem, do którego nigdy nie przyznał się wejść.
+Brudny sprzęt jest też pamięcią. Wzór rys na hełmie może wskazać właz. Sól w szwie buta może nazwać warstwę solanki. Pył rdzy w zębie przecinaka może dowieść, że drzwi przecięto po zalaniu. Smuga na rękawicy może połączyć ciało z pokojem, do którego nigdy nie przyznało się wejść.
 
-Ten sam brud, za który pracownik dostaje karę, może nie pozwolić go wymazać.
+Ten sam brud, który karze pracownika, może powstrzymać jego wymazanie.
 
-## 5. Czego uczy się gracz
+## 6. Dowód, który dalej pracuje
 
-Gracz uczy się, że wydobycie nie jest końcem kontaktu.
+Odzyskany dowód nie zamarza, gdy trafia do worka.
 
-Rzecz przyniesiona z HECTON-8 nadal działa. Ogrzewa się, cieknie, rośnie, śmierdzi, przewodzi, dowodzi, psuje się i kosztuje. Szafa może ochronić statek albo wziąć potrzebne narzędzie jako zakładnika. Próbka może uratować roszczenie albo obciążyć rękę, która ją zapieczętowała. Czysty powrót może być uczciwy, sfałszowany, kupiony albo niemożliwy.
+Ciepła solanka się rozdziela. Błona wysycha, potem budzi się od oddechu. Zapieczętowana tuba przesuwa ciśnienie i plami własną etykietę od środka. Skorupa mineralna rośnie przez krawędź próbki i zmienia to, co wygląda jak pierwszy kontakt. Narzędzie z żywą smugą może przewodzić raz w szafce i nigdy więcej w sali przesłuchań. Martwy owad w woreczku może stać się bardziej użyteczny niż część obok, bo owad dowodzi, które światło było włączone.
 
-Dobra gra oznacza decyzję, co zasługuje na wejście na pokład, co powinno zostać zapieczętowane na dole, co trzeba skopiować przed kwarantanną i który brud jest wart opłaty. Czasem właściwym ruchem jest przynieść brudną rzecz, bo jej historia jest silniejsza niż jej ryzyko. Czasem właściwym ruchem jest zostawić wartość na dole, bo Black Keel posiądzie ją w chwili, gdy przekroczy linię przyjęcia.
+Black Keel lubi dowody, które siedzą nieruchomo. HECTON-8 rzadko je daje. Najlepsze łańcuchy przyznają zmianę, zamiast udawać, że nic się nie ruszyło: temperatura worka, czas pieczęci, tik ciśnienia, wzrost wilgoci, zapach, kropla, dźwięk, zmiana koloru, kto zauważył i kto miał powód nie zauważyć.
 
-Kwarantanna to miejsce, gdzie ocean przestaje być wodą i staje się administracją z zębami. Uczy gracza, że każdy odzyskany przedmiot ma po wynurzeniu drugie zanurzenie: zanurzenie przez opiekę, cenę i dowód.
+Jeśli dowód dalej pracuje, łańcuch musi dalej mówić.
+
+## 7. Kiedy szafka kłamie
+
+Kwarantanna może zawieść bez otwierania.
+
+Czujnik może zarosnąć i nazwać wszystko czystym. Dren może się zatkać i sprawić, że suche pudło się spoci. Tania uszczelka może wpuścić powietrze statku do próbki i wymazać historię ciśnienia. Test grzewczy może obudzić to, co miał ujawnić. Urzędnik może przesunąć jeden worek, by zaoszczędzić miejsce, i zniszczyć dwa łańcuchy naraz. Załoga może przekupić szybkie zwolnienie i spędzić oszczędzoną godzinę na czyszczeniu pleśni z wentylacji koi.
+
+Fałszywie czyste jest gorsze od opóźnienia. Fałszywie brudne też nie jest nieszkodliwe. Może zatrzymać dowód trasy, aż kupiec odejdzie, uczynić narzędzie naprawcze niedostępnym podczas przecieku albo dać Black Keel dość pretekstu, by przejąć znalezisko przez narastające opłaty. Szafka nie jest prawdą. Jest świadkiem z zasilaniem, drenami, czujnikami, nawykami i właścicielami.
+
+Traktuj etykietę kwarantanny jak twierdzenie, które ktoś inny wygłasza o twoim obiekcie. Czasem etykieta ma rację. Czasem jest najdroższym kontaminantem w pudle.
+
+## 8. Reguła terenowa
+
+Przed linią przyjęcia zapakuj obiekt, który masz.
+
+Przed szafką zapisz historię, której potrzebujesz.
+
+Przed przesłuchaniem wiedz, który brud dowodzi, że tam byłeś, i który brud pozwala komuś innemu posiadać dowód.
+
+Nic nie wraca czyste. Pytanie brzmi, kto dostaje zapłatę za nazwanie tego brudnym.

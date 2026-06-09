@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Reisezeiten von Sondenpaketen
 
-Sondenreisezeit erklärt, warum Deep Reach HECTON-8 bewerten konnte, bevor Menschen dort geschützt werden konnten. Die ersten Aufzeichnungen waren eng, bei Ankunft alt und bereits finanziell. Ein Paket kann einen Anspruch reif wirken lassen, während der menschliche Plan dahinter noch geraten ist.
+Sondenpakete ließen Aegir beherrschbar wirken, bevor jemand unter seinem Wasser stand. Seed-Karten, Mineralhinweise, Gefahrenbänder und Routengenehmigungen kamen in Schichten, jede mit einer Startwahrheit, die bereits gealtert war. HECTON-8 erbte diese Geister. Eine aktuell wirkende Karte konnte ein zehn Jahre alter Streit mit besserem Layout sein.
 
 ## Scanner
 
-Die ersten Aegir-Zeugen waren Pakete, keine Kolonisten.
+Geborgener Paketkopf: Ankunftsdatum älter als die Koloniekarte, die er aktualisierte.
 
 ## Terminal
 
-SURVEY-KETTE: strahlunterstützte Sonden und Paketfahrzeuge kreuzen zuerst, liefern abgestandene Wahrheit, legen Bremsmathematik fest und lassen Konzerne eine Route verkaufen, bevor sie menschlich ist.
+SONDENPAKET-NOTIZ: Ran-Aegir-Vermessungsbündel reisen mit gestuften Brennphasen, Schlaf, Relaisfängen und billiger Geduld. Ein Paket kann beim Start korrekt, beim Öffnen veraltet und dennoch teuer genug sein, um Politik zu werden.
 
 ## Audio
 
-Die Sonde sah den Ozean, bevor dort jemand ein Grab hatte.
+Die Karte war wahr, als sie losflog. Das war das Problem.
 
 ## Field Note
 
-Eine Sonde kann eine menschliche Karriere lang eine Route queren, bevor jemand einen Körper riskiert.
+Eine Sonde bringt nicht die Gegenwart. Sie bringt ein Fossil mit Telemetrie.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/de_DE. -->

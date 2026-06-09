@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Contract Risk Reward Boundary"
+title: "Batas Risiko dan Imbalan Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Contract Risk Reward Boundary
+# Batas Risiko dan Imbalan Kontrak
 
-ID LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+Replayability HECTON-8 bukan kekuatan warisan. Ia kontrak yang lebih buruk, jendela yang lebih sempit, permintaan bukti lebih awal, dan carrier yang ingat bagian dirimu mana yang masih jadi agunan.
 
 ## Scanner
 
-ID LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Baris kontrak mengikat hak gadai, jendela badai, urutan kustodi, plafon pembayaran, dan bobot klausul.
 
 ## Terminal
 
-ID LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: baris membutuhkan tingkat hak gadai, plafon pembayaran, jendela badai, kustodi sampel, urutan bukti, dan bobot klausul Deep Reach. Kontrak adalah predator pertama.
 
 ## Audio
 
-ID LOC HOLD: The contract is the first predator.
+Kontrak adalah predator pertama.
 
 ## Field Note
 
-ID LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Perubahan imbalan milik baris kontrak, bukan teks lore improvisasi.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/id_ID. -->

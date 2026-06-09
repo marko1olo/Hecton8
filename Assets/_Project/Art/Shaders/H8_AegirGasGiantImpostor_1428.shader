@@ -12,6 +12,7 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
         _Exposure ("Exposure", Range(0.05, 3.0)) = 0.82
         _DetailStrength ("Detail Strength", Range(0.0, 2.0)) = 0.72
         _StormStrength ("Storm Strength", Range(0.0, 4.0)) = 0.42
+        _StormEmission ("Runtime Storm Emission", Range(0.0, 4.0)) = 1.0
         _RimStrength ("Rim Strength", Range(0.0, 4.0)) = 0.72
         _RimPower ("Rim Power", Range(0.5, 8.0)) = 2.4
         _PhaseCenter ("Phase Center", Range(0.0, 1.0)) = 0.56
@@ -80,6 +81,7 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 half _Exposure;
                 half _DetailStrength;
                 half _StormStrength;
+                half _StormEmission;
                 half _RimStrength;
                 half _RimPower;
                 half _PhaseCenter;
@@ -174,7 +176,7 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 half3 bandColor = lerp(authoredBands, controlledTint, 0.28h);
                 bandColor += (detailSample - half3(0.50h, 0.50h, 0.50h)) * (_DetailStrength * 0.18h * detailQuality);
                 half stormMask = saturate((stormSample - 0.22h) * 1.55h);
-                bandColor += _WarmTint.rgb * stormMask * _StormStrength * lerp(0.28h, 1.0h, quality);
+                bandColor += _WarmTint.rgb * stormMask * _StormStrength * _StormEmission * lerp(0.28h, 1.0h, quality);
 
                 half3 normalWS = normalize(input.normalWS);
                 half3 viewDir = normalize((half3)(_WorldSpaceCameraPos.xyz - input.positionWS));

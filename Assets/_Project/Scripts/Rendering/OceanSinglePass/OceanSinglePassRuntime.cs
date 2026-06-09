@@ -2,8 +2,10 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.VFX;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -58,6 +60,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private GraphicsBuffer _wakeEventBufferA;
         private GraphicsBuffer _wakeEventBufferB;
         private GraphicsBuffer _activeWakeEventBuffer;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private ITerrainProvider _terrainProvider;
         private string _projectRootPath;
         private bool _registeredVisualSync;
@@ -123,7 +126,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (s_runtime != null || !ShouldBootstrapForScene(scene))
                 return;
 
-            OceanSinglePassRuntime authoredRuntime = UnityEngine.Object.FindFirstObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
+            OceanSinglePassRuntime authoredRuntime = UnityEngine.Object.FindAnyObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
             if (authoredRuntime != null)
             {
                 authoredRuntime.gameObject.SetActive(true);
@@ -414,6 +417,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
             ClearPublishedBuffersIfOwnedByThis();
+            _oceanKinematicsService = null;
         }
 
         private void OnDestroy()
@@ -512,6 +516,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private void CacheColdServices()
         {
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _terrainProvider = GlobalRegistry.Terrain;
         }
 
@@ -914,6 +919,9 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private float ResolveWaterSurfaceAupY()
         {
+            if (TryResolveOceanWaterSurfaceAupY(out float oceanWaterSurfaceY))
+                return oceanWaterSurfaceY;
+
             ITerrainProvider terrainProvider = _terrainProvider;
             if (terrainProvider != null && TryResolveWaterSurfaceAupY(terrainProvider.WaterSurfaceLevel, out float terrainWaterSurfaceY))
                 return terrainWaterSurfaceY;
@@ -921,11 +929,41 @@ namespace Hecton8.Rendering.OceanSinglePass
             return OceanSinglePassConstants.DefaultSeaLevelMeters;
         }
 
+        private bool TryResolveOceanWaterSurfaceAupY(out float waterSurfaceY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceAupY(oceanKinematics.SeaLevel, out waterSurfaceY))
+            {
+                return true;
+            }
+
+            waterSurfaceY = OceanSinglePassConstants.DefaultSeaLevelMeters;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceAupY(float candidateWaterSurfaceY, out float waterSurfaceY)
+        {
+            if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceY = candidateWaterSurfaceY;
+                return true;
+            }
+
+            waterSurfaceY = OceanSinglePassConstants.DefaultSeaLevelMeters;
+            return false;
+        }
+
         private static bool TryResolveWaterSurfaceAupY(float candidateWaterSurfaceY, out float waterSurfaceY)
         {
             if (math.isfinite(candidateWaterSurfaceY) &&
                 math.abs(candidateWaterSurfaceY) > 0.0001f &&
-                math.abs(candidateWaterSurfaceY) <= 1000f)
+                math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceY = candidateWaterSurfaceY;
                 return true;
@@ -1101,6 +1139,12 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1130,6 +1174,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             ReleaseAllVaultHandles(_vault);
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
+            _oceanKinematicsService = null;
         }
 
         private void ReleaseAllVaultHandles(IDataVault vault)

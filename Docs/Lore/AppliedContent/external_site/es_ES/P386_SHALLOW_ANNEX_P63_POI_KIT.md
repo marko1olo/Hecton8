@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Kit de pruebas del anexo somero P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Shallow Annex P-63 POI Kit
+# Kit de pruebas del anexo somero P-63
 
-ES LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 funciona porque no separa refugio y prueba. La sala entrega aire, una bomba de sentina, juntas, una línea pinger y un contacto de cortador. Esas piezas sirven primero; el contrato puede esperar, el agua no.
 
-## Scanner
-
-ES LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-ES LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-ES LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-ES LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Cuando la sala queda estable, los mismos objetos pesan distinto. El aviso de ruta sellado habla de cierre bajo condiciones controladas, mientras la bomba dañada, la bandeja de juntas remendada y el paquete de accidente mojado muestran una salida más brusca. La primera contradicción no está escondida en un discurso. Está atornillada al lugar que mantuvo vivo al operador.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/es_ES. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Імена працівників підофісів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Імена працівників підофісів
 
-UA LOC HOLD: Suboffice personnel seeds let future missions add human texture without inventing a new villain hierarchy.
+Імена працівників підофісів дають Deep Reach людський паперовий шар, не перетворюючи компанію на охайну схему босів. Ці імена потрібні не для нового керівного кола. Вони потрібні, щоб підписи, логи дверей і фрагменти службових записок відчувалися як речі, до яких людина торкалася о третій ранку, поки тривоги втрачали пріоритет. Клерк прийому ризику може неправильно позначити припливний запас. Юрист евакуації може втримати випуск. Нотаріус пакетів може засвідчити хеш свідка, не питаючи, чому кімната тоне. Система лишається більшою за будь-якого працівника, але докази отримують відбитки.
 
 ## Scanner
 
-UA LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+Нижні імена Deep Reach важливі, бо катастрофу несло не абстрактне лого компанії, а руки, ініціали й вхідні скриньки.
 
 ## Terminal
 
-UA LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: прийом ризику за запасами / юрист черги евакуації / аналітик безперервності Atlas / нотаріус пакетів / клерк зберігання відновлення. Використовувати імена як якорі підписів, конфліктів свідків і evidence кімнат, а не як просту командну драбину.
 
 ## Audio
 
-UA LOC HOLD: A clerk can damage a life without owning the whole disaster.
+У столів були імена. Тому папір болить.
 
 ## Field Note
 
-UA LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Корпорація стає справжньою, коли за штампом видно втомлену людину.
 
 <!-- In-Game Wiki; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/uk_UA. -->

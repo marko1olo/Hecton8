@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "طبقات معرفة السبب الحقيقي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# طبقات معرفة السبب الحقيقي
 
-AR LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+تحدد طبقات معرفة السبب الحقيقي شكل ذنب Deep Reach من دون تسطيح كل شخص داخل الشركة إلى الوحش نفسه. لم يملك مكتب واحد الكارثة كلها. رأى مراقبو الميدان سلوك المد غير الطبيعي وانهيار هوامش الحساسات. ترجم مكتب المخاطر ذلك إلى تعرض طرفي مقبول. حمت Atlas Safety درجات الاستمرارية. أخر مستشارو الإخلاء سلطة الإفراج. أعدت Keelmark ومكاتب الاسترداد لغة مطالبات تستطيع تحويل الموت والحمولة والصمت إلى خسارة مدارة. كل طبقة كان يمكنها أن تقول إنها لا تعرف ما يكفي لإيقاف الكارثة وحدها. معاً عرفوا ما يكفي لترك HECTON-8 تغرق ببطء وبصورة قانونية.
 
 ## Scanner
 
-AR LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+عرفت Deep Reach الحقيقة على شرائح: هوامش المد في مكتب، ووزن Atlas في آخر، وتأخير الإخلاء وتحويل المطالبات في مكان ثالث.
 
 ## Terminal
 
-AR LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: فرق المد سجلت فقدان الهامش؛ Risk قبل التعرض الطرفي؛ Atlas Safety رجحت الاستمرارية فوق الإخلاء؛ المستشارون حجزوا الإفراجات؛ Keelmark حول الوفيات إلى خسارة قابلة للاسترداد؛ Recovery Compliance طلب الحمولة قبل الإفصاح.
 
 ## Audio
 
-AR LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+لم يحتج أحد إلى كتابة «دعوهم يموتون». كان الجدول يعرف الطريقة بالفعل.
 
 ## Field Note
 
-AR LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+لم يكن الجهل الموزع براءة. كان بنية.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/ar_SA. -->

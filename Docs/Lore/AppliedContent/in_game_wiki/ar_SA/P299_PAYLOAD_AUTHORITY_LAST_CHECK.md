@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Authority Last Check"
+title: "الفحص الأخير لسلطة payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Authority Last Check
+# الفحص الأخير لسلطة payload
 
-AR LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+يعطي الفحص الأخير واجهة النهاية سؤالها الصعب. لا يختار اللاعب صندوق جائزة؛ يختار من يحصل على الكتلة والدليل والأسماء والإحداثيات وإذن الفعل.
 
 ## Scanner
 
-AR LOC HOLD: Payload check: receiver changes meaning, not only reward.
+فحص payload: اختيار المستقبل يغير الملكية، لا المكافأة فقط.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: اختر المستقبل والكتلة وحيازة الأدلة والعاقبة البيئية ومسؤولية ما بعد العودة. يحدد اختيار المستقبل من يستطيع العمل على الدليل بعد المغادرة.
 
 ## Audio
 
-AR LOC HOLD: What leaves will own what remains.
+ما يغادر سيملك ما يبقى.
 
 ## Field Note
 
-AR LOC HOLD: Use immediately before irreversible ending route selection.
+يستخدم مباشرة قبل اختيار مسار النهاية غير القابل للرجوع.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/ar_SA. -->

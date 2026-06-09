@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Протокол відсічення Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Протокол відсічення Atlas payload
 
-UK LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Протокол відсічення - руйнівний маршрут отримувача, а не чистий випуск. Він може зупинити пошкоджену ремонтну логіку й відмовити Deep Reach у векторі відновлення. Він також може зруйнувати машинну екологію, стерти корисну пам'ять маршруту й створити слід доказів, який за правом отримувача читається як containment, sabotage, theft або mercy.
 
 ## Scanner
 
-UK LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Маршрут відсічення зведено. Payload несе ключі розриву для безперервності Atlas, ізоляції пам'яті маршруту й збереження proof hash.
 
 ## Terminal
 
-UK LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+ОТРИМУВАЧ PAYLOAD // ВІДСІЧЕННЯ ATLAS. Ціль: хребет безперервності Atlas. Розірвати ремонтний цикл, ізолювати пам'ять маршруту, зберегти proof hash, відмовити корпоративному вектору відновлення. Екологічний каскад не вирішено. Правова класифікація спірна.
 
 ## Audio
 
-UK LOC HOLD: If this is mercy, it still leaves a body.
+Atlas можна відрізати. Розріз однаково лишить custody marks.
 
 ## Field Note
 
-UK LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Нотатка мародера: чистий розріз усе одно розріз. Сфотографуй custody marks, перш ніж смикнути.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/uk_UA. -->

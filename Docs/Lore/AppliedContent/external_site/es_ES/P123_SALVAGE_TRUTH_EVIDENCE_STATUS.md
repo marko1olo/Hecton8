@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Estado probatorio de la verdad recuperada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Estado probatorio de la verdad recuperada
 
-ES LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+La prueba recuperada da a HECTON-8 una conspiración de combustión lenta. La colonia no calla porque no haya pasado nada, sino porque cada objeto probatorio tiene valor de mercado, valor de responsabilidad y valor legal. La verdad aflora por rutas de custodia y objetos dañados, no por una confesión conveniente.
 
 ## Scanner
 
-ES LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Paquete de caja negra: verdad hasta que lo toca la mesa de reclamaciones.
 
 ## Terminal
 
-ES LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: el salvamento bruto pasa por defecto a material de reclamación. La prueba pública exige hash de fuente intacto, marca de presión-tiempo, paquete testigo, notario de relevo fuera del control del reclamante y una cadena de custodia que sobreviva a pérdida de nave, exposición a salmuera y ediciones manuales.
 
 ## Audio
 
-ES LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Un cadáver es prueba solo cuando alguien fracasa al archivarlo mal.
 
 ## Field Note
 
-ES LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Un hecho del fondo solo es peligroso si conserva a sus testigos.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/es_ES. -->

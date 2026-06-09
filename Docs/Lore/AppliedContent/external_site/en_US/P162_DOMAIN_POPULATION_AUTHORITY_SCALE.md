@@ -23,7 +23,7 @@ localization_flags: 0
 
 The domain table keeps population soft on purpose. Exact census figures can be tuned later, but the pressure relationship is locked: Sol owns old finance and certification, Centauri owns legitimacy language, Barnard owns a working salvage culture, Tau Ceti owns public evidence pressure, Luyten owns packet custody, and Aegir owns the dirty place where all of that becomes machinery.
 
-A player on HECTON-8 should never read a domain name as trivia. Sol Core is a seal on property and insurance continuity. It can make a dead ocean legally active. The Centauri Compact is a memory of functional expansion, which is why Deep Reach can borrow its charter tone and look less rotten than it is. Barnard Yards explains why the protagonist knows clamps, cutters, pressure tools and bad work without needing hero mythology.
+No domain name in HECTON-8 should read as trivia. Sol Core is a seal on property and insurance continuity. It can make a dead ocean legally active. The Centauri Compact is a memory of functional expansion, which is why Deep Reach can borrow its charter tone and look less rotten than it is. Barnard Yards explains why a contractor knows clamps, cutters, pressure tools and bad work without needing hero mythology.
 
 Tau Ceti is valuable because it can make evidence matter in public. That does not mean it can save a diver before the tide changes. Luyten Junction is colder: it can preserve custody, hash chains and packet notary records even when no moral authority is present. Aegir is the dirty claim node where local shells, Black Keel windows and Deep Reach priority hooks turn those remote authorities into immediate danger.
 

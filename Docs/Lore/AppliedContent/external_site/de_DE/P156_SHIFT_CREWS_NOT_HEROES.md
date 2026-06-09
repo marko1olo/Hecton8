@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Schichtcrews, keine Helden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Schichtcrews, keine Helden
 
-DE LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+Schichtcrews, keine Helden ist HECTON-8s Regel für menschliches Schreiben: Arbeiter bleiben durch Jobs, Müdigkeit, Gewohnheiten und Verfahrensfehler im Gedächtnis.
 
 ## Scanner
 
-DE LOC HOLD: The colony becomes human through schedules, not speeches.
+MENSCHLICHE SCHICHT // Die Kolonie wird durch Pläne, abgenutzte Werkzeuge, fehlende Rückkehr und Namen auf Diensttafeln real. Nicht durch Reden.
 
 ## Terminal
 
-DE LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+SCHREIBREGEL: Arbeiter als Pumpentechniker, Medics, Routenangestellte, Taucher, Köche, Fabrikatorbediener und müde Vorgesetzte erfassen. Ein Dienstplan mit einer fehlenden Rückkehr schmerzt mehr als ein Denkmal.
 
 ## Audio
 
-DE LOC HOLD: They were not symbols. They were late for shift.
+Sie waren keine Symbole. Sie kamen zu spät zur Schicht.
 
 ## Field Note
 
-DE LOC HOLD: People are more believable as workers than as memorial statues.
+Menschen sind als Arbeiter glaubwürdiger als als Gedenkstatuen.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/de_DE. -->

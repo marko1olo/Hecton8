@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Partial Return Lien Extension"
+title: "Extensión de gravamen de retorno parcial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Partial Return Lien Extension
+# Extensión de gravamen de retorno parcial
 
-ES LOC HOLD: HECTON-8 replayability keeps one long campaign meaningful while letting partial exits become bitter, useful records.
+La estructura de repetición de HECTON-8 trata las salidas parciales como registros, no reinicios. Un escape fallido aún puede mover la campaña al cambiar lo que se sabe, a quién se debe y qué ventana se abre después.
 
 ## Scanner
 
-ES LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Retorno aprobado bajo gravamen extendido. Las marcas de conocimiento persisten; el inventario queda en cuarentena y retirado.
 
 ## Terminal
 
-ES LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ORDEN PARTIAL RETURN: reentrada al mismo seed permitida bajo gravamen extendido, ventana de tormenta revisada y dossier de conocimiento retenido. Inventario físico reiniciado por cuarentena de custodia; las herramientas siguen siendo propiedad del portador hasta cerrar la revisión de pruebas.
 
 ## Audio
 
-ES LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+La ruta recuerda lo que probaste. El océano se queda lo demás.
 
 ## Field Note
 
-ES LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Registro de reentrada: retorno mismo seed con conocimiento, presión de deuda, cambios de tormenta y reinicio de custodia en lugar de equipo heredado.
 
 <!-- External Site; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/es_ES. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Contract Continuity Desk Signatures"
+title: "Assinaturas da Mesa de Continuidade Contratual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Contract Continuity Desk Signatures
+# Assinaturas da Mesa de Continuidade Contratual
 
-PT LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Assinaturas da Mesa de Continuidade Contratual expõe a papelada sob o contrato inicial de HECTON-8. O artigo dá ao sistema contratual nomes, carimbos e funções para que o jogador veja como uma missão de salvamento vira uma barganha de custódia. A mesa de Edda Malk não precisa conhecer todo o crime da colônia para tornar o presente perigoso. Só precisa fundir ônus, dívida de oxigênio e cláusulas de recuperação na ordem certa. Quando o operador assina, o oceano não é a única pressão fora do casco; o contrato já está apertando.
 
 ## Scanner
 
-PT LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+A armadilha do contrato inicial é construída por assinaturas inferiores: fusão de ônus, adendo de oxigênio, risco de lista negra e retenção de custódia de carga.
 
 ## Terminal
 
-PT LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Fundir termos de ônus da Aegir Reclamation Pool com cláusulas de recuperação Black Keel. Anexar adendo de crédito de oxigênio, aviso de risco de lista negra e retenção de custódia de carga. Escalonamento não exigido se o operador aceitar.
 
 ## Audio
 
-PT LOC HOLD: Nobody says trap. They say continuity.
+Uma assinatura pode ser uma porta de pressão quando cada cláusula depois dela tranca.
 
 ## Field Note
 
-PT LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Ninguém carimba uma armadilha. Carimbam continuidade.
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/pt_BR. -->

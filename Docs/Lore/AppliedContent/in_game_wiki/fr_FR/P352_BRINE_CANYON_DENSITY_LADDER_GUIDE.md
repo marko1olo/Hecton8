@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Guide d'échelle de densité des canyons de saumure
 
-Les canyons de brine rendent la profondeur physique. Ils enseignent couches de densité, limites de coque, défaillances de pression et resource pockets avant l'ouverture des routes basses.
+Les canyons de saumure rendent la profondeur physique. Couches de densité, limon suspendu, poches de suintement froid et zones aveugles des instruments enseignent les limites de coque avant l'ouverture des routes basses. La descente n'est pas un escalier de roche. C'est une échelle faite de fluides qui ne s'accordent pas sur la place d'un corps.
 
 ## Scanner
 

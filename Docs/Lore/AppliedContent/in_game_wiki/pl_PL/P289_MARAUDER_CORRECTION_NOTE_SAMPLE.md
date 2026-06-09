@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Marauder Correction Note Sample"
+title: "Próbka poprawki szabrownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Marauder Correction Note Sample
+# Próbka poprawki szabrownika
 
-PL LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Próbka poprawki szabrownika nie jest wyznaniem i właśnie dlatego jest bardziej użyteczna. To brudna adnotacja na oficjalnym formularzu wypadku, napisana przez kogoś, kto nauczył się nie ufać czystym przyczynom. Notatka nie mówi, kto kogo zabił. Mówi, co trzeba sprawdzić, zanim słowo wypadek może zostać w aktach: certyfikat pompy, skład zmiany, kategorię ciał, rozjazd zegara drzwi oraz kolejkę autoryzacji, która wstrzymała ratunek wystarczająco długo, by pomieszczenie stało się dowodem. W HECTON-8 taki przedmiot łączy dowód środowiskowy z głosem frakcji. Rejestr kolonii próbuje zamknąć sprawę pogodą. Ręka szabrownika odsyła gracza z powrotem do pokoju.
 
 ## Scanner
 
-PL LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Tłusty ołówek na formularzu wypadku: nie pogoda, nie panika, tylko opóźniona autoryzacja z liczbą ciał w tle.
 
 ## Terminal
 
-PL LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+NOTA SZABROWNIKA / OFICJALNA PRZYCZYNA: ODRZUCONA / PRZED ROSZCZENIEM SPRAWDZIĆ: certyfikat pompy, skład zmiany, kategorię ciał, rozjazd zegara drzwi, kolejkę autoryzacji ratunku.
 
 ## Audio
 
-PL LOC HOLD: Someone else smelled the paperwork rot.
+Ktoś wyczuł smród papierów, zanim pomieszczenie wyschło.
 
 ## Field Note
 
-PL LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NIE POGODA. OPÓŹNIONA AUTORYZACJA. Sprawdzić certyfikat pompy, skład zmiany, kategorię ciał. Zegar drzwi wyprzedza stempel roszczenia o sześć minut.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/pl_PL. -->

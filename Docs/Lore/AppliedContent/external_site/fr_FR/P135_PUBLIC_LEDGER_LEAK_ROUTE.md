@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Fuite vers registre public"
+title: "Fuite vers le registre public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fuite vers registre public
+# Fuite vers le registre public
 
-La fuite vers registre public n'est pas un fantasme parfait de lanceur d'alerte. C'est un paquet qui part par une fenêtre relay étroite, avec un witness hash, assez de custody pour être difficile à nier, et trop de pièces manquantes pour être sûr. Tau Ceti peut rendre le registre public longtemps après pouvoir sauver qui que ce soit dans l'eau.
+La fuite vers le registre public n'est pas un fantasme parfait de lanceur d'alerte. C'est un paquet endommagé qui part avant la custody complète, avec assez de preuves pour rendre le déni cher et assez de contexte manquant pour rendre chaque lecteur dangereux. Tau Ceti peut rendre le dossier public bien après qu'il puisse sauver quelqu'un dans l'eau.
 
-Ce délai est le point. Deep Reach ne peut plus simplement supprimer le claim, mais le joueur ne peut pas non plus décider qui l'utilisera ensuite. Assureurs, rivaux, tribunaux civiques, pools de Marauders et bureaux corporatifs liront tous la même blessure autrement. Cette fin rend la vérité plus dure à enterrer et plus dure à posséder.
+Ce délai est le sens. Deep Reach perd la couverture la plus propre, mais le témoin perd aussi la propriété. Le même dossier peut devenir poursuite, levier, calcul d'assurance, propagande de domaine ou nouveau contrat. Cette route rend la vérité plus difficile à enterrer et plus difficile à posséder.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/fr_FR. -->

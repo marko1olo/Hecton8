@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Job Title Table"
+title: "Table des métiers sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Job Title Table
+# Table des métiers sous pression
 
-FR LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+La Table des métiers sous pression donne à HECTON-8 son vocabulaire de travail. Les titres se lisent dans les salles et les objets. Un bon titre transforme un nom en piste: joints près des trappes, relais près des fiches de timing, medlock près des refus et des mensonges de triage.
 
 ## Scanner
 
-FR LOC HOLD: Job titles should explain what kept the colony alive.
+TABLEAU DE POSTES // Le titre n'est pas une garniture RH. Il indique quel système a cédé quand le travailleur n'a plus répondu.
 
 ## Terminal
 
-FR LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+MÉTIERS SOUS PRESSION // Technicien pompe, gréeur de joints, commis de route, plongeur brine, opérateur fabricateur, aide medlock, gardien relais, ouvrier vent-kiln, lecteur sécurité Atlas et superviseur de quart ne sont pas du décor social. Ce sont des règles d'accès. Le titre définit ce que le travailleur savait, quel panneau acceptait son badge, où ses outils devaient se trouver et quel échec lui serait imputé après le Great Tide.
 
 ## Audio
 
-FR LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Personne n'est mort comme Employé 438. Ils sont morts en tenant un travail dont l'océan avait encore besoin.
 
 ## Field Note
 
-FR LOC HOLD: Every title should imply a tool, route or failure.
+Chaque titre doit mener à un outil, une pièce, une permission de route ou une raison pour laquelle le corps n'a pas pu partir.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/fr_FR. -->

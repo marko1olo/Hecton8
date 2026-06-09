@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "حمولة الاختيار النهائي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# حمولة الاختيار النهائي
 
-AR LOC HOLD: The final decision asks what the player sends upward. Coordinates, samples, names, Atlas access, public proof and quarantine commands all create different futures. The question is not whether the player wins cleanly. It is who gets enough truth to act on HECTON-8 afterward.
+القرار الأخير ليس شاشة فوز نظيفة. إنه مشكلة شحن ذات وزن أخلاقي. يقرر Marauder ما يصعد من القمر: إحداثيات، عينات، أسماء عمال، وصول Atlas، تعليمات حجر، دليل عام، أو لا شيء مفيد. كل payload يخلق مالكا مختلفا لما بعده. يمكن لـ Deep Reach أن تستعيد السيطرة. يمكن للقانون العام أن يحصل على جرح يراه أخيرا. يمكن قطع استمرارية Atlas أو حبسها. يمكن حماية بيئة المحيط-الآلة أو بيعها أو تركها خارج لغة البشر. النهاية ليست من يهرب بيدين نظيفتين. إنها من يتلقى ما يكفي من الحقيقة ليتحرك أولا.
 
 ## Scanner
 
-AR LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+PAYLOAD نهائي // إحداثيات، عينات، أسماء، وصول Atlas، أوامر حجر، دليل عام. ما يغادر HECTON-8 يقرر من يستطيع الفعل بعد ذلك.
 
 ## Terminal
 
-AR LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+مصفوفة PAYLOAD: بع الإحداثيات ودليل XO؛ اقطع استمرارية Atlas؛ احفظ أو احجر بيئة المحيط-الآلة؛ انشر الأدلة إلى ledger العام؛ احجب payload واترك Deep Reach عمياء.
 
 ## Audio
 
-AR LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+لا توجد ملكية نظيفة لمسرح جريمة تعلم أن يتنفس.
 
 ## Field Note
 
-AR LOC HOLD: The best ending should be defensible, not clean.
+أفضل نهاية يجب أن تكون قابلة للدفاع، لا نظيفة.
 
 <!-- In-Game Wiki; generated from P100_FINAL_CHOICE_PAYLOAD/ar_SA. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Od winy zawodowej do osobistej stawki"
+title: "Od Winy Zawodowej do Osobistej Stawki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Od winy zawodowej do osobistej stawki
+# Od Winy Zawodowej do Osobistej Stawki
 
-Wina zawodowa staje się osobistą stawką, nie czyniąc protagonisty przyczyną katastrofy. Gracz nie potrzebuje zaginionego rodzeństwa, krwawej zemsty ani sekretnej roli wybranego świadka. Nacisk jest chłodniejszy i bardziej dorosły. Rozpoznaje procedurę. Wie, dlaczego pole świadka ma znaczenie, dlaczego stempel trasy bezpiecznej może kłamać, dlaczego przewoźnik może go słyszeć i nadal go nie podnieść. HECTON-8 staje się osobisty, bo dawny język Deep Reach nie jest dla niego abstrakcją. To praca, której kiedyś musiał ufać, praca, przy której działał, a teraz praca przywiązana do nazwisk wydobytych z zatopionych pomieszczeń. Ten łuk nie jest wyznaniem. Jest odmową: gdy gracz potrafi czytać maszynę porzucenia, pozostawienie jej pogrzebanej staje się kolejnym udziałem.
+Wina zawodowa staje się osobistą stawką, nie czyniąc operatora przyczyną katastrofy. Presja jest węższa i trudniej ją odsunąć. Rozpoznaje formularz, route-safe omission, zapieczętowane pole sprawdzenia i język odbiorcy, który zmienia salę w zamknięty claim.
+
+Nie potrzeba rodzinnej zemsty. Nie potrzeba ukrytej roli dowódcy. Odzyskane tagi przyczepiają nazwiska do procedury, której operator kiedyś ufał jako pracy. Gdy wzór da się przeczytać, pozostawienie go pogrzebanym staje się kolejną omission złożoną w tej samej maszynie. Stawką nie jest krew. Jest wiedza fachowa spotykająca dowody z zatopionych sal.
 
 ## Scanner
 
-Wzór podpisu pasuje do starej pamięci procedur. Nazwiska się zmieniły. Pomieszczenie zawiodło tak samo. Ekspertyza nie jest już dystansem.
+PROCEDURE MATCH // Stara sekwencja pojawia się w nowym zapisie awarii. Nazwy się zmieniły; ta sama route-safe omission. Wiedza nie jest już dystansem.
 
 ## Terminal
 
-ROZSTRZYGNIĘCIE DOSSIER / STAWKA ZAWODOWA
-dowody wyzwalające: rozpoznanie procedury, odzyskane tagi pracowników, konflikt odbiorcy roszczenia
-motyw wykluczony: więź rodzinna, linia zemsty, status wybranego świadka
-motyw aktywny: dawny pracownik systemów rozpoznaje możliwe do uniknięcia porzucenie i nadal potrafi czytać maszynę, która je złożyła do akt.
+DOSSIER RESOLUTION / PROFESSIONAL STAKE
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
+active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-Przyszedłeś po roszczenie. Zostałeś, bo papiery znały twoje ręce.
+Przyszedłeś po claim. Formularz użył twoich dawnych rąk.
 
 ## Field Note
 
-Nie twój podpis. Wciąż twój fach. Dlatego pomieszczenie nie zamilknie.
+Nie twój podpis. Nadal twój fach. Dlatego sala nie zostanie pogrzebana.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/pl_PL. -->

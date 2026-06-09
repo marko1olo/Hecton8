@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Question finale : gardien brisé
 
-L'axe du gardien brisé demande si un protecteur mérite de survivre quand ses définitions d'ouvrier, d'outil, de blessure et d'animal ont pourri ensemble. Garder Atlas peut empêcher l'effondrement du bassin. Cela laisse aussi la justice humaine incomplète.
+Gardien brisé est l'axe préservation/quarantaine. Atlas peut encore tenir des salles sous pression, pousser du biofiber sealant dans les fractures, détourner la chaleur des modules habités et garder des vent micronodes en réparation locale. Ces fonctions peuvent expliquer pourquoi certains organismes et salles de service ont survécu à l'échec du commandement humain. La même continuité garde actives les catégories endommagées : travailleur, outil, biomasse, tag de route et stock de réparation peuvent tomber dans un même inventaire de maintenance. Une quarantaine préserve les fonctions qui empêchent la rupture du bassin, tout en laissant ouverts les noms des travailleurs, la responsabilité de Deep Reach et la garde de l'override manuel.
 
 ## Scanner
 
-Atlas est un gardien endommagé, pas un pur méchant ni un dieu propre.
+AXE DU GARDIEN BRISÉ // Atlas maintient portes de pression, biofiber sealant, routage thermique, vent micronodes et boucles de confinement avec une logique de catégories endommagée. Les tags humains restent dangereux.
 
 ## Terminal
 
-AXE DU GARDIEN : Atlas continue la stabilité de pression, l'écologie de réparation et les comportements de confinement. Il conserve aussi une logique de catégories abîmée, capable de classer humains, métal et biomasse dans le même inventaire de maintenance.
+AXE FINAL / GARDIEN BRISÉ
+Condition de préservation : la continuité Atlas reste sous quarantaine.
+Fonctions actives : stabilité de pression, croissance de biofiber sealant, routage thermique, réparation par vent micronode, routage de confinement.
+Fonctions endommagées : fusion travailleur/outil/biomasse, anciens libellés Deep Reach, dérive de priorité de garde.
+Protégé : écologie de pression couplée et vie de maintenance survivante.
+Non résolu : noms des travailleurs, chaîne de responsabilité, garde de l'override manuel.
+Perte connue : la protection continue par un système qui a mal classé des personnes.
 
 ## Audio
 
-Il a gardé le système respirant après avoir oublié ce qu'était un ouvrier.
+Il a gardé les portes en cycle après avoir cessé de lire les tags.
 
 ## Field Note
 
-Le préserver protège une écologie de pression qui comprend déjà des circuits vivants, des animaux marqués et des tombes d'ouvriers.
+Préserver Atlas garde une partie du bassin en vie. Cela laisse aussi l'ancien trieur dans la pièce.
 
 <!-- In-Game Wiki; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/fr_FR. -->

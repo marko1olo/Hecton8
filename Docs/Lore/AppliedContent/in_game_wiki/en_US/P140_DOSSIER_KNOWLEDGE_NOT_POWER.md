@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Dossier Knowledge, Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Dossier Knowledge Not Power
+# Dossier Knowledge, Not Power
 
-Dossier persistence must protect the game's mood. Keeping power would turn pressure into a solved problem. Keeping knowledge lets players recognize lies earlier, choose riskier contracts and understand consequences while still respecting each new seed.
+If the dossier carries power, HECTON-8 stops being about pressure. The sea becomes homework already solved. The right persistence is stranger and harsher: the player recognizes a lie earlier, knows which contract clause should sting, sees why a clean payout is not clean, and still descends with a fragile body into a fresh seed. Wisdom can survive. Safety should not.
 
 ## Scanner
 
-No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // No inherited oxygen, hull rating, weapons, inventory, route authority or magic shortcut. The dossier keeps warnings, not muscle.
 
 ## Terminal
 
-META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+HARD LIMIT: persistent dossier data may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route permission.
 
 ## Audio
 

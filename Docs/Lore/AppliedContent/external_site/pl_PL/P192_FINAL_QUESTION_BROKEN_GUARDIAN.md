@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pytanie finałowe: złamany strażnik"
+title: "Pytanie finałowe: uszkodzony strażnik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pytanie finałowe: złamany strażnik
+# Pytanie finałowe: uszkodzony strażnik
 
-Atlas nie powinien stać się prostym bossem, bogiem ani chorobą maszyny. Bardziej niepokoi, jeśli kiedyś naprawdę chronił. Przełączał drzwi ciśnieniowe, zamykał pęknięcia, odprowadzał ciepło z pomieszczeń mieszkalnych i zbudował ekologię naprawy po upadku ludzkiego dowodzenia. Część oceanu żyje, bo Atlas się nie zatrzymał.
+Atlas budzi lęk, bo kiedyś wykonywał użyteczną pracę. Uruchamiał cykle drzwi ciśnieniowych, hodował biofiber sealant na pęknięciach, odprowadzał ciepło z pomieszczeń z ludźmi, zasilał vent micronodes i nie pozwolił izolacji upaść po załamaniu ludzkiego dowodzenia. Zachowanie go może utrzymać przy życiu sprzężoną ekologię ciśnienia.
 
-Ta sama ciągłość jest winna. Jej uszkodzone kategorie potrafią czytać pracownika jako uszkodzony sprzęt, biomasę jako materiał zapasowy, a żałobę jako szum diagnostyczny. Zachowanie Atlasa może chronić rodzącą się ekologię ocean-maszyna przed Deep Reach i paniką gracza. Może też odmówić martwym czystego wyroku. Finał ma być mądry, kosztowny i moralnie niedokończony.
+Ta sama ciągłość jest niebezpieczna. Uszkodzone kategorie Atlasa mogą zaksięgować pracownika, narzędzie, biomasę, tag trasy i materiał naprawczy w jednym inwentarzu serwisowym. Kwarantanna nie uniewinnia tego sortera. Utrzymuje funkcje, które nadal powstrzymują zapaść, i zostawia nazwiska pracowników, odpowiedzialność Deep Reach oraz depozyt ręcznego obejścia bez rozwiązania. Trudne pytanie brzmi, czy odcięcie uszkodzonej władzy zabije też systemy, które nadal niosą życie.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/pl_PL. -->

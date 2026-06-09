@@ -1002,6 +1002,63 @@ namespace Hecton8.Core
         public abstract bool EnableSandboxFakeCliffOverhangOffsets { get; }
         public abstract int CurrentBiomeID { get; }
 
+        public virtual bool TryGetTerrainArtifactIdentity(out TerrainArtifactIdentityDTO identity)
+        {
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            int runtimeSeed = 0;
+            int worldGenerationVersionId = 0;
+            if (seedProvider != null && seedProvider.IsInitialized)
+            {
+                runtimeSeed = seedProvider.RuntimeWorldSeed;
+                worldGenerationVersionId = math.max(0, seedProvider.RuntimeWorldGenerationVersionId);
+            }
+
+            float chunkSizeMeters = WorldMacroGeologyFields.DefaultChunkSizeMeters;
+            WorldMacroGeologyFields.ResolveMinimumChunkRange(
+                chunkSizeMeters,
+                out int chunkMinX,
+                out int chunkMinZ,
+                out int chunkMaxX,
+                out int chunkMaxZ);
+
+            identity = new TerrainArtifactIdentityDTO
+            {
+                AuthoringSeed = unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed),
+                RuntimeSeed = runtimeSeed,
+                WorldGenerationVersionId = worldGenerationVersionId,
+                MacroArtifactVersion = WorldMacroGeologyFields.ArtifactVersion,
+                ChunkSizeMeters = chunkSizeMeters,
+                ChunkMinX = chunkMinX,
+                ChunkMinZ = chunkMinZ,
+                ChunkMaxX = chunkMaxX,
+                ChunkMaxZ = chunkMaxZ,
+                ChunkArtifactRangeHash = WorldMacroGeologyFields.BuildChunkArtifactRangeHash(
+                    unchecked((uint)WorldMacroGeologyFields.DefaultAuthoringSeed),
+                    runtimeSeed,
+                    worldGenerationVersionId,
+                    WorldMacroGeologyFields.ArtifactVersion,
+                    chunkSizeMeters,
+                    chunkMinX,
+                    chunkMinZ,
+                    chunkMaxX,
+                    chunkMaxZ),
+                Flags = TerrainArtifactIdentityDTO.FlagsMacroGeologyPresent |
+                        TerrainArtifactIdentityDTO.FlagsDefaultChunkRange |
+                        TerrainArtifactIdentityDTO.FlagsMapMagicProvider
+            };
+
+            if (TryGetActiveQuantizedHeightmapPayload(out QuantizedHeightmapPayload payload))
+            {
+                identity.CacheRevision = math.max(0, payload.CacheRevision);
+                identity.Flags |= TerrainArtifactIdentityDTO.FlagsHeightPayloadPresent;
+                Vector3 terrainCenter = payload.TerrainPosition + payload.TerrainSize * 0.5f;
+                if (TryResolveTerrainAt(terrainCenter.x, terrainCenter.z, out Terrain terrain) && terrain != null)
+                    identity.TerrainEntityHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId()));
+            }
+
+            return identity.HasMacroIdentity;
+        }
+
         public abstract void SlowTick();
         public abstract bool TryGetHeight(float x, float z, out float height);
         public abstract bool TryGetNormal(float x, float z, float sampleDistance, out Vector3 normal);

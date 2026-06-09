@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Seed Cerita Kru Sif"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Seed Cerita Kru Sif
 
-ID LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+Seed cerita kru memberi HECTON-8 tekstur replay tanpa menjadikannya mesin kontradiksi. Koloni yang sama bisa menunjukkan pasangan pekerja berbeda, urutan objek berbeda, dan catatan pinggir berbeda, tetapi Deep Reach tidak menjadi tak bersalah dan Great Tide tidak mendapat alasan baru.
+
+Variasi yang berguna bersifat lokal. Juru rute bisa terkait penyelam brine dalam satu run dan seal rigger dalam run lain. Lokasi slip penolakan bisa berubah. Itu mengubah cara pemain menyusun bukti, bukan buktinya.
 
 ## Scanner
 
-ID LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // Roster boleh berubah. Kesalahan tidak.
 
 ## Terminal
 
-ID LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEED KRU SIF // Run boleh mengubah urutan roster, pasangan pekerja, isi loker, slip penolakan, kapur rute, fragmen lencana, dan koreksi Marauder belakangan. Seed mengubah cara pemain bertemu bukti, bukan apa yang dibuktikan bukti.
 
 ## Audio
 
-ID LOC HOLD: A different locker can hurt the same truth again.
+Loker berbeda bisa mengiris kebenaran yang sama dari sisi lain.
 
 ## Field Note
 
-ID LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Variasi seed mengubah urutan objek, pasangan kerja, dan catatan Marauder. Ia tidak boleh mengubah Great Tide atau tanggung jawab Deep Reach.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/id_ID. -->

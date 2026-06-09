@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Dossierkennis, geen macht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Dossierkennis, geen macht
 
-NL LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Dossierkennis, geen macht is de replayability-regel die HECTON-8 lang, gevaarlijk en narratief eerlijk houdt.
 
 ## Scanner
 
-NL LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Geen geërfde zuurstof, rompwaarde, wapens, inventaris, routeautoriteit of magische shortcut. Het dossier bewaart waarschuwingen, geen spieren.
 
 ## Terminal
 
-NL LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+HARDE GRENS: persistente dossierdata mag waarschuwingen, geruchtenfamilies, claimvarianten en eindcontext openen. Het mag geen uitrustingsmacht, hulpbroninventaris, eigendom van wereldwaarheid of routetoestemming bewaren.
 
 ## Audio
 
-NL LOC HOLD: Memory does not reinforce a cracked hull.
+Geheugen versterkt geen gebarsten romp.
 
 ## Field Note
 
-NL LOC HOLD: The player can become wiser. The ocean should not become smaller.
+De speler mag wijzer worden. De oceaan mag niet kleiner worden.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/nl_NL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Factory Temple Entry Fragment"
+title: "Fragmen Masuk Pabrik-Kuil"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Factory Temple Entry Fragment
+# Fragmen Masuk Pabrik-Kuil
 
-ID LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+Di dasar, HECTON-8 berhenti memisahkan koloni, samudra, mesin, dan bukti. Tempat itu sendiri menjadi argumen: bukan pemujaan, bukan sihir, melainkan industri yang diulang sampai tampak seperti ritual.
 
 ## Scanner
 
-ID LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Aloi, sealant cangkang, alat tangan, dan pulsa perbaikan aktif terbaca sebagai satu permukaan.
 
 ## Terminal
 
-ID LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: kategori pemeliharaan runtuh. Bekas alat, cangkang sealant, akar kabel, jaringan penyaring, dan rusuk aktuator terdaftar sebagai satu permukaan perbaikan. Tanda jalur manusia tidak lagi diistimewakan.
 
 ## Audio
 
-ID LOC HOLD: This is not a room. This is a habit.
+Ini bukan ruangan. Ini kebiasaan.
 
 ## Field Note
 
-ID LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Aturan visual: ia tampak seperti kuil hanya karena industri, jaringan, dan pengulangan berubah menjadi ritual.
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/id_ID. -->

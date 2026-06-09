@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Blackout Window Signal Decay"
+title: "דעיכת אות בחלון האפלה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Blackout Window Signal Decay
+# דעיכת אות בחלון האפלה
 
-HE LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+דעיכת האות נותנת צורה פיזית למחסור בתקשורת. השחקן מקבל חלונות נדירים, שברי חבילות חתוכים ומעקפים אקוסטיים תת-ימיים במקום הדרכה קבועה מן המסלול.
 
 ## Scanner
 
-HE LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+חלון האות קורס: שדרת ממסרים רטובה, צל Aegir, גאומטריית נשא מיושנת, תור משפטי עדיין מנסה שוב.
 
 ## Terminal
 
-HE LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: אובדן uplink מעל סף הסבילות. ערוץ קול מושעה. שברי טקסט עשויים להגיע דרך צומתי שדרה אקוסטיים שתוקנו. גאומטריית הנשאים במסלול תתרענן אחרי שצל המגנטי של Aegir יתפזר. שעוני שעבוד ומשמורת אוטומטיים ממשיכים ללא קשר מפעיל.
 
 ## Audio
 
-HE LOC HOLD: When the sky closes, the paperwork keeps breathing.
+השמים משתתקים קודם. הודעות החוב ממשיכות לדפוק.
 
 ## Field Note
 
-HE LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+לקשור חלונות האפלה לקצב המסלול: פחות קול, יותר קריאת שברים, ערך חזק יותר לממסרים שתוקנו ולמשואות מקומיות.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/he_IL. -->

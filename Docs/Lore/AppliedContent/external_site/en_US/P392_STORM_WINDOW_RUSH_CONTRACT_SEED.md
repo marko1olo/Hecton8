@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Storm Window Rush Contract Seed
 
-A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Storm Window Rush starts with a closing cover map. Storm bands, relay shutter timing and bathydrop recall sit on the same board as the payout ceiling. The high number is not generosity; it is the price of entering water while the safe return window is already shrinking.
 
-## Scanner
-
-Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-This contract pays because it hates waiting.
-
-## Field Note
-
-Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+The run changes pressure at the tool level. A jammed pump takes more than time, because the recall clock moves while the repair is open. A bad weld eats route tolerance. A missed relay mark can push extraction into blackout. The contract family makes the same colony harsher by changing when the water stops waiting.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/en_US. -->

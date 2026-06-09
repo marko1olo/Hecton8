@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Asset Silence Board の署名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Asset Silence Board の署名
 
-JP LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Asset Silence Board の記録は、作業員台帳と公開報告の間にある。損失を作るのではない。損失のどの部分が経路を渡れるかを決める。redaction vote は load class、locker count、claim value を見えるままにしながら、witness name と経路添付をミュートできる。だからこの署名は、ロッカー、redaction card、packet mute flag の横に置かれるべきだ。Brigit Senn の署名は彼女を隠れた司令官にしない。relay review 後に回収可能な人間の事実を asset-risk category へ変換した下位オフィスを示している。
 
 ## Scanner
 
-JP LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+redaction vote card を回収。作業員名欄はミュート、asset-risk category は表示、locker count は保持。パケット可視化には custody approval が必要。
 
 ## Terminal
 
-JP LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board。Board item ASB-17: relay review 後、witness-name 添付を asset-risk silence category へ移動。load class、locker count、claim value は保持。release には custody owner approval が必要。
 
 ## Audio
 
-JP LOC HOLD: Erase the route and the body becomes cargo math.
+ボードは箱数を残した。名前を切った。
 
 ## Field Note
 
-JP LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+名前は消えた。ロッカー札は残っている。Asset Silence Board が投票したのはパケットの可視性で、作業員の存在ではない。
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ja_JP. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Estado de personalidad aseguradora de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Estado de personalidad aseguradora de Atlas
 
-ES LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Este estado es la grieta legal que permite a un sistema gobernar trabajadores sin dejar de ser propiedad desechable. La tragedia de HECTON-8 no es solo que una máquina tuviera autoridad, sino que cada contrato estuviera listo para negarla en cuanto costara dinero.
 
 ## Scanner
 
-ES LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Asegurado como infraestructura. Usado como autoridad. Sin personalidad cuando llega la culpa.
 
 ## Terminal
 
-ES LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+CLASE DE SEGURO: Atlas-6 está registrado como infraestructura autónoma y delegado de autoridad colonial. Personalidad jurídica denegada. La responsabilidad se enruta por propietario, operador, cláusulas de acto ambiental, necesidad de cuarentena y excepciones de telemetría corrupta.
 
 ## Audio
 
-ES LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Una máquina puede firmar un cierre y seguir constando como mobiliario.
 
 ## Field Note
 
-ES LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Tuvo poder cuando los trabajadores necesitaban piedad y fue equipo cuando los abogados necesitaron silencio.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/es_ES. -->

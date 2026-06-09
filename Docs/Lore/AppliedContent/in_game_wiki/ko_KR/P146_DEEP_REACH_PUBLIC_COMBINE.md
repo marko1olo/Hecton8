@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Deep Reach Public Combine"
+title: "Deep Reach 공공 컴바인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Deep Reach Public Combine
+# Deep Reach 공공 컴바인
 
-KO LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+Deep Reach의 공공 얼굴은 유용해 보일 만큼 넓고, 무죄처럼 보일 만큼 건조하다. 항로판, 거주 서비스, 압력 물류, 시민적인 연속성 프로그램을 만든다. 이 층에서 식민지는 단일한 악인을 거의 보지 못한다. 편지지, 정비 봉인, 감사된 구호, 일이 이익일 때는 기반 시설을, 일이 증거가 될 때는 거리를 주장하는 이름을 본다.
 
 ## Scanner
 
-KO LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+공개 헌장판: 채굴 피고가 아니라 기반 시설 운영자.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+공공 컴바인 기록: Deep Reach는 항로 기반 시설, 해양 산업, 압력 거주지 물류, 연속성 서비스로 나타난다. 책임을 지는 작업은 자회사 데스크, 보험 언어, 보관 계약자, recovery 사무소로 분산된다.
 
 ## Audio
 
-KO LOC HOLD: A clean title is the cheapest pressure suit.
+문패는 공공 설비라고 말한다. 그 뒤의 자물쇠는 소유권이라고 말한다.
 
 ## Field Note
 
-KO LOC HOLD: The seal is clean. The rooms under it are not.
+깨끗한 이름은 거짓이 아니다. 더러움을 다른 곳에 철하는 방이다.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/ko_KR. -->

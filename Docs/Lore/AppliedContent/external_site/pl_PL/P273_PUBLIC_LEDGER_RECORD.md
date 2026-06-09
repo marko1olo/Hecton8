@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Public Ledger Record"
+title: "Wpis publicznego rejestru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Public Ledger Record
+# Wpis publicznego rejestru
 
-PL LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Ten zapis końcowy śledzi moment, w którym dowód opuszcza prywatną pieczę. Liczą się pola pokwitowania: kto ostemplował pakiet, które współrzędne ukryto, jaki poziom dowodu przyjęto i ile czasu ma Deep Reach przed kontrpakietem.
 
 ## Scanner
 
-PL LOC HOLD: Witness hash escaped claimant custody.
+WPIS PUBLICZNEGO REJESTRU // Hash świadka wyszedł z prywatnej pieczy trasą pakietu Tau/Luyten. Publiczny poziom dowodu ustawiony; opóźnienie odpowiedzi Deep Reach dołączone.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ZAPIS KOŃCOWY / PUBLICZNY REJESTR
+Trasa: opóźniony pakiet Tau/Luyten.
+Ładunek: hash świadka, pasek pieczy, poziom dowodu z ukrytymi współrzędnymi, znacznik czasu odbiorcy.
+Kontrola po przekaźniku: oddana.
+Odpowiedź Deep Reach: kontrpakiet opóźniony przez publiczne pokwitowanie.
+Znana strata: nadawca nie wybiera pierwszego czytelnika ani późniejszego łańcucha zgłoszeń.
 
 ## Audio
 
-PL LOC HOLD: Truth can leave your hands and still matter.
+Rejestr postawił stempel. Nie wybierasz już pierwszego czytelnika.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Jeśli pokwitowanie jest publiczne, plik przetrwa, bo wychodzi z twoich rąk. Sprawdź ukrycie współrzędnych, zanim ucieszysz się stemplem.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/pl_PL. -->

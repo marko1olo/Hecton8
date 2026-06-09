@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Last Normal Day Evidence Set"
+title: "مجموعة أدلة آخر يوم عادي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Last Normal Day Evidence Set
+# مجموعة أدلة آخر يوم عادي
 
-AR LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+مجموعة أدلة آخر يوم عادي طريقة ميدانية لقراءة مستعمرة HECTON-8 الغارقة. تجمع علامات انقطاع صغيرة: لوحة خزانة غير مستلمة، تصحيحا بلا توقيع، مهمة مضخة مفتوحة، رمز وجبة مثبتا، وساعة مسار ما زالت تنتظر. لا يعرف أي من هذه الأشياء أنه صار دليلا.
 
-## Scanner
+قوتها في ضبط النفس. لا تحتاج الغرفة إلى تسجيل وداع أو مأساة موضوعة بعناية. يكفي أن تبين أن الإجراء العادي كان حيا حين عبر العطل العتبة. كان الناس يعدون الماء، يعيدون الأدوات، يصححون اللوحات، ويتوقعون الغداء. هذه الاستمرارية العادية تجعل الكسر أقسى.
 
-AR LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-AR LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-AR LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-AR LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+تحمل المجموعة اللوم أيضا. لغة الحوادث الرسمية تنعم الغرفة غالبا؛ التناقضات المادية تجعلها خشنة من جديد. شهادة المضخة، عدد الوردية، فئة الجسد، وفارق ساعة الباب يمكنها معا أن تحول إغلاقا باهتا إلى سؤال حاول شخص ما تجنبه. في HECTON-8، آخر يوم عادي هو اللحظة التي لا تزال فيها routine تؤمن بأنها ستستمر.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/ar_SA. -->

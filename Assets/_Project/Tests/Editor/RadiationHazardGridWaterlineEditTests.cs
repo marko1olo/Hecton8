@@ -11,12 +11,12 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "RadiationHazardGrid.cs");
             string recordTelemetry = ExtractMethodBody(source, "private void RecordTelemetry(in AbsoluteUniversePosition playerAup, float intensity01, float accumulatedRads, uint flags)");
-            string resolveDepth = ExtractMethodBody(source, "private static float ResolvePlayerDepthMeters(double3 playerAbsolute)");
+            string resolveDepth = ExtractMethodBody(source, "private float ResolvePlayerDepthMeters(double3 playerAbsolute)");
 
-            StringAssert.Contains("private const float DefaultSeaLevelY = 14.02f;", source);
+            StringAssert.Contains("private const float DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
             StringAssert.Contains("bool hasPlayerAbsolute = AbsoluteUniversePosition.IsFinite(in playerAup);", recordTelemetry);
             StringAssert.Contains("PlayerDepthMeters = hasPlayerAbsolute ? ResolvePlayerDepthMeters(playerAbsolute) : 0f", recordTelemetry);
-            StringAssert.Contains("double depthMeters = DefaultSeaLevelY - playerAbsolute.y;", resolveDepth);
+            StringAssert.Contains("double depthMeters = ResolveTelemetrySeaLevelY() - playerAbsolute.y;", resolveDepth);
             StringAssert.DoesNotContain("PlayerDepthMeters = (float)math.max(0d, -playerAbsolute.y)", source);
         }
 

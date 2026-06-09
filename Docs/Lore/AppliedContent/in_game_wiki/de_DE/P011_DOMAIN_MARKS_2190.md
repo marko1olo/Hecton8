@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Domänenmarken 2190
 
-Domänenmarken zeigen die größere Menschenwelt über Dinge: Sicherheitsplatten, Drehmomentzeichen, Gewahrsamscodes und alte Berechtigungen. Jede Marke verbindet Tür, Werkzeug oder Fracht mit einer fernen menschlichen Autorität.
+Domänenmarken sind die kleinen juristischen Narben, die HECTON-8 fern wirken lassen, ohne es primitiv zu machen. Eine einzige Halterung kann Sol-Core-Sicherheitsgrammatik, eine Centauri-Charterformel, einen Barnard-Yards-Reparaturbiss, einen Luyten-Gewahrsamshash und einen lokalen Aegir-Claimcode tragen. Keine davon ist Schmuck. Jede Marke sagt, wer ein Teil zertifiziert hat, wer es reparierte, wer ein Paket beweisen kann, wer Verlust versichert und wer nach der Flutung über Bergung streitet.
 
-Die Kolonie wirkt dadurch fern, nicht primitiv. Recht, Industrie und Schulden erreichten das Wasser. Rettung braucht trotzdem Masse, Schiff und Fenster.
+Entscheidend ist nicht die Namensliste, sondern wie sie sich auf müdem Metall stapeln. Sol kann ein Objekt zertifizieren, das es nicht retten kann. Barnard macht Dead-Claim-Arbeit normal. Luyten bewahrt Gewahrsam, ohne sich um Gnade zu kümmern. Aegir vollstreckt schmutziges Ortsrecht unter den Papieren der anderen. Wer diese Marken liest, erkennt: Der Ozean ist nicht leer. Autorität kam vor Wärme.
 
 ## Scanner
 
-Gemischte menschliche Domänenmarken: Sol-Sicherheitsplatte, Barnard-Werkzeugstempel, Luyten-Gewahrsamsroute und Aegir-Claimcode auf derselben korrodierten Halterung.
+Gemischte menschliche Domänenmarken auf einer korrodierten Halterung: Sol-Core-Sicherheitsformat, Centauri-Chartersiegel, Barnard-Reparaturbiss, Luyten-Gewahrsamshash und Aegir-Claimcode.
 
 ## Terminal
 
-DOMÄNENABGLEICH // Sol-Core-Sicherheitsformat akzeptiert. Barnard-Yards-Reparaturstempel gültig. Luyten-Junction-Paketgewahrsam angehängt. Aegir-Ortsclaimrecht überschreibt Bergungspriorität nach Descent-Verlust.
+DOMÄNENABGLEICH // Sol-Core-Sicherheitsformat akzeptiert. Centauri-Chartersprache vorhanden. Barnard-Yards-Reparaturautorität gültig. Luyten Packet Ladder-Gewahrsam angehängt. Aegir-Ortsclaimrecht überschreibt freie Bergung nach Descent-Verlust.
 
 ## Audio
 
-Dieser Ort liegt nicht jenseits der Zivilisation. Er ist Zivilisation, nachdem Entfernung die warmen Teile herausgenommen hat.
+Die Zivilisation erreichte diesen Raum. Zuerst als Stempel, dann als Schuld, zuletzt als Hilfe.
 
 ## Field Note
 
-Die Menschheit wurde groß. Rettung muss trotzdem reisen.
+Die Menschheit wurde weit. Rettung muss trotzdem reisen.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/de_DE. -->

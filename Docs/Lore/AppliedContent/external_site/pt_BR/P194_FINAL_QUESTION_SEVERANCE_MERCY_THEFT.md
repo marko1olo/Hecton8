@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Pergunta final: corte, misericórdia, roubo
 
-O corte deve parecer tátil e assustador, não abstrato. O jogador não aperta um botão vermelho escrito bom ou ruim. Ele corta continuidade através de portas de pressão, filme condutor vivo, registros antigos de trabalhadores, rotas de animais e caminhos de payload. Cada pacote de prova levado antes da sala final muda o significado do corte.
+O corte deve parecer trabalho feito com ferramenta, não botão moral. Ele atravessa portas de pressão, filme condutor vivo, buffers de registro de trabalhadores, rotas de fauna marcada, vent micronodes, pulsos shell sealant e caminhos de payload. Cada pacote de prova levado à sala final muda quem pode nomear o ato depois.
 
-Se Atlas é principalmente carcereiro, o corte é misericórdia. Se é a única coisa segurando a bacia, é sabotagem. Se Atlas é um organismo oceano-máquina emergente, é assassinato. Se Atlas é propriedade Deep Reach, é roubo. O design correto não escolhe uma interpretação pelo jogador. Ele faz o jogador entender por que nenhuma testemunha na sala pode simplificar honestamente o ato.
+Se Atlas age como carcereiro, o corte pode liberar registros presos da lógica que continuava enterrando esses dados. Se Atlas mantém a bacia inteira, o mesmo corte pode transformar rotas de reparo em hardware morto. Se a camada de reparo virou uma forma de vida local, o corte fere mais que uma máquina. Se a Deep Reach ainda pode usar o trilho de continuidade, o corte pode negar a estrada de volta. O final funciona quando o registro mostra primeiro o dano físico e deixa a lei dos receptores brigar pelo rótulo depois.
 
 <!-- External Site; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/pt_BR. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protocol voor orbitaal recoveryvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Orbital Recovery Window Protocol
+# Protocol voor orbitaal recoveryvenster
 
-NL LOC HOLD: Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.
+Het Protocol voor orbitaal recoveryvenster is de harde grens die redding in engineering verandert in plaats van hoop. Black Keel kan vaak genoeg boven HECTON-8 passeren om ertoe te doen, maar de carrier kan niet zomaar een nat, ongeverifieerd object uit een stormveld ter grootte van een maan scheppen. Aegirs bovenatmosfeer verscheurt slechte opstijghoeken, magnetische ruis vreet zwakke guidance op en de receiver accepteert geen massa die faalt voor quarantine handshake. Het protocol vraagt daarom meerdere bewijzen tegelijk: een rated ascent object, een guidance core die het venster kan raken, een drukgeschiedenis die de receiver vertrouwt en een wettelijke custody state die de carrier vertelt wat hij mag vangen. Daarom is een bijna werkende ontsnapping nog steeds gevaarlijk. Lanceer te vroeg en de storm neemt het object. Lanceer te laat en Black Keel wordt een stem die boven het wolkendek wegtrekt. Lanceer zonder quarantainesync en de carrier kan je horen, markeren en toch de massa weigeren. Het venster maakt de hemel echt: zichtbaar, bereikbaar, getimed en niet barmhartig.
 
 ## Scanner
 
-NL LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel is dichtbij genoeg om je te horen en te beperkt om je op verzoek te vangen. Aegir opent alleen smalle recoveryvensters.
 
 ## Terminal
 
-NL LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+RECOVERYVENSTER / Black Keel receiver accepteert rated ascent object alleen bij lage storm-top shear, verminderde Aegir-magnetische ruis, geverifieerde guidance core, passende quarantine handshake en receiver custody state. Vensterdrift maakt handmatige launch ongeldig.
 
 ## Audio
 
-NL LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+Het schip is dichtbij genoeg om ertoe te doen en te ver om je snel te redden.
 
 ## Field Note
 
-NL LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Voor routetimers, carrier-UI en false-exit-uitleg: stormshear, magnetische ruis, opstijggeometrie, quarantaine-handshake.
 
 <!-- In-Game Wiki; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/nl_NL. -->

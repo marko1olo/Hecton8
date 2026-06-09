@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Deep Reach Faction Message Split"
+title: "Scission des messages de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Deep Reach Faction Message Split
+# Scission des messages de Deep Reach
 
-FR LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+Le joueur doit entendre Deep Reach comme un système sous contrainte : contrôle de responsabilité, récupération de sauvetage, vieille culpabilité d'ingénierie, pression des assureurs et automatismes opaques qui se croisent au-dessus d'une colonie noyée. Le conflit n'absout pas la compagnie. Il la rend plus dangereuse, car aucune voix ne la contrôle entièrement.
 
 ## Scanner
 
-FR LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Trois sources Deep Reach se contredisent : la récupération veut des coordonnées, le juridique veut le silence, l'ancien ingénierie avertit que le bassin répondra.
 
 ## Terminal
 
-FR LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE : Recovery Compliance demande des coordonnées navigables. Asset Silence ordonne le confinement des preuves et aucune reconnaissance publique. Legacy Engineering Node 4 répète un avertissement d'avant l'effondrement : ne pas perturber les relais du bassin inférieur pendant l'ombre d'Aegir. Ce ne sont pas des rebelles. Ce sont des départements qui protègent des pertes différentes.
 
 ## Audio
 
-FR LOC HOLD: A company can be one logo and three knives.
+Un logo. Trois voix. Aucune n'est propre.
 
 ## Field Note
 
-FR LOC HOLD: This is not redemption. It is pressure-source readability.
+À utiliser après que le joueur a entendu au moins deux tons de Deep Reach. Le battement est une ambiguïté mordante : consignes contradictoires, propriété partagée, aucun allié propre.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/fr_FR. -->

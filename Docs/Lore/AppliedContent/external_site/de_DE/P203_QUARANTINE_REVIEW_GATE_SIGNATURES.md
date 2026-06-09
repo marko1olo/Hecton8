@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Quarantine Hold Signatures"
+title: "Signaturen des Quarantine Review Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Quarantine Hold Signatures
+# Signaturen des Quarantine Review Gate
 
-DE LOC HOLD: Quarantine Hold signatures show how safety language helped convert HECTON-8 into an unrecovered claim.
+Die Quarantäne-Signaturschicht macht Deep-Reach-Schuld prozedural. Die Great Tide erzeugte echte Kontaminations- und Druckrisiken; die Lüge bestand darin, dieses Risiko zu nutzen, um Menschen und Datensätze unter lokaler Custody zu halten, während externe Prüfung zurücklag. Öffentliche Berichte nannten das biologische/Druck-Quarantäne und Autorisierungsversagen. Die geborgenen Gate-Karten fügen eine härtere Tatsache hinzu: Extraktion wurde durch Zertifikatssprache gehalten, selbst wo die Routenhardware noch nicht ausgefallen war.
 
 ## Scanner
 
-DE LOC HOLD: The hold does not need malice. It needs one unresolved hazard field.
+Prüfkarte geborgen: extraction state HELD, Gefahrenfeld BIO/PRESSURE-UNCERTAIN, externes Zertifikat fehlt. Routenfreigabe durch gate code blockiert.
 
 ## Terminal
 
-DE LOC HOLD: SIGNATURE SEED: Ikenna Sor, Quarantine Hold Desk. Function: holds extraction pending pressure-biology certification and external review.
+SIGNATURE SEED: Ikenna Sor, Quarantine Review Gate. Queue: Evacuation release. Aktion: Extraktion bis pressure-biology certificate und externer Prüfung halten. Ausnahme: keine unabhängige Shuttle-Kapazität zugewiesen. Human tags bleiben lokal in Custody, bis das Gate frei ist.
 
 ## Audio
 
-DE LOC HOLD: Pending review is still a locked door.
+Die Tür hatte noch Strom. Das Gate sagt review pending, und die Luke blieb rot.
 
 ## Field Note
 
-DE LOC HOLD: Quarantine hold signatures belong beside broken evacuation hardware or locked survivor routes.
+Leg das neben verriegelte Überlebendenrouten und Evakuierungshardware mit Reststrom. Das Hold-Feld machte eine funktionierende Tür rechtlich geschlossen.
 
 <!-- External Site; generated from P203_QUARANTINE_REVIEW_GATE_SIGNATURES/de_DE. -->

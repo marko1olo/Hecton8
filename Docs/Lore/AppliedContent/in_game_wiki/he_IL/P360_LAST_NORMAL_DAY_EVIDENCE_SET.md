@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Last Normal Day Evidence Set"
+title: "ערכת ראיות היום הרגיל האחרון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Last Normal Day Evidence Set
+# ערכת ראיות היום הרגיל האחרון
 
-HE LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+היום הרגיל האחרון אינו תאריך. הוא הצורה שחדר שומר כאשר העבודה נקטעת. לוחית ארונית מחכה ליד שלא חזרה. פתק תיקון חסר חתימה כי מישהו התכוון לחזור אחרי הירידה. משימת משאבה נשארת פתוחה. אסימון ארוחה נשאר מהודק מתחת לסרט. שעון הנתיב ממשיך לחכות לחותמת חזרה כי לשעון אין קטגוריה לשתיקה.
+
+החפצים האלה אמינים יותר מנאומים. איש לא סידר אותם לזיכרון. הלוח עדיין ניסה להריץ משמרת, להאכיל צוות, לרוקן sump, לספור כלי ולשמור נתיב ישר. לכן הראיה מכאיבה. המושבה עוד לא סיימה להפוך לאסון. היא הייתה עדיין רגילה מספיק כדי להתווכח על כוסות, מפתחות וחתימות מאוחרות בזמן שהכשל כבר נכנס לקירות.
+
+עבור Marauder, הערכה היא גם אזהרה מפני salvage עצל. לוחית יקרה אפשר להסיר בשניות, אבל תיקון לא חתום עשוי להסביר מדוע שדה הסיבה הרשמי נשאר ריק. אסימון ארוחה מהודק עשוי להוכיח שעובד ציפה לחזור לפני שעון הדלת נעצר. קטגוריית גוף עשויה להיראות נקייה עד שתעודת המשאבה וספירת המשמרת סותרות זו את זו.
+
+קרא את ההפרעה לפני לקיחת החפץ. החדרים הטבועים של HECTON-8 אינם צריכים הודעות אחרונות מושלמות. העדות החזקה שלהם קטנה יותר: עבודה פתוחה, חובה שלא נמסרה, שעון שממתין לאדם שהאוקיינוס כבר לקח.
 
 ## Scanner
 
-HE LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+ערכת היום הרגיל האחרון // לוחית ארונית שלא נאספה, תיקון לא חתום, משימת משאבה פתוחה, אסימון ארוחה עדיין מהודק, שעון נתיב מחכה לחזרה. הראיה החזקה ביותר היא עבודה שלא הושלמה.
 
 ## Terminal
 
-HE LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+ערכת ראיות: לוחית ארונית לא נאספה; תיקון לא חתום; משימת משאבה פתוחה; אסימון ארוחה מהודק; שעון נתיב מחכה. סיבה רשמית ריקה. תיקון Marauder: להשוות תעודת משאבה, ספירת משמרת, קטגוריית גוף ואי התאמת שעון-דלת לפני הסרת salvage.
 
 ## Audio
 
-HE LOC HOLD: The last day did not know it was last.
+היום האחרון לא ידע שהוא האחרון.
 
 ## Field Note
 
-HE LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+איש לא סידר את החדר להיסטוריה. השאר את הסתירה שלמה: משימה פתוחה, אסימון אוכל מהודק, שדה סיבה ריק, שעון נתיב שעדיין מצפה לאדם.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/he_IL. -->

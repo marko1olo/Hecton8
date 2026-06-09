@@ -1,0 +1,103 @@
+{
+  "contract": {
+    "covers": [
+      "surface view",
+      "underwater-up view",
+      "horizon view",
+      "different phase angles",
+      "cloud and fog occlusion",
+      "canonical band texture sampling",
+      "weather-driven storm emission",
+      "quality-tier fallback"
+    ],
+    "offlineProof": true,
+    "unityRuntimeProof": false
+  },
+  "image": "Docs/GeneratedAssets/AegirGasGiantProof/AegirGasGiantProofContactSheet_20260608.png",
+  "sourceTextures": [
+    {
+      "guid": "6c173d4e1a858b34ca1b7e5610aae988",
+      "path": "Assets/_Project/Art/TEXTURES/clouds0_diff.png",
+      "role": "bands"
+    },
+    {
+      "guid": "e1aefa60ab4517644bb884257440872b",
+      "path": "Assets/_Project/Art/TEXTURES/Sky/oblakajip.png",
+      "role": "detail"
+    },
+    {
+      "guid": "d9d11072e85a2b54cacd11eaad6614a8",
+      "path": "Assets/_Project/Art/TEXTURES/Aegir_storms.png",
+      "role": "storms"
+    }
+  ],
+  "status": "AEGIR_GAS_GIANT_PROOF_CONTACT_SHEET_BUILT",
+  "views": [
+    {
+      "cloud": 0.05,
+      "fog": 0.12,
+      "horizonOcclusion": 0.0,
+      "id": "surface_clear_full",
+      "mode": "surface",
+      "phaseDegrees": 18.0,
+      "qualityWeight": 1.0,
+      "stormEmissionMultiplier": 0.82,
+      "underwater": 0.0
+    },
+    {
+      "cloud": 0.42,
+      "fog": 0.34,
+      "horizonOcclusion": 0.0,
+      "id": "surface_cloud_fog_half",
+      "mode": "surface",
+      "phaseDegrees": 72.0,
+      "qualityWeight": 0.92,
+      "stormEmissionMultiplier": 1.22,
+      "underwater": 0.0
+    },
+    {
+      "cloud": 0.16,
+      "fog": 0.22,
+      "horizonOcclusion": 0.0,
+      "id": "underwater_up",
+      "mode": "underwater",
+      "phaseDegrees": 48.0,
+      "qualityWeight": 0.72,
+      "stormEmissionMultiplier": 1.0,
+      "underwater": 1.0
+    },
+    {
+      "cloud": 0.2,
+      "fog": 0.48,
+      "horizonOcclusion": 0.42,
+      "id": "horizon_veil",
+      "mode": "horizon",
+      "phaseDegrees": 36.0,
+      "qualityWeight": 1.0,
+      "stormEmissionMultiplier": 1.48,
+      "underwater": 0.0
+    },
+    {
+      "cloud": 0.08,
+      "fog": 0.18,
+      "horizonOcclusion": 0.0,
+      "id": "crescent_low_light",
+      "mode": "surface",
+      "phaseDegrees": 126.0,
+      "qualityWeight": 0.84,
+      "stormEmissionMultiplier": 0.92,
+      "underwater": 0.0
+    },
+    {
+      "cloud": 0.58,
+      "fog": 0.68,
+      "horizonOcclusion": 0.3,
+      "id": "heavy_fog_occlusion",
+      "mode": "horizon",
+      "phaseDegrees": 94.0,
+      "qualityWeight": 0.48,
+      "stormEmissionMultiplier": 1.92,
+      "underwater": 0.0
+    }
+  ]
+}

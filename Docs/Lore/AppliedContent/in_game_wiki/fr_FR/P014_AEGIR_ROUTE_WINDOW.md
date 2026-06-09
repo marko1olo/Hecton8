@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Fenêtre de route Aegir
 
-Une fenêtre Aegir est l'instant où plusieurs horloges hostiles s'accordent : radiation de géante gazeuse, ombre lunaire, bruit de tempête, marée, qualité de lien, masse d'ascension et géométrie Black Keel.
-
-Le ciel fait donc partie de la survie. Les données peuvent monter quand les corps ne devraient pas. L'ascension peut être bonne pendant que le bruit abîme les preuves.
+Une fenêtre de route Aegir n'est pas une météo embellie. C'est le bref moment où des horloges hostiles s'accordent : radiation, ombre lunaire, panache de tempête, cisaillement de marée, lien acoustique, géométrie Black Keel et garde tonne-window. Elle peut être ouverte aux données et fermée à un corps. Un noyau de preuve peut passer la quarantaine pendant qu'un échantillon blue-debt bloque. Le secours est une intersection de survie, droit et masse.
 
 ## Scanner
 
-Table d'éphémérides locale. Communication, marée, radiation, ombre lunaire et géométrie carrier partagent une fenêtre d'ascension étroite.
+Table d'éphémérides locale. Radiation Aegir, ombre lunaire, panache de tempête, cisaillement de marée, lien acoustique, géométrie Black Keel et garde tonne-window s'alignent brièvement.
 
 ## Terminal
 
-MISE À JOUR FENÊTRE AEGIR // Ombre Kestrel en retrait. Bruit uplink en baisse. Radiation en hausse. Cisaillement de marée accru dans les canyons de service. Géométrie Black Keel en attente de masse d'ascension.
+SOLVEUR FENÊTRE AEGIR // Uplink données partiel. Récupération corps fermée. Ascension payload conditionnelle. Surge radiation en bande de dérive. Moon relay shutter actif au prochain cycle local. Géométrie Black Keel exige handshake légal et quarantaine avant engagement de masse.
 
 ## Audio
 
-Un ciel clair n'est pas un ciel sûr. Vérifie la géante.
+Le ciel n'est pas un décor ici. C'est une serrure de plus.
 
 ## Field Note
 
-Sur HECTON-8, la météo est locale et orbitale à la fois.
+Ouvert au signal ne veut pas dire ouvert au corps.
 
 <!-- In-Game Wiki; generated from P014_AEGIR_ROUTE_WINDOW/fr_FR. -->

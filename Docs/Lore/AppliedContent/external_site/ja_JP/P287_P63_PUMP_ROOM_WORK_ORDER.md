@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63 ポンプ室作業指示"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: P-63 Pump Room Work Order
+# P-63 ポンプ室作業指示
 
-JA LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+P-63 ポンプ室作業指示は、小さな HECTON-8 アーティファクトだ。部屋の水、手の中の工具、acoustic return line、環境が返事をするまで信用できないルート。メカニクスをコロニーの習慣に変える。
 
 ## Scanner
 
-JA LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+最初の修理はコロニーの習慣として読める。汲み、封じ、聞き、部屋が嘘をやめた時だけ切る。
 
 ## Terminal
 
-JA LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: sump 排水; cold seam 補修; return pinger 確認; 圧力保持後のみ fused latch 切断; local stock から gasket 印刷; acoustic return が三回反復した後に route safe 記録。監督者イニシャルは水染みで欠落。
 
 ## Audio
 
-JA LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+まずポンプ。次にシール。鳴るなら切るな。
 
 ## Field Note
 
-JA LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+クリップボードの下半分は水を吸っている。切断行だけは、誰かが二重に囲んで、鳴るなら止めろと書いたため読める。
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/ja_JP. -->

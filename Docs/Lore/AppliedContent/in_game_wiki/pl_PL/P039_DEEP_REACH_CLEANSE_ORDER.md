@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rozkaz czyszczenia Deep Reach"
+title: "Aktywny rozkaz czyszczenia Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rozkaz czyszczenia Deep Reach
+# Aktywny rozkaz czyszczenia Deep Reach
 
-Rozkaz czyni Deep Reach obecnym antagonistą: aktywne czyszczenie i wydobycie, nie tylko historia.
+Aktywny rozkaz czyszczenia Deep Reach jest bieżącym zleceniem, nie notatką archiwalną. Pokazuje, jak custody zasobów, dostęp Atlas i kasowanie dowodów są planowane przez kontraktorów proxy po wstrzymaniu ewakuacji.
 
 ## Scanner
 
-Stos rozkazów: zasób, dostęp Atlas, kasowanie dowodów. Ratunek poniżej kontroli aktywów.
+Odzyskano aktywny rozkaz: przejąć certyfikowane próbki, otworzyć kanał Atlas, izolować ocalałych, usunąć dowód odpowiedzialności.
 
 ## Terminal
 
-Dyrektywa proxy: kontraktor zaprzeczalny. Chronić próbki. Otworzyć Atlas przy akceptowalnym ryzyku. Wyczyścić corpus winy.
+Zlecenie proxy DR-CLEANSE-19 pozostaje aktywne. Zaprzeczalni kontraktorzy najpierw dostają custody próbek, potem dostęp Atlas, a odzysk świadków na końcu. Jeśli Black Keel lub rejestr obiektu ujawnia odpowiedzialność, kolejka purge przenosi archiwa dowodów do cold delete i oznacza zgony terenowe jako straty pogodowe.
 
 ## Audio
 
-Deep Reach cię nie ściga. Używa cię jak tańszej sondy.
+Ten głos nie jest ruchem ratunkowym. To oferta czyszczenia.
 
 ## Field Note
 
-Nie wrócili, żeby przeprosić.
+Pole przeprosin jest puste.
 
 <!-- In-Game Wiki; generated from P039_DEEP_REACH_CLEANSE_ORDER/pl_PL. -->

@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Tangga Tekanan
 
-Mengubah progres kedalaman HECTON-8 menjadi struktur survival hard-sci-fi untuk eksplorasi panjang.
+Tangga Tekanan mendefinisikan akses kedalaman HECTON-8 sebagai rantai servis, bukan gerbang level arbitrer: tiap pita baru terbuka saat segel tekanan, grade suit, daya, oksigen, isolasi, sinyal, dan rencana balik lulus bersama.
 
 ## Scanner
 
-Kedalaman dibagi oleh rating tekanan, bukan nama level. Tiap pita perlu jawaban teknik berbeda.
+BACAAN GERBANG KEDALAMAN // Pita: turun servis 250-1200 m. Margin segel 11%. Pelat suit menerima Grade C hanya setelah paket baterai B2 terkunci. Ping balik melemah di bawah klem ketiga. Jangan buka lock bawah dengan keberanian.
 
 ## Terminal
 
-Tangga: alat paparan, penguat ngarai, isolasi brine, disiplin lambung abyss, pengerasan sinyal zona pabrik.
+PANEL AKSES KEDALAMAN
+0-250 m: paparan fotik / kerja singkat dengan alat rusak diterima
+250-1200 m: paparan servis / segel suit Grade C, baterai terkunci, ping tether wajib
+1200-2800 m: ngarai brine / pembungkus isolasi dan trim apung wajib
+2800-4300 m: ladang mesin abyss / sinyal keras dan disiplin lambung wajib
+4300-5600 m: cekungan Atlas / rencana pulang harus tahan hilang tekanan dan bising bus
+Gagal: pita berikutnya terkunci sampai bacaan terlemah diperbaiki
 
 ## Audio
 
-Kau turun bukan karena berani. Kau turun karena segel berikutnya masih menahan.
+Berhenti berdebat dengan pintu. Margin segel merah, dan ping balikmu sudah terlambat.
 
 ## Field Note
 
-Laut mengunci progres dengan matematika.
+Gerbang tidak peduli kenapa kau butuh rute itu. Ia membaca segel, daya, oksigen, isolasi, sinyal, lalu memberi hijau atau membunuh rencana.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/id_ID. -->

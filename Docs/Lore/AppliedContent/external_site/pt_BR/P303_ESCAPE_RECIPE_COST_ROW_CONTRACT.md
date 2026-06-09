@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Escape Recipe Cost Boundary"
+title: "Limite de Custo da Receita de Escape"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Escape Recipe Cost Boundary
+# Limite de Custo da Receita de Escape
 
-PT LOC HOLD: Leaving HECTON-8 is a repair problem first: signal, seal, guidance, ascent energy, legal handshake and payload custody.
+Sair de HECTON-8 é primeiro um problema de reparo: sinal, selo, orientação, energia de subida, handshake legal e custódia de payload. A tabela guarda custos exatos; o lore guarda por que cada custo tem dentes.
 
 ## Scanner
 
-PT LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+A linha da receita liga classe de componente, tier de pressão, prova de rota e estado de autoridade.
 
 ## Terminal
 
-PT LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+ASCENT RECIPE CONTRACT: custos qualificados precisam nomear relé, selo, orientação, energia de subida, handshake legal, autoridade de payload e risco do receptor. O caminho para cima tem peças; as peças têm donos.
 
 ## Audio
 
-PT LOC HOLD: The way up has parts. The parts have owners.
+O caminho para cima tem peças. As peças têm donos.
 
 ## Field Note
 
-PT LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Faixas de pressão vêm de regras de contenção; custos exatos pertencem às tabelas de receita.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/pt_BR. -->

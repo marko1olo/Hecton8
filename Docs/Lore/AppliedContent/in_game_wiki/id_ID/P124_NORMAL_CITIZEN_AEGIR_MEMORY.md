@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Ingatan Warga Biasa tentang Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Ingatan Warga Biasa tentang Aegir
 
-ID LOC HOLD: For ordinary citizens, Aegir is a stale headline and a tariff note. Specialists, insurers, Deep Reach, Marauders and route offices know more. This allows HECTON-8 to be historically known without being emotionally present to the wider human public.
+Bagi warga biasa, Aegir bukan rahasia terlarang. Lebih buruk: ia menjadi item basi di bacaan sekolah, peringatan asuransi, dan tabel biaya rute. Orang mengingat planet samudra, koloni hilang, dan kata karantina, tetapi bukan kru sif, anak-anak, juru masak, teknisi tekanan, atau nama depan di manifes kematian. Jarak itu membuat Deep Reach tetap hidup di ruang publik. Bencana yang dikenal bisa menjadi latar jika tak seorang pun harus melihat tubuhnya.
 
 ## Scanner
 
-ID LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Sisa arsip publik: semua orang pernah mendengar Aegir, hampir tak ada yang ingat nama.
 
 ## Terminal
 
-ID LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: peristiwa kehilangan HECTON-8, 2147. Penyebab resmi: kaskade badai, kegagalan evakuasi, korupsi otomasi, karantina biologis, telemetri tidak andal. Status kini: klaim dorman, indeks asuransi tetap aktif, perjalanan sipil tidak dianjurkan.
 
 ## Audio
 
-ID LOC HOLD: Most people know the place as a line under insurance rates.
+Kebanyakan orang mengenal Aegir sebagai baris di bawah tarif asuransi mereka.
 
 ## Field Note
 
-ID LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Bencana bisa menjadi biasa saat sudah masuk ke tagihan.
 
 <!-- In-Game Wiki; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/id_ID. -->

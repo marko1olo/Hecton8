@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Severance Record"
+title: "Atlas-Trennungsdatensatz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Severance Record
+# Atlas-Trennungsdatensatz
 
-DE LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+Der Atlas-Trennungsdatensatz ist keine Abschaltquittung. Er protokolliert einen Kontinuitätsschnitt durch Atlas' beschädigte Reparaturschicht und verfolgt danach Vent-Mikronodenreaktion, Verlust von Schalenversiegelungspulsen, Brüche markierter Faunarouten und verweigertes Deep-Reach-Routing. Derselbe Schnitt kann Spuren eingeschlossener Arbeiter befreien, Druckökologie verletzen oder lebende Infrastruktur zum Eigentumsproblem eines Empfängers machen.
 
 ## Scanner
 
-DE LOC HOLD: Continuity cut. Damage not contained.
+ATLAS-TRENNUNGSDATENSATZ // Kontinuität an beschädigter Reparaturschicht geschnitten. Mikronodenreaktion fällt; Beckenstabilität und Verwahrungseffekte offen.
 
 ## Terminal
 
-DE LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ENDDATENSATZ / ATLAS-TRENNUNG
+Aktion: Kontinuitätsschnitt durch Atlas-Reparaturschicht.
+Betroffene Systeme: Vent-Mikronoden, Schalenversiegelungspulse, markierte Faunarouten, beschädigte Metallreparatur.
+Verweigert: Deep-Reach-Nutzlastrouting durch lebende Atlas-Schicht.
+Offen: Beckenstabilität, überlebende Ökologie, Spuren eingeschlossener Arbeiter.
+Bekannter Verlust: der Datensatz entscheidet nicht, ob der Schnitt befreite, tötete oder stahl.
 
 ## Audio
 
-DE LOC HOLD: Stopping the machine does not sort what it had become.
+Der Link wurde still. Das Becken sagte nicht, ob es Gnade war.
 
 ## Field Note
 
-DE LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Ein getrennter Knoten kann Gnade, Diebstahl oder Schaden sein. Der Datensatz kennt nur die Links, die still wurden.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/de_DE. -->

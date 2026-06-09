@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Épine de relais
 
-L'espace humain est relié par des relais, pas par des miracles. Les hashes prouvent la réception; les chaînes juridiques maintiennent les claims.
+HECTON-8 n'a pas d'ansible, pas de canal d'urgence magique, pas de tribunal central parlant en direct au-dessus de l'océan. L'espace humain est connecté par une Épine de relais : faisceaux programmés, garde de paquets, hashes témoins, tampons locaux et chaînes de reçus. C'est une excellente machine pour préserver les faits. C'est une très mauvaise machine pour sauver quelqu'un qui a besoin d'air maintenant.
 
-Le réseau est puissant et froid. Le joueur peut envoyer la vérité et mourir avant qu'elle serve.
+Le joueur peut trouver un fichier vrai, prouver son origine, le pousser dans la file et voir la situation locale empirer. Black Keel entend une rafale et la transforme en créance. Luyten authentifie après la fenêtre. Le no-FTL n'est pas une note de bas de page ; c'est la raison pour laquelle l'action immédiate appartient à celui qui est encore sous l'eau.
 
 <!-- External Site; generated from P012_RELAY_SPINE/fr_FR. -->

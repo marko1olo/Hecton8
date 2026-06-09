@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Orbital Recovery Window Protocol"
+title: "פרוטוקול חלון שחזור מסלולי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Orbital Recovery Window Protocol
+# פרוטוקול חלון שחזור מסלולי
 
-HE LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+פרוטוקול חלון השחזור המסלולי מעגן את לולאת הבריחה של HECTON-8 באסטרונומיה מקומית ובהנדסת מערכות. השחקן אינו תקוע כי הסיפור אמר כך. הוא תקוע כי גזירת הסערה של Aegir, ההפרעה המגנטית, שרשרת העלייה הפגועה ומצב המקלט החוקי מסתדרים רק בחלונות צרים. חילוץ הופך לנתיב שצריך לבנות, לא לכפתור שצריך ללחוץ.
 
 ## Scanner
 
-HE LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel קרובה מספיק לשמוע אותך ומוגבלת מדי לתפוס אותך בכל פעם שתבקש. Aegir פותח רק חלונות שחזור צרים.
 
 ## Terminal
 
-HE LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+חלון שחזור / מקלט Black Keel מקבל rated ascent object רק בעת storm-top shear נמוך, רעש מגנטי מופחת של Aegir, guidance core מאומת, quarantine handshake תואם ו-receiver custody state. סחיפת חלון מבטלת launch ידני.
 
 ## Audio
 
-HE LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+הספינה קרובה מספיק כדי לשנות, ורחוקה מדי כדי להציל אותך מהר.
 
 ## Field Note
 
-HE LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+לטיימרי נתיב, UI של carrier והסבר יציאה כוזבת: גזירת סערה, רעש מגנטי, גיאומטריית עלייה, handshake הסגר.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/he_IL. -->

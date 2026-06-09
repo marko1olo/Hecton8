@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Storm Window Rush Contract Seed"
+title: "Graine de contrat d'urgence fenêtre de tempête"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Storm Window Rush Contract Seed
+# Graine de contrat d'urgence fenêtre de tempête
 
-FR LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Urgence Fenêtre de Tempête est une famille de contrats où météo et orbite deviennent les premiers systèmes de pression. La route n'ajoute pas de pouvoir hérité; elle raccourcit le temps de travail sûr, resserre la géométrie de récupération et punit plus tôt les réparations sales.
 
 ## Scanner
 
-FR LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Graine de contrat: fenêtre d'urgence. Paiement plus haut lié à couverture de tempête qui ferme, shutter orbital et marge de réparation réduite.
 
 ## Terminal
 
-FR LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: fenêtre de tempête comprimée, shutter relais orbital hostile, plafond de paiement relevé, rappel bathydrop plus tôt, tolérance de réparation réduite.
 
 ## Audio
 
-FR LOC HOLD: This contract pays because it hates waiting.
+Ce contrat paie parce que la fenêtre se ferme.
 
 ## Field Note
 
-FR LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Note de maraudeur: la prime d'urgence paraît plus grosse parce que le contrat facture chaque minute deux fois.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/fr_FR. -->

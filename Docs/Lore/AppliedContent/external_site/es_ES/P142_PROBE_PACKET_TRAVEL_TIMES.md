@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Tiempos de viaje de paquetes sonda
 
-El tiempo de los paquetes de sonda volvió valioso a Aegir antes de volverlo familiar. Una máquina estrecha podía cruzar, medir e informar mientras las instituciones humanas seguían discutiendo presupuestos y responsabilidad. Cuando Deep Reach vendía confianza, los paquetes ya eran viejos y los modelos de riesgo ya estaban pulidos. Ese es el peligro de explorar primero con máquinas: el océano puede recibir precio desde una verdad caduca mucho antes de que alguien entienda lo que cuesta trabajar allí.
+El tiempo de viaje de los paquetes sonda es una de las fuerzas menos dramáticas y más dañinas del entorno. Los primeros paquetes Ran-Aegir no eran mentiras. Llevaban lecturas espectrales reales, estimaciones de masa, química del hielo, geometría de relés y esperanza de aguas someras. Simplemente eran viejos cuando la gente los trató como permiso.
+
+Eso vuelve más afilado el fracaso colonial. HECTON-8 no se fundó sobre pura fantasía. Se fundó sobre datos que sobrevivieron mejor a la ruta que al tiempo. Cuando las lecturas nuevas contradijeron la primera promesa, la promesa vieja ya tenía deuda, contratos, equipo y planes humanos pegados.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/es_ES. -->

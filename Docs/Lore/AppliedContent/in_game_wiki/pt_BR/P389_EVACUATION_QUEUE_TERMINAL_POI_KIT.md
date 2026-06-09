@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit de provas do terminal de fila de evacuação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit de provas do terminal de fila de evacuação
 
-PT LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+O terminal de fila de evacuação não vale porque diz que pessoas esperaram. Vale porque estado de porta, deriva de relógio, contagem operária e capacidade de rota discordam de formas verificáveis no local.
 
 ## Scanner
 
-PT LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Kit de provas de POI: o terminal prova atraso por estado de porta, deriva de relógio, divergência de trabalhadores e capacidade de rota.
 
 ## Terminal
 
-PT LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+KIT TERMINAL DE FILA: lista de retenção de rota, atraso de liberação de quarentena, nota de ponderação Atlas, divergência de contagem operária, etiqueta de conflito salvage, tira de estado de escotilha, resíduo de crachá.
 
 ## Audio
 
-PT LOC HOLD: A queue is a body count with cleaner formatting.
+Uma fila é uma contagem de corpos com formatação mais limpa.
 
 ## Field Note
 
-PT LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Nota de marauder: não arranque a tira da escotilha antes de escanear o resíduo de crachá. Metal paga menos que timestamp.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/pt_BR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Registro de especialista em sistemas de campo"
+title: "Registro de Especialista de Sistemas de Campo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro de especialista em sistemas de campo
+# Registro de Especialista de Sistemas de Campo
 
-Este registro explica a primeira competência do operador sem transformá-lo em testemunha escolhida. A Deep Reach o treinou perto de bombas, classificações de vedação, salas de relé, cartões de bypass, filas de evacuação e linguagem route-safe. Os sistemas antigos rejeitam seu nome, mas ainda expõem procedimento familiar. A culpa começa como reconhecimento: uma ordem de drenagem, uma classificação de grampo, uma frase de retenção higienizada, uma sala que falhou na ordem que ele foi treinado para impedir.
+O registro field systems explica competência sem transformar o operador em comandante secreto. A Deep Reach treinava esse ofício ao redor de bombas, ratings de vedação, cartões de bypass, salas de relé, filas de evacuação e certificação route-safe. Era trabalho de infraestrutura com acesso suficiente para reconhecer uma rota enterrada.
+
+Depois da revogação, a credencial deixa de abrir portas seguras. O treinamento não desaparece. Uma ordem de drenagem, um rating de clamp, um campo de contagem manual selado ou uma frase hold sanitizada ainda se leem como trabalho em que já se confiou. Por isso a maquinaria afogada vira evidência em vez de cenário: o operador vê onde um processo de segurança foi dobrado até o abandono parecer completo.
+
+O registro mantém o passado estreito. Sem autoridade de comando. Sem confissão limpa. Sem status de passageiro heroico. Só um ex-trabalhador de sistemas da Deep Reach capaz de ler a máquina que arquivou pessoas para fora da contagem.
 
 ## Scanner
 
-Credencial antiga de sistemas de campo. Não era comando. Trabalho de infraestrutura com acesso suficiente para reconhecer onde uma rota foi enterrada.
+CREDENCIAL FIELD SYSTEMS // Infraestrutura de evacuação, certificação route-safe, acesso à sala de bombas. Sem liberação de comando; memória de procedimento ainda útil.
 
 ## Terminal
 
-RASTRO DE PESSOAL: sistemas de campo, infraestrutura de evacuação, certificação route-safe. Autorização revogada após a revisão do silêncio de Aegir. O cache de procedimentos ainda combina com a sequência do operador.
+PERSONNEL TRACE: especialista field systems, infraestrutura de evacuação, certificação route-safe. Liberação revogada após Aegir signal review. Cache de procedimento ainda corresponde à sequência do operador.
 
 ## Audio
 
@@ -35,6 +39,6 @@ Você nunca assinou a mentira. Você conhecia a gramática que fazia ela passar 
 
 ## Field Note
 
-O crachá parou de abrir portas. Não apagou a ordem das falhas.
+O crachá parou de abrir portas. Não desaprendeu a ordem da falha.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/pt_BR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Sanitized Accident Reply Window"
+title: "Bereinigtes Unfallantwortfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Sanitized Accident Reply Window
+# Bereinigtes Unfallantwortfenster
 
-DE LOC HOLD: Deep Reach lies through procedure first. The contradiction is not a villain speech; it is a public report colliding with wet machinery and names.
+Das Bereinigte Unfallantwortfenster zeigt, wie Deep Reach lügt, bevor jemand schreit. Die Lüge ist prozedural, vertraut und abgestanden: eine öffentliche Verlustlinie kollidiert mit physischen Beweisen. HECTON-8s Konzernhorror funktioniert am besten, wenn die offizielle Antwort zu sauber für den Ort ist, der sie erzeugte.
 
 ## Scanner
 
-DE LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Antwortfenster offen. Deep Reach wiederholt Sturmzusammenbruch, geologisches Versagen und autonome Evakuierung, als sei der Raum noch trocken.
 
 ## Terminal
 
-DE LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE: Sturmflut, geologischer Kollaps, autonomes Evakuierungsversagen / RESTRICTED ADVICE: keine unverifizierte Atlas continuity, body-category disputes oder basin-coordinate claims senden.
 
 ## Audio
 
-DE LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Sie antworteten dem Raum, den du finden solltest, nicht dem Raum, in dem du stehst.
 
 ## Field Note
 
-DE LOC HOLD: Place after first physical contradiction, not before.
+Nach dem ersten physischen Widerspruch platzieren: Der Spieler sollte nasse Beweise haben, bevor er das alte öffentliche Skript hört.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/de_DE. -->

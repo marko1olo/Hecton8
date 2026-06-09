@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Marauder Correction Note Sample"
+title: "Probe einer Plünderer-Korrektur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Marauder Correction Note Sample
+# Probe einer Plünderer-Korrektur
 
-DE LOC HOLD: Marauder correction notes preserve suspicion without handing over certainty. They point toward physical contradictions the room must prove.
+Die Probe einer Plünderer-Korrektur ist kein Geständnis, und genau darum ist sie nützlicher. Sie ist eine schmutzige Anmerkung auf einem offiziellen Unfallformular, geschrieben von jemandem, der sauberen Ursachen nicht mehr traute. Die Notiz sagt nicht, wer wen getötet hat. Sie sagt, was geprüft werden muss, bevor das Wort Unfall im Vorgang stehen bleiben darf: Pumpenzertifikat, Schichtzahl, Körperkategorie, Abweichung der Türzeit und die Freigabeschlange, die die Rettung lange genug aufhielt, damit der Raum zum Beweis wurde. In HECTON-8 verbindet das Objekt Umweltbeweis und Fraktionsstimme. Der Kolonieeintrag will die Geschichte mit Wetter beenden. Die Plündererhand zwingt den Spieler zurück in den Raum.
 
 ## Scanner
 
-DE LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Fettstiftkorrektur auf einem Unfallformular: nicht Wetter, nicht Panik, sondern eine Freigabeverzögerung mit Körperzählung.
 
 ## Terminal
 
-DE LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+PLÜNDERERNOTIZ / OFFIZIELLE URSACHE: VERWORFEN / VOR ANSPRUCH PRÜFEN: Pumpenzertifikat, Schichtzahl, Körperkategorie, Türzeit-Abweichung, Rettungsfreigabe-Warteschlange.
 
 ## Audio
 
-DE LOC HOLD: Someone else smelled the paperwork rot.
+Jemand roch die Fäulnis in den Akten, bevor der Raum trocken war.
 
 ## Field Note
 
-DE LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+NICHT WETTER. FREIGABE VERZÖGERT. Pumpenzertifikat, Schichtzahl, Körperkategorie prüfen. Türzeit geht dem Anspruchsstempel sechs Minuten voraus.
 
 <!-- In-Game Wiki; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/de_DE. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "פרוטוקול חיתוך Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Sever Atlas Receiver Protocol
+# פרוטוקול חיתוך Atlas payload
 
-HE LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+פרוטוקול החיתוך הוא מסלול מקבל הרסני, לא שחרור נקי. הוא יכול לעצור לוגיקת תיקון פגומה ולמנוע מ-Deep Reach וקטור שחזור. הוא יכול גם להרוס אקולוגיית מכונה, למחוק זיכרון מסלול שימושי וליצור עקבת ראיות שתיקרא לפי חוק המקבל כהכלה, חבלה, גניבה או רחמים.
 
 ## Scanner
 
-HE LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+מסלול חיתוך חמוש. ה-payload נושא מפתחות חיתוך לרציפות Atlas, בידוד זיכרון מסלול ושימור proof hash.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+מקבל PAYLOAD // חיתוך ATLAS. יעד: שדרת רציפות Atlas. חתוך לולאת תיקון, בודד זיכרון מסלול, שמור proof hash, מנע וקטור שחזור תאגידי. קסקדה אקולוגית לא פתורה. סיווג משפטי במחלוקת.
 
 ## Audio
 
-HE LOC HOLD: If this is mercy, it still leaves a body.
+אפשר לחתוך את Atlas. החיתוך עדיין משאיר סימני משמורת.
 
 ## Field Note
 
-HE LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+הערת בוזז: חיתוך נקי הוא עדיין חיתוך. צלם את סימני המשמורת לפני שאתה מושך.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/he_IL. -->

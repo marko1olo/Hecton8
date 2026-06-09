@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Orbital Recovery Window Protocol"
+title: "بروتوكول نافذة الاسترداد المدارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Orbital Recovery Window Protocol
+# بروتوكول نافذة الاسترداد المدارية
 
-AR LOC HOLD: Orbital Recovery Window Protocol ties escape to hard-sci-fi constraints: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware and legal receiver state.
+بروتوكول نافذة الاسترداد المدارية هو الحد الصلب الذي يحول الإنقاذ إلى هندسة لا أمل. يستطيع Black Keel المرور فوق HECTON-8 بما يكفي ليكون مهما، لكن carrier لا يستطيع أن ينتشل ببساطة جسما مبللا غير موثق من حقل عواصف بحجم قمر. يمزق جو Aegir العلوي زوايا الصعود السيئة، ويأكل الضجيج المغناطيسي التوجيه الضعيف، ولا يقبل المستقبل كتلة تفشل في handshake الحجر. لذلك يطلب البروتوكول عدة إثباتات معا: rated ascent object، وguidance core يصيب النافذة، وتاريخ ضغط يثق به المستقبل، وحالة حيازة قانونية تخبر carrier بما يسمح له بالتقاطه. لهذا يبقى الهروب شبه العامل خطرا. أطلق مبكرا فتأخذ العاصفة الجسم. أطلق متأخرا فيصبح Black Keel صوتا يبتعد فوق سطح السحب. أطلق بلا تزامن حجر وقد يسمعك carrier ويعلّمك ثم يرفض الكتلة. تجعل النافذة السماء حقيقية: مرئية، قابلة للوصول، موقوتة، وبلا رحمة.
 
 ## Scanner
 
-AR LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel قريب بما يكفي ليسمعك، ومقيّد بما يكفي ألا يلتقطك متى طلبت. لا يفتح Aegir إلا نوافذ استرداد ضيقة.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+نافذة الاسترداد / يستقبل Black Keel rated ascent object فقط عند انخفاض storm-top shear، وتراجع ضجيج Aegir المغناطيسي، وتحقق guidance core، وتطابق quarantine handshake وreceiver custody state. انجراف النافذة يبطل launch اليدوي.
 
 ## Audio
 
-AR LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+السفينة قريبة بما يكفي لتهم، وبعيدة بما يكفي ألا تنقذك بسرعة.
 
 ## Field Note
 
-AR LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+لمؤقتات الطريق وواجهة carrier وشرح المخرج الزائف: قص العاصفة، الضجيج المغناطيسي، هندسة الصعود، handshake الحجر.
 
 <!-- In-Game Wiki; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/ar_SA. -->

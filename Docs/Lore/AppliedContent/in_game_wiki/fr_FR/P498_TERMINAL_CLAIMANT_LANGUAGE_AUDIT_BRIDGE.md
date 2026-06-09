@@ -9,43 +9,43 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audit du langage des ayants droit"
+title: "Audit du langage des réclamations"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Audit du langage des ayants droit
+# Audit du langage des réclamations
 
-Le langage de reclamation est l'une des armes les plus silencieuses de la colonie. Il n'a pas besoin de nier la salle des pompes, la porte de triage fermee ou la masse ouvriere derriere la grille de service. Il suffit de les renommer avant qu'une personne puissante lise le fichier. Une file devient un ecart de delai. Une porte verrouillee devient une porte de revue quarantaine. Un corps non revenu devient exposition de paiement. Un retour de recuperation abime devient eligibilite partielle.
+La paperasse de Deep Reach peut enterrer un enregistrement sans le supprimer. Elle garde la salle, l'étiquette, l'heure et le nombre de corps, puis remplace le nom placé à côté d'eux. Dans le cache miroir Tau, la Salle des Pompes B marquée occupée après l'heure d'inondation 03:18 devient un écart de fenêtre de libération. La Porte de Triage 2 verrouillée depuis le côté contrôle devient une révision de quarantaine. L'étiquette de travailleur R-17 absente alors que l'anneau de combinaison figure dans la masse de récupération devient une exposition Keelmark. Un plateau de retour avec quatre crochets de kit vides devient une admissibilité partielle de cargaison.
 
-L'audit sert a lire le langage de procedure comme une action. Chaque phrase convertie doit etre rattachee a une personne, une salle, un outil, une horloge de route ou un evenement de pression. Deep Reach peut garder le temoin tout en enterrant son temoignage par une etiquette de rayon. Si la categorie survit et que le corps disparait, la preuve a deja ete blanchie une fois.
+Lisez l'enregistrement depuis le sol vers le haut : salle, loquet, étiquette, horloge, nombre d'objets rendus. Le langage de procédure des réclamations ne devient preuve que lorsqu'il peut être fixé à une trace physique. Si un fichier garde la catégorie et perd le travailleur, le bureau a déjà nettoyé la route une première fois.
 
 ## Scanner
 
-AUDIT DU LANGAGE DE RECLAMATION // Temoignages ouvriers et salles endommagees deviennent des categories: ecart de delai de liberation, porte de revue quarantaine, exposition de paiement, eligibilite de retour partiel.
+AUDIT DU LANGAGE DES RÉCLAMATIONS // Catégorie de procédure trouvée à côté d'une trace physique. Vérifiez la salle, le loquet, l'étiquette de travailleur, l'horloge de route et le nombre de kits rendus avant d'accepter la catégorie.
 
 ## Terminal
 
-INTERFACE NOTARIALE: AUDIT DU LANGAGE
-Ligne source: file de la salle des pompes toujours occupee.
-Conversion: ecart de delai de liberation.
-Ligne source: porte de triage maintenue fermee.
-Conversion: porte de revue quarantaine.
-Ligne source: masse ouvriere non recuperee.
-Conversion: exposition de paiement Keelmark.
-Ligne source: retour sans charge complete.
-Conversion: eligibilite de retour partiel.
-Une categorie n'est pas neutre quand elle remplace une personne.
+AUDIT DU LANGAGE DES RÉCLAMATIONS / ENTRÉE DU MIROIR TAU
+Trace brute : file de la Salle des Pompes B occupée après la marque d'inondation 03:18.
+Classé comme : écart de fenêtre de libération.
+Trace brute : Porte de Triage 2 verrouillée depuis le côté contrôle.
+Classé comme : révision de quarantaine.
+Trace brute : étiquette de travailleur R-17 absente ; anneau de combinaison consigné dans la masse de récupération.
+Classé comme : exposition Keelmark.
+Trace brute : plateau de retour privé de quatre kits personnels.
+Classé comme : admissibilité partielle de cargaison.
+Rejetez toute catégorie qui ne peut pas désigner une salle, une étiquette, un loquet ou une horloge.
 
 ## Audio
 
-Deep Reach ne supprime pas toujours un temoin. Parfois elle garde le temoin et change l'etagere ou il est range.
+Ils n'ont pas effacé la ligne. Ils ont changé le nom de classement. Commence par la salle, pas par le formulaire.
 
 ## Field Note
 
-Les categories font taire un ouvrier mort sans perdre la facture. Lisez l'etiquette, puis cherchez ce qu'il a fallu couper pour qu'elle rentre.
+Si un fichier sonne trop propre, comptez les crochets, les étiquettes, les loquets et les horloges. Le nom manquant est d'ordinaire le travailleur.
 
 <!-- In-Game Wiki; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/fr_FR. -->

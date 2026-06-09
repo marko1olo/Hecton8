@@ -11,11 +11,11 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
             string selectBiome = ExtractMethodBody(source, "private unsafe bool TrySelectBiomeRecordForChunk(int index, out H8BiomeRecord record)");
-            string resolveDepth = ExtractMethodBody(source, "private static double ResolveChunkDepthMeters(in AbsoluteUniversePositionBlit centerAup)");
+            string resolveDepth = ExtractMethodBody(source, "private double ResolveChunkDepthMeters(in AbsoluteUniversePositionBlit centerAup)");
 
-            StringAssert.Contains("private const double DefaultSeaLevelY = 14.02d;", source);
+            StringAssert.Contains("private const double DefaultSeaLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;", source);
             StringAssert.Contains("double depthMeters = ResolveChunkDepthMeters(in centerAup);", selectBiome);
-            StringAssert.Contains("math.max(0d, DefaultSeaLevelY - centerY)", resolveDepth);
+            StringAssert.Contains("math.max(0d, ResolveChunkSeaLevelY() - centerY)", resolveDepth);
             StringAssert.DoesNotContain("double depthMeters = math.max(0d, -ToAbsoluteY(in centerAup));", source);
         }
 
@@ -803,13 +803,23 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("movement.CurrentAup.ToAbsoluteDouble3()", scatterObserver);
 
             StringAssert.Contains("TryResolvePlayerObserverAup(out AbsoluteUniversePosition observerAup)", biosPass);
+            StringAssert.Contains("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player)", biosSource);
+            StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false)", biosSource);
+            StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", biosSource);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", biosSource);
+            StringAssert.Contains("private void InvalidateLootCache()", biosSource);
+            StringAssert.Contains("playerContext is Behaviour behaviour", biosSource);
+            StringAssert.Contains("InvalidateLootCache();", biosSource);
             AssertTokensInOrder(
                 biosObserver,
+                "IPlayerRuntimeContext playerContext = ResolvePlayerContext();",
+                "!IsPlayerContextUsable(playerContext)",
                 "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
                 "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u",
                 "!movementState.PredictedAup.IsFinite()",
                 "observerAup = movementState.PredictedAup;",
                 "return true;");
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", biosSource);
             StringAssert.DoesNotContain("playerMovement.PredictedAup", biosPass);
 
             AssertTokensInOrder(
@@ -884,6 +894,8 @@ namespace Hecton8.Tests.Editor
             string pdaPlayerAup = ExtractMethodBody(pdaProjectorSource, "private static bool TryResolvePdaProjectionPlayerAup(");
             string dynamicDecalSource = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "DynamicDecalVaultRuntime.cs");
             string dynamicDecalCameraAup = ExtractMethodBody(dynamicDecalSource, "private static double3 ResolveCameraAup(Camera camera)");
+            string deferredDecalSource = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "DeferredDecalPass.cs");
+            string deferredDecalHotSwap = ExtractMethodBody(deferredDecalSource, "public void OnGlobalRegistryServiceReplaced(");
             string baseHudSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "BaseIntegrityHUD.cs");
             string baseHudAup = ExtractMethodBody(baseHudSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             string voxelBridgeSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonVoxelStreamingBridge.cs");
@@ -967,7 +979,7 @@ namespace Hecton8.Tests.Editor
 
             AssertTokensInOrder(
                 dynamicDecalCameraAup,
-                "IPlayerRuntimeContext playerContext = _cachedPlayerContext;",
+                "IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();",
                 "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
                 "(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
                 "snapshot.Aup.IsFinite()",
@@ -980,6 +992,16 @@ namespace Hecton8.Tests.Editor
                 "if (camera != null)",
                 "RuntimeOriginRoute.TryRuntimePositionToAup(position, ref cameraAup)",
                 "return ResolveCurrentRuntimeOriginAup();");
+            StringAssert.Contains("CachePlayerContext(GlobalRegistry.Player)", dynamicDecalSource);
+            StringAssert.Contains("public static void RefreshColdPlayerContext(IPlayerRuntimeContext playerContext)", dynamicDecalSource);
+            StringAssert.Contains("_cachedPlayerContext = IsPlayerContextUsable(playerContext) ? playerContext : null;", dynamicDecalSource);
+            StringAssert.Contains("private static IPlayerRuntimeContext ResolveCachedPlayerContext()", dynamicDecalSource);
+            StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", dynamicDecalSource);
+            StringAssert.Contains("private static bool IsCameraUsable(Camera camera)", dynamicDecalSource);
+            StringAssert.Contains("playerContext is Behaviour behaviour", dynamicDecalSource);
+            StringAssert.Contains("DynamicDecalVaultRuntime.RefreshColdPlayerContext(currentService as IPlayerRuntimeContext)", deferredDecalHotSwap);
+            StringAssert.DoesNotContain("_cachedPlayerContext = GlobalRegistry.Player;", dynamicDecalSource);
+            StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", dynamicDecalSource);
             StringAssert.DoesNotContain("playerContext.PlayerMovement", dynamicDecalCameraAup);
             StringAssert.DoesNotContain("playerMovement.CurrentAup", dynamicDecalCameraAup);
 

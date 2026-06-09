@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shallow Annex P-63 POI Kit"
+title: "Shallow Annex P-63 Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Shallow Annex P-63 POI Kit
+# Shallow Annex P-63 Evidence Kit
 
-P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 works because it refuses to separate shelter from proof. The room gives the operator air, a bilge pump, gasket stock, a pinger line and a cutter contact. Those pieces are useful first; the contract can wait, the water cannot.
 
-## Scanner
-
-POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-First room with air. First room with a lie.
-
-## Field Note
-
-POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+After the room is stable, the same objects change weight. The sealed route notice calls the annex closed under controlled conditions, while the damaged pump, patched gasket tray and wet accident packet show a rougher exit. The first contradiction is not hidden in a speech. It is bolted to the place that kept the operator alive.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/en_US. -->

@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Acoustic Relay Spine Assembly
 
-Acoustic Relay Spine Assembly grounds HECTON-8's escape loop in salvage engineering: sound must survive pressure, route geometry and custody before orbit believes it.
+The Acoustic Relay Spine Assembly is the first piece of HECTON-8's escape chain that turns survival into a measurable signal. It is not a radio mast and not a distress prayer. It is a pressure-code spine built from ceramic ribs, cable jacket, ballast floats and pinger timing.
 
-## Scanner
+The problem is trust. HECTON-8's water carries impact noise, pump knock, brine scatter and route echoes. Black Keel receives more sound than it can safely accept. A capsule that wants recovery has to prove that its tap belongs to a route, a clock and a custody chain, not to a loose panel striking a flooded frame.
 
-Broken acoustic spine. It can tap pressure-code through water; orbit still hears it as damaged custody noise.
-
-## Terminal
-
-ASCENT RELAY: restore low-band acoustic spine before recovery window. High-gain mast lost. Emergency buoy unreliable. Black Keel receiver accepts pressure-code only after route proof.
-
-## Audio
-
-If the Keel hears us, it hears a wound tapping a pipe.
-
-## Field Note
-
-The capsule's first call is not a voice. It is ceramic ribs, cable skin, pinger floats and enough timing discipline to make the ocean repeat you correctly.
+Repairing the spine gives the ascent capsule a narrow voice: coordinates, survival state, clock match, checksum. That is enough to start a recovery conversation, but not enough to guarantee rescue. The ocean can still bend the signal. The carrier can still treat the packet as damaged claim noise. The component earns the first hearing; it does not win the case.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/en_US. -->

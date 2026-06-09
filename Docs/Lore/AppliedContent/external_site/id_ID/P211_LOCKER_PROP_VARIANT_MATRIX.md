@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Matriks Varian Prop Loker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Matriks Varian Prop Loker
 
-ID LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+Matriks Varian Prop Loker menentukan bagaimana HECTON-8 mengubah penyimpanan pribadi menjadi bukti yang bisa dibaca. Loker bukan tempat membuang biografi. Ia adalah objek dunia padat yang menghubungkan pekerja, pekerjaan, akses rute, kerusakan, dan manipulasi kemudian. Dengan begitu pemain membaca hidup koloni lewat benda yang masih pantas berada di ruangan.
 
 ## Scanner
 
-ID LOC HOLD: A locker should show work, route access and what got erased.
+Loker harus menunjukkan pekerjaan, akses rute, dan apa yang coba dihapus seseorang. Kenang-kenangan hanya boleh ada setelah pekerjaan terbaca.
 
 ## Terminal
 
-ID LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: setiap loker authored membutuhkan tiga petunjuk terbaca: pekerjaan, rute, dan kerusakan. Memori dekoratif bersifat sekunder. Loker boleh menyimpan token keluarga atau lelucon pribadi, tetapi hanya setelah alat, jejak izin, atau bekas penghapusan memberi tahu pemain bagaimana orang ini menyentuh koloni.
 
 ## Audio
 
-ID LOC HOLD: The locker is not a shrine. It is a failed work order.
+Loker bukan tempat suci. Itu perintah kerja yang gagal.
 
 ## Field Note
 
-ID LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Varian: aus alat, tag izin rute, pita tekanan, stiker sif, bekas penghapusan gaji, tanda preservasi Marauder.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/id_ID. -->

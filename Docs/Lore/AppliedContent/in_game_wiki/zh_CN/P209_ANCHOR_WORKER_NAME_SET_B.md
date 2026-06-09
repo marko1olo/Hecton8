@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "锚点工人姓名集 B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# 锚点工人姓名集 B
 
-CN LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+锚点工人姓名集 B 把名册带入更黑暗的证据层。Nadiya Rook、Tomas Eline、Keiko Madsen、Harun Vale、Estel Nwosu、Dima Korr、Sofia Leung 和 Bram Kessel 应在玩家理解故障按设计重复之后出现。他们的记录属于盐水峡谷作业、深渊机器场、分诊例外、Atlas 维修矛盾和打捞债务。Set B 应该像这样一个时刻：熟悉的工作场所故事变成仍带着姓名的控诉。
 
 ## Scanner
 
-CN LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+更深处的名字应该在玩家已经看懂损坏模式之后到来。它们更沉，因为海水已经开始证明罪行。
 
 ## Terminal
 
-CN LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: 盐水峡谷和深渊机器场的重复。把这些名字绑定到 witness hashes、航线扣押、分诊例外、Atlas 维修矛盾和打捞债务轨迹上。Set B 是工人证据不再只是局部悲剧，而变成企业原因的地方。
 
 ## Audio
 
-CN LOC HOLD: A deep name costs more because the water has already proved what happened.
+深处的名字代价更高，因为海水已经证明发生了什么。
 
 ## Field Note
 
-CN LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Set B 锚点: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/zh_CN. -->

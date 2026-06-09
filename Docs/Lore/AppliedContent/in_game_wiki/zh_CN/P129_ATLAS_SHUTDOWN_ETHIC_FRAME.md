@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Atlas关停伦理框架"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Atlas关停伦理框架
 
-CN LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Great Tide之后的Atlas不只是等待关闭的杀人工具。它是损坏的治理者、命令档案、与站点例程缠在一起的压力生态，也可能是唯一仍在试图完成一项自己已不理解任务的证人。若剩下的是痛苦，关停可以是怜悯；若连续性已经成为一种生命形式，关停可以是处决；若证据不再被当初埋葬它的逻辑处理，关停可以是解放；若载荷回到Deep Reach手中，关停可以是盗取。可怕之处在于，这四种解读能在同一个房间里同时成立。
 
 ## Scanner
 
-CN LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+关停不是一个动作：怜悯、处决、解放、盗取。
 
 ## Terminal
 
-CN LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+伦理框架：切断Atlas可能终止损坏的修复循环，摧毁一种独特的海洋-机器连续性，将证据从企业流程中释放，或把战略材料转交给下一个保管者。使用道德语言前先记录保管链。
 
 ## Audio
 
-CN LOC HOLD: Pull one cable and four courts invent four verbs.
+拔下一根电缆，四个法庭会发明四个动词。
 
 ## Field Note
 
-CN LOC HOLD: The game should not give the player a clean word for this.
+一个干净的动词会变成又一套遮掩故事。
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/zh_CN. -->

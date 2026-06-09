@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Player Lien Contract Start Card"
+title: "بطاقة بدء عقد lien اللاعب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Player Lien Contract Start Card
+# بطاقة بدء عقد lien اللاعب
 
-AR LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+بطل HECTON-8 مهني سابق في Deep Reach تحول إلى salvage operator. هذا الأصل يجعل القصة ناضجة وعملية: يأتي اللاعب للعمل، لا للقدر. يكتسب التحول العاطفي عبر الأدلة والعقود والوصول الذي ما زال يُتذكر، فيجعل اللغز شخصيا من دون اختزاله إلى انتقام عائلي.
 
 ## Scanner
 
-AR LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+لا تجعلك بطاقة البداية ضحية مختارة. إنها تجعلك مهنيا سابقا في Deep Reach مع lien ومفتاح وسبب لتكذب على نفسك.
 
 ## Terminal
 
-AR LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+بداية العقد / المشغل: salvage contractor مستقل / الوصول السابق: Deep Reach field key، غير نشط لكنه معروف / lien: نشط / الدافع المعلن: claim value / الضغط غير المعلن: prior exposure، ألفة الطريق، beneficiary conflict.
 
 ## Audio
 
-AR LOC HOLD: You came for work. The file remembered you before you remembered it.
+جئت من أجل العمل. تذكرك الملف قبل أن تتذكره.
 
 ## Field Note
 
-AR LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+لا lost-relative hook. يبدأ الدافع كعمل: salvage value، field access قديم، تعرض مهني، ضغط شخصي مقنع.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/ar_SA. -->

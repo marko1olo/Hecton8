@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Blackout Window Signal Decay"
+title: "블랙아웃 창 신호 붕괴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Blackout Window Signal Decay
+# 블랙아웃 창 신호 붕괴
 
-KO LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+HECTON-8의 침묵은 천문학, 손상된 인프라, 기업 자동화가 섞인 것이다. Aegir의 그림자, 물에 잠긴 중계기, 캐리어 타이밍, 법무 대기열은 통신을 날씨로 바꾼다. 플레이어는 그것을 기준으로 계획하고, 두려워하고, 수리하고, 때로는 이용한다.
 
 ## Scanner
 
-KO LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+신호 창이 무너진다. 젖은 중계 척추, Aegir 그림자, 낡은 캐리어 기하, 법무 대기열은 계속 재시도 중.
 
 ## Terminal
 
-KO LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: 업링크 손실이 허용치를 초과했다. 음성 채널 중단. 텍스트 파편은 수리된 음향 척추 노드를 통해 도착할 수 있다. 궤도 캐리어 기하는 Aegir 자기 그림자가 걷힌 뒤 갱신된다. 자동 유치권과 보관 타이머는 오퍼레이터 접촉 없이 계속 진행된다.
 
 ## Audio
 
-KO LOC HOLD: When the sky closes, the paperwork keeps breathing.
+하늘이 먼저 조용해진다. 채무 통지는 계속 문을 두드린다.
 
 ## Field Note
 
-KO LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+블랙아웃 창을 루트 페이싱에 묶는다. 음성은 줄이고, 파편 읽기는 늘리며, 수리된 중계기와 로컬 비콘의 가치를 높인다.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/ko_KR. -->

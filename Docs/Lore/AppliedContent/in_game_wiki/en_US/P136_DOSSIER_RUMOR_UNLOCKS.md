@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Dossier Rumor Memory"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Dossier Rumor Unlocks
+# Dossier Rumor Memory
 
-The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+The Marauder dossier is not a storage locker. It is the part of the job that survives a failed claim: names half heard over relay, contract clauses that smelled wrong, ending categories already exposed, warnings bought with somebody else's last minutes. A new run should begin with better suspicion, not a better submarine.
 
 ## Scanner
 
-Replay memory: rumor, warning, contract context. Not power.
+DOSSIER MEMORY // Rumors, warnings, contract context and ending records persist. Hull, oxygen, tools, cargo and the map do not.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+PERSISTENCE RULE: dossier may keep rumor families, evidence categories, ending flags and route warnings across campaigns. It must not carry equipment, resources, seed geography, or truth ownership.
 
 ## Audio
 
-Your file remembers what your hands cannot carry.
+The file remembers what your hands cannot carry.
 
 ## Field Note
 
-Knowledge can persist without making the next run easier in a boring way.
+Let knowledge persist. Let pressure remain.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/en_US. -->

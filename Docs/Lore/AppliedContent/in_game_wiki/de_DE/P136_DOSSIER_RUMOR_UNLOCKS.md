@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Gerüchterinnerung des Dossiers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Gerüchterinnerung des Dossiers
 
-DE LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+Das Marauder-Dossier ist kein Lagerfach. Es ist der Teil der Arbeit, der einen gescheiterten Claim überlebt: Namen, halb über Relais gehört, Vertragsklauseln mit falschem Geruch, bereits freigelegte Endfamilien, Warnungen, bezahlt mit den letzten Minuten anderer Leute. Ein neuer Lauf soll mit schärferem Verdacht beginnen, nicht mit einem besseren U-Boot.
 
 ## Scanner
 
-DE LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+DOSSIER-GEDÄCHTNIS // Gerüchte, Warnungen, Vertragskontext und Endaufzeichnungen bleiben. Rumpf, Sauerstoff, Werkzeuge, Fracht und Karte nicht.
 
 ## Terminal
 
-DE LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+PERSISTENZREGEL: Das Dossier darf Gerüchtefamilien, Beweiskategorien, Endmarken und Routenwarnungen kampagnenübergreifend behalten. Es darf keine Ausrüstung, Ressourcen, Seed-Geografie oder Wahrheitsbesitz übertragen.
 
 ## Audio
 
-DE LOC HOLD: Your file remembers what your hands cannot carry.
+Die Akte erinnert, was deine Hände nicht tragen können.
 
 ## Field Note
 
-DE LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Wissen darf bleiben. Druck muss bleiben.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/de_DE. -->

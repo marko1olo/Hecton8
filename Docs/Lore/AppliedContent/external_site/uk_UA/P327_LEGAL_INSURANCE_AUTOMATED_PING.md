@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Legal Insurance Automated Ping"
+title: "Автоматичний страховий legal ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Legal Insurance Automated Ping
+# Автоматичний страховий legal ping
 
-UK LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+Автоматичний страховий legal ping - компактна форма бюрократичного жаху HECTON-8. Deep Reach теперішнього часу може говорити через автоматизовану insurance custody не гірше, ніж через людину. Система питає, що несе вижилий, перш ніж запитати, чи треба його рятувати.
 
 ## Scanner
 
-UK LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Отримано автоматичний ping. Мову порятунку замінено receiver proof, mass class і custody status.
 
 ## Terminal
 
-UK LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / до recovery-window assignment потрібно: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-UK LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Перше, що вони питають, не чи ти живий. Вони питають, що ти несеш.
 
 ## Field Note
 
-UK LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Короткий bark для route thresholds. Використовувати рідко; жорстокість у тому, що система питає першою.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/uk_UA. -->

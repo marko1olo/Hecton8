@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -104,6 +105,7 @@ namespace Hecton8.Narrative.Prologue
         private ushort _acousticStressSequence;
         private int _lastSurvivalVitalsSnapshotGeneration;
         private int _lastSurvivalDeathSequence;
+        private uint _playerSurvivalVitalsSourceId;
         private int _signalPushDropCount;
 
         [Header("Authored Reentry Pacing")]
@@ -195,6 +197,7 @@ namespace Hecton8.Narrative.Prologue
             ClearPendingCameraPressureImpact();
             TryUnregisterLateFrameLane();
             TryUnregisterHotSwap();
+            ClearSurvivalSignalCursors();
         }
 
         private void OnDestroy()
@@ -214,6 +217,7 @@ namespace Hecton8.Narrative.Prologue
             TryUnregisterLateFrameLane();
             TryUnregisterUpdateLane();
             TryUnregisterHotSwap();
+            ClearSurvivalSignalCursors();
             ReleaseBlackBox();
             ReleaseReentryStateBuffer();
         }
@@ -254,6 +258,10 @@ namespace Hecton8.Narrative.Prologue
 
                     if (_running && !TryRegisterUpdateLane())
                         FailSequence(PrologueCancelReasons.NonFinite);
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    RefreshPlayerSurvivalVitalsSourceId(currentService as IPlayerRuntimeContext);
+                    PrimeSurvivalSignalCursors();
                     break;
             }
         }
@@ -368,6 +376,7 @@ namespace Hecton8.Narrative.Prologue
             _stageElapsedSeconds = 0d;
             _traumaPublishAccumulatorSeconds = 0d;
             ClearPendingCameraPressureImpact();
+            RefreshPlayerSurvivalVitalsSourceId(GlobalRegistry.Player);
             PrimeSurvivalSignalCursors();
             _runCancellationToken = cancellationToken;
             _reentryState = default;
@@ -1042,7 +1051,11 @@ namespace Hecton8.Narrative.Prologue
 
         private bool ShouldAbortForSurvivalVitals()
         {
-            if (SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal deathSignal, out int deathSequence) &&
+            uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;
+            if (playerSurvivalVitalsSourceId == 0u)
+                return false;
+
+            if (SurvivalSignalRoute.TryGetLatestDeathForSource(playerSurvivalVitalsSourceId, out SurvivalVitalsChangedSignal deathSignal, out int deathSequence) &&
                 deathSequence != _lastSurvivalDeathSequence &&
                 IsFreshSurvivalSignalFrame(deathSignal.Frame))
             {
@@ -1061,7 +1074,8 @@ namespace Hecton8.Narrative.Prologue
             for (int i = 0; i < vitalsSignals.Length; i++)
             {
                 ref readonly SurvivalVitalsChangedSignal vitals = ref vitalsSignals[i];
-                if (!IsFreshSurvivalSignalFrame(vitals.Frame))
+                if (vitals.SourceId != playerSurvivalVitalsSourceId ||
+                    !IsFreshSurvivalSignalFrame(vitals.Frame))
                     continue;
 
                 bool oxygenZero =
@@ -1079,10 +1093,29 @@ namespace Hecton8.Narrative.Prologue
 
         private void PrimeSurvivalSignalCursors()
         {
+            uint playerSurvivalVitalsSourceId = _playerSurvivalVitalsSourceId;
             _lastSurvivalVitalsSnapshotGeneration = SignalBus<SurvivalVitalsChangedSignal>.SnapshotGeneration;
-            _lastSurvivalDeathSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int deathSequence)
+            _lastSurvivalDeathSequence = playerSurvivalVitalsSourceId != 0u &&
+                                          SurvivalSignalRoute.TryGetLatestDeathForSource(playerSurvivalVitalsSourceId, out _, out int deathSequence)
                 ? deathSequence
                 : 0;
+        }
+
+        private void ClearSurvivalSignalCursors()
+        {
+            _playerSurvivalVitalsSourceId = 0u;
+            _lastSurvivalVitalsSnapshotGeneration = 0;
+            _lastSurvivalDeathSequence = 0;
+        }
+
+        private void RefreshPlayerSurvivalVitalsSourceId(IPlayerRuntimeContext playerContext)
+        {
+            HectonSurvivalSystem survival = playerContext != null && playerContext.IsInitialized
+                ? playerContext.SurvivalSystem
+                : null;
+            _playerSurvivalVitalsSourceId = survival != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(survival.GetEntityId()))
+                : 0u;
         }
 
         private bool IsFreshSurvivalSignalFrame(uint frame)

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: Klaim Tekanan"
+title: "HECTON-8: Klaim Di Bawah Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: Klaim Tekanan
+# HECTON-8: Klaim Di Bawah Tekanan
 
-Catatan P-63 menempatkan awal sebagai kerja salvage di bawah utang. Fakta berguna bersifat mekanis: cadangan naik habis, avionik banjir, seal rusak, hasil scanner, dan bahasa resmi yang tidak menjelaskan penyok.
+HECTON-8 dimulai dengan Marauder berutang yang dijatuhkan lewat claim window Black Keel ke P-63, tempat setiap perbaikan, scan, dan pintu tersegel mengubah survival menjadi bukti.
 
 ## Scanner
 
-Catatan masuk Marauder. Kontrak Black Keel mengikat P-63, bathydrop rusak, lien 4.8 tonne-window, dan laporan kecelakaan yang tidak cocok dengan bekas pada logam.
+Artikel beranda publik: kontrak sebelum mitos, jendela Black Keel, bathydrop rusak, shelf terang P-63, celah Deep Reach, jejak Atlas pertama.
 
 ## Terminal
 
-NODE ARSIP PUBLIK // KLAIM H8. Jendela Aegir terbuka. Kerja: pulihkan seal tekanan, pindai P-63, ambil kargo, jaga bukti, kembali sebelum geometri penerima tertutup.
+SITE LONGFORM: menjual rute bermain lewat kerja tekanan, custody bukti, tanpa rescue instan, tanpa family hook, dan proof fisik.
 
 ## Audio
 
-Cuplikan relai Black Keel: "Jendelanya sempit. Perbaiki cangkang turun, baca bekas tekanan, bawa bukti bersama kargo."
+Di HECTON-8 tidak ada yang menjual rescue. Mereka menjual claim dan membiarkan air memutuskan sisanya.
 
 ## Field Note
 
-Catatan Marauder: cahaya di P-63 bukan keselamatan. Hitung udara, perbaiki seal sebelum kargo, dan jangan percaya laporan yang tidak menjelaskan penyok.
+Jika dokumen terdengar tenang, baca logamnya. Kebenaran pertama HECTON-8 hidup di antara baris kontrak dan seal yang patah.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/id_ID. -->

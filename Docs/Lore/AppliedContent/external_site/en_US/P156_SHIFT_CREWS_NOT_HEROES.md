@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Shift Crews, Not Heroes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Shift Crews Not Heroes
+# Shift Crews, Not Heroes
 
-Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+Shift Crews, Not Heroes is the human writing rule for HECTON-8: workers become memorable through jobs, fatigue, habits, and procedural failures.
 
 ## Scanner
 
-The colony becomes human through schedules, not speeches.
+HUMAN LAYER // The colony becomes real through schedules, worn tools, missed returns, and names on duty boards. Not speeches.
 
 ## Terminal
 
-COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+WRITING RULE: record workers as pump techs, medics, route clerks, divers, cooks, fabricator operators, and tired supervisors. A roster with one missing return can hurt more than a monument.
 
 ## Audio
 

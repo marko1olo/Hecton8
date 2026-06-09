@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "Poziomy wiedzy o prawdziwej przyczynie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# Poziomy wiedzy o prawdziwej przyczynie
 
-PL LOC HOLD: True Cause Knowledge Tiers define who inside Deep Reach knew which part of the HECTON-8 failure chain.
+Poziomy wiedzy o prawdziwej przyczynie to mapa korporacyjnej wiedzy stojącej za HECTON-8. Artykuł rozdziela dowody według biur nie po to, by usprawiedliwić Deep Reach, lecz by uczynić zbrodnię bardziej wiarygodną: dane oceaniczne, ważenie SI, prawo ewakuacyjne, konwersja ubezpieczeniowa i zgodność odzysku trzymały różne części tego samego śmiertelnego łańcucha. Grozą nie jest ukryty rozkaz „zabić kolonię”. Grozą jest firma zbudowana tak, by każde biurko widziało częściową prawdę, chroniło własną metrykę i przekazywało moralną resztę dalej, aż ratunek stanie się zdarzeniem odpowiedzialności.
 
 ## Scanner
 
-PL LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach znała prawdę w kawałkach: marginesy pływów w jednym biurze, ważenie Atlas w drugim, opóźnienie ewakuacji i konwersja roszczeń gdzie indziej.
 
 ## Terminal
 
-PL LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: zespoły pływowe notują utratę marginesu; Risk akceptuje ekspozycję ogonową; Atlas Safety waży ciągłość ponad ewakuację; prawnicy wstrzymują zwolnienia; Keelmark zmienia zgony w odzyskiwalną stratę; Recovery Compliance żąda ładunku przed ujawnieniem.
 
 ## Audio
 
-PL LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+Nikt nie musiał pisać „niech umrą”. Tabela już wiedziała jak.
 
 ## Field Note
 
-PL LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+Rozproszona niewiedza nie była niewinnością. Była architekturą.
 
 <!-- External Site; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/pl_PL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "تصنيف النهايات الزائفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# تصنيف النهايات الزائفة
 
-AR LOC HOLD: False Ending Taxonomy frames replayability and player agency: exits can be physically real, materially successful and morally incomplete at the same time.
+يشرح تصنيف النهايات الزائفة بنية إعادة اللعب: قد يكون المخرج حقيقيا من الناحية المادية ومربحا، ومع ذلك يظل ناقصا أخلاقيا. يحتفظ الملف بالمعرفة بين المحاولات، بينما يقرر الضغط والدين والحقيقة العامة هل تكون النهاية مجرد هروب أم حسابا حقيقيا.
 
 ## Scanner
 
-AR LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+لوحة النهايات. بعض المخارج حقيقية بما يكفي لتُحسب، وخاطئة بما يكفي لتؤذي.
 
 ## Terminal
 
-AR LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+عائلات النهايات: عائد مادي؛ خروج جزئي وعودة إلى البذرة نفسها؛ احتجاز الشركة؛ حجز الحجر؛ نشر السجل العام؛ حل حوض Atlas. يجب أن تفصل سجلات النتيجة بين الحمولة والدليل وحالة الدين.
 
 ## Audio
 
-AR LOC HOLD: Leaving is not the same as finishing.
+الخروج من الماء لا يعني أن العمل انتهى.
 
 ## Field Note
 
-AR LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+النهاية الزائفة ليست خدعة. إنها صفقة صحيحة ينقصها جزء من الحقيقة.
 
 <!-- External Site; generated from P098_FALSE_ENDING_TAXONOMY/ar_SA. -->

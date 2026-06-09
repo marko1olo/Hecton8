@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Knowledge Not Power"
+title: "Знання досьє, не сила"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Knowledge Not Power
+# Знання досьє, не сила
 
-UA LOC HOLD: Dossier Knowledge Not Power is the replayability rule that keeps HECTON-8 long-form and dangerous.
+Знання досьє, не сила - правило replayability, що зберігає HECTON-8 довгою, небезпечною й чесною в оповіді.
 
 ## Scanner
 
-UA LOC HOLD: No inherited oxygen, guns, hull, or magic shortcuts.
+META RULE // Немає успадкованого кисню, рейтингу корпусу, зброї, інвентарю, маршрутної влади чи магічного shortcut. Досьє береже попередження, не м'язи.
 
 ## Terminal
 
-UA LOC HOLD: META RULE: Dossier records may unlock warnings, rumor families, claim variants and ending context. It must not preserve equipment power, resource inventory, world truth ownership or route authority.
+ЖОРСТКА МЕЖА: сталі дані досьє можуть відкривати попередження, родини чуток, варіанти claim і контекст кінцівок. Вони не зберігають силу обладнання, інвентар ресурсів, володіння світовою правдою чи маршрутний дозвіл.
 
 ## Audio
 
-UA LOC HOLD: Memory does not reinforce a cracked hull.
+Пам'ять не зміцнює тріснутий корпус.
 
 ## Field Note
 
-UA LOC HOLD: The player can become wiser. The ocean should not become smaller.
+Гравець може стати мудрішим. Океан не має стати меншим.
 
 <!-- External Site; generated from P140_DOSSIER_KNOWLEDGE_NOT_POWER/uk_UA. -->

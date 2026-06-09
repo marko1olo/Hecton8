@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fuite vers registre public"
+title: "Fuite vers le registre public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fuite vers registre public
+# Fuite vers le registre public
 
-La Fuite vers registre public est une fin de vérité partielle. Le joueur envoie assez de preuves pour rendre l'effacement plus difficile, mais pas assez pour contrôler Atlas, les représailles de Deep Reach ou ce que les institutions publiques feront du paquet.
+La fuite vers le registre public est une route de vérité partielle. Le paquet part par une fenêtre relay étroite avec assez de witness hash pour rendre le déni coûteux et trop de trous pour être sûr. Deep Reach ne peut plus simplement effacer la créance, mais personne sur HECTON-8 ne décide qui utilisera ensuite la blessure. Assureurs, tribunaux civiques, domaines rivaux, pools Marauder et bureaux corporatifs liront les mêmes preuves autrement. La publication sauve la vérité d'un enterrement propre. Elle ne la rend pas douce.
 
 ## Scanner
 
@@ -27,11 +27,11 @@ Witness hash accepté. La vérité partielle part avant la custody complète.
 
 ## Terminal
 
-ROUTE REGISTRE PUBLIC : packet notary Tau Ceti a accepté le witness hash ; payload incomplet ; contestation claimant probable ; fenêtre de représailles Deep Reach ouverte après accusé relay.
+ROUTE DE REGISTRE PUBLIC : Tau Ceti packet notary a accepté le witness hash ; payload incomplet ; contestation claimant probable ; fenêtre de représailles Deep Reach après accusé relay.
 
 ## Audio
 
-La vérité part en premier. Tu n'aimeras peut-être pas qui la lit.
+La vérité part d'abord. Le contrôle ne part pas avec elle.
 
 ## Field Note
 

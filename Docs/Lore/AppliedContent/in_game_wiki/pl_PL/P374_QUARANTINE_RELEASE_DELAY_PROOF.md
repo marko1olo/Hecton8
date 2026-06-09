@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Wstrzymanie zwolnienia kwarantanny
 
-Zapis wstrzymania nie czyni kwarantanny złem. Pokazuje czas. Deep Reach mogło nazwać niepewność, opóźnić zwolnienie, zachować pozycję ubezpieczeniową i trzymać pracownika w strefie aż do śmierci trasy.
+Skażenie jest realne na HECTON-8. Ekspozycja ciśnieniowa, chemia solanki i wzrost zgodny z Atlas mogą uczynić nieostrożny ratunek śmiertelnym. Płyta wstrzymania pokazuje, jak prawdziwe zagrożenie stało się osłoną. Deep Reach przywołała kwarantannę po zamknięciu trasy wyjścia, przyjęła odzyskiwalną masę aktywów i utrzymała zwolnienie pracowników pod linią.
 
 ## Scanner
 
-Płyta wstrzymania kwarantanny. Język ochrony pojawia się po tym, jak droga wyjścia jest już zamknięta.
+Odzyskano płytę wstrzymania. Przegląd skażenia zaczyna się po zablokowaniu trasy wyjścia, a zwolnienie pracowników pozostaje poniżej odzysku aktywów.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
+BRAMA ZWOLNIENIA // BIO-CIŚNIENIE NIEPEWNE. Wstrzymać do potwierdzenia rady. Masa aktywów przyjęta do kolejki odzysku przed zwolnieniem pracowników. Ping ubezpieczenia aktywny.
 
 ## Audio
 
-Kwarantanna może ocalić ciało. Może też kazać ciału czekać, aż stanie się papierem.
+Kwarantanna kupiła firmie czas, zanim kogokolwiek ocaliła.
 
 ## Field Note
 
-Notatka Maraudera: ochrony nie dowodzi słowo ochrona. Sprawdź zegar.
+Notatka szabrownika: ochrona to zegar, nie słowo. Sprawdź, kiedy się zaczyna.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/pl_PL. -->

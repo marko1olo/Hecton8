@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relaisspine"
+title: "Relaisrückgrat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisspine
+# Relaisrückgrat
 
-Die Relaisspine ist das langsame Kommunikationsskelett: Strahlfenster, Paketpuffer, Gewahrsamsstempel und Wiederholpläne. Sie bewegt Beweise, Claims und Befehle durch interstellare Entfernung, aber keinen Sauerstoff in einen gefluteten Raum.
+Das Relaisrückgrat hält den Menschenraum verbunden, ohne Entfernung wegzulügen. Es besteht aus Beam-Slots, Paketpuffern, Gewahrsamshashes, Wiederholplänen, Notarspulen und lokalen Wetterfreigaben. Es kann Befehle, Beweise, Schuldscheine und Proof-of-life-Bursts über interstellare Entfernung tragen. Es kann keinen Sauerstoff in einen gefluteten Raum bewegen.
 
-Auf HECTON-8 kann eine Nachricht gültig und bezeugt sein und trotzdem zu spät kommen. Wahrheit und Rettung sind getrennte Logistikprobleme.
+Auf HECTON-8 ist das Relais Druck, nicht Kulisse. Eine Nachricht kann lesbar und nutzlos sein. Ein Deep-Reach-Paket kann bereinigt eintreffen, weil die erste Fassung längst Tote hatte. Ein Tau-Ceti-Beleg kann Beweise Jahre später politisch gefährlich machen. Luyten kann Gewahrsam beweisen und den Spieler dennoch im Wasser allein lassen. Das Relais macht Wahrheit haltbar. Es macht sie nicht schnell.
 
 ## Scanner
 
-Alter Relaispuffer. Alter des ausgehenden Pakets überschreitet lokale Rettungsrelevanz. Gewahrsamshash intakt; Antwortfenster tot.
+Alter Relaispuffer. Quelluhr gültig, Gewahrsamshash intakt, Wiederholwarteschlange erschöpft. Die Nachricht überholte Rettungsmasse und starb im Warteslot.
 
 ## Terminal
 
-RELAISSPINE // Paket über Aegir lokal, Luyten Junction und Sol-Archivpfad eingereiht. Lichtverzögerungsroute akzeptiert. Prioritätsstreit ungelöst. Menschliche Antwort für aktuelles Überlebensfenster nicht operativ.
+RELAISRÜCKGRAT STATUS // Keine Ansible-Lane. Paketgewahrsam durch lokalen Aegir-Puffer gültig. Luyten-Beleg nach Lichtverzögerungsklasse ausstehend. Menschliche Antwort für Kompartmentüberleben obsolet. Lokale Handlungsautorität behalten.
 
 ## Audio
 
-Das Relais ist nicht kaputt. Das ist das Problem. Es tut genau, was Entfernung erlaubt.
+Ein Paket kann wahr, empfangen und trotzdem zu spät sein.
 
 ## Field Note
 
-Eine Nachricht kann wahr sein und trotzdem nach deinen Knochen ankommen.
+Verzug macht Wahrheit nicht falsch. Er macht sie einsam.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/de_DE. -->

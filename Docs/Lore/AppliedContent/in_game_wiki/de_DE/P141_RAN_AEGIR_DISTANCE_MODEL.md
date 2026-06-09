@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ran-Aegir-Distanzmodell
 
-Das Ran-Aegir-Modell gibt HECTON-8 einen fühlbaren Maßstab. Aegir ist nah genug für Sonden, Fracht, Seed-Hardware und schuldbasierte Besiedlung bis 2190. Es ist weit genug, dass eine geflutete Kammer nicht auf Gnade der inneren Welten warten kann. Distanz erscheint als Verzögerung, custody, Treibstoff, Bremsung und Eigentum.
+Das Ran-Aegir-Modell gibt HECTON-8 einen Maßstab, den man im Anzug spürt. Aegir ist bis 2190 nah genug für Sonden, Fracht, Routenrecht, schuldbasierte Besiedlung und Konzernhunger. Es bleibt zu weit entfernt, damit ein geflutetes Abteil auf Güte der inneren Welten warten kann. Distanz wird durch Relaisverzug, Startfenster, Bremspropellant, Trägergewahrsam, Versicherungsausschlüsse und eine einfache Tatsache zu Druck: Masse kommt langsamer an als Befehle.
 
 ## Scanner
 
-Routenplatte: Aegir ist durch Infrastruktur erreichbar und durch Mitgefühl unerreichbar.
+Die Routenplatte bestätigt Aegir in Infrastrukturreichweite, nicht in Notfallreichweite.
 
 ## Terminal
 
-ROUTENMODELL: Ran/Aegir gilt als Ziel der Zehn-Lichtjahr-Klasse von Sol. Spieltext nutzt Aegir; trockene Kataloge nutzen RAN-B:H8. Exakte Ephemeride bleibt Routentabellenarbeit.
+ROUTENMODELL: Ran/Aegir gilt als Ziel der Zehn-Lichtjahr-Klasse von Sol. Öffentliche Flächen sagen Aegir. Trockene Navigationskataloge behalten RAN-B:H8. Die exakte Ephemeride bleibt tabellengesperrt; operative Wahrheit ist Verzögerung, Bremsmasse, Relaisgewahrsam und Eigentumsrisiko.
 
 ## Audio
 
-Zehn Lichtjahre sind klein auf einer Sternkarte. Groß genug, um eine Rettung zu ruinieren.
+Ein Signal kann die Dunkelheit kreuzen. Ein Schiff bezahlt jeden Meter.
 
 ## Field Note
 
-Ungefähre Distanz ist Druck, keine Dekoration. Zehn Lichtjahre können noch einen Raum töten.
+Zehn Lichtjahre sind klein im Katalog und brutal für Rettung.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/de_DE. -->

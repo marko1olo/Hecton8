@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Payload-protocol blind return withholding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Withhold Blind Return Protocol
+# Payload-protocol blind return withholding
 
-NL LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Het blind-returnprotocol weigert elke ontvanger. Geen corporatie, grootboek, quarantainelane of severance-doel ontvangt de finale payload. De drager houdt kaart en bewijs lokaal, waardoor Deep Reach geen schone route terug krijgt. Het laat ook schuld actief, openbaar bewijs oningediend en het pakket kwetsbaar voor water, dood of slechte opslag.
 
 ## Scanner
 
-NL LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Blind-returnroute actief. Geen ontvanger toegewezen. Bekkenvector, proof hashes en toegangsklasse blijven lokaal; lien en recovery-venster blijven onopgelost.
 
 ## Terminal
 
-NL LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+PAYLOAD-ONTVANGER // BLIND RETURN WITHHOLD. Ontvanger: geen. Houd bekkenvector, proof hashes, salvage-klasse, lokaal bewijspakket. Weiger Deep Reach toegangskaart, betalingsbewijs en ontvangerbewaring. Bekende kosten: lien onopgelost, pakketverliesrisico totaal.
 
 ## Audio
 
-NL LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Geen ontvanger, geen bewijs. Als de tas volloopt, gaat het bewijs mee.
 
 ## Field Note
 
-NL LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Plunderaarsnotitie: de kaart houden is een keuze. Je hebt alleen geen ontvanger om de gescheurde tas te verwijten.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/nl_NL. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Abyssal Machine Field Warning"
+title: "深渊机械场警告"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Abyssal Machine Field Warning
+# 深渊机械场警告
 
-ZH LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+深渊机械场警告把深层生态接到最终 Atlas 路径。玩家不再穿过恰好有生命的废墟；他们穿过学会承载机器的生命。
 
 ## Scanner
 
-ZH LOC HOLD: Machine field warning: silt motion does not match current.
+淤泥逆流而动。滤体正在灯光下重新定位。
 
 ## Terminal
 
-ZH LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING：深渊机械场淤泥运动超过水流模型。滤体和埋藏执行器肋骨登记为移动基础设施。保持距离；不要锚定在软地面。
 
 ## Audio
 
-ZH LOC HOLD: The floor is not still.
+地板并不静止。
 
 ## Field Note
 
-ZH LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+后期警告：安静、客观的恐惧。最终场不是 boss 铺垫，而是正在醒来的基础设施。
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/zh_CN. -->

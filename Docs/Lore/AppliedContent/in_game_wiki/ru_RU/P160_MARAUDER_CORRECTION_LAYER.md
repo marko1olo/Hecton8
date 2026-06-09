@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Слой Marauder corrections"
+title: "Слой правок Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Слой Marauder corrections
+# Слой правок Marauder
 
-Marauder corrections держат world writing коротким, полезным и злым. Они также показывают новую культуру игрока, борющуюся с языком, который его обучил.
+Слой правок Marauder - место, где старый корпоративный язык теряет власть. Deep Reach пишет variance, custody, hold, asset, exposure. Marauder пишет то, что нужно водолазу до следующего вдоха: CO2 замедляет руки, brine прячет ступень, seal tape рвется на изгибе, чистому люку не верь. Эти пометки должны ощущаться как культура, заново собранная людьми, которых система обучила, а потом заставила ненавидеть ее словарь.
 
 ## Scanner
 
-Marauders переводят corporate language обратно в survival facts.
+СЛОЙ ПРАВОК // Корпоративная метка: temporary atmospheric variance. Пометка Marauder: CO2 первым съедает суждение.
 
 ## Terminal
 
-CORRECTION LAYER: company label says temporary atmospheric variance. Marauder note says CO2 eats judgment first. Correction is short because the next diver needs it under pressure.
+ПРАВИЛО АННОТАЦИИ: переводить язык Deep Reach обратно в факты выживания. Держать заметки короткими, практичными, злыми и полезными под давлением.
 
 ## Audio
 
-Хорошая записка не умничает. Она сохраняет кому-то жизнь.
+Хорошая заметка не звучит умно. Она держит кого-то живым.
 
 ## Field Note
 
-Игрок должен чувствовать, как старый язык Deep Reach переводится в body count.
+Игрок должен чувствовать, как старый язык Deep Reach переводится в счет тел.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/ru_RU. -->

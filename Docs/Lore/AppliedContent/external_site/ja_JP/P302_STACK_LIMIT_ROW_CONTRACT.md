@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Stack Limit Data Boundary"
+title: "スタック上限データ境界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Stack Limit Data Boundary
+# スタック上限データ境界
 
-JA LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+HECTON-8 のインベントリ圧は、封じ込め、認証、汚染質量から来る。ゲームは単純なスタックを見せられるが、lore はなぜそのスタックが安全で、なぜ壊れ、なぜ海がアイコンを気にしないかを語る。
 
 ## Scanner
 
-JP LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+スタック行はアイコンの山を拒否する: 容器分類、圧力等級、汚染、質量が数を決める。
 
 ## Terminal
 
-JP LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: スタック数には容器タイプ、圧力等級、汚染段階、質量分類、警告 tier、save-stable identity が必要。木箱は圧力容器ではない。
 
 ## Audio
 
-JA LOC HOLD: A crate is not a pressure vessel.
+木箱は圧力容器ではない。
 
 ## Field Note
 
-JP LOC HOLD: Stack limits stay table-owned and stable for save identity.
+スタック上限は table-owned のまま、セーブ identity に対して安定させる。
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/ja_JP. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Recipe Tier Pressure Bands
 
-Recipe Tier Pressure Bands defines release-facing resource progression.
+Recipe Tier Pressure Bands define how HECTON-8 avoids generic survival crafting. Materials are not abstract costs. They are pressure-rated evidence with route history, certification and legal consequences. The same structure can drive recipes, scanner warnings, UI tier labels and lore articles without splitting the world into separate gameplay and fiction languages.
 
 ## Scanner
 
-Recipes should be depth arguments, not shopping lists.
+A HECTON-8 recipe is a depth argument, not a shopping list. The part only counts when it survives the pressure band it claims.
 
 ## Terminal
 
-RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+RECIPE BANDS / T0 survival patch: shallow salvage, hand seal, no custody / T1 rated repair: shelf industrial parts, pump-room certification / T2 pressure hardware: brine wash, vent cure, acoustic proof / T3 ascent or Atlas work: abyssal source, legal receiver, containment receipt.
 
 ## Audio
 
@@ -35,6 +35,6 @@ A recipe is a depth permission form with bolts.
 
 ## Field Note
 
-Tie recipe tiers to pressure rating and route cost.
+Recipe tier must match pressure rating, route cost and custody risk. A cheap bolt in the wrong band is not cheap; it is a future leak.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/en_US. -->

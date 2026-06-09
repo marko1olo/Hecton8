@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Material Exit Receipt Audit"
+title: "Audit Tanda Terima Keluar Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Material Exit Receipt Audit
+# Audit Tanda Terima Keluar Material
 
-ID LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+Audit ini membuat akhir uang terasa sah dan pahit. Pemain mengekstrak nilai dan bertahan dari kontrak, tetapi institusi masih memiliki catatan, nama, dan bentuk resmi bencana.
 
 ## Scanner
 
-ID LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Tanda terima keluar memvalidasi massa yang dipulihkan. Rantai bukti rusak; nama pekerja tetap tidak diterima.
 
 ## Terminal
 
-ID LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+TANDA TERIMA AFTER-ACTION: pembayaran salvage dilepas untuk massa yang dapat dipulihkan dan bahaya kontrak. Kebenaran koordinat belum terselesaikan. Status liabilitas Deep Reach tidak berubah. Buku nama pekerja ditolak sebagai bukti non-kustodial. Keluar diizinkan; kasus tetap dimiliki carrier.
 
 ## Audio
 
-ID LOC HOLD: You got paid. That is not the same as getting out clean.
+Kau dibayar. Itu tidak sama dengan keluar bersih.
 
 ## Field Note
 
-ID LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Catatan pasca-aksi untuk keluar yang dibayar tetapi belum selesai secara moral: hadiah cair, rantai bukti gagal, nama tetap di luar kustodi resmi.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/id_ID. -->

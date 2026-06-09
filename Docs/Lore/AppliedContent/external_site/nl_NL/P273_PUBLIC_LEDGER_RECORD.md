@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Public Ledger Record"
+title: "Openbaar registerrecord"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Public Ledger Record
+# Openbaar registerrecord
 
-NL LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Dit eindrecord volgt het moment waarop bewijs private bewaring verlaat. De bruikbare details zijn de ontvangstvelden: wie het pakket stempelde, welke coördinaten werden geredigeerd, welk bewijsniveau werd geaccepteerd en hoeveel tijd Deep Reach heeft voordat het tegenpakket komt.
 
 ## Scanner
 
-NL LOC HOLD: Witness hash escaped claimant custody.
+OPENBAAR REGISTERRECORD // Getuigehash verliet private bewaring via Tau/Luyten-pakketroute. Openbaar bewijsniveau gezet; Deep Reach-reactievertraging gekoppeld.
 
 ## Terminal
 
-NL LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+EINDRECORD / OPENBAAR REGISTER
+Route: vertraagd Tau/Luyten-pakket.
+Payload: getuigehash, bewaringsstrip, bewijsniveau met geredigeerde coördinaten, ontvangertijdstempel.
+Controle na relais: opgegeven.
+Deep Reach-reactie: tegenpakket vertraagd door openbaar ontvangstbewijs.
+Bekend verlies: afzender kiest niet de eerste lezer of latere indieningsketen.
 
 ## Audio
 
-NL LOC HOLD: Truth can leave your hands and still matter.
+Het register stempelde het. De eerste lezer kies je niet meer.
 
 ## Field Note
 
-NL LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Als het ontvangstbewijs openbaar is, overleeft het bestand doordat het je handen verlaat. Controleer coördinaatredactie voordat je de stempel viert.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/nl_NL. -->

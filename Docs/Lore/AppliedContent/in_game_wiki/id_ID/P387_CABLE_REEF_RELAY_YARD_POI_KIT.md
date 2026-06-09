@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Kit Bukti Yard Relai Karang Kabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Cable Reef Relay Yard POI Kit
+# Kit Bukti Yard Relai Karang Kabel
 
-ID LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+Yard Relai Karang Kabel adalah bengkel perbaikan yang tumbuh menjadi mode gagalnya sendiri. Film konduktif, jaket kabel, dan soket akustik dapat memulihkan sinyal, tetapi jembatan yang sama dapat mengirim rute ke kaki servis lama jika operator memotong tanpa pemindaian.
 
 ## Scanner
 
-ID LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+Kit bukti POI: yard relai menghantar lewat film jembatan hidup dan salah rute lewat memori kabel rusak.
 
 ## Terminal
 
-ID LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+KIT YARD RELAI: soket tulang akustik, jembatan biofilm, peringatan potong, respons pinger, tanda servis Atlas, kupasan isolasi, cabang relai, peta kaki mati.
 
 ## Audio
 
-ID LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+Jangan kupas semua pertumbuhan. Sebagian membawa sinyalmu.
 
 ## Field Note
 
-ID LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Catatan marauder: jika film berdengung di bawah probe, tandai sebelum dipotong. Kabel yang tampak rapi sering kali kabel mati.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/id_ID. -->

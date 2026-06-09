@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Basin Payload Act"
+title: "بوابة payload حوض Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Basin Payload Act
+# بوابة payload حوض Atlas
 
-AR LOC HOLD: Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+حوض Atlas هو المكان الذي يتوقف فيه المسار عن السؤال عما حدث ويبدأ بالسؤال عمن سيأخذ الحزمة الصالحة للاستخدام. سلسلة الأدلة، متجه الحوض، فئة salvage وproof hash لا يمكن أن تبقى كلها بلا مساس. يجب اختيار مستقبل، أو رفضه، أو استبداله بحجز محلي.
 
-## Scanner
-
-AR LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-AR LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-AR LOC HOLD: The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-AR LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+هذا هو الضغط الأخير: لا مسار ينظف موقع الجريمة. بيع الإحداثيات يدفع ويكشف الحوض. القطع يغلق طرق العودة ويقتل بنية نافعة. الحجر يحفظ ويمسك. السجل العام ينشر بلا خريطة. Blind return يرفض الجميع ويخاطر بفقد الحزمة. تنتهي الحملة بالحيازة لا بالراحة.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ar_SA. -->

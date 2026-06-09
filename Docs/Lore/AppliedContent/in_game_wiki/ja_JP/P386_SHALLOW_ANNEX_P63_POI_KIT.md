@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "浅層別棟P-63証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Shallow Annex P-63 POI Kit
+# 浅層別棟P-63証拠キット
 
-JA LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+浅層別棟P-63は、生存手順と責任証拠が同じ作業台に乗る最初の場所である。オペレーターはポンプを復旧し、避難ポケットを密閉し、事故パケットを読み、外の損傷と合わないルート通知を見つける。
 
 ## Scanner
 
-JA LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+POI証拠キット: P-63には稼働する避難ポケット、ポンプ修理、最初の公式な矛盾が残る。
 
 ## Terminal
 
-JA LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+P-63キット: ビルジポンプ、ガスケットトレイ、カッター接触痕、ピンガー線、事故パケット、封印済みルート通知、乾燥ロッカー、手動オーバーライドクランプ。
 
 ## Audio
 
-JA LOC HOLD: First room with air. First room with a lie.
+空気のある最初の部屋。嘘のある最初の部屋。
 
 ## Field Note
 
-JA LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+マローダーメモ: パケットを読む前にポンプを動かし続けろ。死んだ避難室は悪い証拠しか残さない。
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ja_JP. -->

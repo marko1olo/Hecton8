@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Salvage Truth Evidence Status
 
-Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Recovered evidence gives HECTON-8 its slow-burn conspiracy. The colony is not silent because nothing happened; it is silent because every proof object has a market value, a liability value and a legal value. Truth surfaces through custody routes and damaged material objects, not through one convenient confession.
 
 ## Scanner
 
-Evidence only if custody survives pressure, salt and lawyers.
+Black-box packet: truth until the claim desk touches it.
 
 ## Terminal
 
-EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: raw salvage defaults to claim material. Public evidence requires intact source hash, pressure-time stamp, witness packet, relay notary outside claimant control and a custody path that survives ship loss, brine exposure and manual edits.
 
 ## Audio
 
-A corpse is proof only after somebody agrees not to misfile it.
+A corpse is proof only after somebody fails to misfile it.
 
 ## Field Note
 
-Truth is not enough. It needs a route that cannot be bought before arrival.
+A fact from the deep is only dangerous if it keeps its witnesses.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/en_US. -->

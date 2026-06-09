@@ -277,6 +277,7 @@ namespace Hecton8.Meta
             FlushCurrentRunRecords();
             FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
+            ClearRuntimeOwnerCaches();
             UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
@@ -291,6 +292,7 @@ namespace Hecton8.Meta
             FlushCurrentRunRecords();
             FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
+            ClearRuntimeOwnerCaches();
             UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
@@ -507,6 +509,16 @@ namespace Hecton8.Meta
 
         private void UnbindOwnerSubscriptions()
         {
+            _survivalSystem = null;
+            _discoveryManager = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
+        }
+
+        private void ClearRuntimeOwnerCaches()
+        {
+            _playerRuntimeContext = null;
+            _survivalSystem = null;
             _discoveryManager = null;
             _survivalSignalSourceId = 0u;
             _lastSurvivalDeathSignalSequence = 0;
@@ -553,7 +565,8 @@ namespace Hecton8.Meta
                 return;
 
             _survivalSignalSourceId = sourceId;
-            _lastSurvivalDeathSignalSequence = SurvivalSignalRoute.TryGetLatestDeath(out _, out int sequence)
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
                 ? sequence
                 : 0;
         }
@@ -564,7 +577,7 @@ namespace Hecton8.Meta
             if (sourceId == 0u)
                 return;
 
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)

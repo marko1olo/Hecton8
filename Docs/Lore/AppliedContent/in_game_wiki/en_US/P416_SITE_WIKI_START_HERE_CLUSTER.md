@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Start Here: HECTON-8
 
-Start here: contract, player role, HECTON-8 survival pressure and the first contradiction in the Deep Reach story.
+Start here: HECTON-8 begins as a salvage contract around a drowned colony, a debt-bound Marauder and a story Deep Reach filed too neatly.
 
 ## Scanner
 
-Publication hub: premise, player role, first constraints and the first Deep Reach lie.
+Public entry: salvage contract, debt-bound Marauder, damaged capsule, Deep Reach contradiction and first Atlas repair trace.
 
 ## Terminal
 
-SITE NAV: contract approach, former Deep Reach specialist, debt-bound Marauder, damaged capsule, no family hook, first Atlas repair trace.
+SITE NAV: start with contract language, pressure survival, no family hook, no instant rescue, evidence before endings.
 
 ## Audio
 
-You came for salvage. The ocean will make that motive too small.
+The first record is not a call for help. It is a claim.
 
 ## Field Note
 
-Spoiler-light navigation starts here: premise first, evidence second, endings only after the player earns them.
+Read the paperwork first. On HECTON-8, the lie survives because every sentence contains something true.
 
 <!-- In-Game Wiki; generated from P416_SITE_WIKI_START_HERE_CLUSTER/en_US. -->

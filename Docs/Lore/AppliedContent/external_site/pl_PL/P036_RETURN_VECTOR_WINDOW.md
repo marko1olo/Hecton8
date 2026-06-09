@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Okno wektora powrotu
 
-Wyjaśnia, czemu HECTON-8 nie da się po prostu opuścić: nośnik istnieje, lecz jest daleko, zautomatyzowany i zależny od Aegira.
+Okno wektora powrotu opisuje ekstrakcję z HECTON-8 jako procedurę orbitalną, a nie natychmiastowy ratunek. Black Keel może odebrać sygnał przez wąskie okna Aegir, ale odbiór zależy od luk burzowych, uspokojenia cząstek naładowanych, integralności przekaźnika i odbudowanego sprzętu wznoszenia. Packet łączy pierwszy kontakt z carrier i późniejsze rekordy częściowego wyjścia: odpowiedź dowodzi, że trasa może istnieć, a nie że jest gotowa.
 
 ## Scanner
 
-Geometria orbitalna nie jest przyciskiem ratunku. Black Keel słyszy cię tylko w wąskich oknach Aegira.
+ODCZYT WEKTORA POWROTU // Ping Black Keel odebrany przez lukę burzową Aegir. Zasięg carrier: wysoka ścieżka transferowa. Linia przekaźnika brudna pod ładunkiem chmur. Wznoszenie kapsuły odrzucone, dopóki rdzeń naprowadzania, osłona termiczna i handshake powrotu nie zgłoszą zielonego.
 
 ## Terminal
 
-Predykcja łączności: nośnik wysoko nad Aegirem. Wznoszenie kapsuły wymaga luki w burzy, ciszy cząstek i czystego przekaźnika.
+PREDYKTOR OKNA POWROTU
+Carrier: BLACK KEEL / automatyczna ścieżka transferowa
+Okno: 17 min 40 s po następnym uspokojeniu cząstek naładowanych
+Pogoda: wymagana luka w szkwale powierzchniowym
+Przekaźnik: linia nieba zaszumiona / maszt schronu może powtórzyć raz
+Sprzęt wznoszenia: brak rdzenia naprowadzania, osłona termiczna bez certyfikatu, niska rezerwa baterii
+Działanie: odbudować łańcuch wznoszenia przed uznaniem pingu carrier za odbiór
 
 ## Audio
 
-Black Keel żyje dość, by odpowiedzieć. Nie dość blisko, by uratować.
+Black Keel usłyszał ping. To daje okno, nie drabinę.
 
 ## Field Note
 
-Odpowiedź to czas, nie łaska.
+Odpowiedź nie jest ratunkiem. To zegar, który można przegapić.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/pl_PL. -->

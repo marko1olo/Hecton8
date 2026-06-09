@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: akcja zwrotna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: akcja zwrotna
 
-PL LOC HOLD: Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+Vera Sato-Ren to podpis Biura zgodności odzysku z 2190 roku, który daje obecnemu Deep Reach twarz bez czynienia go fizycznie wszechobecnym. Działa przez pakiety, okna opieki, klauzule przewoźników i opóźnione instrukcje. Presja jest proceduralna: odzyskać współrzędne, udowodnić łańcuch XO, zgłosić stan dostępu Atlas, utrzymać milczenie kontraktora, jeśli ładunek wciąż da się kontrolować.
+
+Język akcji zwrotnej jest niebezpieczny, bo może brzmieć jak pomoc. Ratunek pozostaje możliwy, ale dopiero po opiece nad ładunkiem. Pomoc można zaoferować, ale tylko dopóki ryzyko ujawnienia dowodów jest do opanowania. Marauder czytający pakiet nie słucha krzyczącego złoczyńcy. Jest mierzony wobec okna, które zamyka się niezależnie od odpowiedzi.
+
+Dla gracza Sato-Ren zmienia Deep Reach z historycznej winy w obecną dźwignię. Stara kolonia nie jest tylko grobem. Jest aktywnym miejscem roszczeń. Każdy odzyskany zapis może stać się dowodem, okupem, klauzulą milczenia albo wagą negocjacyjną zależnie od tego, kto dostanie go pierwszy. To współczesne zagrożenie Deep Reach: nie czysta flota wroga, lecz prawna komórka nacisku próbująca posiąść zwrot, zanim prawda wyjdzie z wody.
 
 ## Scanner
 
-PL LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
+PAKIET AKCJI ZWROTNEJ // V. Sato-Ren priorytetyzuje odzyskiwalny ładunek, stan dostępu Atlas i milczenie kontraktora w wąskim oknie opieki.
 
 ## Terminal
 
-PL LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. // Biuro zgodności odzysku // Priorytet: współrzędne, dowód XO, stan dostępu Atlas, milczenie kontraktora, jeśli odzyskiwalne w oknie. Pomoc ratunkowa warunkowa wobec opieki nad ładunkiem i ryzyka ujawnienia dowodów.
 
 ## Audio
 
-PL LOC HOLD: She does not need to threaten you. The window already does.
+Nie musi ci grozić. Okno już to robi.
 
 ## Field Note
 
-PL LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Współczesne Deep Reach powinno przychodzić jako dźwignia, nie monolog złoczyńcy. Okno jest groźbą.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/pl_PL. -->

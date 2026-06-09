@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Blackout Window Signal Decay"
+title: "Decaimento de Sinal na Janela de Blackout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Blackout Window Signal Decay
+# Decaimento de Sinal na Janela de Blackout
 
-PT LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+O decaimento de sinal dá forma física à escassez de comunicação. O jogador recebe janelas raras, fragmentos de pacotes cortados e rotas acústicas submarinas em vez de orientação constante da órbita.
 
 ## Scanner
 
-PT LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Janela de sinal colapsando: espinha de relés molhada, sombra de Aegir, geometria do carrier vencida, fila jurídica ainda tentando.
 
 ## Terminal
 
-PT LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: perda de uplink acima da tolerância. Canal de voz suspenso. Fragmentos de texto podem chegar por nós acústicos reparados da espinha. A geometria do carrier orbital será atualizada após a sombra magnética de Aegir limpar. Temporizadores automatizados de gravame e custódia continuam sem contato de operador.
 
 ## Audio
 
-PT LOC HOLD: When the sky closes, the paperwork keeps breathing.
+O céu fica quieto primeiro. Os avisos de dívida continuam batendo.
 
 ## Field Note
 
-PT LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Ligar janelas de blackout ao ritmo da rota: menos voz, mais leitura de fragmentos, valor maior para relés reparados e beacons locais.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/pt_BR. -->

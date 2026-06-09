@@ -1,10 +1,10 @@
 ﻿<Solution>
   <Project Path="Unity.ShaderGraph.Editor.csproj" />
   <Project Path="Hecton8.Core.csproj" />
+  <Project Path="Hecton8.Core.Contracts.csproj" />
   <Project Path="MoreMountains.Feedbacks.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
-  <Project Path="EasySave3.csproj" />
   <Project Path="Unity.RenderPipelines.Core.Editor.csproj" />
   <Project Path="ShapesRuntime.csproj" />
   <Project Path="Crest.csproj" />
@@ -16,7 +16,6 @@
   <Project Path="ShapesEditor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
-  <Project Path="AstarPathfindingProject.csproj" />
   <Project Path="MoreMountains.Feedbacks.PostProcessing.csproj" />
   <Project Path="VolumetricLightBeam.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.MMTools.csproj" />
@@ -28,7 +27,6 @@
   <Project Path="MoreMountains.Feedbacks.TextMeshPro.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="BakeryEditorAssembly.csproj" />
-  <Project Path="PackageToolsEditor.csproj" />
   <Project Path="MoreMountains.Feedbacks.HDRP.csproj" />
   <Project Path="MoreMountains.Feedbacks.URP.csproj" />
   <Project Path="Den.Tools.csproj" />
@@ -36,15 +34,11 @@
   <Project Path="GPUInstancer.Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.csproj" />
   <Project Path="MapMagic.Editor.csproj" />
-  <Project Path="Tayx.Graphy.csproj" />
   <Project Path="MoreMountains.Feedbacks.NiceVibrations.csproj" />
   <Project Path="MoreMountains.Feedbacks.Authorizations.csproj" />
   <Project Path="MeshBakerCore.csproj" />
-  <Project Path="Lofelt.NiceVibrations.Demo.csproj" />
-  <Project Path="EasySave3Editor.csproj" />
   <Project Path="JBooth.MicroSplat.Core.Editor.csproj" />
   <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
-  <Project Path="AstarPathfindingProjectEditor.csproj" />
   <Project Path="BakeryRuntimeAssembly.csproj" />
   <Project Path="AmplifyImpostors.Runtime.csproj" />
   <Project Path="MoreMountains.Feedbacks.Editor.csproj" />
@@ -59,7 +53,6 @@
   <Project Path="MapMagic.MicroSplat.Editor.csproj" />
   <Project Path="Hecton8.World.Dots.csproj" />
   <Project Path="Hecton8.Input.Generated.csproj" />
-  <Project Path="Tayx.Graphy.Editor.csproj" />
   <Project Path="MapMagic.MicroSplat.csproj" />
   <Project Path="Tools\DataMonolithBakeCli\DataMonolithBakeCli.csproj" />
 </Solution>

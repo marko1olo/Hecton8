@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Modelo de distancia Ran-Aegir
 
-El modelo Ran-Aegir da a HECTON-8 una escala que el jugador puede sentir. Aegir está lo bastante cerca para sondas, carga, hardware seed y asentamiento respaldado por deuda en 2190. Sigue lo bastante lejos para que una cámara inundada no pueda esperar piedad de los mundos interiores. La distancia aparece como demora, custody, combustible, frenado y propiedad.
+El modelo Ran-Aegir da a HECTON-8 una escala que se siente dentro del traje. Aegir está lo bastante cerca para sondas, carga, ley de ruta, asentamiento con deuda y apetito corporativo en 2190. Sigue demasiado lejos para que un compartimento inundado espere bondad de los mundos interiores. La distancia se vuelve presión mediante retraso de relé, ventanas de lanzamiento, propelente de frenado, custodia del transportista, exclusiones de seguro y un hecho simple: la masa llega más despacio que las órdenes.
 
 ## Scanner
 
-Placa de ruta: Aegir es alcanzable por infraestructura e inalcanzable por compasión.
+La placa de ruta confirma que Aegir está al alcance de la infraestructura, no del rescate urgente.
 
 ## Terminal
 
-MODELO DE RUTA: Ran/Aegir se trata como objetivo clase diez años luz desde Sol. El texto de juego usa Aegir; los catálogos secos usan RAN-B:H8. La efeméride exacta queda para tablas de ruta.
+MODELO DE RUTA: Ran/Aegir se trata como destino de clase diez años luz desde Sol. Las superficies públicas dicen Aegir. Los catálogos secos de navegación conservan RAN-B:H8. La efeméride exacta queda bloqueada en tablas; la verdad operativa es demora, masa de frenado, custodia de relé y riesgo de propiedad.
 
 ## Audio
 
-Diez años luz son poco en una carta estelar. Bastan para arruinar un rescate.
+Una señal puede cruzar la oscuridad. Una nave paga cada metro.
 
 ## Field Note
 
-La distancia aproximada es presión, no decoración. Diez años luz aún pueden matar una sala.
+Diez años luz son pocos en catálogo y brutales para un rescate.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/es_ES. -->

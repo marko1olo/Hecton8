@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "تعليق بافل سورن الإجرائي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# تعليق بافل سورن الإجرائي
 
-AR LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+يمنح بافل سورن كارثة HECTON-8 مفصلها البشري الأكثر عادية: موظف عقود محلي يملك سلطة كافية لتأخير الإخلاء، ولا يملك شجاعة كافية لكسر سلسلة البنود. تعليقه الإجرائي ليس خطاب شرير ولا أمراً سرياً بالقتل. إنه مذكرة عمل مكتوبة داخل قانون Deep Reach، حيث يجب أن تمر كل خطوة لإنقاذ الأرواح عبر الشهادة ومسار المسؤولية وأختام استمرارية Atlas ولغة حيازة المطالبات قبل أن يسمح لها بأن تسمى إنقاذاً. أهمية السجل أنه يبقي الذنب بشرياً من دون أن يبسطه. رأى سورن ضائقة العمال، وفهم أن طابور الصعود يتحول إلى حكم موت، ومع ذلك اختار الجملة التي تحمي المكتب أولاً: إبقاء التصريح معلقاً حتى تصفو القناة.
 
 ## Scanner
 
-AR LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+لم يأمر بافل سورن بمذبحة. فعل شيئاً أسهل للبقاء على الورق: أبقى تصريح الإخلاء في خانة الانتظار.
 
 ## Terminal
 
-AR LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+SORN, P. مكتب العقود / السطح الإداري. يبقى تصريح الإخلاء في تعليق إجرائي: الشهادة الخارجية مفقودة، ختم استمرارية Atlas غير محسوم، قناة المسؤولية مشبعة. تم الاعتراف بضائقة العمال. لا يؤذن بالصعود حتى تتضح حيازة المطالبة وصياغة الحجر.
 
 ## Audio
 
-AR LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+ظل يكتب «قيد الانتظار» بينما كان البحر يأخذ الطوابق السفلى.
 
 ## Field Note
 
-AR LOC HOLD: Useful evil often signs in normal handwriting.
+لم تمت المستعمرة لأن رجلاً ضحك أمام باب مقفل. ماتت لأن الباب كان له نموذج.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/ar_SA. -->

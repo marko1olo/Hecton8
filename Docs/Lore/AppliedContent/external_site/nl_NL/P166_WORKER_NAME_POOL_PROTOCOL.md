@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Worker Name Pool Record"
+title: "Register van arbeidersnamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Worker Name Pool Record
+# Register van arbeidersnamen
 
-NL LOC HOLD: Worker name pools keep seeded worker evidence human: origin band, role, shift, badge fragment, and route permission.
+Het Register van arbeidersnamen definieert hoe HECTON-8 seeded bewijs omzet in menselijke continuïteit. Elke identiteit wordt gebouwd uit geschreven naam, herkomstband, drukarbeidsrol, badgefragment, routevergunning en shiftmarkering. Het doel is geen willekeurige sfeer, maar leesbare verantwoordelijkheid: wie een luik kon openen, wie een pomp onderhield, wie medische vrijgave geweigerd kreeg en wiens spoor een latere Marauder verstoort.
+
+Het systeem bewaart persoonlijke identiteit terwijl objectplaatsing en bewijskoppelingen kunnen variëren. Dat ondersteunt replay zonder tegenspraak. Een arbeider kan verschijnen via locker, takenbord, routekaart of manifest, maar het principe blijft: mensen worden niet procedureel verbruikbaar omdat een kamer seedbaar is.
 
 ## Scanner
 
-NL LOC HOLD: Names are evidence, not collectible flavor.
+NAAMSTROOK // Herkomstband, routevergunning, shifttaak en beschadigd badgefragment wijzen naar dezelfde arbeider. Lees de naam voordat de locker salvage wordt.
 
 ## Terminal
 
-NL LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+NAAMPOOL-PROTOCOL // Arbeidersidentiteiten bestaan uit stabiele persoonsnaam, domein-herkomstband, drukfunctie, shiftletter, badgefragment en routevergunning. Het systeem mag volgorde en koppelingen per seed variëren, maar mensen nooit tot willekeurige loot-labels maken. Persoonsnamen worden per locale geschreven; rol, route en toegang dragen de mechanische betekenis.
 
 ## Audio
 
-NL LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+De naam was het eerste object dat de kolonie tot onderdelen probeerde te strippen.
 
 ## Field Note
 
-NL LOC HOLD: Seed names must preserve identity without making family melodrama.
+Namen zijn geen decor. Een naam vertelt wie in een natte ruimte mocht zijn toen het station begon te liegen.
 
 <!-- External Site; generated from P166_WORKER_NAME_POOL_PROTOCOL/nl_NL. -->

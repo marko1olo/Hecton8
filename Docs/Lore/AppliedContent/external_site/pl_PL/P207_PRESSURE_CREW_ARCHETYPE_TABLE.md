@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Crew Archetype Table"
+title: "Tabela archetypów załóg ciśnieniowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Crew Archetype Table
+# Tabela archetypów załóg ciśnieniowych
 
-PL LOC HOLD: Pressure crew archetypes tie colony names to work first: pump, seal, relay, brine map, vent forge, triage, pressure botany, and payload witness.
+Archetypy załóg ciśnieniowych zamieniają obsadę pracowników HECTON-8 w czytelną historię pracy. Kolonii nie tłumaczą najpierw biografie; tłumaczy ją praca. Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany i Payload Witness dają każdemu nazwisku funkcję, miejsce w gospodarce oceanu i powód, by pojawić się jako dowód. Lore wychodzi więc przez obiekty i trasy, nie przez odłączoną ekspozycję.
 
 ## Scanner
 
-PL LOC HOLD: Crews are verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Załogi są czasownikami, zanim staną się biografią: pompować, uszczelniać, przekazywać, mapować, kuć, sortować, uprawiać, świadczyć.
 
 ## Terminal
 
-PL LOC HOLD: CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Names attach to route function first.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany i Payload Witness. Każda tożsamość pracownika wiąże się z rodziną załogi przed detalem osobistym. Dzięki temu dowody pozostają związane z maszynami, trasami, awariami ciśnienia, kulturą żywności, prawem odzysku i końcowym łańcuchem payload.
 
 ## Audio
 
-PL LOC HOLD: Job first. Memory second. That is how the colony survives.
+Najpierw praca. Potem pamięć. Tak kolonia przeżywa na papierze.
 
 ## Field Note
 
-PL LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Martwy pracownik jest czytelniejszy, gdy pomieszczenie nadal potrzebuje pracy, którą znał.
 
 <!-- External Site; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/pl_PL. -->

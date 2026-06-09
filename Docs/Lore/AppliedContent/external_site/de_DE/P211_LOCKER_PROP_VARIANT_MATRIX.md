@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Variantenmatrix für Spind-Requisiten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Variantenmatrix für Spind-Requisiten
 
-DE LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+Die Variantenmatrix für Spind-Requisiten definiert, wie HECTON-8 persönliche Aufbewahrung in lesbare Beweise verwandelt. Spinde sind keine Biografiehalden. Sie sind kompakte Weltobjekte, die Arbeiter, Arbeit, Routenzugang, Schaden und spätere Manipulation verbinden. So liest der Spieler Kolonieleben durch Dinge, die noch in den Raum gehören.
 
 ## Scanner
 
-DE LOC HOLD: A locker should show work, route access and what got erased.
+Ein Spind soll Arbeit, Routenzugang und das zeigen, was jemand löschen wollte. Andenken sind erst erlaubt, wenn die Arbeit lesbar ist.
 
 ## Terminal
 
-DE LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: Jeder geschriebene Spind braucht drei lesbare Hinweise: Arbeit, Route und Schaden. Dekorative Erinnerung ist zweitrangig. Ein Spind darf ein Familienzeichen oder einen privaten Witz enthalten, aber erst nachdem ein Werkzeug, eine Genehmigungsspur oder eine Löschungsnarbe dem Spieler sagt, wie diese Person die Kolonie berührte.
 
 ## Audio
 
-DE LOC HOLD: The locker is not a shrine. It is a failed work order.
+Der Spind ist kein Schrein. Er ist ein gescheiterter Arbeitsauftrag.
 
 ## Field Note
 
-DE LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Varianten: Werkzeugabnutzung, Routengenehmigungs-Tag, Druckband, Schichtaufkleber, Lohnlöschungsnarbe, Marauder-Erhaltungsmarke.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/de_DE. -->

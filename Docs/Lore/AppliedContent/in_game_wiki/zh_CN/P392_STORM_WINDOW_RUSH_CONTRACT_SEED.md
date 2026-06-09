@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Storm Window Rush Contract Seed"
+title: "风暴窗口急行合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Storm Window Rush Contract Seed
+# 风暴窗口急行合同种子
 
-ZH LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+风暴窗口急行是一组让天气和轨道成为首批压力系统的合同。航路不会增加继承力量；它缩短安全工作时间，收紧回收几何，并更早惩罚粗糙修理。
 
 ## Scanner
 
-ZH LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+合同种子：急行窗口。更高付款绑定正在关闭的风暴覆盖、轨道快门时刻和减少的修理余量。
 
 ## Terminal
 
-ZH LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH：风暴窗口压缩，轨道中继快门不利，付款上限提高，bathydrop召回提前，修理容差降低。
 
 ## Audio
 
-ZH LOC HOLD: This contract pays because it hates waiting.
+这份合同会付款，是因为窗口正在关闭。
 
 ## Field Note
 
-ZH LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+掠夺者备注：急行报酬看起来更大，是因为合同把每一分钟算了两遍。
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/zh_CN. -->

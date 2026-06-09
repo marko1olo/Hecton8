@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Cable Reef Symbiosis
 
-Cable reef symbiosis makes abandoned infrastructure useful and dangerous at the same time: living sleeves can protect signal lines or hide failure.
+Cable Reef Symbiosis is HECTON-8's mid-depth warning that life can keep abandoned service lines working while hiding the insulation faults that will later draw Atlas repair logic.
 
 ## Scanner
 
-Flora is bonded to power trunks and signal lines. Some growth protects the cable; some hides failed insulation.
+Cable-root mat grips the P63 power trunk at three clamp rings. Signal still passes under the green sleeve. Insulation fault visible at lower edge. Hazard: drone grazer traffic follows live current.
 
 ## Terminal
 
-MAINTENANCE NOTE: cable-root mats reduce abrasion and preserve signal continuity. Drone and grazer traffic increases near live trunks.
+SERVICE TRENCH NOTE
+Line: P63 power trunk / relay pair C
+Condition: biological sleeve reducing abrasion
+Fault: exposed orange insulation under lower mat
+Traffic: grazers and maintenance drones near live current
+Action: scan continuity before cutting growth
 
 ## Audio
 
-A living reef learned the shape of a service corridor.
+The reef is not decoration. It is keeping that relay dry, and the drones know the current is live.
 
 ## Field Note
 
-If it is growing on a cable, prove it is killing the line before you strip it.
+Do not strip green growth just because it looks wrong. If it is holding the jacket dry, mark the fault and route around it.
 
 <!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/en_US. -->

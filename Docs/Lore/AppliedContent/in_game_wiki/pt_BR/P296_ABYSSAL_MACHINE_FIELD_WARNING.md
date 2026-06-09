@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Abyssal Machine Field Warning"
+title: "Aviso do Campo-Máquina Abissal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Abyssal Machine Field Warning
+# Aviso do Campo-Máquina Abissal
 
-PT LOC HOLD: Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+O aviso liga a ecologia profunda à aproximação final de Atlas. O jogador não cruza mais ruínas que por acaso contêm vida; cruza uma vida que aprendeu a carregar máquinas.
 
 ## Scanner
 
-PT LOC HOLD: Machine field warning: silt motion does not match current.
+O lodo se move contra a corrente. Corpos filtrantes se reposicionam sob as luzes.
 
 ## Terminal
 
-PT LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: movimento de lodo do campo-máquina abissal excede o modelo de corrente. Corpos filtrantes e costelas de atuador enterradas registradas como infraestrutura móvel. Manter distância; não ancorar no chão macio.
 
 ## Audio
 
-PT LOC HOLD: The floor is not still.
+O chão não está parado.
 
 ## Field Note
 
-PT LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Aviso de fim de jogo: medo quieto e objetivo. O campo final é infraestrutura acordando, não preparação de chefe.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/pt_BR. -->

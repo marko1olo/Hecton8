@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Довідник pressure glass і sealant"
+title: "Польовий довідник давленого скла і герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Довідник pressure glass і sealant
+# Польовий довідник давленого скла і герметика
 
-Pressure glass - місце, де геологія зустрічає Atlas. Repair network використовує наявні тріщини, мінеральні краї й pressure memories як маршрути, тому корисна лінза може бути живою межею.
+Давлене скло - місце, де геологія зустрічає Atlas. Старі тріщини, мінеральні краї, шви біоплівки й пам'ять напруги стають маршрутами для ремонтної хімії, тому корисна лінза може бути живою межею.
 
 ## Scanner
 
-Тріщина pressure-glass запечатана хімією Atlas. Безпечний lens stock можливий лише якщо seal map лишається цілою.
+Тріщина давленого скла запечатана хімією Atlas. Запас лінз безпечний тільки поки карта герметика лишається цілою.
 
 ## Terminal
 
-FIELD GUIDE: pressure glass записує старий tide stress. Atlas sealant іде цими тріщинами, бо тріщини вже описують лінії відмови системи.
+ПОЛЬОВИЙ ДОВІДНИК: давлене скло зберігає старий припливний стрес. Герметик Atlas іде цими тріщинами, бо тріщини вже описують лінії відмови системи.
 
 ## Audio
 
@@ -35,6 +35,6 @@ FIELD GUIDE: pressure glass записує старий tide stress. Atlas seala
 
 ## Field Note
 
-Не шліфуй гарний край. Іди за fracture map і ріж з мертвого боку seal.
+Не шліфуй гарний край. Іди за картою тріщин і ріж із мертвого боку герметика.
 
 <!-- In-Game Wiki; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/uk_UA. -->

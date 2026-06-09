@@ -47,7 +47,7 @@ namespace Hecton8.World
         {
             if (runtimeRule.StrictEnvelopeMapping)
             {
-                if (!PassesStrictSubstrateEnvelope(runtimeRule, candidatePreview.Position))
+                if (!PassesStrictSubstrateEnvelope(runtimeRule, candidatePreview.Position, in fieldSample))
                     return false;
 
                 if (!PassesClusterPatchEnvelope(runtimeRule, candidatePreview))
@@ -93,12 +93,29 @@ namespace Hecton8.World
             return true;
         }
 
-        private bool PassesStrictSubstrateEnvelope(in ScatterRuntimeRuleEntry runtimeRule, Vector3 absolutePosition)
+        private bool PassesStrictSubstrateEnvelope(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            Vector3 absolutePosition,
+            in WorldProceduralFieldSampler.FieldSample fieldSample)
         {
             if (runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.None ||
-                runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any)
+                runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.Any ||
+                runtimeRule.RequiredSubstrate == WorldProceduralPlacementRule.FloraSubstrateMask.AnyGeology)
             {
                 return true;
+            }
+
+            if (fieldSample.hasTerrainDetailSample != 0)
+            {
+                WorldProceduralPlacementRule.FloraSubstrateMask terrainDetailSubstrate =
+                    ScatterCandidateEvaluator.ResolveFloraSubstrateFromTerrainDetail(
+                        fieldSample.terrainDetailEligibilityFlags,
+                        fieldSample.terrainSurfaceMaterialClass,
+                        in fieldSample.terrainSurfaceMaterialWeights);
+                if (terrainDetailSubstrate != WorldProceduralPlacementRule.FloraSubstrateMask.None)
+                    return ScatterCandidateEvaluator.PassesStrictSubstrateEnvelope(
+                        runtimeRule.RequiredSubstrate,
+                        terrainDetailSubstrate);
             }
 
             if (!EnsureEnvironmentalVegetationBridgeResolved())

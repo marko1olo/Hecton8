@@ -19,25 +19,8 @@ localization_flags: 0
 
 # Professional Guilt To Personal Stake
 
-The protagonist's motive grows from expertise into responsibility. HECTON-8 avoids forced family melodrama: the former Deep Reach worker cares because they understand the procedural machinery that made abandonment look complete.
+Professional Guilt To Personal Stake closes the dossier by refusing an easy melodrama. The operator does not need to be related to a victim, secretly responsible for the disaster, or chosen by the colony. The motive grows from work.
 
-## Scanner
-
-Signature pattern matches the old procedure cache. The names changed. The room failed the same way. Expertise is no longer distance.
-
-## Terminal
-
-DOSSIER RESOLUTION / PROFESSIONAL STAKE
-trigger evidence: procedure recognition, recovered worker tags, claim receiver conflict
-excluded motive: family relation, revenge lineage, chosen-witness status
-active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
-
-## Audio
-
-You came for a claim. You stayed because the paperwork knew your hands.
-
-## Field Note
-
-Not your signature. Still your trade. That is why the room will not stay quiet.
+The old forms, route stamps, sealed checks and receiver conflicts are familiar enough to hurt. They show a preventable abandonment written in a trade language the operator once trusted. That makes HECTON-8 personal in a colder way: when a person can read how the machine buried a room, walking away becomes another line in the same machine.
 
 <!-- External Site; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/en_US. -->

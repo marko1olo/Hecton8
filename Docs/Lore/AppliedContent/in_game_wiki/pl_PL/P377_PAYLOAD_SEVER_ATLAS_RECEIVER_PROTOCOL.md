@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protokół odcięcia Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protokół odcięcia Atlas payload
 
-PL LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Protokół odcięcia jest niszczącą trasą odbiorcy, nie czystym uwolnieniem. Może zatrzymać uszkodzoną logikę naprawy i odmówić Deep Reach wektora odzysku. Może też zniszczyć ekologię maszyn, skasować użyteczną pamięć trasy i stworzyć ślad dowodów czytany w prawie odbiorcy jako containment, sabotage, theft albo mercy.
 
 ## Scanner
 
-PL LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Trasa odcięcia uzbrojona. Payload niesie klucze cięcia dla ciągłości Atlas, izolacji pamięci trasy i zachowania proof hash.
 
 ## Terminal
 
-PL LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+ODBIORCA PAYLOAD // ODCIĘCIE ATLAS. Cel: kręgosłup ciągłości Atlas. Przeciąć pętlę naprawy, izolować pamięć trasy, zachować proof hash, odmówić korporacyjnego wektora odzysku. Kaskada ekologiczna nierozwiązana. Klasyfikacja prawna sporna.
 
 ## Audio
 
-PL LOC HOLD: If this is mercy, it still leaves a body.
+Atlas można przeciąć. Cięcie nadal zostawia znaki dozoru.
 
 ## Field Note
 
-PL LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Notatka szabrownika: czyste cięcie nadal jest cięciem. Sfotografuj znaki dozoru, zanim pociągniesz.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/pl_PL. -->

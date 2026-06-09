@@ -54,10 +54,15 @@ namespace Hecton8.Thermodynamics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float ResolveSeaLevelDepthMeters(double3 aup)
+        public static float ResolveSeaLevelDepthMeters(double3 aup, double seaLevelAupY)
         {
+            double resolvedSeaLevelAupY = math.isfinite(seaLevelAupY) &&
+                                         math.abs(seaLevelAupY) > 0.0001d &&
+                                         math.abs(seaLevelAupY) <= 1000d
+                ? seaLevelAupY
+                : DefaultSeaLevelAupY;
             return math.isfinite(aup.y)
-                ? (float)math.max(0d, DefaultSeaLevelAupY - aup.y)
+                ? (float)math.max(0d, resolvedSeaLevelAupY - aup.y)
                 : 0f;
         }
 
@@ -765,6 +770,7 @@ namespace Hecton8.Thermodynamics
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public NuclearReactorThermalTuningDTO Tuning;
         public ThermalGridTuningDTO GridTuning;
+        public double SeaLevelAupY;
         public int ReactorCount;
         public int ReactorCapacity;
         public uint Frame;
@@ -827,7 +833,7 @@ namespace Hecton8.Thermodynamics
             signal.ModuleCenter = center;
             signal.Stress01 = stress01;
             signal.PeakStress01 = stress01;
-            signal.DepthMeters = ReactorThermalMath.ResolveSeaLevelDepthMeters(aup);
+            signal.DepthMeters = ReactorThermalMath.ResolveSeaLevelDepthMeters(aup, SeaLevelAupY);
             signal.NodeId = reactorHash;
             signal.ModuleHash = reactorHash;
             signal.Frame = Frame;

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oferta de Limpeza do Mercado de Evidencias"
+title: "Oferta de Limpeza de Evidência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Oferta de Limpeza do Mercado de Evidencias
+# Oferta de Limpeza de Evidência
 
-Uma oferta de limpeza e uma tentativa paga de mudar como um fragmento viaja: limpar, renomear, suprimir, anexar a um lote ou mover para categoria segura. Prova que alguem valorizou a trilha documental o bastante para interferir, nao que o fragmento seja verdadeiro, falso ou que o comprador seja culpado. Em HECTON-8 siga pagamento, rotulo original, rotulo limpo, reescrita e custodia.
+Uma oferta de limpeza não é um veredito. É uma ordem de compra contra uma rota de evidência. O pedido pode solicitar que um intermediário seque uma etiqueta, normalize um rótulo, mova um fragmento para um lote de salvamento, atrase a publicação, traduza o nome de um trabalhador para uma categoria de pagamento ou enterre o objeto bruto atrás de um resumo seguro para reclamantes. Ela importa porque o dinheiro aparece antes de o registro mudar. Quem paga pode ser culpado, assustado, descuidado ou estar comprando tempo; a oferta em si prova pressão sobre o rastro, não a verdade do fragmento.
+
+Leia a oferta pela sequência. Rótulo original, origem da oferta, retenção em escrow, conta do operador, rótulo limpo, transferência de custódia e rota do objeto precisam ficar juntos. Se um rótulo limpo aparece antes do pagamento, pode ser tratamento normal de arquivo. Se o pagamento chega antes da mudança de rótulo, alguém comprou a alteração da rota. Preserve o rótulo sujo ao lado do limpo, ou o arquivo vira parte da limpeza.
 
 ## Scanner
 
-OFERTA DE LIMPEZA // Pedido pago para limpar, reclassificar, suprimir ou redirecionar um fragmento. Apenas sinal de pressao.
+OFERTA DE LIMPEZA // Pedido pago contra uma rota de evidência. Necessário: rótulo original, origem da oferta, retenção em escrow, conta do operador, rótulo limpo, transferência de custódia, rota do objeto.
 
 ## Terminal
 
-OFERTA DE LIMPEZA DE EVIDENCIA
-Nao leia linha de pagamento como veredito.
-Proxima prova: origem da oferta, retencao de pagamento, transferencia de custodia, reescrita do reclamante e rota do objeto.
-Preserve rotulo original ao lado do limpo.
+OFERTA DE LIMPEZA DE EVIDÊNCIA
+Não trate pagamento como veredito.
+Pagamento antes da mudança de rótulo = alteração de rota comprada.
+Mudança de rótulo antes do pagamento = possível tratamento de arquivo.
+Próxima prova: retenção em escrow, conta do operador, transferência de custódia, rótulo antigo, rótulo limpo, rota do objeto.
+Ação: preservar os dois rótulos até a rota do objeto ser resolvida.
 
 ## Audio
 
-Oferta e cheiro, nao sentenca. Mantenha o rotulo sujo ao lado do limpo.
+O pagamento apareceu antes de o rótulo mudar. Mantenha o nome antigo na tela.
 
 ## Field Note
 
-Oferta e cheiro, nao sentenca. Mantenha o rotulo sujo ao lado do limpo.
+Nunca arquive só o rótulo limpo. O rótulo antigo e o relógio do pagamento são a evidência.
 
 <!-- In-Game Wiki; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/pt_BR. -->

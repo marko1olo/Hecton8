@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Koloni dan Pekerja
 
-Worker index pulih: water ledgers, relay witness trays, brine route stamps, triage repair tags, dan vent-forge rejects menjaga nama melalui kerja.
+Hub dossier pekerja: HECTON-8 mengingat orang lewat shift boards, maintenance debts, pressure calls, handoff marks, dan catatan yang coba diratakan Deep Reach menjadi kategori kehilangan.
 
 ## Scanner
 
-WORKER INDEX // Lima catatan nama terkait rute. Pump, relay, brine, triage, forge. Pertahankan tag chain sebelum melepas hardware.
+WORKER INDEX // Pump boards, relay trays, brine stamps, triage tags, dan vent-forge rejects menyimpan orang sebagai route evidence.
 
 ## Terminal
 
-KEELMARK LOSS DESK: pertahankan name tags jika terkait route, claim, custody, atau pressure work.
+KEELMARK LOSS DESK: simpan name tags jika menjelaskan pressure decision, delay, custody claim, atau repair route.
 
 ## Audio
 
-Mara Venn, pump chief: jika pompa bernyanyi bersih, catat. Jika berhenti bernyanyi, lari naik.
+Nama pada pump card bukan latar. Itu alasan pintu tetap terbuka.
 
 ## Field Note
 
-Bukan keluarga. Kerja. Nama di pump card menjelaskan mengapa pintu tetap terbuka.
+Bukan umpan keluarga. Kerja, tekanan, tanda tangan, kesalahan. Begitulah yang mati masih berdebat.
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/id_ID. -->

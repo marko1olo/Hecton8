@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Jendela Langit Tangga Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Jendela Langit Tangga Bulan Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+Tangga bulan Aegir adalah informasi rute. Tag bulan mengajarkan kualitas sinyal, tekanan pasang, bayangan relai, dan risiko jendela transfer tanpa membutuhkan simulasi orbit langsung.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+TAG BULAN // Derau relai turun. Jendela bisa dipakai jika pita badai bertahan.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+CATATAN EPHEMERIS // Pita jendela HECTON-8 menguntungkan. Bayangan relai Kestrel naik. Jendela paket kuat singkat.
 
 ## Audio
 
-Read the sky, then send.
+Jangan menatap langit. Bacalah, lalu kirim.
 
 ## Field Note
 
-Pretty moons are weights.
+Bulan cantik tetap beban di tali.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/id_ID. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Maintien en quarantaine : air vicié"
+title: "Maintien en quarantaine : air rassis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Maintien en quarantaine : air vicié
+# Maintien en quarantaine : air rassis
 
-Le Maintien en quarantaine sauve le corps et suspend l'agency. Le joueur a échappé à la pression, mais pas à la custody. Chaque respiration est mesurée pendant que la preuve attend derrière le langage d'examen.
+Le maintien en quarantaine sauve le corps et suspend l'agence. Aucun méchant n'a besoin d'être dans la pièce. Le formulaire dit récupéré vivant, le compteur d'air dit ration active, et la porte suivante ne s'ouvre qu'après examen de contamination, contestation du réclamant et audit de perte. La preuve attend derrière un langage conçu pour paraître raisonnable. Chaque déclaration est retardée plus longtemps que les ouvriers n'ont eu à vivre. L'océan a disparu, mais la pression a appris à porter des papiers.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Corps récupéré. Témoin scellé. Ration d'air active.
 
 ## Terminal
 
-MAINTIEN EN QUARANTAINE : contractant récupéré vivant ; ration d'air active ; custody d'échantillon non résolue ; témoignage externe différé en attente d'examen de contamination, contestation du claimant et revue de perte Keelmark.
+MAINTIEN EN QUARANTAINE : contractant récupéré vivant ; ration d'air active ; custody d'échantillon non résolue ; témoignage externe retardé jusqu'à examen de contamination, contestation du réclamant et audit de perte Keelmark.
 
 ## Audio
 

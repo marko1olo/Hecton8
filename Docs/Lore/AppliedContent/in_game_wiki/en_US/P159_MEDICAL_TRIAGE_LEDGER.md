@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Medical Triage Ledger
 
-Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.
+The medical ledger should not turn HECTON-8 into spectacle gore. Its power is colder. A patient becomes a pressure-state, then an oxygen debt, then a lock delay, then a certification hold. Medics can know the right treatment and still lose the patient because a hatch, route clock, or Deep Reach signoff makes help arrive late. The ledger is human because it shows people trying to be precise while the system makes precision useless.
 
 ## Scanner
 
-The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // Pressure injury, hypoxia, lock delay, missing route, certification hold. The horror is how neatly help waited.
 
 ## Terminal
 
-TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+MEDICAL RULE: count bodies without gore. Use pressure-state, oxygen debt, route delay, triage priority, and signoff hold to show how procedure made patients faster than medics could treat them.
 
 ## Audio
 

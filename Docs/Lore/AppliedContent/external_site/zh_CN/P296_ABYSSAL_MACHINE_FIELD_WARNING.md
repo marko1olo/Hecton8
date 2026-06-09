@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Abyssal Machine Field Warning"
+title: "深渊机械场警告"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Abyssal Machine Field Warning
+# 深渊机械场警告
 
-ZH LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+在最终盆地之前，HECTON-8 不再像被遗弃的地方，而像一台大到无法展示全身的机器。警告保持安静，因为恐惧不是追逐，而是尺度。
 
 ## Scanner
 
-ZH LOC HOLD: Machine field warning: silt motion does not match current.
+淤泥逆流而动。滤体正在灯光下重新定位。
 
 ## Terminal
 
-ZH LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING：深渊机械场淤泥运动超过水流模型。滤体和埋藏执行器肋骨登记为移动基础设施。保持距离；不要锚定在软地面。
 
 ## Audio
 
-ZH LOC HOLD: The floor is not still.
+地板并不静止。
 
 ## Field Note
 
-ZH LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+后期警告：安静、客观的恐惧。最终场不是 boss 铺垫，而是正在醒来的基础设施。
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/zh_CN. -->

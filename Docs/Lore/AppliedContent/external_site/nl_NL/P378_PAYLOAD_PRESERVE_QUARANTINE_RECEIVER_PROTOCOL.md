@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Payload-protocol quarantainebehoud"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Payload-protocol quarantainebehoud
 
-NL LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Quarantainebehoud is de voorzichtige route, en voorzichtig betekent niet onschadelijk. De payload blokkeert directe Deep Reach-overdracht en houdt de coördinatenvector verzegeld. Atlas-gekoppelde ecologie blijft intact genoeg voor beoordeling, en het bekken wordt niet per ontvangstbewijs aan een recovery-koper gegeven.
 
-## Scanner
-
-NL LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-NL LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-NL LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-NL LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Het gevaar is institutioneel. Quarantaine-escrow kan langer leven dan de noodsituatie die het rechtvaardigde. Een beschermd bekken kan een gehouden bekken worden, daarna een toegewezen bekken, daarna een claim met betere taal. Deze route redt tijd en levende structuur, maar laat custody-markeringen over de hele toekomst achter.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/nl_NL. -->

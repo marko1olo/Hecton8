@@ -19,6 +19,14 @@ localization_flags: 1
 
 # 結末とpayload custody
 
-結末クラスターはgoodやbadの単純な札で分けてはいけない。HECTON-8では、payloadを誰が受け取るか、proofを誰が読めるか、身体、データ、Atlas recordsのcustodyを誰が得るか、どの真実がルート後に残るかが重要だ。False exitも構造の一部である。不完全な証拠で去ることは救出に見えるかもしれないが、after-action recordsが沈黙を誰が買ったか示す。ここはspoiler gatesで閉じ、Black Keel、Deep Reach、public archive、quarantine authority、Atlas continuity、解釈権の喪失といったreceiver consequencesで整理する。
+HECTON-8の結末はすべて、上昇窓の前から始まっている。重要なのはカプセル内の生きた身体だけではない。その身体に付いたpayloadだ。座標、圧力サンプル、Atlas records、worker evidence、quarantine status、損傷したguidance logs、Black Keelのcustody receipt、そして別の組織がrecoveryをどう呼んでよいか決める法的な一文である。
+
+単純なgood/bad表は、いちばん使える部分を壊す。Black KeelはMarauderを引き上げても、真実をひどく売ることができる。Deep Reachはきれいな座標を受け取り、compliance languageへ変換できる。Public archiveは会社を傷つけても死者を戻せない。Quarantine holdは医学的に合理的で、同時に政治的に便利になり得る。支払いは一つの負債を消しても、海の最良の証人をreceiverの保管庫に閉じ込めたままにできる。
+
+False exitsは冗談の結末ではない。一つの鎖だけが閉じ、別の鎖が未払いで残る出口だ。身体は出るが、worker proofは封印されたまま。Sampleは売れるが、origin recordは剥がされる。Atlasを断てば危険なrepair networkは死ぬが、保険案件以上の植民地を覚えている最後の記憶も死ぬかもしれない。Atlasを残せばrecordsは生きるが、生命を予備部品として扱うことを覚えたmaintenance intelligenceも生き残る。
+
+だからこのクラスターは詳細をspoiler gatesの奥に隠し、結果をreceiver consequenceで名付ける。誰がproofを所有するのか。誰が読めるのか。誰が書き換えられるのか。payloadが救助、salvage、contamination、theft、evidenceのどれだったかを誰が決めるのか。
+
+最後の上昇はきれいな幕引きではない。悪い光、悪い天候、さらに悪い契約の下で行われるcustody transferだ。HECTON-8が再び沈黙するのは、誰か別の者が物語を受け取った後である。
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/ja_JP. -->

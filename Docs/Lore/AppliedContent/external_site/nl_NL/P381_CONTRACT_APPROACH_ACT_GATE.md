@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Contract Approach Act Gate"
+title: "Contractbenadering-poort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Contract Approach Act Gate
+# Contractbenadering-poort
 
-NL LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+De contractbenadering zet de campagnedruk zonder te doen alsof de oceaan zichzelf al heeft uitgelegd. Een Black Keel-bord wijst claimoverdracht, bathydrop-timing, lienblootstelling en gereedschapsschuld toe voordat de operator open water bereikt. De route begint als betaald werk onder slechte voorwaarden.
 
-## Scanner
-
-NL LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-NL LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-NL LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-NL LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Het belangrijke detail is het Deep Reach-restant in het operatorprofiel. Geen familiehaak en geen heldentitel. Het is een procedurele match: toegangstaal, onderhoudsafkortingen en gewoonten uit evacuatie-infrastructuur die nog passen op verlaten koloniesystemen. De eerste poort zegt dat de afdaling werk is; de tweede regel zegt dat dat werk al een dossier heeft.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/nl_NL. -->

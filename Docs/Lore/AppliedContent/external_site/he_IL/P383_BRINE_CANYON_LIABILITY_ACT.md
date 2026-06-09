@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Canyon Liability Act"
+title: "שער אחריות קניון מי מלח"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Canyon Liability Act
+# שער אחריות קניון מי מלח
 
-HE LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+בקניון המסלול מפסיק להיות ניירת salvage ומתחיל להתנהג כתיק. שכבות צפיפות שומרות שעונים רעים. מי מלח מחזיקים עקבות שמים רגילים היו מוחקים. לוח פינוי שבור יכול לשבת ליד יומן מרווח ולחזק את שני המסמכים.
 
-## Scanner
-
-HE LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-HE LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-HE LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-HE LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+השרשרת חשובה מפני שהיא לא מכחישה פיזיקה. הגאות הגדולה פגעה. הקיר כשל. שקר החברה נמצא בסדר ההחלטות סביב העובדות האלה: מרווח שהתקבל, תור מעוכב, מסלול פגוע, תביעה מוגנת. העבודה הנראית נשארת פיזית: לסרוק עקבה, להתאים שעון, להוציא ראיה.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/he_IL. -->

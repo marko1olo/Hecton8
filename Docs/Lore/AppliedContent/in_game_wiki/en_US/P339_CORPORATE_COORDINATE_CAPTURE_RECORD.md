@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Corporate Coordinate Capture Record
 
-Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+Corporate Coordinate Capture Record is the cleanest sellout route. The player may escape, but the disaster site returns to the institution that failed it and now owns a better map.
 
 ## Scanner
 
-Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Coordinate payload accepted. Deep Reach receiver priority restored; public report unchanged.
 
 ## Terminal
 
-COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: Atlas basin vector transferred to Deep Reach receiver. Recovery granted under cooperation note. Public accident record unchanged. Future operations regain corporate route authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You opened the door from the inside.
 
 ## Field Note
 
-Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach control.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/en_US. -->

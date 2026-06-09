@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Materiële uitgang: bittere kredieten"
+title: "Materiële exit: bittere credits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Materiële uitgang: bittere kredieten
+# Materiële exit: bittere credits
 
-De materiële uitgang moet koud legitiem voelen. De speler haalt drukmateriaal op, houdt custody intact, voldoet aan Black Keels massa-door-venster-boekhouding en krijgt een echte verlaging van de lien. Geen alarm noemt het falen; het systeem werkt precies zoals ontworpen.
+Materiële exit moet koud legaal voelen, niet cartoonachtig kwaadaardig. De contractor deed het werk, haalde drukmateriaal terug, hield genoeg custody intact voor Black Keel-boekhouding en verdiende een echte verlaging van de lien. Het schip schreeuwt geen mislukking, omdat het commerciële systeem geen reden heeft dit mislukking te noemen.
 
-De schade zit in wat het bewijs uitsluit. Namen van vermiste arbeiders blijven onverrekend, de bewijsketen is onvolledig, en Deep Reach krijgt een schonere commerciële reden om terug te keren. HECTON-8 straft de speler niet voor professionaliteit. Het toont wat professioneel succes kost wanneer de werkplek ook een graf is.
+Het bittere zit in wat het ontvangstbewijs niet hoeft te onthouden. Arbeidersnamen blijven betwist, de bewijs-payload is onvolledig en Deep Reach krijgt een schoner commercieel voorwendsel om terug te keren dan de koloniearbeiders ooit kregen om te vertrekken. HECTON-8 straft professionaliteit niet. Het toont wat professionaliteit kost wanneer de werkplek ook een graf is.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/nl_NL. -->

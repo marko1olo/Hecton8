@@ -11,11 +11,18 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "SpatialAudioManager.cs");
             string runTick = ExtractMethodBody(source, "private void RunSpatialAudioTickCore(float deltaTime)");
-            string resolveDepth = ExtractMethodBody(source, "private static float ResolveVirtualListenerDepthMeters(Vector3 listenerAupRuntimePosition)");
+            string resolveDepth = ExtractMethodBody(source, "private float ResolveVirtualListenerDepthMeters(Vector3 listenerAupRuntimePosition)");
+            string resolveWater = ExtractMethodBody(source, "private float ResolveAudioWaterLevelY()");
+            string sanitizeWater = ExtractMethodBody(source, "private static bool TryResolveAudioWaterLevel(");
 
             StringAssert.Contains("private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", source);
+            StringAssert.Contains("using Hecton8.World;", source);
             StringAssert.Contains("float listenerDepthMeters = ResolveVirtualListenerDepthMeters(listenerAupRuntimePosition);", runTick);
-            StringAssert.Contains("math.max(0f, DefaultSeaLevelY - listenerAupRuntimePosition.y)", resolveDepth);
+            StringAssert.Contains("float seaLevelY = ResolveAudioWaterLevelY();", resolveDepth);
+            StringAssert.Contains("math.max(0f, seaLevelY - listenerAupRuntimePosition.y)", resolveDepth);
+            StringAssert.Contains("provider.SeaLevel", resolveWater);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", sanitizeWater);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", sanitizeWater);
             StringAssert.DoesNotContain("float listenerDepthMeters = math.max(0f, -listenerAupRuntimePosition.y);", source);
         }
 

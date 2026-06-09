@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "重型货运准备时间"
+title: "重型货运筹备时间"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 重型货运准备时间
+# 重型货运筹备时间
 
-重型货运把时间藏在基础设施里。Atlas hardware、seed cargo、防护库存和braking parts可以提前抵达，因为它们在公开殖民话语赶上之前很多年就已发射。这并不会让紧急救援变得容易。准备好的航路能移动质量，是因为depot、beam windows、pellet streams和catch stages已经在等待。灾难航路没有那种耐心。HECTON-8充满按旧计划抵达的机器，以及按新时钟需要帮助的人。
+重型货运筹备是星际物流无需武器就变成暴力的地方。栖居环、反应堆壳、切割爬行机、压力肋或食物储备都太贵，不能被当成随口承诺。它们还没到Aegir，就已经积累了保险人、留置权、承运商、检查员和备用条款。
+
+条件变化后，Deep Reach不必凭空发明残酷。它只需要继续履行货运链。每一吨已经上路的货都要求一个接收者，每个接收者要求一个工地，每个工地要求人的身体。殖民地成了对已付款货物的人的答案。
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/zh_CN. -->

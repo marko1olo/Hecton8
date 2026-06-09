@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Wyciek do rejestru publicznego
 
-Wyciek do rejestru publicznego nie jest idealną fantazją sygnalisty. To pakiet wychodzący przez wąskie okno relay, z witness hash, custody dość mocną, by trudno było zaprzeczyć, i zbyt wieloma brakami, by było bezpiecznie. Tau Ceti może upublicznić zapis długo po tym, jak mogłoby uratować kogokolwiek w wodzie.
+Wyciek do rejestru publicznego nie jest idealną fantazją sygnalisty. To uszkodzony pakiet wychodzący przed pełną custody, z dość mocnym dowodem, by zaprzeczenie było drogie, i z dość dużym brakiem kontekstu, by każdy czytelnik był niebezpieczny. Tau Ceti może upublicznić zapis długo po tym, jak mógłby uratować kogokolwiek w wodzie.
 
-To opóźnienie jest sednem. Deep Reach nie może już po prostu usunąć claim, ale gracz też nie może zdecydować, kto użyje go następny. Ubezpieczyciele, rywale, sądy obywatelskie, pule Marauderów i biura korporacyjne odczytają tę samą ranę inaczej. To zakończenie sprawia, że prawdę trudniej pogrzebać i trudniej posiadać.
+To opóźnienie jest sensem. Deep Reach traci najczystsze ukrycie, ale świadek też traci własność. Ten sam zapis może stać się aktem oskarżenia, dźwignią, matematyką ubezpieczeniową, propagandą domeny albo nowym kontraktem. Ta trasa sprawia, że prawdę trudniej pogrzebać i trudniej posiadać.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/pl_PL. -->

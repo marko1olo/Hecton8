@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Stack Limit Data Boundary"
+title: "Granica danych limitu stosu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Stack Limit Data Boundary
+# Granica danych limitu stosu
 
-PL LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+Granica utrzymuje fizyczny charakter ekwipunku. Przedmioty układają się tylko wtedy, gdy pojemnik, ciśnienie, masa i skażenie mogą przeżyć tę samą trasę bez okłamywania pliku zapisu.
 
 ## Scanner
 
-PL LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Wiersz stosu odrzuca kupy ikon: klasa naczynia, ciśnienie, skażenie i masa decydują o liczbie.
 
 ## Terminal
 
-PL LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: liczba w stosie wymaga typu naczynia, ratingu ciśnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia i stabilnej tożsamości zapisu. Skrzynia nie jest naczyniem ciśnieniowym.
 
 ## Audio
 
-PL LOC HOLD: A crate is not a pressure vessel.
+Skrzynia nie jest naczyniem ciśnieniowym.
 
 ## Field Note
 
-PL LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Limity stosów pozostają table-owned i stabilne dla save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/pl_PL. -->

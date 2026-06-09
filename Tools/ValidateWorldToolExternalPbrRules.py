@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 APPLIER = ROOT / "Assets/_Project/Scripts/Editor/WorldToolExternalPbrMaterialApplier.cs"
 ITEM_DATA_ROOT = ROOT / "Assets/_Project/Data/Items/Tools"
 STAGING_SPAWNER = ROOT / "Assets/_Project/Scripts/ToolStagingSpawner.cs"
+UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 MATERIAL_ROOT = ROOT / "Assets/_Project/Art/Materials/Generated/ExternalPBR_20260607"
 GEMINI_ATLAS_ROOT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases"
 STATIC_MANIFESTS = {
@@ -181,6 +183,19 @@ def validate(args: argparse.Namespace) -> int:
         errors.append("world-tool applier must not downgrade missing prefab/material/renderer failures to warnings")
     if "RecordFailure(" in text or "failures=" in text:
         errors.append("world-tool applier must not aggregate required binding failures after validation")
+
+    if not UNITY_APPLY_RUNNER.exists():
+        errors.append(f"missing Unity apply runner: {display_path(UNITY_APPLY_RUNNER)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $worldToolValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate world-tool external PBR route")
+
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display_path(STATIC_PREFLIGHT)}")
+    elif "ValidateWorldToolExternalPbrRules.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateWorldToolExternalPbrRules.py")
 
     for index, match in enumerate(rules):
         prefab = match.group("prefab")

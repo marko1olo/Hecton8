@@ -68,10 +68,11 @@ namespace Hecton8.EditorTools
                     Material material = RequireMaterial(rule);
 
                     int changed = AssignMatchingRenderers(prefabRoot, rule.rendererNameContains, material);
-                    if (changed == 0)
+                    if (CountMatchingRenderers(prefabRoot, rule.rendererNameContains) == 0)
                         throw new InvalidOperationException($"[HeldToolExternalPbrMaterialApplier] No renderer matched '{rule.rendererNameContains}' in {rule.prefabPath}");
 
-                    currentDirty = true;
+                    if (changed > 0)
+                        currentDirty = true;
                     assigned += changed;
                 }
 

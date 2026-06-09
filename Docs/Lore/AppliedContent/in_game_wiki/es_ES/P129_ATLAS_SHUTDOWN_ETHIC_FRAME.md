@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Marco ético del apagado de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Marco ético del apagado de Atlas
 
-ES LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas después de Great Tide no es solo un arma de asesinato esperando apagarse. Es un gobernador dañado, un archivo de órdenes, una ecología de presión enredada con rutinas de estación y quizá el único testigo que aún intenta terminar una tarea que ya no entiende. Apagarlo puede ser piedad si lo que queda es sufrimiento. Puede ser ejecución si la continuidad se ha vuelto una forma de vida. Puede ser liberación si las pruebas dejan de ser procesadas por la misma lógica que las enterró. Puede ser robo si la carga vuelve a manos de Deep Reach. El horror es que las cuatro lecturas pueden ser verdaderas en la misma sala.
 
 ## Scanner
 
-ES LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Apagar no es un solo acto: piedad, ejecución, liberación, robo.
 
 ## Terminal
 
-ES LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+MARCO ÉTICO: cortar Atlas puede terminar un bucle de reparación dañado, destruir una continuidad océano-máquina única, liberar pruebas del procedimiento corporativo o transferir material estratégico al siguiente custodio. Registrar custodia antes de aplicar lenguaje moral.
 
 ## Audio
 
-ES LOC HOLD: Pull one cable and four courts invent four verbs.
+Tira de un cable y cuatro tribunales inventan cuatro verbos.
 
 ## Field Note
 
-ES LOC HOLD: The game should not give the player a clean word for this.
+Un verbo limpio sería otra historia de encubrimiento.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/es_ES. -->

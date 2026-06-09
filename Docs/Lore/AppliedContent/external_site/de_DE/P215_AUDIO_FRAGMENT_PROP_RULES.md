@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Regeln für Audiofragment-Requisiten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Regeln für Audiofragment-Requisiten
 
-DE LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Regeln für Audiofragment-Requisiten definieren, wie HECTON-8 Stimme nutzt, ohne die Welt mit Monologen zu überfluten. Jedes Audiofragment braucht physische Quelle, beschädigten Transkriptzustand, Zeitstempel und Widerspruch. Stimme soll Umweltbeweis nicht ersetzen, sondern schärfen, damit Räume, Requisiten und Routendatensätze zusammen sprechen.
 
 ## Scanner
 
-DE LOC HOLD: Voice is expensive. It must prove something the room also proves.
+Stimme ist teuer. Sie muss etwas beweisen, das der Raum auch mit Metall, Wasser, Zeitstempel oder Schaden beweisen kann.
 
 ## Terminal
 
-DE LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE: keine frei schwebenden Monologe. Stimme gehört zu Hydrophonstreifen, Anzugrekorder, Terminalcache, Wartungshörer oder Blackboxfragment. Jede abspielbare Zeile braucht eine Quelle, beschädigten Transkriptzustand, Routenzeitstempel und einen Widerspruch, den der Spieler inspizieren kann.
 
 ## Audio
 
-DE LOC HOLD: If the room cannot prove me, cut the line.
+Wenn der Raum mich nicht beweisen kann, streich die Zeile.
 
 ## Field Note
 
-DE LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Audiofragmente brauchen eine Quellenrequisite, Transkriptschaden, Routenzeitstempel und einen physischen Widerspruch.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/de_DE. -->

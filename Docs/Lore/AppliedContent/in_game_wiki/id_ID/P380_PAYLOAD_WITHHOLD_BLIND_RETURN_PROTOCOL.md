@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Protokol Tahan Blind Return Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Withhold Blind Return Protocol
+# Protokol Tahan Blind Return Payload
 
-ID LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+Protokol blind return menolak setiap penerima. Tidak ada korporasi, buku, jalur karantina, atau target pemutusan yang menerima payload akhir. Pembawa menjaga peta dan bukti tetap lokal, sehingga menolak rute bersih kembali untuk Deep Reach. Itu juga membuat utang tetap aktif, bukti publik tidak diajukan, dan paket rentan pada air, kematian, atau penyimpanan buruk.
 
 ## Scanner
 
-ID LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+Rute blind return dipersenjatai. Tidak ada penerima ditetapkan. Vektor cekungan, proof hashes, dan kelas akses tetap lokal; lien dan jendela pemulihan belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+PENERIMA PAYLOAD // BLIND RETURN WITHHOLD. Penerima: tidak ada. Tahan vektor cekungan, proof hashes, kelas salvage, paket bukti lokal. Tolak peta akses, tanda terima pembayaran, dan kustodi penerima untuk Deep Reach. Biaya diketahui: lien belum selesai, risiko kehilangan paket total.
 
 ## Audio
 
-ID LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+Tanpa penerima, tanpa tanda terima. Jika tas terendam, bukti ikut pergi.
 
 ## Field Note
 
-ID LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+Catatan perompak: menyimpan peta adalah pilihan. Hanya saja tidak ada penerima yang bisa disalahkan jika tas robek.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/id_ID. -->

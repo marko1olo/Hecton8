@@ -1331,9 +1331,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (ToxicityDamagePulseIntervalSeconds <= 0f)
-                return;
-
             float maxPulseAccumulatorSeconds = ToxicityDamagePulseIntervalSeconds * (MaxToxicityDamagePulsesPerTick + 1);
             _toxicityPulseAccumulatorSeconds = math.min(
                 FiniteNonNegativeOrZero(_toxicityPulseAccumulatorSeconds) + safeDt,

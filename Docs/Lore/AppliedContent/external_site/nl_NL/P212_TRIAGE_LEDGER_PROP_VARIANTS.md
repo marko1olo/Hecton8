@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Triage Ledger Prop Variants"
+title: "Propvarianten voor triagelogboek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Triage Ledger Prop Variants
+# Propvarianten voor triagelogboek
 
-NL LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Propvarianten voor triagelogboeken definiëren medisch bewijs als procesbewijs. HECTON-8 gebruikt logboeken om letsel, drukfalen, routeweigering, apparatuurstaat en getuigenhiaten te verbinden. Zo blijft de horror systemisch: de speler leest niet alleen dat mensen gewond raakten, maar hoe de kolonie schade in routingbeslissingen omzette.
 
 ## Scanner
 
-NL LOC HOLD: Medical evidence should expose delay and routing, not decorate the room with suffering.
+Medisch bewijs moet vertraging en routing blootleggen, niet de kamer met lijden decoreren.
 
 ## Terminal
 
-NL LOC HOLD: TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state or certification delay.
+TRIAGE PROP RULE: elke logboekregel moet letsel verbinden aan druk, routeweigering, apparatuurstaat, certificeringsvertraging of ontbrekende getuigenketen. Pijn alleen is niet genoeg. De prop moet tonen wie kon bewegen, wie werd vastgehouden en welk systeem vertraging procedureel liet lijken.
 
 ## Audio
 
-NL LOC HOLD: Pain is not proof until the route bears the mark.
+Pijn is geen bewijs tot de route het merkteken draagt.
 
 ## Field Note
 
-NL LOC HOLD: Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Varianten: crush-status-shorthand, zuurstofschuldmarkering, doorgestreepte route hold, Atlas-stabilisatienotitie, witness-hash-gat.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/nl_NL. -->

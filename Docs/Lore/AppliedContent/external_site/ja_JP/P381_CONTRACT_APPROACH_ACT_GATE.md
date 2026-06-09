@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Contract Approach Act Gate"
+title: "契約接近ゲート"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Contract Approach Act Gate
+# 契約接近ゲート
 
-JA LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+契約接近段階は、海がすべてを説明済みのふりをせずにキャンペーンの圧力を置く。Black Keelボードは、オペレーターが開水域に出る前に、請求移転、bathydrop時刻、リーエン曝露、工具債務を割り当てる。ルートは悪い条件の有給仕事として始まる。
 
-## Scanner
-
-JA LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-JA LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-JA LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-JA LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+重要なのは、オペレータープロファイルに残るDeep Reachの痕跡だ。家族の引き金でも英雄称号でもない。アクセス語、保守略語、避難インフラの癖が、放棄コロニーのシステムにまだ合うという手続き上の一致だ。最初のゲートは降下が仕事だと言い、二行目はその仕事にすでにファイルがあると言う。
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/ja_JP. -->

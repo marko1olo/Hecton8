@@ -107,6 +107,43 @@ def hash_list(values: list[str], *, hex_format: bool) -> str:
     return ";".join(str(fnv1a32(value)) for value in values)
 
 
+def render_output_row(
+    *,
+    route_card_id: str,
+    phase_id: str,
+    depth_min_text: str,
+    depth_max_text: str,
+    primary_surface: str,
+    ending_pressure: str,
+    runtime_packets: list[str],
+    runtime_required: list[str],
+) -> dict[str, str]:
+    route_hash = fnv1a32(route_card_id)
+    phase_hash = fnv1a32(phase_id)
+    pressure_hash = fnv1a32(ending_pressure)
+    return {
+        "route_card_id": route_card_id,
+        "route_card_hash_hex": f"0x{route_hash:08X}",
+        "route_card_hash_uint": str(route_hash),
+        "phase_id": phase_id,
+        "phase_hash_hex": f"0x{phase_hash:08X}",
+        "phase_hash_uint": str(phase_hash),
+        "depth_min_m": depth_min_text,
+        "depth_max_m": depth_max_text,
+        "primary_surface": primary_surface,
+        "primary_surface_mask": str(SURFACE_MASKS[primary_surface]),
+        "ending_pressure": ending_pressure,
+        "ending_pressure_hash_hex": f"0x{pressure_hash:08X}",
+        "ending_pressure_hash_uint": str(pressure_hash),
+        "packet_ids": ";".join(runtime_packets),
+        "packet_hashes_hex": hash_list(runtime_packets, hex_format=True),
+        "packet_hashes_uint": hash_list(runtime_packets, hex_format=False),
+        "required_packet_ids": ";".join(runtime_required),
+        "required_packet_hashes_hex": hash_list(runtime_required, hex_format=True),
+        "required_packet_hashes_uint": hash_list(runtime_required, hex_format=False),
+    }
+
+
 def validate_acyclic_prerequisites(graph: dict[str, set[str]]) -> None:
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -246,31 +283,17 @@ def render_route_card_export(root: Path) -> tuple[int, str]:
                             )
                         prerequisite_graph[packet_id].add(ref)
 
-                route_hash = fnv1a32(route_card_id)
-                phase_hash = fnv1a32(phase_id)
-                pressure_hash = fnv1a32(ending_pressure)
                 output_rows.append(
-                    {
-                        "route_card_id": route_card_id,
-                        "route_card_hash_hex": f"0x{route_hash:08X}",
-                        "route_card_hash_uint": str(route_hash),
-                        "phase_id": phase_id,
-                        "phase_hash_hex": f"0x{phase_hash:08X}",
-                        "phase_hash_uint": str(phase_hash),
-                        "depth_min_m": depth_min_text,
-                        "depth_max_m": depth_max_text,
-                        "primary_surface": primary_surface,
-                        "primary_surface_mask": str(SURFACE_MASKS[primary_surface]),
-                        "ending_pressure": ending_pressure,
-                        "ending_pressure_hash_hex": f"0x{pressure_hash:08X}",
-                        "ending_pressure_hash_uint": str(pressure_hash),
-                        "packet_ids": ";".join(runtime_packets),
-                        "packet_hashes_hex": hash_list(runtime_packets, hex_format=True),
-                        "packet_hashes_uint": hash_list(runtime_packets, hex_format=False),
-                        "required_packet_ids": ";".join(runtime_required),
-                        "required_packet_hashes_hex": hash_list(runtime_required, hex_format=True),
-                        "required_packet_hashes_uint": hash_list(runtime_required, hex_format=False),
-                    }
+                    render_output_row(
+                        route_card_id=route_card_id,
+                        phase_id=phase_id,
+                        depth_min_text=depth_min_text,
+                        depth_max_text=depth_max_text,
+                        primary_surface=primary_surface,
+                        ending_pressure=ending_pressure,
+                        runtime_packets=runtime_packets,
+                        runtime_required=runtime_required,
+                    )
                 )
 
     if missing_packet_refs:
@@ -295,6 +318,126 @@ def route_card_export_current(root: Path) -> tuple[int, bool]:
     return count, output_path.exists() and output_path.read_text(encoding="utf-8") == text
 
 
+def render_selected_route_card_rows(root: Path, packet_id: str) -> list[dict[str, str]]:
+    if not packet_id:
+        raise ValueError("--packet-id must not be empty")
+
+    known_packets = baked_packet_ids(root)
+    if packet_id not in known_packets:
+        raise ValueError(f"Selected packet_id is not in baked AppliedLore packet CSV: {packet_id}")
+
+    output_rows: list[dict[str, str]] = []
+    selected_owner: str | None = None
+    prerequisite_graph: dict[str, set[str]] = {}
+    for input_path in iter_route_card_sources(root):
+        with input_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            if tuple(reader.fieldnames or ()) != INPUT_HEADERS:
+                if packet_id in input_path.read_text(encoding="utf-8"):
+                    raise ValueError(f"Route-card source header mismatch for selected packet: {input_path}")
+                continue
+
+            for line_number, row in enumerate(reader, start=2):
+                packets = packet_refs(row.get("packet_ids", ""))
+                if packet_id not in packets:
+                    continue
+
+                location = f"{input_path}:{line_number}"
+                route_card_id = require_cell(row, "route_card_id", location)
+                if selected_owner is not None:
+                    raise ValueError(
+                        f"Route card {location}: packet_id {packet_id} already owned by {selected_owner}"
+                    )
+                selected_owner = route_card_id
+
+                phase_id = require_cell(row, "phase_id", location)
+                depth_min_text = require_cell(row, "depth_min_m", location)
+                depth_max_text = require_cell(row, "depth_max_m", location)
+                depth_min = parse_depth(depth_min_text, "depth_min_m", location)
+                depth_max = parse_depth(depth_max_text, "depth_max_m", location)
+                primary_surface = require_cell(row, "primary_surface", location)
+                ending_pressure = require_cell(row, "ending_pressure", location)
+                required = packet_refs(row.get("required_packet_ids", ""))
+
+                if depth_max < depth_min:
+                    raise ValueError(f"Route card {location}: invalid depth bounds {depth_min}-{depth_max}")
+                if primary_surface not in ROUTE_CARD_PRIMARY_SURFACES:
+                    raise ValueError(f"Route card {location}: unsupported primary_surface={primary_surface}")
+                if ending_pressure not in ROUTE_CARD_ENDING_PRESSURES:
+                    raise ValueError(f"Route card {location}: unsupported ending_pressure={ending_pressure}")
+                if len(packets) > ROUTE_CARD_PACKET_CAPACITY:
+                    raise ValueError(
+                        f"Route card {location}: packet_ids exceeds capacity {ROUTE_CARD_PACKET_CAPACITY}"
+                    )
+                if len(required) > ROUTE_CARD_PREREQUISITE_CAPACITY:
+                    raise ValueError(
+                        "Route card "
+                        f"{location}: required_packet_ids exceeds capacity {ROUTE_CARD_PREREQUISITE_CAPACITY}"
+                    )
+                for field in ("world_object_hint", "player_question", "truth_payload", "replay_axis"):
+                    require_cell(row, field, location)
+
+                runtime_packets = [runtime_packet_id for runtime_packet_id in packets if runtime_packet_id in known_packets]
+                runtime_required = [runtime_packet_id for runtime_packet_id in required if runtime_packet_id in known_packets]
+                if packet_id not in runtime_packets:
+                    raise ValueError(f"Route card {location}: selected packet is not runtime-baked")
+
+                prerequisite_graph.setdefault(packet_id, set())
+                for ref in runtime_required:
+                    if ref == packet_id:
+                        raise ValueError(f"Route card {location}: packet_id {packet_id} depends on itself")
+                    prerequisite_graph[packet_id].add(ref)
+
+                output_rows.append(
+                    render_output_row(
+                        route_card_id=route_card_id,
+                        phase_id=phase_id,
+                        depth_min_text=depth_min_text,
+                        depth_max_text=depth_max_text,
+                        primary_surface=primary_surface,
+                        ending_pressure=ending_pressure,
+                        runtime_packets=runtime_packets,
+                        runtime_required=runtime_required,
+                    )
+                )
+
+    if not output_rows:
+        raise ValueError(f"Missing route-card source ownership for packet_id {packet_id}")
+
+    validate_acyclic_prerequisites(prerequisite_graph)
+    return output_rows
+
+
+def selected_route_card_export_current(root: Path, packet_id: str) -> tuple[int, bool]:
+    expected_rows = render_selected_route_card_rows(root, packet_id)
+    output_path = route_card_output_path(root)
+    if not output_path.exists():
+        return len(expected_rows), False
+
+    with output_path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        if tuple(reader.fieldnames or ()) != OUTPUT_HEADERS:
+            return len(expected_rows), False
+        actual_by_route: dict[str, dict[str, str]] = {}
+        for row in reader:
+            route_card_id = row.get("route_card_id", "")
+            if route_card_id in actual_by_route:
+                return len(expected_rows), False
+            actual_by_route[route_card_id] = row
+
+    current = all(actual_by_route.get(row["route_card_id"]) == row for row in expected_rows)
+    return len(expected_rows), current
+
+
+def check_selected_route_card_export(root: Path, packet_id: str) -> int:
+    count, current = selected_route_card_export_current(root, packet_id)
+    if not current:
+        raise ValueError(
+            f"AppliedLore route-card export is stale for packet_id {packet_id}: {route_card_output_path(root)}"
+        )
+    return count
+
+
 def check_route_card_export(root: Path) -> int:
     count, current = route_card_export_current(root)
     if not current:
@@ -317,9 +460,24 @@ def main() -> int:
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument("--check", action="store_true", help="Fail if the generated route-card export is stale.")
     parser.add_argument("--dry-run", action="store_true", help="Validate and compare without writing the export.")
+    parser.add_argument(
+        "--packet-id",
+        help="Validate and compare only the route-card source/export row that owns this packet.",
+    )
     args = parser.parse_args()
     root = Path(args.root).resolve()
     try:
+        if args.packet_id:
+            if args.check:
+                count = check_selected_route_card_export(root, args.packet_id)
+                print(f"applied_lore_route_cards_selected={count} packet_id={args.packet_id} export_current=1")
+                return 0
+            count, current = selected_route_card_export_current(root, args.packet_id)
+            print(
+                f"applied_lore_route_cards_selected={count} packet_id={args.packet_id} "
+                f"export_current={int(current)} would_write=0"
+            )
+            return 0
         if args.check:
             count = check_route_card_export(root)
             print(f"applied_lore_route_cards={count} export_current=1")

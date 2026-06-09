@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Spoilergrenze des offentlichen Index"
+title: "Redaktionsregel des öffentlichen Index"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Spoilergrenze des offentlichen Index
+# Redaktionsregel des öffentlichen Index
 
-Der offentliche Index soll das Archiv nutzbar machen, ohne die Route zu verbrennen. Ein Titel darf eine Beweisfamilie nennen: Verwahrungsroute, Beweisklasse, Schwarzungszustand, Anspruchssprache, Scannertor. Das reicht, damit der Spieler versteht, welche Art Beweis er jagt und warum ein anderes Paket wichtig ist.
+Eine öffentliche Indexzeile ist ein Zugriffskontrollsatz, keine Zusammenfassung. Sie darf Docket-Familie, Verwahrungsspur, Beweistyp, Redaktionsflag, Scanner-Gate und das nächste Objekt zeigen, das zum Öffnen des Pakets nötig ist. Das reicht, um eine Suche zu führen, ohne den Empfänger offenzulegen.
 
-Der Index darf nicht verraten, wer die Nutzlast erhalt, wo die Endroute landet, in welchem Zustand die Nutzlast ist, was Atlas damit tut, welchen Endzweig sie belastet oder welches Rechtsresultat folgt. Diese Bedeutungen gehoren zum verdienten Beweispfad. Wenn ein Titel die Empfangerlinie verrat, ist der Index kein Archiv mehr, sondern eine Spoilermaschine. Das korrekte offentliche Versprechen ist einfach: Dieses Regal existiert, die letzte Seite ist maskiert.
+Die maskierten Felder sind wichtiger als der Titel. Empfängerkette, Endkoordinaten, Nutzlastzustand, Atlas-Reaktion, Druck auf den Ausgang und Rechtsfolge bleiben hinter dem Redaktionssiegel, bis die Route sie verdient. Wenn der Index eine Empfängeradresse zu früh druckt, informiert er den Fall nicht; er leakt die Route an jeden, der den Spiegel beobachtet.
 
 ## Scanner
 
-SPOILERGRENZE // Sichtbar: Verwahrungsroute, Beweisklasse, Schwarzungszustand, Anspruchssprache. Gehalten: Empfangerkette, Koordinaten, Nutzlastzustand, Atlas-Folge, Endzweig, Rechtsresultat.
+ÖFFENTLICHE INDEXREDAKTION // Sichtbar: Docket-Familie, Verwahrungsspur, Beweistyp, Redaktionsflag, Scanner-Gate, nächstes Beweisobjekt. Maskiert: Empfängerkette, Koordinaten, Nutzlastzustand, Atlas-Reaktion, Rechtsfolge.
 
 ## Terminal
 
-STEMPEL OFFENTLICHER INDEXGRENZE
-Zeigen: Kategorietitel, Verwahrungsroute, Beweisklasse, Schwarzungszustand, Scannertor, nachstes Beweisziel.
-Halten: Empfangerkette, Endkoordinaten, Nutzlastzustand, Atlas-Folge, Endzweig, Rechtsresultat.
-Regel: Regal zeigen, letzte Seite maskieren. Der Index darf die Art des Beweises nennen, nicht was er am Ende der Route bewirkt.
+STEMPEL ÖFFENTLICHE INDEXREDAKTION
+Zeigen: Titel, Docket-Familie, Verwahrungsspur, Beweistyp, Redaktionsflag, Scanner-Gate, nächstes Beweisobjekt.
+Maskieren: Empfängerkette, Endkoordinaten, Nutzlastzustand, Atlas-Reaktion, Ausgangsdruck, Rechtsfolge.
+Fehler: Empfängeradresse vor Verwahrungsschwelle sichtbar.
+Aktion: Routenfelder versiegelt halten, bis Pakethash und Objektbeweis übereinstimmen.
 
 ## Audio
 
-Ein Kategorietitel ist ein Regaletikett. Er ist nicht Empfanger, Urteil oder letzte Tur.
+Die Indexzeile ist offen. Die Empfängerzeile nicht. Wenn beides sichtbar ist, hat jemand die Route verbrannt.
 
 ## Field Note
 
-Kategorietitel reisen weiter als Korper. Lies das Regal, aber tu nicht so, als sei es die letzte Seite. Wenn die letzte Seite gratis ist, hat jemand die Route bereits verkauft.
+Nutze den Index, um das nächste Beweisobjekt zu wählen. Eine sichtbare Kategorie ist keine Verwahrung, kein Urteil und kein Ziel.
 
 <!-- In-Game Wiki; generated from P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE/de_DE. -->

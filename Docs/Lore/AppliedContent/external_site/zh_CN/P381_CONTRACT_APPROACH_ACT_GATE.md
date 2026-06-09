@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Contract Approach Act Gate"
+title: "合同接近门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Contract Approach Act Gate
+# 合同接近门
 
-ZH LOC HOLD: HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+合同接近阶段设置战役压力，但不假装海洋已经解释了一切。Black Keel 板在操作员抵达开阔水域之前分配索赔转移、bathydrop 时间、留置暴露和工具债务。路线以坏条件下的有偿工作开始。
 
-## Scanner
-
-ZH LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-ZH LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-ZH LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-ZH LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+关键细节是操作员档案里的 Deep Reach 残留。它不是家庭钩子，也不是英雄头衔。它是程序匹配：访问语言、维护缩写和疏散基础设施习惯，仍能套进废弃殖民地系统。第一道门说下降是工作；第二行说这份工作已经有档案。
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/zh_CN. -->

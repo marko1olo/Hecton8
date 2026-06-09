@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: P-63 Fabricator Authority Limits"
+title: "Límites de autoridad del fabricador P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: P-63 Fabricator Authority Limits
+# Límites de autoridad del fabricador P-63
 
-ES LOC HOLD: P-63 Fabricator Authority Limits explain the first crafting station in HECTON-8. It makes the player competent quickly, but it refuses ascent-grade parts until the player earns pressure-rated materials, route stamps and deeper evidence.
+Los límites de autoridad del fabricador P-63 mantienen el crafteo temprano de HECTON-8 como triaje de supervivencia: competencia rápida, escape lento y piezas de ascenso ganadas con presión real.
 
 ## Scanner
 
-ES LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+El P-63 acepta juntas, abrazaderas, pingers y contactos de cortador, pero bloquea componentes de ascenso sin prueba más profunda.
 
 ## Terminal
 
-ES LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT: emergency patch OK. Rated repair requiere pressure certificate, material procesado por respiradero o route authority stamp.
 
 ## Audio
 
-ES LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+La máquina puede salvarte la mañana. No puede perdonarte la órbita.
 
 ## Field Note
 
-ES LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+No es una pared de crafteo arbitraria. La máquina no fabrica piezas de escape sin certificado de presión.
 
 <!-- External Site; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/es_ES. -->

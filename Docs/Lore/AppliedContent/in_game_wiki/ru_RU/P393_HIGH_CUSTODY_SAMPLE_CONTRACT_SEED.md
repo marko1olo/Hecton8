@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: High Custody Sample Contract Seed"
+title: "Семя контракта образца высокой custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: High Custody Sample Contract Seed
+# Семя контракта образца высокой custody
 
-RU LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Образец высокой custody - семейство контрактов, где ценность ресурса и обращение с доказательствами сталкиваются рано. Blue debt, ткане-железный осадок, запечатанная вода и загрязненные фильтр-пакеты платят больше только пока контейнер, метка, масса и маршрутная custody целы.
 
 ## Scanner
 
-RU LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Семя контракта: образец высокой custody. Большая выплата привязана к учету массы, карантинной задержке и receiver-сертифицированным контейнерам.
 
 ## Terminal
 
-RU LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: образцы custody-grade активны, журнал массы строгий, карантинная задержка повышена, печать receiver обязательна, штраф за сброс маршрута активен.
 
 ## Audio
 
-RU LOC HOLD: A sample can weigh more after it enters the ledger.
+Образец становится тяжелее после того, как журнал его принял.
 
 ## Field Note
 
-RU LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Заметка мародера: взвесь мешок, прежде чем назвать его прибылью. Receiver может выставить недостающие граммы жестче, чем ударит океан.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ru_RU. -->

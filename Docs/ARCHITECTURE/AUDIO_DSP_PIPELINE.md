@@ -1,12 +1,12 @@
 ﻿# HECTON-8 Audio DSP Pipeline
 
-Date: 2026-05-07
+Date: 2026-06-09
 
-Status: PENDING VERIFICATION
+Status: CURRENT STATIC SOURCE ROUTE / RUNTIME PROOF PENDING
 
 ## Source Anchors
 
-Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility only, not Unity audio-thread behavior, profiler, GC, console, or player-build proof.
+Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove current path visibility and source ownership only, not Unity audio-thread behavior, profiler, GC, console, or player-build proof.
 
 - `Assets/_Project/Scripts/SpatialAudioManager.cs`
 
@@ -16,9 +16,21 @@ Evidence class: STATIC_SOURCE / FILESYSTEM path check. These anchors prove curre
 
 - `Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs`
 
+- `Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs`
+
 - `Assets/_Project/Scripts/Audio/Synthesis/DepthStressGranularSynthesisKernel.cs`
 
-Verification: PENDING VERIFICATION
+- `Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs`
+
+- `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs`
+
+- `Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs`
+
+- `Assets/_Project/Scripts/Audio/HectonMusicDirector.cs`
+
+- `Assets/_Project/Scripts/AcousticZoneController.cs`
+
+Verification: current source route only. Unity import, Unity Console, Play Mode, profiler, GCMonitor, player build, frame-time, memory, scene wiring, native plugin loading, and audible output remain `PENDING VERIFICATION`.
 
 ## 2026-05-11 Historical Override + 2026-05-17 Actuality Pointer
 
@@ -49,6 +61,56 @@ First-party procedural audio owner path:
 - `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
 
 The target is zero-allocation runtime transport with sample-stable DSP parameters and deterministic underwater psychoacoustics.
+
+## Current Runtime Route
+
+The current audio architecture is not one monolithic mixer. It is a set of bounded owners connected through registry slots, SignalBus lanes, DataVault buffers, and native/audio-kernel bridge state.
+
+- `AcousticZoneController` owns acoustic-zone presentation: underwater/surface/interior transitions, flood and water muffle, mixer snapshot transitions, queued transition cues, storm/static interference, sonar impulse coloration, vegetation acoustic overlays, and the acoustic read model. It consumes world/player/physics/sonar/atmosphere/audio-service/music state. It does not own flooding truth, player truth, pressure truth, sonar truth, or save state.
+
+- `SpatialAudioManager` owns world-source playback pools, binaural telemetry, passive radar payloads, and delayed acoustic world events.
+
+- `PlayerCriticalProceduralAudioRenderer` owns player-local critical procedural audio: hull stress, sonar, thrusters, dread sub-bass, heartbeat, bubbles, enclosure coloration, and final critical output transport. It has no managed `OnAudioFilterRead` synthesis path in current source; player-critical output routes through `AudioFrameSpscRingBuffer` plus `HectonSensoryKernelNativeBridge`.
+
+- `AudioFrameSpscRingBuffer` owns the SPSC shared frame ring and audio bridge telemetry. It resolves capacity to a power-of-two frame count, validates shared index state, records overflow/non-finite/bridge failures, and exposes frames/shared state/telemetry through DataVault-owned native buffers.
+
+- `HectonSensoryKernelNativeBridge` owns native audio-kernel registration. It validates descriptor magic, pointer alignment, capacity, shared-state metadata, source-channel bounds, plugin availability, retry status, and clear/telemetry calls before the native kernel can consume the shared ring.
+
+- `VocalWarningSystem` owns warning priority, cooldown, current warning state, dispatch, telemetry, and warning profile/tuning buffers. Producers send `VocalWarningSignal` through a bounded SignalBus lane; warning-line playback is downstream and does not make the gameplay fact true.
+
+- `VocalBankPlaybackRuntime` owns vocal-bank playback, voice-over and subtitle handoff, mock-bank fallback, waveform/telemetry/counters/csv metadata buffers, and `PlayVoiceOverSignal` / `VocalCueSignal` / `SubtitleCueSignal` consumption. Release-player managed callback is fail-closed to silence. Editor/development callback decode is an authoring/debug seam only and is blocked from release acceptance until replaced by native/DSPGraph/native audio-kernel output.
+
+- `AdaptiveStemAudioMixer` owns adaptive stem mix state, rules, commands, telemetry, CSV rule support, mock depth/predator/tension lanes, and quality-scaled cadence for the adaptive stem solver. Unity `AudioSource`/`AudioLowPassFilter` assignment remains a low-cadence endpoint, not the high-authority DSP proof lane.
+
+- `HectonMusicDirector` owns long-form music/stinger orchestration, scene profile resolution, dynamic music scalar publication, vocal-warning ducking, biome/acoustic/AI/player-stress consumption, and music voice pool lifecycle.
+
+## Data And Lifecycle Contract
+
+- Audio runtime state that crosses systems must use bounded SignalBus lanes, DataVault buffers with owner IDs, registry slots, or explicit read-model interfaces. A component-local field is not cross-system truth unless the owner publishes it through one of those routes.
+
+- Owner replacement must clear stale handles before rebinding. DataVault service replacement requires releasing old owner buffers or mutation guards, reacquiring generation-checked handles, and republishing a neutral state if consumers would otherwise keep stale pressure, warning, transition, or mix data.
+
+- Scene unload and disable paths must unregister registry/read-model slots, release DataVault buffers, dispose native rings, clear active warning/music/acoustic state, and avoid leaving a previous scene's audio pressure in global state.
+
+- Runtime-created `AudioSource`, fallback profile, mock bank, generated emergency profile, or repaired mixer binding is recovery/debug support only. It cannot be cited as production binding proof.
+
+## Failure Model
+
+Treat the following as integration failures unless a current proof artifact shows the expected recovery path:
+
+- no audio service, missing dispatcher, missing DataVault, stale registry slot, duplicate active music/acoustic/vocal owner, or service replacement during playback;
+
+- SignalBus queue full, repeated subscribe/unsubscribe, producer using an obsolete direct raise path, or cue/warning drop hidden as success;
+
+- DataVault handle generation mismatch, missing buffer, capacity mismatch, mutation guard not released, interrupted job, stale read-only view, or telemetry cursor corruption;
+
+- native plugin unavailable, descriptor magic mismatch, pointer alignment invalid, shared-state metadata invalid, ring full/underrun, non-finite samples, or bridge clear/register failure;
+
+- managed `OnAudioFilterRead` doing synthesis, decode, DataVault locks, allocation, scene lookup, `Stopwatch`, `AudioSettings`, or gameplay queries in release;
+
+- mock/fallback clip/bank/profile or runtime component repair used as release proof;
+
+- scene unload/domain reload leaving active warning, music cue, acoustic transition, native ring, prologue transition, or DataVault mutation guard alive.
 
 ## Documentation Lifecycle
 
@@ -214,7 +276,7 @@ modFreq = lerp(5 Hz, 80 Hz, stress^2)
 
 modIndex = lerp(0.1, 12.0, stress)
 
-carrierFreq = 80 Hz + sin(modPhase * 2Ï€) * modIndex * noise
+carrierFreq = 80 Hz + sin(modPhase * 2*pi) * modIndex * noise
 
 output = tanh(raw * (1 + stress * 3))
 

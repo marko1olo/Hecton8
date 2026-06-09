@@ -13,9 +13,20 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILDER = ROOT / "Assets/_Project/Scripts/Editor/Batch34TerrainLayerAssetBuilder.cs"
 APPLY_ALL = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
 UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/GeminiMaterialAtlas_Manifest.json"
 OUTPUT_ROOT = "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases/Batch20260608_TextureExpansion/TerrainLayers"
 REQUIRED_MAPS = ("BaseColor", "NormalGL", "MaskMap_UnityURP")
+REQUIRED_TERRAIN_MATERIAL_IDS = {
+    "gemini_Batch20260608_TextureExpansion_b34_3401_photic_limestone_rubble_shelf",
+    "gemini_Batch20260608_TextureExpansion_b34_3402_shallow_seagrass_root_mat_substrate",
+    "gemini_Batch20260608_TextureExpansion_b34_3403_brine_canyon_salt_crust_silt",
+    "gemini_Batch20260608_TextureExpansion_b34_3404_abyssal_manganese_nodule_plain",
+    "gemini_Batch20260608_TextureExpansion_b34_3405_methane_hydrate_crack_vein",
+    "gemini_Batch20260608_TextureExpansion_b34_3406_serpentinite_fault_rock",
+    "gemini_Batch20260608_TextureExpansion_b34_3408_clay_silt_turbidity_slope",
+    "gemini_Batch20260608_TextureExpansion_b34_3409_limestone_cave_ceiling_mineral_drip",
+}
 SPEC_PATTERN = re.compile(
     r'new\s+TerrainLayerSpec\(\s*"(?P<id>[^"]+)"\s*,\s*"(?P<output>[^"]+\.terrainlayer)"\s*,'
     r"\s*(?P<min_r>[0-9.]+)f\s*,\s*(?P<min_g>[0-9.]+)f\s*,\s*(?P<min_b>[0-9.]+)f\s*,"
@@ -175,8 +186,13 @@ def validate(args: argparse.Namespace) -> int:
     unity_apply_runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig") if UNITY_APPLY_RUNNER.exists() else ""
     if "Batch34TerrainLayerAssetBuilder.BuildTerrainLayers(false)" not in apply_all_text:
         errors.append("Gemini apply-all must invoke Batch34TerrainLayerAssetBuilder.BuildTerrainLayers(false)")
-    if "ValidateBatch34TerrainLayerBuilder.py" not in unity_apply_runner_text or "--post-apply" not in unity_apply_runner_text:
+    expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $batch34TerrainLayerBuilderValidator -Arguments @("--post-apply")'
+    if expected_post_apply_call not in unity_apply_runner_text:
         errors.append("Unity apply-all runner must post-apply validate Batch34 terrain layers")
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display_path(STATIC_PREFLIGHT)}")
+    elif "ValidateBatch34TerrainLayerBuilder.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateBatch34TerrainLayerBuilder.py")
 
     if not MANIFEST.exists():
         errors.append(f"missing manifest: {display_path(MANIFEST)}")
@@ -190,8 +206,11 @@ def validate(args: argparse.Namespace) -> int:
         }
 
     specs = parse_specs(builder_text)
-    if len(specs) != 7:
-        errors.append(f"expected exactly 7 terrain layer specs, got {len(specs)}")
+    if len(specs) != 8:
+        errors.append(f"expected exactly 8 terrain layer specs, got {len(specs)}")
+    actual_material_ids = {str(spec["id"]) for spec in specs}
+    for missing_id in sorted(REQUIRED_TERRAIN_MATERIAL_IDS - actual_material_ids):
+        errors.append(f"missing required Batch34 terrain material spec: {missing_id}")
 
     required_tokens = (
         "TerrainLayer",

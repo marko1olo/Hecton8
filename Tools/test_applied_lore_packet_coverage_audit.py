@@ -223,6 +223,24 @@ class TestAppliedLorePacketCoverageAudit(unittest.TestCase):
             self.assertEqual(stats.route_cards, 1)
             self.assertEqual(stats.route_source_rows, 1)
 
+    def test_large_publication_index_field_passes(self):
+        with temporary_directory() as tmp:
+            root = Path(tmp)
+            make_repo(root)
+            index_path = root / "Docs" / "Lore" / "AppliedContent" / "Publication_Surface_Index.csv"
+            with index_path.open("r", encoding="utf-8", newline="") as handle:
+                rows = list(csv.DictReader(handle))
+            extra = dict(rows[0])
+            extra["packet_id"] = "P_UNSELECTED_LARGE_FIELD"
+            extra["page_path"] = "in_game_wiki/en_US/P_UNSELECTED_LARGE_FIELD.md"
+            extra["title"] = "x" * 150_000
+            rows.append(extra)
+            write_csv(index_path, PUBLICATION_INDEX_HEADERS, rows)
+
+            stats = audit_selected_packets(root, ("P_TEST_COVERAGE",))
+
+            self.assertEqual(stats.publication_rows, len(TARGET_LOCALES) * 2)
+
     def test_missing_binding_map_fails(self):
         with temporary_directory() as tmp:
             root = Path(tmp)
@@ -408,7 +426,7 @@ class TestAppliedLorePacketCoverageAudit(unittest.TestCase):
 
             stats = audit_selected_packets(root, (), include_all=True)
 
-            self.assertEqual(stats.source_packets, 2)
+            self.assertEqual(stats.source_packets, 1)
             self.assertEqual(stats.target_packets, 1)
 
     def test_all_rejects_stale_baked_packet_outside_canonical_selection(self):

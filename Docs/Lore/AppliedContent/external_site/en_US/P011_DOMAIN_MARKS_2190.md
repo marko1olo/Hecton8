@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-By 2190, human civilization is wide enough to leave several owners on one broken object. Sol standards travel as safety formats. Barnard Yards marks survive on tools and pressure repairs. Luyten Junction appears in packet custody and routing law. Aegir local claim codes sit on salvage tags because the system has its own courts, debts and recovery priorities.
+By 2190, humanity is wide enough for one broken object to have several legal parents. HECTON-8 uses that fact as texture. A pressure latch can be Sol-certified, repaired in Barnard labor culture, routed through Luyten custody, justified by Centauri charter language and seized under an Aegir claim shell. The marks do not make the colony safe. They make it documented.
 
-This gives HECTON-8 a particular flavor of isolation. The player is not exploring a forgotten fantasy ruin. The ruin is documented. The bolts have provenance. The airlocks have legal parents. Help can still be slow, conditional or absent because civilization is present as authority before it is present as mass.
+That distinction is central to the game's tone. HECTON-8 is not beyond civilization. It is under the cold side of civilization: the side that can name a bracket, price a body, preserve a packet and still fail to move rescue mass through the window in time. The player learns the wider setting by touching corroded proof, not by reading a classroom timeline.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/en_US. -->

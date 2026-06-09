@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "音響リレー脊柱アセンブリ"
+title: "音響リレースパイン組立"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 音響リレー脊柱アセンブリ
+# 音響リレースパイン組立
 
-音響リレー脊柱アセンブリは HECTON-8 の脱出ループをサルベージ工学に固定する。音は圧力、航路幾何、custody を生き延びてからでなければ、軌道に信じられない。
+音響リレースパイン組立は、HECTON-8 の脱出鎖で生存を測定可能な信号へ変える最初の部品だ。無線マストでも遭難の祈りでもない。セラミックリブ、ケーブルジャケット、バラスト floats、pinger timing で作られた pressure-code spine である。
 
-## Scanner
+問題は信頼だ。HECTON-8 の水は衝撃音、ポンプノック、brine scatter、ルート反射を運ぶ。Black Keel は安全に受理できる量を超える音を受ける。回収を求めるカプセルは、その tap が水没フレームを叩く遊離パネルではなく、ルート、時計、custody chain に属すると証明しなければならない。
 
-壊れた音響脊柱。水中へ pressure-code を叩き込めるが、軌道にはまだ損傷した custody noise として聞こえる。
-
-## Terminal
-
-ASCENT RELAY: recovery window 前に低帯域音響脊柱を復旧。High-gain mast 喪失。Emergency buoy 不安定。Black Keel 受信機は route proof 後のみ pressure-code を受理。
-
-## Audio
-
-Keel が聞くなら、それは管を叩く傷の音だ。
-
-## Field Note
-
-カプセルの最初の呼びかけは声ではない。セラミック肋材、ケーブル外皮、pinger floats、そして海が正しく反復するだけのタイミング規律だ。
+スパイン修理は上昇カプセルに狭い声を与える。座標、生存状態、clock match、checksum。それで recovery の会話は始まるが、救助は保証されない。海は信号を曲げる。carrier はまだ packet を damaged claim noise と扱える。この部品が得るのは最初の聴取であり、判定ではない。
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ja_JP. -->

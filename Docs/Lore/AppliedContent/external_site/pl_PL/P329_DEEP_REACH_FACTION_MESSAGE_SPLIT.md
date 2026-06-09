@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Deep Reach Faction Message Split"
+title: "Rozłam komunikatów Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Deep Reach Faction Message Split
+# Rozłam komunikatów Deep Reach
 
-PL LOC HOLD: The Deep Reach threat is stronger when it is institutional, not cartoonish. HECTON-8 lets different offices expose different failures.
+Gracz powinien słyszeć Deep Reach jako system pod presją: kontrola odpowiedzialności, odzysk salvage, dawna inżynierska wina, nacisk ubezpieczyciela i czarnoskrzynkowa automatyka krzyżujące przewody nad zatopioną kolonią. Konflikt nie uniewinnia firmy. Czyni ją groźniejszą, bo żaden głos nie kontroluje jej w pełni.
 
 ## Scanner
 
-PL LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Trzy źródła Deep Reach nie zgadzają się: odzysk chce współrzędnych, dział prawny chce ciszy, dawna inżynieria ostrzega, że basen odpowie.
 
 ## Terminal
 
-PL LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance żąda współrzędnych żeglugowych. Asset Silence nakazuje zatrzymanie dowodów i brak publicznego uznania. Legacy Engineering Node 4 powtarza ostrzeżenie sprzed kolapsu: nie naruszać dolnych przekaźników basenu podczas cienia Aegir. To nie buntownicy. To działy chroniące różne straty.
 
 ## Audio
 
-PL LOC HOLD: A company can be one logo and three knives.
+Jedno logo. Trzy głosy. Żaden czysty.
 
 ## Field Note
 
-PL LOC HOLD: This is not redemption. It is pressure-source readability.
+Użyć po tym, jak gracz usłyszy co najmniej dwa tony Deep Reach. To ma być dwuznaczność z zębami: sprzeczne instrukcje, wspólna własność, żadnego czystego sojusznika.
 
 <!-- External Site; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/pl_PL. -->

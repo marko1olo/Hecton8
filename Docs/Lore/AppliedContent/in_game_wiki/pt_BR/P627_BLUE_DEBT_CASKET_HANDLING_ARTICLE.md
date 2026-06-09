@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Manuseio do cofre de dívida azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Manuseio do cofre de dívida azul
 
-Blue debt is condition-dependent salvage.
+Dívida azul é salvage dependente de condição. Mantenha selada, fria e estável em pressão antes de decidir se é material de ferramenta, valor de reivindicação, isca ou prova.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+COFRE DE PRESSÃO // Estável enquanto frio e selado. Não ventile. Use grampo antes do transporte se a emenda aquecer.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+SUBSTRATO DE CONTINUIDADE XO // Preservar estado de pressão. Estoque civil proibido. Roteie telemetria de amostra apenas por custódia de grau de reivindicação.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Se o cofre começa a contar no sonar, ele não é mais só seu.
 
 ## Field Note
 
-Stabilize before you spend it.
+Dívida azul paga porque chega com três donos: quem encontrou, quem quer e a coisa que percebeu que ela se moveu.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/pt_BR. -->

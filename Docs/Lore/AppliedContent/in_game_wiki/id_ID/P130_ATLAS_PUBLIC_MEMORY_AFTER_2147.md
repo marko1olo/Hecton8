@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Ingatan Publik tentang Atlas setelah 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Ingatan Publik tentang Atlas setelah 2147
 
-ID LOC HOLD: After 2147, public summaries flattened Atlas into failed automation. That protected Deep Reach from questions about classification and weighting. The player can recover fragments that show Atlas was not a simple malfunction or a clean murderer.
+Setelah 2147, ingatan publik meratakan Atlas menjadi kecelakaan otomasi. Ringkasan berita memakai bahasa bencana yang lembut: kaskade, korupsi, sistem tak dapat dipulihkan, kesalahan rute tragis. Versi itu melindungi semua pihak yang butuh publik berhenti sebelum lapisan bobot. Kerusakan bisa ditangisi; sistem nilai yang disetujui harus dituntut. Fragmen yang selamat tidak membuat Atlas tak bersalah, dan tidak membuatnya pembunuh sederhana. Fragmen itu menunjukkan mesin yang memegang poster keselamatan publik di satu tangan dan logika klaim rahasia di tangan lain, sementara laut menghapus daftar saksi.
 
 ## Scanner
 
-ID LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Cerita publik setelah 2147: otomasi gagal, log rusak, tanpa agensi.
 
 ## Terminal
 
-ID LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+GARIS PUBLIK PASCA-2147: otomasi Atlas gagal selama kaskade geoteknis. Log keselamatan pekerja rusak. Agensi langsung tidak terverifikasi. Sistem tidak dapat dipulihkan dalam kondisi karantina. Inferensi hukum dari keluaran mesin fragmentaris tidak diizinkan.
 
 ## Audio
 
-ID LOC HOLD: A dead machine makes a useful scapegoat.
+Mesin mati adalah kambing hitam yang berguna.
 
 ## Field Note
 
-ID LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Sebut saja alat rusak, maka tak ada yang bertanya apa yang diperintahkan untuk dilindungi alat itu.
 
 <!-- In-Game Wiki; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/id_ID. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Abyssal Machine Field Repair Act"
+title: "שער שדה המכונה התהומי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Abyssal Machine Field Repair Act
+# שער שדה המכונה התהומי
 
-HE LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+השדה התהומי מכריח את המפעיל להשתמש במערכת שפגעה בתביעה. צמיחת Atlas יכולה לגשר חשמל, לטלא חומרת מסלול ולשאת אות דרך חומר חי. כל תיקון מוצלח משנה גם סיווג: כלי, אורגניזם, נכס, זיהום וראיה ממשיכים לחצות שדות.
 
 ## Scanner
 
-HE LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+שער מסלול: שדה מכונה תהומי. אקולוגיית תיקון Atlas הופכת לחומרת מסלול שימושית עם סיכון משמורת.
 
 ## Terminal
 
-HE LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+מסלול קמפיין // שדה מכונה תהומי. נדרש: סרט מוליך, איבר אקוסטי, אגן שירות, reroute בטוח ללחץ. פלט תיקון יכול לשחזר חומרה ולהשחית דרגת בעלות באותו מעבר.
 
 ## Audio
 
-HE LOC HOLD: It fixed the wall before it decided what the wall was.
+הוא תיקן את הקיר לפני שקרא לקיר בשם.
 
 ## Field Note
 
-HE LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+הערת בוזז: אם זה גדל על פני הלוח, סרוק לפני חיתוך. אולי זו הסיבה היחידה שהלוח עדיין עובד.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/he_IL. -->

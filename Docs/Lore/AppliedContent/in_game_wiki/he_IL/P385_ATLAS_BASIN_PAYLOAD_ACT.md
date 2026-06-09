@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Basin Payload Act"
+title: "שער payload אגן Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Basin Payload Act
+# שער payload אגן Atlas
 
-HE LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+שער האגן הוא החלטת מקבל תחת לחץ. ה-payload יכול למכור קואורדינטות, לחתוך את Atlas, לשמר הסגר, לפרסם חבילת ספר מושחרת או להישאר מקומי ללא קבלה. כל מסלול משנה משמורת, חוב, אקולוגיה וגישה לראיות. אף אחד לא מחזיר את האגן למצב שלא נגעו בו.
 
 ## Scanner
 
-HE LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+שער מסלול: אגן Atlas. ה-payload הסופי דורש מסלול, מקבל, proof hash, מצב אקולוגי, מצב שעבוד וחלון הישרדות.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+מסלול קמפיין // PAYLOAD אגן ATLAS. פתור או סרב: מכירת קואורדינטות, חיתוך Atlas, escrow הסגר, ספר ציבורי, blind return. חותמת מקבל משנה משמורת. אין מצב תביעה נקי זמין.
 
 ## Audio
 
-HE LOC HOLD: The last question is not what happened. It is who you send it to.
+שאלת המסלול האחרונה היא מי מקבל את החבילה.
 
 ## Field Note
 
-HE LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+הערת בוזז: בחר מקבל לפני שהתיק מקבל מים. תשובה מושלמת לא נכנסת לתיק הזה.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/he_IL. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zespół ładunku energii wznoszenia"
+title: "Zespół Ładunku Energii Wznoszenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zespół ładunku energii wznoszenia
+# Zespół Ładunku Energii Wznoszenia
 
-Ładunek wznoszenia zmienia głębinowe zasoby w mechaniczny i moralny handel. Materiały wysokociśnieniowe mogą podnieść kapsułę, zachować dowody przez custody albo stać się wypłatą osłabiającą drogę do domu.
+Ładunek energii wznoszenia zamienia głębinowe materiały HECTON-8 w kontrolowany impuls startowy. To nie stos paliwa. To kołyska vent-forged heat cells, izolacji z historią ciśnienia, stopniowanych tulei impulsu i znaków custody, które mówią odbiorcy, jaki materiał przetrwał spalanie.
+
+Blue debt staje się cenny wcześniej, niż staje się bezpieczny. Próbka Xenon-Omega wyrosła pod ciśnieniem może opłacić rachunek carrier, zakotwiczyć ulepszenie, dowieść, co Deep Reach zostawiła w ruchu, albo pęknąć pod obciążeniem startu, jeśli jej historię traktowano jak luźny łup. Ładunek musi nieść energię i papiery jednocześnie: masę, stan ciśnienia, klasę skażenia i custody stamp.
+
+Dlatego zespół tworzy prawdziwą decyzję salvage. Rozbierz kołyskę dla wypłaty, a kapsuła traci certyfikowaną nośność. Załaduj surowy materiał, a profil impulsu staje się niestabilny. Zachowaj podpisany ładunek, a trasa wznoszenia robi się cięższa, biedniejsza i znacznie trudniejsza do zanegowania.
 
 ## Scanner
 
-Kołyska energii porysowana przez pressure pulse. Tani ładunek robi czystą trumnę.
+KOŁYSKA ENERGII // Rysy od impulsu ciśnienia, wypaczone kieszenie heat-cell, gniazdo custody stamp puste. Surowy blue debt może się palić; nie certyfikuje wznoszenia.
 
 ## Terminal
 
-ASCENT CHARGE: wymagane vent-forged heat cell, pressure-history insulator i custody stamp. Raw fuel odrzucony. Niecertyfikowany blue debt pęka pod launch impulse i unieważnia recovery claim.
+ASCENT CHARGE: załadować vent-forged heat cell, izolator z historią ciśnienia, stopniowaną tuleję impulsu i podpisany custody stamp. Odrzucić surowe paliwo, wyszczerbiony izolator i blue debt bez stempla.
 
 ## Audio
 
-Możesz sprzedać nośność albo na niej polecieć. Nie oba.
+Sprzedaj nośność, a kapsuła stanie się inwentarzem.
 
 ## Field Note
 
-Każdy gram w kołysce to ucieczka, dowód albo blue-debt payout. Kapsuła nie wybacza chciwości.
+Ładunek to część, którą każdy chce ukraść, bo to także część, która zabiera cię z dna.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/pl_PL. -->

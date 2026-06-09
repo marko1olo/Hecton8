@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Corporate Coordinate Capture Record"
+title: "Registro de captura corporativa de coordenadas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Corporate Coordinate Capture Record
+# Registro de captura corporativa de coordenadas
 
-ES LOC HOLD: Corporate Coordinate Capture Record is the clearest sellout route. The player may escape, but the disaster site returns to the institution that failed it.
+Este registro es la ruta de venta más clara. El jugador puede escapar, pero el sitio del desastre vuelve a la institución que lo falló y ahora posee un mapa mejor.
 
 ## Scanner
 
-ES LOC HOLD: Coordinate payload accepted. Deep Reach receiver priority confirmed.
+Carga de coordenadas aceptada. Prioridad de receptor Deep Reach restaurada; informe público sin cambios.
 
 ## Terminal
 
-ES LOC HOLD: COORDINATE CAPTURE: recovery granted after Atlas basin vector transfer. Public report remains unchanged. Deep Reach route authority restored for future operations.
+COORDINATE CAPTURE: vector de cuenca Atlas transferido al receptor Deep Reach. Recuperación concedida bajo nota de cooperación. Registro público del accidente sin cambios. Operaciones futuras recuperan autoridad corporativa de ruta.
 
 ## Audio
 
-ES LOC HOLD: You opened the door from the inside.
+Abriste la puerta desde dentro.
 
 ## Field Note
 
-ES LOC HOLD: Corporate partial ending record: coordinates buy recovery by reopening the crime scene to Deep Reach.
+Registro de final corporativo parcial: las coordenadas compran recuperación reabriendo la escena del crimen al control de Deep Reach.
 
 <!-- In-Game Wiki; generated from P339_CORPORATE_COORDINATE_CAPTURE_RECORD/es_ES. -->

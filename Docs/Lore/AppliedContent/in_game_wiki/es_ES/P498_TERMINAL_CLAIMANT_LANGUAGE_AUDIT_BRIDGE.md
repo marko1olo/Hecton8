@@ -9,43 +9,43 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Auditoria del lenguaje de reclamantes"
+title: "Auditoría del lenguaje de reclamación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Auditoria del lenguaje de reclamantes
+# Auditoría del lenguaje de reclamación
 
-El lenguaje de reclamantes es una de las armas mas silenciosas de la colonia. No necesita negar la sala de bombas, la puerta de triaje sellada o la masa obrera tras la rejilla de servicio. Solo necesita renombrarlas antes de que alguien con poder lea el archivo. Una cola pasa a ser variacion de salida. Una puerta cerrada pasa a compuerta de revision. Un cuerpo que no vuelve pasa a exposicion de pago. Un retorno dañado pasa a elegibilidad parcial.
+La papelería de Deep Reach puede enterrar un registro sin borrarlo. Conserva la sala, la etiqueta, la hora y el conteo de cuerpos, y luego cambia el sustantivo que va junto a ellos. En la caché espejo Tau, la Sala de Bombas B marcada como ocupada tras la hora de inundación 03:18 queda archivada como variación de ventana de liberación. La Puerta de Triaje 2 cerrada desde el lado de control queda archivada como revisión de cuarentena. La etiqueta de trabajador R-17 ausente mientras el aro del traje aparece en la masa de rescate queda archivada como exposición Keelmark. Una bandeja de retorno con cuatro ganchos de kit vacíos queda archivada como elegibilidad parcial de carga.
 
-La auditoria existe para leer el lenguaje de procedimiento como accion. Cada frase convertida debe rastrearse hasta una persona, una sala, una herramienta, un reloj de ruta o un evento de presion. Deep Reach puede conservar al testigo y aun enterrar el testimonio cambiando la etiqueta del estante. Si la categoria sobrevive y el cuerpo desaparece, la prueba ya fue lavada una vez.
+Lee el registro desde el suelo hacia arriba: sala, pestillo, etiqueta, reloj, conteo de objetos devueltos. El lenguaje de procedimiento de reclamación solo se vuelve prueba cuando puede fijarse a un rastro físico. Si un archivo conserva la categoría y pierde al trabajador, la oficina ya limpió la ruta una vez.
 
 ## Scanner
 
-AUDITORIA DE LENGUAJE // Testimonio obrero y salas dañadas pueden convertirse en categorias: variacion de tiempo de salida, compuerta de revision de cuarentena, exposicion de pago, elegibilidad de retorno parcial.
+AUDITORÍA DE LENGUAJE DE RECLAMACIÓN // Categoría de procedimiento encontrada junto a una prueba física. Verifica sala, pestillo, etiqueta de trabajador, reloj de ruta y conteo de kits devueltos antes de aceptar la categoría.
 
 ## Terminal
 
-INTERFAZ NOTARIAL: AUDITORIA DE LENGUAJE
-Linea original: cola de sala de bombas aun ocupada.
-Conversion: variacion de tiempo de salida.
-Linea original: puerta de triaje mantenida cerrada.
-Conversion: compuerta de revision de cuarentena.
-Linea original: masa obrera no recuperada.
-Conversion: exposicion de pago Keelmark.
-Linea original: retorno sin carga completa.
-Conversion: elegibilidad de retorno parcial.
-Una categoria no es neutral si sustituye a una persona.
+AUDITORÍA DE LENGUAJE DE RECLAMACIÓN / INGESTA DEL ESPEJO TAU
+Rastro bruto: cola de la Sala de Bombas B ocupada tras la marca de inundación 03:18.
+Archivado como: variación de ventana de liberación.
+Rastro bruto: Puerta de Triaje 2 cerrada desde el lado de control.
+Archivado como: revisión de cuarentena.
+Rastro bruto: etiqueta de trabajador R-17 ausente; aro del traje registrado en masa de rescate.
+Archivado como: exposición Keelmark.
+Rastro bruto: bandeja de retorno sin cuatro kits personales.
+Archivado como: elegibilidad parcial de carga.
+Rechaza cualquier categoría que no pueda señalar una sala, etiqueta, pestillo o reloj.
 
 ## Audio
 
-Deep Reach no siempre borra al testigo. A veces conserva al testigo y cambia el estante donde lo guarda.
+No borraron la línea. Cambiaron el sustantivo de archivo. Empieza por la sala, no por el formulario.
 
 ## Field Note
 
-Las categorias hacen callar a un obrero muerto sin perder la factura. Lea la etiqueta y busque que hubo que cortar para que encajara.
+Si un archivo suena demasiado limpio, cuenta ganchos, etiquetas, pestillos y relojes. El sustantivo que falta suele ser el trabajador.
 
 <!-- In-Game Wiki; generated from P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE/es_ES. -->

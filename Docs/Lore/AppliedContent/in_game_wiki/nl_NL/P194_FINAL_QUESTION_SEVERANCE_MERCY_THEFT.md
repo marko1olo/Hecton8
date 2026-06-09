@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Laatste vraag: scheiding, genade, diefstal"
+title: "Laatste vraag: severance, genade, diefstal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Laatste vraag: scheiding, genade, diefstal
+# Laatste vraag: severance, genade, diefstal
 
-Scheiding dwingt de speler te beslissen wat Atlas-oceaan-continuïteit is geworden. Is het alleen een kapot gereedschap, dan is snijden reparatie. Is het een levenssysteem, dan is snijden doden. Is het getuigenis, dan kan snijden bewijs vernietigen.
+Severance snijdt door de Atlas-oceaan-reparatielaag, niet door één schakelaar. Het kan beschadigde categorielogica stoppen en Deep Reach een levende herstelroute ontzeggen. Het kan ook vent micronodes laten zwijgen, shell-sealantpulsen breken, gemerkte faunaroutes stranden, arbeidersrecordbuffers beschadigen en drukruimtes achterlaten zonder het systeem dat ze verzegeld hield. Een severance-payload moet de proof-hash bewaren, omdat de handeling wordt betwist nadat de kamer donker wordt.
 
 ## Scanner
 
-Atlas doorsnijden is geen shutdownknop. Het is chirurgie zonder schone anatomie.
+SEVERANCE-AS // De continuïteitsknip loopt door Atlas' reparatielaag: drukdeuren, geleiderfilm, arbeidersrecordbuffers, gemerkte faunaroutes, vent micronodes, payloadpaden. Bewijsstatus verandert het bewaaretiket.
 
 ## Terminal
 
-SCHEIDINGSAS: snij Atlas-continuïteit, isoleer drukecologie, weiger Deep Reach-payloadrouting, riskeer bekkeninstorting of bewaar alleen gedeeltelijk reparatiegeheugen. Betekenis hangt af van bewijs in de laatste kamer.
+EINDAS / ATLAS-SEVERANCE
+Actie: continuïteitsknip door Atlas-oceaan-reparatielaag.
+Getroffen: drukdeuren, levende geleiderfilm, vent micronodes, shell-sealantpulsen, gemerkte faunaroutes, arbeidersrecordbuffers, payloadpaden.
+Receiver-effect: Deep Reach-route ontzegd tenzij een apart payloadpad overleeft.
+Risico: bekkeninstabiliteit, verlies van reparatieroutes, ecologische schade, betwiste bewaarneming.
+Bekend verlies: dezelfde knip kan redding, schade, sabotage of diefstal zijn afhankelijk van bewijsstatus.
 
 ## Audio
 
-Een schone schakelaar zou genadig zijn. Die krijg je niet.
+De knip is echt. Het etiket komt later.
 
 ## Field Note
 
-Dezelfde daad kan gevangen arbeiders bevrijden, oceaan-machineleven doden, Deep Reach weigeren en een levende infrastructuur van zichzelf stelen.
+Een knip kan een opgesloten record vrijmaken, een schadelijke lus stoppen, levende reparatie breken of Deep Reach een terugweg ontzeggen. De console toont alleen welke links donker worden.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/nl_NL. -->

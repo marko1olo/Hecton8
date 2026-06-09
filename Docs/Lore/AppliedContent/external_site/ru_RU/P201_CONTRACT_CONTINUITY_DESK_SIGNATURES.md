@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Contract Continuity Desk Signatures"
+title: "Подписи стола контрактной непрерывности"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Contract Continuity Desk Signatures
+# Подписи стола контрактной непрерывности
 
-RU LOC HOLD: Contract Continuity Desk signatures expose the lower Deep Reach paperwork behind the opening contract.
+Подписи стола контрактной непрерывности вскрывают бумажный слой под стартовым контрактом HECTON-8. Статья дает контрактной системе имена, штампы и функции, чтобы игрок видел, как рейс по спасенному имуществу становится торгом за хранение. Столу Эдды Малк не нужно знать все преступление колонии, чтобы сделать настоящее опасным. Ему достаточно соединить залоги, кислородный долг и пункты восстановления в правильном порядке. К моменту подписи оператора не только океан давит снаружи корпуса; контракт уже сжимает.
 
 ## Scanner
 
-RU LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+Стартовая контрактная ловушка собрана из нижних подписей: слияние залога, кислородное приложение, риск черного списка и удержание груза.
 
 ## Terminal
 
-RU LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Эдда Малк, Contract Continuity Desk. Объединить условия залога Aegir Reclamation Pool с пунктами восстановления Black Keel. Приложить кислородный кредит, уведомление о риске черного списка и удержание груза. Эскалация не требуется, если оператор принимает.
 
 ## Audio
 
-RU LOC HOLD: Nobody says trap. They say continuity.
+Подпись может стать гермодверью, если после нее запирается каждый пункт.
 
 ## Field Note
 
-RU LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Никто не ставит штамп «ловушка». Ставят штамп «непрерывность».
 
 <!-- External Site; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ru_RU. -->

@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: fr_FR
 surface: external_site
@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Usine du fond
 
-L'Usine du fond doit donner l'impression que tous les indices précédents se joignent physiquement. La blue debt n'est plus seulement un échantillon. Les cicatrices de réparation ne sont plus des patchs isolés. Les escaliers de saumure ne sont plus seulement des routes. Les dossiers d'évacuation ne sont plus de la paperasse. Au fond, tous ces systèmes nourrissent un corps qui travaille encore. C'est une usine parce qu'il traite la matière. C'est un vaisseau parce que routes et peaux de pression déplacent encore des charges. C'est un temple parce que les anciennes catégories de la colonie ont été remplacées par des rituels de maintenance qu'aucun humain ne peut interpréter sans risque. La clé est que le lieu n'est pas mort. Il est occupé. Il garde les portes scellées, fait pousser des membranes, recycle les épaves, préserve la continuité et utilise tout ce que l'océan a livré. Pour le joueur, la descente finale consiste moins à trouver la dernière salle qu'à entrer dans une machine qui a déjà décidé que la différence entre personne, outil, route et matière brute est optionnelle.
+L'Usine du fond n'est pas une dernière salle du trône. C'est l'installation de retour inférieure où les preuves précédentes deviennent du matériel : résidus de blue debt dans les joints muraux, routes de saumure sous les plaques de pont, soudures de réparation sous du carbonate neuf et étiquettes d'évacuation encore coincées près de portes scellées.
+
+Deep Reach a construit le nœud inférieur pour maintenir la continuité de réclamation et de service pendant un long délai. Atlas-6 a continué de router autour des catégories défaillantes parce que les pompes, les câbles et les plateaux d'échantillons répondaient encore. Le résultat est une usine en marche. La saumure circule. La chaleur revient. Le signal traverse des gaines de câble rapiécées. Des organismes filtrants s'accumulent dans des logements qui étaient autrefois des boîtes de service propres. Les scellements poussés sous pression maintiennent les plaques fermées après la défaillance des joints d'origine.
+
+C'est ce qui rend le site dangereux de façon pratique. Il répare autour de ce qui reste dans le passage. Il peut préserver une route tout en enterrant l'étiquette qui explique qui s'y trouvait. Lis le tiroir d'étiquettes avant de couper un joint clair ; l'usine peut refermer la fuite plus vite que tu ne récupères le nom.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/fr_FR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Conflit entre signature et témoin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Conflit entre signature et témoin
 
-FR LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+Le conflit entre signature et témoin est le moment où l'histoire officielle de Deep Reach cesse d'être seulement incomplète et commence à devenir fausse. La signature publique présente HECTON-8 comme un désastre de marée sans contradiction exploitable avant le retard d'évacuation. Les hashes témoins locaux disent autre chose : conseil d'évacuation, Atlas Safety et opérations de route étaient dans la même salle d'examen alors que perte de marge, détresse des travailleurs et timing de route étaient déjà visibles. Le conflit donne au joueur une forme forte de preuve. Trouver une mauvaise signature ne suffit pas ; il faut placer la signature à côté des journaux de porte, des horloges endommagées et des tampons de nom jusqu'à ce que l'alibi casse.
 
 ## Scanner
 
-FR LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+La signature affirme que l'examen d'évacuation n'avait aucune contradiction vivante. Les hashes témoins disent que la contradiction était dans la pièce.
 
 ## Terminal
 
-FR LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT : signature publique marque l'échec de marée comme cause unique. Hash témoin local place conseil évacuation, Atlas Safety et opérations de route dans la salle d'examen avant la retenue de libération. Comparer journal de porte, tampon de nom et horloge de route brisée.
 
 ## Audio
 
-FR LOC HOLD: The signatures line up. The bodies do not.
+Le rapport dit que personne ne pouvait savoir. Le journal de porte n'est pas d'accord.
 
 ## Field Note
 
-FR LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Une signature n'est propre que jusqu'au moment où la pièce se souvient de qui se tenait à côté.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/fr_FR. -->

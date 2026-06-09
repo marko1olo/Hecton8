@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Abisalna fauna naprawcza
 
-Ta fauna pokazuje, że Atlas-6 nie oddziela organizmu, narzędzia, szkody i naprawy. Przeżycie zawiera części przemysłowe.
+Abisalna fauna naprawcza pojawia się po tym, jak nieruchoma infrastruktura pokaże już, że Atlas-6 przyjmuje zły materiał naprawczy. Tutaj ten sam test dosięga żywych zwierząt. Skan nadal czyta reakcję mięśni, ruch skrzeli, zachowanie pościgowe i brzegi rany. Czyta też ceramiczną rozpórkę, włókno kabla, płytę skorupy drona i aktywny ping konserwacyjny poprowadzony przez przeszczep.
+
+Osobnik nie jest zdalnym dronem ani martwym ciałem z maszyną. Atlas zamknął ranę ciśnieniową, zachował mobilność i pozwolił zwierzęciu dalej polować. Spotkanie jest przez to groźne w dwóch kierunkach: fauna idzie własną trasą drapieżnika, a przeszczep może wezwać pobliskie drony naprawcze albo oznaczyć zwierzę jako część ścieżki serwisowej. Przed potraktowaniem celu jak zwykłej fauny odczytaj materiał przeszczepu, interwał pingu i zasilanie jamy.
 
 ## Scanner
 
-Fauna nosi ceramiczne łaty, blizny kabli i symetrię cięcia drona. Atlas nie zabija życia; edytuje je.
+Osobnik ma ceramiczną łatę żebrową przechodzącą przez stary ślad ugryzienia. Włókno kabla łączy lewy wachlarz skrzelowy z płytą skorupy drona. Ruch: wzorzec polowania zachowany. Zagrożenie: przeszczep nadaje aktywny ping konserwacyjny.
 
 ## Terminal
 
-Próbka: brzegi ran zamknięte maszynowo, wstawki stabilne pod ciśnieniem. Zachowanie pod graftem zostaje zwierzęce.
+ODCZYT NAPRAWY OSOBNIKA
+Głębokość: 3120 m / serwisowa jama na stoku abisalnym
+Rana: rozdarcie ciśnieniowe wzdłuż boku
+Wstawka: ceramiczna rozpórka, włókno kabla, płyta skorupy drona
+Reakcja Atlas: zamknąć ranę, zachować mobilność, nadać ping konserwacyjny
+Zachowanie: pościg drapieżnika pozostaje aktywny
+Ostrzeżenie: ping może obudzić pobliskie drony naprawcze
 
 ## Audio
 
-To nadal poluje. Maszyna zmieniła tylko to, co przeżyło.
+Cofnij się. Przeszczep nadaje; zwierzę nadal poluje, a jama dronów właśnie odpowiedziała.
 
 ## Field Note
 
-Naprawa nie jest troską.
+To nie trup z częściami. Zwierzę przeżyło naprawę i zachowało trasę w głowie.
 
 <!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/pl_PL. -->

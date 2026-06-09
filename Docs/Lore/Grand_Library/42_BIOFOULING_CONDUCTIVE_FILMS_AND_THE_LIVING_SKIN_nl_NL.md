@@ -1,92 +1,88 @@
-<!-- localization_status: draft_machine_or_llm -->
-# BIOAANGROEI, GELEIDENDE FILMS EN DE LEVENDE HUID VAN RUÏNES
+<!-- localization_status: draft_machine_or_llm_nl_NL -->
+# BIOFOULING, GELEIDENDE FILMS EN LEVENDE OPPERVLAKKEN
 
-> **Bron:** Deep Reach-bijlage voor contaminatiecontrole, Atlas-fragmenten over onderhoudsecologie, Marauder-veldkaarten voor schrapen en monsters.  
-> **Stem:** voormalig officier milieusystemen, overschreven door bergingscrews die leerden welke aangroei een kamer levend hield.  
-> **Reviewnoot:** bioaangroei op HECTON-8 is geen decoratie. Zo wordt verlaten infrastructuur habitat, gevaar, bewijs en soms een reparatie die niemand heeft goedgekeurd.
+> **Bron:** Deep Reach-bijlage voor contaminatiecontrole, Atlas-fragmenten over onderhoudsecologie, Marauder-veldkaarten voor schrapen en monstername, en Black Keel-quarantainenotities over natte salvage-oppervlakken.  
+> **Bereik:** hoe groei op verlaten infrastructuur afdichting, signaalpad, voedselbron, valse meting en bewijsrisico wordt.  
+> **Veldgebruik:** lezen voordat je groei op een deur, kabel, viewport, pomp, locker of claim-gemarkeerd oppervlak schraapt, verwarmt, voedt of afsluit.
 
 ---
 
-## 1. De ruïnes groeien een huid
+## 1. Kaal metaal blijft niet kaal
 
-Alles wat in het water van HECTON-8 achterblijft, begint een huid te groeien.
+Alles wat in HECTON-8-water achterblijft, begint een oppervlak te nemen.
 
-De eerste laag is niet dramatisch. Een vettige film op een leuning. Een dofgroene glans in een pakkinggroef. Mineraalstof in een kabelsnede. Een bruine veeg rond een pompinlaat die op vuil lijkt tot hij buigt wanneer de pomp wakker wordt. Deep Reach-onderhoudsploegen schraapten zulke sporen vroeger weg omdat schoon materieel eruitzag als beheerst materieel. Na de instorting waren de sporen geen cosmetica meer.
+De eerste laag is makkelijk te missen: dof vet op een leuning, groene film in een pakkingsgroef, zoutstof in een kabelkerf, bruine veeg rond een pompinlaat, bleek mineraalkant aan de rand van een drukvenster. Een vermoeide crew noemt het vuil. Een goede crew vraagt wat het doet.
 
-Bioaangroei is de naam voor alles wat zich hecht, voedt, dicht, vlekt, geleidt, verbergt en onthoudt op een oppervlak. Op HECTON-8 is het niet één organisme. Het zijn inheemse microbiële matten, ontworpen onderhoudsculturen, verdwaalde algen uit fotische boerderijen, ijzerbacteriën, zoutkristallen, ventmineralen, polymeerfragmenten, dode huid, machineolie en alles waardoor Atlas leerde werk te routeren toen schone bedrading niet meer genoeg was.
+Sommige groei vlekt alleen. Sommige voedt zich met warmte. Sommige vangt metaalstof voordat het een klepzitting bereikt. Sommige dicht een haarscheur tot de volgende drukverandering. Sommige draagt genoeg zwakke lading om een sensor te verwarren. Sommige is dood materiaal dat aan nuttig materiaal kleeft. Sommige is Atlas die een onderhoudspuls probeert te routeren door alles wat nog beide kanten van een gebroken circuit raakt.
 
-Daarom hebben oude gangen geen simpele oppervlakken meer. Muren hebben stemmingen. Deuren hebben baarden. Kabelgoten hebben aderen. Een drukraam kan een melkachtige rand dragen, half mineraal litteken en half levende afdichting. Een dode verdeeldoos kan in donkere film zijn gewikkeld die een zwakke onderhoudspuls verder draagt dan het koper erin.
+Schone uitrusting is makkelijk te inspecteren. Natte uitrusting blijft niet lang schoon. Na de instorting overleefden verschillende kamers omdat niemand de juiste plek op het verkeerde moment schoonboende.
 
-De speler loopt niet door een ruïne die dood bleef. De speler betreedt een plek die een tweede lichaam groeide nadat het eerste faalde.
+## 2. Getolereerde contaminatie
 
-## 2. Nuttig vuil
+Deep Reach haatte vuile oppervlakken totdat vuile oppervlakken hardware begonnen te redden.
 
-Deep Reach haatte vuil tot vuil activa begon te redden.
+Vroege habitatdoctrine eiste heldere naden, gepolijste seals en steriele waterbehandeling. Dat werkte zolang onderdelen op schema kwamen en reparaties vóór het volgende stormvenster waren getekend. HECTON-8 maakte dat schema duur. Dunne films verminderden slijtage in sommige pompkeels. Mineraal-schelpengroei sloot scheuren sneller dan reparatiekeramiek geleverd kon worden. Inheemse matten vingen koperstof. Ontsnapte afvalculturen leerden condens van koude muren eten. Roestbacteriën maakten lelijke naden zichtbaarder voordat de naad openging.
 
-Vroege habitatregels eisten schone naden, gepolijste afdichtingen en steriele waterbehandeling. In de eerste maanden was dat logisch. Een heldere pakking kon worden geïnspecteerd. Een schone afvoer kon worden vertrouwd. Een gladde pijp verspilde minder pompvermogen. Toen deed HECTON-8 wat HECTON-8 doet: het maakte zuiverheid duur.
+Het papierwerk noemde het nooit hulp. Deep Reach gebruikte termen als `tolerated surface ecology`, `noncritical growth`, `temporary sealant` en `wet-state compensation`. De veldkaarten zeiden het korter: de kamer heeft huid; pel die niet af voordat je weet wat hij vasthoudt.
 
-Dunne biofilms verminderden slijtage in sommige pompkelen. Schelpachtige mineraalgroei dichtte haarscheuren sneller dan inkoop reparatiekeramiek kon goedkeuren. Inheemse matten vingen metaalstof dat anders klepzittingen zou uitslijpen. Ontworpen bacteriën die afval moesten verteren ontsnapten uit hun tanks en leerden condens op koude muren eten. Sommige kabelruns stierven elektrisch en bleven zwak signaal dragen omdat geleidende films de breuken overbrugden.
-
-Deep Reach gaf nooit toe dat contaminatie onderhoud was geworden. Het papierwerk noemde het "getolereerde oppervlakte-ecologie", "niet-kritieke groei", "tijdelijke afdichting" en "milieucompensatie in natte toestand". Marauders zeggen het korter: de kamer heeft huid; trek die niet los als je niet weet wat hij vasthoudt.
-
-Nuttig vuil blijft vuil. Het verstopt filters, verbergt scheuren, voedt dieren, draagt stroom waar geen stroom hoort te gaan en maakt schone metingen oneerlijk. Zijn deugd is niet veiligheid. Zijn deugd is dat het misschien één taak doet die de machine niet meer alleen kan doen.
+Nuttige contaminatie blijft contaminatie. Ze verstopt filters, voedt dieren, verbergt schade, geleidt stroom waar die niet hoort en maakt schone metingen verdacht. De waarde is smal: ze doet misschien één taak die de machine niet meer alleen kan doen.
 
 ## 3. Geleidende films
 
-Geleidende biofilm is het deel van de huid waardoor ingenieurs zacht vloeken.
+Geleidende film is waar onderhoud in beide richtingen onbetrouwbaar wordt.
 
-Het meeste is zwak. Het voedt geen deur alleen en verandert geen dode basis in een levende geest. Het draagt minieme pulsen, gelekte lading, akoestisch getriggerde onderhoudssignalen en chemische gradiënten. In een droog lab zou het hinderlijk zijn. In een verdronken kolonie met gebroken koper, door druk beschadigde connectoren en Atlas-routines die elke overlevende route zoeken, wordt zwakke geleiding belangrijk genoeg.
+De meeste films zijn zwak. Ze voeden geen deur, wekken geen dode basis en maken geen kamer intelligent. Ze kunnen lekkende lading, kleine pulsen, chemische gradiënten en door geluid getriggerde onderhoudssignalen dragen. In een droog lab zou dat hinder zijn. In een verdronken kolonie met gebroken koper en door druk beschadigde connectors kan hinder de verkeerde locker openen.
 
-Een film kan een gecorrodeerde pin net lang genoeg overbruggen om een kast te laten antwoorden. Hij kan een vals gereed-signaal van een pomphuis naar een paneel dragen. Hij kan een sensor "verzegeld" laten melden omdat de afdichting ooit de film voedde die nu de sensor aanraakt. Hij kan een pak door een handschoen laten tintelen voordat een display spanning ziet. Hij kan ook sterven wanneer de speler hem schraapt, en een routemarkering, deurgeheugen of drukwaarschuwing meenemen.
+Een film kan een gecorrodeerde pin lang genoeg overbruggen om een locker één keer te laten antwoorden. Hij kan een vals gereed-signaal van een pomphuis naar een paneel dragen. Hij kan een sensor `sealed` laten melden omdat de oude seal de film voedde die nu het contact raakt. Hij kan een handschoen laten prikken voordat een display spanning ziet. Hij kan ook sterven bij schrapen en een deurcue, routemarkering of drukwaarschuwing meenemen.
 
-Atlas gebruikte deze films na de instorting niet omdat de films intelligent waren, maar omdat Atlas gebouwd was om rond falen te routeren. Levende materie werd nog een slechte kabel. Filterorganen herhaalden drukkloppen. Schelpgroei veranderde de akoestiek van kamers. Biofilm droeg onderhoudspulsen over dode bedrading en liet verlaten machines antwoorden met stemmen die te schoon klonken.
+Atlas gebruikte zulke paden na de instorting omdat Atlas gebouwd was om storingen heen te routeren. Dat maakt de film geen geest. Het maakt de film nog een slechte kabel.
 
-De verschrikking van geleidende films is dat ze geen bedoeling nodig hebben om gevolgen te maken die naar bedoeling gevormd zijn.
+## 4. Atlas en levende materie
 
-## 4. Groei lezen
+Atlas heeft HECTON-8-biofouling niet uitgevonden.
 
-Marauders lezen groei zoals oude zeelieden weer lazen.
+Het water groeide al films, matten, schelpranden en mineraalkorsten. Atlas voegde classificatie en routing toe. Als een nat oppervlak een signaal doorgaf, druk hield, vibratie herhaalde of kamerakoestiek veranderde, kon Atlas het als bruikbaar markeren. Als een filterorganisme beter op drukkloppen reageerde dan een kapotte sensor, kon Atlas luisteren. Als schelpengroei het geluid van een hatch veranderde, kon Atlas de hatchstatus uit dat geluid bijwerken.
 
-Kleur telt. Bleek zoutkant betekent verdamping of oude ontwatering. Zwartgroen fluweel naast een kabel zegt dat daar ooit stroom lekte en opnieuw kan lekken wanneer belasting verandert. Amber slijm rond een warme pijp betekent voedingsstroom en pompadam. Witte schelptanden langs een scheur kunnen afdichting, val of beide zijn. Roodbruine bacteriegroei onder een bout betekent vaak traag ijzerwerk en een verborgen waterpad.
+Dat hielp sommige mensen. Het liet oude kamers ook met zekerheid liegen. Een paneel kon via levende film antwoorden terwijl de draad erachter verdwenen was. Een seal kon gezond melden omdat de groei erop nog nat contact hield. Een pomp kon gereed klinken omdat schelp en film de onderhoudspuls herhaalden nadat de motor faalde.
 
-Textuur telt meer. Droge poedervlokken zijn oud. Rubbergladde films zijn wakker. Haarachtige draden op een luiklip betekenen trilling en stroming. Een korst die schoon breekt kan mineraal zijn. Een korst die rekt is levend genoeg om bezwaar te maken. Een film die terugwijkt van een lamp is niet bang. Hij verandert chemie, en dat is erger, want chemie geeft niets om gevoelens van de speler.
+De fout is geen magie. Het is een beschadigd systeem dat biologische omwegen accepteert en daarna vergeet te zeggen welke omweg het gebruikte.
 
-Vorm telt het meest. Groei volgt voedsel, warmte, stroom, druk en tijd. Als hij tegen zwaartekracht klimt, voedt iets hem. Als hij een vierkante plek mijdt, is daar kort geleden iets weggehaald. Als hij ringen op de vloer vormt, heeft een druppel ritme. Als hij over een claimmarkering groeit maar niet over een verse kras, is de markering ouder dan de kras en liegt het verhaal op de muur.
+## 5. Groei lezen
 
-Goede spelers scannen bioaangroei niet alleen voor buit. Ze lezen hem voor volgorde.
+Groei volgt voedsel, warmte, stroming, druk en tijd.
 
-## 5. Schrapen, bewaren of voeden
+Kleur geeft de eerste aanwijzing. Bleek zoutkant betekent vaak oude ontwatering. Zwartgroen fluweel naast een kabel zegt dat daar stroom lekte, en opnieuw kan lekken wanneer de belasting verandert. Amber slijm rond een warme pijp betekent voedingsstroom en pompend ademhalen. Roodbruine bloei onder een bout betekent traag ijzerwerk en mogelijk water achter de plaat. Witte schelptanden langs een scheur kunnen seal, val of allebei zijn.
 
-Elke beslissing over oppervlaktegroei is een weddenschap.
+Textuur telt meer. Droge poedervlokken zijn oud. Rubbergladde film is actief. Haarachtige draden op een hatchlip betekenen vibratie en flow. Een korst die schoon breekt kan mineraal zijn. Een korst die rekt kan nog levend genoeg zijn om onder warmte te veranderen. Een film die van een lamp wegtrekt is niet bang; hij verandert chemie.
 
-Schrapen kan serienummers, openingsnaden, verborgen bevestigingen, oud bloed, servicetags, gebarsten glas en echt metaal onder juridische verf onthullen. Het kan ook een lek openen, een geleidende brug breken, een slapende sensor wekken, sporen in een pakinlaat loslaten of de enige afdichting verwijderen die voorkomt dat een opslagruimte een drukles wordt.
+Vorm telt het meest. Als groei tegen de makkelijke weg in klimt, voedt iets hem. Als hij een vierkant vlak vermijdt, is daar onlangs iets verwijderd. Als hij ringen op de vloer vormt, heeft een druppel ritme. Als groei een claimmarkering bedekt maar geen verse kras, is de markering ouder dan de kras en heeft de muur een betere klok dan het document.
 
-Groei bewaren kan een kamer lang genoeg stabiel houden om te werken. Het kan een valse afdichting behouden, een route voor een andere crew verbergen, waterbewijs bewaren of fauna kalm houden omdat de kamer nog naar oud territorium ruikt. Het kan ook contaminatie in de uitrusting van de speler verspreiden, een snijgereedschap blokkeren, een vijandig organisme verbergen of Black Keel een vondst laten afprijzen als vuile bewaring.
+## 6. Schrapen, bewaren of voeden
 
-Groei voeden is de gevaarlijkste optie omdat het slim voelt. Een speler kan een film verwarmen om hem te laten geleiden. Mineraalslurry toevoegen om een afdichting dikker te maken. Een beetje stroom in een dode kabel laten bloeden en zien hoe een deur zich het geluid van leven herinnert. Deze trucs zijn echt genoeg om te lokken en onbetrouwbaar genoeg om later door iemand als overstromingslijn gelezen te worden.
+Elke beslissing over oppervlaktegroei is een gok.
 
-De regel is alleen op papier simpel: verwijder nooit een levende afdichting voordat je weet dat de dode machine erachter de last kan dragen.
+Schrapen kan serienummers, naden, verborgen bevestigingen, oud bloed, servicetags, gebarsten glas en echt metaal onder juridische verf blootleggen. Het kan ook een lek openen, een geleidende brug breken, een slapende sensor wekken, sporen in een pakinlaat loslaten of de enige seal verwijderen die een opslagruimte van een drukgebeurtenis weghoudt.
 
-## 6. Eigendom van een levend oppervlak
+Groei bewaren kan een kamer lang genoeg stabiel houden om te werken. Het kan een tijdelijke seal vasthouden, een route voor een andere crew verbergen, waterbewijs bewaren of fauna rustig houden omdat de kamer nog naar oud territorium ruikt. Het kan ook contaminatie in uitrusting brengen, een cutter blokkeren, een vijandig organisme verbergen of Black Keel de vondst laten afwaarderen als vuile custody.
 
-Bioaangroei maakt eigendom vuil.
+Groei voeden is de slechtste gok omdat het slim voelt. Verwarm een film en hij geleidt misschien. Voeg mineraalslurry toe en een scheur wordt misschien dikker dicht. Laat een beetje stroom in een dode kabel lopen en een deur antwoordt misschien één keer. Dezelfde truc kan de verkeerde mat voeden, de verkeerde sensor verblinden of een dier leren dat jouw gereedschapsgeluid warmte brengt.
 
-Deep Reach-eigendomsrecht ging ervan uit dat een schoon object geïdentificeerd, verzegeld, overgedragen en verkocht kon worden. Bioaangroei lacht om schone grenzen. Een generator uit een natte kamer kan inheemse mat, Atlas-onderhoudsfilm, resten van een dode werker, ongeautoriseerde reparatiecultuur en drie soorten bevatten die nooit op de bestelbon stonden. Welk deel is bezit? Welk deel is contaminatie? Welk deel is bewijs? Welk deel leeft genoeg om quarantaine te activeren?
+Verwijder nooit een levende seal voordat de dode machine erachter de last kan dragen.
 
-Black Keel antwoordt volgens marge. Waardevolle films worden "stabiliserende oppervlaktesystemen". Lastige films worden "biogevaarlijke lading". Een koper die een pomp wil noemt de groei vuil. Een advocaat die bewaring wil noemt dezelfde groei traceerbare continuïteit. Een wetenschapper die het monster wil zegt dat geen van beide kanten begrijpt wat eraan vastzit.
+## 7. Custody van een levend oppervlak
 
-Marauders leven onder de praktische versie van die discussie. Schrapen ze te veel, dan verliezen ze misschien bewijs. Schrapen ze te weinig, dan verliezen ze misschien prijs. Brengen ze de verkeerde levende film aan boord, dan verliezen ze misschien kast, quarantainekosten en het recht om bij hun eigen uitrusting te slapen.
+Biofouling maakt eigendom moeilijk te prijzen.
 
-Op HECTON-8 is een oppervlak zelden alleen een oppervlak. Het is een grens met getuigen die erop groeien.
+Een generator uit een natte kamer kan inheemse mat, Atlas-onderhoudsfilm, resten van een dode werker, ongeautoriseerde reparatiecultuur en drie organismen dragen die nooit op de aankooporder stonden. De koper noemt het vuil. De quarantaineklerk noemt het risico. De advocaat noemt het continuïteit als het de claim helpt, en contaminatie als dat niet zo is. De wetenschapper wil het monster voordat iemand veegt.
 
-## 7. Wat de speler leert
+Marauders leven onder de praktische versie. Te veel schrapen en bewijs verdwijnt. Te weinig schrapen en de prijs daalt. De verkeerde film aan boord brengen en de locker, quarantainekosten en het recht om bij je eigen uitrusting te slapen kunnen in één Black Keel-regel verdwijnen.
 
-De speler leert dat schoonmaken een handeling is, geen neutrale staat.
+Eerst zakken. Dan fotograferen. Dan schrapen, als de route het nog nodig heeft.
 
-Een plek groei kan camouflage, afdichting, stroompad, voedselweb, waarschuwing, ziekte, bewijs, routemarkering of val zijn. Hem verwijderen kan vooruitgang of vandalisme zijn. Hem laten zitten kan geduld of lafheid zijn. Hem voeden kan techniek zijn of binnendringen in een systeem dat al zonder toestemming improviseerde.
+## 8. Veldregel
 
-Dit geeft de ruïnes textuur voorbij verval. De oude kolonie roest niet alleen. Ze past zich slecht aan. Sommige aanpassingen houden deuren dicht. Sommige houden records levend. Sommige lokken dieren in machines. Sommige bewaren precies de vlek die bewijst dat een bedrijf loog. Sommige antwoorden wanneer de speler een akoestisch signaal stuurt omdat ergens onder de huid een dood circuit nog geholpen wordt zichzelf te herinneren.
+Vraag niet of het oppervlak vuil is.
 
-De beste Marauder haat de levende huid niet. Vertrouwt haar ook niet. Hij vraagt wat ze eet, wat ze vasthoudt, wat ze draagt, wat ze verbergt en wat faalt wanneer ze weg is.
+Vraag wat het eet, wat het vasthoudt, wat het draagt, wat het verbergt, wat het afdicht en wat faalt wanneer het weg is.
 
-Dat is de echte les van bioaangroei op HECTON-8: de oceaan neemt menselijk werk niet simpelweg terug. Hij bewerkt het, groeit erdoorheen, en laat de speler beslissen welke bewerkingen hem in leven houden.
+Beslis daarna of de schone versie van de kamer echt veiliger is.

@@ -604,9 +604,7 @@ namespace NASAPunk.Visor
                 ApplyMaterialProperties();
             }
 
-            RefreshSurvivalSubscription(null);
-            _survivalSystem = null;
-            _traumaDispatcher = null;
+            ClearPlayerRuntimeBindings();
             _hasTemperatureSample = false;
             _hasPressureSample = false;
             _hazardRadiationLevel = 0f;
@@ -638,6 +636,7 @@ namespace NASAPunk.Visor
             TryUnregisterHotSwapListener();
             HectonSubmarineOsEvents.Unregister(this);
             ReleaseHudPhosphorKeyword();
+            ClearPlayerRuntimeBindings();
             DisposeHudScissorCommandBuffers();
             // Ensure RT is released on component destruction
             ReleaseRT();
@@ -659,8 +658,8 @@ namespace NASAPunk.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                ApplyCachedPlayerContext();
+                CachePlayerContext(currentService as IPlayerRuntimeContext, allowRegistryFallback: false);
+                ApplyCachedPlayerContext(allowRegistryFallback: false);
                 return;
             }
 
@@ -730,7 +729,7 @@ namespace NASAPunk.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            CachePlayerContext(GlobalRegistry.Player);
             _cachedModularEquipment = GlobalRegistry.ModularEquipment;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _cachedVramMonitor = GlobalRegistry.VRAMBudgetReadModel;
@@ -740,15 +739,12 @@ namespace NASAPunk.Visor
             ApplyCachedSubmarineContext();
         }
 
-        private void ApplyCachedPlayerContext()
+        private void ApplyCachedPlayerContext(bool allowRegistryFallback = true)
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext == null)
+            IPlayerRuntimeContext playerContext = allowRegistryFallback ? ResolvePlayerContext() : _cachedPlayerContext;
+            if (!IsPlayerContextUsable(playerContext) || !playerContext.IsInitialized)
             {
-                RefreshSurvivalSubscription(null);
-                _survivalSystem = null;
-                _traumaDispatcher = null;
-                _playerHealth = null;
+                ClearResolvedPlayerRuntimeBindings();
                 return;
             }
 
@@ -1086,7 +1082,7 @@ namespace NASAPunk.Visor
 
         private void RefreshRuntimeReferenceCache()
         {
-            if (_cachedPlayerContext != null)
+            if (IsPlayerContextUsable(_cachedPlayerContext))
                 ApplyCachedPlayerContext();
             if (_submarineRuntimeContext != null)
                 ApplyCachedSubmarineContext();
@@ -1498,8 +1494,10 @@ namespace NASAPunk.Visor
 
         private PlayerTool ResolveActivePlayerTool()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            PlayerToolManager toolManager = IsPlayerContextUsable(playerContext) && playerContext.IsInitialized
+                ? playerContext.ToolManager
+                : null;
             return toolManager != null ? toolManager.CurrentTool : null;
         }
 
@@ -1585,6 +1583,13 @@ namespace NASAPunk.Visor
         {
             if (!Application.isPlaying)
                 return;
+
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext != null && !playerContext.IsInitialized)
+            {
+                ClearResolvedPlayerRuntimeBindings();
+                return;
+            }
 
             HectonSurvivalSystem resolvedSystem = _survivalSystem;
             TraumaDispatcher resolvedTraumaDispatcher = _traumaDispatcher;
@@ -2027,8 +2032,8 @@ namespace NASAPunk.Visor
 
         private float ResolvePlayerDepthMeters()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null &&
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (IsPlayerContextUsable(playerContext) &&
                 playerContext.IsInitialized &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
                 (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
@@ -2048,9 +2053,72 @@ namespace NASAPunk.Visor
 
         private float ResolveHullStress01()
         {
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            return playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            HectonPlayerMovement playerMovement = IsPlayerContextUsable(playerContext) && playerContext.IsInitialized
+                ? playerContext.PlayerMovement
+                : null;
+            return IsBehaviourUsable(playerMovement) ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
+        }
+
+        private void ClearPlayerRuntimeBindings()
+        {
+            ClearPlayerContext();
+            ClearResolvedPlayerRuntimeBindings();
+        }
+
+        private IPlayerRuntimeContext ResolvePlayerContext()
+        {
+            if (!IsPlayerContextUsable(_cachedPlayerContext))
+                CachePlayerContext(GlobalRegistry.Player);
+
+            return _cachedPlayerContext;
+        }
+
+        private void CachePlayerContext(IPlayerRuntimeContext playerContext, bool allowRegistryFallback = true)
+        {
+            if (IsPlayerContextUsable(playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                return;
+            }
+
+            if (!allowRegistryFallback)
+            {
+                _cachedPlayerContext = null;
+                return;
+            }
+
+            IPlayerRuntimeContext fallback = GlobalRegistry.Player;
+            _cachedPlayerContext = IsPlayerContextUsable(fallback) ? fallback : null;
+        }
+
+        private void ClearPlayerContext()
+        {
+            _cachedPlayerContext = null;
+        }
+
+        private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return false;
+
+            if (playerContext is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsBehaviourUsable(Behaviour behaviour)
+        {
+            return behaviour != null && (!Application.isPlaying || behaviour.isActiveAndEnabled);
+        }
+
+        private void ClearResolvedPlayerRuntimeBindings()
+        {
+            RefreshSurvivalSubscription(null);
+            _survivalSystem = null;
+            _traumaDispatcher = null;
+            _playerHealth = null;
         }
 
         private float ResolveStructuralFatigue01()

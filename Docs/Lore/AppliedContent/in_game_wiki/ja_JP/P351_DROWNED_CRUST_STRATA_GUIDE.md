@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "水没地殻層フィールドガイド"
+title: "沈水地殻層ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 水没地殻層フィールドガイド
+# 沈水地殻層ガイド
 
-水没地殻は HECTON-8 の読める歴史だ。古い植民地の切断、氷崩壊棚、pressure-glass の縫い目、鉱物帯が、どの経路が持ち、ずれ、触れただけで落ちるかを示す。
+沈水地殻はHECTON-8の読める歴史だ。古い植民地の切削痕、氷崩壊の棚、圧力ガラスの継ぎ目、鉱物帯が、どの経路が保ち、剪断し、触れただけで壊れるかを示す。サルベージ班はそれを破損した台帳のように読む。何が建てられ、何が落ち、海がそれ以来何を削ってきたのか。
 
 ## Scanner
 

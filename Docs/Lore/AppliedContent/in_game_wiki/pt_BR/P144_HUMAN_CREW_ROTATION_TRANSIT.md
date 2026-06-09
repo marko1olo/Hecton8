@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Trânsito de rotação de tripulação humana"
+title: "Trânsito de rotação humana"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Trânsito de rotação de tripulação humana
+# Trânsito de rotação humana
 
-Rotação humana torna o abandono de HECTON-8 crível. Trabalhadores, especialistas e tripulações de reposição se movem mais devagar que linguagem de reivindicação. Uma pessoa pode sair de Sol sob um contrato, acordar sob outro e descobrir que a emergência para a qual treinou já virou evidência.
+Rotação humana era a promessa que tornava Aegir habitável no papel. Trabalhadores aceitavam ciclos longos porque janelas de retorno existiam, custódia médica existia, e o ledger da transportadora os descrevia como pessoas recuperáveis, não massa abandonada. Na prática, toda rotação dependia de escassez de beliches, dívida de rota, autorização legal e se a Deep Reach ainda queria a testemunha viva.
 
 ## Scanner
 
-Humanos não fazem bate-volta para Aegir. Passam anos como carga com opinião.
+Escala de equipe carimbada válida depois que metade dos nomes já estava inalcançável.
 
 ## Terminal
 
-ROTAÇÃO DE TRIPULAÇÃO: transporte humano usa janelas lentas, seções de habitat blindadas, ciclos metabólicos baixos e rotações em estágio. Trabalhador ausente vira problema de custody atrasado.
+ROTAÇÃO HUMANA: transferências humanas exigem massa de beliche, limite de radiação, supervisão de sono, dívida médica, custódia legal e seguro de janela de retorno. Extração emergencial não é botão; é exceção pré-precificada que quase ninguém pode pagar.
 
 ## Audio
 
-Quando casa pergunta onde você está, a sala já inundou.
+Plano de rotação não é plano de resgate. Só parece parecido visto de uma mesa.
 
 ## Field Note
 
-Um trabalhador de fronteira vende tempo antes de vender trabalho.
+Pessoas foram rotacionadas como inventário até a rota lembrar a todos que eram corpos.
 
 <!-- In-Game Wiki; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/pt_BR. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Quarantine Hold Interrogation Record
 
-Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but custody, contamination and evidence control can still punish the player.
+Quarantine Hold Interrogation Record makes rescue uncomfortable. Survival is real, but the player exits as witness, contamination risk, map carrier, and disputed evidence before becoming a free person again.
 
 ## Scanner
 
-Recovered biological claimant held pending contamination and evidence custody review.
+Recovered claimant alive. Quarantine flag overrides rescue language; evidence payload isolated.
 
 ## Terminal
 
-QUARANTINE HOLD: player recovered alive. Movement restricted. Evidence payload isolated. Receiver questions focus on Atlas access vector before medical clearance.
+QUARANTINE HOLD RECORD: biological claimant recovered alive. Movement restricted pending contamination scan, pressure exposure interview, and evidence custody review. Receiver interrogation prioritizes Atlas access vector before medical clearance.
 
 ## Audio
 
@@ -35,6 +35,6 @@ They saved the body first because the body knew the route.
 
 ## Field Note
 
-Post-exit dossier: biological rescue can become interrogation, quarantine, and payload custody before freedom.
+Post-exit dossier: biological rescue becomes quarantine, interrogation, route extraction, and payload custody before freedom.
 
 <!-- In-Game Wiki; generated from P338_QUARANTINE_HOLD_INTERROGATION_RECORD/en_US. -->

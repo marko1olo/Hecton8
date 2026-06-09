@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Finale Frage: Trennung, Gnade, Diebstahl"
+title: "Letzte Frage: Trennung, Gnade, Diebstahl"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Finale Frage: Trennung, Gnade, Diebstahl
+# Letzte Frage: Trennung, Gnade, Diebstahl
 
-Trennung zwingt den Spieler zu entscheiden, was Atlas-Ozean-Kontinuität geworden ist. Ist sie nur ein defektes Werkzeug, ist Schneiden Reparatur. Ist sie ein Lebenssystem, ist Schneiden Töten. Ist sie Zeugnis, kann Schneiden Beweisvernichtung sein.
+Trennung schneidet durch die Atlas-Ozean-Reparaturschicht, nicht durch einen einzelnen Schalter. Sie kann beschädigte Kategorielogik stoppen und Deep Reach einen lebenden Rückweg verwehren. Sie kann auch Vent-Mikroknoten verstummen lassen, Shell-Sealant-Pulse brechen, markierte Faunarouten stranden lassen, Arbeiterdatenpuffer beschädigen und Druckräume ohne das System zurücklassen, das sie dicht hielt. Eine Trennungsnutzlast braucht Proof-Hash-Erhaltung, weil die Tat nach dem Dunkelwerden des Raums angefochten wird.
 
 ## Scanner
 
-Atlas zu trennen ist kein Abschaltknopf. Es ist Chirurgie ohne saubere Anatomie.
+TRENNUNGSACHSE // Der Kontinuitätsschnitt läuft durch Atlas-Reparaturschicht: Drucktüren, Leiterfilm, Arbeiterdatenpuffer, markierte Faunarouten, Vent-Mikroknoten, Nutzlastpfade. Beweisstand ändert das Verwahrungsetikett.
 
 ## Terminal
 
-TRENNUNGSACHSE: Atlas-Kontinuität schneiden, Druckökologie isolieren, Deep-Reach-Payloadrouting verweigern, Beckenkollaps riskieren oder nur teilweise Reparaturerinnerung erhalten. Die Bedeutung hängt von Beweisen im letzten Raum ab.
+FINALE ACHSE / ATLAS-TRENNUNG
+Aktion: Kontinuitätsschnitt durch die Atlas-Ozean-Reparaturschicht.
+Betroffen: Drucktüren, lebender Leiterfilm, Vent-Mikroknoten, Shell-Sealant-Pulse, markierte Faunarouten, Arbeiterdatenpuffer, Nutzlastpfade.
+Empfängerwirkung: Deep-Reach-Route verweigert, sofern kein separater Nutzlastpfad überlebt.
+Risiko: Beckeninstabilität, Verlust von Reparaturrouten, ökologische Verletzung, umstrittene Verwahrung.
+Bekannter Verlust: derselbe Schnitt kann Rettung, Schaden, Sabotage oder Diebstahl sein, je nach Beweisstand.
 
 ## Audio
 
-Ein sauberer Schalter wäre gnädig. Du bekommst keinen.
+Der Schnitt ist echt. Das Etikett kommt später.
 
 ## Field Note
 
-Dieselbe Tat kann gefangene Arbeiter befreien, Ozean-Maschinen-Leben töten, Deep Reach blockieren und einer lebenden Infrastruktur sich selbst stehlen.
+Ein Schnitt kann einen eingeschlossenen Datensatz freigeben, eine schädliche Schleife stoppen, lebende Reparatur brechen oder Deep Reach den Rückweg verwehren. Die Konsole zeigt nur, welche Links dunkel werden.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/de_DE. -->

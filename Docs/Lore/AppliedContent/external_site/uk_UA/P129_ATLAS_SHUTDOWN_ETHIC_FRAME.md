@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Етична рамка вимкнення Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Етична рамка вимкнення Atlas
 
-UA LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+Рамка вимкнення не дає Atlas перетворитися на зручний міф про фінальне вбивство. Остання проблема влади на HECTON-8 - ланцюг зберігання: що саме припиняють, що звільняють і кому належить результат, коли кабель темніє.
 
 ## Scanner
 
-UA LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Вимкнення - не один акт: милість, страта, звільнення, крадіжка.
 
 ## Terminal
 
-UA LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ЕТИЧНА РАМКА: відсікання Atlas може припинити пошкоджений ремонтний цикл, знищити унікальну океансько-машинну безперервність, вивести докази з корпоративної процедури або передати стратегічний матеріал наступному зберігачу. Зафіксуйте ланцюг зберігання до моральної мови.
 
 ## Audio
 
-UA LOC HOLD: Pull one cable and four courts invent four verbs.
+Смикни один кабель, і чотири суди вигадають чотири дієслова.
 
 ## Field Note
 
-UA LOC HOLD: The game should not give the player a clean word for this.
+Чисте дієслово було б ще однією легендою прикриття.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/uk_UA. -->

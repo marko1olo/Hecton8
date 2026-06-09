@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Quiet Salvage Contract Seed"
+title: "静穏サルベージ契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Quiet Salvage Contract Seed
+# 静穏サルベージ契約シード
 
-JA LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+静穏サルベージは、初期警報が少なく、所有権の文言が厳しい契約群である。ルートはオペレーターに修理、呼吸、読解の時間を与えるが、サンプルタグ、pingerログ、証拠ロッカーは最初の大きな支払い前にreceiverへ縛られる。
 
 ## Scanner
 
-JA LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+契約シード: 静穏サルベージ。嵐曝露は低く、初回支払いはきれいだが、ルート履歴を証明する物は厳しい保管対象になる。
 
 ## Terminal
 
-JA LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET: 嵐ウィンドウ静穏、bathydropスロット事前承認、初期生物接触低下、保管ロック強化、receiver-first監査条項有効。
 
 ## Audio
 
-JA LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+静かな水は、誰かが危険を先に書類へ移したという意味だ。
 
 ## Field Note
 
-JA LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+マローダーメモ: 静かな水だと、契約盤の嘘がより明瞭に聞こえる。
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/ja_JP. -->

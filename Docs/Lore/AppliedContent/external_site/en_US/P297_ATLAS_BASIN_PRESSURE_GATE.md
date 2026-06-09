@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Basin Pressure Gate
 
-The final descent does not abandon hard sci-fi: the bottom opens through pressure ratings, damaged authority and an industrial system that misreads identity.
+The final descent keeps hard science under the dread. The bottom opens through pressure ratings, damaged authority, load proofs, and a machine that still trusts Deep Reach-shaped keys more than a living claimant.
 
 ## Scanner
 
-Basin gate requires pressure proof and authority response.
+Basin gate asks for pressure proof, route authority, and a body it can classify.
 
 ## Terminal
 
-ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: pressure proof incomplete. Suit grade accepted below descent threshold. Authority clamp recognizes revoked Deep Reach pattern, not current claimant. Manual override requires local load, receiver choice, and witness payload.
 
 ## Audio
 

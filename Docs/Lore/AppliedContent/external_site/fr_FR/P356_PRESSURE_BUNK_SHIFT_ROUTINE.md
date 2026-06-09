@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Bunk Shift Routine"
+title: "Routine de couchette sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Bunk Shift Routine
+# Routine de couchette sous pression
 
-FR LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+La routine de couchette de pression montre la colonie noyée de HECTON-8 par l'habitude plutôt que par la confession. Une ardoise de rangée ouvrière liste ton de réveil, vérification de joint, note de pression, jeton eau-repas, garde d'outil et affectation de descente. Dans une station sans lever de soleil, cette liste est matin, paie, avertissement médical et preuve de retour.
 
-## Scanner
+Sa force vient de son absence de pose. Elle ne dit pas que quelqu'un fut courageux. Elle dit que la clé de pompe devait revenir avant le repas. Elle dit que les joints se vérifient à 03:52. Elle dit que le sommeil était découpé par la machine parce que l'océan se moquait de l'heure comprise par le corps.
 
-FR LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-FR LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-FR LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-FR LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Suivre l'ardoise rend la colonie lisible. Le même nom peut apparaître comme couchette, clé, jeton d'eau, tampon de route et retour manqué. Ce n'est pas du désordre. C'est le système nerveux d'une colonie de pression, écrit dans les plus petites marques.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/fr_FR. -->

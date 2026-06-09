@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Lek naar openbaar ledger
 
-Lek naar Openbaar Ledger is een gedeeltelijke-waarheid-einde. De speler stuurt genoeg bewijs om uitwissen moeilijker te maken, maar niet genoeg om Atlas, Deep Reach-vergelding of het gebruik door publieke instellingen te controleren.
+Lek naar openbaar ledger is een gedeeltelijke-waarheidsroute. Het pakket vertrekt via een smal relay-venster met genoeg witness hash om ontkenning duur te maken en te veel gaten om veilig te zijn. Deep Reach kan de claim niet zomaar wissen, maar niemand op HECTON-8 beslist wie de wond daarna gebruikt. Verzekeraars, burgerlijke rechtbanken, rivaliserende domains, Marauder-pools en corporate kantoren zullen hetzelfde bewijs anders lezen. Publicatie redt de waarheid van een schone begrafenis. Ze maakt de waarheid niet vriendelijk.
 
 ## Scanner
 
@@ -27,14 +27,14 @@ Witness hash geaccepteerd. Gedeeltelijke waarheid vertrekt vóór volledige cust
 
 ## Terminal
 
-OPENBARE LEDGER-ROUTE: Tau Ceti packet notary accepteerde witness hash; payload onvolledig; claimant-uitdaging waarschijnlijk; Deep Reach-vergeldingvenster begint na relay-bevestiging.
+OPENBARE LEDGER-ROUTE: Tau Ceti packet notary accepteerde witness hash; payload onvolledig; claimant-uitdaging waarschijnlijk; Deep Reach-vergeldingsvenster begint na relay-bevestiging.
 
 ## Audio
 
-De waarheid vertrekt eerst. Misschien bevalt het je niet wie haar leest.
+De waarheid vertrekt eerst. Controle vertrekt niet mee.
 
 ## Field Note
 
-Openbaar betekent niet veilig. Het betekent alleen moeilijker te wissen.
+Openbaar is niet veilig. Het is alleen moeilijker te wissen.
 
 <!-- In-Game Wiki; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/nl_NL. -->

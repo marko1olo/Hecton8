@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Matriks Varian Prop Loker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Matriks Varian Prop Loker
 
-ID LOC HOLD: Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.
+Matriks Varian Prop Loker menjaga bukti pekerja tetap fisik. Loker yang baik memberi tahu pemain apa pekerjaan pekerja itu, ke mana ia diizinkan pergi, dan apa yang coba dihapus koloni atau salvager kemudian. Aus alat menunjuk keluarga kru. Tag rute menunjuk pintu, lift, suit, atau teluk crawler. Pita tekanan dan stiker sif menunjukkan perawatan biasa di bawah risiko tidak biasa. Bekas penghapusan gaji dan tanda preservasi Marauder menunjukkan kehidupan kedua bukti setelah Deep Reach mencoba mengubah manusia menjadi baris biaya. Hasilnya harus terasa intim tanpa menjadi sampah dekoratif.
 
 ## Scanner
 
-ID LOC HOLD: A locker should show work, route access and what got erased.
+Loker harus menunjukkan pekerjaan, akses rute, dan apa yang coba dihapus seseorang. Kenang-kenangan hanya boleh ada setelah pekerjaan terbaca.
 
 ## Terminal
 
-ID LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: setiap loker authored membutuhkan tiga petunjuk terbaca: pekerjaan, rute, dan kerusakan. Memori dekoratif bersifat sekunder. Loker boleh menyimpan token keluarga atau lelucon pribadi, tetapi hanya setelah alat, jejak izin, atau bekas penghapusan memberi tahu pemain bagaimana orang ini menyentuh koloni.
 
 ## Audio
 
-ID LOC HOLD: The locker is not a shrine. It is a failed work order.
+Loker bukan tempat suci. Itu perintah kerja yang gagal.
 
 ## Field Note
 
-ID LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Varian: aus alat, tag izin rute, pita tekanan, stiker sif, bekas penghapusan gaji, tanda preservasi Marauder.
 
 <!-- In-Game Wiki; generated from P211_LOCKER_PROP_VARIANT_MATRIX/id_ID. -->

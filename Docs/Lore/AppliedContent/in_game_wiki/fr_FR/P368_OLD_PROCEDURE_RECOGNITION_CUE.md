@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Indice de reconnaissance d’ancienne procédure"
+title: "Signal de Reconnaissance d'Ancienne Procédure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Indice de reconnaissance d’ancienne procédure
+# Signal de Reconnaissance d'Ancienne Procédure
 
-La reconnaissance d’une ancienne procédure transforme le passé du protagoniste en outil jouable. Le joueur ne suit pas un indice mystique ni une prophétie personnelle. Il lit un formulaire de sécurité auquel il a jadis dû faire confiance. Un tampon route-sûre affirme que la ligne a été certifiée. Les preuves dans la pièce disent que le comptage des travailleurs a été modifié. Le champ de témoin manuel, censé imposer une deuxième vérification humaine, a été scellé par un bureau de continuité. C’est cette contradiction qui accroche. Deep Reach n’a pas seulement caché une route. Elle a utilisé le langage de protection des travailleurs pour faire passer l’abandon pour un dossier administrativement complet. L’enjeu du protagoniste commence par une reconnaissance professionnelle: ce formulaire avait été conçu pour empêcher exactement cet échec.
+La reconnaissance d'ancienne procédure commence par un formulaire de sécurité, pas par un aveu. Une certification route-safe devait lier un couloir à un nombre, un jeu de tags de salle des pompes et une seconde vérification humaine quand les chiffres divergent. Dans ce dossier, les occupants déclarés ont été dégradés, le comptage des tags contredit encore la salle, et le champ de seconde vérification est scellé par Continuity Office.
+
+Cette contradiction suffit. L'opérateur n'a pas besoin d'un accès de commandement pour la lire. Deep Reach a utilisé le langage de protection des travailleurs pour donner à l'abandon une clôture administrative. Le formulaire n'a pas échoué parce qu'une ligne manquait. La ligne censée arrêter le compte est devenue celle qui protège le claim.
 
 ## Scanner
 
-Tampon route-sûre présent. Comptage des travailleurs réécrit avec deux encres. Champ de témoin manuel scellé. Le formulaire avait été conçu pour attraper ce genre de mensonge avant qu’on en fasse une politique.
+FORMULAIRE ROUTE-SAFE // Occupants déclarés dégradés. Les tags de salle des pompes contredisent le décompte. Champ de seconde vérification scellé par Continuity Office.
 
 ## Terminal
 
-FORMULAIRE DE CONTINUITÉ D’ÉVACUATION / CERTIFICATION ROUTE-SÛRE
-route: ligne d’issue auxiliaire
-occupants déclarés: comptage dégradé accepté
-témoin manuel: scellé par le bureau de continuité
-correction terrain: décompte des travailleurs incohérent avec les étiquettes de salle des pompes
-statut: préservation de réclamation, pas d’autorisation d’extraction.
+EVACUATION CONTINUITY FORM / ROUTE-SAFE CERTIFICATION
+route: auxiliary egress line
+declared occupants: degraded-count accepted
+manual second-check: sealed by Continuity Office
+field correction: pump-room tags exceed accepted tally
+status: claim-preserving, not extraction-cleared.
 
 ## Audio
 
-Tu connais ce formulaire. Il devait empêcher qu’une pièce soit comptée vide pendant que des gens y respiraient encore.
+Tu connais ce formulaire. Si les tags ne collent pas, la salle n'est pas cleared.
 
 ## Field Note
 
-Le formulaire devait imposer un autre comptage. Ici, il a imposé le silence.
+Le formulaire devait forcer un autre compte. Ici, il a rendu le mauvais compte complet.
 
 <!-- In-Game Wiki; generated from P368_OLD_PROCEDURE_RECOGNITION_CUE/fr_FR. -->

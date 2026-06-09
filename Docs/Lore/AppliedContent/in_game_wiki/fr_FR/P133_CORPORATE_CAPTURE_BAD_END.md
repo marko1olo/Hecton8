@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Capture corporative : secours propre"
+title: "Capture corporative : sauvetage propre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Capture corporative : secours propre
+# Capture corporative : sauvetage propre
 
-La Capture corporative est une mauvaise fin bâtie depuis un secours plausible. Le joueur quitte l'océan vivant, mais l'autorité qui répond traite le témoin comme matériau de confinement et le payload comme le vrai patient.
+La capture corporative commence exactement comme une aide devrait commencer. Le signal est propre, le vecteur de pickup professionnel, et la pièce contient de l'air respirable. Puis l'ordre des questions expose le sauvetage : coordonnées d'abord, custody ensuite, accès Atlas en troisième, bien-être après examen. Le contractant quitte l'océan vivant, mais l'autorité qui répond traite le témoin comme contamination et le payload comme patient. Le témoignage est scellé avant de pouvoir devenir dossier public. Le corps survit à la pression pour entrer dans une machine plus silencieuse de contrôle des preuves.
 
 ## Scanner
 
-Source de récupération vérifiée : proxy Deep Reach. Payload demandé avant contrôle de bien-être.
+Source de récupération vérifiée : proxy Deep Reach. Payload demandé avant le pouls.
 
 ## Terminal
 
-RAMASSAGE DEEP REACH : l'équipe de récupération accepte coordonnées, custody XO et clé d'accès Atlas avant contrôle de bien-être du contractant. Témoignage du contractant scellé sous protocole de contamination.
+PICKUP DEEP REACH : l'équipe de récupération demande coordonnées, custody XO, clé d'accès Atlas et scellé payload Seed avant l'examen du bien-être du contractant. Témoignage du témoin scellé sous protocole de contamination.
 
 ## Audio
 
-La salle propre n'est pas pour toi.
+La salle blanche n'est pas pour le témoin.
 
 ## Field Note
 
-Un secours propre qui demande les coordonnées d'abord est une capture avec un meilleur air.
+Un sauvetage propre qui demande d'abord les coordonnées est une custody avec air chaud.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/fr_FR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Taxonomy"
+title: "Taxonomía de finales falsos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Taxonomy
+# Taxonomía de finales falsos
 
-ES LOC HOLD: HECTON-8 supports false and partial endings without making them fake. A material payout can roll credits. A partial exit can return to the same seed. Corporate capture and quarantine hold can punish bad payloads. Public ledger release and Atlas resolution require deeper truth.
+HECTON-8 trata los finales falsos y parciales como resultados reales, no como engaños. Un pago material puede activar los créditos. Una salida parcial puede devolver al jugador a la misma semilla con el conocimiento del dossier conservado. La captura corporativa y la retención de cuarentena pueden castigar una carga mala o una ruta peligrosa de pruebas. Los finales más profundos exigen prueba pública, resolución del estado de Atlas y una decisión sobre qué clase de rescate acepta comprar el jugador.
 
 ## Scanner
 
-ES LOC HOLD: Ending board. Some exits are real enough to count and wrong enough to hurt.
+Tablero de finales. Algunas salidas son lo bastante reales para contar y lo bastante equivocadas para doler.
 
 ## Terminal
 
-ES LOC HOLD: ENDING FAMILIES: material payout, partial exit and return, corporate capture, quarantine hold, public ledger release, Atlas basin resolution.
+FAMILIAS DE FINALES: pago material; salida parcial y regreso a la misma semilla; captura corporativa; retención de cuarentena; publicación del libro público; resolución de la cuenca Atlas. Los registros de resultado deben separar carga, prueba y estado de deuda.
 
 ## Audio
 
-ES LOC HOLD: Leaving is not the same as finishing.
+Salir del agua no es lo mismo que terminar el trabajo.
 
 ## Field Note
 
-ES LOC HOLD: False ending must not be a trick. It must be a valid bad bargain.
+Un final falso no es un truco. Es un trato válido al que le falta la verdad.
 
 <!-- In-Game Wiki; generated from P098_FALSE_ENDING_TAXONOMY/es_ES. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Public Ledger Aftershock Record"
+title: "Rejestr wstrząsu po publicznej księdze"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Public Ledger Aftershock Record
+# Rejestr wstrząsu po publicznej księdze
 
-PL LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+Prawdziwe zakończenie HECTON-8 nie jest czystością. To decyzja, by utrudnić ukrywanie i przyjąć niekontrolowane skutki: żałobę, rynki, pozwy, sekciarskie odczytania, akcje ratunkowe i zemstę opartą na tych samych ujawnionych faktach.
 
 ## Scanner
 
-PL LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Lustra księgi przyjęte. Dowodu nie da się już usunąć; konsekwencji nie da się już prowadzić.
 
 ## Terminal
 
-PL LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: dowody uwolnione poza dozór Deep Reach. Nazwiska pracowników, fragmenty wektora Atlas i tagi odpowiedzialności odbite w publicznych odbiornikach. Władza gracza nad interpretacją zakończona.
 
 ## Audio
 
-PL LOC HOLD: Truth left the room. It did not ask where to go next.
+Prawda wyszła z pokoju. Nie zapytała, dokąd iść dalej.
 
 ## Field Note
 
-PL LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Publiczny rejestr prawdy: kopie dowodów zapobiegają wymazaniu, ale kończą kontrolę gracza nad interpretacją i odwetem.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/pl_PL. -->

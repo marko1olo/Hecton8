@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Feldführer für ertrunkene Krustenschichten"
+title: "Führer zu ertrunkenen Krustenschichten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feldführer für ertrunkene Krustenschichten
+# Führer zu ertrunkenen Krustenschichten
 
-Der Feldführer für ertrunkene Krustenschichten lässt HECTON-8s Meeresboden gebaut und gebrochen wirken: terrain, salvage routes und Mineralproben stammen aus derselben geschichteten Druckgeschichte.
+HECTON-8s Kruste verhält sich nicht wie unberührter Meeresboden. Die Kolonie schnitt sie, erhitzte sie, versiegelte sie, belastete sie mit Druckglas und ließ sie dann einem Ozean zurück, der weiterarbeitete, nachdem die Lohnlisten endeten. Eine Wand kann Werkzeugspuren einer Servicebohrung, einen hellen Eissturzsimms, ein grünschwarzes Mineralband aus Sickerfluss und eine haarfeine Naht zeigen, durch die Atlas später einen Weg fand.
 
-## Scanner
-
-Geflutete Schichten legen alte Schnittmarken, pressure-glass-Nähte und Mineralbänder frei, die nie zweimal in dieselbe Richtung versagen.
-
-## Terminal
-
-FIELD GUIDE: HECTON-8s ertrunkene Kruste ist gestapelter Siedlungsfels, Erinnerung kollabierten Eises, pressure glass und extraction scars unter bewegter brine. Bruchlinien zählen mehr als saubere Flächen.
-
-## Audio
-
-Die Karte ist kein Gelände. Sie ist ein Stapel Ertrinkungen.
-
-## Field Note
-
-Wenn ein Band hohl klingt, traue der flachen Fläche nicht. Markiere den Bruch, nimm die Probe, lass die Wand halten.
+Für eine Salvage-Crew sind Schichten Navigation. Eine flache Fläche kann hohl klingen. Eine schöne Mineralkante kann das Einzige sein, was einen Servicecanyon noch hält. Gute Routenlesung bedeutet, die Probe zu nehmen, ohne der Wand das Fallen beizubringen. Darum zählt die ertrunkene Kruste im Feld: Der Meeresboden ist kein Hintergrund. Er ist Archiv, Straße und manchmal Falle.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/de_DE. -->

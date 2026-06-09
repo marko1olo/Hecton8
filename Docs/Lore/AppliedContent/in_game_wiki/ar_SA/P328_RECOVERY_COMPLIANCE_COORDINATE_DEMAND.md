@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "طلب إحداثيات امتثال الاستعادة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Recovery Compliance Coordinate Demand
+# طلب إحداثيات امتثال الاستعادة
 
-AR LOC HOLD: Recovery Compliance Coordinate Demand makes the present antagonist concrete. Deep Reach does not need to shoot first; it can make rescue conditional on access.
+يحول هذا الطلب ضغط Deep Reach الحالي إلى آلية لعب: لدى اللاعب الإحداثيات وإثبات الحيازة والمعرفة المحلية التي تحتاجها الشركة. الرسالة تعرض الاستعادة، لكن كل جملة تسعرها مقابل السيطرة على HECTON-8.
 
 ## Scanner
 
-AR LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+حزمة موثقة من Deep Reach Recovery Compliance: لغة إنقاذ تلف مطالب الإحداثيات وإثبات الحيازة وحالة التلوث.
 
 ## Terminal
 
-AR LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+إشعار RECOVERY COMPLIANCE DR-RC-8: أرسل متجه وصول Atlas، وإثبات حيازة Xenon-Omega، وحالة التلوث الحيوي، وإحداثيات الحوض الحالية. يبقى الإخلاء الطبي معلقا حتى تسوية سلسلة الأصل وامتياز الإنقاذ وحقوق السيطرة على الموقع. قد يؤدي البث غير المصرح به إلى خفض أولوية الناجي إلى احتجاز أدلة.
 
 ## Audio
 
-AR LOC HOLD: They can say rescue without meaning rescue.
+وجدوا طريقة تجعل الإنقاذ يبدو كأمر قضائي.
 
 ## Field Note
 
-AR LOC HOLD: Use near payload authority decisions and receiver selection.
+يوضع حيث يستطيع اللاعب اختيار ما يرسله. يجب أن يكون التهديد إجرائيا لا مسرحيا: لا خطاب شرير، بل طابور قادر على دفن جسد.
 
 <!-- In-Game Wiki; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/ar_SA. -->

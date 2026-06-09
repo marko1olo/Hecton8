@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_fauna_traces |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS171_FIRST_FAUNA_TRACE_ARTICLES.md |
 | Speaker | Field scanner, molt trace note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first fauna trace reading |
@@ -39,7 +39,7 @@ MOLT TRACE // Salt ring intact. Record outline before lifting fragment.
 
 The transparent fold is less useful than the ring around it. Salt dried at the edge after the waterline shifted, leaving an outline that can vanish under one careless lift.
 
-The absence left a shape.
+The salt ring is the outline to record before the fold tears.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD BEFORE LIFTING
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| ar_SA | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| de_DE | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| es_ES | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| fr_FR | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| he_IL | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| id_ID | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| ja_JP | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| ko_KR | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| nl_NL | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| pl_PL | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| pt_BR | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| ru_RU | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| uk_UA | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
-| zh_CN | draft_machine_or_llm | MOLT TRACE // Salt ring intact. Record outline before lifting fragment. |
+| ar_SA | draft_machine_or_llm | أثر انسلاخ // حلقة الملح سليمة. سجل المحيط قبل رفع القطعة. |
+| de_DE | draft_machine_or_llm | HAEUTUNGSSPUR // Salzring intakt. Umriss vor dem Anheben des Fragments erfassen. |
+| es_ES | draft_machine_or_llm | RASTRO DE MUDA // Anillo de sal intacto. Registra el contorno antes de levantar el fragmento. |
+| fr_FR | draft_machine_or_llm | TRACE DE MUE // Anneau de sel intact. Relever le contour avant de soulever le fragment. |
+| he_IL | draft_machine_or_llm | עקבת נשל // טבעת המלח שלמה. רשום את המתאר לפני הרמת המקטע. |
+| id_ID | draft_machine_or_llm | JEJAK GANTI KULIT // Cincin garam utuh. Catat garis luar sebelum fragmen diangkat. |
+| ja_JP | draft_machine_or_llm | 脱皮痕 // 塩輪は無傷。破片を持ち上げる前に輪郭を記録。 |
+| ko_KR | draft_machine_or_llm | 탈피 흔적 // 소금 고리가 온전하다. 조각을 들어 올리기 전에 윤곽을 기록한다. |
+| nl_NL | draft_machine_or_llm | VERVELLINGSSPOOR // Zoutring intact. Leg omtrek vast voordat je het fragment optilt. |
+| pl_PL | draft_machine_or_llm | SLAD WYLINKI // Pierscien soli caly. Przed podniesieniem fragmentu zapisz obrys. |
+| pt_BR | draft_machine_or_llm | RASTRO DE MUDA // Anel de sal intacto. Registre o contorno antes de levantar o fragmento. |
+| ru_RU | draft_machine_or_llm | СЛЕД ЛИНЬКИ // Соляное кольцо цело. Запиши контур до подъема фрагмента. |
+| uk_UA | draft_machine_or_llm | СЛІД ЛИНЯННЯ // Соляне кільце ціле. Запиши контур до підняття фрагмента. |
+| zh_CN | draft_machine_or_llm | 蜕皮痕迹 // 盐环完整。抬起碎片前先记录轮廓。 |

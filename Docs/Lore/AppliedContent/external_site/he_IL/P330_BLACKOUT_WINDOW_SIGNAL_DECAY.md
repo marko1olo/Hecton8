@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Blackout Window Signal Decay"
+title: "דעיכת אות בחלון האפלה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Blackout Window Signal Decay
+# דעיכת אות בחלון האפלה
 
-HE LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+השתיקה של HECTON-8 היא חלק אסטרונומיה, חלק תשתית פגועה וחלק אוטומציה תאגידית. הצל של Aegir, ממסרים שטבעו, תזמון הנשאים ותורים משפטיים הופכים תקשורת למזג אוויר: משהו שהשחקן מתכנן סביבו, מפחד ממנו, מתקן ולעיתים מנצל.
 
 ## Scanner
 
-HE LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+חלון האות קורס: שדרת ממסרים רטובה, צל Aegir, גאומטריית נשא מיושנת, תור משפטי עדיין מנסה שוב.
 
 ## Terminal
 
-HE LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: אובדן uplink מעל סף הסבילות. ערוץ קול מושעה. שברי טקסט עשויים להגיע דרך צומתי שדרה אקוסטיים שתוקנו. גאומטריית הנשאים במסלול תתרענן אחרי שצל המגנטי של Aegir יתפזר. שעוני שעבוד ומשמורת אוטומטיים ממשיכים ללא קשר מפעיל.
 
 ## Audio
 
-HE LOC HOLD: When the sky closes, the paperwork keeps breathing.
+השמים משתתקים קודם. הודעות החוב ממשיכות לדפוק.
 
 ## Field Note
 
-HE LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+לקשור חלונות האפלה לקצב המסלול: פחות קול, יותר קריאת שברים, ערך חזק יותר לממסרים שתוקנו ולמשואות מקומיות.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/he_IL. -->

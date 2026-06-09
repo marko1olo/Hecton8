@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Tool Certification Board"
+title: "לוח הסמכת כלים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Tool Certification Board
+# לוח הסמכת כלים
 
-HE LOC HOLD: Tool certification boards show colony culture without mysticism: trust came from repeated technical checks and custody marks.
+לוח הסמכת כלים נראה טקסי רק אם קוראים את המושבה רע. אין כאן מיסטיקה. החותמות החוזרות, ראשי התיבות בעיפרון שומן וסימני ההחזקה האדומים הם הדרך שבה עובדים הפכו פחד לנוהל לפני ירידה. ראש חיתוך לא היה אמין כי נראה חד. מחסנית איטום לא הייתה אמינה כי התווית אמרה מלאה. כפפת לחץ לא הייתה אמינה עד ששני אנשים חתמו עליה ואחד מהם היה עשוי ללבוש את הכפפה הבאה בערימה.
+
+כך נוצרה תרבות. טכנאי משאבות, קושרי איטום, צוללי מי מלח, מפעילי פבריקייטור ופקידי מסלול תלויים בכלים שיכלו להרוג בשקט אם היו כמעט נכונים. הטקס היה חזרה: לשקול, לבדוק, לחתום, להחזיר, לבדוק שוב. זה היה גם לחץ חברתי. מפתח משאבה שהוחזר באיחור לא הפך לנאום מוסרי. הוא הפך לסימון על הלוח, לערכת ירידה מוחזקת, לעובד שנמשך לבדיקה חוזרת, ואחר כך לוויכוח במזנון אם העיכוב עלה במים.
+
+עבור פושט, הלוח שימושי לפני שהוא יפה. הוא אומר אילו כלים היו אמינים, אילו מסלולים עוכבו ואילו אזהרות לא נמחקו לפני שהחדר טבע. אל תתייחס לחתימות כקישוט. כפפה בחתימה כפולה יכולה לקשור עובד למסלול. סימון מפתח מאוחר יכול לחבר דרגש לפקודת משאבה. חותך מוחזק יכול להסביר למה דלת אטומה אחת עדיין קיימת. הסמכה היא הדרך שבה המושבה הפכה אמון לנראה.
 
 ## Scanner
 
-HE LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
+לוח הסמכת כלים // ראש חיתוך סומן מחדש, מחסנית איטום נשקלה, כפפת לחץ נחתמה בידי שניים, מפתח משאבה סומן כהוחזר באיחור. אמון הוטבע בכלים לפני הירידה.
 
 ## Terminal
 
-HE LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
+לוח הסמכה: ראש חיתוך נבדק; מחסנית איטום נשקלה; כפפת לחץ בחתימה כפולה; מפתח משאבה הוחזר באיחור; ערכת ירידה מוחזקת עד בדיקה חוזרת. אין חותך בחתימה אחת מתחת ל-80 מ'.
 
 ## Audio
 
-HE LOC HOLD: They did not pray before descent. They checked each other's tools.
+הם לא התפללו לפני הירידה. הם בדקו זה לזה את הכלים.
 
 ## Field Note
 
-HE LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+ראש החיתוך נבדק. מחסנית האיטום נשקלה. כפפת הלחץ נחתמה בשתי ידיים. מפתח המשאבה חזר מאוחר ואף אחד לא מחק את האזהרה.
 
 <!-- In-Game Wiki; generated from P358_TOOL_CERTIFICATION_RITUALS/he_IL. -->

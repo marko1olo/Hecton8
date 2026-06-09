@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Öffentliche Routennamen
 
-## Names That Bill
+## Namen, die abrechnen
 
-Öffentliche Routennamen sind keine Poesie im Dunkel. Sie sind Arbeitslabels, die Verträge, Rumpfplatten, Relaiswarteschlangen und Gerichtsstücke überleben. Sol-Centauri Charter Spine trägt Legitimität, Barnard Breaker Run riecht nach Abwrackwerften und Schuldarbeit. Luyten Packet Ladder ist die custody-Kette, die Beweis gültig oder nutzlos macht, Tau Public Ledger Lane ist langsamer öffentlicher Druck, und Ran Long Claim sagt, dass die Arbeit schon teuer ist, bevor der Ozean kassiert.
+Die öffentlichen Routen von HECTON-8 sollen nicht schön sein. Sie sollen Rechnungen, Siegel, Versicherungstabellen und Salvage-Streit überleben. Ein Routenname ist der Teil der Karte, der noch zählt, wenn das Bild weg ist und nur der Vertrag bleibt.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Die Sol-Centauri Charter Spine ist die respektable Linie. Sie trägt alte Legitimität, Kompatibilitätssprache und die Art Formulierung, die Deep Reach zitiert, wenn ein Grenzprojekt zivilisiert wirken soll. Barnard Breaker Run ist hässlicher und ehrlicher: Abwracken, Druckhardware, Schuldbesatzungen, ausgeschlachtete Rümpfe und die praktische Kultur, die Marauders möglich macht.
+
+Die Luyten Packet Ladder ist keine romantische Gesellschaft. Sie ist Paketgewahrsams-Infrastruktur. Sie erklärt, warum eine Nachricht Beweis werden kann, warum Beweis sich verzögert und warum ein ehrliches Paket nicht Hilfe ist. Tau Public Ledger Lane ist der Ort, an dem Beweis nach der langsamen Arbeit des Lichts öffentlicher Druck wird.
+
+Ran Long Claim ist der Name am nächsten bei HECTON-8. Es ist keine Autobahn, sondern ein Anspruchspfad durch Distanz, Recht, Bremsrechte und Frachtkosten. Eine Routenplatte soll wie ein Druckmal gelesen werden: Wessen Recht reist hier, wessen Fracht bewegt sich, wessen Beweis überlebt, und wessen Körper fehlt im Rückmanifest?
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/de_DE. -->

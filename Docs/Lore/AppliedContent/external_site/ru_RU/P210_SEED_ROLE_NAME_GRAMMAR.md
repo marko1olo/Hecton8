@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Грамматика seed-role имен
 
-RU LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+Грамматика seed-role имен определяет, как HECTON-8 использует процедурную вариативность, не теряя авторскую человеческую фактуру. Повторное прохождение может менять место появления улики рабочего, но имя должно оставаться связанным с работой, допуском, задачей и предметом. Так колония остается неожиданной между забегами и при этом сохраняет ощущение, что каждая запись принадлежала человеку, чья работа имела значение.
 
 ## Scanner
 
-Seed может менять порядок evidence, но не превращать человека в disposable text.
+Seed может менять порядок улик. Он не может превращать рабочего в одноразовый текст.
 
 ## Terminal
 
-SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Локализация может annotate; она не должна переписывать identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Локализация может пояснять названия бригад ради читаемости, но не должна переписывать личность, стирать работу или отрывать имя от конкретного предмета.
 
 ## Audio
 
-Random не авторство. Привяжи имя к работе.
+Случайность это не авторство. Привяжи имя к работе.
 
 ## Field Note
 
-Seed-role identities собираются из stable personal name, crew family, route permission, last task и object variant.
+Каждая seed-role личность соединяет личное имя, бригадную семью, маршрутный допуск, последнюю задачу и вариант объекта.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/ru_RU. -->

@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Guide du verre de pression et du mastic
 
-Le Guide du verre de pression et du mastic ancre l'horreur biomécanique de HECTON-8 dans une logique de réparation : Atlas suit fissures, câbles, biofilms et pressure scars parce que les systèmes cassés fournissent déjà des chemins.
+Le verre de pression a commencé comme matériau colonial pratique : assez clair pour des hublots, assez robuste pour des portes pressurisées, assez bon marché pour couler dans les joints de service. Des années sous l'eau ont changé son rôle. Les marées ont écrit la contrainte dans les panneaux. Les minéraux ont brouillé les bords. Le biofilm a appris les fissures. Quand la chimie Atlas est arrivée, elle n'a pas eu besoin d'inventer une route dans la colonie. Le verre brisé l'avait déjà dessinée.
 
-## Scanner
-
-Fracture de pressure-glass scellée par chimie Atlas. Stock de lentilles sûr seulement si la seal map reste intacte.
-
-## Terminal
-
-FIELD GUIDE : le pressure glass enregistre ancien tide stress. L'Atlas sealant suit ces fissures parce qu'elles décrivent déjà les lignes de défaillance du système.
-
-## Audio
-
-Le réseau de réparation lit les fractures comme tu lis une carte.
-
-## Field Note
-
-Ne meule pas le joli bord. Suis la fracture map et coupe depuis le côté mort du seal.
+C'est pourquoi un stock de lentilles peut être précieux et dangereux à la fois. Coupez du côté mort d'un joint et le verre devient salvage. Meulez le bord vivant et le réseau de réparation gagne un passage plus propre. Le mastic n'est pas seulement une colle dans HECTON-8. C'est une décision sur les pannes autorisées à se fermer, celles qui restent cartographiées, et celles qui deviennent une porte pour quelque chose qui essaie encore de réparer le mauvais corps.
 
 <!-- External Site; generated from P355_PRESSURE_GLASS_AND_SEALANT_GUIDE/fr_FR. -->

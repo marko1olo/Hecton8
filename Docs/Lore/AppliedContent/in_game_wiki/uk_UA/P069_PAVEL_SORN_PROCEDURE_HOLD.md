@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pavel Sorn Procedure Hold"
+title: "Процедурне утримання Павла Сорна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pavel Sorn Procedure Hold
+# Процедурне утримання Павла Сорна
 
-UK LOC HOLD: Pavel Sorn gives the crime an ordinary operator. His procedure holds show how Deep Reach can be guilty without every human participant being a mastermind: obedience, delay and clause discipline become lethal.
+Павло Сорн дає катастрофі HECTON-8 найзвичайніший людський шарнір: місцевого контрактного офіцера, який має достатньо влади затримати евакуацію і замало мужності розірвати ланцюг пунктів. Його процедурне утримання не є монологом лиходія чи таємним наказом убивати. Це службова записка, написана всередині права Deep Reach, де кожна дія для порятунку життя мусить пройти сертифікацію, маршрут відповідальності, печатки безперервності Atlas і мову зберігання претензії, перш ніж її дозволять назвати порятунком. Запис важливий, бо залишає провину людською, але не робить її простою. Сорн бачив лихо працівників, розумів, що черга підйому стає смертним вироком, і все одно вибрав речення, яке спершу захищало офіс: утримувати дозвіл, доки канал не очиститься.
 
 ## Scanner
 
-UK LOC HOLD: Pavel Sorn is not the villain in the room. He is the room learning how to obey until obedience kills it.
+Павло Сорн не наказував різанину. Він зробив те, що легше пережити на папері: залишив дозвіл на евакуацію у теці очікування.
 
 ## Terminal
 
-UK LOC HOLD: SORN, P. Local contract office holds evacuation release pending external certification. Worker distress acknowledged. Atlas continuity seal unresolved. Follow procedure until channel clears.
+СОРН, П. Контрактний офіс / адміністративна палуба. Дозвіл на евакуацію лишається у ПРОЦЕДУРНОМУ УТРИМАННІ: немає зовнішньої сертифікації, печатка безперервності Atlas не закрита, канал відповідальності перевантажений. Лихо працівників визнано. Підйом не дозволяти до прояснення зберігання претензії та карантинного формулювання.
 
 ## Audio
 
-UK LOC HOLD: He wrote the sentence that kept the door closed and probably hated it less than he should have.
+Він далі писав «очікує», поки море забирало нижні палуби.
 
 ## Field Note
 
-UK LOC HOLD: Useful evil often signs in normal handwriting.
+Колонія загинула не тому, що хтось сміявся біля замкнених дверей. Вона загинула тому, що в дверей була форма.
 
 <!-- In-Game Wiki; generated from P069_PAVEL_SORN_PROCEDURE_HOLD/uk_UA. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "claim连续性损失转换"
+title: "索赔连续性损失转换"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# claim连续性损失转换
+# 索赔连续性损失转换
 
-证据链结束于转换。只要工人成为losses，证据成为material custody，claim继续存活，Deep Reach就能承认损害并保留所有权。所以玩家携带的不只是事实。他们携带的是系统知道如何购买的东西。
+链条在总账处结束，因为总账能比其他一切活得更久。工人成为不可回收损失，受损模块成为物资保管，证据仍附着在索赔上。携带这些文件的人携带的不是感情，而是每个想要索赔却不想要尸体的接收方的问题。
 
 ## Scanner
 
-回收的损失台印章。ledger比它重新命名的工人活得更久。
+已回收损失台印章。工人状态在证据保管离开活跃索赔前转换为不可回收。
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED。biological workforce converted to unrecoverable loss。Material and proof custody remain active pending receiver assignment。
+KEELMARK 损失 // 连续性保留。生物劳动力转换为不可回收损失。物资保管和证据保管保持有效，等待接收方分配。
 
 ## Audio
 
-人在这里变成干净的列。
+名字在这里变成了一列干净数据。
 
 ## Field Note
 
-Marauder笔记：ledger可以记住死者，也仍能花掉他们。
+拾荒者记录：总账可以记住死者，同时继续花掉他们。
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/zh_CN. -->

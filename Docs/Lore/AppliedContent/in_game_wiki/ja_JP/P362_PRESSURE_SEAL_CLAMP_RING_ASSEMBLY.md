@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "圧力シールクランプリングアセンブリ"
+title: "圧力シールクランプリング組立"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 圧力シールクランプリングアセンブリ
+# 圧力シールクランプリング組立
 
-圧力シールは、修理がさらに深くへ進まざるを得ない理由を説明する。部屋から水を締め出す素材は、誤ったシール連鎖が採用された瞬間、カプセルを沈んだ船体へ貼り付けることもある。
+圧力シールクランプリングは、修理が単純な生存ではなくなる場所だ。safe room から水を追い出す同じ材料が、separation seam を越えれば ascent capsule を捕まえる。浅層パッチは区画を保てばよい。launch-rated seal は圧力を保ち、crush を受け、impulse 下できれいに離れなければならない。
+
+HECTON-8 でこれが難しいのは、Atlas-grown sealant が本当に役に立つからだ。漏れを追い、亀裂を埋め、沈むはずの habitat volume を保つ。だがそれは flight seal ではない。sealant map が clamp ring seat や pressure-glass の縁を越えれば、カプセルは static pressure test に合格しても charge 点火時に分離できない。
+
+組立には deep-rated metal、既知の crush history、清潔な glass seat、launch boundary 手前で終わる sealant map が必要だ。有用な修理を有用な escape から切り戻さなければならない。間違ったパッチを残した Marauder は、動く瞬間まで乾いたままのカプセルを作ってしまう。
 
 ## Scanner
 
-クランプリングの傷跡。上昇スリーブは、本来帰還に使うはずのシールを使い切って衝撃を生き延びた。
+クランプリング座 // 衝撃スコア、浅層パッチ残留、分離シームを横切るシーラント。区画圧は保てる可能性あり。発射 impulse は違う層を裂く。
 
 ## Terminal
 
-SEAL CERT: shallow patch は区画圧のみ保持。Ascent seal には deep-rated clamp ring、pressure-glass seat、shell-sealant map、検証済み Deep Reach profile が必要。Atlas-grown sealant は habitat を保護しつつ、清潔な分離を妨げる可能性がある。
+SEAL CERT: shallow patch は compartment pressure のみ許可。Ascent seal には deep-rated clamp ring、pressure-glass seat、shell-sealant map、検証済み Deep Reach crush profile が必要。separation seam を越える sealant growth は拒否。
 
 ## Audio
 
-役に立つシールは、間違った向きに生きている。
+パッチは部屋を保つ。カプセルは放さない。
 
 ## Field Note
 
-安全室のパッチは一時間の空気を買える。発射衝撃は保持できない。
+部屋のパッチは空気を買える。上昇シールは潰れ、離れ、次の burn に十分きれいなカプセル外皮を残さなければならない。
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ja_JP. -->

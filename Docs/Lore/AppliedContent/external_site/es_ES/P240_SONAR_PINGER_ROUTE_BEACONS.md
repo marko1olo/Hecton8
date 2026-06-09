@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Sonar Pinger Route Beacons"
+title: "Balizas de ruta con pinger sónar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Sonar Pinger Route Beacons
+# Balizas de ruta con pinger sónar
 
-ES LOC HOLD: Sonar Pinger Route Beacons are a signature HECTON-8 object: cheap, physical, acoustic and morally loaded. They help the player map, return, tag evidence and negotiate rescue, while also announcing presence to the ocean.
+Las balizas de ruta con pinger sónar son un objeto muy HECTON-8: baratas, físicas, acústicas y moralmente cargadas. Ayudan al jugador a volver, pero anuncian su presencia al mar.
 
 ## Scanner
 
-ES LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+Un flotador pinger marca geometría de regreso, expone ecos falsos y atrae tanto rescate como vida indeseada.
 
 ## Terminal
 
-ES LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-ES LOC HOLD: One ping is a promise. Two pings are a bill.
+Un ping es una promesa. Dos pings son una factura.
 
 ## Field Note
 
-ES LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+El pinger es la primera herramienta honesta: dice distancia, deuda, ruta perdida y riesgo vivo mediante sonido.
 
 <!-- External Site; generated from P240_SONAR_PINGER_ROUTE_BEACONS/es_ES. -->

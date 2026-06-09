@@ -19,23 +19,27 @@ localization_flags: 0
 
 # Revoked Access Language Trace
 
-Revoked access language became one of Deep Reach's quieter locks. A door could deny a former worker, mark the request as routine maintenance, and still leak the exact terms that named the hidden evacuation route. On HECTON-8, this matters because the player does not need a clean confession to follow the trail. The old phrasing is enough: degraded-count protocol, substitute witness, route-safe archive, claim-preservation routing. Those words were built for liability review, not rescue. The denial proves two things at once. The credential is dead. The procedure behind it is not.
+Revoked access language is one of Deep Reach's quieter locks. A former worker can be refused at the door while the denial text still exposes the procedure behind the sealed route. The lock does not need to confess. It only has to use the wrong old words.
+
+Maintenance reclassification means a human route was made to look like service material. Degraded-count means a worker tally was accepted after it should have been checked again. Claim-preservation routing means the company protected ownership of the line before it protected bodies in the line. Each phrase is small enough to pass as office language and specific enough to point at the buried corridor.
+
+That makes the dead credential useful in a limited way. It cannot open the hatch. It can force the archive to speak in its old liability dialect, and that dialect is a map.
 
 ## Scanner
 
-The lockout does not say forbidden. It says maintenance reclassification, continuity hold, and route materials. Old Deep Reach phrasing: a denial that still points at the buried door.
+LOCKOUT TRACE // Denial text names maintenance reclassification, continuity hold and route materials. The door rejects the badge but leaks the buried route.
 
 ## Terminal
 
 ACCESS RESPONSE / ROUTE-SAFE ARCHIVE
 credential: revoked
 reason: evacuation-continuity materials restricted to certified Deep Reach staff
-visible terms: degraded-count, substitute witness, claim-preservation route, maintenance reclassification
+visible terms: degraded-count, substitute check, claim-preservation route, maintenance reclassification
 note: legacy field personnel may view denial language for incident reconciliation only.
 
 ## Audio
 
-They did not erase the corridor. They wrapped it in vocabulary only guilty staff would still understand.
+They did not erase the corridor. They wrapped it in vocabulary guilty staff could still read.
 
 ## Field Note
 

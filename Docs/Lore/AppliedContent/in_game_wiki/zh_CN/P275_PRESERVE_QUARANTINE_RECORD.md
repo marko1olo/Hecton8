@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "CN LOC HOLD: Preserve Quarantine Record"
+title: "保存隔离记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Preserve Quarantine Record
+# 保存隔离记录
 
-CN LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+保存隔离记录是最佳受损结局的保留令。载荷留在Deep Reach直接托管之外，坐标保持盲化，部分收据维持外部压力。Atlas通过受损修复逻辑继续呼吸，保护压力生态和存活维护生命，同时让工人姓名、盆地责任和未来salvage提交保持未解决。
 
 ## Scanner
 
-CN LOC HOLD: Payload withheld. Consequence deferred.
+保存隔离记录 // 载荷未交给Deep Reach。Atlas受损但仍活跃；生态保留令阻断干净的所有权转移。
 
 ## Terminal
 
-CN LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+结局记录 / 保存隔离
+载荷：未进入Deep Reach直接托管。
+命令：生态保留、坐标盲化、部分公开收据。
+Atlas状态：受损修复逻辑活跃。
+受保护：压力生态和存活维护生命。
+未解决：工人姓名、盆地责任、未来salvage提交。
+已知损失：保存不会变成无辜。
 
 ## Audio
 
-CN LOC HOLD: Leaving something alive is not the same as saving it.
+你让它活着。这不等于救了它。
 
 ## Field Note
 
-CN LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+扣住数据包能保护部分活系统，也让破损权威继续呼吸。盯住盲索赔队列。
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/zh_CN. -->

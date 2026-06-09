@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "Змінні бригади, не герої"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# Змінні бригади, не герої
 
-UA LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+Змінні бригади, не герої - правило людського письма для HECTON-8: працівники запам'ятовуються через роботу, втому, звички й процедурні збої.
 
 ## Scanner
 
-UA LOC HOLD: The colony becomes human through schedules, not speeches.
+ЛЮДСЬКИЙ ШАР // Колонія стає справжньою через графіки, стерті інструменти, пропущені повернення й імена на дошках змін. Не через промови.
 
 ## Terminal
 
-UA LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+ПРАВИЛО ПИСЬМА: записувати працівників як техніків насосів, медиків, маршрутних клерків, водолазів, кухарів, операторів фабрикатора й утомлених старших змін. Розклад з одним пропущеним поверненням болить сильніше за пам'ятник.
 
 ## Audio
 
-UA LOC HOLD: They were not symbols. They were late for shift.
+Вони не були символами. Вони запізнювалися на зміну.
 
 ## Field Note
 
-UA LOC HOLD: People are more believable as workers than as memorial statues.
+Люди правдоподібніші як працівники, ніж як меморіальні статуї.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/uk_UA. -->

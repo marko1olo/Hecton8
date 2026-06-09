@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Contract Risk Reward Boundary"
+title: "حد خطر ومكافأة العقد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Contract Risk Reward Boundary
+# حد خطر ومكافأة العقد
 
-AR LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+قابلية الإعادة في HECTON-8 ليست قوة موروثة. إنها عقد أسوأ ونافذة أضيق وطلب دليل أبكر وناقل يتذكر أي أجزاء منك لا تزال رهنا.
 
 ## Scanner
 
-AR LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+يربط صف العقد الامتياز ونافذة العاصفة وترتيب الحيازة وسقف الدفع ووزن البند.
 
 ## Terminal
 
-AR LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: تتطلب الصفوف شدة الامتياز وسقف الدفع ونافذة العاصفة وحيازة العينة وترتيب الأدلة ووزن بند Deep Reach. العقد هو أول مفترس.
 
 ## Audio
 
-AR LOC HOLD: The contract is the first predator.
+العقد هو أول مفترس.
 
 ## Field Note
 
-AR LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+تغييرات المكافأة تخص صف العقد، لا نص lore مرتجلا.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ar_SA. -->

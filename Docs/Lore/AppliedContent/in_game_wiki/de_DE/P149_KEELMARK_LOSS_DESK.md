@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Keelmark-Verlustdesk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Keelmark-Verlustdesk
 
-DE LOC HOLD: Keelmark Loss Desk makes the cover-up procedural. Bodies vanish into accounting before they vanish into the ocean.
+Keelmark ist der Rechenraum. Er übersetzt Katastrophe in Verlustklassen, die versichert, bestritten, verkauft oder ignoriert werden können. Seine Gefahr ist nicht theatralische Grausamkeit, sondern die ruhige Fähigkeit, eine Person in einer Kategorie namens nicht rückholbare Exposition verschwinden zu lassen.
 
 ## Scanner
 
-DE LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
+Verlusttabelle gefunden: eine Spalte Ausrüstung, eine Arbeit, eine unbequemes Zeugnis.
 
 ## Terminal
 
-DE LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
+KEELMARK-VERLUSTDESK: Versicherungsseitige Triage weist Frachtverlust, Habitatverlust, Arbeitsbeeinträchtigung, Zeugenexposition und bergbare Materialklasse zu, bevor eine Erklärung Tote benennt.
 
 ## Audio
 
-DE LOC HOLD: The ledger is dry because the room was not.
+Sie zählten die Vermissten, bevor sie die Namen zählten.
 
 ## Field Note
 
-DE LOC HOLD: A loss category is a grave with better stationery.
+Ein Verlustdesk trauert nicht. Er entscheidet, welche Abwesenheit fakturierbar ist.
 
 <!-- In-Game Wiki; generated from P149_KEELMARK_LOSS_DESK/de_DE. -->

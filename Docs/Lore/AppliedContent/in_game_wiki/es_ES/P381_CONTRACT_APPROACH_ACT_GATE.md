@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Contract Approach Act Gate"
+title: "Puerta de aproximación contractual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Contract Approach Act Gate
+# Puerta de aproximación contractual
 
-ES LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+La primera puerta es papeleo con presión detrás. Black Keel no envía a un turista a aguas de Aegir. El operador acepta transferencia de reclamación, exposición de deuda, ranura bathydrop y factura de herramientas antes del primer escaneo profundo. El viejo perfil Deep Reach importa porque el reconocimiento de procedimiento empieza antes de que la ruta parezca personal.
 
 ## Scanner
 
-ES LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Puerta de ruta: contrato aceptado. Exposición de gravamen, horario bathydrop y antiguo procedimiento Deep Reach activos antes del descenso.
 
 ## Terminal
 
-ES LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+RUTA DE CAMPAÑA // APROXIMACIÓN CONTRACTUAL. Propietario: tablero de reclamaciones Black Keel. Aceptar transferencia de reclamación, exposición de gravamen, ranura bathydrop y deuda de herramientas. Residuo de credencial Deep Reach detectado en perfil de operador. Recuperación condicional.
 
 ## Audio
 
-ES LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Viniste por trabajo. El contrato ya sabe dónde trabajaste antes.
 
 ## Field Note
 
-ES LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Nota de saqueador: lee dos veces el tablero de contrato. La segunda pasada muestra qué permisos viejos aún encajan en tus manos.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/es_ES. -->

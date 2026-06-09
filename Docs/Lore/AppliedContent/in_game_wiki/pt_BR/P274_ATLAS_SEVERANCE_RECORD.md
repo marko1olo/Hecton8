@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Atlas Severance Record"
+title: "Registro de corte de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Atlas Severance Record
+# Registro de corte de Atlas
 
-PT-BR LOC HOLD: Atlas Severance Record defines shutdown as a morally split ending route.
+O Registro de corte de Atlas não é recibo de desligamento. Ele registra um corte de continuidade na camada de reparo danificada da Atlas e acompanha resposta dos micronodos de respiro, perda de pulsos de selante, quebras de rotas de fauna marcada e roteamento negado à Deep Reach. O mesmo corte pode libertar rastros de trabalhadores presos, ferir a ecologia de pressão ou transformar infraestrutura viva em problema de propriedade para um recebedor.
 
 ## Scanner
 
-PT-BR LOC HOLD: Continuity cut. Damage not contained.
+REGISTRO DE CORTE DE ATLAS // Continuidade cortada na camada de reparo danificada. Resposta dos micronodos caindo; estabilidade da bacia e efeitos de custódia sem resolução.
 
 ## Terminal
 
-PT-BR LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+REGISTRO DE FINAL / CORTE DE ATLAS
+Ação: corte de continuidade pela camada de reparo de Atlas.
+Sistemas afetados: micronodos de respiro, pulsos de selante de concha, rotas de fauna marcada, reparo de metal danificado.
+Negado: roteamento de carga da Deep Reach pela camada viva de Atlas.
+Sem resolução: estabilidade da bacia, ecologia sobrevivente, rastros de trabalhadores presos.
+Perda conhecida: o registro não decide se o corte libertou, matou ou roubou.
 
 ## Audio
 
-PT-BR LOC HOLD: Stopping the machine does not sort what it had become.
+O link ficou mudo. A bacia não respondeu se isso era misericórdia.
 
 ## Field Note
 
-PT-BR LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Um nodo cortado pode ser misericórdia, roubo ou dano. O registro só sabe quais links ficaram mudos.
 
 <!-- In-Game Wiki; generated from P274_ATLAS_SEVERANCE_RECORD/pt_BR. -->

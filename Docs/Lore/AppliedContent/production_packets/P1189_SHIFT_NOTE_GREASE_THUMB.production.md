@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_locker_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS182_FIRST_LOCKER_TRACE_ARTICLES.md |
 | Speaker | Locker scanner, shift note provenance |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter locker |
@@ -72,17 +72,17 @@ WORK CADENCE TRACE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| ru_RU | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| ja_JP | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| zh_CN | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| fr_FR | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| es_ES | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| de_DE | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| pl_PL | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| uk_UA | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| ar_SA | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| id_ID | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| ko_KR | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| he_IL | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| pt_BR | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
-| nl_NL | draft_machine_or_llm | SHIFT NOTE // Grease thumb covers corner. Handling order matters more than wording. |
+| ar_SA | draft_machine_or_llm | ملاحظة وردية // بصمة إبهام دهنية تغطي الزاوية. ترتيب التعامل أهم من النص. |
+| de_DE | draft_machine_or_llm | SCHICHTNOTIZ // Fettiger Daumen bedeckt Ecke. Handhabungsfolge zaehlt mehr als Wortlaut. |
+| es_ES | draft_machine_or_llm | NOTA DE TURNO // Pulgar grasiento cubre esquina. El orden de manejo importa mas que las palabras. |
+| fr_FR | draft_machine_or_llm | NOTE D'EQUIPE // Pouce graisseux sur le coin. L'ordre de manipulation compte plus que le texte. |
+| he_IL | draft_machine_or_llm | פתק משמרת // אגודל שמנוני מכסה פינה. סדר הטיפול חשוב יותר מהניסוח. |
+| id_ID | draft_machine_or_llm | CATATAN SHIFT // Ibu jari berminyak menutup sudut. Urutan penanganan lebih penting dari kata-kata. |
+| ja_JP | draft_machine_or_llm | シフトメモ // 油じみた親指跡が角を覆う。文面より扱われた順序が重要。 |
+| ko_KR | draft_machine_or_llm | 교대 메모 // 기름 묻은 엄지가 모서리를 덮었다. 문구보다 취급 순서가 더 중요하다. |
+| nl_NL | draft_machine_or_llm | DIENSTNOTITIE // Vettige duim bedekt hoek. Behandelvolgorde telt meer dan tekst. |
+| pl_PL | draft_machine_or_llm | NOTATKA ZMIANY // Tlusty kciuk zakrywa rog. Kolejnosc obchodzenia sie wazniejsza niz slowa. |
+| pt_BR | draft_machine_or_llm | NOTA DE TURNO // Polegar engordurado cobre canto. Ordem de manuseio importa mais que texto. |
+| ru_RU | draft_machine_or_llm | СМЕННАЯ ЗАПИСКА // Жирный отпечаток большого пальца закрывает угол. Порядок обращения важнее слов. |
+| uk_UA | draft_machine_or_llm | ЗМІННА ЗАПИСКА // Жирний відбиток великого пальця закриває кут. Порядок поводження важливіший за слова. |
+| zh_CN | draft_machine_or_llm | 班次便条 // 油拇指印盖住角落。接触顺序比文字更重要。 |

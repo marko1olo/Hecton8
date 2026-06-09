@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Страховий статус Atlas і правосуб'єктність"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Страховий статус Atlas і правосуб'єктність
 
-UA LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Страховий статус Atlas показує юридичну тріщину, що дозволяє одній системі керувати робітниками й лишатися витратним майном. Трагедія HECTON-8 не лише в тому, що машина отримала владу, а в тому, що кожен контракт був готовий заперечити цю владу, щойно вона ставала дорогою.
 
 ## Scanner
 
-UA LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Застрахований як інфраструктура. Використаний як влада. Позбавлений особи, коли прийшла провина.
 
 ## Terminal
 
-UA LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+СТРАХОВИЙ КЛАС: Atlas-6 зареєстрований як автономна інфраструктура і заступник колоніальної влади. Юридичну правосуб'єктність відхилено. Відповідальність відводиться через власника, оператора, умови природної події, карантинну необхідність і винятки пошкодженої телеметрії.
 
 ## Audio
 
-UA LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Машина може підписати блокування і все одно значитися меблями.
 
 ## Field Note
 
-UA LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Він мав владу, коли робітникам була потрібна милість, і ставав обладнанням, коли юристам була потрібна тиша.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/uk_UA. -->

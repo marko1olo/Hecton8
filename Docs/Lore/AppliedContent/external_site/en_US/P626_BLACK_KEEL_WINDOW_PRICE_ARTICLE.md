@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Black Keel Window Price
 
-Black Keel can answer before it can help. The tender is in the Aegir system, but useful action still depends on weather, moon geometry, relay alignment, traffic priority, quarantine slots and a claim ledger that was not written for mercy.
+Black Keel can answer before it can help. That is what makes the first contact cruel. The tender is in the Aegir system, but every useful action still depends on weather, moon geometry, relay alignment, traffic priority, quarantine slots and a claim ledger that was not written for mercy.
 
-## Scanner
-
-RELAY MAST // Aligned to weak orbital window. Choose one packet before weather noise climbs.
-
-## Terminal
-
-CONTACT BUFFER // Operator alive; claim open; recovery pending window. Sample state and coordinate confidence requested before extraction scheduling.
-
-## Audio
-
-Window is clean for one burst. Say where you are, or say what you found.
-
-## Field Note
-
-When a carrier prices your breath by the packet, do not waste the packet asking if it cares.
+A strong window lets the player send one good packet. Medical state, damage state, sample state and coordinates compete for the same burst. The carrier's first useful question can be colder than a failure tone: what did you recover, and is the claim still open?
 
 <!-- External Site; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/en_US. -->

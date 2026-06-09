@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Harga Jendela Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Harga Jendela Black Keel
 
-Black Keel can answer without granting immediate rescue.
+Black Keel bisa mengonfirmasi kamu hidup tanpa memberi penyelamatan langsung. Satu jendela orbit kuat membawa satu paket berguna, dan ledger klaim menentukan nilainya.
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+TIANG RELAI // Selaras ke jendela orbit lemah. Pilih satu paket sebelum derau cuaca naik.
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+BUFFER KONTAK // Operator hidup; klaim terbuka; pemulihan menunggu jendela. Status sampel dan keyakinan koordinat diminta sebelum jadwal ekstraksi.
 
 ## Audio
 
-One clean burst; choose what to send.
+Jendela bersih untuk satu burst. Katakan di mana kamu, atau katakan apa yang kamu temukan.
 
 ## Field Note
 
-A priced packet is not mercy.
+Saat carrier menilai napasmu per paket, jangan buang paket untuk bertanya apakah ia peduli.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/id_ID. -->

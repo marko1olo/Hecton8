@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relaisspine"
+title: "Relay Spine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisspine
+# Relay Spine
 
-De relaisspine is het trage communicatieskelet: straalslots, pakketbuffers, bewaringsstempels en herhaalschema's. Het verplaatst bewijs, claims en orders, maar geen zuurstof naar een onderlopende kamer.
+De Relay Spine houdt menselijke ruimte verbonden zonder te doen alsof afstand verdwenen is. Het is een keten van beam-slots, pakketbuffers, bewaringshashes, retryschema's, notariële spoelen en lokale weerspermissies. Het kan orders, bewijs, schuldmeldingen en proof-of-life-bursts over interstellaire afstand verplaatsen. Het kan geen zuurstof in een ondergelopen kamer brengen.
 
-Op HECTON-8 kan een bericht geldig en gezien zijn en toch te laat. Waarheid en redding zijn aparte logistieke problemen.
+Op HECTON-8 is het relay druk, geen achtergrond. Een bericht kan leesbaar en nutteloos zijn. Een Deep Reach-pakket kan opgeschoond arriveren omdat de schrijvers van de eerste versie dood zijn. Een Tau Ceti-public ledger receipt kan bewijs jaren later politiek gevaarlijk maken. Luyten kan custody bewijzen en de speler toch alleen in het water laten. Het relay maakt waarheid duurzaam. Niet snel.
 
 ## Scanner
 
-Verouderde relaisbuffer. Leeftijd van uitgaand pakket boven lokale reddingsrelevantie. Bewaringshash intact; antwoordvenster dood.
+Oude relaybuffer. Bronklok geldig, bewaringshash intact, retrywachtrij leeg. Het bericht haalde reddingsmassa in en stierf in de wachtgleuf.
 
 ## Terminal
 
-RELAISSPINE // Pakket in wachtrij via Aegir lokaal, Luyten Junction en Sol-archiefpad. Lichtvertragingsroute geaccepteerd. Prioriteitsgeschil onopgelost. Menselijke respons niet operationeel voor huidig overlevingsvenster.
+RELAY SPINE STATUS // Geen ansible-lane. Pakketbewaring geldig via lokale Aegir-buffer. Luyten-ontvangstbewijs wacht op lichtvertragingsklasse. Menselijke respons verouderd voor compartimentoverleving. Lokale handelingsautoriteit behouden.
 
 ## Audio
 
-Het relais is niet stuk. Dat is het probleem. Het doet precies wat afstand toestaat.
+Een pakket kan waar, ontvangen en toch te laat zijn.
 
 ## Field Note
 
-Een bericht kan waar zijn en toch na je botten aankomen.
+Vertraging maakt waarheid niet vals. Ze maakt haar eenzaam.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/nl_NL. -->

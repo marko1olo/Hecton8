@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Vent Forge Process Steps"
+title: "热泉锻造流程"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Vent Forge Process Steps
+# 热泉锻造流程
 
-ZH LOC HOLD: Vent Forge Process Steps describe the industrial fantasy behind HECTON-8 crafting: heat, pressure, custody, and debt turned into usable parts.
+热泉锻造流程描述了 HECTON-8 制造系统背后的硬科幻幻想。行星提供热和压力，殖民地提供坏掉的夹具和流程记忆，玩家提供判断。同一条可读链可以支撑未来的制作节拍、环境叙事和音频反馈。
 
 ## Scanner
 
-ZH LOC HOLD: Vent forging should feel like using the planet against itself.
+热泉锻造不是魔法金工，而是在不让行星吞掉零件的前提下，借用它的热、压力和时机。
 
 ## Terminal
 
-ZH LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+热泉锻造步骤 / 01 从坯件排出盐水 / 02 脉冲前夹紧 / 03 随热泉上升预热 / 04 在压力低谷封口 / 05 用冷回流淬冷 / 06 以声学响环认证 / 失败：扭曲废料、盐 bloom 或压力裂纹件。
 
 ## Audio
 
-ZH LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+这颗月亮就是炉子。你只是被允许借用它。
 
 ## Field Note
 
-ZH LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+流程必须能读成排盐、夹紧、预热、封口、淬冷、响环测试。风险不是火焰，而是错过压力低谷。
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/zh_CN. -->

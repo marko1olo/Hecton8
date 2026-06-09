@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Vent Forge Process Steps"
+title: "Этапы вент-ковки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Vent Forge Process Steps
+# Этапы вент-ковки
 
-RU LOC HOLD: Vent forge steps turn hard-sci-fi resource lore into future crafting beats without simulating chemistry.
+Этапы вент-ковки превращают крафт HECTON-8 в индустриальный ритуал, который остается физическим. Игрок не носит в кармане сказочную печь. Кузня - это место, где океан, геотермальный вент и сломанное колониальное оборудование на короткое время договариваются. Сначала заготовку продувают, чтобы старый рассол не вскипел внутри. Потом ее зажимают до подъема импульса, прогревают на росте давления, запечатывают в коротком провале и закаливают в холодном обратном течении. Финальный акустический звон не украшение; он доказывает, что деталь звучит одним чистым телом, а не прячет трещины. Так крафт получает ритм, который мир может поддержать через VFX, звук и UI. Тепло важно, но тайминг важнее. Пропущенное окно не дает загадочный fail state. Оно дает гнутый лом, солевой bloom или треснувший компонент, который точно сообщает игроку, что пошло не так.
 
 ## Scanner
 
-RU LOC HOLD: Vent forging should feel like using the planet against itself.
+Вент-ковка - не магическая металлургия. Это заем тепла, давления и ритма планеты без права позволить планете забрать деталь.
 
 ## Terminal
 
-RU LOC HOLD: FORGE STEPS: purge brine, clamp blank, preheat on vent pulse, seal during pressure lull, quench in cold current, certify by acoustic ring. Wrong timing makes useful scrap.
+ЭТАПЫ ВЕНТ-КОВКИ / 01 выдуть рассол из заготовки / 02 зажать до импульса / 03 прогреть на подъеме вента / 04 запечатать в провале давления / 05 закалить в холодном обратном течении / 06 подтвердить акустическим звоном / отказ: гнутый лом, солевой bloom или треснувшая от давления деталь.
 
 ## Audio
 
-RU LOC HOLD: The moon is the furnace. The player is only allowed to borrow it.
+Луна - печь. Тебе лишь разрешили взять ее взаймы.
 
 ## Field Note
 
-RU LOC HOLD: Make forge steps readable as heat, pressure, wait and risk.
+Процесс должен читаться как продувка, зажим, прогрев, герметизация, закалка, ring-test. Риск не в огне; риск в пропущенном провале давления.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/ru_RU. -->

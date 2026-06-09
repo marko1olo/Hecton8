@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Recipe Tier Pressure Bands"
+title: "Bandas de presión de niveles de receta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Recipe Tier Pressure Bands
+# Bandas de presión de niveles de receta
 
-ES LOC HOLD: Recipe Tier Pressure Bands defines release-facing resource progression.
+Las Bandas de presión de niveles de receta definen cómo HECTON-8 evita el crafteo de supervivencia genérico. Los materiales no son costes abstractos. Son pruebas con clasificación de presión, historial de ruta, certificación y consecuencias legales. La misma estructura puede alimentar recetas, avisos de escáner, etiquetas de UI y artículos de lore sin separar el lenguaje de juego y ficción.
 
 ## Scanner
 
-ES LOC HOLD: Recipes should be depth arguments, not shopping lists.
+Una receta de HECTON-8 es un argumento de profundidad, no una lista de la compra. La pieza solo cuenta si sobrevive a la banda de presión que reclama.
 
 ## Terminal
 
-ES LOC HOLD: RECIPE BANDS: Tier 0 survival patches live in shallows; Tier 1 rated repairs need industrial shelf parts; Tier 2 pressure hardware needs brine/vent process; Tier 3 ascent/Atlas work needs abyssal authority and containment.
+BANDAS DE RECETA / T0 parche de supervivencia: salvamento somero, sello manual, sin custodia / T1 reparación certificada: piezas industriales de almacén, certificación de sala de bombas / T2 hardware de presión: lavado de salmuera, curado de respiradero, prueba acústica / T3 ascenso o Atlas: origen abisal, receptor legal, recibo de contención.
 
 ## Audio
 
-ES LOC HOLD: A recipe is a depth permission form with bolts.
+Una receta es un permiso de profundidad con pernos.
 
 ## Field Note
 
-ES LOC HOLD: Tie recipe tiers to pressure rating and route cost.
+El nivel de receta debe coincidir con clasificación de presión, coste de ruta y riesgo de custodia. Un perno barato en la banda equivocada no es barato; es una fuga futura.
 
 <!-- External Site; generated from P171_RECIPE_TIER_PRESSURE_BANDS/es_ES. -->

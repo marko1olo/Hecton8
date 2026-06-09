@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: PDA Carrier Contact Note
 spoiler_tier: 0
-title: "Black Keel Window Price"
+title: "Black Keel ウィンドウ価格"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel Window Price
+# Black Keel ウィンドウ価格
 
-Black Keel can answer without granting immediate rescue.
+Black Keelは生存を確認できても、即時救助を認めるとは限らない。強い軌道ウィンドウは一つの有用なパケットだけを運び、その価値は請求台帳が決める。
 
 ## Scanner
 
-Relay mast aligned to a weak orbital window.
+中継マスト // 弱い軌道ウィンドウに整列。天候ノイズが上がる前に一つのパケットを選べ。
 
 ## Terminal
 
-Black Keel confirms survival but keeps recovery pending window and claim state.
+接触バッファ // オペレーター生存、請求未決、回収はウィンドウ待ち。抽出予定の前にサンプル状態と座標信頼度を要求。
 
 ## Audio
 
-One clean burst; choose what to send.
+ウィンドウは一回のバーストだけ澄んでいる。居場所を言うか、見つけたものを言え。
 
 ## Field Note
 
-A priced packet is not mercy.
+carrierがあなたの呼吸をパケット単位で値付けするなら、気にかけているかを聞くためにそのパケットを捨てるな。
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_WINDOW_PRICE_ARTICLE/ja_JP. -->

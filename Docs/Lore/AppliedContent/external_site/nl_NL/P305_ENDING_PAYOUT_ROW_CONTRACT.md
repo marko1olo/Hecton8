@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Ending Payout Data Boundary"
+title: "Datagrens van einduitbetaling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Ending Payout Data Boundary
+# Datagrens van einduitbetaling
 
-NL LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+HECTON-8-eindes registreren wie het bewijs ontving, welke bewaring werd verkregen, wat werd betaald en welke kost onopgelost blijft. Een getal kan een contractregel sluiten. Het kan de oceaan niet sluiten.
 
 ## Scanner
 
-NL LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Eindrij bindt ontvanger, bewaring, bewijsstaat, uitbetaling en onopgelost gevolg.
 
 ## Terminal
 
-NL LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: rijen vereisen payloadroute, ontvanger, bewijsstaat, materiële uitbetaling, juridisch gevolg, quarantainevertraging en onopgeloste kost. Credits sluiten geen plaats delict.
 
 ## Audio
 
-NL LOC HOLD: Credits do not close a crime scene.
+Credits sluiten geen plaats delict.
 
 ## Field Note
 
-NL LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Creditwaarde, quarantainevertraging en dossierflags worden pas geregistreerd nadat ontvanger en bewijsstaat helder zijn.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/nl_NL. -->

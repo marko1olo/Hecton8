@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Brine Canyon Liability Act"
+title: "Brine Canyon Liability Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Brine Canyon Liability Act
+# Brine Canyon Liability Gate
 
-The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+The brine canyon turns timing into evidence. Sensors, clocks, queue states and broken route plates show that the flood was real and the accepted risk was also real. The operator stops collecting rumors and starts carrying a chain of documents that can survive receiver review.
 
 ## Scanner
 
-Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Route gate: brine canyon. Density layers, damaged clocks and accepted margins become physical liability evidence.
 
 ## Terminal
 
-LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+CAMPAIGN ROUTE // BRINE CANYON. Required: compare margin trace, evacuation queue, route fracture and pressure clock. Great Tide event confirmed. Commercial exception and Atlas weighting remain disputed.
 
 ## Audio
 
-The ocean did not lie. The timetable did.
+The ocean broke the wall. The timetable broke the people.
 
 ## Field Note
 
-Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Marauder note: do not argue with the tide. Argue with the timestamp someone paid to remove.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/en_US. -->

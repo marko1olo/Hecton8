@@ -13,6 +13,8 @@ from typing import NamedTuple
 ROOT = Path(__file__).resolve().parents[1]
 APPLIER = ROOT / "Assets/_Project/Scripts/Editor/ConstructionGeminiMaterialApplier.cs"
 BOOTSTRAP = ROOT / "Assets/_Project/Scripts/Editor/ConstructionBootstrapAuthoring.cs"
+UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 MANIFEST = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialIntake_20260607/GeminiSingleMaterials_Manifest.json"
 GEMINI_ATLAS_ROOT = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiMaterialAtlases"
 REQUIRED_MAPS = ("BaseColor", "NormalGL", "MaskMap_UnityURP", "ARM_AO_Rough_Metal", "Height")
@@ -284,6 +286,19 @@ def main() -> int:
             errors.append("Construction applier must not report skipped assignments instead of failing the stage")
         if "File.Exists(manifestPath)" in text or "File.ReadAllText(manifestPath)" in text or "Directory.Exists(GeminiAtlasRoot)" in text:
             errors.append("Construction applier must resolve project-root file paths instead of using cwd-relative manifest paths")
+
+    if not UNITY_APPLY_RUNNER.exists():
+        errors.append(f"missing Unity apply runner: {display_path(UNITY_APPLY_RUNNER)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $constructionValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate construction Gemini material assignments")
+
+    if not STATIC_PREFLIGHT.exists():
+        errors.append(f"missing static preflight runner: {display_path(STATIC_PREFLIGHT)}")
+    elif "ValidateConstructionGeminiMaterialAssignments.py" not in STATIC_PREFLIGHT.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateConstructionGeminiMaterialAssignments.py")
 
     seen_materials: set[str] = set()
     for assignment in assignments:

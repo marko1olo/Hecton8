@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Preserve Quarantine Record"
+title: "Record quarantainebehoud"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Preserve Quarantine Record
+# Record quarantainebehoud
 
-NL LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+Dit quarantainerecord telt omdat het opsomt wat werd vastgehouden, beschermd en later nog kan breken: payloadbewaring, blinde coördinaten, gedeeltelijk openbaar ontvangstbewijs, Atlas-schade, ecologie-hold, werknemersnamen, aansprakelijkheid en blinde vervolgclaims.
 
 ## Scanner
 
-NL LOC HOLD: Payload withheld. Consequence deferred.
+RECORD QUARANTAINEBEHOUD // Payload onthouden aan Deep Reach. Atlas blijft beschadigd maar actief; ecologie-hold blokkeert schone eigendomsoverdracht.
 
 ## Terminal
 
-NL LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+EINDRECORD / QUARANTAINEBEHOUD
+Payload: onthouden aan directe Deep Reach-bewaring.
+Order: ecologie-hold, blinde coördinaten, gedeeltelijk openbaar ontvangstbewijs.
+Atlas-staat: beschadigde reparatielogica actief.
+Beschermd: drukecologie en overlevend onderhoudsleven.
+Onopgelost: werknemersnamen, bekkenaansprakelijkheid, latere salvage-indieningen.
+Bekend verlies: behoud wordt geen onschuld.
 
 ## Audio
 
-NL LOC HOLD: Leaving something alive is not the same as saving it.
+Je liet het leven. Dat is niet hetzelfde als redden.
 
 ## Field Note
 
-NL LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Het pakket vasthouden beschermt enkele levende systemen en laat gebroken autoriteit ademen. Let op de wachtrij met blinde claims.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/nl_NL. -->

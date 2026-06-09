@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Протокол відсічення Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Протокол відсічення Atlas payload
 
-UK LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+Маршрут відсічення дає носієві спосіб зробити Atlas некорисним для Deep Reach. У цьому практична привабливість. Розріз хребта безперервності може зламати пошкоджені ремонтні петлі, ізолювати пам'ять маршруту й не дати отримувачу використати Atlas як автоматичну дорогу назад у басейн.
 
-## Scanner
-
-UK LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-UK LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-UK LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-UK LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Ціна сидить у тому самому пакеті. Atlas не просто стійка інструментів; його пошкоджений ріст став частиною місцевої екології й логіки маршрутів. Відсічення може закрити корпоративний шлях повернення, вбиваючи дані й організми, які більше ніхто не відновить. Payload зберігає proof hash, бо після зміни світла цій дії знадобиться запис.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/uk_UA. -->

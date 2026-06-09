@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using Hecton8.Atmosphere;
@@ -5,11 +6,13 @@ using Hecton8.Core;
 using Hecton8.Celestial;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
+using Hecton8.SaveSystem;
 using NUnit.Framework;
 using UnityEditor;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 public class HectonCelestialEngineEditTests
 {
@@ -359,15 +362,33 @@ public class HectonCelestialEngineEditTests
         string source = File.ReadAllText(path).Replace("\r\n", "\n");
 
         StringAssert.Contains("TryResolveSeaLevelY(movementSurfaceY, out float movementSeaLevelY)", source);
+        StringAssert.Contains("TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out seaLevelY)", source);
         StringAssert.Contains("TryResolveSeaLevelY(atmosphereSeaLevelY, out float resolvedSeaLevelY)", source);
         StringAssert.Contains("TryResolveSeaLevelY(fallbackSeaLevelY, out float seaLevelY)", source);
         StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
+        StringAssert.Contains("private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
+        StringAssert.Contains("CacheAtmosphereReadModel(currentService as IAtmosphereReadModel)", source);
+        StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext)", source);
+        StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolvePlayerContext();", source);
+        StringAssert.Contains("IsAtmosphereReadModelUsable", source);
+        StringAssert.Contains("IsPlayerContextUsable", source);
+        StringAssert.Contains("IsPlayerMovementUsable", source);
+        StringAssert.Contains("IsExplicitFollowCameraUsable(runtimeCamera)", source);
+        StringAssert.Contains("if (IsAtmosphereReadModelUsable(atmosphereManager))", source);
+        StringAssert.Contains("_cachedAtmosphereReadModel = null;", source);
+        StringAssert.Contains("_cachedPlayerContext = null;", source);
+        StringAssert.Contains("playerMovement = null;", source);
+        StringAssert.Contains("readModel is Behaviour behaviour", source);
+        StringAssert.Contains("playerContext is Behaviour behaviour", source);
+        StringAssert.Contains("return movement != null && movement.isActiveAndEnabled;", source);
         StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", source);
-        StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", source);
+        StringAssert.Contains("Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", source);
         StringAssert.Contains("seaLevelY = DefaultSeaLevelY;", source);
         StringAssert.DoesNotContain("if (math.isfinite(movementSurfaceY))", source);
         StringAssert.DoesNotContain("if (math.isfinite(atmosphereSeaLevelY))", source);
         StringAssert.DoesNotContain("return math.isfinite(fallbackSeaLevelY)", source);
+        StringAssert.DoesNotContain("_cachedAtmosphereReadModel = currentService as IAtmosphereReadModel;", source);
+        StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
     }
 
     [Test]
@@ -448,6 +469,44 @@ public class HectonCelestialEngineEditTests
         StringAssert.DoesNotContain("ResolveTaggedRuntimeMainCamera", source);
         StringAssert.Contains("Camera cachedPlayerCamera = TryResolveCachedPlayerCamera();", source);
         StringAssert.Contains("HectonPlayerMovement movement = playerContext.PlayerMovement;", source);
+    }
+
+    [Test]
+    public void CelestialEngineRejectsStalePlayerContextForSkyPlacement()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);", source);
+        StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext);", source);
+        StringAssert.Contains("private IPlayerRuntimeContext ResolveCachedPlayerContext()", source);
+        StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+        StringAssert.Contains("playerContext is Behaviour behaviour", source);
+        StringAssert.Contains("IPlayerRuntimeContext playerContext = ResolveCachedPlayerContext();", source);
+        StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+        StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
+    }
+
+    [Test]
+    public void ObserverRelativeCelestialBodyRejectsStaleRuntimeOwnersForSkyPlacement()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "ObserverRelativeCelestialBody.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("CachePlayerContext(currentService as IPlayerRuntimeContext);", source);
+        StringAssert.Contains("CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);", source);
+        StringAssert.Contains("CacheAtmosphereManager(currentService as HectonAtmosphereManager, registeredOwner: true);", source);
+        StringAssert.Contains("CacheAtmosphereManager(Hecton8.Core.GlobalRegistry.Atmosphere, registeredOwner: true);", source);
+        StringAssert.Contains("private IPlayerRuntimeContext ResolvePlayerContext()", source);
+        StringAssert.Contains("private HectonAtmosphereManager ResolveAtmosphereManagerForRead()", source);
+        StringAssert.Contains("private static bool IsPlayerContextUsable(IPlayerRuntimeContext playerContext)", source);
+        StringAssert.Contains("private static bool IsAtmosphereManagerUsable(HectonAtmosphereManager manager)", source);
+        StringAssert.Contains("private static bool IsPlayerCameraUsable(Camera camera)", source);
+        StringAssert.Contains("private static bool IsTransformUsable(Transform target)", source);
+        StringAssert.Contains("ClearRuntimeRegistryReferences();", source);
+        StringAssert.Contains("playerContext is Behaviour behaviour", source);
+        StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", source);
+        StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", source);
     }
 
     [Test]
@@ -576,6 +635,60 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void CelestialLightReadabilityQualityMapsProjectQualityTiers()
+    {
+        float surface = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            0,
+            7);
+        float abyss = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            1,
+            7);
+        float orbit = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            2,
+            7);
+        float quest = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            3,
+            7);
+        float handheld = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            4,
+            7);
+        float compactPc = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            5,
+            7);
+        float leviathan = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            6,
+            7);
+        float unknownClamped = (float)InvokePrivateStaticMethod(
+            typeof(HectonCelestialEngine),
+            "ResolveCelestialQualityFromUnityTier",
+            200,
+            9);
+
+        Assert.That(surface, Is.EqualTo(0.72f).Within(0.0001f));
+        Assert.That(abyss, Is.EqualTo(0.55f).Within(0.0001f));
+        Assert.That(orbit, Is.EqualTo(0.90f).Within(0.0001f));
+        Assert.That(quest, Is.EqualTo(0.64f).Within(0.0001f));
+        Assert.That(handheld, Is.EqualTo(0.58f).Within(0.0001f));
+        Assert.That(compactPc, Is.EqualTo(0.76f).Within(0.0001f));
+        Assert.That(leviathan, Is.EqualTo(1.00f).Within(0.0001f));
+        Assert.That(unknownClamped, Is.InRange(0.55f, 1f));
+    }
+
+    [Test]
     public void SurfaceWeatherDirectorResetBindsOwnedVfxRigInEditMode()
     {
         GameObject directorObject = new GameObject("SurfaceWeatherDirectorResetTest");
@@ -701,6 +814,194 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void AtmosphereManagerSetTimeOfDayRefreshesSunPresentationAndRejectsBadData()
+    {
+        GameObject sunObject = new GameObject("RuntimeSun");
+        GameObject atmosphereObject = new GameObject("AtmosphereManager");
+        int timeOfDayShaderId = Shader.PropertyToID("_HectonTimeOfDay01");
+        float previousTimeOfDayGlobal = Shader.GetGlobalFloat(timeOfDayShaderId);
+
+        try
+        {
+            Light sunLight = sunObject.AddComponent<Light>();
+            sunLight.type = LightType.Directional;
+
+            HectonAtmosphereManager atmosphereManager = atmosphereObject.AddComponent<HectonAtmosphereManager>();
+            SetPrivateField(atmosphereManager, "_sunLight", sunLight);
+            SetPrivateField(atmosphereManager, "_sunOrbitalYAngle", 0f);
+            SetPrivateField(atmosphereManager, "_orbitalInclination", 0f);
+            SetPrivateField(atmosphereManager, "_cycleDuration", 3600f);
+
+            Assert.That(atmosphereManager.TrySetTimeOfDay(0.25f), Is.True);
+
+            Vector3 validForward = sunLight.transform.forward;
+            Assert.That(atmosphereManager.SunAngle, Is.EqualTo(90f).Within(0.01f));
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.25f).Within(0.001f));
+            Assert.That(Vector3.Angle(Vector3.forward, validForward), Is.GreaterThan(30f));
+            Assert.That(Shader.GetGlobalFloat(timeOfDayShaderId), Is.EqualTo(0.25f).Within(0.001f));
+
+            Assert.That(atmosphereManager.TrySetTimeOfDay(float.NaN), Is.False);
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.25f).Within(0.001f));
+            Assert.That(Vector3.Angle(validForward, sunLight.transform.forward), Is.LessThan(0.01f));
+            Assert.That(Shader.GetGlobalFloat(timeOfDayShaderId), Is.EqualTo(0.25f).Within(0.001f));
+        }
+        finally
+        {
+            Shader.SetGlobalFloat(timeOfDayShaderId, previousTimeOfDayGlobal);
+            Object.DestroyImmediate(atmosphereObject);
+            Object.DestroyImmediate(sunObject);
+        }
+    }
+
+    [Test]
+    public void AtmosphereManagerSaveLoadPersistsTimeOfDayAndIgnoresBadPayload()
+    {
+        GameObject sunObject = new GameObject("RuntimeSun");
+        GameObject atmosphereObject = new GameObject("AtmosphereManager");
+
+        try
+        {
+            Light sunLight = sunObject.AddComponent<Light>();
+            sunLight.type = LightType.Directional;
+
+            HectonAtmosphereManager atmosphereManager = atmosphereObject.AddComponent<HectonAtmosphereManager>();
+            SetPrivateField(atmosphereManager, "_sunLight", sunLight);
+            SetPrivateField(atmosphereManager, "_sunOrbitalYAngle", 0f);
+            SetPrivateField(atmosphereManager, "_orbitalInclination", 0f);
+            SetPrivateField(atmosphereManager, "_cycleDuration", 3600f);
+
+            Assert.That(atmosphereManager.TrySetTimeOfDay(0.62f), Is.True);
+            SaveData saved = SaveData.CreateNew(0d);
+            atmosphereManager.PopulateSaveData(saved);
+
+            Assert.That(saved.celestialLightPhaseSerialized, Is.True);
+            Assert.That(saved.celestialLightTimeOfDay01, Is.EqualTo(0.62f).Within(0.001f));
+
+            Assert.That(atmosphereManager.TrySetTimeOfDay(0.1f), Is.True);
+            LogAssert.Expect(LogType.Warning, "[HectonAtmosphere] Celestial light phase save payload restored through atmosphere fallback: celestial owner unavailable.");
+            atmosphereManager.LoadFromSaveData(saved);
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.62f).Within(0.001f));
+
+            SaveData missing = SaveData.CreateNew(0d);
+            missing.celestialLightPhaseSerialized = false;
+            missing.celestialLightTimeOfDay01 = 0.9f;
+            atmosphereManager.LoadFromSaveData(missing);
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.62f).Within(0.001f));
+
+            SaveData bad = SaveData.CreateNew(0d);
+            bad.celestialLightPhaseSerialized = true;
+            bad.celestialLightTimeOfDay01 = float.NaN;
+            LogAssert.Expect(LogType.Warning, "[HectonAtmosphere] Celestial light phase save payload ignored: non-finite time-of-day.");
+            atmosphereManager.LoadFromSaveData(bad);
+            Assert.That(atmosphereManager.TimeOfDay, Is.EqualTo(0.62f).Within(0.001f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(atmosphereObject);
+            Object.DestroyImmediate(sunObject);
+        }
+    }
+
+    [Test]
+    public void RuntimeTimeOfDayBridgeRefreshesAtmosphereAndCelestialReadability()
+    {
+        string atmospherePath = Path.Combine("Assets", "_Project", "Scripts", "HectonAtmosphereManager.cs");
+        string celestialPath = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string saveDataPath = Path.Combine("Assets", "_Project", "Scripts", "SaveData.cs");
+        string saveCodecPath = Path.Combine("Assets", "_Project", "Scripts", "SaveBinaryPayloadCodec.cs");
+        string saveMigrationPath = Path.Combine("Assets", "_Project", "Scripts", "SaveDataMigration.cs");
+        string atmosphereSource = File.ReadAllText(atmospherePath).Replace("\r\n", "\n");
+        string celestialSource = File.ReadAllText(celestialPath).Replace("\r\n", "\n");
+        string saveDataSource = File.ReadAllText(saveDataPath).Replace("\r\n", "\n");
+        string saveCodecSource = File.ReadAllText(saveCodecPath).Replace("\r\n", "\n");
+        string saveMigrationSource = File.ReadAllText(saveMigrationPath).Replace("\r\n", "\n");
+
+        StringAssert.Contains("ISaveable", atmosphereSource);
+        StringAssert.Contains("public int SavePriority                => 4;", atmosphereSource);
+        StringAssert.Contains("public int LoadPriority                => 4;", atmosphereSource);
+        StringAssert.Contains("TryRegisterSaveParticipant();", atmosphereSource);
+        StringAssert.Contains("TryUnregisterSaveParticipant();", atmosphereSource);
+        StringAssert.Contains("case GlobalRegistryServiceSlot.Save:", atmosphereSource);
+        StringAssert.Contains("public void PopulateSaveData(SaveData data)", atmosphereSource);
+        StringAssert.Contains("data.celestialLightPhaseSerialized = true;", atmosphereSource);
+        StringAssert.Contains("data.celestialLightTimeOfDay01 = Mathf.Repeat(timeOfDay01, 1f);", atmosphereSource);
+        StringAssert.Contains("public void LoadFromSaveData(SaveData data)", atmosphereSource);
+        StringAssert.Contains("!data.celestialLightPhaseSerialized", atmosphereSource);
+        StringAssert.Contains("_CelestialLightPhaseLoadWarningHash", atmosphereSource);
+        StringAssert.Contains("_CelestialLightPhaseLoadNonFiniteContextHash", atmosphereSource);
+        StringAssert.Contains("_CelestialLightPhaseLoadOwnerFallbackContextHash", atmosphereSource);
+        StringAssert.Contains("_CelestialLightPhaseLoadRejectedContextHash", atmosphereSource);
+        StringAssert.Contains("celestial.RecordCelestialLightPhaseLoadNonFinite(data.celestialLightTimeOfDay01);", atmosphereSource);
+        StringAssert.Contains("celestial.RecordCelestialLightPhaseLoadFallback(timeOfDay01);", atmosphereSource);
+        StringAssert.Contains("celestial.RecordCelestialLightPhaseLoadRejected(timeOfDay01);", atmosphereSource);
+        StringAssert.Contains("ReportCelestialLightPhaseLoadWarning(\n                    \"ignored: non-finite time-of-day\"", atmosphereSource);
+        StringAssert.Contains("ReportCelestialLightPhaseLoadWarning(\n                    \"restored through atmosphere fallback: celestial owner unavailable\"", atmosphereSource);
+        StringAssert.Contains("ReportCelestialLightPhaseLoadWarning(\n                \"ignored: runtime owner rejected phase\"", atmosphereSource);
+        StringAssert.Contains("PublishCelestialLightPhaseLoadWarningTelemetry(contextHash);", atmosphereSource);
+        StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(\n                _CelestialLightPhaseLoadWarningHash", atmosphereSource);
+        StringAssert.Contains("celestial.TryApplyRuntimeTimeOfDay01(timeOfDay01)", atmosphereSource);
+        StringAssert.Contains("public bool TrySetTimeOfDay(float normalized)", atmosphereSource);
+        StringAssert.Contains("if (!math.isfinite(normalized))", atmosphereSource);
+        StringAssert.Contains("ApplyTimeOfDayImmediate(math.saturate(normalized));", atmosphereSource);
+        StringAssert.Contains("RotateSun();", atmosphereSource);
+        StringAssert.Contains("EnvironmentState resolvedState = ResolveState();", atmosphereSource);
+        StringAssert.Contains("_transitionProgress = 1f;", atmosphereSource);
+        StringAssert.Contains("QueueGiantAbyssLight();", atmosphereSource);
+        StringAssert.Contains("QueueAbyssAtmospherePresentation();", atmosphereSource);
+        StringAssert.Contains("FlushLateFramePresentation();", atmosphereSource);
+
+        StringAssert.Contains("case GlobalRegistryServiceSlot.AtmosphereRuntime:", celestialSource);
+        StringAssert.Contains("CacheAtmosphereManager(GlobalRegistry.Atmosphere);", celestialSource);
+        StringAssert.Contains("private HectonAtmosphereManager ResolveAtmosphereManagerForRead()", celestialSource);
+        StringAssert.Contains("private static bool IsAtmosphereManagerUsable(HectonAtmosphereManager atmosphereManager)", celestialSource);
+        StringAssert.Contains("HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;", celestialSource);
+        StringAssert.Contains("_atmosphereManager = IsAtmosphereManagerUsable(registeredAtmosphere)", celestialSource);
+        StringAssert.Contains("HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManagerForRead();", celestialSource);
+        StringAssert.Contains("public bool TryApplyRuntimeTimeOfDay01(float timeOfDay01)", celestialSource);
+        StringAssert.Contains("if (!math.isfinite(timeOfDay01))", celestialSource);
+        StringAssert.Contains("WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseNonFinite);", celestialSource);
+        StringAssert.Contains("float normalizedTimeOfDay01 = math.saturate(timeOfDay01);", celestialSource);
+        StringAssert.Contains("atmosphereManager.TrySetTimeOfDay(normalizedTimeOfDay01)", celestialSource);
+        StringAssert.Contains("WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRejected);", celestialSource);
+        StringAssert.Contains("RefreshCelestialRuntimeAfterTimeOfDayRestore();", celestialSource);
+        StringAssert.Contains("private void RefreshCelestialRuntimeAfterTimeOfDayRestore()", celestialSource);
+        StringAssert.Contains("UpdateSunPosition(0f);", celestialSource);
+        StringAssert.Contains("RefreshCelestialRuntimeSnapshotSunDirectionAfterTimeOfDayRestore();", celestialSource);
+        StringAssert.Contains("PublishCelestialRuntimeSnapshot(publishGlobalSnapshot: true);", celestialSource);
+        StringAssert.Contains("PublishGlobalTimeSyncSignal(in snapshot);", celestialSource);
+        StringAssert.Contains("PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);", celestialSource);
+        StringAssert.Contains("FlushCelestialRuntimeSnapshotShaderGlobals();", celestialSource);
+        StringAssert.Contains("PublishCelestialRuntimeSnapshot(publishGlobalSnapshot: true);\n            PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);\n            FlushCelestialRuntimeSnapshotShaderGlobals();", celestialSource);
+        StringAssert.Contains("TryRaiseCelestialSunAngleChanged(_currentSunAngle);", celestialSource);
+        StringAssert.Contains("private void RefreshCelestialRuntimeSnapshotSunDirectionAfterTimeOfDayRestore()", celestialSource);
+        StringAssert.Contains("snapshot.SunDirection = NormalizeVisualRsqrt(_resolvedSunDirection", celestialSource);
+        StringAssert.Contains("snapshot.Sequence = _celestialRuntimeSequence + 1u;", celestialSource);
+        StringAssert.Contains("CelestialBlackBoxFlagSavePhaseRestored = 1u << 27", celestialSource);
+        StringAssert.Contains("CelestialBlackBoxFlagSavePhaseFallback = 1u << 28", celestialSource);
+        StringAssert.Contains("CelestialBlackBoxFlagSavePhaseRejected = 1u << 29", celestialSource);
+        StringAssert.Contains("CelestialBlackBoxFlagSavePhaseNonFinite = 1u << 30", celestialSource);
+        StringAssert.Contains("WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRestored);", celestialSource);
+        StringAssert.Contains("internal void RecordCelestialLightPhaseLoadFallback(float timeOfDay01)", celestialSource);
+        StringAssert.Contains("internal void RecordCelestialLightPhaseLoadRejected(float timeOfDay01)", celestialSource);
+        StringAssert.Contains("internal void RecordCelestialLightPhaseLoadNonFinite(float timeOfDay01)", celestialSource);
+        StringAssert.Contains("private void WriteCelestialLightPhasePersistenceBlackBox(float timeOfDay01, uint persistenceFlag)", celestialSource);
+        StringAssert.DoesNotContain("_atmosphereManager.TimeOfDay", celestialSource);
+
+        StringAssert.Contains("CelestialLightPhasePersistenceVersion = 84", saveDataSource);
+        StringAssert.Contains("ProceduralTerrainIdentityContractPersistenceVersion = 85", saveDataSource);
+        StringAssert.Contains("CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion", saveDataSource);
+        StringAssert.Contains("public bool celestialLightPhaseSerialized;", saveDataSource);
+        StringAssert.Contains("public float celestialLightTimeOfDay01 = CelestialLightTimeOfDayDefault;", saveDataSource);
+        StringAssert.Contains("CelestialLightPhaseSaveVersion = SaveData.CelestialLightPhasePersistenceVersion", saveCodecSource);
+        StringAssert.Contains("WriteCelestialLightPhase(ref writer, data)", saveCodecSource);
+        StringAssert.Contains("ReadCelestialLightPhase(ref reader, data.version, data)", saveCodecSource);
+        StringAssert.Contains("if (saveDataVersion < CelestialLightPhaseSaveVersion)", saveCodecSource);
+        StringAssert.Contains("SanitizeCelestialLightPhase(data);", saveCodecSource);
+        StringAssert.Contains("EnsureCelestialLightPhase(data, sourceVersion, steps)", saveMigrationSource);
+        StringAssert.Contains("celestial light phase state repaired", saveMigrationSource);
+    }
+
+    [Test]
     public void CelestialEngineConsumesAtmosphereDirtySignalAfterManualSunMove()
     {
         GameObject sunObject = new GameObject("EditorSun");
@@ -771,6 +1072,53 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void CelestialLightReadabilityReadModelTracksPublishAndClear()
+    {
+        CelestialLightReadabilitySnapshot originalSnapshot = GlobalRegistry.CelestialLightReadabilitySnapshot;
+        uint originalSequence = GlobalRegistry.CelestialLightReadabilitySequence;
+        CelestialLightReadabilitySnapshot seededSnapshot = new CelestialLightReadabilitySnapshot
+        {
+            DepthMeters = 250f,
+            UnderwaterVisibilityMeters = 36f,
+            AmbientReadability01 = 0.42f,
+            Flags = (uint)CelestialLightReadabilityFlags.Valid,
+            DepthStratum = (uint)CelestialLightDepthStratum.Mesophotic100To500Meters,
+            Sequence = 91u
+        };
+
+        try
+        {
+            InvokePrivateStaticMethod(
+                typeof(GlobalRegistry),
+                "PublishCelestialLightReadabilitySnapshot",
+                seededSnapshot);
+
+            ICelestialLightReadabilityReadModel readModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+            Assert.That(GlobalRegistry.CelestialLightReadabilitySequence, Is.EqualTo(seededSnapshot.Sequence));
+            Assert.That(GlobalRegistry.CelestialLightReadabilitySnapshot.Sequence, Is.EqualTo(seededSnapshot.Sequence));
+            Assert.That(readModel.LightReadabilitySequence, Is.EqualTo(seededSnapshot.Sequence));
+            Assert.That(readModel.LightReadabilitySnapshot.DepthMeters, Is.EqualTo(250f).Within(0.001f));
+            Assert.That(readModel.LightReadabilitySnapshot.DepthStratum, Is.EqualTo((uint)CelestialLightDepthStratum.Mesophotic100To500Meters));
+
+            CelestialLightReadabilitySnapshot emptySnapshot = default;
+            InvokePrivateStaticMethod(
+                typeof(GlobalRegistry),
+                "PublishCelestialLightReadabilitySnapshot",
+                emptySnapshot);
+
+            Assert.That(GlobalRegistry.CelestialLightReadabilitySequence, Is.EqualTo(0u));
+            Assert.That(GlobalRegistry.CelestialLightReadabilitySnapshot.Flags, Is.EqualTo(0u));
+            Assert.That(readModel.LightReadabilitySequence, Is.EqualTo(0u));
+            Assert.That(readModel.LightReadabilitySnapshot.Flags, Is.EqualTo(0u));
+        }
+        finally
+        {
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialLightReadabilitySnapshot", originalSnapshot);
+            SetPrivateStaticField(typeof(GlobalRegistry), "_celestialLightReadabilitySequence", unchecked((int)originalSequence));
+        }
+    }
+
+    [Test]
     public void CelestialEngineOnDisableUnregistersHotSwapBeforeClearingRuntimeCaches()
     {
         string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
@@ -789,6 +1137,45 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void CelestialEngineClearsAegirMaterialCacheAfterTextureRestoreOnTeardown()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        int disableStart = source.IndexOf("private void OnDisable()", System.StringComparison.Ordinal);
+        Assert.That(disableStart, Is.GreaterThanOrEqualTo(0));
+        int destroyStart = source.IndexOf("private void OnDestroy()", disableStart, System.StringComparison.Ordinal);
+        Assert.That(destroyStart, Is.GreaterThan(disableStart));
+        int refreshStart = source.IndexOf("private void RefreshColdRuntimeDependencies()", destroyStart, System.StringComparison.Ordinal);
+        Assert.That(refreshStart, Is.GreaterThan(destroyStart));
+        string onDisable = source.Substring(disableStart, destroyStart - disableStart);
+        string onDestroy = source.Substring(destroyStart, refreshStart - destroyStart);
+
+        StringAssert.Contains("RestoreCelestialTextureDefaults();", onDisable);
+        StringAssert.Contains("ClearAegirMaterialRuntimeCache();", onDisable);
+        StringAssert.Contains("RestoreCelestialTextureDefaults();", onDestroy);
+        StringAssert.Contains("ClearAegirMaterialRuntimeCache();", onDestroy);
+        Assert.That(
+            onDisable.IndexOf("RestoreCelestialTextureDefaults();", System.StringComparison.Ordinal),
+            Is.LessThan(onDisable.IndexOf("ClearAegirMaterialRuntimeCache();", System.StringComparison.Ordinal)));
+        Assert.That(
+            onDestroy.IndexOf("RestoreCelestialTextureDefaults();", System.StringComparison.Ordinal),
+            Is.LessThan(onDestroy.IndexOf("ClearAegirMaterialRuntimeCache();", System.StringComparison.Ordinal)));
+
+        int clearStart = source.IndexOf("private void ClearAegirMaterialRuntimeCache()", System.StringComparison.Ordinal);
+        Assert.That(clearStart, Is.GreaterThanOrEqualTo(0));
+        int clearEnd = source.IndexOf("private static Texture GetMaterialTexture", clearStart, System.StringComparison.Ordinal);
+        Assert.That(clearEnd, Is.GreaterThan(clearStart));
+        string clearBody = source.Substring(clearStart, clearEnd - clearStart);
+        StringAssert.Contains("aegirRenderer.SetPropertyBlock(null);", clearBody);
+        StringAssert.Contains("_aegirMPB.Clear();", clearBody);
+        StringAssert.Contains("_aegirSharedMaterial = null;", clearBody);
+        StringAssert.Contains("_aegirMainTexDefault = null;", clearBody);
+        StringAssert.Contains("_aegirDetailTexDefault = null;", clearBody);
+        StringAssert.Contains("_aegirEmissionMapDefault = null;", clearBody);
+        StringAssert.Contains("_aegirCelestialOcclusionTexDefault = null;", clearBody);
+    }
+
+    [Test]
     public void CelestialEnginePublishesAegirSkyProjectionGlobalsFromRuntimeSnapshot()
     {
         string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
@@ -799,8 +1186,58 @@ public class HectonCelestialEngineEditTests
         StringAssert.Contains("Shader.SetGlobalVector(\n                _ID_H8AegirPlanetCenterRadius", source);
         StringAssert.Contains("Shader.SetGlobalVector(\n                _ID_H8AegirSunDirection", source);
         StringAssert.Contains("Shader.SetGlobalFloat(_ID_H8AegirFlowPhaseValid, 1f);", source);
+        StringAssert.Contains("Shader.SetGlobalFloat(_ID_H8AegirStormEmission, ResolveAegirSkyProjectionStormEmission());", source);
+        StringAssert.Contains("ResolveAegirSkyProjectionQuality01", source);
+        StringAssert.Contains("return math.max(math.saturate(profile.minimumQuality), quality);", source);
         StringAssert.Contains("ResolveAegirSkyProjectionVisibility01", source);
+        StringAssert.Contains("ResolveAegirSkyProjectionStormEmission", source);
+        StringAssert.Contains("_AegirStormEmissionInvalidWarningHash", source);
+        StringAssert.Contains("AegirStormEmissionWarningCooldownFrames", source);
+        StringAssert.Contains("ReportAegirStormEmissionInvalidIfNeeded", source);
         StringAssert.Contains("ClearAegirSkyProjectionGlobals();", source);
+        StringAssert.Contains("Shader.SetGlobalFloat(_ID_H8AegirStormEmission, 1f);", source);
+    }
+
+    [Test]
+    public void CelestialEnginePublishesAegirWaterConsumerGlobalsFromRuntimeSnapshot()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("PublishOceanCelestialProjectionGlobals(aegirDirection);", source);
+        StringAssert.Contains("private void PublishOceanCelestialProjectionGlobals(Vector4 aegirDirection)", source);
+        StringAssert.Contains("_ID_HectonEclipseWaterShadowParams", source);
+        StringAssert.Contains("_ID_HectonEclipseWaterShadowDirection", source);
+        StringAssert.Contains("_ID_HectonRingCausticsParams", source);
+        StringAssert.Contains("_ID_HectonRingCausticsDirection", source);
+        StringAssert.Contains("ResolveAupOceanShadowCenterRuntimeXZ(planarDirection, travel - radius)", source);
+        StringAssert.Contains("TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)", source);
+        StringAssert.Contains("Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowParams, Vector4.zero);", source);
+        StringAssert.Contains("Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowDirection, Vector4.zero);", source);
+        StringAssert.Contains("Shader.SetGlobalVector(_ID_HectonRingCausticsParams, Vector4.zero);", source);
+        StringAssert.Contains("Shader.SetGlobalVector(_ID_HectonRingCausticsDirection, Vector4.zero);", source);
+    }
+
+    [Test]
+    public void CelestialEngineClearSurfaceWeatherOverrideImmediatelyRestoresAegirMaterialsInPlayMode()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+        int start = source.IndexOf("internal void ClearSurfaceWeatherOverride()", System.StringComparison.Ordinal);
+        Assert.That(start, Is.GreaterThanOrEqualTo(0));
+        int end = source.IndexOf("public float SunElevation", start, System.StringComparison.Ordinal);
+        Assert.That(end, Is.GreaterThan(start));
+        string clearBody = source.Substring(start, end - start);
+
+        StringAssert.Contains("_surfaceWeatherOverrideActive = false;", clearBody);
+        StringAssert.Contains("_surfaceWeatherFogOverrideActive = false;", clearBody);
+        StringAssert.Contains("_surfaceWeatherStormEmissionMultiplier = 1f;", clearBody);
+        StringAssert.Contains("if (Application.isPlaying)", clearBody);
+        StringAssert.Contains("UpdateSkyMaterial();", clearBody);
+        StringAssert.Contains("UpdateAegirMaterial();", clearBody);
+        Assert.That(
+            clearBody.IndexOf("_surfaceWeatherStormEmissionMultiplier = 1f;", System.StringComparison.Ordinal),
+            Is.LessThan(clearBody.IndexOf("UpdateAegirMaterial();", System.StringComparison.Ordinal)));
     }
 
     [Test]
@@ -811,9 +1248,282 @@ public class HectonCelestialEngineEditTests
 
         StringAssert.Contains("TryClaimCelestialRuntimeAuthority()", source);
         StringAssert.Contains("DisableDuplicateCelestialPresentation()", source);
+        StringAssert.Contains("PublishAegirPresentationWarning(_AegirDuplicateOwnerWarningHash, 1f);", source);
         StringAssert.Contains("bool shouldClearRuntimeSnapshot = !Application.isPlaying || _hasCelestialRuntimeAuthority;", source);
         StringAssert.Contains("if (shouldClearRuntimeSnapshot)\n                ClearCelestialRuntimeSnapshot();", source);
         StringAssert.Contains("ReleaseCelestialRuntimeAuthority();", source);
+    }
+
+    [Test]
+    public void CelestialEnginePublishesAegirPresentationFailureTelemetry()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("_AegirPresentationContextHash", source);
+        StringAssert.Contains("_AegirDuplicateOwnerWarningHash", source);
+        StringAssert.Contains("_AegirMissingMaterialWarningHash", source);
+        StringAssert.Contains("_AegirMissingBandTextureWarningHash", source);
+        StringAssert.Contains("private static void PublishAegirPresentationWarning(uint warningHash, float scalarValue)", source);
+        StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(\n                warningHash,\n                _AegirPresentationContextHash,\n                scalarValue);", source);
+        StringAssert.Contains("PublishAegirPresentationWarning(_AegirMissingMaterialWarningHash, 1f);", source);
+        StringAssert.Contains("PublishAegirPresentationWarning(_AegirMissingBandTextureWarningHash, 1f);", source);
+    }
+
+    [Test]
+    public void CelestialEngineReportsBoundedCelestialEventBackpressure()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("_CelestialEventDropWarningHash", source);
+        StringAssert.Contains("TryRaiseCelestialSunAngleChanged(_currentSunAngle);", source);
+        StringAssert.Contains("TryRaiseCelestialPlanetPhaseChanged(_currentPhase);", source);
+        StringAssert.Contains("TryRaiseCelestialEclipseStarted();", source);
+        StringAssert.Contains("TryRaiseCelestialEclipseEnded();", source);
+        StringAssert.Contains("ReportCelestialEventDropIfBackpressured(_CelestialSunAngleEventHash);", source);
+        StringAssert.Contains("ReportCelestialEventDropIfBackpressured(_CelestialPlanetPhaseEventHash);", source);
+        StringAssert.Contains("ReportCelestialEventDropIfBackpressured(_CelestialEclipseStartedEventHash);", source);
+        StringAssert.Contains("ReportCelestialEventDropIfBackpressured(_CelestialEclipseEndedEventHash);", source);
+        StringAssert.Contains("if (!Application.isPlaying || CelestialEvents.PendingCount <= 0)", source);
+        StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(\n                _CelestialEventDropWarningHash", source);
+    }
+
+    [Test]
+    public void CelestialEngineReportsCelestialTruthFallbackTelemetry()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("private enum CelestialTruthReadFailure : byte", source);
+        StringAssert.Contains("_CelestialTruthFallbackWarningHash", source);
+        StringAssert.Contains("_CelestialTruthMissingContextHash", source);
+        StringAssert.Contains("_CelestialTruthInvalidStateContextHash", source);
+        StringAssert.Contains("_CelestialTruthInvalidSnapshotContextHash", source);
+        StringAssert.Contains("ReportCelestialTruthFallbackIfNeeded(failure);", source);
+        StringAssert.Contains("ReportCelestialTruthFallbackIfNeeded(CelestialTruthReadFailure.InvalidSnapshot);", source);
+        StringAssert.Contains("failure = CelestialTruthReadFailure.MissingVaultOrHandle;", source);
+        StringAssert.Contains("failure = CelestialTruthReadFailure.InvalidState;", source);
+        StringAssert.Contains("failure = CelestialTruthReadFailure.InvalidSnapshot;", source);
+        StringAssert.Contains("ResolveCelestialTruthFailureContextHash(failure)", source);
+        StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(\n                _CelestialTruthFallbackWarningHash", source);
+    }
+
+    [Test]
+    public void CelestialRuntimeSnapshotGlobalPublishHasSingleRuntimeOwner()
+    {
+        string root = Directory.GetCurrentDirectory();
+        string scriptsRoot = Path.Combine(root, "Assets", "_Project", "Scripts");
+        string[] sources = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+
+        foreach (string sourcePath in sources)
+        {
+            string normalizedPath = sourcePath.Replace('\\', '/');
+            string source = File.ReadAllText(sourcePath);
+            if (!source.Contains("PublishCelestialRuntimeSnapshot("))
+                continue;
+
+            bool allowed =
+                normalizedPath.EndsWith("/Assets/_Project/Scripts/HectonCelestialEngine.cs", StringComparison.Ordinal) ||
+                normalizedPath.EndsWith("/Assets/_Project/Scripts/Core/GlobalRegistry.cs", StringComparison.Ordinal);
+            Assert.That(allowed, Is.True, "Unexpected global CelestialRuntimeSnapshot writer: " + normalizedPath);
+        }
+    }
+
+    [Test]
+    public void CelestialLightReadabilityGlobalPublishHasSingleRuntimeOwner()
+    {
+        string root = Directory.GetCurrentDirectory();
+        string scriptsRoot = Path.Combine(root, "Assets", "_Project", "Scripts");
+        string[] sources = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+
+        foreach (string sourcePath in sources)
+        {
+            string normalizedPath = sourcePath.Replace('\\', '/');
+            string source = File.ReadAllText(sourcePath);
+            if (!source.Contains("PublishCelestialLightReadabilitySnapshot("))
+                continue;
+
+            bool allowed =
+                normalizedPath.EndsWith("/Assets/_Project/Scripts/HectonCelestialEngine.cs", StringComparison.Ordinal) ||
+                normalizedPath.EndsWith("/Assets/_Project/Scripts/Core/GlobalRegistry.cs", StringComparison.Ordinal);
+            Assert.That(allowed, Is.True, "Unexpected global CelestialLightReadabilitySnapshot writer: " + normalizedPath);
+        }
+    }
+
+    [Test]
+    public void CelestialEventsModelListenerLifecycleAndDispatchFailures()
+    {
+        string path = Path.Combine("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+        string source = File.ReadAllText(path).Replace("\r\n", "\n");
+
+        StringAssert.Contains("_deferredRegisterListeners", source);
+        StringAssert.Contains("_deferredUnregisterListeners", source);
+        StringAssert.Contains("QueueDeferredRegister(listener);", source);
+        StringAssert.Contains("QueueDeferredUnregister(listener);", source);
+        StringAssert.Contains("ApplyDeferredListenerMutations();", source);
+        StringAssert.Contains("DrainQueuedEvents();", source);
+        StringAssert.Contains("private static void DispatchToListener(ICelestialEventListener listener, in CelestialEventPayload payload)", source);
+        StringAssert.Contains("ReportQueueOverflow(eventType);", source);
+        StringAssert.Contains("ReportDuplicateListenerRegistration();", source);
+        StringAssert.Contains("ReportListenerRejected();", source);
+        StringAssert.Contains("ReportListenerDispatchException();", source);
+        StringAssert.Contains("ReportUnregisterMiss();", source);
+        StringAssert.Contains("GlobalTelemetryBus.PublishPerformanceWarning(\n                _QueueOverflowWarningHash", source);
+        StringAssert.Contains("Hecton8.Core.H8Debug.LogException(exception);", source);
+    }
+
+    [Test]
+    public void CelestialEventsReentrantUnregisterRegisterKeepsListenerAlive()
+    {
+        ResetCelestialEventsForTests();
+        try
+        {
+            TestCelestialEventListener listener = new TestCelestialEventListener();
+            listener.SunAngleCallback = (self, angle) =>
+            {
+                CelestialEvents.Unregister(self);
+                CelestialEvents.Register(self);
+            };
+
+            CelestialEvents.Register(listener);
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(12f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(listener.SunAngleCount, Is.EqualTo(1));
+            Assert.That(listener.LastSunAngle, Is.EqualTo(12f).Within(0.001f));
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(24f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(listener.SunAngleCount, Is.EqualTo(2));
+            Assert.That(listener.LastSunAngle, Is.EqualTo(24f).Within(0.001f));
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(0));
+        }
+        finally
+        {
+            ResetCelestialEventsForTests();
+        }
+    }
+
+    [Test]
+    public void CelestialEventsDeferredUnregisterPreventsStaleCallbackInSameDispatch()
+    {
+        ResetCelestialEventsForTests();
+        try
+        {
+            TestCelestialEventListener staleListener = new TestCelestialEventListener();
+            TestCelestialEventListener removingListener = new TestCelestialEventListener();
+            removingListener.SunAngleCallback = (_, __) => CelestialEvents.Unregister(staleListener);
+
+            CelestialEvents.Register(staleListener);
+            CelestialEvents.Register(removingListener);
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(5f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(removingListener.SunAngleCount, Is.EqualTo(1));
+            Assert.That(staleListener.SunAngleCount, Is.EqualTo(0));
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(6f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(removingListener.SunAngleCount, Is.EqualTo(2));
+            Assert.That(staleListener.SunAngleCount, Is.EqualTo(0));
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(0));
+        }
+        finally
+        {
+            ResetCelestialEventsForTests();
+        }
+    }
+
+    [Test]
+    public void CelestialEventsDeferredRegisterStartsOnNextPayloadOnly()
+    {
+        ResetCelestialEventsForTests();
+        try
+        {
+            TestCelestialEventListener child = new TestCelestialEventListener();
+            TestCelestialEventListener parent = new TestCelestialEventListener();
+            parent.SunAngleCallback = (_, __) => CelestialEvents.Register(child);
+
+            CelestialEvents.Register(parent);
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(1f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(parent.SunAngleCount, Is.EqualTo(1));
+            Assert.That(child.SunAngleCount, Is.EqualTo(0));
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(2f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(parent.SunAngleCount, Is.EqualTo(2));
+            Assert.That(child.SunAngleCount, Is.EqualTo(1));
+            Assert.That(child.LastSunAngle, Is.EqualTo(2f).Within(0.001f));
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(0));
+        }
+        finally
+        {
+            ResetCelestialEventsForTests();
+        }
+    }
+
+    [Test]
+    public void CelestialEventsBoundedQueueRejectsOverflowAndDrainsAcceptedPayloads()
+    {
+        ResetCelestialEventsForTests();
+        try
+        {
+            TestCelestialEventListener listener = new TestCelestialEventListener();
+            CelestialEvents.Register(listener);
+
+            for (int i = 0; i < 8; i++)
+                Assert.IsTrue(CelestialEvents.TryRaiseEclipseStarted(), $"Expected payload {i} to fit the bounded celestial event queue.");
+
+            Assert.IsFalse(CelestialEvents.TryRaiseEclipseStarted());
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(8));
+
+            CelestialEvents.FlushPending();
+
+            Assert.That(listener.EclipseStartedCount, Is.EqualTo(8));
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(0));
+        }
+        finally
+        {
+            ResetCelestialEventsForTests();
+        }
+    }
+
+    [Test]
+    public void CelestialEventsListenerExceptionDoesNotBlockOtherListeners()
+    {
+        ResetCelestialEventsForTests();
+        bool previousIgnore = LogAssert.ignoreFailingMessages;
+        LogAssert.ignoreFailingMessages = true;
+        try
+        {
+            TestCelestialEventListener throwingListener = new TestCelestialEventListener();
+            throwingListener.ThrowOnSunAngle = true;
+            TestCelestialEventListener healthyListener = new TestCelestialEventListener();
+
+            CelestialEvents.Register(throwingListener);
+            CelestialEvents.Register(healthyListener);
+
+            Assert.IsTrue(CelestialEvents.TryRaiseSunAngleChanged(64f));
+            CelestialEvents.FlushPending();
+
+            Assert.That(throwingListener.SunAngleCount, Is.EqualTo(1));
+            Assert.That(healthyListener.SunAngleCount, Is.EqualTo(1));
+            Assert.That(healthyListener.LastSunAngle, Is.EqualTo(64f).Within(0.001f));
+            Assert.That(CelestialEvents.PendingCount, Is.EqualTo(0));
+        }
+        finally
+        {
+            LogAssert.ignoreFailingMessages = previousIgnore;
+            ResetCelestialEventsForTests();
+        }
     }
 
     [Test]
@@ -825,15 +1535,116 @@ public class HectonCelestialEngineEditTests
         string impostorSource = File.ReadAllText(impostorPath).Replace("\r\n", "\n");
 
         StringAssert.Contains("_H8AegirSunDirection", skySource);
+        StringAssert.Contains("float _H8AegirStormEmission;", skySource);
+        StringAssert.Contains("float AegirStormEmission()", skySource);
+        StringAssert.Contains("clamp(_H8AegirStormEmission, 0.0, 4.0)", skySource);
         StringAssert.Contains("systemVisibility = saturate(1.0 - _H8AegirSunDirection.w);", skySource);
         StringAssert.Contains("ringAlpha = ringMask * gap * (0.28 + quality * 0.42) * _RingOpacity * systemVisibility;", skySource);
+        StringAssert.Contains("bool RaySphere(", skySource);
+        StringAssert.Contains("bool RayRingPlane(", skySource);
+        StringAssert.Contains("float RingShadow(", skySource);
+        StringAssert.Contains("SAMPLE_TEXTURE2D(_AegirBandTex", skySource);
+        StringAssert.Contains("float hardTerminator = smoothstep(-0.08, 0.18, ndotl);", skySource);
+        StringAssert.Contains("float limbDarken = lerp(1.0, 0.58", skySource);
+        StringAssert.Contains("color += _AtmosphereTint.rgb * scatter;", skySource);
         StringAssert.Contains("float3 planetColor = DrawAegir", skySource);
+        StringAssert.Contains("stormBand * cloudTexture * 0.15 * stormEmission", skySource);
+        StringAssert.Contains("bands += float3(0.095, 0.052, 0.022) * stormSignal * stormEmission", skySource);
 
         StringAssert.Contains("_PlanetPhase", impostorSource);
         StringAssert.Contains("_H8GlobalQualityWeight", impostorSource);
         StringAssert.Contains("_H8AegirSunDirection", impostorSource);
         StringAssert.Contains("_HectonCelestialLightReadability0", impostorSource);
+        StringAssert.Contains("TEXTURE2D(_MainTex);", impostorSource);
+        StringAssert.Contains("TEXTURE2D(_DetailTex);", impostorSource);
+        StringAssert.Contains("TEXTURE2D(_StormTex);", impostorSource);
+        StringAssert.Contains("_StormEmission (\"Runtime Storm Emission\"", impostorSource);
+        StringAssert.Contains("half _StormEmission;", impostorSource);
+        StringAssert.Contains("_WarmTint.rgb * stormMask * _StormStrength * _StormEmission", impostorSource);
+        StringAssert.Contains("baseUv.x = frac(baseUv.x + _Rotation + _GlobalRotation + syncTime * _AutoRotationSpeed);", impostorSource);
+        StringAssert.Contains("half phase = smoothstep(_PhaseCenter - _PhaseSoftness", impostorSource);
+        StringAssert.Contains("half limbDarken = lerp(1.0h, 0.58h, pow(limb, 1.25h));", impostorSource);
+        StringAssert.Contains("_HectonCelestialLightReadability0.w / 112.0", impostorSource);
+        StringAssert.Contains("horizonVeil = 1.0h - smoothstep(", impostorSource);
+        StringAssert.Contains("color = lerp(color, veilColor, atmosphereMask);", impostorSource);
         StringAssert.Contains("systemVisibility = min(systemVisibility", impostorSource);
+    }
+
+    [Test]
+    public void AegirSkyMaterialUsesCanonicalBandTextureInsteadOfStormMask()
+    {
+        string skyMaterialPath = Path.Combine("Assets", "_Project", "Art", "Materials", "Sky", "MAT_AegirSky_Master.mat");
+        string skyMaterialSource = File.ReadAllText(skyMaterialPath).Replace("\r\n", "\n");
+        string skyBandGuid = ReadMaterialTextureGuid(skyMaterialSource, "_AegirBandTex");
+
+        Assert.That(ReadMaterialShaderGuid(skyMaterialSource), Is.EqualTo("6a3f1601ae9165f4a001000000000001"));
+        Assert.That(skyBandGuid, Is.EqualTo("6c173d4e1a858b34ca1b7e5610aae988"));
+        Assert.That(skyBandGuid, Is.Not.EqualTo("d9d11072e85a2b54cacd11eaad6614a8"));
+    }
+
+    [Test]
+    public void AegirGasMaterialUsesCanonicalBandDetailStormTextureSet()
+    {
+        string gasMaterialPath = Path.Combine("Assets", "_Project", "Art", "Materials", "Celestial", "MAT_AegirGasGiant_Impostor_1428.mat");
+        string gasMaterialSource = File.ReadAllText(gasMaterialPath).Replace("\r\n", "\n");
+
+        Assert.That(ReadMaterialShaderGuid(gasMaterialSource), Is.EqualTo("0661c64fe7dfd77469f3bd686cbc254e"));
+        Assert.That(ReadMaterialTextureGuid(gasMaterialSource, "_MainTex"), Is.EqualTo("6c173d4e1a858b34ca1b7e5610aae988"));
+        Assert.That(ReadMaterialTextureGuid(gasMaterialSource, "_DetailTex"), Is.EqualTo("e1aefa60ab4517644bb884257440872b"));
+        Assert.That(ReadMaterialTextureGuid(gasMaterialSource, "_StormTex"), Is.EqualTo("d9d11072e85a2b54cacd11eaad6614a8"));
+        StringAssert.Contains("- _StormEmission: 1", gasMaterialSource);
+    }
+
+    [Test]
+    public void AegirSourceValidatorGuardsScenePrefabAndProductFaceBindingDrift()
+    {
+        string validatorPath = Path.Combine("Assets", "_Project", "Scripts", "Editor", "AegirGasGiantSourceValidator.cs");
+        string productFacePath = Path.Combine("Assets", "_Project", "Scripts", "Editor", "ProductFaceSkyOceanSourceValidator.cs");
+        string validatorSource = File.ReadAllText(validatorPath).Replace("\r\n", "\n");
+        string productFaceSource = File.ReadAllText(productFacePath).Replace("\r\n", "\n");
+
+        StringAssert.Contains("Aegir Gas Giant Source Contract", validatorSource);
+        StringAssert.Contains("ValidateTextureImport", validatorSource);
+        StringAssert.Contains("streamingMipmaps", validatorSource);
+        StringAssert.Contains("isReadable", validatorSource);
+        StringAssert.Contains("maxTextureSize", validatorSource);
+        StringAssert.Contains("ValidateMaterialFloat(gasMaterial, \"_StormEmission\", 1f", validatorSource);
+        StringAssert.Contains("EnsureMaterialFloat(GasGiantMaterialPath, \"_StormEmission\", 1f);", validatorSource);
+        StringAssert.Contains("private static int EnsureMaterialFloat", validatorSource);
+        StringAssert.Contains("ValidateRuntimeSourceContracts(report);", validatorSource);
+        StringAssert.Contains("CheckedSourceCount", validatorSource);
+        StringAssert.Contains("BadRuntimeSourceContract", validatorSource);
+        StringAssert.Contains("ResolveAegirSkyProjectionStormEmission()", validatorSource);
+        StringAssert.Contains("_AegirStormEmissionInvalidWarningHash", validatorSource);
+        StringAssert.Contains("AegirStormEmissionWarningCooldownFrames", validatorSource);
+        StringAssert.Contains("ReportAegirStormEmissionInvalidIfNeeded", validatorSource);
+        StringAssert.Contains("Shader.SetGlobalFloat(_ID_H8AegirStormEmission, ResolveAegirSkyProjectionStormEmission());", validatorSource);
+        StringAssert.Contains("Shader.SetGlobalFloat(_aegirStormEmissionId, 1f);", validatorSource);
+        StringAssert.Contains("RestoreCelestialTextureDefaults();", validatorSource);
+        StringAssert.Contains("ClearAegirMaterialRuntimeCache();", validatorSource);
+        StringAssert.Contains("aegirRenderer.SetPropertyBlock(null);", validatorSource);
+        StringAssert.Contains("_aegirSharedMaterial = null;", validatorSource);
+        StringAssert.Contains("PublishOceanCelestialProjectionGlobals(aegirDirection)", validatorSource);
+        StringAssert.Contains("_ID_HectonEclipseWaterShadowParams", validatorSource);
+        StringAssert.Contains("_ID_HectonEclipseWaterShadowDirection", validatorSource);
+        StringAssert.Contains("_ID_HectonRingCausticsParams", validatorSource);
+        StringAssert.Contains("_ID_HectonRingCausticsDirection", validatorSource);
+        StringAssert.Contains("ResolveAupOceanShadowCenterRuntimeXZ", validatorSource);
+        StringAssert.Contains("TryResolvePlayerAup", validatorSource);
+        StringAssert.Contains("stormBand * cloudTexture * 0.15 * stormEmission", validatorSource);
+        StringAssert.Contains("stormEmissionMultiplier", validatorSource);
+        StringAssert.Contains("weather-driven storm emission", validatorSource);
+        StringAssert.Contains("ValidateOrbitSceneOverrides", validatorSource);
+        StringAssert.Contains("CountOccurrences(source, sourcePrefabToken)", validatorSource);
+        StringAssert.Contains("production Aegir prefab instances. Keep one celestial renderer/source owner.", validatorSource);
+        StringAssert.Contains("RepairPrefabSource", validatorSource);
+        StringAssert.Contains("RepairOrbitSceneFromMenu", validatorSource);
+        StringAssert.Contains("RevertAegirScenePrefabOverrides", validatorSource);
+        StringAssert.Contains("PrefabUtility.RevertPropertyOverride(property, InteractionMode.AutomatedAction);", validatorSource);
+        StringAssert.Contains("UnityBuiltInPrimitiveMeshGuid", validatorSource);
+        StringAssert.Contains("9bafceacd557491409f6134514063ff4", validatorSource);
+        StringAssert.Contains("0000000000000000e000000000000000", validatorSource);
+        StringAssert.Contains("ValidateAegirGasGiantSource(report);", productFaceSource);
     }
 
     [Test]
@@ -886,6 +1697,58 @@ public class HectonCelestialEngineEditTests
             Sequence = 3,
             EventTypeHash = 0x13A7u
         };
+    }
+
+    private static string ReadMaterialTextureGuid(string source, string propertyName)
+    {
+        if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(propertyName))
+            return string.Empty;
+
+        int propertyIndex = source.IndexOf("- " + propertyName + ":", System.StringComparison.Ordinal);
+        if (propertyIndex < 0)
+            return string.Empty;
+
+        int textureIndex = source.IndexOf("m_Texture:", propertyIndex, System.StringComparison.Ordinal);
+        if (textureIndex < 0)
+            return string.Empty;
+
+        int guidIndex = source.IndexOf("guid:", textureIndex, System.StringComparison.Ordinal);
+        if (guidIndex < 0)
+            return string.Empty;
+
+        guidIndex += "guid:".Length;
+        while (guidIndex < source.Length && source[guidIndex] == ' ')
+            guidIndex++;
+
+        int guidEnd = source.IndexOf(",", guidIndex, System.StringComparison.Ordinal);
+        if (guidEnd < 0)
+            return string.Empty;
+
+        return source.Substring(guidIndex, guidEnd - guidIndex).Trim();
+    }
+
+    private static string ReadMaterialShaderGuid(string source)
+    {
+        if (string.IsNullOrEmpty(source))
+            return string.Empty;
+
+        int shaderIndex = source.IndexOf("m_Shader:", System.StringComparison.Ordinal);
+        if (shaderIndex < 0)
+            return string.Empty;
+
+        int guidIndex = source.IndexOf("guid:", shaderIndex, System.StringComparison.Ordinal);
+        if (guidIndex < 0)
+            return string.Empty;
+
+        guidIndex += "guid:".Length;
+        while (guidIndex < source.Length && source[guidIndex] == ' ')
+            guidIndex++;
+
+        int guidEnd = source.IndexOf(",", guidIndex, System.StringComparison.Ordinal);
+        if (guidEnd < 0)
+            return string.Empty;
+
+        return source.Substring(guidIndex, guidEnd - guidIndex).Trim();
     }
 
     private void SetPrivateField(string fieldName, object value)
@@ -946,5 +1809,47 @@ public class HectonCelestialEngineEditTests
 
         Assert.IsNotNull(method, $"Expected private static method '{methodName}' to exist.");
         return method.Invoke(null, args);
+    }
+
+    private static void ResetCelestialEventsForTests()
+    {
+        InvokePrivateStaticMethod(typeof(CelestialEvents), "ResetStaticState");
+    }
+
+    private sealed class TestCelestialEventListener : ICelestialEventListener
+    {
+        public int EclipseStartedCount;
+        public int EclipseEndedCount;
+        public int SunAngleCount;
+        public int PlanetPhaseCount;
+        public float LastSunAngle;
+        public float LastPlanetPhase;
+        public bool ThrowOnSunAngle;
+        public System.Action<TestCelestialEventListener, float> SunAngleCallback;
+
+        public void OnCelestialEclipseStarted()
+        {
+            EclipseStartedCount++;
+        }
+
+        public void OnCelestialEclipseEnded()
+        {
+            EclipseEndedCount++;
+        }
+
+        public void OnCelestialSunAngleChanged(float angleDegrees)
+        {
+            SunAngleCount++;
+            LastSunAngle = angleDegrees;
+            SunAngleCallback?.Invoke(this, angleDegrees);
+            if (ThrowOnSunAngle)
+                throw new System.InvalidOperationException("Synthetic celestial listener failure.");
+        }
+
+        public void OnCelestialPlanetPhaseChanged(float phase)
+        {
+            PlanetPhaseCount++;
+            LastPlanetPhase = phase;
+        }
     }
 }

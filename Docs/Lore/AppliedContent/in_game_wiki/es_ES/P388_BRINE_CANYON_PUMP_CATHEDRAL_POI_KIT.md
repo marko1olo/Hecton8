@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit de pruebas de la catedral de bombas del cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit de pruebas de la catedral de bombas del cañón de salmuera
 
-ES LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+La catedral de bombas del cañón de salmuera es un volumen industrial construido alrededor de presión, densidad y demora. Sus máquinas no acusan solas, pero la mirilla, el reloj de retención, las marcas de bomba y el libro de cola forman una cadena de responsabilidad utilizable.
 
 ## Scanner
 
-ES LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Kit de pruebas de POI: la catedral alinea vidrio de densidad, daño de bomba, relojes de ruta y registros de cola obrera.
 
 ## Terminal
 
-ES LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+KIT CATEDRAL DE BOMBAS: mirilla de densidad, surco de bomba de salmuera, nota de margen aceptado, reloj de retención de ruta, libro de cola obrera, llave de arranque de bomba, marca de pasarela inundada.
 
 ## Audio
 
-ES LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Las bombas movieron agua. La sala guardó mejores registros que la oficina.
 
 ## Field Note
 
-ES LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Nota de merodeador: fotografía la mirilla antes de drenar el bolsillo. Cuando la salmuera se mueve, la línea de margen queda más plana.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/es_ES. -->

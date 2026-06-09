@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8: reivindicação sob pressão"
+title: "HECTON-8: A Reivindicação Sob Pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8: reivindicação sob pressão
+# HECTON-8: A Reivindicação Sob Pressão
 
-As notas de P-63 mostram o começo como salvamento sob dívida. Os fatos úteis são mecânicos: capacidade de subida gasta, aviônica inundada, vedações danificadas, retorno de scanner e linguagem oficial que não explica amassados.
+HECTON-8 começa com um Marauder endividado lançado por uma claim window da Black Keel até P-63, onde cada reparo, scan e porta selada transforma sobrevivência em prova.
 
 ## Scanner
 
-Registro de entrada de saqueador. O contrato Black Keel liga P-63, um bathydrop danificado, um gravame de 4.8 tonne-window e um acidente que não combina com o metal.
+Artigo público inicial: contrato antes do mito, janela Black Keel, bathydrop danificado, plataforma clara P-63, omissões Deep Reach, primeiro rastro Atlas.
 
 ## Terminal
 
-NÓ DE ARQUIVO PÚBLICO // REIVINDICAÇÃO H8. Janela Aegir aberta. Trabalho: restaurar vedação, escanear P-63, recuperar carga, preservar prova e voltar antes do fechamento de recepção.
+SITE LONGFORM: vender a rota jogável por trabalho sob pressão, custody de provas, sem rescue instantâneo, sem family hook e com proof física.
 
 ## Audio
 
-Relé Black Keel: "Janela estreita. Conserte a carcaça, leia as marcas de pressão e traga prova com a carga."
+Em HECTON-8 ninguém vende resgate. Vendem uma claim e deixam a água decidir o resto.
 
 ## Field Note
 
-Nota de saqueador: luz em P-63 não é segurança. Conte ar, vede antes da carga e desconfie de relatório que não explica os amassados.
+Se a papelada parece calma, leia o metal. A primeira verdade de HECTON-8 vive entre uma linha de contrato e um seal quebrado.
 
 <!-- In-Game Wiki; generated from P456_SITE_HOME_LONGFORM_BRIEF/pt_BR. -->

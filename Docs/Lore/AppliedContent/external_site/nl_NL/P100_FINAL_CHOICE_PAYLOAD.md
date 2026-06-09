@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Final Choice Payload"
+title: "Payload van de laatste keuze"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Final Choice Payload
+# Payload van de laatste keuze
 
-NL LOC HOLD: Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas and the ocean-machine ecology.
+Payload van de laatste keuze definieert HECTON-8s eindfilosofie: de speler kiest wat de maan verlaat, wie het ontvangt en wat dat mogelijk maakt voor Deep Reach, publiek recht, Atlas en de oceaan-machine-ecologie.
 
 ## Scanner
 
-NL LOC HOLD: Payload matrix. Sell, sever, quarantine, publish, or leave the new body to breathe.
+FINALE PAYLOAD // Coördinaten, monsters, namen, Atlas-toegang, quarantainebevelen, openbaar bewijs. Wat HECTON-8 verlaat, bepaalt wie daarna kan handelen.
 
 ## Terminal
 
-NL LOC HOLD: FINAL PAYLOADS: sell coordinates and XO proof; sever Atlas continuity; preserve/quarantine ocean-machine ecology; publish evidence to public ledger; withhold payload and leave Deep Reach blind.
+PAYLOADMATRIX: coördinaten en XO-bewijs verkopen; Atlas-continuïteit verbreken; oceaan-machine-ecologie bewaren of in quarantaine zetten; bewijs naar het openbare ledger publiceren; payload achterhouden en Deep Reach blind laten.
 
 ## Audio
 
-NL LOC HOLD: There is no clean ownership for a crime scene that became alive in the wrong way.
+Er bestaat geen schoon eigendom voor een plaats delict die leerde ademen.
 
 ## Field Note
 
-NL LOC HOLD: The best ending should be defensible, not clean.
+Het beste einde moet verdedigbaar zijn, niet schoon.
 
 <!-- External Site; generated from P100_FINAL_CHOICE_PAYLOAD/nl_NL. -->

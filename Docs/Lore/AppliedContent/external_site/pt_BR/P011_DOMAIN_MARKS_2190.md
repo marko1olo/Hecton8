@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Marcas de domínio 2190
 
-Em 2190, um objeto quebrado pode carregar vários donos: padrão Sol, reparo Barnard, custódia Luyten, reivindicação Aegir. O isolamento de HECTON-8 não é falta de história; é história impressa no metal enquanto a sala alaga.
+Em 2190, um objeto quebrado pode ter vários pais legais. Em HECTON-8, uma trava de pressão pode ser certificada por Sol, reparada por Barnard, guardada por Luyten, legitimada por Centauri e tomada por uma casca Aegir. As marcas não tornam a colônia segura. Tornam a colônia documentada.
+
+Essa diferença carrega o tom do jogo. HECTON-8 não está fora da civilização. Está sob o lado frio dela: o lado que consegue nomear um suporte, precificar um corpo, preservar um pacote e ainda falhar em mover massa de resgate a tempo.
 
 <!-- External Site; generated from P011_DOMAIN_MARKS_2190/pt_BR. -->

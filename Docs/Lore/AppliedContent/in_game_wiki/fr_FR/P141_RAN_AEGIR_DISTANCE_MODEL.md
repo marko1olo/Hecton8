@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Modèle de distance Ran-Aegir
 
-Le modèle Ran-Aegir donne à HECTON-8 une échelle sensible. Aegir est assez proche pour sondes, fret, matériel seed et colonisation adossée à la dette en 2190. Il reste assez loin pour qu'une chambre noyée ne puisse pas attendre la pitié des mondes intérieurs. La distance apparaît comme délai, custody, carburant, freinage et propriété.
+Le modèle Ran-Aegir donne à HECTON-8 une échelle sensible dans la combinaison. Aegir est assez proche pour les sondes, le fret, le droit de route, la colonisation adossée à la dette et l'appétit corporatif en 2190. Il reste trop loin pour qu'un compartiment noyé attende la bonté des mondes intérieurs. La distance devient pression par le délai relais, les fenêtres de lancement, le propergol de freinage, la garde du transporteur, les exclusions d'assurance et ce fait simple : la masse arrive plus lentement que les ordres.
 
 ## Scanner
 
-Plaque de route : Aegir est atteignable par infrastructure et inatteignable par sympathie.
+La plaque de route confirme Aegir à portée d'infrastructure, pas à portée de secours.
 
 ## Terminal
 
-MODÈLE DE ROUTE : Ran/Aegir est traité comme cible de classe dix années-lumière depuis Sol. Le texte de jeu utilise Aegir ; les catalogues secs utilisent RAN-B:H8. L'éphéméride exacte reste du travail de table de route.
+MODÈLE DE ROUTE : Ran/Aegir est traité comme destination de classe dix années-lumière depuis Sol. Les surfaces publiques disent Aegir. Les catalogues de navigation secs gardent RAN-B:H8. L'éphéméride exacte reste verrouillée par table ; la vérité opérationnelle est délai, masse de freinage, garde relais et risque de propriété.
 
 ## Audio
 
-Dix années-lumière, c'est petit sur une carte stellaire. C'est assez grand pour ruiner un secours.
+Un signal peut traverser le noir. Un vaisseau paie chaque mètre.
 
 ## Field Note
 
-La distance approximative est une pression, pas une décoration. Dix années-lumière peuvent encore tuer une pièce.
+Dix années-lumière sont petites dans un catalogue et brutales pour un sauvetage.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/fr_FR. -->

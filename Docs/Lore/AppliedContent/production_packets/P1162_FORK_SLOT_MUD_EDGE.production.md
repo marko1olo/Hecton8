@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_cargo_handling |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS177_FIRST_CARGO_HANDLING_ARTICLES.md |
 | Speaker | Cargo scanner, pallet handling note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first cargo handling |
@@ -39,7 +39,7 @@ FORK SLOT // Mud caught on lower lip. Record lift side before shifting load.
 
 The upper slot wall stayed dry while mud packed into the lower lip. That difference marks how the pallet met the floor or fork, and which side carried the dirty contact.
 
-Cargo remembers the side that took the ground.
+The dirty lower lip is the side to record before the pallet moves.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ RECORD LIFT SIDE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| ar_SA | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| de_DE | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| es_ES | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| fr_FR | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| he_IL | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| id_ID | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| ja_JP | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| ko_KR | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| nl_NL | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| pl_PL | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| pt_BR | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| ru_RU | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| uk_UA | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
-| zh_CN | draft_machine_or_llm | FORK SLOT // Mud caught on lower lip. Record lift side before shifting load. |
+| ar_SA | draft_machine_or_llm | فتحة شوكة // طين عالق على الشفة السفلية. سجل جهة الرفع قبل نقل الحمل. |
+| de_DE | draft_machine_or_llm | GABELSCHLITZ // Schlamm an Unterkante. Hubseite vor Lastbewegung erfassen. |
+| es_ES | draft_machine_or_llm | RANURA DE HORQUILLA // Barro en el labio inferior. Registra el lado de izado antes de mover la carga. |
+| fr_FR | draft_machine_or_llm | FENTE DE FOURCHE // Boue prise sur la levre basse. Noter le cote de levage avant de deplacer la charge. |
+| he_IL | draft_machine_or_llm | חריץ מזלג // בוץ נתפס בשפה התחתונה. רשום צד הרמה לפני הזזת המטען. |
+| id_ID | draft_machine_or_llm | CELAH GARPU // Lumpur tertahan di bibir bawah. Catat sisi angkat sebelum menggeser muatan. |
+| ja_JP | draft_machine_or_llm | フォーク穴 // 下縁に泥が詰まる。荷をずらす前に持ち上げ側を記録。 |
+| ko_KR | draft_machine_or_llm | 포크 슬롯 // 아래 턱에 진흙이 걸렸다. 짐을 옮기기 전 들어 올린 쪽을 기록한다. |
+| nl_NL | draft_machine_or_llm | VORKSLEUF // Modder op onderlip. Noteer hefzijde voor verplaatsen van last. |
+| pl_PL | draft_machine_or_llm | GNIAZDO WIDEL // Bloto na dolnej krawedzi. Przed przesunieciem ladunku zapisz strone podnoszenia. |
+| pt_BR | draft_machine_or_llm | FENDA DE GARFO // Lama presa na borda inferior. Registre o lado de elevacao antes de deslocar a carga. |
+| ru_RU | draft_machine_or_llm | ПАЗ ПОД ВИЛЫ // Грязь на нижней кромке. Запиши сторону подъема до сдвига груза. |
+| uk_UA | draft_machine_or_llm | ПАЗ ПІД ВИЛИ // Бруд на нижній крайці. Запиши бік підйому перед зсувом вантажу. |
+| zh_CN | draft_machine_or_llm | 叉槽 // 下缘卡泥。移动载荷前记录抬升侧。 |

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "Seeds de contrats plus risqués"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# Seeds de contrats plus risqués
 
-FR LOC HOLD: Riskier contract seeds let experienced players change pressure without changing canon. A run can start with worse orbital timing, deeper early objectives or harsher custody terms. The player chooses risk, not inherited strength.
+Les contrats risqués sont la manière dont le dossier tente un Marauder expérimenté sans casser la survie. Le tableau peut offrir un meilleur allègement de lien contre une mauvaise fenêtre, une descente précoce sous la profondeur confortable, un échantillon à garder scellé ou une garde des preuves si stricte que chaque raccourci coûte cher. Le joueur choisit la pression, pas une force héritée.
 
 ## Scanner
 
-FR LOC HOLD: You can choose a worse contract, not a stronger body.
+SEED CONTRAT // Fenêtre pire, première cible plus profonde, garde plus stricte, échantillon plus rare, allègement de lien plus fort. Aucun pouvoir hérité.
 
 ## Terminal
 
-FR LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+OPTION SEED : augmenter le paiement en acceptant un mauvais timing orbital, des objectifs initiaux plus profonds, une garde des preuves plus dure, une preuve de ressource rare ou un compte retour plus serré. Puissance d'équipement et inventaire se réinitialisent.
 
 ## Audio
 
-FR LOC HOLD: The board pays more when it expects less of you to return.
+Le tableau paie plus quand il s'attend moins à ton retour.
 
 ## Field Note
 
-FR LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+Le replay doit demander avidité, courage ou bêtise. Pas du grind.
 
 <!-- In-Game Wiki; generated from P137_RISKIER_CONTRACT_SEEDS/fr_FR. -->

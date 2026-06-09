@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "تجميعة حلقة مشبك ختم الضغط"
+title: "تجميع حلقة مشبك ختم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة حلقة مشبك ختم الضغط
+# تجميع حلقة مشبك ختم الضغط
 
-تحول تجميعة حلقة مشبك ختم الضغط إصلاح الكبسولة إلى قرار لا قائمة فحص: معدن deep-rated، ومقعد زجاج، وAtlas bio-sealant يمكنها إنقاذ مسار الصعود أو حبسه.
+تجميع حلقة مشبك ختم الضغط هو الحد الصلب الثاني في سلسلة صعود HECTON-8. يستطيع العمود الصوتي جعل المدار يستمع، لكن الحلقة تقرر إن كانت الكبسولة ستنفصل جسديا عن البنية الغارقة.
 
-## Scanner
+الفشل مقنع لأن الإصلاح الخطأ قد يبدو ناجحا. shallow seal قد يحفظ الهواء، يوقف تسريبا، ويترك الغرفة قابلة للاستخدام. وقد يعبر separation seam للكبسولة، يوسخ pressure-glass seat، أو يترك Atlas shell-sealant على سطح يجب أن يترك تحت launch impulse. static pressure ليس اختبار ascent.
 
-ندبة clamp-ring. نجت كم sleeve الصعود من الارتطام بإنفاق الختم الذي كان يفترض أن يعيدها إلى البيت.
-
-## Terminal
-
-SEAL CERT: shallow patch يحفظ ضغط الحجرة فقط. يتطلب Ascent seal حلقة deep-rated clamp ring، وpressure-glass seat، وshell-sealant map، وملف Deep Reach محقق. قد يحفظ Atlas-grown sealant الـ habitat بينما يمنع انفصالا نظيفا.
-
-## Audio
-
-الختم المفيد حي في الاتجاه الخطأ.
-
-## Field Note
-
-رقعة safe-room قد تشتري ساعة من الهواء. لكنها لا تمسك اندفاع الإطلاق.
+هذا المكوّن يحتاج deep-rated metal، crush profile موثقا، seat geometry نظيفة، وsealant map ذات حافة مقصودة. لا يكفي أن تتوقف الكبسولة عن التسرب. يجب أن يعرف الإصلاح متى يترك.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ar_SA. -->

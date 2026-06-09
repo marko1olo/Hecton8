@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Правила мародерських коригувальних міток"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Правила мародерських коригувальних міток
 
-UA LOC HOLD: Marauder Correction Mark Rules keep salvage notes functional: preserve name, challenge category, warn route, price sample, hide witness, or mark debt.
+Правила мародерських коригувальних міток пояснюють, як HECTON-8 дозволяє пізнішим рятувальникам торкатися старих доказів, не ламаючи канон. Мітки додають живий шар поверх корпоративних паперів: зберегти ім'я, оскаржити категорію, попередити маршрут, оцінити зразок, сховати свідка або позначити борг. Вони роблять replay-докази такими, що пройшли через руки інших працівників претензій, але кожна рукописна зміна лишається функціональною.
 
 ## Scanner
 
-UA LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Коригувальна мітка може врятувати ім'я, отруїти претензію або попередити наступного пірнальника, що офіційна категорія бреше.
 
 ## Terminal
 
-UA LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: мародерські мітки мають змінювати тлумачення доказу, ризик маршруту або тиск виплати. Чинні мітки зберігають ім'я працівника, оскаржують страхову категорію, попереджають маршрут, оцінюють зразок, ховають свідка або позначають борг. Порожні графіті ламають ланцюг доказів.
 
 ## Audio
 
-UA LOC HOLD: Somebody came before you and still failed to leave clean.
+Хтось прийшов до тебе і все одно не зміг піти чисто.
 
 ## Field Note
 
-UA LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Мітки: зберегти ім'я, оскаржити категорію, попередити маршрут, оцінити зразок, сховати свідка, позначити борг. Почерк має змінювати прочитання, а не прикрашати предмет.
 
 <!-- External Site; generated from P214_MARAUDER_CORRECTION_MARK_RULES/uk_UA. -->

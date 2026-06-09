@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8中軌道潮汐役"
+title: "HECTON-8中軌道潮汐役割"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8中軌道潮汐役
+# HECTON-8中軌道潮汐役割
 
-HECTON-8はAegirの軌道数学が個人の問題になる月だ。最悪の内側放射線から十分遠く、海を動かす潮汐には十分近く、Deep Reachが圧力下に建設するほど価値がある。同じ位置が救助を汚す。潮汐位相、carrier質量、嵐ノイズ、法的保管がプレイヤーの頭上で重なる。
+HECTON-8は、Aegirの軌道計算が個人の問題になる月だ。最悪の内側放射線からは長期作業に十分遠く、海を動かし続ける潮汐には十分近く、Deep Reachが圧力下で建設するほど価値がある。同じ位置が救助を汚す。潮汐位相、キャリア質量、嵐のノイズ、法的保管がスーツの上で動く天井として重なる。
 
 ## Scanner
 
@@ -35,6 +35,6 @@ HECTON-8潮汐記録。中軌道は海を採掘可能にし、証拠を埋める
 
 ## Field Note
 
-HECTON-8が支払うのは、圧力、潮汐、責任がそこで重なるからだ。
+HECTON-8が金になるのは、圧力、潮汐、責任が同じ水柱で重なるからだ。
 
 <!-- In-Game Wiki; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/ja_JP. -->

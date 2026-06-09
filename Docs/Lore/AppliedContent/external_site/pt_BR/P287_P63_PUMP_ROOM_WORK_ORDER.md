@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: P-63 Pump Room Work Order"
+title: "Ordem de Trabalho da Sala de Bombas P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: P-63 Pump Room Work Order
+# Ordem de Trabalho da Sala de Bombas P-63
 
-PT-BR LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+A Ordem de Trabalho da Sala de Bombas P-63 é HECTON-8 em pequena escala: água na sala, uma ferramenta na mão, uma linha acoustic return e uma rota que não pode ser confiada até o ambiente responder. Ela transforma mecânicas em hábito de colônia.
 
 ## Scanner
 
-PT-BR LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+O primeiro reparo se lê como hábito de colônia: bombear, selar, ouvir, cortar só se a sala parar de mentir.
 
 ## Terminal
 
-PT-BR LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: limpar sump; remendar cold seam; verificar return pinger; cortar fused latch só depois que a pressão segurar; imprimir gasket do estoque local; marcar route safe depois de três repetições de acoustic return. Iniciais do supervisor ausentes sob mancha de água.
 
 ## Audio
 
-PT-BR LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Bomba primeiro. Selo depois. Se cantar, pare de cortar.
 
 ## Field Note
 
-PT-BR LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+A metade inferior da prancheta está encharcada. A linha sobre cortar ainda é legível porque alguém a circulou duas vezes e escreveu se cantar, pare.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/pt_BR. -->

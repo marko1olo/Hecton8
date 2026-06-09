@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Origin Chain"
+title: "سلسلة أصل Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Origin Chain
+# سلسلة أصل Deep Reach
 
-AR LOC HOLD: Deep Reach Origin Chain anchors the corporation in older human expansion, keeping Aegir as one of its worst projects rather than its birthplace.
+سلسلة الأصل تمنع Deep Reach من أن تكون مكتبا شريرا واحدا. إنها اقتصاد مسارات يرتدي جلودا قانونية متعددة، يبدو محليا في كل ولاية وغائبا عند نقطة الاصطدام. تستخدم HECTON-8 هذا التاريخ كي تبدو سلطة الشركات قديمة ومملة وقاتلة: آلة تستطيع قتل مستعمرة من دون أن تتكلم يوما كشرير.
 
 ## Scanner
 
-AR LOC HOLD: Old company. New disaster. Same charter language.
+ضفيرة مواثيق: كلمات Centauri، مال Sol، وأجساد إيغير.
 
 ## Terminal
 
-AR LOC HOLD: CHARTER TRACE: Deep Reach used Centauri-compatible autonomy language, Sol-compatible insurance finance and later Aegir project shells. Atlas was launched from an established route economy, not a first heroic leap from Earth.
+CHARTER TRACE: جمعت Deep Reach بنود استقلال متوافقة مع Centauri، وتمويلا تأمينيا من Sol Core، ودين لوجستيات Barnard، ثم أصداف مشروع Aegir. تم اعتماد Atlas كبنية مسار قبل أن يصبح شاهدا على موت جماعي.
 
 ## Audio
 
-AR LOC HOLD: They brought the empire in filing cabinets.
+جلبوا الإمبراطورية في خزائن ملفات وسموا ذلك توسعا.
 
 ## Field Note
 
-AR LOC HOLD: Deep Reach did not grow up on Aegir. It arrived with paperwork already old.
+لم تبدأ Deep Reach بالكارثة. لذلك نجت منها.
 
 <!-- External Site; generated from P125_DEEP_REACH_ORIGIN_CHAIN/ar_SA. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "ספי כשל תחת לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# ספי כשל תחת לחץ
 
-HE LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+ספי כשל תחת לחץ מגדירים את הקצה הקריא בין משאב לסכנה. הם מאפשרים ל-HECTON-8 להפוך עומק לדקדוק הפונה לשחקן: לחץ חזותי, נקישות שמע, אזהרות סורק, סיכון salvage ותוצאות יצירה כולם מצביעים על אותו כלל פיזי. דגימה נכשלת כי העולם לוחץ עליה, לא כי מספר מלאי פג בשקט.
 
 ## Scanner
 
-HE LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+דגימה טובה הופכת לסכנה כשהיא חוצה את קו הלחץ הלא נכון. לאוקיינוס לא אכפת שהתווית כמעט צדקה.
 
 ## Terminal
 
-HE LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+כשל לחץ / shallow-rated: נקישת אטם וזחילת מים / industrial-rated: סחיפת gasket ופטפוט מהדק / brine-rated: סדק שיער ופריחת מלח / abyssal-rated: רפאות אקוסטית, ערפל דגימה מתה / Atlas-rated: נעילת משמורת לפני אובדן מבני.
 
 ## Audio
 
-HE LOC HOLD: Pressure does not care that the label was almost right.
+ללחץ לא אכפת שהתווית כמעט הייתה נכונה.
 
 ## Field Note
 
-HE LOC HOLD: Failure thresholds should be readable before they punish.
+ספי כשל חייבים להיות קריאים לפני העונש: נקישה, סחיפה, סדק שיער, פריחת מלח, ערפל דגימה מתה. אם השחקן לומד רק אחרי אובדן, העולם מרמה.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/he_IL. -->

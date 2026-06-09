@@ -19,22 +19,24 @@ localization_flags: 1
 
 # Custódia tonne-window da Black Keel
 
-Um recibo Keelmark explica por que Black Keel fala em massa antes de falar em resgate. O cargueiro opera por custódia tonne-window: um slot legal combinado a payload físico, exposição de seguro e uma fase do relógio de rota. Um corpo vivo, um núcleo de prova selado, um corte de material de processo Xenon-Omega e uma caixa de casco recuperável competem pela mesma janela se o contrato os coloca na mesma linha. O sistema é frio, mas não aleatório. Ele mostra ao jogador o que a fronteira valoriza e qual escolha vai viajar para casa primeiro.
+A tonne-window é uma forma limpa de crueldade frontier. Parece contabilidade porque é contabilidade, mas o que se conta é físico: massa passando por uma janela estreita de recovery. Black Keel não levanta tudo do oceano, só o que rota, seguro, quarentena e custódia permitem.
+
+Cada payload fica mais afiado. Um contratado vivo tem valor, mas um núcleo de evidência contra a Deep Reach também. Xenon-Omega pode valer mais que salvage comum e envenenar a quarentena. Casco recuperável pode satisfazer seguradora antes que um dossier de trabalhador satisfaça justiça.
 
 ## Scanner
 
-LINHA DE CUSTÓDIA // Massa tonne-window aceita pode ser salvage, prova, corpo ou objeto de dívida. Um pacote ouvido não dá prioridade de içamento; atribui responsabilidade.
+Recibo Keelmark. Uma tonne-window mapeia massa de payload, fase de rota, exposição de seguro, classe de quarentena e prioridade de recovery para um slot carrier.
 
 ## Terminal
 
-RECIBO DE MASSA KEELMARK // A janela concede custódia a um slot, não piedade a uma pessoa. Payloads acima da massa passam para a próxima volta salvo se valor de reivindicação, classe de quarentena e geometria do cargueiro limparem juntos.
+CUSTÓDIA TONNE-WINDOW // Lien 4.8 tonne-window ativo. Contratado vivo, núcleo de evidência selado, corte Xenon-Omega e caixa de casco recuperável compartilham classe recovery salvo repriorização por proof custody. Status humano sozinho insuficiente.
 
 ## Audio
 
-Áudio de dívida da Black Keel: posso carregar prova, metal ou você. O livro vai perguntar qual mantém a nave solvente.
+Black Keel fala em toneladas porque toneladas são o que a janela pode carregar.
 
 ## Field Note
 
-Quando o cargueiro diz massa aceita, não está dizendo pessoa aceita. Amarre a prova ao traje antes que o livro mande você escolher.
+Tonne-window não é dinheiro. É permissão para massa sair.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/pt_BR. -->

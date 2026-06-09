@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Deep Reach Public Combine"
+title: "Combinado público Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Deep Reach Public Combine
+# Combinado público Deep Reach
 
-ES LOC HOLD: Deep Reach's formal name should appear in charters, plaques and public articles. Dirty work moves through shells below it.
+La cara pública de Deep Reach es lo bastante amplia para parecer útil y lo bastante seca para parecer inocente. Construye placas de ruta, servicios de hábitat, logística de presión y programas de continuidad con tono cívico. En esta capa, la colonia rara vez ve un único villano. Ve membretes, sellos de mantenimiento, lemas auditados y un nombre capaz de reclamar infraestructura cuando el trabajo da ganancias y distancia cuando el trabajo se vuelve prueba.
 
 ## Scanner
 
-ES LOC HOLD: The public name sounds like development because exploitation would not pass procurement.
+Placa de carta pública: operador de infraestructura, no demandado de extracción.
 
 ## Terminal
 
-ES LOC HOLD: PUBLIC ENTITY: Deep Reach Extraterrestrial Development Combine is the respectable name. It buys charters, route rights, colony autonomy language and insurance compatibility.
+REGISTRO DEL COMBINADO PÚBLICO: Deep Reach se presenta como infraestructura de ruta, industria oceánica, logística de hábitat presurizado y servicios de continuidad. El trabajo con responsabilidad se distribuye a mesas subsidiarias, lenguaje asegurador, contratistas de custodia y oficinas de recuperación.
 
 ## Audio
 
-ES LOC HOLD: A clean title is the cheapest pressure suit.
+El cartel de la puerta dice utilidad. Las cerraduras detrás dicen propiedad.
 
 ## Field Note
 
-ES LOC HOLD: The seal is clean. The rooms under it are not.
+El nombre limpio no es mentira. Es la sala donde la suciedad se archiva en otro sitio.
 
 <!-- In-Game Wiki; generated from P146_DEEP_REACH_PUBLIC_COMBINE/es_ES. -->

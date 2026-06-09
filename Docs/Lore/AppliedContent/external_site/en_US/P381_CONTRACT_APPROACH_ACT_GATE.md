@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Contract Approach Act Gate"
+title: "Contract Approach Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Contract Approach Act Gate
+# Contract Approach Gate
 
-HECTON-8 starts with contract pressure, debt and old corporate procedure. The horror begins as work, not prophecy.
+The contract approach stage sets the campaign's pressure without pretending the ocean has already explained itself. A Black Keel board assigns claim transfer, bathydrop timing, lien exposure and tool debt before the operator reaches open water. The route begins as paid work under bad terms.
 
-## Scanner
-
-Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
-
-## Terminal
-
-CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
-
-## Audio
-
-You came for work. The paperwork already knows you worked for Deep Reach.
-
-## Field Note
-
-Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+The important detail is the old Deep Reach residue in the operator profile. It is not a family hook or a heroic title. It is a procedural match: access language, maintenance abbreviations and evacuation-infrastructure habits that still fit abandoned colony systems. The first gate says the descent is work; the second line says the work already has a file.
 
 <!-- External Site; generated from P381_CONTRACT_APPROACH_ACT_GATE/en_US. -->

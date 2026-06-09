@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Material Payout Record"
+title: "Datensatz zur materiellen Auszahlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Material Payout Record
+# Datensatz zur materiellen Auszahlung
 
-DE LOC HOLD: Material Payout Record explains that HECTON-8 can end with real money and a worse truth state.
+Dieser Auszahlungsdatensatz ist wegen seiner Quittungsfelder nützlich: was der Empfänger kaufte, was fehlt, welche Koordinaten akzeptiert wurden, welche Probe ging, wie sich das Pfand änderte, welche Namen fehlen und welchen Rückweg Deep Reach bekam.
 
 ## Scanner
 
-DE LOC HOLD: Paid. Not cleared.
+DATENSATZ ZUR MATERIELLEN AUSZAHLUNG // Keelmark/Recovery Compliance akzeptierte Beckenkoordinaten und Blau-Schuld-Probe. Operatorpfand reduziert; Arbeiterbelege blieben außerhalb notarieller Verwahrung.
 
 ## Terminal
 
-DE LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+ENDDATENSATZ / MATERIELLE AUSZAHLUNG
+Empfänger: Keelmark/Recovery Compliance.
+Akzeptiert: Atlas-Beckenkoordinaten, Blau-Schuld-Probe, Carrier-Verwahrungshash.
+Nicht angehängt: notarielles Zeugenpaket, Namensregister der Arbeiter, Rettungsmassenprüfung.
+Pfandeffekt: nach Vertragstabelle reduziert oder gelöscht.
+Deep-Reach-Effekt: saubererer Rückweg nach HECTON-8.
+Bekannter Verlust: Belege können bepreist werden, ohne gehört zu werden.
 
 ## Audio
 
-DE LOC HOLD: The receipt is clean because it ignores the room.
+Das Register zahlte für die Grabkarte. Den Raum öffnete es nicht.
 
 ## Field Note
 
-DE LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Die Quittung räumt die Pfandspalte frei, nicht den Raum. Namen, die nicht in Verwahrung kamen, fehlen auch nach der Auszahlung.
 
 <!-- External Site; generated from P271_MATERIAL_PAYOUT_RECORD/de_DE. -->

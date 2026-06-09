@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Legal Insurance Automated Ping"
+title: "Automatische juridische verzekeringsping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Legal Insurance Automated Ping
+# Automatische juridische verzekeringsping
 
-NL LOC HOLD: Legal Insurance Automated Ping makes corporate pressure playable. The messages are sparse, procedural and useful as evidence, not constant exposition.
+De Automatische juridische verzekeringsping maakt corporatieve druk speelbaar omdat hij arriveert als een nuttig, hatelijk klein bericht. Het systeem verspilt geen woorden aan de vraag of de speler leeft. Het vraagt om mass class, contamination state, coordinate proof, claim priority en receiver custody acceptance. Dat doet twee dingen tegelijk. Mechanisch vertelt het de speler welke categorieën voor recovery tellen. Narratief laat het zien waar de speler staat in de reddingseconomie: leven wordt niet genegeerd, maar staat niet vooraan in de rij. De ping moet zeldzaam genoeg zijn om te steken. Als hij constant herhaalt, wordt hij ruis. Als hij bij routedrempels arriveert, nadat de speler zichzelf heeft geriskeerd om bewijs of sample payload te dragen, wordt hij een schone corporatieve hand die door de radio reikt om het lichaam te wegen voordat het wordt gered.
 
 ## Scanner
 
-NL LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Automatische ping ontvangen. Reddingstaal is vervangen door receiverbewijs, massaklasse en bewairstatus.
 
 ## Terminal
 
-NL LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / vereist voor recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-NL LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Het eerste wat ze vragen is niet of je leeft. Het is wat je draagt.
 
 ## Field Note
 
-NL LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Korte bark-kandidaat bij routedrempels. Spaarzaam gebruiken; de wreedheid zit in wat het systeem eerst vraagt.
 
 <!-- In-Game Wiki; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/nl_NL. -->

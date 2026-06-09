@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rakitan Muatan Energi Pendakian"
+title: "Rangkaian Muatan Energi Pendakian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rakitan Muatan Energi Pendakian
+# Rangkaian Muatan Energi Pendakian
 
-Muatan pendakian mengubah sumber daya dalam menjadi pertukaran mekanis dan moral. Bahan tekanan tinggi dapat mengangkat kapsul, menjaga bukti melalui custody, atau menjadi bayaran yang melemahkan rute pulang.
+Muatan energi pendakian mengubah material dalam HECTON-8 menjadi impuls peluncuran terkendali. Ini bukan tumpukan bahan bakar. Ini dudukan berisi vent-forged heat cells, insulasi riwayat tekanan, selongsong impuls bertahap, dan tanda custody yang memberi tahu penerima jenis material apa yang selamat dari pembakaran.
+
+Blue debt menjadi bernilai sebelum menjadi aman. Sampel Xenon-Omega yang tumbuh di bawah tekanan bisa membayar tagihan carrier, menopang peningkatan, membuktikan apa yang dibiarkan Deep Reach tetap berjalan, atau retak di bawah beban peluncuran jika riwayatnya diperlakukan seperti loot lepas. Muatan harus membawa energi dan dokumen sekaligus: massa, keadaan tekanan, kelas kontaminasi, dan custody stamp.
+
+Karena itu rangkaian ini membuat keputusan salvage yang nyata. Lucuti dudukan untuk bayaran, kapsul kehilangan angkat tersertifikasi. Muat material mentah, profil impuls menjadi tidak stabil. Pertahankan muatan bertanda tangan, rute pendakian menjadi lebih berat, lebih miskin, dan jauh lebih sulit dibantah.
 
 ## Scanner
 
-Dudukan energi tergores pressure pulse. Muatan murah membuat peti mati rapi.
+DUDUKAN ENERGI // Goresan pulsa tekanan, kantong heat-cell melengkung, soket custody stamp kosong. Blue debt mentah mungkin terbakar; itu tidak mensertifikasi angkat.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, dan custody stamp wajib. Raw fuel ditolak. Blue debt tanpa sertifikasi retak di bawah launch impulse dan membatalkan recovery claim.
+ASCENT CHARGE: muat vent-forged heat cell, insulator bersejarah tekanan, selongsong impuls bertahap, dan custody stamp bertanda tangan. Tolak bahan bakar mentah, insulator retak, dan blue debt tanpa stempel.
 
 ## Audio
 
-Kau bisa menjual daya angkat atau menungganginya. Tidak keduanya.
+Jual daya angkat, maka kapsul menjadi inventaris.
 
 ## Field Note
 
-Setiap gram di dudukan adalah pelarian, bukti, atau blue-debt payout. Kapsul tidak memaafkan keserakahan.
+Muatan ini ingin dicuri semua orang karena bagian ini juga yang mengangkatmu dari dasar laut.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/id_ID. -->

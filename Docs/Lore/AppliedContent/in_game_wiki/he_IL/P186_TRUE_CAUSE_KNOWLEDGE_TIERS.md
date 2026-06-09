@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "True Cause Knowledge Tiers"
+title: "שכבות ידע של הסיבה האמיתית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# True Cause Knowledge Tiers
+# שכבות ידע של הסיבה האמיתית
 
-HE LOC HOLD: Deep Reach did not need one mastermind. The disaster became fatal through distributed categories and delayed authority.
+שכבות ידע של הסיבה האמיתית מגדירות את צורת האשמה של Deep Reach בלי לשטח כל אדם בחברה לאותו מפלצת. שום משרד לא החזיק את כל האסון. משקיפי השטח ראו התנהגות גאות חריגה והתמוטטות של שולי חיישנים. משרד הסיכון תרגם זאת לחשיפת קצה קבילה. Atlas Safety הגנה על ציוני רציפות. יועצי הפינוי עיכבו סמכות שחרור. Keelmark ושולחנות השחזור הכינו לשון תביעות שיכלה להפוך מוות, מטען ושתיקה להפסד מנוהל. כל שכבה יכלה לומר שלא ידעה מספיק כדי לעצור את האסון לבדה. יחד הם ידעו מספיק כדי לתת ל-HECTON-8 לטבוע לאט ובאופן חוקי.
 
 ## Scanner
 
-HE LOC HOLD: True-cause knowledge was tiered across risk, Atlas weighting, evacuation law, insurance and recovery offices.
+Deep Reach ידעה את האמת בפרוסות: שולי גאות במשרד אחד, שקלול Atlas באחר, עיכוב פינוי והמרת תביעות במקום אחר.
 
 ## Terminal
 
-HE LOC HOLD: KNOWLEDGE TIERS: field staff saw tide anomalies; risk office accepted tail margins; Atlas office weighted continuity; evacuation counsel delayed releases; Keelmark converted losses; Recovery Compliance wants payload before truth.
+KNOWLEDGE TIERS: צוותי גאות תיעדו אובדן שוליים; Risk קיבל חשיפת קצה; Atlas Safety שקללה רציפות מעל פינוי; ייעוץ משפטי החזיק שחרורים; Keelmark המיר מוות להפסד בר-השבה; Recovery Compliance דרש מטען לפני גילוי.
 
 ## Audio
 
-HE LOC HOLD: No one wrote murder. They wrote columns until rescue lost.
+איש לא היה צריך לכתוב „תנו להם למות”. הטבלה כבר ידעה איך.
 
 ## Field Note
 
-HE LOC HOLD: This keeps Deep Reach guilty without making every worker omniscient or every executive a cartoon villain.
+בורות מבוזרת לא הייתה חפות. היא הייתה ארכיטקטורה.
 
 <!-- In-Game Wiki; generated from P186_TRUE_CAUSE_KNOWLEDGE_TIERS/he_IL. -->

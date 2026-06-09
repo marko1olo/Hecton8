@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Quiet Salvage Contract Seed"
+title: "静默打捞合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Quiet Salvage Contract Seed
+# 静默打捞合同种子
 
-ZH LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+静默打捞是一组早期警报更少、所有权措辞更硬的合同。航路给操作员修理、喘息和阅读的时间，但样本标签、pinger日志和证据柜会在第一笔大额付款前绑定到receiver。
 
 ## Scanner
 
-ZH LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+合同种子：静默打捞。风暴暴露低，首笔付款干净，但所有能证明航路历史的东西都受限托管。
 
 ## Terminal
 
-ZH LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+SEED QUIET：风暴窗口平静，bathydrop槽位预清，早期生物接触降低，custody锁增强，receiver-first审计条款启用。
 
 ## Audio
 
-ZH LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+平静的水说明有人已经把风险搬进文件里。
 
 ## Field Note
 
-ZH LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+掠夺者备注：水越平静，越能听清合同板怎么说谎。
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/zh_CN. -->

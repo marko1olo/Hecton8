@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "بروتوكول قطع Atlas payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Payload Sever Atlas Receiver Protocol
+# بروتوكول قطع Atlas payload
 
-AR LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+مسار القطع يعطي الحامل طريقة لجعل Atlas غير مفيد لDeep Reach. هذا هو الإغراء العملي. قطع عمود الاستمرارية يمكن أن يكسر حلقات إصلاح تالفة، ويعزل ذاكرة المسار، ويمنع مستقبلا من استخدام Atlas كطريق تلقائي عائد إلى الحوض.
 
-## Scanner
-
-AR LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-AR LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-AR LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-AR LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+الثمن داخل الحزمة نفسها. Atlas ليس رف أدوات فقط؛ نموه التالف صار جزءا من البيئة المحلية ومنطق المسارات. قد يغلق القطع طريق عودة مؤسسي بينما يقتل بيانات وكائنات لا يستطيع أحد آخر بناءها. يحفظ payload proof hash لأن الفعل سيحتاج إلى سجل بعد تغير الأضواء.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/ar_SA. -->

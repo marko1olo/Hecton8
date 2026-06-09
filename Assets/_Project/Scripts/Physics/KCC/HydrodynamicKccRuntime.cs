@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Physiology;
 using Hecton8.Core.Contracts.Signals;
@@ -340,7 +341,7 @@ namespace Hecton8.Physics.KCC
         public const int InputGenerationShift = 16;
         public const float MinDenominator = 0.0001f;
         public const float AuthoritativeQualityWeight = 1f;
-        public const float DefaultWaterSurfaceY = 14.02f;
+        public const float DefaultWaterSurfaceY = Hecton8.World.WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         public const float MillimeterScale = 1000f;
         public const float InvMillimeterScale = 0.001f;
         public const float MaxLocalFloatMagnitude = 131072f;
@@ -384,7 +385,16 @@ namespace Hecton8.Physics.KCC
         {
             return math.isfinite(candidateWaterSurfaceY) &&
                    math.abs(candidateWaterSurfaceY) > MinDenominator &&
-                   math.abs(candidateWaterSurfaceY) <= 1000f
+                   math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
+                ? candidateWaterSurfaceY
+                : DefaultWaterSurfaceY;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveRuntimeWaterSurfaceY(float candidateWaterSurfaceY)
+        {
+            return math.isfinite(candidateWaterSurfaceY) &&
+                   math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? candidateWaterSurfaceY
                 : DefaultWaterSurfaceY;
         }
@@ -1061,7 +1071,7 @@ namespace Hecton8.Physics.KCC
             float3 appliedFlow = sampledFlow * math.max(0f, math.isfinite(environmentProfile.CurrentAdvectionScalar) ? environmentProfile.CurrentAdvectionScalar : 1f);
             velocity += appliedFlow * dt;
 
-            float waterSurfaceY = HydrodynamicKccMath.ResolveWaterSurfaceY(Tuning.WaterSurfaceY);
+            float waterSurfaceY = HydrodynamicKccMath.ResolveRuntimeWaterSurfaceY(Tuning.WaterSurfaceY);
             float depth = math.max(0f, waterSurfaceY - localPosition.y);
             float submersion = math.saturate(depth * math.rcp(math.max(0.1f, height)));
             submersion = submersion * submersion * (3f - 2f * submersion);
@@ -2923,6 +2933,7 @@ namespace Hecton8.Physics.KCC
         private VaultGenerationHandle<KccEnvironmentProfileDTO> _environmentProfilesHandle;
         private VaultGenerationHandle<int> _environmentProfileBucketsHandle;
         private VaultGenerationHandle<uint> _environmentProfileHashesHandle;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private JobHandle _inputHandle;
         private JobHandle _environmentMockHandle;
         private JobHandle _integrationHandle;
@@ -3082,6 +3093,7 @@ namespace Hecton8.Physics.KCC
 
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
+            CacheOceanKinematicsRuntimeCold();
             _droppedSignalCount = 0;
             _globalQualityWeight = ResolveGlobalQualityWeight();
 #if UNITY_EDITOR
@@ -3111,6 +3123,7 @@ namespace Hecton8.Physics.KCC
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterFixedTick();
+            _oceanKinematicsService = null;
             _coreBlackboxWarmed = false;
         }
 
@@ -3876,6 +3889,12 @@ namespace Hecton8.Physics.KCC
                 ResetVaultHandles();
                 _dataVault = currentService as IDataVault;
                 EnsureVaultBuffers();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
             }
         }
 
@@ -4775,6 +4794,7 @@ namespace Hecton8.Physics.KCC
             tuning.GlobalQualityWeight = _globalQualityWeight;
             tuning.WaterSurfaceY = _waterSurfaceY;
             tuning = SanitizeTuning(tuning);
+            tuning.WaterSurfaceY = ResolveRuntimeWaterSurfaceY();
             tuningBuffer[0] = tuning;
             return tuning;
         }
@@ -4792,7 +4812,7 @@ namespace Hecton8.Physics.KCC
                 CapsuleHeight = _capsule != null ? math.max(0.1f, _capsule.height) : 1.8f,
                 SkinWidth = 0.025f,
                 GlobalQualityWeight = ResolveGlobalQualityWeight(),
-                WaterSurfaceY = _waterSurfaceY,
+                WaterSurfaceY = ResolveRuntimeWaterSurfaceY(),
                 MockInputFrequency = 0.35f,
                 MockInputAmplitude = 1f,
                 VisualSyncSharpness = 18f,
@@ -4819,6 +4839,48 @@ namespace Hecton8.Physics.KCC
             tuning.VisualSyncSharpness = math.max(0.01f, math.isfinite(tuning.VisualSyncSharpness) ? tuning.VisualSyncSharpness : 18f);
             tuning.WakeThreshold = math.max(0.01f, math.isfinite(tuning.WakeThreshold) ? tuning.WakeThreshold : 0.25f);
             return tuning;
+        }
+
+        private void CacheOceanKinematicsRuntimeCold()
+        {
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+        }
+
+        private float ResolveRuntimeWaterSurfaceY()
+        {
+            return TryResolveOceanWaterSurfaceY(out float waterSurfaceY)
+                ? waterSurfaceY
+                : HydrodynamicKccMath.ResolveWaterSurfaceY(_waterSurfaceY);
+        }
+
+        private bool TryResolveOceanWaterSurfaceY(out float waterSurfaceY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out waterSurfaceY))
+            {
+                return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceY(float candidateWaterSurfaceY, out float waterSurfaceY)
+        {
+            if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceY = candidateWaterSurfaceY;
+                return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
         }
 
         private static KccEnvironmentProfileDTO DefaultEnvironmentProfile()

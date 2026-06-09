@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zespół rdzenia timingu naprowadzania"
+title: "Zespół Rdzenia Czasowego Nawigacji"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zespół rdzenia timingu naprowadzania
+# Zespół Rdzenia Czasowego Nawigacji
 
-Działające wznoszenie wymaga rdzenia timingu naprowadzania, który rozumie geometrię księżyców Aegir, interwały blackout, cienie przekaźników i carrier recovery lanes. Zły timing może zgubić kapsułę bez złamania choćby jednej części.
+Rdzeń czasowy nawigacji pilnuje, żeby wznoszenie nie stało się czystym spaleniem donikąd. Nad HECTON-8 nie ma otwartego nieba. Aegir przesuwa geometrię odzysku, przesłony przekaźników otwierają się i zamykają, pióropusze burz uginają przekaz akustyczny i radiowy, a Black Keel patrzy tylko na wybrane pasy o wybranych porach.
+
+Rdzeń nie czyni kapsuły mądrzejszą od oceanu. Daje jej zegar, wycinek efemerydy, tabelę pasów odbioru i dość korekty dryfu, by wyjście z wody było zdarzeniem możliwym do sklasyfikowania. Wczesne pakiety wchodzą do stosu carrier jako szum przechwycenia. Spóźnione pakiety docierają po odejściu pasa. Dobry silnik ze złym rdzeniem może wystartować dokładnie według projektu i nie zostawić użytecznego roszczenia recovery.
+
+Naprawialny rdzeń potrzebuje czterech rzeczy: zegara stabilnego wobec opóźnień głębinowych, aktualnego okna Aegir, właściwego pasa Black Keel i cache przesłon zgodnego z łańcuchem przekaźników nad burzą. Dlatego zespół wydaje się mały i bezlitosny. Nie dodaje ciągu. Decyduje, czy ciąg stanie się dotarciem.
 
 ## Scanner
 
-Pusty timing core. Geometria Aegir decyduje, czy wznoszenie stanie się recovery, capture czy ciszą.
+PUSTY RDZEŃ CZASOWY // Brak efemerydy Aegir, brak tabeli pasów Keel, cache przesłon przekaźnika puste. Kapsuła może odpalić czysto i minąć każdy odbiornik.
 
 ## Terminal
 
-GUIDANCE CORE: zsynchronizować zegar kapsuły z Aegir window, Black Keel receiver lane, moon relay shutter i dryfem storm-plume. Spóźnione packets stają się utratą dowodów; wczesne packets stają się capture noise.
+GUIDANCE CORE: zainstalować wycinek efemerydy Aegir, tabelę pasów odbioru Black Keel, cache przesłon przekaźnika księżycowego i korektę dryfu pióropusza. Odrzucić zegar lokalny, jeśli dryf przekracza tolerancję custody stamp.
 
 ## Audio
 
-Góra nie jest kierunkiem. To okno ze świadkiem.
+Celuj kapsułą w okno, nie w niebo.
 
 ## Field Note
 
-Z HECTON-8 nie ma prostego góra. Jest odbiornik, cień, dryf burzy i packet queue starsza już od twojej paniki.
+Z HECTON-8 nie ma prostego w górę. Jest cień księżyca, pióropusz burzy, pas odbioru i zegar, któremu trzeba uwierzyć.
 
 <!-- In-Game Wiki; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/pl_PL. -->

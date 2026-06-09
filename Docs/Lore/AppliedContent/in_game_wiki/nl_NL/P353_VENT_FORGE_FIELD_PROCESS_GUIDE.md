@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Veldprocesgids voor vent-forge"
+title: "Veldprocesgids voor ventsmederijen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Veldprocesgids voor vent-forge
+# Veldprocesgids voor ventsmederijen
 
-Vent forges zijn natuurlijk-industriële reactoren. Ze veranderen hitte, brine en pressure history in bruikbare ceramics, sealants en charge materials en houden elk monster verbonden met zijn thermische pad.
+Ventsmederijen zijn natuurlijk-industriële reactoren. Ze maken van hitte, pekel, drukgeschiedenis en trage koeling keramiek, sealants en ladingsmaterialen. Een monster is pas nuttig als zijn thermische pad de berging overleeft.
 
 ## Scanner
 
-Vent-forge chemistry actief. Kwaliteit volgt pressure history, heat pulse en langzame koeling, niet de glans van het monster.
+Chemie van ventsmederij actief. Kwaliteit volgt drukgeschiedenis, hittepuls en trage koeling, niet monsterglans.
 
 ## Terminal
 
-FIELD GUIDE: vent forges koken sulfides, noble-gas pockets, ceramics en sealant precursors. De route van een monster door heat, brine en pressure telt meer dan zijn naam.
+VELDGIDS: ventsmederijen koken sulfiden, edelgaszakken, keramiekkorrels en sealantvoorlopers. De route van een monster door hitte, pekel en druk telt meer dan zijn naam.
 
 ## Audio
 
@@ -35,6 +35,6 @@ De vent maakte geen erts. Hij maakte een proces dat jij onderbrak.
 
 ## Field Note
 
-Til een verse partij niet direct in koud water. Laat de vent de anneal afmaken of de shell craqueleert.
+Til een verse partij niet meteen in koud water. Laat de vent het gloeien afmaken, anders craqueleert de schaal.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/nl_NL. -->

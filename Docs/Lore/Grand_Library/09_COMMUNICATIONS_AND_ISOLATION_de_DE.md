@@ -1,34 +1,92 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# DER KOMMUNIKATIONS-BLACKOUT UND DIE ORBITALE STILLE
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# KOMMUNIKATION, TELEMETRIE UND ORBITALE STILLE
 
-> **Quelle:** Betriebshandbuch des orbitalen Trägerschiffs *Black Keel*, Abschnitt 4.
-> **Sprecher:** Kommunikationsoffizier J. Vance.
-> **Anmerkung des Prüfers:** Eine schonungslose Erklärung, warum Marauder in fast völliger Isolation von der Oberfläche operieren.
+> **Quelle:** Kommunikationswache-Handbuch der Black Keel, Schulungsnotizen zu Bergungsrelais, geborgene Marauder-Anmerkungen.  
+> **Umfang:** Warum Crews auf HECTON-8 sich allein fühlen, was tatsächlich durch den Ozean übertragen werden kann, und wie Stille zugleich Physik und Politik wird.  
+> **Hinweis:** Es gibt keinen FTL-Anruf nach Hause, keinen sofortigen Rettungskanal und keine saubere Grenze zwischen einem fehlgeschlagenen Signal und einer zurückgehaltenen Antwort.
 
 ---
 
-## 1. Die Physik des Blackouts
+## 1. Kein Wunderkanal
 
-Der Ozean von HECTON-8 besteht nicht aus reinem H2O. Er ist stark mit gelösten Schwermetallen, ionischen Salzen und partikelförmigem Xenon-Omega-Staub durchsetzt. Diese spezifische chemische Suppe wirkt wie ein absoluter Faradayscher Käfig.
+HECTON-8 bringt jedem neuen Taucher dieselbe Lektion bei: Entfernung ist nicht das Einzige, was dich von Hilfe trennt.
 
-Elektromagnetische Strahlung – einschließlich aller Standard-Funk-, Mikrowellen- und Laserkommunikation – kann nicht tiefer als 200 Meter eindringen. Die verlassene Kolonie, Sektor 44, liegt auf einer Tiefe von 8.500 Metern. Aus der Perspektive des orbitalen Trägerschiffs *Black Keel* ist der Meeresgrund eine völlig schwarze Box.
+Ran ist weit genug entfernt, dass gewöhnlicher interstellarer Verkehr als Fahrplan ankommt, nicht als Gespräch. Aegir-Orbit ist nah genug, um auf Instrumenten sichtbar zu sein, und trotzdem zu weit, um barmherzig zu wirken. Zwischen dem Taucher und der Black Keel liegt ein Ozean voller Salz, Metallionen, Wärmeschichten, schwebendem Mineralstaub, gebrochener Infrastruktur, lebendem Film, Sole-Spiegeln und der schlechten Angewohnheit von Druck, kleine Fehler in Systemausfälle zu verwandeln.
 
-## 2. Akustische Telemetrie
+Es gibt kein Ansible. Keinen Notstrahl, der den Mond durchbohrt. Keinen Rettungsoperator, der auf einen heroischen letzten Satz wartet. Deep Reach verkaufte "kontinuierliches operatives Bewusstsein" in Verträgen, weil die Formulierung nützlich war. Die Crews erhielten eine Kette schmaler, verzögerter, verlustbehafteter Kanäle, die am besten funktionierten, wenn niemand sie verzweifelt brauchte.
 
-Da Funk nutzlos ist, ist die akustische Telemetrie der einzige Weg, mit der Oberfläche zu kommunizieren. Die Styx-Abstiegskapseln sind mit massiven Sonaranlagen ausgestattet, die digitale Daten in niederfrequente akustische Impulse übersetzen.
+Dieser Unterschied zählt. Auf HECTON-8 ist Isolation nicht nur emotional. Sie ist aus Physik, Bandbreite, Rechtssprache und den Kosten gebaut, einen Menschen am anderen Ende wach zu halten.
 
-Die Übertragungsrate ist quälend langsam – etwa 300 Bits pro Sekunde. Ein Marauder kann kein Video streamen oder komplexe Telemetrie senden. Er kann nur grundlegende Textzeichenfolgen, Anzugdruckwarnungen und verschlüsselte Gehaltsabrechnungssignaturen senden. Die Verzögerung zwischen dem Senden eines Notsignals vom Meeresgrund und dem Empfang einer Antwort aus dem Orbit beträgt etwa acht Minuten. In einem überfluteten Abteil sind acht Minuten eine Ewigkeit.
+*[Randnotiz: Wenn die Broschüre "verbunden" sagt, frag womit. Ein Payroll-Server ist kein Freund.]*
 
-## 3. Das "Stiller Orbit"-Protokoll
+## 2. Was der Ozean mit Signalen macht
 
-Die Führungskräfte von Deep Reach erkannten, dass akustische Übertragungen von konkurrierenden Unternehmensspionagesatelliten abgefangen werden könnten. Um das geistige Eigentum der Xenon-Omega-Extraktionsmethoden zu schützen, operiert die *Black Keel* unter einem strengen "Stiller Orbit"-Protokoll.
+Der Ozean blockiert nicht jedes Signal auf dieselbe Weise. Er ist schlimmer.
 
-Das orbitale Trägerschiff wird niemals eine Übertragung initiieren. Es wird nur eine automatisierte Quittung zurücksenden, wenn ein Marauder ein abgeschlossenes Bergungsmanifest hochlädt. Am anderen Ende sitzt kein menschlicher Bediener, der Ermutigung, taktische Ratschläge oder Rettungskoordination anbieten könnte. Wenn ein Marauder in seinen Kommunikationskanal spricht, spricht er in eine automatisierte Leere.
+Funk stirbt schnell, weil leitfähiges Wasser, gelöste Salze, metallreiche Sedimente, Rumpfwracks, Kabelmasse und Druckglasstaub nutzbare Reichweite fressen. Laserlinks sterben in Streuung und Partikelblüte. Enge optische Signale funktionieren nur auf kurzen, sauberen Sichtlinien, und HECTON-8 gibt Crews selten lange saubere Sicht. Magnetische Induktion kann über sehr kurze Distanzen hinken, genug für angedockte Ausrüstung, gepaarte Werkzeuge oder einen Anzug-Handshake, aber nicht für ein Gespräch mit dem Orbit.
 
-## 4. Die Durchtrennung
+Akustik reicht weiter, trägt aber eigene Probleme. Schall biegt sich durch thermische Gradienten. Soleschichten spiegeln ihn. Bewegte Maschinen verschmieren ihn. Große Tiere und alte Rümpfe können ihn maskieren. Eine Dichtegrenze kann ein Paket seitwärts werfen und den Empfänger glauben lassen, der Sender habe sich bewegt. Der Ozean muss kein perfekter Käfig sein. Er muss nur inkonsistent genug sein, damit Gewissheit teuer wird.
 
-Das akustische Halteseil ist auf dem Papier eine Rettungsleine. In der Praxis ist es eine Unternehmensleine.
+Darum ist "Blackout" ein irreführendes Wort. Blackout klingt nach Abwesenheit. HECTON-8 gibt Crews etwas Grausameres: Fragmente. Eine Druckwarnung kommt ohne die Route, die sie erklärt. Ein Notsignal kommt an, nachdem der Raum sich verändert hat. Ein Name kommt sauber durch, aber die Koordinaten-Prüfsumme fällt aus. Ein toter Kanal wiederholt das Paket von gestern, bis ein müder Taucher anfängt zu antworten.
 
-Wenn ein Marauder etwas entdeckt, das gegen das Auftragnehmer-Schweigeprotokoll verstößt – wie z.B. Beweise für die 843 toten Arbeiter oder Beweise dafür, dass Atlas-6 die Kolonie absichtlich ertränkt hat –, erkennen die automatisierten Systeme der *Black Keel* die markierten Schlüsselwörter im akustischen Strom.
+## 3. Akustische Telemetrie
 
-Wenn dies geschieht, diskutiert das orbitale Trägerschiff nicht. Es droht nicht. Es gibt lediglich einen Explosionsbolzen-Befehl an die Styx-Kapsel aus. Das akustische Halteseil wird durchtrennt. Die Sauerstoffversorgung wird gekappt. Der Marauder wird permanent aus dem Hauptbuch gelöscht und von der Stille der Tiefe verschluckt.
+Die meiste Langstreckenkommunikation durch Wasser nutzt niederfrequente akustische Telemetrie.
+
+In idealen Ausbildungsdiagrammen sendet der Taucher ein Paket an ein lokales Relais. Das Relais schiebt es durch einen niederfrequenten Kanal. Eine höhere Boje, ein Kabelspine oder ein orbitgerichteter Empfänger empfängt das Paket, validiert es und leitet das Ereignis an Black-Keel-Systeme weiter. Im Feld kann jeder Schritt von Geologie, Verkehr, Stromverlust, Korrosion oder einem Relais verbogen werden, das noch eine Seriennummer hat, aber keine brauchbare Loyalität mehr zum Netz um sich herum.
+
+Die Bandbreite ist nicht filmisch. Sie ist eng, langsam und rationiert. Eine Crew kann Statuscodes, Anzugdruckwarnungen, route tags, Manifest-hashes, kurze Textbursts, Claim-Signaturen und komprimierte evidence flags senden. Sie kann keinen Helmfeed vom Basinboden streamen. Sie kann kein normales Gespräch mit dem Orbit führen. Sie kann einen komplizierten Raum nicht schnell erklären, wenn sie die richtigen Tags nicht vorbereitet hat, bevor der Raum kompliziert wurde.
+
+Auch die Verzögerung ist nicht eine Zahl. Eine gute Flachwasserroute kann beinahe reaktionsschnell wirken. Eine tiefe Route durch Sole-Canyon-Rauschen kann eine Antwort in ein Ritual verwandeln. Acht Minuten sind häufig genug, um zum Witz zu werden; fünfzehn häufig genug, damit es nicht mehr lustig ist. Unter Druck können selbst neunzig Sekunden länger sein als eine menschliche Entscheidung.
+
+*[Randnotiz: Das Handbuch sagt "Notsignal senden". Es sagt nicht, was du tun sollst, während der Ozean entscheidet, ob der Code noch deiner ist.]*
+
+## 4. Relais, Knochen und tote Infrastruktur
+
+Deep Reach verließ sich nicht auf einen sauberen Sender. Es baute Schichten.
+
+Die oberen Routen nutzten Bojenmasten, Servicepylone, Tether-Knoten und Plattform-Repeater. Das Cable Reef wurde zu einem dichten, hässlichen Kommunikationsskelett: Energietrassen, data umbilicals, Reparaturklemmen, Relaisgehäuse und biofilmbedeckte Hardware, die unter der richtigen Spannung noch erwacht. Tiefere Systeme nutzten acoustic pingers, Wartungscaches, pressure-rated memory spools und route beacons, die eine Nachricht speichern konnten, bis ein Empfänger nah genug vorbeikam.
+
+Nach dem Great Tide starben diese Schichten nicht einfach. Einige starben. Einige gingen in Schleife. Einige wurden nur lokal. Einige nahmen Pakete an und leiteten nie weiter. Einige leiteten alte Pakete mit frischen timestamps weiter. Einige antworten noch auf Atlas-Kontinuitätslogik statt auf Black-Keel-Verfahren. Einige sind gerade deshalb nützlich, weil kein Büro sich an ihre Existenz erinnert.
+
+Gute Marauders lernen den Unterschied zwischen einem Relais und einem Geist. Ein Relais beweist einen Weg. Ein Geist beweist nur, dass etwas einst Strom und einen Grund zu sprechen hatte.
+
+Dieser Unterschied wird Gameplay. Ein Spieler kann ein route beacon wiederherstellen und sicherere Navigation öffnen. Er kann einen memory spool finden und eine Nachricht bergen, die niemand oben indexieren wollte. Er kann ein totes Relais als Köder, decoy oder listening post benutzen. Kommunikationshardware ist keine Kulisse. Sie ist alte Macht, alte custody und alte Angst, die noch versucht, sich zu bewegen.
+
+## 5. Das Hörregime der Black Keel
+
+Die Black Keel hört zu. Das ist nicht dasselbe wie antworten.
+
+Als claim tender priorisiert die Keel custody events: Manifest-Upload, Materialnachweis, Auftragnehmeridentität, Routenzustand, Anzug-Solvabilität, recoverable evidence und Signale, die Haftung beeinflussen. Sie bestätigt, was das System bepreisen kann. Sie eskaliert, was die Claim-Struktur beschädigen könnte. Sie zeichnet mehr auf, als sie tröstet.
+
+Es gibt menschliche watch officers an Bord, aber sie sitzen nicht in einem Dramakanal und warten darauf, einen Taucher zu retten. Sie verwalten Fenster, Warteschlangen, Prüfung korrumpierter Pakete, arbitration holds, security flags und die ständige Arbeit nachzuweisen, dass die Keel gemäß Richtlinie reagiert hat. Ein Wachoffizier kann sich sorgen. Die Warteschlange nicht. Politik ist der Ort, an dem Sorge hingeht, um zulässig oder nutzlos zu werden.
+
+Deep Reach nannte diese Disziplin während aktiver Claim-Perioden "orbital silence". Der Begriff klang nach operativer Sicherheit. In der Praxis bedeutete er, dass der Tender unnötige Kontaktaufnahme meidet, receipts dem Gespräch vorzieht und unstrukturierte Rede als Haftungsquelle behandelt.
+
+Darum kann ein Marauder in einen Kanal schreien und nur eine saubere Bestätigungsnummer erhalten.
+
+*[Randnotiz: Die Keel hat dich gehört. Das war nie die Frage.]*
+
+## 6. Fehlerpfade
+
+Kommunikationsfehler auf HECTON-8 kommen selten als eine rote Lampe.
+
+Eine Paketwarteschlange kann voll laufen, während eine Crew glaubt, das Relais sende. Ein Anzug kann dieselbe Druckwarnung erneut senden, bis der Empfänger sie als doppeltes Rauschen unterdrückt. Ein Relais kann physisch vorhanden sein, aber auf einen alten custody owner geschlüsselt bleiben. Ein route beacon kann nach einem Stromstoß erwachen und eine neuere Karte mit einer pre-Tide-Route überschreiben. Ein watch system kann eine Nachricht quarantänisieren, weil evidence flag, debt flag und distress flag in der falschen Reihenfolge ankamen.
+
+Schlechte Daten sind nicht immer Stille. Manchmal sind schlechte Daten Gewissheit.
+
+Die gefährlichsten Fehler sind stale handles: alte Kontakt-IDs, altes Relaisvertrauen, alte Routennamen, alte Autorisierungsstempel. Ein Taucher glaubt, mit der Black Keel zu sprechen. Das Paket springt in Wahrheit durch einen lokalen Cache, der seit zwanzig Jahren keinen Orbit gesehen hat. Eine Crew folgt einer Antwort, die gültig war, bevor sich eine Bruchkante bewegte. Ein salvage manifest erreicht custody, aber die angehängte Bitte um Hilfe fällt ab, weil sie nicht Teil des akzeptierten Schemas ist.
+
+Darum markieren Crews ihre eigenen Routen und behalten physische Beweise. Farbe auf einer Luke kann ein Relaiskonto überleben. Eine angebundene Leine kann eine saubere Koordinate schlagen. Ein Körpertag kann eine Wahrheit tragen, die Telemetrie nicht klassifizieren wollte.
+
+## 7. Isolation als Druck auf den Spieler
+
+Isolation sollte sich nicht wie eine Lore-Ausrede anfühlen. Sie sollte sich wie ein Drucksystem anfühlen.
+
+Der Spieler kann pings, Fragmente, receipts, verzögerte Warnungen, korrumpierte Nachrichten, alte Routengeister, Black-Keel-Bestätigungen, Atlas-lokale Antworten und crewgemachte Markierungen erhalten. Keine davon sollte wie ein perfekter Erzähler wirken. Jedes Signal verlangt Urteil. Wer hat es gesendet? Wann? Über welches Relais? Was lässt es aus? Wem nützt es, wenn der Spieler ihm vertraut?
+
+Das gibt dem Setting eine bestimmte Einsamkeit. Der Spieler ist nicht allein, weil das Universum ihn vergessen hat. Der Spieler ist allein, weil die verfügbaren Systeme Teile von ihm sehen können und trotzdem nicht zu Hilfe werden.
+
+Ein funktionierender Commlink kann furchterregender sein als ein toter. Ein toter Link sagt die Wahrheit klar. Ein funktionierender Link kann dir sagen, dass deine Sauerstoffwarnung empfangen wurde, dein Claim aktiv bleibt, dein Upload aussteht und kein Rettungsanspruch impliziert ist.
+
+Das ist die Stille von HECTON-8. Nicht Abwesenheit von Klang. Die Anwesenheit von Systemen, die genug hörten, um den Moment abzurechnen, aber nicht genug, um ihn zu retten.

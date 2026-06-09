@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Kręgosłup przekaźników
 
-Kręgosłup przekaźników to powolny szkielet komunikacji: sloty wiązek, bufory pakietów, stemple opieki i harmonogramy ponowień. Przenosi dowody, roszczenia i rozkazy, ale nie tlen do zalanego pokoju.
+Kręgosłup przekaźników utrzymuje przestrzeń ludzi w łączności, nie udając, że odległość zniknęła. To łańcuch slotów wiązki, buforów pakietów, hashy opieki, harmonogramów ponowień, szpul notarialnych i lokalnych zgód pogodowych. Przenosi rozkazy, dowody, wezwania do długu i impulsy życia przez odległość międzygwiezdną. Nie przenosi tlenu do zalanego pokoju.
 
-Na HECTON-8 wiadomość może być ważna i potwierdzona, a jednak spóźniona. Prawda i ratunek to różne problemy logistyki.
+Na HECTON-8 przekaźnik jest presją, nie tłem. Wiadomość może być czytelna i bezużyteczna. Pakiet Deep Reach może przyjść oczyszczony, bo autorzy pierwszej wersji nie żyją. Potwierdzenie Tau Ceti może uczynić dowód politycznie groźnym po latach. Luyten może dowieść opieki i zostawić gracza samego w wodzie. Przekaźnik czyni prawdę trwałą. Nie czyni jej szybką.
 
 ## Scanner
 
-Stary bufor przekaźnika. Wiek pakietu wychodzącego przekracza lokalną przydatność ratunku. Hash opieki cały; okno odpowiedzi martwe.
+Stary bufor przekaźnika. Zegar źródła ważny, hash opieki nienaruszony, kolejka ponowień wyczerpana. Wiadomość wyprzedziła masę ratunku i umarła w slocie oczekiwania.
 
 ## Terminal
 
-KRĘGOSŁUP PRZEKAŹNIKÓW // Pakiet w kolejce przez Aegir lokalny, Luyten Junction i ścieżkę archiwum Sol. Trasa opóźnienia świetlnego przyjęta. Spór priorytetu nierozwiązany. Odpowiedź ludzka nieoperacyjna dla obecnego okna przeżycia.
+STATUS RELAY SPINE // Brak pasa ansible. Opieka pakietu ważna przez lokalny bufor Aegir. Potwierdzenie Luyten oczekuje według klasy opóźnienia światła. Odpowiedź ludzi przestarzała dla przeżycia przedziału. Zachowaj lokalną władzę działania.
 
 ## Audio
 
-Przekaźnik nie jest zepsuty. W tym problem. Robi dokładnie to, na co pozwala odległość.
+Pakiet może być prawdziwy, odebrany i nadal za późny.
 
 ## Field Note
 
-Wiadomość może być prawdziwa i dotrzeć po twoich kościach.
+Opóźnienie nie czyni prawdy fałszem. Czyni ją samotną.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/pl_PL. -->

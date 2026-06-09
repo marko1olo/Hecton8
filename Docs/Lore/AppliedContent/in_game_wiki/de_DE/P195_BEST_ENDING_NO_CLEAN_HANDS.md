@@ -1,15 +1,15 @@
 ---
 packet_id: P195_BEST_ENDING_NO_CLEAN_HANDS
 release_set_id: RS039_FINAL_DECISION_EMOTIONAL_AXIS
-article_id: final_axis.best_ending_no_clean_hands
-unlock_id: unlock.best_ending_no_clean_hands
-poi_tags: poi.no_clean_hands_record;poi.final_uncertainty_marker
+article_id: final_axis.residue_left_visible
+unlock_id: unlock.residue_left_visible
+poi_tags: poi.residue_left_visible_record;poi.final_open_fields_marker
 biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bestes Ende: keine sauberen Hände"
+title: "Beste Route: Rückstände bleiben sichtbar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bestes Ende: keine sauberen Hände
+# Beste Route: Rückstände bleiben sichtbar
 
-Keine sauberen Hände ist die Regel für den Finalton. HECTON-8 belohnt Verständnis, Vorbereitung und Zeugenarbeit, nicht Reinheit. Das beste Ende soll den Spieler zugleich kompetent und verstrickt fühlen lassen.
+Rückstände bleiben sichtbar ist der Standard für die stärkste Route. Das Ende soll etwas Konkretes sichern, ohne HECTON-8 in einen Belohnungsbildschirm zu verwandeln: einen öffentlichen Datensatz, verweigertes Deep-Reach-Routing, ein erhaltenes Becken, einen freien Operator, Arbeiternamen oder einen Atlas-Proof-Hash. Der Datensatz muss außerdem offene Felder für Empfängerverwahrung, Haftung, fehlende Namen, Beckenschaden, Atlas-Zustand und Schuldenreste behalten.
 
 ## Scanner
 
-Das beste Ende soll etwas Wirkliches retten, ohne zu behaupten, Unschuld habe den Abstieg überlebt.
+REGEL FÜR DIE BESTE ROUTE // Sichere ein konkretes Ergebnis: Operator-Verwahrung, öffentlicher Datensatz, verweigerte Nutzlast, lebendes Becken, Arbeiternamen-Paket oder Atlas-Proof-Hash. Schadensfelder bleiben offen.
 
 ## Terminal
 
-KEINE-SAUBEREN-HÄNDE-REGEL: Kriterien des besten bekannten Endes verlangen Agency, Beweis, Folge und Rückstand. Wenn jede verletzte Partei zufrieden ist, hat das Ende HECTON-8 vergessen.
+STANDARD FÜR ENDING-DATENSATZ
+Erforderlich gerettetes Objekt oder Zustand: Operator-Ausgang, öffentlicher Datensatz, verweigerte Deep-Reach-Nutzlast, erhaltene Beckenökologie, Arbeiternamen-Paket oder Atlas-Proof-Hash.
+Erforderlich offene Felder: Empfängerverwahrung, Haftungskette, fehlende Namen, Beckenschaden, Atlas-Zustand, Pfandreste.
+Ungültiger Datensatz: alle Kosten hinter Auszahlung, Rettung oder Firmenschluss verborgen.
+Nutzung: zeigen, was sich geändert hat und wofür noch eine Ablagepartei existiert.
 
 ## Audio
 
-Wenn es sauber wirkt, hat es vergessen, wo du bist.
+Wenn jede Zeile schließt, lügt der Datensatz.
 
 ## Field Note
 
-Eine starke Route kann Wahrheit offenlegen, Deep Reach blockieren, einen Teil der Ökologie erhalten und den Spieler befreien, aber Kosten müssen sichtbar bleiben.
+Wenn jede Zeile schließt, hat das Ende den Raum versteckt.
 
 <!-- In-Game Wiki; generated from P195_BEST_ENDING_NO_CLEAN_HANDS/de_DE. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_sensor_surface |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS179_FIRST_SENSOR_SURFACE_ARTICLES.md |
 | Speaker | Instrument scanner, range-lens note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first instrument inspection |
@@ -72,17 +72,17 @@ USE FIXED MARKS
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| ru_RU | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| ja_JP | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| zh_CN | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| fr_FR | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| es_ES | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| de_DE | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| pl_PL | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| uk_UA | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| ar_SA | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| id_ID | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| ko_KR | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| he_IL | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| pt_BR | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
-| nl_NL | draft_machine_or_llm | RANGE LENS // Diagonal scratch through center. Confirm distance against fixed marks. |
+| ar_SA | draft_machine_or_llm | عدسة قياس مدى // خدش قطري عبر المركز. أكد المسافة بعلامات ثابتة. |
+| de_DE | draft_machine_or_llm | ENTFERNUNGSLINSE // Diagonaler Kratzer durch Mitte. Abstand an festen Marken bestaetigen. |
+| es_ES | draft_machine_or_llm | LENTE DE ALCANCE // Aranazo diagonal por el centro. Confirma distancia con marcas fijas. |
+| fr_FR | draft_machine_or_llm | LENTILLE DE PORTEE // Rayure diagonale au centre. Confirmer la distance avec des reperes fixes. |
+| he_IL | draft_machine_or_llm | עדשת טווח // שריטה אלכסונית דרך המרכז. אשר מרחק מול סימנים קבועים. |
+| id_ID | draft_machine_or_llm | LENSA JARAK // Goresan diagonal melewati pusat. Konfirmasi jarak dengan tanda tetap. |
+| ja_JP | draft_machine_or_llm | 測距レンズ // 中央を斜め傷が横切る。固定マークで距離を確認。 |
+| ko_KR | draft_machine_or_llm | 거리 렌즈 // 대각선 흠집이 중앙을 지난다. 고정 표식으로 거리를 확인한다. |
+| nl_NL | draft_machine_or_llm | AFSTANDSLENS // Diagonale kras door midden. Bevestig afstand met vaste markeringen. |
+| pl_PL | draft_machine_or_llm | SOCZEWKA DALMIERZA // Ukosna rysa przez srodek. Potwierdz odleglosc na stalych znakach. |
+| pt_BR | draft_machine_or_llm | LENTE DE ALCANCE // Risco diagonal pelo centro. Confirme distancia com marcas fixas. |
+| ru_RU | draft_machine_or_llm | ДАЛЬНОМЕРНАЯ ЛИНЗА // Диагональная царапина через центр. Сверь расстояние с фиксированными метками. |
+| uk_UA | draft_machine_or_llm | ДАЛЬНОМІРНА ЛІНЗА // Діагональна подряпина через центр. Звір відстань із фіксованими мітками. |
+| zh_CN | draft_machine_or_llm | 测距镜片 // 对角划痕穿过中心。用固定标记确认距离。 |

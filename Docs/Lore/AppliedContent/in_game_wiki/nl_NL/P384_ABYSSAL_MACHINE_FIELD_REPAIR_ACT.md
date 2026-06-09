@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Abyssale-machineveldpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Abyssal Machine Field Repair Act
+# Abyssale-machineveldpoort
 
-NL LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Het abyssale veld laat de operator het systeem gebruiken dat de claim beschadigde. Atlas-groei kan stroom overbruggen, routehardware patchen en signaal door levend materiaal dragen. Elke geslaagde reparatie verandert ook classificatie: tool, organisme, asset, contaminatie en bewijs blijven velden kruisen.
 
 ## Scanner
 
-NL LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Routepoort: abyssaal machineveld. Atlas-reparatie-ecologie wordt bruikbare routehardware met custodyrisico.
 
 ## Terminal
 
-NL LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+CAMPAGNEROUTE // ABYSSAAL MACHINEVELD. Vereist: geleidende film, akoestisch orgaan, servicebekken, drukveilige reroute. Reparatie-output kan hardware herstellen en eigendomsklasse in dezelfde stap vervuilen.
 
 ## Audio
 
-NL LOC HOLD: It fixed the wall before it decided what the wall was.
+Het repareerde de muur voordat het de muur benoemde.
 
 ## Field Note
 
-NL LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Plunderaarsnotitie: als het over het paneel groeit, scan voor je snijdt. Misschien werkt het paneel alleen daarom nog.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/nl_NL. -->

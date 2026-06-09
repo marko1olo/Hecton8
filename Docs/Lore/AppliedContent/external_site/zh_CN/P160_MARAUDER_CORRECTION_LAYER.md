@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder 修正层"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder 修正层
 
-CN LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Marauder 修正层连接 Deep Reach 程序和玩家能动性：短注释把官方语言变成生存真相。
 
 ## Scanner
 
-CN LOC HOLD: Marauders turn corporate language back into survival facts.
+修正层 // 企业标签：temporary atmospheric variance。Marauder 备注：CO2 最先吞掉判断。
 
 ## Terminal
 
-CN LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+注释规则：把 Deep Reach 语言翻译回生存事实。备注要短、实用、愤怒，并且在压力下有用。
 
 ## Audio
 
-CN LOC HOLD: A good note does not sound clever. It keeps someone alive.
+好备注听起来不聪明。它让人活着。
 
 ## Field Note
 
-CN LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+玩家应该感到旧 Deep Reach 语言正在被翻译成死亡人数。
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/zh_CN. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_inventory_sorting |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS165_FIRST_INVENTORY_SORTING_ARTICLES.md |
 | Speaker | Inventory scanner, wet-stock sorting note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first inventory sorting |
@@ -33,7 +33,7 @@ Forbidden facts: no inventory-system claim, no automatic cleaning, no safe-use a
 
 ### Scanner
 
-WET STOCK // Red tag active. Keep separate until tested, dried, or discarded.
+WET STOCK // Red tag is active. Keep separate until tested, dried, or discarded.
 
 ### Codex
 
@@ -71,18 +71,18 @@ TEST BEFORE USE
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| ar_SA | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| de_DE | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| es_ES | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| fr_FR | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| he_IL | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| id_ID | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| ja_JP | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| ko_KR | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| nl_NL | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| pl_PL | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| pt_BR | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| ru_RU | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| uk_UA | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
-| zh_CN | draft_machine_or_llm | WET STOCK // Red tag active. Keep separate until tested, dried, or discarded. |
+| en_US | source_authority | WET STOCK // Red tag is active. Keep separate until tested, dried, or discarded. |
+| ar_SA | draft_machine_or_llm | مخزون مبلل // البطاقة الحمراء مفعلة. أبقه منفصلا حتى يتم اختباره أو تجفيفه أو التخلص منه. |
+| de_DE | draft_machine_or_llm | NASSBESTAND // Rote Markierung ist aktiv. Getrennt halten, bis geprüft, getrocknet oder verworfen. |
+| es_ES | draft_machine_or_llm | MATERIAL MOJADO // Etiqueta roja activa. Mantén separado hasta probar, secar o descartar. |
+| fr_FR | draft_machine_or_llm | STOCK HUMIDE // Étiquette rouge active. Garder séparé jusqu'au test, séchage ou rebut. |
+| he_IL | draft_machine_or_llm | מלאי רטוב // תג אדום פעיל. שמור בנפרד עד בדיקה, ייבוש או השלכה. |
+| id_ID | draft_machine_or_llm | STOK BASAH // Tag merah aktif. Pisahkan sampai diuji, dikeringkan, atau dibuang. |
+| ja_JP | draft_machine_or_llm | 濡れ在庫 // 赤タグ有効。検査、乾燥、廃棄まで分離。 |
+| ko_KR | draft_machine_or_llm | 젖은 물품 // 붉은 태그가 활성이다. 검사, 건조, 폐기 전까지 분리하라. |
+| nl_NL | draft_machine_or_llm | NATTE VOORRAAD // Rood label actief. Apart houden tot getest, gedroogd of weggegooid. |
+| pl_PL | draft_machine_or_llm | MOKRY ZAPAS // Czerwona etykieta aktywna. Trzymaj osobno do testu, suszenia albo odrzutu. |
+| pt_BR | draft_machine_or_llm | ESTOQUE MOLHADO // Etiqueta vermelha ativa. Mantenha separado até testar, secar ou descartar. |
+| ru_RU | draft_machine_or_llm | МОКРЫЙ ЗАПАС // Красная бирка активна. Держи отдельно до проверки, сушки или списания. |
+| uk_UA | draft_machine_or_llm | МОКРИЙ ЗАПАС // Червона бирка активна. Тримай окремо до перевірки, сушіння або списання. |
+| zh_CN | draft_machine_or_llm | 湿物资 // 红色标签有效。测试、干燥或丢弃前保持隔离。 |

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "Протокол продажи координат payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# Протокол продажи координат payload
 
-RU LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+Этот протокол не является простой продажей добычи. Это передача досягаемости. У Deep Reach уже достаточно бумаг, чтобы спорить о HECTON-8; ей не хватает надежного пути обратно через поврежденный бассейн. Payload дает этот путь, связывая координаты с уверенностью, хранением доказательств и классом salvage.
 
-## Scanner
-
-RU LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-RU LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-RU LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-RU LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+Выплата реальна, и облегчение долга тоже реально. Поэтому маршрут опасен, а не карикатурен. Отчаянный оператор может закрыть залог и одновременно доставить путь возвращения колонии компании, похоронившей временные записи. Штамп получателя превращает выживание в услугу.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/ru_RU. -->

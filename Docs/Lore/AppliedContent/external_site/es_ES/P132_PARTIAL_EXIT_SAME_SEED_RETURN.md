@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salida parcial: retorno al mismo seed"
+title: "Salida parcial: regreso al mismo seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salida parcial: retorno al mismo seed
+# Salida parcial: regreso al mismo seed
 
-La salida parcial protege la campaña larga de un cierre falso. Black Keel puede subir al operador por una ventana limitada, reparar el traje, registrar paquetes recuperados y vender la pausa como bienestar. El mundo de abajo no pasa a una versión más limpia.
+La salida parcial es una válvula de presión para una historia de supervivencia larga. El contratista gana una ventana de pickup, recibe heridas cerradas y equipo reparado, y oye el raro sonido de aire no filtrado por un traje moribundo. Ese alivio es real, por eso el regreso duele.
 
-Cuando el jugador vuelve, el mismo seed sigue allí. La escalera de salmuera tiene la misma trampa, el mismo relé tiene el mismo mal ángulo y la misma prueba sigue siendo peligrosa. Este final da alivio sin absolución: aire en los pulmones, más deuda en el contrato y ningún borrado de lo encontrado.
+Black Keel registra la pausa como bienestar y mantenimiento del lien. El mismo world seed sigue activo, las mismas pruebas siguen sin resolver y el mismo océano espera con todas las rutas descubiertas. La salida parcial no es misericordia del sistema. Es mantenimiento de un activo que aún se espera que descienda.
 
 <!-- External Site; generated from P132_PARTIAL_EXIT_SAME_SEED_RETURN/es_ES. -->

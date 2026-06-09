@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Public Ledger Aftershock Record"
+title: "רשומת הדף של ספר ציבורי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Public Ledger Aftershock Record
+# רשומת הדף של ספר ציבורי
 
-HE LOC HOLD: HECTON-8's truth ending is not purity. It is a decision to make concealment harder while accepting uncontrolled consequence.
+סוף האמת של HECTON-8 אינו טוהר. זו החלטה להקשות על הסתרה תוך קבלת תוצאה ללא שליטה: אבל, שווקים, תביעות, קריאות כתתיות, מאמצי חילוץ ונקמה המשתמשים באותן עובדות ששוחררו.
 
 ## Scanner
 
-HE LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+מראות הספר התקבלו. ראיות כבר אינן ניתנות להסרה; התוצאה כבר אינה ניתנת להכוונה.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: ראיות שוחררו מחוץ למשמורת Deep Reach. שמות עובדים, שברי וקטור Atlas ותגי אחריות שוכפלו למקלטים ציבוריים. סמכות השחקן על הפרשנות הסתיימה.
 
 ## Audio
 
-HE LOC HOLD: Truth left the room. It did not ask where to go next.
+האמת יצאה מהחדר. היא לא שאלה לאן ללכת.
 
 ## Field Note
 
-HE LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+רשומת אמת ציבורית: ראיות משוכפלות מונעות מחיקה, אך מסיימות את שליטת השחקן בפרשנות ובנקמה.
 
 <!-- External Site; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/he_IL. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Public Ledger Leak
 
-Public Ledger Leak is a partial-truth ending. The player sends enough evidence to make erasure harder, but not enough to control Atlas, Deep Reach retaliation or what public institutions will do with the packet.
+Public Ledger Leak is a partial truth route. The packet leaves on a narrow relay window with enough witness hash to be hard to deny and too many gaps to be safe. Deep Reach cannot simply erase the claim, but nobody on HECTON-8 can decide who uses the wound next. Insurers, civic courts, rival domains, Marauder pools and corporate offices will all read the same evidence differently. Publication saves the truth from clean burial. It does not make the truth kind.
 
 ## Scanner
 
@@ -31,7 +31,7 @@ PUBLIC LEDGER ROUTE: Tau Ceti packet notary accepted witness hash; payload incom
 
 ## Audio
 
-The truth leaves first. You may not like who reads it.
+The truth leaves first. Control does not leave with it.
 
 ## Field Note
 

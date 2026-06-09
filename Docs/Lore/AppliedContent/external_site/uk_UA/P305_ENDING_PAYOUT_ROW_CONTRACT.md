@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Ending Payout Data Boundary"
+title: "Межа даних виплати кінцівки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Ending Payout Data Boundary
+# Межа даних виплати кінцівки
 
-UA LOC HOLD: HECTON-8 endings record who received the proof, what custody they gained, and what cost remains unresolved.
+Кінцівки HECTON-8 записують, хто отримав доказ, яке зберігання здобув, що заплатив і яка ціна лишилась невирішеною. Число може закрити рядок контракту. Воно не може закрити океан.
 
 ## Scanner
 
-UA LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Рядок кінцівки зв'язує приймач, зберігання, стан доказів, виплату й невирішений наслідок.
 
 ## Terminal
 
-UA LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: рядки потребують маршрут payload, приймач, стан доказів, матеріальну виплату, юридичний наслідок, затримку карантину і невирішену ціну. Кредити не закривають місце злочину.
 
 ## Audio
 
-UK LOC HOLD: Credits do not close a crime scene.
+Кредити не закривають місце злочину.
 
 ## Field Note
 
-UA LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value, quarantine delay і dossier flags записуються тільки після ясних receiver і evidence state.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/uk_UA. -->

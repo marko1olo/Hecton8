@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Kartoteka specjalisty systemów terenowych"
+title: "Kartoteka Specjalisty Systemów Terenowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kartoteka specjalisty systemów terenowych
+# Kartoteka Specjalisty Systemów Terenowych
 
-Postać gracza w HECTON-8 schodzi do oceanu z praktyczną blizną: dawną pracą przy systemach terenowych Deep Reach, dostępem do infrastruktury ewakuacyjnej, cofniętym uprawnieniem i pamięcią procedur wystarczającą, by czytać zatopione maszyny jak dowody. Teraz jest Marauderem, nie oficerem firmy ani pasażerskim bohaterem. Zepsuta pompa, stempel trasy albo formuła odpowiedzialności mają wagę, bo operator rozumie, jak te systemy miały chronić pracowników, zanim stały się papierem.
+Kartoteka Specjalisty Systemów Terenowych daje centralnemu operatorowi HECTON-8 użyteczną przeszłość, ale nie wygładza jej za mocno. Nie był dowództwem ani tajnym architektem katastrofy. Pracował blisko systemów, które miały utrzymywać uczciwość tras ewakuacji, pomp, uszczelnień i sal przekaźników.
 
-## Scanner
+To ważne, bo opuszczona kolonia jest pełna procedur, nie tylko wraku. Stempel route-safe, klasa clamp albo formuła maintenance potrafią oskarżać mocniej niż dramatyczne nagranie. Operator wie, jak te zapisy wyglądają, gdy chronią ludzi, i jak wyglądają, gdy firma chce zmienić ochronę w papier.
 
-Stare uprawnienie systemów terenowych. Nie kadra dowódcza. Praca przy infrastrukturze z dostępem wystarczającym, by rozpoznać, gdzie pogrzebano trasę.
-
-## Terminal
-
-ŚLAD PERSONELU: systemy terenowe, infrastruktura ewakuacyjna, certyfikacja route-safe. Dostęp cofnięty po przeglądzie ciszy Aegir. Pamięć procedur nadal pasuje do sekwencji operatora.
-
-## Audio
-
-Nigdy nie podpisałeś kłamstwa. Znałeś gramatykę, dzięki której przechodziło kontrolę.
-
-## Field Note
-
-Identyfikator przestał otwierać drzwi. Nie wymazał kolejności awarii.
+Cofnięty dostęp wyostrza historię. Stary identyfikator nie daje już kontroli, ale zostawia zdolność rozpoznania dialektu awarii. HECTON-8 zmienia tę pamięć zawodową w motyw: nie winę za spowodowanie katastrofy, lecz odpowiedzialność po odczytaniu, jak możliwe do uratowania pomieszczenia odłożono do akt.
 
 <!-- External Site; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/pl_PL. -->

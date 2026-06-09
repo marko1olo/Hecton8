@@ -30,6 +30,7 @@
 
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -750,7 +751,7 @@ namespace Hecton8.Physics
             }
 
             IFluidSurfaceCurrentReadModel fluidSurface = GlobalRegistry.FluidSurfaceCurrent;
-            float waterY = fluidSurface != null ? fluidSurface.WaterLevel : 5000f;
+            float waterY = ResolveEditorWaterSurfaceY(fluidSurface);
 
             bool submerged = transform.position.y < waterY;
 
@@ -783,6 +784,38 @@ namespace Hecton8.Physics
                 Gizmos.color = new Color(0f, 1f, 0f, 0.6f);
                 Gizmos.DrawWireSphere(_groundHit.point, 0.05f);
             }
+        }
+
+        private static float ResolveEditorWaterSurfaceY(IFluidSurfaceCurrentReadModel fluidSurface)
+        {
+            if (fluidSurface != null && TryResolveRuntimeWaterLevelY(fluidSurface.WaterLevel, out float fluidWaterY))
+                return fluidWaterY;
+
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveRuntimeWaterLevelY(oceanKinematics.SeaLevel, out float oceanWaterY))
+            {
+                return oceanWaterY;
+            }
+
+            return WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+        }
+
+        private static bool TryResolveRuntimeWaterLevelY(float candidateWaterLevelY, out float waterLevelY)
+        {
+            if (math.isfinite(candidateWaterLevelY) &&
+                math.abs(candidateWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevelY = candidateWaterLevelY;
+                return true;
+            }
+
+            waterLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
         }
 #endif
     }

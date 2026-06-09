@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Storm Window Rush Contract Seed"
+title: "Semilla de contrato de prisa por ventana de tormenta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Storm Window Rush Contract Seed
+# Semilla de contrato de prisa por ventana de tormenta
 
-ES LOC HOLD: A HECTON-8 replay seed can make the same moon feel different by changing orbital and weather pressure.
+Prisa por Ventana de Tormenta empieza con un mapa de cobertura que se cierra. Bandas de tormenta, horario de obturador de relé y llamada bathydrop quedan en el mismo tablero que el techo de pago. El número alto no es generosidad; es el precio de entrar al agua cuando la ventana de retorno seguro ya se encoge.
 
-## Scanner
-
-ES LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
-
-## Terminal
-
-ES LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
-
-## Audio
-
-ES LOC HOLD: This contract pays because it hates waiting.
-
-## Field Note
-
-ES LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+La tirada cambia la presión al nivel de herramienta. Una bomba atascada cuesta más que tiempo, porque el reloj de llamada avanza mientras la reparación está abierta. Una mala soldadura consume tolerancia de ruta. Una marca de relé perdida puede empujar la extracción al apagón. La familia de contrato endurece la misma colonia cambiando cuándo el agua deja de esperar.
 
 <!-- External Site; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/es_ES. -->

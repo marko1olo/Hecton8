@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Suit Service Grades"
+title: "Grados de servicio del traje de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Suit Service Grades
+# Grados de servicio del traje de presión
 
-ES LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+Los grados de servicio del traje de presión mantienen la progresión de HECTON-8 en ciencia ficción dura: certificación de profundidad, consumibles, márgenes térmicos e historial de mantenimiento imperfecto.
 
 ## Scanner
 
-ES LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Las etiquetas del traje clasifican profundidad, fatiga de sellos, reserva de scrubber, margen térmico y contaminación.
 
 ## Terminal
 
-ES LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-ES LOC HOLD: The suit does not make you brave. It only fails later.
+El traje no te hace valiente. Solo falla más tarde.
 
 ## Field Note
 
-ES LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Un traje más profundo no es armadura de color. Es papeleo, piezas y mantenimiento feo.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/es_ES. -->

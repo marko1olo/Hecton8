@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Abyssal Machine Field Repair Act"
+title: "بوابة حقل الآلة السحيق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Abyssal Machine Field Repair Act
+# بوابة حقل الآلة السحيق
 
-AR LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+الحقل السحيق يجبر المشغل على استخدام النظام الذي أضر بالمطالبة. نمو Atlas يمكن أن يجسر الطاقة، ويرقع عتاد المسار، ويحمل الإشارة عبر مادة حية. كل إصلاح ناجح يغير التصنيف أيضا: أداة، كائن، أصل، تلوث ودليل تستمر في عبور الحقول.
 
 ## Scanner
 
-AR LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+بوابة مسار: حقل آلة سحيق. بيئة إصلاح Atlas تصبح عتاد مسار قابلا للاستخدام مع خطر حيازة مرفق.
 
 ## Terminal
 
-AR LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+مسار حملة // حقل الآلة السحيق. مطلوب: فيلم موصل، عضو صوتي، حوض خدمة، reroute آمن للضغط. خرج الإصلاح يمكن أن يعيد العتاد ويفسد فئة الملكية في المرور نفسه.
 
 ## Audio
 
-AR LOC HOLD: It fixed the wall before it decided what the wall was.
+أصلح الجدار قبل أن يسمي الجدار.
 
 ## Field Note
 
-AR LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+ملاحظة نهب: إذا نما عبر اللوحة، فامسح قبل القطع. قد يكون السبب الوحيد لبقاء اللوحة عاملة.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ar_SA. -->

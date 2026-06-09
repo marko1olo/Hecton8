@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Rejestr wody w kantynie
 
-Rejestr wody w kantynie to jeden z najprostszych ludzkich artefaktów HECTON-8: tablica jadalni zapisująca wodę pitną, zwrot żetonów, dostęp do pomp i wyjątki medyczne. Nie wyjaśnia katastrofy. Pokazuje kolonię tuż przed tym, jak katastrofa stała się historią.
+Księga wody kantyny to spuchnięta tablica z jadalni kolonii, która mierzyła wodę pitną z taką samą powagą jak pieczę nad narzędziami. Sześć brakujących żetonów, dwa medyczne wyjątki i korekta z pompowni wystarczą, by pokój był żywy: nie heroiczny, nie schludny, nadal kłócący się o kubki, gdy system ciśnienia już zaczynał puszczać.
 
-Jego wartość to faktura i dowód. Sześć brakujących żetonów brzmi drobno, dopóki gracz nie zrozumie, czym była woda w kolonii ciśnieniowej. Woda pitna przechodziła przez filtry, rachunek zmian, wyjątki medyczne i ewidencję pompowni. Brakujący kubek mógł oznaczać zmęczonego pracownika. Mógł też oznaczać chorą ekipę, skażoną linię, obejście racji albo przełożonego ukrywającego lokalną awarię przed raportami Deep Reach.
+Na HECTON-8 woda nigdy nie była tylko wodą. Przechodziła przez filtry, prowadzących zmiany, wyjątki medyczne, klucze pomp i zaufanie kantyny. Brakujący żeton mógł być zapomnieniem, kradzieżą, chorobą, skażeniem albo decyzją przełożonego, by utrzymać lokalną awarię poza papierami Deep Reach jeszcze jedną zmianę.
 
-Nie chodzi o melodramat. Rejestr czyni kolonię czytelną jako pracę: ludzie wracali ze zmian, kłócili się, poprawiali wpisy, pożyczali narzędzia, chronili swoich i próbowali utrzymać pokój normalnym, gdy ocean już wchodził do systemu. W HECTON-8 taki zwykły ślad może stać się dowodem.
+Nie ścieraj marginesu ołówka smarowego. To tam pokój staje się ludzki. Widać pracowników chroniących znajomych, ukrywających objawy, spierających się o kolejność racji i próbujących powstrzymać jeden skwaśniały filtr przed paniką całej kolonii do następnego tonu zejścia.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/pl_PL. -->

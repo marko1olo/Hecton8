@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: P-63 Fabricator Authority Limits"
+title: "Limites d'autorité du fabricateur P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: P-63 Fabricator Authority Limits
+# Limites d'autorité du fabricateur P-63
 
-FR LOC HOLD: P-63 Fabricator Authority Limits define early crafting as survival triage, not a shortcut to departure.
+Le P-63 est le premier établi, pas une navette de sortie. Il peut colmater une fuite, serrer une bride, ranimer un outil et produire un pinger bon marché. Les manches d'ascension, joints certifiés de profondeur et contacts de propulsion restent verrouillés tant que le joueur ne rapporte pas matériaux plus profonds, tampons d'autorité et historique de pression. Le craft devient une chaîne de preuves, pas un simple menu.
 
 ## Scanner
 
-FR LOC HOLD: P-63 accepts gasket, clamp, pinger and cutter-contact recipes, but rejects ascent-qualified components without deeper proof.
+Le P-63 accepte joints, brides, pingers et contacts de cutter, mais refuse les composants d'ascension sans preuve plus profonde.
 
 ## Terminal
 
-FR LOC HOLD: P-63 LIMIT: emergency patch OK. Rated repair requires pressure certificate, vent-processed material or route authority stamp.
+P-63 LIMIT : emergency patch OK. Rated repair exige pressure certificate, matériau traité par évent ou route authority stamp.
 
 ## Audio
 
-FR LOC HOLD: The machine can save your morning. It cannot forgive your orbit.
+La machine peut sauver ta matinée. Elle ne peut pas pardonner ton orbite.
 
 ## Field Note
 
-FR LOC HOLD: Fabricator authority is a story gate and engineering gate: low-grade survival first, pressure-rated escape later.
+Ce n'est pas un mur de craft arbitraire. La machine refuse de fabriquer des pièces d'évasion sans preuve de pression.
 
 <!-- In-Game Wiki; generated from P238_P63_FABRICATOR_AUTHORITY_LIMITS/fr_FR. -->

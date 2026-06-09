@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Sanitized Accident Reply Window"
+title: "Fenêtre de réponse d'accident aseptisée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Sanitized Accident Reply Window
+# Fenêtre de réponse d'accident aseptisée
 
-FR LOC HOLD: Sanitized Accident Reply Window gives Deep Reach a present voice without making them omniscient. Their first response is a stale public script under new pressure.
+La Fenêtre de réponse d'accident aseptisée donne à Deep Reach une voix présente sans rendre la corporation omnisciente. Leur première réponse vivante n'est pas une menace. Elle est pire d'une manière plus calme : une vieille explication publique poussée dans un nouveau canal sous pression. Le message parle encore d'onde de tempête, d'effondrement géologique et d'échec d'évacuation autonome parce que ce script a protégé Deep Reach une fois et que le système le reprend. Le joueur ne doit l'entendre qu'après une contradiction physique : mauvaise heure de porte, mauvais certificat de pompe, noms qui ont survécu à l'effacement de paie, pièce dont les dégâts ne correspondent pas à la météo. Le timing compte. Si le script arrive d'abord, c'est de l'exposition. S'il arrive après la preuve mouillée, c'est une insulte. Deep Reach ne parle pas à la pièce occupée par le joueur. Il parle au rapport sec que cette pièce devait devenir.
 
 ## Scanner
 
-FR LOC HOLD: Reply window open. Deep Reach repeats storm collapse and failed autonomous evacuation.
+Fenêtre de réponse ouverte. Deep Reach répète effondrement de tempête, échec géologique et évacuation autonome comme si la pièce était encore sèche.
 
 ## Terminal
 
-FR LOC HOLD: DR-LIVE WINDOW: HECTON-8 loss remains classified as storm surge, geological collapse and autonomous evacuation failure. Do not transmit unverified Atlas continuity claims.
+DR-LIVE WINDOW / PUBLIC LOSS LINE : onde de tempête, effondrement géologique, échec d'évacuation autonome / RESTRICTED ADVICE : ne pas transmettre Atlas continuity non vérifiée, body-category disputes ou basin-coordinate claims.
 
 ## Audio
 
-FR LOC HOLD: They answered the room you were supposed to find, not the room you are standing in.
+Ils ont répondu à la pièce que vous deviez trouver, pas à celle où vous vous tenez.
 
 ## Field Note
 
-FR LOC HOLD: Place after first physical contradiction, not before.
+À placer après la première contradiction physique : le joueur doit avoir une preuve mouillée avant d'entendre le vieux script public.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/fr_FR. -->

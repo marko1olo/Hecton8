@@ -19,22 +19,10 @@ localization_flags: 1
 
 # 상승 에너지 장약 조립체
 
-상승 에너지 장약 조립체는 자원 경제를 서사적 결과와 묶는다. blue debt와 vent-forged hardware가 탈출 신뢰도, 증거 custody, 타협을 결정한다.
+상승 에너지 장약 조립체는 HECTON-8의 salvage 경제가 추상이기를 멈추는 지점이다. carrier의 관심을 사는 압력 성장 재료가 바다에서 캡슐을 들어 올리는 임펄스 장약이 될 수도 있다.
 
-## Scanner
+그 거래가 위험한 이유는 blue debt가 마법 연료가 아니기 때문이다. 그것은 압력 이력, 오염 상태, 격리 행동, 법적 가치를 가진 Xenon-Omega 공정 재료다. vent-forged heat cell은 제어된 에너지를 낼 수 있다. 원시 샘플은 깨지고, custody 기록을 망치고, 유효한 recovery를 분쟁 화물로 바꿀 수 있다.
 
-에너지 크래들이 pressure pulse로 긁혀 있다. 싼 장약은 깔끔한 관을 만든다.
-
-## Terminal
-
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator, custody stamp 필요. Raw fuel 거부. 미인증 blue debt는 launch impulse 아래 파열되며 recovery claim 무효.
-
-## Audio
-
-양력을 팔거나 타고 가거나. 둘 다는 안 된다.
-
-## Field Note
-
-크래들의 모든 그램은 탈출, 증거, 또는 blue-debt payout이다. 캡슐은 탐욕을 용서하지 않는다.
+완전한 장약은 그래서 같은 크래들 안에 하드웨어와 청구 언어를 담는다. heat cell, 절연체, 임펄스 슬리브, 질량 기록, 서명된 custody stamp다. 온전하게 유지하면 캡슐에는 인증 상승력이 있다. 대금을 위해 부수면 바다는 여전히 엔진 점화를 허락할 수 있지만, 위쪽의 누구도 도착한 것을 받아들일 의무가 없다.
 
 <!-- External Site; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/ko_KR. -->

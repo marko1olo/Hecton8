@@ -11,10 +11,65 @@ from pathlib import Path
 from typing import Iterable
 
 
-ROOT_DOCS = {"AGENTS.md", "MASTER_RELEASE_WORK_PLAN.md", "BUILD_PLAYTEST_ISSUES.md"}
-ARCHIVE_PARTS = {"DEPRECATED", "_Archive", "Archive", "AgentLogs", "Tasks"}
+ROOT_ANCHORS = {
+    "AGENTS.md",
+    "PROJECT_BIBLES.md",
+    "VISION_LOCKS.md",
+    "TASTE.md",
+    "textes.md",
+    "MASTER_RELEASE_WORK_PLAN.md",
+    "BUILD_PLAYTEST_ISSUES.md",
+    "GEMINI.md",
+    "HECTON8_ORCHESTRATOR.md",
+    "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
+}
+DOCS_ROOT_FILES = {
+    "README.md",
+    "PROJECT_BASELINE.md",
+    "DOC_GOVERNANCE.md",
+    "QUALITY_GATES.md",
+    "SYSTEMS_CONTRACTS.md",
+    "HECTON8_GLOBAL_ARCHITECTURE_MAP.md",
+    "HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md",
+    "ROOT_DOCS_REFERENCE.md",
+    "PROJECT_ATLAS.md",
+    "DEPENDENCY_GRAPH.md",
+    "ARCHITECT_HANDBOOK.md",
+    "AGENT_AUTHORITY_ROUTING.md",
+    "AGENTS_RULE_DETAIL_LEDGER.md",
+}
+ACTIVE_DOC_SUBTREES = {"ARCHITECTURE"}
+EXPLICIT_ACTIVE_DOC_PATHS = {
+    "Docs/Generated/README.md",
+    "Docs/Data/Profiles/README.md",
+    "Docs/Reports/README.md",
+    "Docs/Tasks/README.md",
+    "Docs/DEPRECATED/README.md",
+    "Docs/_Archive/README.md",
+    "Docs/Archive/README.md",
+}
+ARCHIVE_PARTS = {"DEPRECATED", "_Archive", "Archive", "AgentLogs", "Tasks", "Reports", "Logs", "Screenshots"}
+CORPUS_PARTS = {
+    "AI_Texturing_Templates",
+    "AssetAudit",
+    "Atmosphere",
+    "Audio",
+    "BibleMandateAudits",
+    "Codex_Workflow_Kit_RU",
+    "Data",
+    "Design",
+    "GameDesign",
+    "Generated",
+    "GeneratedAssets",
+    "Lore",
+    "Marketing",
+    "Modding",
+    "Orchestration",
+    "mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)",
+}
 DOC_EXTENSIONS = {".md", ".txt", ".diff"}
 TRANSIENT_REPORT_SUFFIXES = ("_stdout.txt", "_stderr.txt")
+ROUTE_BIBLE_RE = re.compile(r"`([^`\\/]+\.md)`")
 
 
 def repo_root() -> Path:
@@ -33,23 +88,48 @@ def is_transient_report_output(path: Path) -> bool:
     )
 
 
-def is_active_docs_path(path: Path, root: Path) -> bool:
+def discover_root_route_bibles(root: Path) -> set[str]:
+    project_bibles = root / "PROJECT_BIBLES.md"
+    if not project_bibles.exists():
+        return set()
+    text = read_text(project_bibles)
+    return {match.group(1) for match in ROUTE_BIBLE_RE.finditer(text)}
+
+
+def allowed_root_docs(root: Path) -> set[str]:
+    return ROOT_ANCHORS | discover_root_route_bibles(root)
+
+
+def is_active_docs_path(path: Path, root: Path, *, include_corpora: bool = False) -> bool:
     try:
         rel = path.relative_to(root)
     except ValueError:
         return False
 
     if len(rel.parts) == 1:
-        return path.name in ROOT_DOCS
+        return path.name in allowed_root_docs(root)
 
     if rel.parts[0] != "Docs":
         return False
 
-    return not any(part in ARCHIVE_PARTS for part in rel.parts[1:])
+    rel_posix = rel.as_posix()
+    if rel_posix in EXPLICIT_ACTIVE_DOC_PATHS:
+        return True
+
+    if len(rel.parts) == 2:
+        return rel.parts[1] in DOCS_ROOT_FILES
+
+    if len(rel.parts) > 2 and rel.parts[1] in ACTIVE_DOC_SUBTREES:
+        return True
+
+    if include_corpora:
+        return not any(part in ARCHIVE_PARTS for part in rel.parts[1:])
+
+    return False
 
 
-def iter_active_docs(root: Path) -> Iterable[Path]:
-    for name in sorted(ROOT_DOCS):
+def iter_active_docs(root: Path, *, include_corpora: bool = False) -> Iterable[Path]:
+    for name in sorted(allowed_root_docs(root)):
         path = root / name
         if path.exists():
             yield path
@@ -59,7 +139,7 @@ def iter_active_docs(root: Path) -> Iterable[Path]:
         return
 
     for path in sorted(docs.rglob("*")):
-        if path.is_file() and is_doc(path) and is_active_docs_path(path, root):
+        if path.is_file() and is_doc(path) and is_active_docs_path(path, root, include_corpora=include_corpora):
             yield path
 
 
@@ -142,20 +222,30 @@ def stale_hits(text: str) -> dict[str, int]:
     return {name: len(pattern.findall(text)) for name, pattern in STALE_PATTERNS.items()}
 
 
-def validate(root: Path) -> dict:
-    files = list(iter_active_docs(root))
-    root_docs = sorted(path.name for path in files if path.parent == root and path.name in ROOT_DOCS)
+def validate(root: Path, *, include_corpora: bool = False) -> dict:
+    allowed_roots = allowed_root_docs(root)
+    root_markdown = sorted(path.name for path in root.glob("*.md"))
+    files = list(iter_active_docs(root, include_corpora=include_corpora))
+    root_docs = sorted(path.name for path in files if path.parent == root and path.name in allowed_roots)
+    missing_root_docs = sorted(name for name in ROOT_ANCHORS if not (root / name).exists())
+    unexpected_root_docs = sorted(name for name in root_markdown if name not in allowed_roots)
     result = {
         "schema": "hecton8.doc_structure.v1",
+        "docScope": "all_docs_corpus" if include_corpora else "authority_spine",
         "repoRoot": str(root),
         "activeDocCount": len(files),
+        "allowedRootTextDocs": sorted(allowed_roots),
         "rootTextDocs": root_docs,
         "rootTextDocCount": len(root_docs),
-        "rootTextDocPolicyPass": root_docs == sorted(ROOT_DOCS),
+        "missingRootTextDocs": missing_root_docs,
+        "unexpectedRootTextDocs": unexpected_root_docs,
+        "rootTextDocPolicyPass": not missing_root_docs and not unexpected_root_docs,
         "duplicateHeaderFiles": [],
         "brokenLinkFiles": [],
         "fenceIssueFiles": [],
         "encodingWithoutUtf8Sig": [],
+        "encodingPolicy": "utf-8 or utf-8-sig accepted; missing BOM is informational",
+        "encodingPolicyPass": True,
         "staleParameterFiles": [],
     }
 
@@ -183,7 +273,7 @@ def validate(root: Path) -> dict:
         and not result["duplicateHeaderFiles"]
         and not result["brokenLinkFiles"]
         and not result["fenceIssueFiles"]
-        and not result["encodingWithoutUtf8Sig"]
+        and result["encodingPolicyPass"]
         and not result["staleParameterFiles"]
     )
     return result
@@ -192,16 +282,24 @@ def validate(root: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", default="Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json")
+    parser.add_argument(
+        "--include-corpora",
+        action="store_true",
+        help="Also scan content/support corpora such as Lore, GeneratedAssets, Reports, and Modding. Default validates authority spine only.",
+    )
     args = parser.parse_args()
     root = repo_root()
-    report = validate(root)
+    report = validate(root, include_corpora=args.include_corpora)
     output = root / args.report
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8-sig")
     print(json.dumps({
         "pass": report["pass"],
+        "docScope": report["docScope"],
         "activeDocCount": report["activeDocCount"],
         "rootTextDocCount": report["rootTextDocCount"],
+        "missingRootTextDocs": len(report["missingRootTextDocs"]),
+        "unexpectedRootTextDocs": len(report["unexpectedRootTextDocs"]),
         "duplicateHeaderFiles": len(report["duplicateHeaderFiles"]),
         "brokenLinkFiles": len(report["brokenLinkFiles"]),
         "fenceIssueFiles": len(report["fenceIssueFiles"]),

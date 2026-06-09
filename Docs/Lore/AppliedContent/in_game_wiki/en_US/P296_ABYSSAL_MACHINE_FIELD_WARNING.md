@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Abyssal Machine Field Warning
 
-Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach.
+Abyssal Machine Field Warning bridges deep ecology into the final Atlas approach. The player is no longer crossing ruins that happen to contain life; they are crossing life that has learned to carry machines.
 
 ## Scanner
 
-Machine field warning: silt motion does not match current.
+Silt moves against the current. Filter bodies are repositioning beneath the lights.
 
 ## Terminal
 
-ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: abyssal machine-field silt exceeds current model. Filter bodies and buried actuator ribs registering as moving infrastructure. Maintain standoff; do not anchor to soft floor.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The floor is not still.
 
 ## Field Note
 
-Late-game warning should be quiet and objective, not boss buildup.
+Late-game warning: quiet objective dread. The final field is infrastructure waking, not boss buildup.
 
 <!-- In-Game Wiki; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/en_US. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Factory Temple Entry Fragment"
+title: "Fragmen Masuk Pabrik-Kuil"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Factory Temple Entry Fragment
+# Fragmen Masuk Pabrik-Kuil
 
-ID LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+Fragmen ini mendefinisikan tata visual zona final. Rasa sakralnya kebetulan: ribuan perbaikan diulang sampai mesin, biologi, dan kerusakan manusia menjadi satu pola.
 
 ## Scanner
 
-ID LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Aloi, sealant cangkang, alat tangan, dan pulsa perbaikan aktif terbaca sebagai satu permukaan.
 
 ## Terminal
 
-ID LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: kategori pemeliharaan runtuh. Bekas alat, cangkang sealant, akar kabel, jaringan penyaring, dan rusuk aktuator terdaftar sebagai satu permukaan perbaikan. Tanda jalur manusia tidak lagi diistimewakan.
 
 ## Audio
 
-ID LOC HOLD: This is not a room. This is a habit.
+Ini bukan ruangan. Ini kebiasaan.
 
 ## Field Note
 
-ID LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Aturan visual: ia tampak seperti kuil hanya karena industri, jaringan, dan pengulangan berubah menjadi ritual.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/id_ID. -->

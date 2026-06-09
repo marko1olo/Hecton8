@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Blackout Window Signal Decay"
+title: "Zanik sygnału w oknie blackoutu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Blackout Window Signal Decay
+# Zanik sygnału w oknie blackoutu
 
-PL LOC HOLD: Blackout Window Signal Decay keeps communications scarce for physical reasons. The player gets rare windows, broken packets and acoustic relays, not constant radio guidance.
+Zanik sygnału nadaje niedoborowi łączności fizyczny kształt. Gracz otrzymuje rzadkie okna, ucięte fragmenty pakietów i podwodne obejścia akustyczne zamiast stałych wskazówek z orbity.
 
 ## Scanner
 
-PL LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Okno sygnału się zapada: mokry kręgosłup przekaźników, cień Aegir, nieaktualna geometria nośnika, kolejka prawna wciąż ponawia próby.
 
 ## Terminal
 
-PL LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: utrata uplinku powyżej tolerancji. Kanał głosowy zawieszony. Fragmenty tekstu mogą nadejść przez naprawione akustyczne węzły kręgosłupa. Geometria orbitalnego nośnika odświeży się po ustąpieniu magnetycznego cienia Aegir. Automatyczne liczniki zastawu i dozoru biegną dalej bez kontaktu operatora.
 
 ## Audio
 
-PL LOC HOLD: When the sky closes, the paperwork keeps breathing.
+Najpierw milknie niebo. Zawiadomienia o długu nadal pukają.
 
 ## Field Note
 
-PL LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Powiązać okna blackoutu z tempem trasy: mniej głosu, więcej czytania fragmentów, większa wartość naprawionych przekaźników i lokalnych boi.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/pl_PL. -->

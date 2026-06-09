@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Bunk Shift Routine"
+title: "Rutina de litera de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Bunk Shift Routine
+# Rutina de litera de presión
 
-ES LOC HOLD: Bunk routines make colony life legible through repeated work: sleep, tools, pressure notes, meals and descent assignments.
+Una litera de presión no es un dormitorio en el viejo sentido de superficie. Es calor alquilado, cinchas de sujeción, espuma seca si las bombas son amables, y una pequeña cadena de prueba de que alguien volvió de la presión. La pizarra C-12 registra tono de despertar 03:40, revisión del sello del traje, nota de presión, ficha de agua-comida, custodia de herramienta y asignación de descenso. Ningún amanecer llegaba al módulo. El tono de bomba hacía el trabajo de la mañana.
+
+La rutina parece dura hasta que se sigue la cadena. Una revisión de sello perdida toca al jefe de literas. Una llave de bomba tarde toca el almacén de herramientas y el libro de cantina. Una nota de presión puede mover a un trabajador al medlock antes de que una mala decisión se convierta en pasillo inundado. La litera era cama, dirección, horario, punto de custodia y alarma silenciosa.
+
+Aquí importan las pruebas pequeñas: cinta de calcetín húmedo en un riel, un nombre abreviado, una ficha de comida junto a una nota de presión, una llave debida antes del tone 2. Nada de eso se escribió como memorial. Era vida ordinaria de estación intentando mantener vivo un cuerpo cansado hasta el próximo tono.
 
 ## Scanner
 
-ES LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
+PIZARRA DE LITERA // Fila C-12. Tono de bomba 03:40, revisión de sellos del traje, nota de presión, ficha de agua-comida, custodia de llave de bomba. El sueño rotaba por tono de bomba, no por amanecer.
 
 ## Terminal
 
-ES LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
+LITERA C-12: tono de despertar 03:40; correa despejada; revisión de sellos 03:52; nota de presión archivada; ficha de agua-comida tras descenso; custodia de herramienta D. Rivas; llave de bomba antes del tono 2. Retorno perdido avisa a jefe de fila y libro de cantina.
 
 ## Audio
 
-ES LOC HOLD: Tired, trained and due back in six hours.
+Seis horas abajo, dos horas de sueño, un tono para probar que volviste.
 
 ## Field Note
 
-ES LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+La litera 12 aún tiene cinta de un calcetín húmedo en la baranda. Tono 03:40. D. Rivas debía devolver la llave de bomba antes de comer. No arranques la etiqueta; la rutina es la cadena de identidad.
 
 <!-- In-Game Wiki; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/es_ES. -->

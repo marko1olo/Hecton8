@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Marauder Correction Layer
 
-Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Marauder Correction Layer bridges Deep Reach procedure and player agency: short annotations turn official language into survival truth.
 
 ## Scanner
 
-Marauders turn corporate language back into survival facts.
+CORRECTION LAYER // Corporate label: temporary atmospheric variance. Marauder note: CO2 eats judgment first.
 
 ## Terminal
 
-CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ANNOTATION RULE: translate Deep Reach language back into survival facts. Keep notes short, practical, angry, and useful under pressure.
 
 ## Audio
 

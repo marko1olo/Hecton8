@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Tool Certification Board"
+title: "Werkzeug-Zertifizierungstafel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Tool Certification Board
+# Werkzeug-Zertifizierungstafel
 
-DE LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Das Werkzeugzertifizierungsbrett hält eine Kultur fest, die Marken mehr vertraute als Reden. Cutterkopf indexiert. Dichtkartusche gewogen. Druckhandschuh doppelt signiert. Pumpenschlüssel spät. Abstiegsset gehalten. Jede Zeile ist stumpf, weil stumpfe Prozedur Menschen dort am Leben hielt, wo ein fast korrektes Werkzeug leise töten konnte.
 
-## Scanner
+Das Brett wirkt rituell, weil gefährliche Arbeit dieselben Bewegungen wiederholt, bis Angst einen Platz bekommt. Wiegen, prüfen, signieren, zurückgeben, erneut prüfen. Die zweite Signatur war kein Schmuck; sie machte Vertrauen verantwortlich. Wenn ein Handschuh unter Druck versagte, sagte die Marke, wer ihn sah, wer drängte und wer ihn trotzdem hinunterschicken wollte.
 
-DE LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-DE LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-DE LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-DE LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Das ist Arbeiterglaube ohne Mystik. Die Kolonie betete nicht über Cuttern. Sie ließ eine andere müde Person Kante, Dichtung, Gewicht und Schlüsselrückgabe ansehen. Überleben wurde gemeinschaftlich, weil jedes Werkzeug einen fremden Namen trug, bevor es die Route berührte.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/de_DE. -->

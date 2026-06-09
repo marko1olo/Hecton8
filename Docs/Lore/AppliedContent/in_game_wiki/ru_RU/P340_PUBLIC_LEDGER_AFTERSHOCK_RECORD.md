@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Public Ledger Aftershock Record"
+title: "Запись афтершока публичного реестра"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Public Ledger Aftershock Record
+# Запись афтершока публичного реестра
 
-RU LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+Эта запись не дает правде стать чистой кнопкой победы. Публикация ломает стирание, но игрок теряет контроль над паникой, эксплуатацией, местью и тем, что чужие люди построят из доказательства.
 
 ## Scanner
 
-RU LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Зеркала реестра приняты. Доказательство больше нельзя убрать; последствия больше нельзя направлять.
 
 ## Terminal
 
-RU LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: доказательства выпущены вне хранения Deep Reach. Имена рабочих, фрагменты вектора Atlas и теги ответственности зеркалированы по публичным приемникам. Полномочия игрока на трактовку прекращены.
 
 ## Audio
 
-RU LOC HOLD: Truth left the room. It did not ask where to go next.
+Правда вышла из комнаты. Она не спросила, куда ей идти.
 
 ## Field Note
 
-RU LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Запись публичной правды: зеркальные доказательства мешают стиранию, но прекращают контроль игрока над трактовкой и ответным ударом.
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/ru_RU. -->

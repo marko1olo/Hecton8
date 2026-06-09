@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Worker Community Notice"
+title: "Дошка робочих контактів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Worker Community Notice
+# Дошка робочих контактів
 
-UK LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Дошка робочих контактів - малий соціальний документ із жорстким краєм. Вона перелічує ряди койок, ведучих маршрутів, свідків медлока, контакти інструментальної та релейні вікна. Це схоже на облік, доки не видно логіку тиску: позастанційний контакт може сумувати, сперечатися і пам'ятати, але не дістанеться люка раніше за воду.
 
-## Scanner
+На HECTON-8 екстрений контакт означає: на станції, навчений, досяжний за тоном і допущений до маршруту працівника. Визначення суворе, але не бездушне. Коли пропущене повернення може стати шляхом затоплення, турбота набуває такої форми.
 
-UK LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-UK LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-UK LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-UK LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Дошка також зв'язує щоденні докази в мережу громади. Ключ насоса в одному артефакті, водна правка в іншому, підпис інструмента в третьому: кожна позначка прив'язує втомленого працівника до іншого. Це не мелодрама, а правдоподібне поселення під тиском, де відповідальність стала формою близькості.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/uk_UA. -->

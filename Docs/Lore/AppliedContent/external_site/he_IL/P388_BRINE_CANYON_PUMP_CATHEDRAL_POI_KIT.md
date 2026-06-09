@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "ערכת ראיות לקתדרלת המשאבות בקניון התמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# ערכת ראיות לקתדרלת המשאבות בקניון התמלחת
 
-HE LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+קתדרלת המשאבות נותנת קנה מידה לעומק הביניים. המפעיל צריך לחצות גשרים, לייצב כיס תמלחת, לקרוא זכוכית צפיפות ולהשוות שעון החזקת מסלול לפנקס תור עובדים. אף אחד מהעצמים אינו קישוט; כל אחד משנה אם העיכוב נראה כמו מזג אוויר, רשלנות או הגנת תביעה.
 
-## Scanner
-
-HE LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-HE LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-HE LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-HE LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+הראיה חזקה יותר כשהיא מכבדת את האוקיינוס. הגאות הגדולה שברה קירות והזיזה מים. החדר לא מכחיש זאת. הוא מראה מה עשה לוח הזמנים סביב ההצפה: מרווח מקובל, התנעת משאבה מאוחרת, מסלול מוחזק, תור עמוס. נקודת העניין נעשית ציון דרך כי המכונה עוד זוכרת את סדר העבודה.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/he_IL. -->

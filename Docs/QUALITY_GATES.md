@@ -185,6 +185,7 @@ Use for in-world prose, codex/wiki/site articles, terminal notes, scanner text, 
 | Gate | Command / proof | Blocks content completion |
 |---|---|---|
 | Grand Library source quality | `python -B Tools/ValidateGrandLibraryLoreQuality.py --article-glob <glob> --require-status-comment` | Yes for Grand Library article work |
+| AI prose firewall | Manual static source review against `writing.md` Anti-AI Prose Ban, LLM Style Suppression Law, Creative Freedom Envelope, Risk Word And Rhythm Firewall, AI Phrase Family Quarantine, Living Prose Floor, Zero-Shot Writer Contract, Few-Shot Rewrite Pattern Bank, Paragraph Evidence Firewall, Manual Redline Protocol, Legacy Corpus Rewrite Law; `localization.md` Multilingual AI-Style Localization Firewall; `Docs/Lore/WriterScenarioAgentPrompt.md` `AI_STYLE_FIREWALL`, `CREATIVE_FREEDOM_ENVELOPE`, `RISK_WORD_AND_RHYTHM_FIREWALL`, `AI_PHRASE_FAMILY_QUARANTINE`, `LIVING_PROSE_FLOOR`, `ZERO_SHOT_CONTRACT`, and `FEW_SHOT_REWRITE LAW`; and `Docs/Lore/LoreCorpusManualRewriteAgentPrompt.md` for old corpus repair/manual rewrite waves; all English authority and generated locale rows in scope must pass. Detector/script output may triage only and cannot accept prose | Yes for in-world prose and AppliedContent source/page work |
 | production packet source guard | `python -B Tools/AppliedLoreProductionSourceGuard.py --release-glob <RS*>` | Yes when `.production.md` packet sources are present; packet-JSON releases rely on import/page/coverage gates |
 | production source guard self-test | `python -B Tools/AppliedLoreProductionSourceGuard.py --self-test` | Yes after changing the guard |
 | Data Monolith import freshness | `python -B Tools/AppliedLoreImporter.py --check` | Yes when packet JSON/import tables are touched |
@@ -197,6 +198,14 @@ Rules:
 
 - A lore `CONTENT_ARTIFACT` is not complete if the only output is chat prose, a source brief, route card, outline, validator log, or packet plan.
 - Unless the task explicitly says English-only, production content carries all 15 locale rows. Non-English agent-generated rows remain `draft_machine_or_llm` unless native review proof exists.
+- AI-style filler is a hard content failure, not an editing preference. Reject abstract category-collapse prose, organic metaphor spam, fake terminal prophecy, scanner poetry, audio trailer lines, authoring notes in player-facing text, and legal/corporate mistranslations before export or localization.
+- AI phrase families are rejected by function, not by exact spelling. Replacing "testament" with a synonym, or translating the same museum-label/essay-thesis move into another language, still fails.
+- Anti-AI cleanup must preserve living source voice. A rewrite that becomes sterile, neutral documentation without source pressure also fails the writing gate.
+- A writer prompt that lacks source/object/pressure/limit, forbidden facts, forbidden style, and surface-specific acceptance is a draft-risk prompt. Strong prose generated from a weak prompt still requires manual redline and may fail completion.
+- Few-shot examples must include the bad line, the failure class, and the repaired artifact. A style example that only says "more human" or "more atmospheric" is not a valid content gate.
+- If the English authority row cannot pass the firewall, do not translate it. Rewrite the English source from scene, evidence object, speaker, and knowledge boundary first.
+- Every old or new locale row in scope must be read manually. Non-English rows copied in English, rows with local AI boilerplate, and rows that add local metaphors or moral interpretation fail even when the packet structure is valid.
+- Existing lore files, generated pages, source packets, terminal fragments, scanner text, audio text, and locale rows are not grandfathered. If they are touched or included in the task scope, unchanged AI-style prose still blocks completion.
 - Completion names concrete files under `Docs/Lore/Grand_Library`, `Docs/Lore/AppliedContent`, `Assets/_SourceData/DataMonolith/Narrative`, or the generated page/binding/route-card outputs. If a canon fact is missing, stop as `BLOCKER` with the exact missing source.
 - Runtime route-card export may only contain baked packet IDs. Source CSVs may carry draft prerequisite refs, but `AppliedLoreRouteCardExporter.py` must prune non-baked refs from DataMonolith output and `AppliedLorePacketCoverageAudit.py --all` must pass against the runtime-pruned export.
 

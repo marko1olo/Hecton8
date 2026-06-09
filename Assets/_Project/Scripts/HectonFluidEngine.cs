@@ -63,6 +63,8 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEditor;
 #endif
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
+using OceanAdapterVaultHandles = Hecton8.Environment.Fluids.OceanAdapterVaultHandles;
+using OceanAdapterVaultRoute = Hecton8.Environment.Fluids.OceanAdapterVaultRoute;
 
 namespace Hecton8.Physics
 {
@@ -1043,7 +1045,7 @@ namespace Hecton8.Physics
 
         [Header("── Water ─────────────────────────────────────")]
         [Tooltip("World-space Y coordinate of the water surface.")]
-        [SerializeField] private float waterLevel = 5000f;
+        [SerializeField] private float waterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         [SerializeField] private bool enableCinematicTideShift = true;
         [SerializeField, Range(0f, 8f)] private float cinematicTideAmplitudeMeters = 2f;
 
@@ -1213,7 +1215,7 @@ namespace Hecton8.Physics
         /// <summary>Y-koordinata poverhnosti vody.</summary>
         public float WaterLevel
         {
-            get => waterLevel;
+            get => ResolveBaseWaterLevelY();
             set
             {
                 waterLevel = value;
@@ -1939,6 +1941,7 @@ namespace Hecton8.Physics
         private IDataVault _dataVault;
         private ISimulationBucketer _simulationBucketer;
         private IWeatherService _weatherService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private ICelestialSkyDirectionReadModel _celestialEngine;
         private ITerrainHeightSampleReadModel _terrainBridge;
         private IBiomePhysicsInfluenceReadModel _proceduralFieldSampler;
@@ -2065,11 +2068,14 @@ namespace Hecton8.Physics
         private FluidVaultBuffer<AbyssalFlowTelemetryEntry> _abyssalFlowTelemetry;
         private FluidVaultBuffer<FluidTelemetryEntry> _fluidSovereigntyTelemetry;
         private FluidVaultBuffer<int> _fluidSovereigntyTelemetryCursor;
+        private OceanAdapterVaultHandles _oceanAdapterVaultHandles;
         private int _abyssalFlowTelemetryCursor;
         private bool _abyssalFlowTelemetryDumped;
         private int _maelstromTelemetryCursor;
         private bool _maelstromTelemetryDumped;
         private int _fluidSovereigntyTelemetryCursorMirror;
+        private bool _oceanAdapterVaultHandlesReady;
+        private bool _oceanAdapterVaultBootAttempted;
         private int _fluidSovereigntyConsecutiveFaults;
         private int _lastFluidSovereigntyDumpFrame = -1;
         private int _lastBuoyancyCapacityFaultFrame = -1;
@@ -2103,6 +2109,7 @@ namespace Hecton8.Physics
             _dataVault = GlobalRegistry.DataVault;
             s_staticFluidDataVault = _dataVault;
             EnsureFluidSovereigntyTelemetry();
+            EnsureOceanAdapterVaultBootHandles();
             PrewarmBuoyancyNativeCapacity();
             CacheFluidRuntimeServicesCold();
             RefreshRuntimeActorContextsIfMissing();
@@ -2300,6 +2307,7 @@ namespace Hecton8.Physics
             DisposeFluidAdvectionState();
             _fluidSovereigntyTelemetry.Release();
             _fluidSovereigntyTelemetryCursor.Release();
+            ResetOceanAdapterVaultRoute();
             _currentWaterLevelYSnapshotValid = false;
             _currentWeatherSnapshotValid = false;
             _simulationBucketer = null;
@@ -2482,6 +2490,7 @@ namespace Hecton8.Physics
             DisposeFluidAdvectionState();
             _fluidSovereigntyTelemetry.Release();
             _fluidSovereigntyTelemetryCursor.Release();
+            ResetOceanAdapterVaultRoute();
             _simulationBucketer = null;
             if (ReferenceEquals(s_staticFluidDataVault, _dataVault))
                 s_staticFluidDataVault = null;
@@ -2494,6 +2503,7 @@ namespace Hecton8.Physics
         private void CacheFluidRuntimeServicesCold()
         {
             _weatherService = GlobalRegistry.Weather;
+            _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             _celestialEngine = GlobalRegistry.CelestialSkyDirection;
             _terrainBridge = GlobalRegistry.TerrainHeightSamples;
             _proceduralFieldSampler = GlobalRegistry.BiomePhysicsInfluence;
@@ -2505,6 +2515,7 @@ namespace Hecton8.Physics
         private void ClearCachedFluidRuntimeServices()
         {
             _weatherService = null;
+            _oceanKinematicsService = null;
             _celestialEngine = null;
             _terrainBridge = null;
             _proceduralFieldSampler = null;
@@ -2541,7 +2552,9 @@ namespace Hecton8.Physics
                     _dataVault = currentService as IDataVault;
                     s_staticFluidDataVault = _dataVault;
                     ResetFluidVaultGenerationHandles();
+                    ResetOceanAdapterVaultRoute();
                     EnsureFluidSovereigntyTelemetry();
+                    EnsureOceanAdapterVaultBootHandles();
                     PrewarmBuoyancyNativeCapacity();
                     EnsureGpuAbyssalFlowBuffersColdIfEnabled();
                     EnsureFluidAdvectionVisualState(allowAllocate: true);
@@ -2557,6 +2570,10 @@ namespace Hecton8.Physics
                     break;
                 case GlobalRegistryServiceSlot.Weather:
                     _weatherService = currentService as IWeatherService;
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    PublishCurrentWaterLevelUniform();
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
                     _celestialEngine = currentService as ICelestialSkyDirectionReadModel;
@@ -3378,6 +3395,46 @@ namespace Hecton8.Physics
             return true;
         }
 
+        private bool EnsureOceanAdapterVaultBootHandles()
+        {
+            if (_oceanAdapterVaultHandlesReady)
+                return true;
+
+            if (_oceanAdapterVaultBootAttempted)
+                return false;
+
+            _oceanAdapterVaultBootAttempted = true;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            _oceanAdapterVaultHandlesReady = OceanAdapterVaultRoute.TryAcquireBootHandles(vault, out _oceanAdapterVaultHandles);
+            return _oceanAdapterVaultHandlesReady;
+        }
+
+        private void ResetOceanAdapterVaultRoute()
+        {
+            _oceanAdapterVaultHandles = default;
+            _oceanAdapterVaultHandlesReady = false;
+            _oceanAdapterVaultBootAttempted = false;
+        }
+
+        private void PublishOceanAdapterGlobalWaterLevel(float cinematicWaterLevel)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return;
+
+            if (!_oceanAdapterVaultHandlesReady && !EnsureOceanAdapterVaultBootHandles())
+                return;
+
+            OceanAdapterVaultRoute.TryPublishWaterLevel(
+                vault,
+                cinematicWaterLevel,
+                ResolveFluidAdvectionQualityWeight(),
+                Hecton8.Core.SystemDispatcher.CurrentFrameId);
+        }
+
         private void RecordFluidSovereigntyTelemetry(
             BufferID bufferId,
             uint flags,
@@ -3637,6 +3694,7 @@ namespace Hecton8.Physics
             {
             WeatherRuntimeSnapshot fixedWeatherSnapshot = ResolveWeatherSnapshot();
             float cinematicWaterLevel = PublishCurrentWaterLevelUniform(in fixedWeatherSnapshot);
+            PublishOceanAdapterGlobalWaterLevel(cinematicWaterLevel);
 
             if (!TryDrainScheduledBuoyancyJob())
                 return;
@@ -7638,7 +7696,7 @@ namespace Hecton8.Physics
         private float ResolveCinematicWaterLevelY(float waterLevelTimeSeconds)
         {
             return GlobalPhysicsStateManager.UpdateFrameCachedCurrentWaterLevelY(
-                waterLevel,
+                ResolveBaseWaterLevelY(),
                 enableCinematicTideShift,
                 cinematicTideAmplitudeMeters,
                 waterLevelTimeSeconds);
@@ -7646,7 +7704,44 @@ namespace Hecton8.Physics
 
         private float ReadPublishedCurrentWaterLevelY()
         {
-            return _currentWaterLevelYSnapshotValid ? _currentWaterLevelYSnapshot : waterLevel;
+            return _currentWaterLevelYSnapshotValid ? _currentWaterLevelYSnapshot : ResolveBaseWaterLevelY();
+        }
+
+        private float ResolveBaseWaterLevelY()
+        {
+            return TryResolveOceanWaterLevelY(out float oceanWaterLevelY)
+                ? oceanWaterLevelY
+                : WorldWaterLevelCalibrationMath.ResolveFallbackWaterLevelY(waterLevel);
+        }
+
+        private bool TryResolveOceanWaterLevelY(out float waterLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveRuntimeWaterLevelY(oceanKinematics.SeaLevel, out waterLevelY))
+            {
+                return true;
+            }
+
+            waterLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
+        }
+
+        private static bool TryResolveRuntimeWaterLevelY(float candidateWaterLevelY, out float waterLevelY)
+        {
+            if (math.isfinite(candidateWaterLevelY) &&
+                math.abs(candidateWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterLevelY = candidateWaterLevelY;
+                return true;
+            }
+
+            waterLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
+            return false;
         }
 
         private WeatherRuntimeSnapshot ReadPublishedWeatherSnapshot()
@@ -9521,7 +9616,8 @@ namespace Hecton8.Physics
             }
 
             Gizmos.color = new Color(0f, 0.3f, 0.8f, 0.1f);
-            Vector3 center = new Vector3(0f, waterLevel, 0f);
+            float resolvedWaterLevelY = ResolveBaseWaterLevelY();
+            Vector3 center = new Vector3(0f, resolvedWaterLevelY, 0f);
             Gizmos.DrawCube(center, new Vector3(200f, 0.02f, 200f));
 
             if (lodObserver != null && drawLodGizmos)
@@ -9535,7 +9631,7 @@ namespace Hecton8.Physics
             if (drawCurrentVectors)
             {
                 Vector3 origin = lodObserver != null ? lodObserver.position : center;
-                origin.y = waterLevel;
+                origin.y = resolvedWaterLevelY;
                 Vector3 current = currentVector * gizmoCurrentVectorScale;
                 Gizmos.color = new Color(0.1f, 0.95f, 1f, 0.95f);
                 Gizmos.DrawRay(origin, current);

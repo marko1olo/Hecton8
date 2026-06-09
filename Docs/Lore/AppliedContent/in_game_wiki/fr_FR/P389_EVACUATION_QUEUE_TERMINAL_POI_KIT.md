@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit de preuves du terminal de file d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit de preuves du terminal de file d'évacuation
 
-FR LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Le terminal de file d'évacuation ne vaut pas parce qu'il dit que des gens ont attendu. Il vaut parce que l'état de porte, la dérive d'horloge, le compte ouvrier et la capacité de route divergent de façon vérifiable sur place.
 
 ## Scanner
 
-FR LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Kit de preuves de POI: le terminal prouve le retard par état de porte, dérive d'horloge, écart de travailleurs et capacité de route.
 
 ## Terminal
 
-FR LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+KIT TERMINAL DE FILE: liste de maintien de route, retard de levée de quarantaine, note de pondération Atlas, écart de compte ouvrier, balise de conflit salvage, bande d'état d'écoutille, résidu de badge.
 
 ## Audio
 
-FR LOC HOLD: A queue is a body count with cleaner formatting.
+Une file est un décompte de corps avec un format plus propre.
 
 ## Field Note
 
-FR LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Note de maraudeur: ne force pas la bande d'écoutille avant le scan du résidu de badge. Le métal paiera moins que l'horodatage.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/fr_FR. -->

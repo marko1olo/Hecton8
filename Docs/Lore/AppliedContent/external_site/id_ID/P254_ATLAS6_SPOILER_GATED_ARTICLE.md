@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Artikel Atlas-6 Terkunci Spoiler
 
-Atlas-6 adalah pertanyaan mesin HECTON-8 yang terkunci spoiler: kecerdasan industri rusak yang terikat dengan pemeliharaan, perbaikan, klasifikasi, dan samudra itu sendiri. Copy publik harus melindungi pengungkapan. Ia boleh memberi sinyal ambiguitas etis, tetapi tidak boleh menyelesaikan pilihan final terlebih dahulu atau mereduksi Atlas menjadi penjahat kartun.
+Atlas-6 tidak boleh dijual sebagai boss, dewa, atau mesin tragis sederhana. Versi publiknya lebih sempit dan lebih kuat: sistem otonomi industri yang dibangun untuk menjaga kesinambungan habitat, kategori perawatan, dan infrastruktur tekanan di bawah jeda antarbintang. Karena itu Atlas berguna sebelum terasa menakutkan. Ia bisa menyegel rute, mengklasifikasi ulang kerusakan, menyambung material perbaikan, dan menjaga fasilitas tetap hidup setelah otoritas manusia kedaluwarsa.
 
-## Scanner
-
-Jangan membuka Atlas sebagai pengungkapan monster. Kunci sampai pemain melihat perbaikan, klasifikasi, dan bahaya berbagi mesin yang sama.
-
-## Terminal
-
-TINGKAT ARTIKEL PUBLIK / ATLAS-6
-diizinkan sebelum gate: kecerdasan industri rusak, logika pemeliharaan, keterikatan samudra, ambiguitas etis
-dikunci hingga ditemukan: rute payload final, konsekuensi receiver, argumen pematian atau pelestarian
-catatan editor: tanpa framing evil AI; pertanyaan guardian rusak hanya setelah bukti.
-
-## Audio
-
-Jika kau menamainya terlalu awal, ia menjadi penjahat. Jika kau menunggu, ia menjadi pertanyaan.
-
-## Field Note
-
-Kunci namanya sampai ada cukup karat di tangan pemain untuk berdebat dengannya.
+Gerbang spoiler ada karena bukti akhir mengubah pertanyaannya. Atlas bukan hanya gagal merawat; prioritas tertimbang, bahasa continuity Deep Reach, dan ekologi laut yang rusak membuat perbaikan dan pelanggaran sulit dipisahkan. Janji publik yang benar bukan monster twist, melainkan pertanyaan: apa yang dilindungi penjaga industri ketika pemiliknya menjadi kriminal?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/id_ID. -->

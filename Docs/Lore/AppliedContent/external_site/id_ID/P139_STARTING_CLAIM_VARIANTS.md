@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Starting Claim Variants"
+title: "Varian Claim Awal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Starting Claim Variants
+# Varian Claim Awal
 
-ID LOC HOLD: Starting Claim Variants let HECTON-8 replay with different economic hooks while preserving one strong protagonist.
+Varian Claim Awal membuat HECTON-8 bisa direplay dengan kait ekonomi berbeda sambil mempertahankan satu protagonis kuat.
 
 ## Scanner
 
-ID LOC HOLD: Same protagonist. Different claim pressure.
+VARIAN CLAIM // Marauder eks-Deep-Reach yang sama. Utang pertama, bounty, hardware rute, kustodi sampel, atau keringanan blacklist berbeda.
 
 ## Terminal
 
-ID LOC HOLD: CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+ATURAN AWAL: varian mengubah tekanan awal, akses rumor, bobot bukti, dan logika bayaran. Mereka tidak menciptakan hero alternatif atau menghapus tulang punggung eks Deep Reach.
 
 ## Audio
 
-ID LOC HOLD: You can change the job without changing who took it.
+Kau bisa mengubah pekerjaan tanpa mengubah orang yang mengambilnya.
 
 ## Field Note
 
-ID LOC HOLD: Variants should color motive, not erase the canon character.
+Ubah claim. Pertahankan bekas lukanya.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/id_ID. -->

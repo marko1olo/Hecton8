@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Preserve Quarantine Record"
+title: "Registro de preservación en cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Preserve Quarantine Record
+# Registro de preservación en cuarentena
 
-ES LOC HOLD: Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+Este registro de cuarentena sirve porque enumera lo retenido, lo protegido y lo que aún puede romperse después: custodia de carga, coordenadas cegadas, recibo público parcial, daño de Atlas, retención ecológica, nombres de trabajadores, responsabilidad y reclamaciones ciegas posteriores.
 
 ## Scanner
 
-ES LOC HOLD: Payload withheld. Consequence deferred.
+REGISTRO DE PRESERVACIÓN EN CUARENTENA // Carga retenida frente a Deep Reach. Atlas sigue dañado pero activo; orden de retención ecológica bloquea transferencia limpia de propiedad.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+REGISTRO DE FINAL / PRESERVACIÓN EN CUARENTENA
+Carga: retenida fuera de custodia directa de Deep Reach.
+Orden: retención ecológica, coordenadas cegadas, recibo público parcial.
+Estado de Atlas: lógica de reparación dañada activa.
+Protegido: ecología de presión y vida de mantenimiento superviviente.
+Sin resolver: nombres de trabajadores, responsabilidad de cuenca, futuras presentaciones salvage.
+Pérdida conocida: preservar no se vuelve inocencia.
 
 ## Audio
 
-ES LOC HOLD: Leaving something alive is not the same as saving it.
+Lo dejaste vivo. No es lo mismo que salvarlo.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Retener el paquete protege algunos sistemas vivos y deja respirar a la autoridad rota. Vigila la cola de reclamaciones ciegas.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/es_ES. -->

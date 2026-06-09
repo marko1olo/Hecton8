@@ -1335,26 +1335,101 @@ namespace Hecton8.Physics
 
             if (_tickDispatcher == null)
                 _tickDispatcher = GlobalRegistry.TickDispatcher;
-            if (_celestialEngineRuntime == null)
-                _celestialEngineRuntime = GlobalRegistry.CelestialSkyDirection;
-            if (_celestialSnapshotReadModel == null)
-                _celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            if (!IsCelestialSkyDirectionReadModelUsable(_celestialEngineRuntime))
+                CacheCelestialSkyDirectionReadModel(GlobalRegistry.CelestialSkyDirection);
+            if (!IsCelestialRuntimeSnapshotReadModelUsable(_celestialSnapshotReadModel))
+                CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel);
         }
 
         private void RefreshOwnerPhaseCelestialSnapshotCache()
         {
             // Owner-phase bridge: public waterline/speculative hover helpers consume this immutable cache
             // instead of polling GlobalRegistry from read-shaped accessors.
-            ICelestialSkyDirectionReadModel celestialEngine = _celestialEngineRuntime;
+            ICelestialSkyDirectionReadModel celestialEngine = ResolveCelestialSkyDirectionReadModel();
             if (celestialEngine == null)
+            {
+                ClearCachedCelestialRuntimeSnapshot();
                 return;
-            ICelestialRuntimeSnapshotReadModel snapshotReadModel = _celestialSnapshotReadModel;
+            }
+
+            ICelestialRuntimeSnapshotReadModel snapshotReadModel = ResolveCelestialRuntimeSnapshotReadModel();
             if (snapshotReadModel == null)
+            {
+                ClearCachedCelestialRuntimeSnapshot();
                 return;
+            }
 
             CelestialRuntimeSnapshot snapshot = snapshotReadModel.RuntimeSnapshot;
             _cachedCelestialRuntimeSnapshot = snapshot;
             _cachedCelestialRuntimeSnapshotSequence = snapshot.Sequence;
+        }
+
+        private ICelestialSkyDirectionReadModel ResolveCelestialSkyDirectionReadModel()
+        {
+            if (!IsCelestialSkyDirectionReadModelUsable(_celestialEngineRuntime))
+                _celestialEngineRuntime = null;
+
+            return _celestialEngineRuntime;
+        }
+
+        private ICelestialRuntimeSnapshotReadModel ResolveCelestialRuntimeSnapshotReadModel()
+        {
+            if (!IsCelestialRuntimeSnapshotReadModelUsable(_celestialSnapshotReadModel))
+                _celestialSnapshotReadModel = null;
+
+            return _celestialSnapshotReadModel;
+        }
+
+        private void CacheCelestialSkyDirectionReadModel(ICelestialSkyDirectionReadModel readModel)
+        {
+            if (IsCelestialSkyDirectionReadModelUsable(readModel))
+            {
+                _celestialEngineRuntime = readModel;
+                return;
+            }
+
+            ICelestialSkyDirectionReadModel fallback = GlobalRegistry.CelestialSkyDirection;
+            _celestialEngineRuntime = IsCelestialSkyDirectionReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private void CacheCelestialRuntimeSnapshotReadModel(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (IsCelestialRuntimeSnapshotReadModelUsable(readModel))
+            {
+                _celestialSnapshotReadModel = readModel;
+                return;
+            }
+
+            ICelestialRuntimeSnapshotReadModel fallback = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            _celestialSnapshotReadModel = IsCelestialRuntimeSnapshotReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private static bool IsCelestialSkyDirectionReadModelUsable(ICelestialSkyDirectionReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static bool IsCelestialRuntimeSnapshotReadModelUsable(ICelestialRuntimeSnapshotReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static void ClearCachedCelestialRuntimeSnapshot()
+        {
+            _cachedCelestialRuntimeSnapshot = default;
+            _cachedCelestialRuntimeSnapshotSequence = 0u;
         }
 
         private void ReleaseUndersizedNativeState()
@@ -1522,7 +1597,8 @@ namespace Hecton8.Physics
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
-                    _celestialEngineRuntime = currentService as ICelestialSkyDirectionReadModel;
+                    CacheCelestialSkyDirectionReadModel(currentService as ICelestialSkyDirectionReadModel);
+                    CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel);
                     RefreshOwnerPhaseCelestialSnapshotCache();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:

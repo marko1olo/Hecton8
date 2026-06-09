@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Brine Canyon Liability Act"
+title: "Шлюз ответственности рассольного каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Brine Canyon Liability Act
+# Шлюз ответственности рассольного каньона
 
-RU LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+В каньоне маршрут перестает быть salvage-бумагами и начинает вести себя как дело. Слои плотности сохраняют плохие часы. Рассол удерживает следы, которые обычная вода стерла бы. Сломанная эвакуационная пластина может лежать рядом с журналом допусков и усиливать оба документа.
 
-## Scanner
-
-RU LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-RU LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-RU LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-RU LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Цепочка важна потому, что не отрицает физику. Великий прилив ударил. Стена отказала. Ложь компании сидит в порядке решений вокруг этих фактов: принятый допуск, задержанная очередь, поврежденный маршрут, защищенная претензия. Видимая работа остается физической: сканировать след, сопоставить часы, вынести доказательство.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/ru_RU. -->

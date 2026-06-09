@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Tanda Tangan Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Tanda Tangan Packet Notary Interface
 
-ID LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+Jeda antarbintang tidak membuat setiap pesan HECTON-8 sia-sia. Ia membuat kustodi pesan mahal. Pita Packet Notary mencatat jendela relai mana yang membawa paket, hash mana yang menyaksikannya, dan pemilik mana yang menahan kustodi sebelum rilis. Dalam catatan HECTON-8 yang dipulihkan, mekanisme ini bisa melindungi log pekerja atau membiarkannya tertahan sebagai claim material sampai saksi kedua dilampirkan. Catatan arsip publik: catatan ini mengidentifikasi rute bukti, bukan seluruh rantai komando Deep Reach.
 
 ## Scanner
 
-ID LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Segel paket dipulihkan: pita hash utuh, cap jendela relai 17-A, pemilik kustodi belum jelas. Perlakukan sebagai bukti hanya setelah witness chain cocok.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Rute: Relay Spine / witness hash strip. Tindakan: segel packet hash, jeda relai lokal, pemilik kustodi. Pengecualian: lampiran nama pekerja hilang; paket tetap di antrean claim material. Eskalasi: public ledger setelah witness hash kedua.
 
 ## Audio
 
-ID LOC HOLD: A seal is not mercy. It is a clock with a price.
+Segelnya utuh. Cap waktu terlambat dua jendela. Kalau witness hash cocok, mereka tidak bisa menyebutnya statik.
 
 ## Field Note
 
-ID LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Jangan jual ini sebagai log. Jual sebagai jam plus saksi: waktu relai, packet hash, pemilik kustodi. Tanpa ketiganya, Deep Reach akan menyebutnya derau pembawa lepas.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/id_ID. -->

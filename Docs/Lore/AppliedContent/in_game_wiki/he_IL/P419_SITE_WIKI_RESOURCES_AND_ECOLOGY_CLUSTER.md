@@ -19,15 +19,15 @@ localization_flags: 1
 
 # משאבים ואקולוגיה
 
-מרכז משאבים ואקולוגיה: drowned crust, brine ladders, vent chemistry, living systems ו-repair logic פגומה של Atlas.
+מרכז משאבים ואקולוגיה: Drowned Crust, סולמות תמלחת, כימיית פתחים, blue debt, רמזי טורפים, פאונה מתויגת ותיקוני Atlas שמתייחסים למערכות חיות כחומרה.
 
 ## Scanner
 
-מרכז פרסום: geology, blue debt, דקדוק פאונה ו-misuse של רשת תיקון Atlas.
+מרכז פרסום: Drowned Crust, סולמות תמלחת, היסטוריית לחץ של blue debt, רמזי פאונה ושימוש שגוי בתיקוני Atlas.
 
 ## Terminal
 
-SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ecology ו-encounter grammar כמפת process אחת.
+SITE NAV: קרא דגימות לפי מקור, היסטוריית לחץ, מגע חי, נזק חילוץ וערך custody.
 
 ## Audio
 
@@ -35,6 +35,6 @@ SITE NAV: native geology, process feedstock, Atlas-altered resources, shallow ec
 
 ## Field Note
 
-משאבים ואקולוגיה שייכים יחד כש-materials, biota ו-evidence pressure חולקים אותו מסלול.
+דגימה נקייה היא לעיתים רחוקות העשירה ביותר. שאל מה יצר אותה, מה נגע בה ומה נפגע כשלקחו אותה.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/he_IL. -->

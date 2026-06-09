@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir 경로 창"
+title: "Aegir 항로 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,8 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir 경로 창
+# Aegir 항로 창
 
-HECTON-8에서 하늘은 던전의 일부다. 거성은 방사선을 정하고, 달은 그림자를 만들며, 조석은 협곡과 수직갱을 지난다.
-
-플레이어는 메시지가 오를 때, 몸이 오를 때, 열린 하늘이 함정이 되는 때를 배운다.
+HECTON-8은 바다의 달이지만 하늘은 던전의 일부다. Aegir 방사선, 달 그림자, 릴레이 shutter, 폭풍 plume, 조석, carrier 기하가 신호, 몸, 샘플, 증거 코어가 떠날 수 있는지를 정한다. 핵심은 분리다. 데이터 창은 구조 창이 아니고, 구조 창은 오염 화물 창이 아니다. Black Keel은 계산하지만 누가 질량을 소유하고, 누가 검역을 받고, 어떤 조항이 Deep Reach를 지키는지 묻는다.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/ko_KR. -->

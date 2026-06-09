@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Transit van menselijke crewrotatie
 
-Menselijk transit is waar de route ophoudt abstract te zijn. Werkers worden niet naar Aegir geteleporteerd; ze worden gepland, gekoeld, verzekerd, geïndexeerd en jarenlang tussen autoriteiten overgedragen. Een contract kan één kant op verouderen terwijl de persoon erin een andere kant op veroudert. Tegen de tijd dat een ploeg wakker wordt, kunnen werkgever, aansprakelijkheidseigenaar en de noodsituatie waarvoor zij trainde allemaal veranderd zijn.
+Transit van menselijke crewrotatie is waar de route ophoudt astronomie te zijn en arbeidscontrole wordt. Een persoon op HECTON-8 is niet alleen passagier. Die is kooivolume, zuurstoflast, stralingsblootstelling, psychiatrisch risico, loonpandrecht, medisch dossier, bewaringscategorie en mogelijke getuige. Elk terugkeervenster sorteert die waarden voordat het angst sorteert.
+
+De tragedie is dat het rotatiesysteem niet volledig nep was. Mensen verlieten Aegir. Mensen kwamen thuis met druklittekens, spaargeld en verhalen die voor publicatie waren bewerkt. Die geschiedenis maakte latere beloften geloofwaardig. Toen de kolonie begon te falen, hoefde Deep Reach terugkeer niet te weigeren. Vertragen, herclassificeren, beprijzen en nog één cyclus vragen was genoeg.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/nl_NL. -->

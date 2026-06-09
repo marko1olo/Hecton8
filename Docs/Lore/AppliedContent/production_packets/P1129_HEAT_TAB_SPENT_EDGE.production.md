@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_ration_checks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS173_FIRST_RATION_CHECK_ARTICLES.md |
 | Speaker | Survival scanner, field-heat supply note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first ration checking |
@@ -39,7 +39,7 @@ HEAT TAB // One edge spent dark. Keep apart from unused warming stock.
 
 The tab still has its stamped use dot, but one edge has gone dark and brittle. It belongs in a suspect tray until someone can separate unused warming stock from scraps.
 
-Cold shelves make spent supplies look patient.
+The dark edge is enough to pull it from unused stock.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ KEEP FROM UNUSED STOCK
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| ar_SA | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| de_DE | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| es_ES | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| fr_FR | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| he_IL | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| id_ID | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| ja_JP | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| ko_KR | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| nl_NL | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| pl_PL | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| pt_BR | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| ru_RU | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| uk_UA | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
-| zh_CN | draft_machine_or_llm | HEAT TAB // One edge spent dark. Keep apart from unused warming stock. |
+| ar_SA | draft_machine_or_llm | قرص تسخين // حافة واحدة مستهلكة وداكنة. أبقه بعيدا عن مخزون التسخين غير المستخدم. |
+| de_DE | draft_machine_or_llm | WÄRMETAB // Eine Kante dunkel verbraucht. Vom unbenutzten Wärmevorrat getrennt halten. |
+| es_ES | draft_machine_or_llm | PASTILLA TÉRMICA // Un borde gastado y oscuro. Mantén separada del material térmico sin usar. |
+| fr_FR | draft_machine_or_llm | PASTILLE CHAUFFANTE // Un bord sombre et consommé. Garder à part du stock chauffant inutilisé. |
+| he_IL | draft_machine_or_llm | טבלית חימום // קצה אחד כהה ומשומש. שמור בנפרד ממלאי חימום שלא נפתח. |
+| id_ID | draft_machine_or_llm | TAB PANAS // Satu tepi gelap terpakai. Pisahkan dari stok pemanas yang belum dipakai. |
+| ja_JP | draft_machine_or_llm | 加熱タブ // 片端が黒く使用済み。未使用の加温備品から分離。 |
+| ko_KR | draft_machine_or_llm | 발열 탭 // 한쪽 가장자리가 어둡게 소모됐다. 미사용 발열 재고와 분리하라. |
+| nl_NL | draft_machine_or_llm | WARMTETABLET // Eén rand donker verbruikt. Apart houden van ongebruikte warmtevoorraad. |
+| pl_PL | draft_machine_or_llm | WKŁAD GRZEWCZY // Jedna krawędź ciemna i zużyta. Trzymaj poza nieużytym zapasem grzewczym. |
+| pt_BR | draft_machine_or_llm | PASTILHA TÉRMICA // Uma borda escura e gasta. Mantenha longe do estoque de aquecimento sem uso. |
+| ru_RU | draft_machine_or_llm | ТЕПЛОВАЯ ВКЛАДКА // Один край темный и сработанный. Держи отдельно от неиспользованного теплового запаса. |
+| uk_UA | draft_machine_or_llm | ТЕПЛОВА ВКЛАДКА // Один край темний і спрацьований. Тримай окремо від невикористаного теплового запасу. |
+| zh_CN | draft_machine_or_llm | 发热片 // 一边已变黑耗尽。与未用加热物资分开。 |

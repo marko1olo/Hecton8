@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Authority Last Check"
+title: "בדיקת סמכות payload אחרונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Authority Last Check
+# בדיקת סמכות payload אחרונה
 
-HE LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+הבדיקה האחרונה נותנת לממשק הסיום את השאלה הקשה. השחקן אינו בוחר תיבת פרס; הוא בוחר מי יקבל מסה, ראיה, שמות, קואורדינטות והרשאה לפעול.
 
 ## Scanner
 
-HE LOC HOLD: Payload check: receiver changes meaning, not only reward.
+בדיקת payload: בחירת מקלט משנה בעלות, לא רק תגמול.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: בחר מקלט, מסה, משמורת ראיות, תוצאה אקולוגית ואחריות לאחר חזרה. בחירת המקלט מגדירה מי רשאי לפעול על סמך הראיה לאחר העזיבה.
 
 ## Audio
 
-HE LOC HOLD: What leaves will own what remains.
+מה שייצא יחזיק במה שיישאר.
 
 ## Field Note
 
-HE LOC HOLD: Use immediately before irreversible ending route selection.
+להשתמש מיד לפני בחירת מסלול סוף בלתי הפיכה.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/he_IL. -->

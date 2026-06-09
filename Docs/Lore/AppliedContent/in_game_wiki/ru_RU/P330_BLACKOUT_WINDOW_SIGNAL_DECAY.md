@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Распад сигнала в blackout window
 
-Распад сигнала держит связь редкой по физическим причинам. Игрок получает окна, broken packets и acoustic relays, не постоянное radio guidance.
+Распад сигнала дает дефициту связи физическую форму. Игрок получает редкие окна, обрезанные фрагменты пакетов и подводные акустические обходы вместо постоянных подсказок с орбиты.
 
 ## Scanner
 
-Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Окно связи схлопывается: мокрый релейный хребет, тень Aegir, устаревшая геометрия носителя, юридическая очередь все еще повторяет попытки.
 
 ## Terminal
 
-BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: потери uplink выше допуска. Голосовой канал приостановлен. Текстовые фрагменты могут пройти через отремонтированные акустические узлы хребта. Геометрия орбитального носителя обновится после выхода из магнитной тени Aegir. Автоматические таймеры удержаний и владения продолжают идти без контакта с оператором.
 
 ## Audio
 
-Когда небо закрывается, бумажная очередь продолжает дышать.
+Сначала замолкает небо. Долговые уведомления продолжают стучать.
 
 ## Field Note
 
-RU LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Связывать blackout windows с темпом маршрута: меньше голоса, больше чтения фрагментов, выше ценность отремонтированных реле и местных маяков.
 
 <!-- In-Game Wiki; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/ru_RU. -->

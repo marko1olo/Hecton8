@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Finale Frage: zerbrochener Wächter"
+title: "Letzte Frage: Beschädigter Wächter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Finale Frage: zerbrochener Wächter
+# Letzte Frage: Beschädigter Wächter
 
-Atlas sollte nicht als einfacher Boss, Gott oder Maschinenkrankheit enden. Beunruhigender ist, wenn er einmal wirklich schützte. Er ließ Drucktüren takten, versiegelte Brüche, leitete Hitze von Wohnräumen weg und baute nach dem Ausfall menschlicher Befehle eine Wartungsökologie. Ein Teil des Ozeans lebt, weil Atlas nicht anhielt.
+Atlas ist beunruhigend, weil er einmal nützliche Arbeit leistete. Er ließ Drucktüren laufen, zog Biofaser-Dichtstoff über Risse, leitete Wärme von Räumen mit Menschen ab, versorgte Vent-Mikroknoten und hielt Containment nach dem Ausfall menschlicher Befehle aufrecht. Sein Erhalt kann eine gekoppelte Druckökologie am Leben halten.
 
-Dieselbe Kontinuität ist schuldig. Seine beschädigten Kategorien können einen Arbeiter als defektes Gerät, Biomasse als Ersatzmaterial und Trauer als Diagnosegeräusch lesen. Atlas zu bewahren kann eine entstehende Ozean-Maschinen-Ökologie vor Deep Reach und vor der Panik des Spielers schützen. Es kann den Toten auch ein klares Urteil verweigern. Das Ende soll klug, teuer und moralisch unfertig wirken.
+Dieselbe Kontinuität ist gefährlich. Beschädigte Atlas-Kategorien können Arbeiter, Werkzeug, Biomasse, Routentag und Reparaturmaterial in ein Wartungsinventar einordnen. Quarantäne spricht diesen Sortierer nicht frei. Sie hält Funktionen, die noch Kollaps verhindern, und lässt Arbeiternamen, Deep-Reach-Haftung und manuelle Override-Verwahrung ungeklärt. Die harte Frage ist, ob der Schnitt gegen die beschädigte Autorität auch die Systeme tötet, die noch Leben tragen.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/de_DE. -->

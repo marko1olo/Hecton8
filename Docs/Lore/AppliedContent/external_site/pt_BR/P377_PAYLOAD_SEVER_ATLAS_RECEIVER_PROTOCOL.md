@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protocolo de corte Atlas do payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protocolo de corte Atlas do payload
 
-PT LOC HOLD: Atlas-6 endings are built around interpretation, not clean victory. Severance is an ethical action with damaged evidence.
+A rota de corte dá ao portador uma forma de tornar Atlas inútil para a Deep Reach. Esse é o apelo prático. Um corte na espinha de continuidade pode quebrar loops de reparo danificados, isolar memória de rota e impedir que um receptor use Atlas como estrada automática de volta à bacia.
 
-## Scanner
-
-PT LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
-
-## Terminal
-
-PT LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
-
-## Audio
-
-PT LOC HOLD: If this is mercy, it still leaves a body.
-
-## Field Note
-
-PT LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+O custo está no mesmo pacote. Atlas não é só uma prateleira de ferramentas; seu crescimento danificado virou parte da ecologia local e da lógica de rotas. O corte pode fechar um caminho corporativo de retorno enquanto mata dados e organismos que ninguém mais consegue reconstruir. O payload preserva um proof hash porque o ato precisará de registro depois que as luzes mudarem.
 
 <!-- External Site; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/pt_BR. -->

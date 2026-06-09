@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Worker Locker Nameplate Sample"
+title: "Muestra de placa de taquilla laboral"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Worker Locker Nameplate Sample
+# Muestra de placa de taquilla laboral
 
-ES LOC HOLD: Worker locker plates preserve people through work permissions, tool checks and erasure scars.
+La Muestra de placa de taquilla laboral muestra cómo HECTON-8 recuerda a las personas mediante objetos que aún tenían trabajo. Ren Okoye no se presenta con biografía. La placa de taquilla da ruta, certificación de herramienta, vale de comida, marca de talla de guante y una franja de nómina lijada por alguien que no sabía qué detalles importaban. Por eso el artefacto funciona. Prueba que el borrado corporativo puede ser torpe: la payline desaparece, pero clamp route permanece; el estado se sobrescribe, pero la marca de guante aún encaja con una mano real. El jugador debe leer el nombre mediante labor primero, y luego sentir la violencia de la línea de cuenta ausente.
 
 ## Scanner
 
-ES LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+La placa de Ren Okoye conserva el nombre porque la línea de pago era más fácil de borrar que el trabajo.
 
 ## Terminal
 
-ES LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-ES LOC HOLD: Name retained. Payline erased.
+Nombre retenido. Línea de pago borrada. Trabajo aún unido.
 
 ## Field Note
 
-ES LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / vale de comida bajo cinta. Franja de nómina lijada; marca de talla de guante aún visible.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/es_ES. -->

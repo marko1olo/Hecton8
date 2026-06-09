@@ -12,6 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 INTEGRATOR_PATH = ROOT / "Assets/_Project/Scripts/Editor/Batch34VisorTraumaDecalArrayIntegrator.cs"
 APPLY_ALL_PATH = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
+UNITY_APPLY_RUNNER_PATH = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
+STATIC_PREFLIGHT_PATH = ROOT / "Tools/RunGeminiMaterialStaticPreflight.ps1"
 ALPHA_MANIFEST_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json"
 OUTPUT_ARRAY_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset"
 SLICE_CONTRACT_PATH = ROOT / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray_SliceContract.json"
@@ -93,19 +95,19 @@ def main() -> int:
             "!IsProjectAssetPath(normalized)",
             "Path.GetFullPath(Path.Combine(Application.dataPath, \"..\"))",
             "GetPixels32(0)",
-            "out bool restoreReadableOnExit",
-            "if (restoreReadableOnExit)",
-            "RestoreReadable(entry.alphaCandidate);",
+            "File.ReadAllBytes(projectFilePath)",
+            "ImageConversion.LoadImage(texture, bytes, false)",
+            "out bool destroySourceOnExit",
+            "if (destroySourceOnExit && source != null)",
+            "UnityEngine.Object.DestroyImmediate(source);",
+            "return texture.isReadable;",
             "No alpha candidates found:",
             "Missing Batch34 visor trauma alpha source",
             "No DeferredDecalPass renderer features were bound",
             "expected {AtlasSize}x{AtlasSize}",
             "Texture2DArray bake returned null",
             "Texture2DArray save failed",
-            "bool madeReadable = false;",
-            "if (texture == null && madeReadable)",
-            "restoreReadableOnExit = true;",
-            "RestoreReadable(normalized);",
+            "new Texture2D(2, 2, TextureFormat.RGBA32, false, false)",
             "decalArray.Apply(true, true);",
         )
         for token in required_tokens:
@@ -120,8 +122,8 @@ def main() -> int:
             errors.append("integrator must fail missing/invalid slices instead of baking transparent fallback slices")
         if "decalArray.Apply(true, false)" in text:
             errors.append("integrator must release readable CPU copy after baking the Batch34 Texture2DArray")
-        if "finally\n                {\n                    RestoreReadable(entry.alphaCandidate);" in text:
-            errors.append("integrator must only restore readable import state when it changed the source importer")
+        if "AssetImporter.GetAtPath(normalized)" in text:
+            errors.append("integrator must not depend on Unity import readability for alpha candidate bake")
         size_match = re.search(r"private\s+const\s+int\s+AtlasSize\s*=\s*(?P<size>\d+)\s*;", text)
         slice_match = re.search(r"private\s+const\s+int\s+AtlasSliceCount\s*=\s*(?P<count>\d+)\s*;", text)
         if size_match is None or slice_match is None:
@@ -164,6 +166,19 @@ def main() -> int:
         for token in forbidden_apply_tokens:
             if token in apply_text:
                 errors.append(f"apply-all visor trauma route must not use reflection token: {token}")
+
+    if not UNITY_APPLY_RUNNER_PATH.exists():
+        errors.append(f"missing Unity apply runner: {display_path(UNITY_APPLY_RUNNER_PATH)}")
+    else:
+        runner_text = UNITY_APPLY_RUNNER_PATH.read_text(encoding="utf-8-sig")
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $batch34VisorTraumaDecalArrayValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
+            errors.append("Unity apply-all runner must post-apply validate Batch34 visor trauma decal array route")
+
+    if not STATIC_PREFLIGHT_PATH.exists():
+        errors.append(f"missing static preflight runner: {display_path(STATIC_PREFLIGHT_PATH)}")
+    elif "ValidateBatch34VisorTraumaDecalArrayRoute.py" not in STATIC_PREFLIGHT_PATH.read_text(encoding="utf-8-sig"):
+        errors.append("static preflight runner must include ValidateBatch34VisorTraumaDecalArrayRoute.py")
 
     promoted_ids: set[str] = set()
     if not ALPHA_MANIFEST_PATH.exists():

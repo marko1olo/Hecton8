@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Obsługa kasety niebieskiego długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Obsługa kasety niebieskiego długu
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Niebieski dług nie staje się użyteczny w chwili znalezienia. Staje się użyteczny, jeśli zachowa stan, który nadał mu wartość. Zaplombowana kaseta ciśnieniowa jest pojemnikiem, ostrzeżeniem i pokwitowaniem; chroni pozostałość Xenon-Omega, kratę wyrosłą pod ciśnieniem lub skażony substrat przed zmianą w szum, pył, utratę dowodu albo sygnał słyszalny dla złego systemu.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+Pierwszy bezpieczny wybór to nie sprzedać, wytworzyć ani ukryć. To ustabilizować. Kaseta z zimnym, nienaruszonym paskiem może się poruszać. Kaseta z ciepłym uszczelnieniem czyni dowód podejrzanym. Złe obchodzenie zmienia wypłatę w skażenie, hałas i ryzyko trasy.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/pl_PL. -->

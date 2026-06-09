@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure gate Atlas basin"
+title: "Напорные ворота бассейна Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure gate Atlas basin
+# Напорные ворота бассейна Atlas
 
-Pressure gate Atlas basin закрепляет final threshold через suit grade, pressure proof и authority conflict.
+Напорные ворота привязывают финальный порог к классу костюма, доказательству давления и конфликту полномочий. Дверь не мистическая; это промышленная система, решающая, считать ли игрока доступом, доказательством или заражением.
 
 ## Scanner
 
-Basin gate requires pressure proof and authority response.
+Ворота бассейна требуют доказательство давления, маршрутные права и тело, которое можно классифицировать.
 
 ## Terminal
 
-ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ВОРОТА БАССЕЙНА ATLAS: доказательство давления неполное. Класс костюма принят ниже порога спуска. Authority clamp узнает отозванный паттерн Deep Reach, а не текущего заявителя. Ручной обход требует локальную нагрузку, выбор приемника и свидетельский payload.
 
 ## Audio
 
@@ -35,6 +35,6 @@ ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked 
 
 ## Field Note
 
-Final threshold должен читаться как service gate living factory, не fantasy portal.
+Финальный порог должен читаться как сервисные ворота живой фабрики, а не фантазийный портал.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/ru_RU. -->

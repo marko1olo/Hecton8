@@ -124,6 +124,116 @@ Do not claim `native_reviewed` or `runtime_ready` without the review/proof artif
 
 Production AppliedContent localization is file-backed. Locale text must be present in the packet/source data that feeds export/import, not only in chat or a planning note. When `in_game_wiki`, `external_site`, scanner, terminal, audio, or field-note surfaces are in scope, the matching surface text must exist per required locale or carry an explicit `BLOCKED_TRANSLATION_DRAFT` row.
 
+## Multilingual AI-Style Localization Firewall
+
+Localization is not a place to launder bad English source text. If a source paragraph is abstract, aphoristic, metaphor-first, or AI-sounding, every locale row will inherit the failure. Rewrite the English authority row before translating.
+
+Localization is allowed to be natural. It is not required to mirror English sentence order, punctuation, clause count, or idiom. The hard requirement is source truth, not grammatical obedience.
+
+Allowed locale adaptation:
+
+- change word order for a natural local artifact voice;
+- split or merge short sentences when the surface still fits;
+- choose the local professional register for claims, custody, insurance, salvage, liability, engineering, or field notes;
+- reduce ornament when the locale would otherwise sound literary or theatrical;
+- preserve a speaker's anger, fatigue, institutional coldness, or practical pressure in local form.
+
+Forbidden locale adaptation:
+
+- adding a proverb, metaphor, slogan, moral judgment, or dramatic closer;
+- translating English AI scaffolding into a local equivalent;
+- making every row smoother than the source speaker should be;
+- turning scanner or terminal rows into elegant prose;
+- preserving a bad English metaphor because it is "in the source";
+- fixing vague English with local poetry instead of rewriting English first.
+
+AI phrase families are language-independent. A locale row fails when it performs the same rhetorical move, even if it avoids the exact banned English words.
+
+Reject local equivalents of:
+
+- essay-framing: "this article explores", "this section shows";
+- thesis contrast: "not merely X but Y", "more than X", "at once X and Y";
+- museum-label prose: "serves as", "stands as", "testament", "witness", "reminder", "symbol";
+- prestige abstraction without source object: essence, core, truth, legacy, meaning, continuity, humanity;
+- universal moral closure about ocean, colony, debt, survival, machine, or humanity;
+- concept-as-actor where system/ocean/colony/process/debt acts without a specific owner, mechanism, document, or route;
+- fake sensory verbs where there is no real sound, pressure, power, signal, or organism.
+
+Every locale may choose natural local syntax, but the repair must be factual:
+
+- source + object + action + constraint;
+- local professional register for legal/custody/insurance/salvage language;
+- local spoken rhythm for diary/audio/field note;
+- no added local poetry to hide weak English.
+
+Every locale row must be manually redlined. Automated scans, detector scores, or "it sounds fluent" are not acceptance. The reviewer must check:
+
+- same speaker/source as the English authority row;
+- same object, room, route, document, scan result, or audio source;
+- same lie, omission, uncertainty, and spoiler boundary;
+- no added metaphor, proverb, folklore, moral judgment, local joke, or explanatory flourish;
+- no English row copied into a non-English locale except stable IDs, route labels, units, product names, and intentionally untranslated in-world labels;
+- no machine-style symmetry where every sentence has the same length, rhythm, and polished closure;
+- no generic prestige vocabulary used to hide missing facts.
+
+The translator must preserve source pressure, not source grammar. Each locale may use natural local syntax, but it must keep the artifact type:
+
+- scanner rows stay short, material, confidence/hazard/limit;
+- terminal rows stay procedural, not poetic;
+- field notes stay practical and sharp, not literary;
+- public/wiki rows stay readable, sourced, and sectioned, not encyclopedic sludge;
+- audio rows stay speakable under interruption, not paragraph prose;
+- corporate/legal rows stay clean, evasive, and procedurally exact, not courtroom melodrama.
+
+Hard reject in every language:
+
+- aphorism instead of artifact;
+- abstract category collapse instead of source evidence;
+- "not just X but Y" equivalent;
+- "at its core" equivalent;
+- "serves as a reminder" equivalent;
+- "testament/witness to" equivalent;
+- "in a world where" equivalent;
+- "unique blend" / "delicate balance" equivalent;
+- unexplained organic metaphor: one body, one skin, gut, organ, living tissue, blood, wound, bloom, when the scene is not literal biology;
+- fake terminal fields with abstract values rather than operational fields;
+- scanner poetry rather than material, confidence, hazard, and limitation;
+- corporate/legal words translated into courtroom language when the source is actually claim, custody, insurance, salvage, or liability procedure.
+
+Locale-specific rejection notes:
+
+- `en_US`: reject essay scaffolding, trailer tags, "more than just", "not just X but Y", "the real horror", "without human categories", and abstract all-caps terminals.
+- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
+- `uk_UA`: reject "мова позивачів", "конверсія позивача", "слугує нагадуванням", "свідчення", "у своїй основі", "більше ніж просто", "одне тіло", "одна шкіра", and Russian-calque syntax.
+- `de_DE`: reject "mehr als nur", "im Kern", "in einer Welt, in der", "dient als Erinnerung", "Zeugnis", decorative compounds that do not map to a source object, and over-formal filler.
+- `es_ES`: reject "más que solo/simplemente", "en esencia", "en un mundo donde", "sirve como recordatorio", "testimonio", and inflated literary clauses where a field note should stay practical.
+- `fr_FR`: reject "plus que simplement", "au fond", "dans un monde où", "sert de rappel", "témoignage", and elegant abstract phrasing that removes the operational source.
+- `pl_PL`: reject "więcej niż tylko", "w swej istocie", "w świecie, w którym", "służy jako przypomnienie", "świadectwo", and moralizing nouns added for tone.
+- `pt_BR`: reject "mais do que apenas", "em sua essência", "num mundo onde", "serve como lembrete", "testemunho", and soft explanatory padding.
+- `nl_NL`: reject "meer dan alleen", "in de kern", "in een wereld waar", "dient als herinnering", "getuigenis", and abstract nominal phrases that make the source voice disappear.
+- `id_ID`: reject "lebih dari sekadar", "pada intinya", "di dunia tempat", "berfungsi sebagai pengingat", "bukti atas", and formal filler copied from English structure.
+- `ja_JP`: reject English essay logic translated into Japanese: "単なる...ではなく", "核心", "世界では", "思い出させる", "証し", abstract "一つの体/皮膚", and clean literary closure in scanner, terminal, or field-note rows.
+- `ko_KR`: reject "단순한...아니라", "핵심적으로", "세계에서", "상기시켜", "증거", abstract "하나의 몸/피부", and sentence-final polish that makes all voices sound like the same narrator.
+- `zh_CN`: reject "不仅仅是...而是", "从本质上", "在...世界", "提醒", "见证", "一个身体", "边界无效", and compact literary summaries that erase source limits.
+- `ar_SA`: reject "ليس مجرد...بل", "في جوهر", "في عالم", "تذكير", "شهادة", abstract "جسد واحد/جلد واحد", and legal "مدعين" language when the source is claim/custody/insurance rather than plaintiffs.
+- `he_IL`: reject "לא רק...אלא", "בבסיס", "בעולם שבו", "תזכורת", "עדות", abstract "גוף אחד/עור אחד", and legal plaintiff wording when the source is procedural claim/custody.
+
+Manual localization rewrite rule:
+
+If a locale row fails because the English source is metaphorical or vague, do not invent a better local metaphor. Rewrite the English source into a grounded artifact, then translate the grounded artifact. If only one locale fails because of grammar, legal register, RTL/CJK shape, or local terminology, rewrite that locale row and keep the canon facts identical.
+
+Manual locale row repair sequence:
+
+1. Read the English authority row and identify source/object/pressure/limit.
+2. Read the locale row as the intended artifact type.
+3. Mark the row `KEEP`, `REWRITE`, `CUT_SOURCE`, or `BLOCKED_TRANSLATION_DRAFT`.
+4. If the locale row preserves English AI rhythm, rewrite the locale row from meaning, not word order.
+5. If the English row itself is AI-style, mark `CUT_SOURCE` and rewrite English first.
+6. If legal/procedural terms drift into courtroom, moral, or literary language, rewrite with the local professional register.
+7. If CJK/RTL/long European expansion changes readability, shorten without changing source truth.
+
+Old localization rows must be rechecked when touched. A row marked `draft_machine_or_llm` is not acceptable merely because the status is honest. Draft means it still must be readable, source-faithful, non-generic, and free of AI boilerplate. Native review is for final language quality; it is not a cleanup stage for obvious machine prose.
+
 ## Proof Artifacts
 
 Localization work must provide:
@@ -147,6 +257,10 @@ Reject:
 - missing keys hidden as normal copy;
 - warning copy that does not tell the player what to do or what failed;
 - public/store text routed here instead of `textes.md`.
+- locale rows that preserve AI-style source prose because the English row was not rewritten first;
+- translated aphorisms, metaphors, or analogies that are not present as believable source voice;
+- non-English rows copied in English except stable IDs, route labels, units, product names, and intentional in-world labels;
+- claim/custody/insurance language mistranslated as courtroom plaintiff language.
 
 ## Acceptance Sentence
 

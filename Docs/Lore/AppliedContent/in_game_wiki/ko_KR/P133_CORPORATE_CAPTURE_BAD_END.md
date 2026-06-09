@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 기업 포획: 깨끗한 구조
 
-기업 포획은 그럴듯한 구조에서 만들어진 나쁜 결말이다. 플레이어는 살아서 바다를 떠나지만, 응답한 권한은 증인을 containment 물질로, payload를 실제 환자로 취급한다.
+기업 포획은 도움이 시작되어야 할 방식 그대로 시작된다. 신호는 깨끗하고, pickup 벡터는 전문적이며, 방에는 숨 쉴 공기가 있다. 그러다 질문의 순서가 구조를 폭로한다. 좌표가 먼저, custody가 둘째, Atlas 접근이 셋째, 복지는 검토 뒤다. 계약자는 바다를 살아서 떠나지만, 응답한 권한은 증인을 오염물로, payload를 환자로 취급한다. 진술은 공적 기록이 되기 전에 봉인된다. 몸은 압력을 살아남아 더 조용한 증거 통제 기계 안으로 들어간다.
 
 ## Scanner
 
-회수 출처 확인: Deep Reach 프록시. 복지 확인 전에 payload 요청.
+회수 출처 확인: Deep Reach 프록시. 맥박 확인 전 payload 요청.
 
 ## Terminal
 
-DEEP REACH 회수: recovery team은 계약자 복지 검토 전 좌표, XO custody, Atlas 접근 키를 수락. 계약자 증언은 오염 프로토콜 아래 봉인.
+DEEP REACH PICKUP: 회수팀은 계약자 복지 검토 전에 좌표, XO custody, Atlas 접근 키, Seed payload 봉인을 요청한다. 증인 진술은 오염 프로토콜 아래 봉인된다.
 
 ## Audio
 
-그 깨끗한 방은 너를 위한 것이 아니다.
+클린룸은 증인을 위한 곳이 아니다.
 
 ## Field Note
 
-좌표를 먼저 요구하는 깨끗한 구조는 공기가 더 좋은 포획이다.
+좌표를 먼저 묻는 깨끗한 구조는 따뜻한 공기를 가진 custody다.
 
 <!-- In-Game Wiki; generated from P133_CORPORATE_CAPTURE_BAD_END/ko_KR. -->

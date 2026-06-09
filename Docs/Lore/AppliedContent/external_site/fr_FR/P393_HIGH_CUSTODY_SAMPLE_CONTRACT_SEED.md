@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: High Custody Sample Contract Seed"
+title: "Graine de contrat d'échantillon haute garde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: High Custody Sample Contract Seed
+# Graine de contrat d'échantillon haute garde
 
-FR LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Échantillon Haute Garde commence avec un meilleur prix et une pire boîte. Le tableau marque certains échantillons comme certifiés récepteur: grains de blue debt, paillettes tissu-fer, saumure scellée, packs de filtre et débris de pousse qui portent encore le contexte de route. Chaque pièce a besoin d'un conteneur, d'un contrôle de masse, d'un état de sceau et d'un tag de garde avant de devenir payable.
 
-## Scanner
-
-FR LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-FR LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-FR LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-FR LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+La pression est ordinaire et laide. Un échantillon lourd ralentit une montée. Un sceau fendu peut transformer paiement en retard de quarantaine. Un casier propre plein peut forcer l'opérateur à choisir entre dossier de preuve, pièce de réparation et matière certifiée. Le contrat paie plus parce qu'il fait de la propriété un système porteur.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/fr_FR. -->

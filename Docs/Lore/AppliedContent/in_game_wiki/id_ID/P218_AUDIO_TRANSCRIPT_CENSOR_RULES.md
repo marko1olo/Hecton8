@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Pita Kerusakan Transkrip Audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Pita Kerusakan Transkrip Audio
 
-ID LOC HOLD: Audio Transcript Censor Rules balance noir redaction with accessibility and localization.
+Pita kerusakan adalah luka yang terlihat pada audio rusak. Pita ini menandai apa yang hilang dari perekam, apa yang ditekan notaris paket, apa yang gagal dibaca terjemahan buruk, dan apa yang mungkin dipotong operator kemudian. Pita bukan hiasan. Ia memberi tahu pemain seberapa jauh transkrip bisa dipercaya.
+
+Transkrip rusak yang baik tetap terbaca di bagian yang menyangkut bertahan hidup. Ia boleh menyembunyikan nama, koordinat, nomor muatan, klausul utang, atau detik terakhir teriakan. Ia tidak boleh menyembunyikan peringatan pintu, pembalikan rute, perubahan tekanan, peran pembicara, atau aksi yang dibutuhkan untuk memahami bukti. Jika kerusakan mengubah petunjuk menjadi derau, petunjuk itu belum siap.
+
+HECTON-8 memakai pita kerusakan sebagai aturan kejujuran. Subtitle bersih di atas audio hancur itu mencurigakan. Baris hitam di sebelah perekam utuh bertanya siapa yang menyensornya. Detik hilang yang sama di beberapa log bisa menunjuk ke scrubber otomatis. Pemain harus belajar membaca bentuk ketiadaan: kata terpotong, lompatan waktu, tanda tingkat keyakinan, geser pembicara, bekas terjemahan, dan cap notaris.
+
+Ini juga melindungi aksesibilitas. Kerusakan diegetik tidak boleh menghukum pemain yang membutuhkan subtitle. Pita boleh menunjukkan ketidakpastian, tetapi peringatan tetap terbaca. Koloni mungkin gagal dalam gelap; antarmuka tidak boleh ikut gelap.
 
 ## Scanner
 
-ID LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+PITA KERUSAKAN // Rekaman memiliki celah fisik atau prosedural. Redaksi boleh menyembunyikan nama, ID muatan, atau cap waktu. Ia tidak boleh menyembunyikan peringatan utama, peran pembicara, atau aksi penting rute.
 
 ## Terminal
 
-ID LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
+GERBANG AKSESIBILITAS // Audio rusak boleh tidak lengkap. Jika sisa transkrip tidak menjelaskan apa yang terjadi, apa yang berubah, atau apa yang berbahaya, jangan terbitkan sebagai petunjuk.
 
 ## Audio
 
-ID LOC HOLD: Static may hide the name. It cannot hide the alarm.
+Derau boleh memakan nama. Ia tidak boleh memakan alarm.
 
 ## Field Note
 
-ID LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Sembunyikan nama jika perlu. Tinggalkan alarm di tempat orang hidup bisa membacanya.
 
 <!-- In-Game Wiki; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/id_ID. -->

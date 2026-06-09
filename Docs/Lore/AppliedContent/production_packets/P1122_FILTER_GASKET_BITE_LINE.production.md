@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_repair_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS167_FIRST_REPAIR_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, filter housing note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first repair reading |
@@ -33,7 +33,7 @@ Forbidden facts: no filtration-system claim, no clean-water verdict, no automati
 
 ### Scanner
 
-FILTER GASKET // Bite line off-center. Clean grit from lip before reseating.
+FILTER GASKET // Bite line is off-center. Clean grit from the lip before reseating.
 
 ### Codex
 
@@ -71,18 +71,18 @@ CLEAN LIP BEFORE RESEAT
 
 | Locale | Status | Text |
 |---|---|---|
-| en_US | source_authority | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| ar_SA | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| de_DE | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| es_ES | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| fr_FR | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| he_IL | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| id_ID | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| ja_JP | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| ko_KR | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| nl_NL | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| pl_PL | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| pt_BR | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| ru_RU | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| uk_UA | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
-| zh_CN | draft_machine_or_llm | FILTER GASKET // Bite line off-center. Clean grit from lip before reseating. |
+| en_US | source_authority | FILTER GASKET // Bite line is off-center. Clean grit from the lip before reseating. |
+| ar_SA | draft_machine_or_llm | حشية المرشح // خط الضغط خارج المركز. نظف الحبيبات عن الحافة قبل إعادة التثبيت. |
+| de_DE | draft_machine_or_llm | FILTERDICHTUNG // Drucklinie liegt außermittig. Schmutz vom Rand vor dem Wiedereinsetzen entfernen. |
+| es_ES | draft_machine_or_llm | JUNTA DEL FILTRO // La marca de presión queda descentrada. Limpia la arenilla del borde antes de recolocar. |
+| fr_FR | draft_machine_or_llm | JOINT DE FILTRE // La trace de compression est décentrée. Enlever les grains du rebord avant de remettre en place. |
+| he_IL | draft_machine_or_llm | אטם מסנן // קו הלחיצה אינו במרכז. נקה גרגרי לכלוך מהשפה לפני ההושבה מחדש. |
+| id_ID | draft_machine_or_llm | GASKET FILTER // Garis tekan meleset dari tengah. Bersihkan pasir dari bibir sebelum memasang ulang. |
+| ja_JP | draft_machine_or_llm | フィルターガスケット // 圧着線が中心からずれている。戻す前にリップの砂粒を除去。 |
+| ko_KR | draft_machine_or_llm | 필터 개스킷 // 압착 자국이 중심에서 벗어났다. 다시 앉히기 전에 립의 모래를 닦아라. |
+| nl_NL | draft_machine_or_llm | FILTERPAKKING // Compressielijn zit uit het midden. Maak gruis van de rand schoon voor terugplaatsen. |
+| pl_PL | draft_machine_or_llm | USZCZELKA FILTRA // Linia docisku jest poza środkiem. Oczyść krawędź z ziaren przed ponownym osadzeniem. |
+| pt_BR | draft_machine_or_llm | JUNTA DO FILTRO // A marca de pressão está fora do centro. Limpe a areia da borda antes de recolocar. |
+| ru_RU | draft_machine_or_llm | ПРОКЛАДКА ФИЛЬТРА // Линия прижима смещена. Перед посадкой убери крупинки с кромки. |
+| uk_UA | draft_machine_or_llm | ПРОКЛАДКА ФІЛЬТРА // Лінія притиску зміщена. Перед встановленням очисти край від піску. |
+| zh_CN | draft_machine_or_llm | 滤器密封圈 // 压痕偏离中心。重新装回前先清掉边缘砂粒。 |

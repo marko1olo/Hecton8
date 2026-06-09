@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Canteen Water Ledger
 
-The Canteen Water Ledger is one of HECTON-8's simplest human artifacts: a meal-room slate that records drinking water, token returns, pump access and medical exceptions. It does not explain the disaster. It shows the colony immediately before the disaster became a story.
+The Canteen Water Ledger is a swollen meal-room slate from a colony that measured drinkable water with the same seriousness it measured tool custody. Six missing tokens, two medical overrides and a pump-room correction are enough to make the room feel alive: not heroic, not tidy, still arguing about cups while the pressure system was already failing.
 
-Its value is texture and evidence. Six missing tokens sound minor until the player understands what water meant in a pressure colony. Drinkable water passed through filters, shift accounting, medical overrides and pump-room custody. A missing cup could mean a tired worker. It could also mean a sick crew, a contaminated line, a bypassed ration order or a supervisor hiding a local failure from Deep Reach reporting.
+Water on HECTON-8 was never only water. It passed through filters, shift leads, medical exceptions, pump keys and canteen trust. A missing token could be forgetfulness, theft, sickness, contamination, or a supervisor keeping a local failure out of Deep Reach paperwork for one more shift.
 
-The point is not melodrama. The canteen ledger makes the colony legible as work: people came off shift, argued, corrected records, borrowed tools, protected friends and tried to keep the room normal while the ocean began entering the system. In HECTON-8, that ordinary trace can become evidence.
+Do not clean the grease-pencil margin. The margin is where the room becomes human. It shows workers protecting friends, hiding symptoms, disputing ration order, and trying to keep one sour filter from becoming a colony-wide panic before the next descent tone.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/en_US. -->

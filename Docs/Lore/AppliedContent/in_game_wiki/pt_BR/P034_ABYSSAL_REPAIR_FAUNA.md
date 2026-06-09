@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fauna abissal de reparo"
+title: "Fauna abissal reparada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,32 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fauna abissal de reparo
+# Fauna abissal reparada
 
-Essa fauna mostra que Atlas-6 já não separa organismo, ferramenta, dano e reparo. Sobreviver agora inclui partes industriais.
+A fauna abissal reparada aparece depois que a infraestrutura fixa já mostra o Atlas-6 aceitando material ruim de reparo. Aqui, o mesmo teste chega a animais vivos. O escaneamento ainda lê resposta muscular, movimento branquial, comportamento de perseguição e bordas de ferida. Também lê um suporte cerâmico, filamento de cabo, placa de carcaça de drone e um ping de manutenção ativo roteado pelo enxerto.
+
+O espécime não é um drone remoto nem um corpo morto com máquina em cima. O Atlas fechou uma ferida de pressão, preservou mobilidade e deixou o animal continuar caçando. Isso torna o encontro perigoso em duas direções: a fauna segue sua própria rota predatória, enquanto o enxerto pode chamar drones de reparo próximos ou marcar o animal como parte de um caminho de serviço. Leia material do enxerto, intervalo do ping e energia da toca antes de tratar o alvo como fauna comum.
 
 ## Scanner
 
-A fauna carrega remendos cerâmicos, cicatrizes de cabo e simetria de corte de drone. Atlas edita a vida.
+O espécime carrega um remendo cerâmico de costela atravessando uma mordida antiga. Um filamento de cabo liga o leque branquial esquerdo a uma placa de carcaça de drone. Movimento: padrão de caça intacto. Perigo: o enxerto transmite um ping de manutenção ativo.
 
 ## Terminal
 
-Espécime: bordas de ferida fechadas por máquina e inserções estáveis à pressão. Sob o enxerto, o comportamento segue animal.
+LEITURA DE REPARO DO ESPÉCIME
+Profundidade: 3120 m / toca de serviço no talude abissal
+Ferida: rasgo de pressão no flanco
+Inserção: suporte cerâmico, filamento de cabo, placa de carcaça de drone
+Resposta Atlas: fechar ferida, manter mobilidade, transmitir ping de manutenção
+Comportamento: perseguição predatória permanece ativa
+Aviso: o ping pode acordar drones de reparo próximos
 
 ## Audio
 
-Ainda caça. A máquina só mudou o que sobreviveu.
+Recua. O enxerto está transmitindo; ele ainda caça, e a toca dos drones acabou de responder.
 
 ## Field Note
 
-Reparo não é cuidado.
+Não é um cadáver com peças em cima. Um animal sobreviveu ao reparo e manteve a rota na cabeça.
 
 <!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/pt_BR. -->

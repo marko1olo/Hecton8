@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Kit de pruebas del patio de relés del arrecife de cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Cable Reef Relay Yard POI Kit
+# Kit de pruebas del patio de relés del arrecife de cable
 
-ES LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+El patio de relés del arrecife de cable es un taller de reparación que creció hasta tener su propio modo de fallo. La película conductora, las cubiertas de cable y los zócalos acústicos pueden restaurar señal, pero el mismo puente puede mandar la ruta a un viejo ramal de servicio si el operador corta sin escanear.
 
 ## Scanner
 
-ES LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+Kit de pruebas de POI: el patio conduce por película puente viva y enruta mal por memoria de cable dañada.
 
 ## Terminal
 
-ES LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+KIT PATIO DE RELÉS: zócalo de espina acústica, puente de biofilm, aviso de corte, respuesta pinger, marca de servicio Atlas, pelado de aislamiento, bifurcación de relé, mapa de ramal muerto.
 
 ## Audio
 
-ES LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+No retires todo el crecimiento. Parte de él lleva tu señal.
 
 ## Field Note
 
-ES LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Nota de merodeador: si la película zumba bajo la sonda, márcala antes de cortar. Un cable bonito suele ser un cable muerto.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/es_ES. -->

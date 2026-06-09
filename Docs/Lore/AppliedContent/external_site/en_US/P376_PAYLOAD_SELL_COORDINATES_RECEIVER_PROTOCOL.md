@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Payload Sell Coordinates Receiver Protocol
 
-One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+This protocol is not a simple sale of treasure. It is a transfer of reach. Deep Reach already owns enough paper to argue over HECTON-8; what it lacks is a trustworthy way back through the damaged basin. The payload supplies that way back by bundling coordinates with confidence, proof custody and salvage class.
 
-## Scanner
-
-Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+The payment is real, and so is the debt relief. That is what makes the route dangerous rather than cartoonish. A desperate operator can clear a lien and still deliver the colony's return path to the company that buried the timing records. The receiver stamp turns survival into service.
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/en_US. -->

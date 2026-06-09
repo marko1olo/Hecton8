@@ -7,6 +7,8 @@ namespace Hecton8.Core
         private const float SunDirectionEpsilonSq = 0.000001f;
         private const float MaxModeledDepthMeters = 12000f;
         private const float MinPlayableAbyssReadability = 0.055f;
+        private const float MaxReadableSunColor = 1f;
+        private const float MaxReadableSunSourceIntensity = 1.25f;
 
         public static CelestialLightDepthStratum ResolveDepthStratum(float depthMeters)
         {
@@ -31,7 +33,8 @@ namespace Hecton8.Core
             float directionalLightIntensity,
             float3 directionalLightColor,
             float quality01,
-            uint sequence)
+            uint sequence,
+            bool lightingStateFallback = false)
         {
             bool celestialValid = IsCelestialValid(in celestial);
             float3 sunDirection = celestialValid
@@ -42,9 +45,11 @@ namespace Hecton8.Core
             float phase01 = Sanitize01(timeOfDay01, 0f);
             float elevation01 = ResolveSunElevation01(sunElevationDegrees, sunDirection);
             float eclipse01 = celestialValid ? Sanitize01(celestial.EclipseOcclusion01, 0f) : 0f;
-            float sourceIntensity = math.max(
-                SanitizeNonNegative(surfaceSunIntensity, 1f),
-                SanitizeNonNegative(directionalLightIntensity, 1f));
+            float sourceIntensity = math.min(
+                MaxReadableSunSourceIntensity,
+                math.max(
+                    SanitizeNonNegative(surfaceSunIntensity, 1f),
+                    SanitizeNonNegative(directionalLightIntensity, 1f)));
             float surfaceDirect = math.saturate(sourceIntensity * elevation01 * (1f - eclipse01 * 0.86f));
             float surfaceAmbient = math.saturate(0.18f + elevation01 * 0.76f - eclipse01 * 0.42f);
             CelestialLightDepthStratum stratum = ResolveDepthStratum(depth);
@@ -92,13 +97,16 @@ namespace Hecton8.Core
 
             uint flags = CelestialLightReadabilityFlagsValue(
                 celestialValid,
+                lightingStateFallback,
                 depth > 0.01f,
                 nightOrEclipse,
                 caustic,
                 biolum,
                 artificial,
                 blackFloor,
-                quality);
+                quality,
+                elevation01,
+                eclipse01);
 
             CelestialLightReadabilitySnapshot snapshot = default;
             snapshot.AbsoluteUniverseTime = celestialValid ? celestial.AbsoluteUniverseTime : 0d;
@@ -140,18 +148,18 @@ namespace Hecton8.Core
             float4 safe = math.all(math.isfinite(baseline))
                 ? baseline
                 : new float4(0.09f, 0.42f, 0.70f, 0.85f);
-            safe.xyz = math.max(safe.xyz, 0f);
-            safe.w = math.max(safe.w, 0f);
+            safe.xyz = math.min(math.max(safe.xyz, 0f), MaxReadableSunColor);
+            safe.w = math.min(math.max(safe.w, 0f), MaxReadableSunSourceIntensity);
 
             if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u)
                 return safe;
 
             float readability = math.max(light.BlackCrushFloor01, light.DirectSun01 + light.AmbientReadability01 * 0.35f);
             float biolumLift = light.BiolumWeight01 * 0.045f;
-            float3 sunTint = math.max(light.SunColorIntensity.xyz, 0f);
+            float3 sunTint = math.min(math.max(light.SunColorIntensity.xyz, 0f), MaxReadableSunColor);
             float tintWeight = math.saturate(light.DirectSun01 * 0.22f);
             safe.xyz = math.lerp(safe.xyz, math.max(safe.xyz, sunTint), tintWeight);
-            safe.w = math.min(8f, safe.w * math.max(light.BlackCrushFloor01, readability) + biolumLift);
+            safe.w = math.min(MaxReadableSunSourceIntensity, safe.w * math.max(light.BlackCrushFloor01, readability) + biolumLift);
             return safe;
         }
 
@@ -312,16 +320,20 @@ namespace Hecton8.Core
 
         private static uint CelestialLightReadabilityFlagsValue(
             bool celestialValid,
+            bool lightingStateFallback,
             bool underwater,
             float nightOrEclipse,
             float caustic,
             float biolum,
             float artificial,
             float blackFloor,
-            float quality)
+            float quality,
+            float elevation01,
+            float eclipse01)
         {
-            uint flags = (uint)CelestialLightReadabilityFlags.Valid;
-            if (!celestialValid)
+            uint flags = (uint)CelestialLightReadabilityFlags.Valid |
+                         ResolveLightPhaseFlags(elevation01, eclipse01);
+            if (!celestialValid || lightingStateFallback)
                 flags |= (uint)CelestialLightReadabilityFlags.Fallback;
             if (underwater)
                 flags |= (uint)CelestialLightReadabilityFlags.Underwater;
@@ -338,6 +350,16 @@ namespace Hecton8.Core
             if (quality < 0.55f)
                 flags |= (uint)CelestialLightReadabilityFlags.QualityReduced;
             return flags;
+        }
+
+        private static uint ResolveLightPhaseFlags(float elevation01, float eclipse01)
+        {
+            float darkness01 = math.saturate((1f - Sanitize01(elevation01, 0f)) + Sanitize01(eclipse01, 0f) * 0.86f);
+            if (darkness01 < 0.38f)
+                return (uint)CelestialLightReadabilityFlags.LightPhaseDay;
+            if (darkness01 < 0.82f)
+                return (uint)CelestialLightReadabilityFlags.LightPhaseTwilight;
+            return (uint)CelestialLightReadabilityFlags.LightPhaseNight;
         }
 
         private static float ResolveSunElevation01(float sunElevationDegrees, float3 sunDirection)
@@ -384,7 +406,7 @@ namespace Hecton8.Core
         private static float3 SanitizeColor(float3 value)
         {
             float3 safe = math.all(math.isfinite(value)) ? value : new float3(1f, 1f, 1f);
-            return math.max(safe, 0f);
+            return math.min(math.max(safe, 0f), MaxReadableSunColor);
         }
 
         private static float SanitizeDepthMeters(float depthMeters)

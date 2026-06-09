@@ -19,22 +19,30 @@ localization_flags: 0
 
 # Abyssal Repair Fauna
 
-Abyssal repair fauna are the clearest sign that Atlas-6 no longer separates organism, tool, damage and repair. The creature is alive, but its survival now includes industrial parts.
+Abyssal repair fauna appear after static infrastructure has already shown Atlas-6 accepting bad repair material. Here the same test reaches living animals. The scan still reads muscle response, gill movement, pursuit behavior, and wound margins. It also reads a ceramic brace, cable filament, drone-shell plate, and a live maintenance ping routed through the graft.
+
+The specimen is not a remote drone and not a dead body with machinery on it. Atlas closed a pressure wound, preserved mobility, and let the animal keep hunting. That makes the encounter dangerous in two directions: the fauna follows its own predatory route, while the graft can call nearby repair drones or mark the animal as part of a service path. Read graft material, ping interval, and den power before treating the target as simple wildlife.
 
 ## Scanner
 
-Fauna carries ceramic patches, cable scars and drone-cut symmetry. Atlas is not killing life; it is editing it.
+Specimen carries a ceramic rib patch through old bite damage. Cable filament bridges the left gill fan to a drone-shell plate. Movement: hunting pattern intact. Hazard: graft broadcasts a live maintenance ping.
 
 ## Terminal
 
-Specimen note: wound margins show machine-clean closure and pressure-stable insert growth. Behavior remains animal under the graft.
+SPECIMEN REPAIR READ
+Depth: 3120 m / abyssal slope service den
+Wound: pressure tear along flank
+Insert: ceramic brace, cable filament, drone shell plate
+Atlas response: close wound, retain mobility, broadcast maintenance ping
+Behavior: predator pursuit remains active
+Warning: ping may wake nearby repair drones
 
 ## Audio
 
-It still hunts. The machine only changed what survived.
+Back off. The graft is broadcasting; it is still hunting, and the drone den just answered.
 
 ## Field Note
 
-Repair is not care.
+Not a corpse with parts on it. An animal survived the repair and kept the route in its head.
 
 <!-- In-Game Wiki; generated from P034_ABYSSAL_REPAIR_FAUNA/en_US. -->

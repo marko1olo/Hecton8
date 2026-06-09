@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir : le ciel qui refuse le secours
 
-Aegir est un ciel opérationnel. La chaîne des lunes peut retarder ou corrompre un paquet sans rendre la surface toujours noire. Le secours échoue par distance, géométrie, droit et coût.
+Aegir est la machine orbitale au-dessus de HECTON-8 : moon ladder, relay shadow, storm permission, debris weather, mass window et raison pour laquelle rescue voyage plus lentement que les papiers.
 
 ## Scanner
 
-Guide de route céleste. Pas de FTL, pas d'ansible. Les fenêtres Aegir passent par lunes, débris, garde de relais, état de tempête et comptabilité de masse Black Keel.
+Astronomie publique : pas de FTL, pas d'ansible, relay geometry d'Aegir, dangers de moon ladder, custody orbitale Black Keel, route windows avant la loi.
 
 ## Terminal
 
-GUIDE DE NAVIGATION AEGIR // BANDE PUBLIQUE. Employer des classes de risque : ombre de route, poussée chargée, dispersion de glace, panache de tempête, retard de guidage, garde du récepteur.
+SITE LONGFORM : rendre le ciel pratique et hostile; chaque packet, drop, pickup et claim a physics, timing, mass et custody.
 
 ## Audio
 
-Planification Black Keel : "Signal vrai n'est pas signal utile. La fenêtre tient par masse, météo, garde et verrou de récepteur."
+Le ciel au-dessus de HECTON-8 n'est pas vide. C'est un schedule avec des dents.
 
 ## Field Note
 
-Règle de Maraudeur : ne demande pas si le signal est parti. Demande quelle lune l'a bloqué, quel registre l'a pris, et si le récepteur a entendu une personne ou une classe de masse.
+Regarde en haut pour le timing, pas pour le réconfort. Sur HECTON-8, moonlight peut être relay opening, storm warning ou claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/fr_FR. -->

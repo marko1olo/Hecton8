@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Запись публичного ledger"
+title: "Запись публичного реестра"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Запись публичного ledger
+# Запись публичного реестра
 
-Эта статья объясняет, как HECTON-8 обращается с evidence через custody, delay и consequence.
+Эта запись финала фиксирует момент, когда доказательство выходит из частного хранения. Важны поля квитанции: кто проштамповал пакет, какие координаты закрыты, какой уровень доказательства принят и сколько времени остается Deep Reach до встречного пакета.
 
 ## Scanner
 
-Witness hash ушел из custody claimant.
+ЗАПИСЬ ПУБЛИЧНОГО РЕЕСТРА // Свидетельский хэш вышел из частного хранения по пакетному маршруту Tau/Luyten. Уровень публичного доказательства задан; задержка ответа Deep Reach приложена.
 
 ## Terminal
 
-ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ЗАПИСЬ ФИНАЛА / ПУБЛИЧНЫЙ РЕЕСТР
+Маршрут: отложенный пакет Tau/Luyten.
+Нагрузка: свидетельский хэш, полоса хранения, уровень доказательства с закрытыми координатами, метка времени приемника.
+Контроль после реле: утрачен.
+Ответ Deep Reach: встречный пакет задержан публичной квитанцией.
+Известная потеря: отправитель не выбирает первого читателя и последующую цепочку подачи.
 
 ## Audio
 
-Правда может уйти из твоих рук и все еще иметь значение.
+Реестр поставил штамп. Первого читателя ты уже не выбираешь.
 
 ## Field Note
 
-Fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay, uncontrolled consequence.
+Если квитанция публичная, файл выживает потому, что уходит из твоих рук. Проверь закрытие координат до того, как радоваться штампу.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/ru_RU. -->

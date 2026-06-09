@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Registro de Água da Cantina
 
-O Registro de Água da Cantina é um dos artefatos humanos mais simples de HECTON-8: uma placa de sala de refeições que anota água potável, devolução de fichas, acesso às bombas e exceções médicas. Ele não explica o desastre. Mostra a colônia logo antes de o desastre virar história.
+O Livro de Água da Cantina é uma lousa inchada de refeitório de uma colônia que media água potável com a mesma seriedade da custódia de ferramentas. Seis fichas perdidas, duas liberações médicas e uma correção da sala de bombas bastam para deixar a sala viva: não heroica, não limpa, ainda discutindo copos enquanto o sistema de pressão já começava a falhar.
 
-Seu valor é textura e prova. Seis fichas faltando parecem pouco até o jogador entender o que água significava numa colônia de pressão. Água potável passava por filtros, contabilidade de turno, exceções médicas e registro da sala de bombas. Um copo faltando podia ser um trabalhador cansado. Também podia ser uma equipe doente, uma linha contaminada, uma ordem de ração contornada ou um supervisor escondendo uma falha local dos relatórios da Deep Reach.
+Água em HECTON-8 nunca era só água. Passava por filtros, líderes de turno, exceções médicas, chaves de bomba e confiança da cantina. Uma ficha perdida podia ser esquecimento, roubo, doença, contaminação ou um supervisor mantendo uma falha local fora da papelada da Deep Reach por mais um turno.
 
-O ponto não é melodrama. O registro torna a colônia legível como trabalho: pessoas saíam de turno, discutiam, corrigiam registros, pegavam ferramentas emprestadas, protegiam os seus e tentavam manter a sala normal enquanto o oceano já entrava no sistema. Em HECTON-8, esse traço comum pode virar prova.
+Não limpe a margem de lápis graxo. É ali que a sala fica humana. Ela mostra trabalhadores protegendo amigos, escondendo sintomas, disputando ordem de ração e tentando impedir que um filtro azedo vire pânico de colônia antes do próximo tom de descida.
 
 <!-- External Site; generated from P357_CANTEEN_WATER_LEDGER/pt_BR. -->

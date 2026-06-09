@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "بذور قصص طواقم الوردية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# بذور قصص طواقم الوردية
 
-AR LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+تعطي seeds طواقم الوردية HECTON-8 نسيج replay من دون تحويل العالم إلى آلة تناقضات. قد تعرض المستعمرة نفسها أزواجا مختلفة وترتيب أشياء مختلفا وملاحظات هامشية أخرى، لكنها لا تجعل Deep Reach بريئة ولا تغير سبب Great Tide.
+
+التنوع المفيد محلي. قد يرتبط كاتب مسار بغواص brine في جولة وبمركب أختام في أخرى. مكان ورقة الرفض قد يتغير. هذا يغير تجميع الدليل، لا الدليل نفسه.
 
 ## Scanner
 
-AR LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // يمكن أن تتغير القائمة. الذنب لا.
 
 ## Terminal
 
-AR LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SEEDS الطاقم // يمكن للجولة تغيير ترتيب roster، أزواج العمال، محتوى الخزائن، الرفض، طباشير المسار، أجزاء الشارات وتصحيحات Marauder اللاحقة. يغير seed طريقة لقاء الدليل، لا ما يثبته الدليل.
 
 ## Audio
 
-AR LOC HOLD: A different locker can hurt the same truth again.
+خزان مختلف قد يجرح الحقيقة نفسها من جهة أخرى.
 
 ## Field Note
 
-AR LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+تنوع seed يغير ترتيب الأشياء وأزواج الوظائف وملاحظات Marauder. لا يغير Great Tide أو مسؤولية Deep Reach.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/ar_SA. -->

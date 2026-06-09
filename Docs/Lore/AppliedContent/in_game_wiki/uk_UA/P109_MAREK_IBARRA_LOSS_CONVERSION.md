@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Марек Ібарра: конверсія збитків"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Марек Ібарра: конверсія збитків
 
-UA LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Марек Ібарра — слід оцінювача Keelmark Mutual, який перетворює зниклих робітників на нерозв'язані облікові стани. Таблиця написана не для горя, а для вартості закриття: тіло не відновлено, стан тиску не сертифіковано, забруднення очікує, payroll-особу призупинено.
+
+Тому імена важливі в HECTON-8. Табличка шафки, мітка костюма, рядок реєстру тіл або відновлений годинник маршруту можуть повернути робітника з нерозв'язаного навантаження до претензії. Двозначність дешевша за порятунок, дешевша за компенсацію і легше ховається в суперечці перевізників.
+
+Для Marauder відновлена особа не прикраса. Вона пошкоджує обліковий трюк, який стер людину двічі: спершу у воді, потім у реєстрі.
 
 ## Scanner
 
-UA LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+ТАБЛИЦЯ ОЦІНЮВАЧА // М. Ібарра переводив зниклих робітників у нерозв'язані класи навантаження, доки не можна буде сертифікувати стан тиску, забруднення або payroll-статус.
 
 ## Terminal
 
-UA LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+ІБАРРА, М. // Keelmark Mutual, конверсія збитків // Невідновлені біологічні активи лишаються нерозв'язаними до сертифікації стану тиску, забруднення або payroll-статусу. Не закривати клас заявника без доказу опіки.
 
 ## Audio
 
-UA LOC HOLD: A missing person became a pending category. That was cheaper.
+Зникла людина стала категорією очікування. Так було дешевше.
 
 ## Field Note
 
-UA LOC HOLD: Insurance language should feel colder than gunfire.
+Страхова мова має бути холоднішою за постріли. Відновлене ім'я не атмосфера; воно ламає дешевшу категорію.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/uk_UA. -->

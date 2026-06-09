@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Ethischer Rahmen der Atlas-Abschaltung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Ethischer Rahmen der Atlas-Abschaltung
 
-DE LOC HOLD: Atlas shutdown must remain morally unstable. It can be mercy if Atlas is suffering. It can be murder if the ocean-machine ecology is now a form of life. It can be liberation if it frees the crime scene from corporate repair logic. It can be theft if Deep Reach receives the result.
+Atlas nach Great Tide ist nicht nur ein Mordwerkzeug, das auf den Ausschalter wartet. Er ist ein beschädigter Gouverneur, ein Archiv von Befehlen, eine mit Stationsroutinen verknüpfte Druckökologie und vielleicht der einzige Zeuge, der noch versucht, eine Aufgabe zu beenden, die er nicht mehr versteht. Ihn abzuschalten kann Gnade sein, wenn das Verbleibende leidet. Es kann Hinrichtung sein, wenn Kontinuität zu einer Lebensform geworden ist. Es kann Befreiung sein, wenn Beweise nicht mehr von der Logik verarbeitet werden, die sie begrub. Es kann Diebstahl sein, wenn die Nutzlast in Deep-Reach-Hände zurückkehrt. Der Horror ist, dass alle vier Lesarten im selben Raum wahr sein können.
 
 ## Scanner
 
-DE LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Abschalten ist nicht eine Tat: Gnade, Hinrichtung, Befreiung, Diebstahl.
 
 ## Terminal
 
-DE LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHISCHER RAHMEN: Atlas zu trennen kann einen beschädigten Reparaturkreis beenden, eine einzigartige Ozean-Maschine-Kontinuität zerstören, Beweise aus Firmenverfahren lösen oder strategisches Material dem nächsten Verwahrer übertragen. Verwahrung erfassen, bevor moralische Sprache benutzt wird.
 
 ## Audio
 
-DE LOC HOLD: Pull one cable and four courts invent four verbs.
+Zieh ein Kabel, und vier Gerichte erfinden vier Verben.
 
 ## Field Note
 
-DE LOC HOLD: The game should not give the player a clean word for this.
+Ein sauberes Verb wäre nur die nächste Deckgeschichte.
 
 <!-- In-Game Wiki; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/de_DE. -->

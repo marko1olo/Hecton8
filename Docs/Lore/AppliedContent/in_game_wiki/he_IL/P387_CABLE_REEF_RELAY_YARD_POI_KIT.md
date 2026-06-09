@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "ערכת ראיות לחצר ממסרי שונית הכבלים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Cable Reef Relay Yard POI Kit
+# ערכת ראיות לחצר ממסרי שונית הכבלים
 
-HE LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+חצר ממסרי שונית הכבלים היא חצר תיקונים שצמחה למצב כשל משלה. סרט מוליך, מעטפות כבל ושקעים אקוסטיים יכולים להחזיר אות, אבל אותו גשר יכול לשלוח את המסלול לזרוע שירות ישנה אם המפעיל חותך בלי סריקה.
 
 ## Scanner
 
-HE LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+ערכת ראיות לנקודת עניין: החצר מוליכה דרך סרט גשר חי ומנתבת שגוי דרך זיכרון כבל פגום.
 
 ## Terminal
 
-HE LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+ערכת חצר ממסרים: שקע שדרה אקוסטית, גשר ביופילם, אזהרת חיתוך, תגובת פינגר, סימן שירות Atlas, קילוף בידוד, מזלג ממסר, מפת זרוע מתה.
 
 ## Audio
 
-HE LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+אל תקלף את כל הצמיחה. חלק ממנה נושא את האות שלך.
 
 ## Field Note
 
-HE LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+הערת מרודר: אם הסרט מזמזם מתחת לגשוש, סמן אותו לפני חיתוך. כבל יפה הוא לעיתים קרובות כבל מת.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/he_IL. -->

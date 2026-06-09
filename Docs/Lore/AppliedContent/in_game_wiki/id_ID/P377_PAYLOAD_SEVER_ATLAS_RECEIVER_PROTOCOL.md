@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Payload Sever Atlas Receiver Protocol"
+title: "Protokol Penerima Putus Atlas Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Payload Sever Atlas Receiver Protocol
+# Protokol Penerima Putus Atlas Payload
 
-ID LOC HOLD: Atlas severance must remain morally unstable. It may stop damaged repair logic, destroy emergent ecology, deny Deep Reach or erase a witness.
+Protokol pemutusan adalah rute penerima yang merusak, bukan pelepasan bersih. Ia dapat menghentikan logika perbaikan rusak dan menolak vektor pemulihan Deep Reach. Ia juga dapat menghancurkan ekologi mesin, menghapus memori rute yang berguna, dan membuat jejak bukti yang menurut hukum penerima terbaca sebagai penahanan, sabotase, pencurian, atau belas kasihan.
 
 ## Scanner
 
-ID LOC HOLD: Severance route armed. The target is not a boss; it is a damaged continuity system.
+Rute pemutusan dipersenjatai. Payload membawa kunci potong untuk kontinuitas Atlas, isolasi memori rute, dan pelestarian proof hash.
 
 ## Terminal
 
-ID LOC HOLD: PAYLOAD ROUTE SEVER: cut Atlas continuity, preserve proof hash, deny recovery vector. Ecological consequence unresolved.
+PENERIMA PAYLOAD // PEMUTUSAN ATLAS. Target: tulang punggung kontinuitas Atlas. Potong loop perbaikan, isolasi memori rute, simpan proof hash, tolak vektor pemulihan korporat. Kaskade ekologis belum terselesaikan. Klasifikasi hukum diperdebatkan.
 
 ## Audio
 
-ID LOC HOLD: If this is mercy, it still leaves a body.
+Atlas bisa dipotong. Potongan tetap meninggalkan tanda kustodi.
 
 ## Field Note
 
-ID LOC HOLD: Receiver record: severance changes Atlas, but the evidence can read as mercy, theft, murder, or liberation.
+Catatan perompak: potongan bersih tetap potongan. Foto tanda kustodi sebelum menariknya.
 
 <!-- In-Game Wiki; generated from P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL/id_ID. -->

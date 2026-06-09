@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "CN LOC HOLD: Resource Yield Data Boundary"
+title: "资源产出数据边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# CN LOC HOLD: Resource Yield Data Boundary
+# 资源产出数据边界
 
-CN LOC HOLD: Resource values in HECTON-8 are pressure-bound records tied to custody and route evidence, not loose lore claims.
+HECTON-8 的资源价值是一条链，而不是标签。表格拥有数字，但叙事拥有数字存在的原因：谁取了样，在什么压力下，用哪个监管印，以及这条矿脉还能被路线安全剥取多少。
 
 ## Scanner
 
-CN LOC HOLD: Yield boundary: resource class, pressure band, custody grade, depletion rule.
+产出行拒绝松散价值：类别、压力带、监管、枯竭和 hash 必须一致。
 
 ## Terminal
 
-CN LOC HOLD: RESOURCE YIELD CONTRACT: packet hash, resource class, depth band, rarity curve, and depletion behavior are required before any number is accepted.
+RESOURCE YIELD CONTRACT：没有 packet hash、资源类别、压力带、监管等级、稀有度曲线和枯竭行为，任何数字都不被接受。没有压力历史的样本是证据，不是价值。
 
 ## Audio
 
-ZH LOC HOLD: A sample without pressure history is not a value.
+没有压力历史的样本没有价值。
 
 ## Field Note
 
-CN LOC HOLD: Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+在 pressure band、custody grade、depletion behavior 和 packet hash 一致前，yield 数字保持临时状态。
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/zh_CN. -->

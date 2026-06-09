@@ -19,24 +19,24 @@ localization_flags: 1
 
 # Znaki domen 2190
 
-Znaki domen pokazują świat ludzi przez przedmioty: tablice bezpieczeństwa, ślady momentu, kody opieki i stare zgody. Każdy znak wiąże drzwi, narzędzie lub ładunek z daleką władzą.
+Znaki domen to małe prawne blizny, które czynią HECTON-8 odległym, ale nie prymitywnym. Jeden wspornik może nieść gramatykę bezpieczeństwa Sol Core, frazę karty Centauri, ślad naprawy Barnard Yards, hash opieki Luyten i lokalny kod roszczenia Aegir. To nie dekoracja. Każdy znak mówi, kto certyfikował część, kto ją naprawił, kto może udowodnić pakiet, kto ubezpiecza stratę i kto będzie spierał się o salvage, gdy pokój zostanie zalany.
 
-Kolonia jest odległa, nie prymitywna. Prawo, przemysł i dług dotarły do wody. Ratunek nadal potrzebuje masy, statku i okna.
+Ważna jest nie lista domen, lecz ich warstwa na zmęczonym metalu. Sol może certyfikować obiekt, którego nie ocali. Barnard normalizuje pracę martwych roszczeń. Luyten zachowuje opiekę bez pytania o litość. Aegir wykonuje brudne lokalne prawo pod cudzymi papierami. Gdy Marauder czyta te znaki, ocean przestaje być pusty. Ludzka władza przybyła przed ludzkim ciepłem.
 
 ## Scanner
 
-Mieszane ludzkie znaki domen: płyta bezpieczeństwa Sol, stempel narzędzia Barnard, trasa opieki Luyten i kod roszczenia Aegir na tym samym skorodowanym wsporniku.
+Mieszane ludzkie znaki domen na skorodowanym wsporniku: format bezpieczeństwa Sol Core, pieczęć karty Centauri, ślad naprawy Barnard, hash opieki Luyten i kod roszczenia Aegir.
 
 ## Terminal
 
-UZGODNIENIE DOMEN // Format bezpieczeństwa Sol Core zaakceptowany. Stempel Barnard Yards ważny. Opieka pakietu Luyten Junction dołączona. Lokalne prawo roszczeń Aegir nadpisuje priorytet odzysku po utracie zejścia.
+UZGODNIENIE DOMEN // Format bezpieczeństwa Sol Core przyjęty. Język karty Centauri obecny. Autorytet naprawczy Barnard Yards ważny. Opieka Luyten Packet Ladder dołączona. Lokalne prawo roszczeń Aegir nadpisuje otwarte salvage po utracie zejścia.
 
 ## Audio
 
-To miejsce nie jest poza cywilizacją. To cywilizacja po tym, jak odległość wyjęła z niej ciepłe części.
+Cywilizacja dotarła do tego pokoju. Najpierw jako stemple, potem jako dług, a pomoc dopiero na końcu.
 
 ## Field Note
 
-Ludzkość urosła. Ratunek nadal musi podróżować.
+Ludzkość stała się szeroka. Ratunek nadal musi podróżować.
 
 <!-- In-Game Wiki; generated from P011_DOMAIN_MARKS_2190/pl_PL. -->

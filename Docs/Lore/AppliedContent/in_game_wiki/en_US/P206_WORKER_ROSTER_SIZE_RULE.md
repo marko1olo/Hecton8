@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Worker Roster Size Rule
 
-The Worker Roster Size Rule prevents both anonymous ruins and uncontrolled name spam.
+The Worker Roster Size Rule keeps the abandoned colony readable. HECTON-8 must feel inhabited by crews, not populated by random plaques, so the roster is deliberately small enough for repetition to matter. Anchor workers return in lockers, pump tags, triage sheets, route permissions, and damaged work objects. Seed-role workers fill the wider run with variation, but they still carry a job, a place, and a last task. The rule prevents two failures at once: anonymous ruins with no human weight, and uncontrolled name spam that makes every death feel procedurally cheap.
 
 ## Scanner
 
-The colony roster is large enough to feel inhabited and small enough to stay authored.
+Seventy-two names is not flavor text. It is the colony's memory budget: enough hands to make the place feel worked, few enough that a locker, repair tag, and last shift can point back to the same person.
 
 ## Terminal
 
-ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: The live roster carries 72 worker identities. Twenty-four are anchor names that can recur across lockers, ledgers, damaged tools, permission stamps, and audio fragments. Forty-eight are seed-role names for replay variation. A generated name may move evidence order; it may not become disposable filler.
 
 ## Audio
 
-A name is evidence only when the room can prove the job.
+A name becomes evidence when the room can prove the job.
 
 ## Field Note
 
-The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+If a name cannot return later with a job attached, cut it from the roster.
 
 <!-- In-Game Wiki; generated from P206_WORKER_ROSTER_SIZE_RULE/en_US. -->

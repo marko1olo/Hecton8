@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "סעיף המוטב המוסווה של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Masked Deep Reach Beneficiary Clause
+# סעיף המוטב המוסווה של Deep Reach
 
-HE LOC HOLD: Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+סעיף המוטב המוסווה של Deep Reach מגדיר את הצורה המודרנית של קנוניית HECTON-8. Deep Reach אינו מפעיל בובות כל יכול. הוא מוטב מוסתר בעדיפות שחזור, ניתוב ביטוח ו-shell custody. התוצאה מפחידה יותר כי היא רגילה: ניירת עם שיניים סביב אסון שמעולם לא הפסיק לשלם.
 
 ## Scanner
 
-HE LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach אינו מודפס על גיליון ההעסקה. הוא מופיע במקום שבו כסף, עדיפות מקבל וגישה לקואורדינטות נפגשים.
 
 ## Terminal
 
-HE LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+עקבת מוטב / שוכר גלוי: proxy loss desk / מוטב מוסווה: shell קשורה ל-Deep Reach / אחריות: מבודדת / coordinate access: נשמר / priority recovery channel: נפתח לפני contractor distress lane.
 
 ## Audio
 
-HE LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+אם השם חסר אבל הערוץ נפתח ראשון, הבעלים עדיין בחדר.
 
 ## Field Note
 
-HE LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+להשאיר פרוצדורלי: השחרה, proxy loss desk, עקבת מוטב, ערוץ שחזור. לתת לשחקן להסיק את הלחץ.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/he_IL. -->

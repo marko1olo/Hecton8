@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Storm Window Rush Contract Seed"
+title: "폭풍 창 러시 계약 시드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Storm Window Rush Contract Seed
+# 폭풍 창 러시 계약 시드
 
-KO LOC HOLD: Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+폭풍 창 러시는 날씨와 궤도가 첫 압력 시스템이 되는 계약군이다. 경로는 물려받은 힘을 더하지 않는다. 안전 작업 시간을 줄이고, 회수 기하를 좁히며, 허술한 수리를 더 일찍 벌한다.
 
 ## Scanner
 
-KO LOC HOLD: Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+계약 시드: 러시 창. 닫히는 폭풍 엄폐, 궤도 셔터 시각, 줄어든 수리 여유에 더 높은 지급이 묶인다.
 
 ## Terminal
 
-KO LOC HOLD: SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: 폭풍 창 압축, 궤도 릴레이 셔터 불리, 지급 상한 상승, bathydrop 리콜 조기화, 수리 허용 감소.
 
 ## Audio
 
-KO LOC HOLD: This contract pays because it hates waiting.
+이 계약이 돈을 주는 이유는 창이 닫히기 때문이다.
 
 ## Field Note
 
-KO LOC HOLD: Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+마로더 메모: 러시 보수가 커 보이는 이유는 계약이 매분을 두 번 청구하기 때문이다.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/ko_KR. -->

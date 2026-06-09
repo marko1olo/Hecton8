@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Conflicto entre firma y testigo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Conflicto entre firma y testigo
 
-ES LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Conflicto entre firma y testigo define la contradicción detrás del informe público de Deep Reach. La compañía puede afirmar que el océano hizo imposible el rescate; no puede afirmar con seguridad que nadie vio el conflicto antes de retener la autoridad de liberación. Este artículo convierte la evidencia de sala en presión narrativa: un registro de puerta, un hash de testigo y un reloj de ruta dañado hacen que la firma oficial se lea menos como incertidumbre y más como omisión controlada. Mantiene físico el desastre, pero prueba que la historia de cobertura fue humana.
 
 ## Scanner
 
-ES LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+La firma dice que la revisión de evacuación no tenía contradicción viva. Los hashes de testigo dicen que la contradicción estaba en la sala.
 
 ## Terminal
 
-ES LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: firma pública marca fallo de marea como causa única. Hash local de testigo sitúa asesoría de evacuación, Atlas Safety y operaciones de ruta en la sala de revisión antes de retener la liberación. Comparar registro de puerta, sello de nombre y reloj de ruta roto.
 
 ## Audio
 
-ES LOC HOLD: The signatures line up. The bodies do not.
+El informe dice que nadie podía saber. El registro de puerta no está de acuerdo.
 
 ## Field Note
 
-ES LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Una firma solo está limpia hasta que la sala recuerda quién estaba a su lado.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/es_ES. -->

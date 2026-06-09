@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "צוותי משמרת, לא גיבורים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# צוותי משמרת, לא גיבורים
 
-HE LOC HOLD: HECTON-8 should show the colony as people with jobs, fatigue, habits and small procedural failures. No family-revenge hook is needed.
+HECTON-8 צריך להפוך את המושבה לאנושית דרך עבודה לפני טרגדיה. טכנאי לחץ מחליף אטם שסתום, טבחית סופרת אסימוני מים, פקיד מסלול חותם חזרה לא נכונה, צולל חותם על cutter ולא מחזיר אותו לרישום: פרטים כאלה הופכים אנשים לקריאים בלי לכפות עלילת נקמה משפחתית. המושבה הטבועה חזקה ביותר כשהיא מרגישה כמו מקום שנקטע באמצע שגרה, לא מוזיאון שנבנה אחרי המוות.
 
 ## Scanner
 
-HE LOC HOLD: The colony becomes human through schedules, not speeches.
+שכבה אנושית // המושבה נעשית אמיתית דרך לוחות זמנים, כלים שחוקים, חזרות חסרות ושמות על לוחות תורנות. לא דרך נאומים.
 
 ## Terminal
 
-HE LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+כלל כתיבה: לרשום עובדים כטכנאי משאבות, חובשים, פקידי מסלול, צוללים, טבחים, מפעילי fabricator ומפקחים עייפים. סידור עם חזרה חסרה אחת יכול לכאוב יותר מאנדרטה.
 
 ## Audio
 
-HE LOC HOLD: They were not symbols. They were late for shift.
+הם לא היו סמלים. הם איחרו למשמרת.
 
 ## Field Note
 
-HE LOC HOLD: People are more believable as workers than as memorial statues.
+אנשים אמינים יותר כעובדים מאשר כפסלי זיכרון.
 
 <!-- In-Game Wiki; generated from P156_SHIFT_CREWS_NOT_HEROES/he_IL. -->

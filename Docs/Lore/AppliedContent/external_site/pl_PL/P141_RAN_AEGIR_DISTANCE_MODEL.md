@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Model odległości Ran-Aegir
 
-Odległość Ran-Aegir to liczba, która zmienia izolację w fizykę. Zasięg klasy dziesięciu lat świetlnych wystarcza sondom, frachtowi, staremu prawu i korporacyjnemu apetytowi, lecz jest zbyt długi, by współczucie dotarło w rytmie ludzkiego oddechu. HECTON-8 używa tej luki jako presji: wiadomości poruszają się szybciej niż statki, roszczenia szybciej niż ludzie, a zalany pokój umiera, zanim odpowiedź z wewnętrznych światów stanie się istotna.
+Model odległości Ran-Aegir jest cichym fundamentem presji HECTON-8. Aegir leży w okrutnej strefie pośredniej: dość blisko, by uzasadnić płyty tras, sprzęt seed, zastawy frachtowe, zdalnych notariuszy i stałą kolonię wydobywczą; dość daleko, by nikt nie mógł improwizować litości, gdy zawiedzie drzwi ciśnieniowe.
+
+Ta różnica ma znaczenie. Wiadomości, roszczenia prawne, harmonogramy przewoźników, statki ratunkowe i ludzkie ciała nie mają jednego zegara. Ostrzeżenie może już lecieć, kiedy statek mający odpowiedzieć wciąż tkwi w paliwie, oknie, masie i zgodzie właściciela. Deep Reach nauczyła się używać tej szczeliny. Kolonia żyła wewnątrz niej.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pl_PL. -->

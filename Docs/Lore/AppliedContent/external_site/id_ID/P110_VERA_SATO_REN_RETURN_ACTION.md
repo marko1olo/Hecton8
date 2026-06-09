@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: Tindakan Pengembalian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: Tindakan Pengembalian
 
-ID LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: Tindakan Pengembalian adalah jembatan antara bencana lama Deep Reach dan kampanye pemain masa kini. Ia mewakili Kantor Kepatuhan Pemulihan pada 2190, saat Deep Reach tidak perlu berdiri di ruangan untuk memberi tekanan. Ia mengirim paket tindakan pengembalian.
 
-## Scanner
+Paket itu meminta koordinat, bukti XO, status akses Atlas, dan diamnya kontraktor dalam jendela kustodi. Bentuk itu penting. Ancamannya bukan pidato. Ancamannya adalah waktu. Jika payload dapat dipulihkan, Deep Reach dapat menawarkan penyelamatan, perlindungan hukum, atau akses pengangkut. Jika risiko bukti tumbuh, sistem yang sama dapat mengubah pemain menjadi tanggungan.
 
-ID LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-ID LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-ID LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-ID LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Artikel ini menjaga faksi tetap membumi. Deep Reach berbahaya karena masih prosedural, solvent, dan sabar. Ia menginginkan pemulihan sebelum penyelamatan dan kustodi sebelum kebenaran. Sato-Ren adalah tepi mesin itu yang berbentuk manusia.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/id_ID. -->

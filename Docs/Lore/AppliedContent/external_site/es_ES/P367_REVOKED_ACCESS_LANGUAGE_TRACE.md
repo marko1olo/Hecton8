@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rastro de lenguaje de acceso revocado"
+title: "Rastro de Lenguaje de Acceso Revocado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rastro de lenguaje de acceso revocado
+# Rastro de Lenguaje de Acceso Revocado
 
-El protagonista lee los bloqueos de Deep Reach como evidencia. Las credenciales revocadas cierran el acceso, pero la redacción todavía expone la ruta enterrada: recuentos degradados, testigos sustitutos, reclasificación de mantenimiento y lenguaje de preservación de reclamación.
+El Rastro de Lenguaje de Acceso Revocado se construye sobre una regla simple de HECTON-8: una puerta cerrada aún puede delatarse. Los sistemas Deep Reach fueron diseñados para negar, clasificar y proteger reclamaciones con lenguaje cuidadoso. Cuando falla la credencial antigua, ese lenguaje permanece.
 
-## Scanner
+Las pistas útiles no son contraseñas. Son frases corporativas con consecuencias físicas: maintenance reclassification, degraded counts, substitute checks y claim-preservation routes. Un visitante normal ve denegación. Un antiguo field systems worker ve un registro de lo que la puerta recibió orden de ocultar.
 
-El bloqueo no dice prohibido. Dice reclasificación de mantenimiento, retención de continuidad y materiales de ruta. Vieja fraseología de Deep Reach: una negativa que aún apunta a la puerta enterrada.
-
-## Terminal
-
-RESPUESTA DE ACCESO / ARCHIVO DE RUTA SEGURA
-credencial: revocada
-motivo: materiales de continuidad de evacuación restringidos a personal certificado de Deep Reach
-términos visibles: recuento degradado, testigo sustituto, ruta de preservación de reclamación, reclasificación de mantenimiento
-nota: el antiguo personal de campo puede ver el lenguaje de denegación solo para conciliación de incidente.
-
-## Audio
-
-No borraron el pasillo. Lo envolvieron en un vocabulario que solo el personal culpable sigue entendiendo.
-
-## Field Note
-
-La placa está muerta. El bloqueo todavía habla el dialecto de oficina que enterró la ruta.
+Esto mantiene la investigación arraigada en trabajo y responsabilidad. El operador no necesita llave mágica ni confesión de villano. Una placa muerta, una pantalla de denegación y los términos maintenance equivocados bastan para empezar a seguir la ruta que Deep Reach intentó enterrar bajo procedimiento.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/es_ES. -->

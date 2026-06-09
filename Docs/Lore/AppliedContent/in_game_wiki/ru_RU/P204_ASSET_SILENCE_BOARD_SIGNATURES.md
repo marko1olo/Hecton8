@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Подписи Asset Silence Board
 
-RU LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Записи Asset Silence Board стоят между рабочим реестром и публичным отчетом. Они не создают потерю; они решают, какие части потери могут уйти по маршруту. Голосование за редактирование может оставить видимыми load class, число шкафов и claim value, но заглушить имена свидетелей и маршрутные приложения. Поэтому эти подписи должны лежать рядом со шкафами, redaction cards и флагами packet mute. Подпись Brigit Senn не делает ее тайным командиром. Она определяет нижний офис, который после relay review перевел восстанавливаемые человеческие факты в категории asset-risk.
 
 ## Scanner
 
-Silence vote не оружие. Но он все равно может заставить людей исчезнуть.
+Карточка redaction vote восстановлена: поле имени работника заглушено, категория asset-risk видима, число шкафов сохранено. Видимость пакета требует approval владельца хранения.
 
 ## Terminal
 
-SIGNATURE SEED: Brigit Senn, Asset Silence Board. Функция: маршрутизирует witness names в asset-risk silence categories после relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: перенести приложение witness-name в категорию asset-risk silence после relay review. Сохранить load class, locker count и claim value. Выпуск требует approval владельца хранения.
 
 ## Audio
 
-Сотри маршрут, и тело становится cargo math.
+Board оставил счет ящиков. Имена вырезали.
 
 ## Field Note
 
-Эти подписи нужны рядом с стертыми именами, приглушенными пакетами и странными accounting categories.
+Имя исчезло, бирка шкафа на месте. Asset Silence Board голосовал за видимость пакета, а не за то, существовал ли работник.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/ru_RU. -->

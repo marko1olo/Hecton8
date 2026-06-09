@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Salvage Carrier Autonomy Limits
 
-The carrier's limits keep HECTON-8 grounded: autonomy covers accounting and recovery, not impossible rescue under ocean pressure.
+Salvage Carrier Autonomy Limits keep HECTON-8 grounded. Black Keel is dangerous because it is useful and limited at the same time. It can perform the accounting and recovery work that makes escape possible, but its rules forbid the impossible rescue players expect from a personal ship. The result is infrastructure with a pulse, not a companion.
 
 ## Scanner
 
-Carrier autonomy table: claim processing, ballast drop, pings. No deep rescue authority.
+Black Keel can move debt, telemetry and low-risk supply drops without asking you. It cannot authorize a deep rescue.
 
 ## Terminal
 
-AUTONOMY LIMIT: Black Keel may schedule recovery, reject contaminated mass, sell claim telemetry and drop low-risk supplies. It may not authorize crewed descent or deep-rated rescue without insured receiver approval.
+AUTONOMY LIMITS / permitted: claim processing, telemetry sale, recovery-window scheduling, low-risk ballast or supply drop, contaminated-mass rejection / prohibited: crewed descent, deep-rated rescue, lien cancellation, quarantine override, receiver ownership transfer.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Autonomous does not mean free. It means the debt can move without asking you.
 
 ## Field Note
 
-Keep this out of combat barks; it belongs in carrier status and contract UI.
+Keep this in carrier status and contract UI, not combat barks. Autonomy covers accounting, recovery scheduling and refusal logic.
 
 <!-- External Site; generated from P324_SALVAGE_CARRIER_AUTONOMY_LIMITS/en_US. -->

@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_suit_fit_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS174_FIRST_SUIT_FIT_MARK_ARTICLES.md |
 | Speaker | Suit inspection scanner, cuff seal note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first suit/gear checking |
@@ -39,7 +39,7 @@ CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal.
 
 The gasket is not torn, but the fold line means it has been stored under pressure or worn badly. A clean seal starts at the dry lip; salt flecks along that edge can hold the fold open.
 
-Gear fails in small shapes first.
+The fold is where the seal will stay open if the lip is stored dirty.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ SMOOTH DRY LIP
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| ar_SA | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| de_DE | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| es_ES | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| fr_FR | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| he_IL | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| id_ID | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| ja_JP | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| ko_KR | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| nl_NL | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| pl_PL | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| pt_BR | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| ru_RU | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| uk_UA | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
-| zh_CN | draft_machine_or_llm | CUFF GASKET // Fold line visible. Smooth dry lip before trusting seal. |
+| ar_SA | draft_machine_or_llm | حشية كم // خط الطية ظاهر. سو الحافة الجافة قبل الثقة بالختم. |
+| de_DE | draft_machine_or_llm | MANSCHETTENDICHTUNG // Faltlinie sichtbar. Trockene Lippe glaetten, bevor du der Dichtung traust. |
+| es_ES | draft_machine_or_llm | JUNTA DE MANGUITO // Linea de pliegue visible. Alisa el labio seco antes de fiarte del sello. |
+| fr_FR | draft_machine_or_llm | JOINT DE MANCHETTE // Ligne de pli visible. Lisser la levre seche avant de croire le joint. |
+| he_IL | draft_machine_or_llm | אטם שרוול // קו קיפול גלוי. החלק את השפה היבשה לפני אמון באטימה. |
+| id_ID | draft_machine_or_llm | GASKET MANSET // Garis lipatan terlihat. Ratakan bibir kering sebelum percaya segel. |
+| ja_JP | draft_machine_or_llm | カフガスケット // 折れ線あり。シールを信じる前に乾いたリップをならす。 |
+| ko_KR | draft_machine_or_llm | 소매 개스킷 // 접힌 선이 보인다. 밀봉을 믿기 전에 마른 립을 펴 둔다. |
+| nl_NL | draft_machine_or_llm | MANCHETPAKKING // Vouwlijn zichtbaar. Strijk droge lip glad voor je de afdichting vertrouwt. |
+| pl_PL | draft_machine_or_llm | USZCZELKA MANKIETU // Widoczna linia zgiecia. Wygladz sucha warge przed zaufaniem uszczelnieniu. |
+| pt_BR | draft_machine_or_llm | JUNTA DO PUNHO // Linha de dobra visivel. Alise o labio seco antes de confiar na vedacao. |
+| ru_RU | draft_machine_or_llm | МАНЖЕТНЫЙ УПЛОТНИТЕЛЬ // Видна линия сгиба. Разгладь сухую кромку до доверия герметику. |
+| uk_UA | draft_machine_or_llm | МАНЖЕТНИЙ УЩІЛЬНЮВАЧ // Видно лінію згину. Розгладь суху крайку перед довірою до ущільнення. |
+| zh_CN | draft_machine_or_llm | 袖口密封圈 // 可见折线。信任密封前先抚平干唇边。 |

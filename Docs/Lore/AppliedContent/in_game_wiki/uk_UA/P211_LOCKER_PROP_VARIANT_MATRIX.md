@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Матриця варіантів реквізиту шафок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Матриця варіантів реквізиту шафок
 
-UA LOC HOLD: Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.
+Матриця варіантів реквізиту шафок тримає докази працівників фізичними. Хороша шафка каже гравцеві, що робив працівник, куди йому дозволяли ходити і що колонія або пізніші рятувальники намагалися прибрати. Знос інструмента вказує на родину бригади. Маршрутна бірка вказує на двері, ліфти, костюми або бухти crawler. Тискова стрічка й наліпки змін показують звичайне обслуговування під ненормальним ризиком. Шрами стирання зарплати й мітки збереження мародерів показують друге життя доказу після того, як Deep Reach намагалася перетворити людину на рядок витрат. Результат має бути інтимним, але не ставати декоративним мотлохом.
 
 ## Scanner
 
-UA LOC HOLD: A locker should show work, route access and what got erased.
+Шафка має показувати роботу, маршрутний доступ і те, що хтось намагався стерти. Пам'ятні речі дозволені лише після того, як робота читається.
 
 ## Terminal
 
-UA LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: кожна авторська шафка потребує трьох читабельних підказок: робота, маршрут і пошкодження. Декоративна пам'ять другорядна. У шафці може бути сімейний жетон або приватний жарт, але тільки після того, як інструмент, слід дозволу або шрам стирання скаже гравцеві, як ця людина торкалася колонії.
 
 ## Audio
 
-UA LOC HOLD: The locker is not a shrine. It is a failed work order.
+Шафка не святиня. Це провалене робоче замовлення.
 
 ## Field Note
 
-UA LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Варіанти: знос інструмента, бірка маршрутного дозволу, тискова стрічка, наліпка зміни, шрам стирання зарплати, мітка збереження мародера.
 
 <!-- In-Game Wiki; generated from P211_LOCKER_PROP_VARIANT_MATRIX/uk_UA. -->

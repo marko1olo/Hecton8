@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Capsule Blackbox Audio 01"
+title: "Audio de boîte noire de capsule 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Capsule Blackbox Audio 01
+# Audio de boîte noire de capsule 01
 
-FR LOC HOLD: The first recovered blackbox makes survival a debt: the capsule bought one landing by burning the part meant to take it back.
+L'Audio de boîte noire de capsule 01 est le premier artefact technique honnête de HECTON-8. Il reformule la survie en dette : l'atterrissage a été acheté en consommant le matériel de retour. L'enregistrement donne aux joueurs une raison physique au piège océanique avant tout mystère corporatif.
 
 ## Scanner
 
-FR LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+La première boîte noire ne dit pas que vous vous êtes écrasé. Elle dit que la capsule a survécu en dépensant le matériel censé la remonter.
 
 ## Terminal
 
-FR LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32 : survival burn complete ; impact de descente absorbé ; ascent sleeve dépensé ; recovery ring sans verrouillage ; bouée non fiable ; frames 12-19 perdues durant pressure shear. Ascension manuelle déconseillée sans remplacement externe du sleeve.
 
 ## Audio
 
-FR LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Événement boîte noire. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-FR LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01 : crush-frame inférieur fissuré ; ascent sleeve brûlé ; recovery ring no-lock ; la bouée répète encore une demande de remontée morte.
 
 <!-- External Site; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/fr_FR. -->

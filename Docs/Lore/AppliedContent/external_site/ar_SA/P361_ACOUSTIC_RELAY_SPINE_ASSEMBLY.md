@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "تجميعة عمود المرحل الصوتي"
+title: "تجميع عمود الترحيل الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة عمود المرحل الصوتي
+# تجميع عمود الترحيل الصوتي
 
-تغرس تجميعة عمود المرحل الصوتي حلقة الهرب في HECTON-8 داخل هندسة salvage: يجب أن ينجو الصوت من الضغط وهندسة المسار وcustody قبل أن يصدقه المدار.
+تجميع عمود الترحيل الصوتي هو أول قطعة في سلسلة هروب HECTON-8 تحول النجاة إلى إشارة قابلة للقياس. ليس سارية راديو ولا صلاة استغاثة. إنه pressure-code spine من أضلاع خزفية، غلاف كابل، ballast floats، وتوقيت pinger.
 
-## Scanner
+المشكلة هي الثقة. يحمل ماء HECTON-8 ضجيج الاصطدام، طرق المضخات، brine scatter، وأصداء المسارات. يستقبل Black Keel أصواتا أكثر مما يستطيع قبوله بأمان. الكبسولة التي تريد recovery يجب أن تثبت أن tap الخاص بها ينتمي إلى مسار وساعة وسلسلة custody، لا إلى لوحة سائبة تضرب إطارا مغمورا.
 
-عمود صوتي مكسور. يستطيع نقر pressure-code عبر الماء؛ وما زال المدار يسمعه كـ custody noise متضرر.
-
-## Terminal
-
-ASCENT RELAY: استعادة العمود الصوتي منخفض النطاق قبل recovery window. High-gain mast مفقود. Emergency buoy غير موثوق. مستقبل Black Keel يقبل pressure-code فقط بعد route proof.
-
-## Audio
-
-إذا سمعنا Keel، فسيسمع جرحا يطرق أنبوبا.
-
-## Field Note
-
-أول نداء للكبسولة ليس صوتا. إنه أضلاع خزفية، وجلد كابلات، وpinger floats، وانضباط توقيت يكفي لكي يكرر المحيط رسالتك بشكل صحيح.
+إصلاح العمود يعطي كبسولة الصعود صوتا ضيقا: إحداثيات، survival state، clock match، checksum. هذا يكفي لبدء حديث recovery، لا لضمان الإنقاذ. يمكن للمحيط أن يثني الإشارة. ويمكن للـ carrier أن يعامل packet كـ damaged claim noise. يكسب المكوّن جلسة السماع الأولى؛ لا يكسب القضية.
 
 <!-- External Site; generated from P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY/ar_SA. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Bunk Shift Routine"
+title: "Rutina de litera de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Bunk Shift Routine
+# Rutina de litera de presión
 
-ES LOC HOLD: The human layer of HECTON-8 is labor history under pressure: bunks, shifts, water, tools and debt before the disaster name.
+La rutina de litera de presión muestra la colonia ahogada de HECTON-8 mediante hábito, no confesión. Una pizarra de fila obrera enumera tono de despertar, revisión del sello, nota de presión, ficha de agua-comida, custodia de herramienta y asignación de descenso. En una estación sin amanecer, esa lista es mañana, nómina, aviso médico y prueba de regreso.
 
-## Scanner
+La fuerza emocional está en lo poco que posa. No dice que alguien fue valiente. Dice que la llave de bomba debía volver antes de comer. Dice que los sellos se revisan a las 03:52. Dice que el sueño fue dividido por máquinas porque al océano no le importaba si un cuerpo entendía la hora.
 
-ES LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
-
-## Terminal
-
-ES LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
-
-## Audio
-
-ES LOC HOLD: Tired, trained and due back in six hours.
-
-## Field Note
-
-ES LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+Sigue la pizarra y la colonia se vuelve legible. El mismo nombre puede aparecer como litera, llave, ficha de agua, sello de ruta y regreso perdido. No es desorden. Es el sistema nervioso del asentamiento de presión, escrito con las marcas más pequeñas.
 
 <!-- External Site; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/es_ES. -->

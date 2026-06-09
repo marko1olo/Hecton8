@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Druckversagensschwellen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Druckversagensschwellen
 
-DE LOC HOLD: Pressure failure thresholds make salvage decisions physical and visible instead of abstract inventory math.
+Druckversagensschwellen machen die Bergung in HECTON-8 physisch statt abstrakt. Ein Behälter ist nicht sicher, weil sein Name im Inventar grün ist. Er ist sicher, weil Hülle, Dichtung, Klammer, Prüfmarke und Routenhistorie noch mit der Tiefe um ihn herum übereinstimmen. Diese Schwellen sind auch eine Fairnessregel. Bevor Versagen zu Verlust wird, sollte die Welt sprechen: Eine Dichtung tickt, ein Gasket driftet, eine Klammer klappert, ein Haarriss glänzt, eine Salzblüte wächst, eine akustische Rückgabe geistert, oder Totprobennebel trübt das Glas. Jedes Signal bedeutet in verschiedenen Stufen dasselbe: Das Material ist vom nützlichen Objekt zur lokalen Gefahr geworden. So können Crafting, UI und Umgebungsaudio dieselbe Warnsprache teilen. Der Spieler wird bestraft, weil er Druck ignoriert, nicht weil er versteckte Mathematik nicht gelesen hat.
 
 ## Scanner
 
-DE LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Eine gute Probe wird zur Gefahr, wenn sie die falsche Drucklinie überschreitet. Dem Ozean ist egal, dass das Etikett fast stimmte.
 
 ## Terminal
 
-DE LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+DRUCKVERSAGEN / shallow-rated: Dichtungstick und Wasserkriechen / industrial-rated: Dichtungsdrift und Klammerklappern / brine-rated: Haarriss und Salzblüte / abyssal-rated: akustisches Geistern, Totprobennebel / Atlas-rated: Verwahrungssperre vor Strukturverlust.
 
 ## Audio
 
-DE LOC HOLD: Pressure does not care that the label was almost right.
+Druck interessiert nicht, dass das Etikett fast richtig war.
 
 ## Field Note
 
-DE LOC HOLD: Failure thresholds should be readable before they punish.
+Versagensschwellen müssen vor der Strafe lesbar sein: Ticken, Drift, Haarriss, Salzblüte, Totprobennebel. Wenn der Spieler erst nach Verlust lernt, betrügt die Welt.
 
 <!-- In-Game Wiki; generated from P172_PRESSURE_FAILURE_THRESHOLDS/de_DE. -->

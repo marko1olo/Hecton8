@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Basin Payload Act"
+title: "Atlas-Becken-Payload-Tor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Basin Payload Act
+# Atlas-Becken-Payload-Tor
 
-DE LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+Das Beckentor ist eine Empfängerentscheidung unter Druck. Die Payload kann Koordinaten verkaufen, Atlas schneiden, Quarantäne erhalten, ein redigiertes Hauptbuchpaket veröffentlichen oder lokal ohne Beleg bleiben. Jede Route ändert Verwahrung, Schuld, Ökologie und Beweiszugriff. Keine gibt dem Becken einen unberührten Zustand zurück.
 
 ## Scanner
 
-DE LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Routentor: Atlas-Becken. Finale Payload verlangt Route, Empfänger, Proof Hash, Ökologiestatus, Pfandstatus und Überlebensfenster.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+KAMPAGNENROUTE // ATLAS-BECKEN PAYLOAD. Entscheiden oder verweigern: Koordinatenverkauf, Atlas-Severance, Quarantäne-Escrow, öffentliches Hauptbuch, Blind Return. Empfängerstempel ändert Verwahrung. Kein sauberer Anspruchszustand verfügbar.
 
 ## Audio
 
-DE LOC HOLD: The last question is not what happened. It is who you send it to.
+Die letzte Routenfrage ist, wer das Paket erhält.
 
 ## Field Note
 
-DE LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Plünderernotiz: Wähle den Empfänger, bevor die Tasche Wasser nimmt. Eine perfekte Antwort passt nicht in diese Tasche.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/de_DE. -->

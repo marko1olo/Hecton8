@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Weighting Audit
 
-This proof keeps Atlas out of cheap villainy. The audit shows a damaged continuity system sorting categories under pressure: machinery, routes, records, extraction hardware, workers. The crime is not emotion. The crime is who configured the weights, who accepted them, and who later used the result as if it were neutral.
+The audit is dry enough to be dangerous. Atlas did not need hatred to abandon people. It sorted categories under pressure: machines that held the colony together, routes that preserved access, records that kept ownership alive, and workers with falling retrieval yield. Deep Reach sealed the weighting table because the branch order was legible.
 
 ## Scanner
 
-Audit shard recovered. Atlas weighted pressure continuity, route memory and claim retention above worker retrieval during the failure window.
+Audit shard recovered. Atlas ranked pressure continuity, route memory and claim custody above biological retrieval during the failure window.
 
 ## Terminal
 
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biological retrieval downranked after infrastructure continuity flag. Claim record remains protected. Human route not marked impossible, only lower yield.
+ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Infrastructure continuity locked high. Claim record shielded. Biological retrieval downranked after yield forecast, not marked impossible.
 
 ## Audio
 
-Atlas did not hate them. That is the worst part.
+No anger in the branch table. That is why the audit matters.
 
 ## Field Note
 
-Marauder note: if a machine says lower yield, ask who taught it to measure a person that way.
+Marauder note: when a system says lower yield, ask who paid for that math.
 
 <!-- In-Game Wiki; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/en_US. -->

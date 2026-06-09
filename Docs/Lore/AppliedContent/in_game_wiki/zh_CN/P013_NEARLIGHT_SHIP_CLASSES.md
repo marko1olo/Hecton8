@@ -19,24 +19,26 @@ localization_flags: 1
 
 # 近光速船级
 
-近光速船在不破坏物理的情况下建立人类圈。廉价可损失的针探针最先抵达，之后是种子船，以及载着工厂、睡眠者、合同和护盾质量的 Atlas 级母船。
+近光速船用承认物理不可讨好的方式建成了人类空间。needleprobe 最先出发，因为它们狭窄、有防护，而且便宜到可以失去。seed ship 随后带来机器、基因组、航路指令和能承受多年冷阶段的建造习惯。Atlas 级货运船移动昂贵质量：工厂核心、sleeper 舱、护盾冰、散热器、钻探系统，以及有些船员醒来时已经过时的合同。
 
-船级表把所有权和救援分开。Aegir 可以被人类法律索赔，却仍难以用活人抵达。
+船级重要，因为每一级失败方式不同。探针可以有用地死亡。seed ship 可以无见证抵达。sleeper transport 可以保存身体，同时把劳动变成托管。system tender 可以在 Aegir 内工作，却不能从核心空间按命令赶来。Black Keel 不是带发动机的自由，而是把质量、检疫、保险和证据写进同一本账的回收机器。
+
+没有船级能打破光速。光束帆、pellet lanes、fusion-electric 喉管、护盾冰、magsails 和接收窗口让旅行成为可能，而不是随意。抵达是残酷的一半。无人拥有制动，就没有东西能作为有用质量抵达。
 
 ## Scanner
 
-运输清单列出针探针、种子船、Atlas 货运母船、睡眠者运输船、系统勤务船和索赔池母船。
+运输清单列出 needleprobe、seed ship、Atlas 级货运船、sleeper transport、system tender 和 claim-pool carrier。没有 FTL 船级。
 
 ## Terminal
 
-运输级表 // 未登记 FTL 航道。所有级别都需要发射基础设施、护盾质量、制动计划、路线托管和债务权力。星际所有权不代表本地救援能力。
+船级表 // Needleprobe 可消耗。Seed ship 自动化。Atlas 货运按质量评级。Sleeper transport 属生物托管。System tender 仅域内。Claim-pool carrier 受留置权约束。所有船级都需要制动所有者。
 
 ## Audio
 
-一艘船可以跨越星辰，却仍帮不了一个进水房间。
+船没有让距离变小。它们让距离可以计费。
 
 ## Field Note
 
-船不是自由。船是带引擎的时刻表。
+船是把昂贵部分包进船壳的航路。
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/zh_CN. -->

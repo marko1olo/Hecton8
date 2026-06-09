@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vera Sato-Ren Return Action"
+title: "Vera Sato-Ren: terugkeeractie"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vera Sato-Ren Return Action
+# Vera Sato-Ren: terugkeeractie
 
-NL LOC HOLD: Vera Sato-Ren Return Action gives the present campaign an active Deep Reach face without breaking hard-sci-fi delay. She acts through packets, clauses, carrier custody and recovery windows.
+Vera Sato-Ren: terugkeeractie is de brug tussen Deep Reachs oude ramp en de huidige campagne van de speler. Ze vertegenwoordigt het Recovery Compliance Office in 2190, waar Deep Reach niet meer in de kamer hoeft te staan om kracht uit te oefenen. Het stuurt terugkeeractiepakketten.
 
-## Scanner
+Het pakket vraagt om coördinaten, XO-bewijs, Atlas-toegangsstatus en stilzwijgen van de aannemer binnen een bewaringsvenster. Die vorm telt. De dreiging is geen toespraak. De dreiging is timing. Als de payload herstelbaar is, kan Deep Reach redding, juridische dekking of vervoerderstoegang aanbieden. Als het bewijsrisico groeit, kan hetzelfde systeem de speler in aansprakelijkheid veranderen.
 
-NL LOC HOLD: Return-action packet. V. Sato-Ren wants recovery before rescue.
-
-## Terminal
-
-NL LOC HOLD: SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
-
-## Audio
-
-NL LOC HOLD: She does not need to threaten you. The window already does.
-
-## Field Note
-
-NL LOC HOLD: Present Deep Reach should arrive as leverage, not a villain monologue.
+Dit artikel houdt de factie geaard. Deep Reach is gevaarlijk omdat het nog steeds procedureel, solvabel en geduldig is. Het wil herstel vóór redding en bewaring vóór waarheid. Sato-Ren is de mensvormige rand van die machine.
 
 <!-- External Site; generated from P110_VERA_SATO_REN_RETURN_ACTION/nl_NL. -->

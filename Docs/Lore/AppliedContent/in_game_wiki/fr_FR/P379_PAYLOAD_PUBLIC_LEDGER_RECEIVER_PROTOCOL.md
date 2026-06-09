@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Payload Public Ledger Receiver Protocol"
+title: "Protocole récepteur registre public payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Payload Public Ledger Receiver Protocol
+# Protocole récepteur registre public payload
 
-FR LOC HOLD: The public ledger route exposes proof through delayed external custody. It can stop erasure while creating new political and corporate pressure.
+Le protocole de registre public envoie les preuves là où Deep Reach ne peut pas les posséder discrètement. Il expurge les coordonnées, scelle les hashes d'attestation, attache garde de route et digest de pondération Atlas, puis entre dans un relais retardé. L'expéditeur perd le contrôle à l'acceptation. Le paquet devient plus difficile à acheter, plus difficile à enterrer et plus lent à utiliser.
 
 ## Scanner
 
-FR LOC HOLD: Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
+Route registre public armée. Coordonnées expurgées avant relais retardé; pile de hash d'attestation et chaîne de responsabilité scellées à l'acceptation.
 
 ## Terminal
 
-FR LOC HOLD: PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
+RÉCEPTEUR PAYLOAD // VOIE REGISTRE PUBLIC. Récepteur: registre public distribué, voie Tau retardée. Accepter paquet d'incident à coordonnées expurgées, hashes d'attestation, garde de route, digest de pondération Atlas, horodatage récepteur. Rejeter paiement privé et réclamation de récupération directe. Rappel terminé à l'acceptation relais.
 
 ## Audio
 
-FR LOC HOLD: Once it leaves, it is no longer your truth. That is the point and the cost.
+Le registre a pris le paquet. Coordonnées masquées. Fenêtre de rappel fermée.
 
 ## Field Note
 
-FR LOC HOLD: Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+Note de pillard: expurge la route avant l'acceptation du relais. Après acceptation, le paquet n'est plus à toi.
 
 <!-- In-Game Wiki; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/fr_FR. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: No Clean Ending Dossier Note"
+title: "Нотатка досьє без чистої кінцівки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: No Clean Ending Dossier Note
+# Нотатка досьє без чистої кінцівки
 
-UK LOC HOLD: No Clean Ending Dossier Note defines the post-ending memory tone.
+Нотатка задає тон пам'яті після фіналу. Навіть найсильніша кінцівка залишає живий файл: урятоване, пошкоджене й ціну, що відмовляється стати охайною.
 
 ## Scanner
 
-UK LOC HOLD: Dossier note: closure denied; consequence retained.
+Нотатка досьє: закриття відхилено; наслідок збережено.
 
 ## Terminal
 
-UK LOC HOLD: DOSSIER RECORD: outcome stored. Clean closure not available under current evidence state.
+DOSSIER RECORD: результат збережено. Чисте закриття недоступне за поточного стану доказів. Борг, екологія, відповідальність і зберігання свідка лишаються активними записами.
 
 ## Audio
 
-UK LOC HOLD: You saved something. That is not the same as clearing it.
+Ти щось урятував. Це не означає, що ти це очистив.
 
 ## Field Note
 
-UA LOC HOLD: The post-ending dossier keeps the bridge open: outcome recorded, debt and evidence unresolved, no perfect victory granted.
+Постфінальне досьє тримає міст відкритим: результат записано, борг і докази не вирішено, ідеальної перемоги не надано.
 
 <!-- In-Game Wiki; generated from P300_NO_CLEAN_ENDING_DOSSIER_NOTE/uk_UA. -->

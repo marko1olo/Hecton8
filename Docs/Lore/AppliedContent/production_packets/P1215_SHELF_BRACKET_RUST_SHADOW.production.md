@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_storage_trace |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS188_FIRST_STORAGE_RACK_TRACE_ARTICLES.md |
 | Speaker | Habitat scanner, storage bracket note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter storage |
@@ -72,17 +72,17 @@ OLD LOAD LINE
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| ru_RU | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| ja_JP | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| zh_CN | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| fr_FR | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| es_ES | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| de_DE | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| pl_PL | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| uk_UA | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| ar_SA | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| id_ID | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| ko_KR | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| he_IL | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| pt_BR | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
-| nl_NL | draft_machine_or_llm | SHELF BRACKET // Rust shadow marks old load line. Support history, not strength proof. |
+| ru_RU | draft_machine_or_llm | КРОНШТЕЙН ПОЛКИ // Ржавый след отмечает старую линию нагрузки. История опоры, не доказательство прочности. |
+| ja_JP | draft_machine_or_llm | 棚ブラケット // 錆の影が古い荷重点を示す。支えの履歴であり強度証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 搁板支架 // 锈影标出旧载荷线。是支撑历史，不是强度证明。 |
+| fr_FR | draft_machine_or_llm | SUPPORT D'ETAGERE // Ombre de rouille sur ancienne ligne de charge. Historique d'appui, pas preuve de solidite. |
+| es_ES | draft_machine_or_llm | SOPORTE DE ESTANTE // Sombra de oxido marca antigua linea de carga. Historial de apoyo, no prueba de resistencia. |
+| de_DE | draft_machine_or_llm | REGALHALTER // Rostschatten markiert alte Lastlinie. Stuetzverlauf, kein Festigkeitsbeweis. |
+| pl_PL | draft_machine_or_llm | WSPORNIK POLKI // Cien rdzy znaczy dawna linie obciazenia. Historia podparcia, nie dowod wytrzymalosci. |
+| uk_UA | draft_machine_or_llm | КРОНШТЕЙН ПОЛИЦІ // Іржавий слід позначає стару лінію навантаження. Історія опори, не доказ міцності. |
+| ar_SA | draft_machine_or_llm | حامل رف // ظل صدأ يحدد خط حمل قديم. سجل دعم، لا دليل قوة. |
+| id_ID | draft_machine_or_llm | BRACKET RAK // Bayangan karat menandai garis beban lama. Riwayat penopang, bukan bukti kekuatan. |
+| ko_KR | draft_machine_or_llm | 선반 브래킷 // 녹 그림자가 예전 하중선을 표시한다. 지지 이력이지 강도 증거가 아니다. |
+| he_IL | draft_machine_or_llm | תושבת מדף // צל חלודה מסמן קו עומס ישן. היסטוריית תמיכה, לא הוכחת חוזק. |
+| pt_BR | draft_machine_or_llm | SUPORTE DE PRATELEIRA // Sombra de ferrugem marca antiga linha de carga. Historico de apoio, nao prova de resistencia. |
+| nl_NL | draft_machine_or_llm | PLANKDRAGER // Roestschaduw markeert oude lastlijn. Steungeschiedenis, geen sterktebewijs. |

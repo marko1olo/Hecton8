@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Czasy podróży pakietów sond"
+title: "Czasy lotu pakietów sond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Czasy podróży pakietów sond
+# Czasy lotu pakietów sond
 
-Czas podróży sond wyjaśnia, jak Deep Reach mogło wycenić HECTON-8, zanim mogło chronić tam ludzi. Pierwsze zapisy były wąskie, stare już przy przybyciu i od razu finansowe. Pakiet może sprawić, że roszczenie wygląda dojrzale, choć ludzki plan za nim nadal jest zgadywanką.
+Pakiety sond sprawiły, że Aegir wyglądał na możliwy do zarządzania, zanim ktokolwiek stanął pod jego wodą. Mapy seed, ślady minerałów, pasma zagrożeń i zezwolenia tras przychodziły warstwami, każda ze stemplem prawdy startowej, która już się postarzała. HECTON-8 odziedziczył te duchy. Aktualnie wyglądająca mapa mogła być dziesięcioletnim sporem w lepszym formacie.
 
 ## Scanner
 
-Pierwszymi świadkami Aegir były pakiety, nie koloniści.
+Odzyskany nagłówek: data przybycia starsza niż mapa kolonii, którą aktualizował.
 
 ## Terminal
 
-ŁAŃCUCH POMIAROWY: sondy wspierane wiązką i statki pakietowe przechodzą pierwsze, zwracają nieświeżą prawdę, ustalają matematykę hamowania i pozwalają korporacjom sprzedać trasę, zanim stanie się ludzka.
+NOTA PAKIETU SONDY: wiązki badań Ran-Aegir lecą przez etapowe odpalenia, sen, przechwycenia przekaźników i tanią cierpliwość. Pakiet może być dokładny przy starcie, przestarzały przy otwarciu i wciąż dość drogi, by stać się polityką.
 
 ## Audio
 
-Sonda zobaczyła ocean, zanim ktokolwiek miał tam grób.
+Mapa była prawdziwa, kiedy odlatywała. To był problem.
 
 ## Field Note
 
-Sonda może spędzić ludzką karierę na trasie, zanim ktoś zaryzykuje ciało.
+Sonda nie przynosi teraźniejszości. Przynosi skamielinę z telemetrią.
 
 <!-- In-Game Wiki; generated from P142_PROBE_PACKET_TRAVEL_TIMES/pl_PL. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Mark Rules"
+title: "Правила мародерських коригувальних міток"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Mark Rules
+# Правила мародерських коригувальних міток
 
-UA LOC HOLD: Marauder Correction Mark Rules make replay evidence feel touched by other claim workers without breaking canon.
+Правила мародерських коригувальних міток визначають другу людську руку на доказах колонії. Deep Reach писала категорії, щоб поховати працівників; пізніші бригади претензій писали поверх цих категорій, щоб вижити, торгуватися або попередити одне одного. Коригувальна мітка корисна лише тоді, коли змінює висновок гравця. Обведене ім'я може врятувати людину з категорії збитку. Закреслений маршрутний штамп може зробити безпечні двері підозрілими. Цінова мітка може перетворити біологічний зразок на борговий предмет. Прихована мітка свідка може захистити голосовий фрагмент, доки гравець не має правильного контексту. Мітки мають бути швидкими, практичними й втомленими, а не театральними. Це не графіті для настрою. Це робота людей, які знали, що запис брудний, але їм усе одно треба було їсти.
 
 ## Scanner
 
-UA LOC HOLD: A correction mark can rescue a name or contaminate a claim.
+Коригувальна мітка може врятувати ім'я, отруїти претензію або попередити наступного пірнальника, що офіційна категорія бреше.
 
 ## Terminal
 
-UA LOC HOLD: CORRECTION RULE: Marauder marks must change evidence interpretation, route risk or payout pressure. No empty graffiti.
+CORRECTION RULE: мародерські мітки мають змінювати тлумачення доказу, ризик маршруту або тиск виплати. Чинні мітки зберігають ім'я працівника, оскаржують страхову категорію, попереджають маршрут, оцінюють зразок, ховають свідка або позначають борг. Порожні графіті ламають ланцюг доказів.
 
 ## Audio
 
-UA LOC HOLD: Somebody came before you and still failed to leave clean.
+Хтось прийшов до тебе і все одно не зміг піти чисто.
 
 ## Field Note
 
-UA LOC HOLD: Marks: preserve name, challenge category, warn route, price sample, hide witness, mark debt. Keep handwriting functional.
+Мітки: зберегти ім'я, оскаржити категорію, попередити маршрут, оцінити зразок, сховати свідка, позначити борг. Почерк має змінювати прочитання, а не прикрашати предмет.
 
 <!-- In-Game Wiki; generated from P214_MARAUDER_CORRECTION_MARK_RULES/uk_UA. -->

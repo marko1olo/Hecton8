@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "دليل سلم كثافة وادي الملح"
+title: "دليل سلم كثافة وادي المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# دليل سلم كثافة وادي الملح
+# دليل سلم كثافة وادي المحلول الملحي
 
-تجعل أودية brine العمق ماديا. تعلم طبقات الكثافة، وحدود الهيكل، وفشل الضغط، وresource pockets قبل فتح المسارات الأدنى.
+تجعل وديان المحلول الملحي العمق شيئا ماديا. طبقات الكثافة، والطمي المعلق، وجيوب seep الباردة، ومناطق عمى الأجهزة تعلم حدود البدن قبل فتح الطرق السفلى. الطريق إلى الأسفل ليس سلما في الصخر. إنه سلم من سوائل تختلف حول مكان الجسد.
 
 ## Scanner
 

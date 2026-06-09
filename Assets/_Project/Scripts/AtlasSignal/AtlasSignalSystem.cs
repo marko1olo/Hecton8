@@ -26,6 +26,7 @@ using Conditional = System.Diagnostics.ConditionalAttribute;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
@@ -137,6 +138,7 @@ namespace Hecton8.AtlasSignal
         private ILocalizationTextReadModel _localization;
         private ISaveService _saveService;
         private ISaveService _registeredSaveService;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private int _revealNotificationMissCount;
 
         private const int FormalDetectionRevealStage = 2;
@@ -587,7 +589,36 @@ namespace Hecton8.AtlasSignal
             }
 
             double absoluteY = playerAup.ToAbsoluteDouble3().y;
-            return math.max(0f, (float)(DefaultSeaLevelAupY - absoluteY));
+            return math.max(0f, (float)(ResolveCurrentSeaLevelAupY() - absoluteY));
+        }
+
+        private double ResolveCurrentSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return DefaultSeaLevelAupY;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private float CalculateRawStrength(in AbsoluteUniversePosition playerAup, in AbsoluteUniversePosition coreAup)
@@ -786,6 +817,7 @@ namespace Hecton8.AtlasSignal
             CacheAudioLogSystem(GlobalRegistry.AudioLogRuntime);
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _saveService = Hecton8.Core.GlobalRegistry.Save;
+            _oceanKinematicsService = Hecton8.Core.GlobalRegistry.OceanKinematics;
         }
 
         private void ClearRuntimeDependencies()
@@ -797,6 +829,7 @@ namespace Hecton8.AtlasSignal
             _audioLogs = null;
             _localization = null;
             _saveService = null;
+            _oceanKinematicsService = null;
         }
 
         private void CacheAudioLogSystem(IAudioLogRuntime audioLogSystem)
@@ -872,6 +905,9 @@ namespace Hecton8.AtlasSignal
                     TryUnregisterSaveParticipant();
                     _saveService = currentService as ISaveService;
                     TryRegisterSaveParticipant();
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregister();

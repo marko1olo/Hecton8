@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Basin Payload Act"
+title: "Atlas Basin Payload Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Basin Payload Act
+# Atlas Basin Payload Gate
 
-Final HECTON-8 choices are built around custody and consequence: sale, severance, quarantine, public ledger or refusal.
+The Atlas basin is where the route stops asking what happened and starts asking who gets the usable packet. The evidence chain, basin vector, salvage class and proof hash cannot all remain untouched. A receiver must be chosen, denied or replaced by a local hold.
 
-## Scanner
-
-Act gate: Atlas basin. Every ending is a receiver and custody decision.
-
-## Terminal
-
-PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
-
-## Audio
-
-The last question is not what happened. It is who you send it to.
-
-## Field Note
-
-Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+That is the final pressure: no route cleans the crime scene. Coordinate sale pays and exposes the basin. Severance cuts return paths and kills useful structure. Quarantine preserves and holds. Public ledger publishes without the map. Blind return refuses everyone and risks losing the packet. The campaign ends with custody, not comfort.
 
 <!-- External Site; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/en_US. -->

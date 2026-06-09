@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: High Custody Sample Contract Seed"
+title: "זרע חוזה דגימה במשמורת גבוהה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: High Custody Sample Contract Seed
+# זרע חוזה דגימה במשמורת גבוהה
 
-HE LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+דגימה במשמורת גבוהה מתחילה במחיר טוב יותר ובקופסה גרועה יותר. הלוח מסמן דגימות מסוימות כמאושרות מקלט: גרגרי blue debt, פתיתי רקמה-ברזל, תמלחת חתומה, חבילות מסנן ופסולת צמיחה שעדיין נושאת הקשר מסלול. כל פריט צריך מכל, בדיקת מסה, מצב חותם ותג משמורת לפני שהוא נעשה בר תשלום.
 
-## Scanner
-
-HE LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-HE LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-HE LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-HE LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+הלחץ רגיל ומכוער. דגימה כבדה מאטה טיפוס. חותם סדוק יכול להפוך תשלום לעיכוב הסגר. ארון נקי מלא יכול לאלץ את המפעיל לבחור בין חבילת ראיה, חלק תיקון וחומר מאושר. החוזה משלם יותר כי הוא הופך בעלות למערכת נושאת עומס.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/he_IL. -->

@@ -19,22 +19,26 @@ localization_flags: 1
 
 # Catatan Spesialis Sistem Lapangan
 
-Catatan ini menjelaskan kompetensi awal operator tanpa menjadikannya saksi terpilih. Deep Reach melatihnya di sekitar pompa, rating segel, ruang relay, kartu bypass, antrean evakuasi, dan bahasa route-safe. Sistem lama menolak namanya, tetapi masih membocorkan prosedur yang akrab. Rasa bersalah bermula sebagai pengenalan: urutan pengurasan, rating klem, frasa penahanan yang terlalu bersih, dan ruangan yang gagal dalam urutan yang diajarkan untuk dicegah.
+Catatan field systems menjelaskan kompetensi tanpa mengubah operator menjadi komandan rahasia. Deep Reach melatih pekerjaan ini di sekitar pompa, rating segel, kartu bypass, ruang relai, antrean evakuasi, dan sertifikasi route-safe. Itu kerja infrastruktur dengan cukup akses untuk mengenali rute yang dikubur.
+
+Setelah dicabut, kredensial berhenti membuka pintu aman. Pelatihan tidak hilang. Perintah drainase, rating clamp, kolom hitung manual yang disegel, atau frasa hold yang disanitasi masih terbaca seperti pekerjaan yang dulu dipercaya. Karena itu mesin tenggelam menjadi bukti, bukan latar: operator bisa melihat di mana proses keselamatan dibengkokkan sampai pengabaian tampak selesai.
+
+Catatan ini menjaga latar tetap sempit. Tidak ada otoritas komando. Tidak ada pengakuan bersih. Tidak ada status penumpang pahlawan. Hanya mantan pekerja sistem Deep Reach yang bisa membaca mesin yang mengeluarkan orang dari hitungan.
 
 ## Scanner
 
-Kredensial sistem lapangan lama. Bukan staf komando. Pekerja infrastruktur dengan akses cukup untuk mengenali di mana sebuah rute dikubur.
+KREDENSIAL FIELD SYSTEMS // Infrastruktur evakuasi, sertifikasi route-safe, akses ruang pompa. Izin komando tidak ada; memori prosedur masih berguna.
 
 ## Terminal
 
-JEJAK PERSONEL: sistem lapangan, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah tinjauan kebisuan Aegir. Cache prosedur masih cocok dengan urutan operator.
+PERSONNEL TRACE: spesialis field systems, infrastruktur evakuasi, sertifikasi route-safe. Izin dicabut setelah Aegir signal review. Cache prosedur masih cocok dengan urutan operator.
 
 ## Audio
 
-Kamu tidak pernah menandatangani kebohongan itu. Kamu tahu tata bahasa yang membuatnya lolos inspeksi.
+Kau tidak pernah menandatangani kebohongan. Kau tahu tata bahasa yang membuatnya lolos inspeksi.
 
 ## Field Note
 
-Lencana itu berhenti membuka pintu. Ia tidak menghapus urutan kegagalan.
+Lencana berhenti membuka pintu. Ia tidak menghapus urutan kegagalan.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/id_ID. -->

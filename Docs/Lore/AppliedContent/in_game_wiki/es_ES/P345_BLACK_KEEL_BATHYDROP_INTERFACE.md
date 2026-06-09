@@ -35,6 +35,6 @@ No perdiste toda la nave. Perdiste la única cadena que hace que la nave importe
 
 ## Field Note
 
-Registro de escape inicial: el portador está presente, pero la cadena entre jugador, mar, superficie y órbita está rota en piezas con nombre.
+Registro de escape inicial: el portador está presente, pero la cadena entre traje, mar, superficie y órbita está rota en piezas con nombre.
 
 <!-- In-Game Wiki; generated from P345_BLACK_KEEL_BATHYDROP_INTERFACE/es_ES. -->

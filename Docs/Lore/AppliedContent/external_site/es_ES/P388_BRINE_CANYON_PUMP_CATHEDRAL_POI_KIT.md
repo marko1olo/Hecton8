@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit de pruebas de la catedral de bombas del cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit de pruebas de la catedral de bombas del cañón de salmuera
 
-ES LOC HOLD: The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+La catedral de bombas da trabajo a la escala de media profundidad. El operador debe cruzar pasarelas, estabilizar un bolsillo de salmuera, leer vidrio de densidad y comparar un reloj de retención de ruta con un libro de cola obrera. Ningún objeto es decoración; cada uno cambia si la demora parece clima, negligencia o protección de reclamación.
 
-## Scanner
-
-ES LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-ES LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-ES LOC HOLD: The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-ES LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+La prueba se mantiene más fuerte cuando respeta al océano. La Gran Marea rompió muros y movió agua. La sala no niega eso. Muestra lo que hizo el horario alrededor de la inundación: margen aceptado, arranque tardío de bomba, ruta retenida, cola saturada. El POI se vuelve hito porque la maquinaria aún recuerda el orden del trabajo.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/es_ES. -->

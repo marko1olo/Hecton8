@@ -26,7 +26,7 @@ REQUIRED_COLUMNS = (
     "RejectAs",
     "NextOwner",
 )
-EXPECTED_ROW_COUNT = 35
+EXPECTED_ROW_COUNT = 37
 EXPECTED_REFERENCE_COUNT = 15
 REQUIRED_ARTIFACTS = {
     "Docs/AssetAudit/ContactSheets/mandatory_visual_references_current_20260605.png": (
@@ -59,12 +59,26 @@ REQUIRED_ARTIFACTS = {
         "STATIC_DOC",
         "BLOCKED_CHANNEL_SEMANTICS",
     ),
+    "Docs/GeneratedAssets/AegirGasGiantProof/AegirGasGiantProofContactSheet_20260608.png": (
+        "generated_contact_sheet",
+        "aegir_gas_giant",
+        "STATIC_IMAGE_QA",
+        "PENDING_VERIFICATION",
+    ),
+    "Docs/GeneratedAssets/AegirGasGiantProof/AegirGasGiantProofContactSheet_20260608.json": (
+        "generated_manifest",
+        "aegir_gas_giant",
+        "STATIC_DOC",
+        "PENDING_VERIFICATION",
+    ),
 }
 COMPANION_TERMS = (
     "This index is a map of existing proof-adjacent artifacts. It is not product acceptance.",
     "mandatory_visual_references_current_20260605.png",
     "h8_1914_surface_crest_recovery_probe.png",
     "Batch31_PromotionPrep_contact_sheet.png",
+    "AegirGasGiantProofContactSheet_20260608.png",
+    "AegirGasGiantProofContactSheet_20260608.json",
     "Final status: `PENDING VERIFICATION`.",
 )
 BATCH31_BLOCKER_TERMS = (

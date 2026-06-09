@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Locker Prop Variant Matrix
 
-Locker Prop Variant Matrix keeps worker evidence physical and scan-readable.
+The Locker Prop Variant Matrix keeps worker evidence physical. A good locker tells the player what the worker did, where they were allowed to go, and what the colony or later salvagers tried to remove. Tool wear points to crew family. A route tag points to doors, lifts, suits, or crawler bays. Pressure tape and shift stickers show ordinary maintenance under abnormal risk. Payroll erasure scars and Marauder preservation marks show the second life of the evidence, after Deep Reach tried to turn a person into a cost line. The result should feel intimate without becoming decorative clutter.
 
 ## Scanner
 
-A locker should show work, route access and what got erased.
+A locker should show work, route access, and what somebody tried to erase. Keepsakes are allowed only after the job is readable.
 
 ## Terminal
 
-LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: every authored locker needs three readable clues: job, route, and damage. Decorative memory is secondary. A locker can hold a family token or private joke, but only after a tool, permission trace, or erasure scar tells the player how this person touched the colony.
 
 ## Audio
 

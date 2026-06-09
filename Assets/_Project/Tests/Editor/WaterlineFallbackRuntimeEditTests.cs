@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -17,11 +18,13 @@ namespace Hecton8.Tests.Editor
                 "Fluids",
                 "EmergencyMockOceanKinematicsAdapter.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultSeaLevel = 14.02f;"));
+            Assert.That(source, Does.Contain("using Hecton8.World;"));
+            Assert.That(source, Does.Contain("private const float DefaultSeaLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("GenerateEmergencyMockOceanAdapter(float seaLevel = DefaultSeaLevel)"));
             Assert.That(source, Does.Contain("_seaLevel = ResolveSeaLevel(seaLevel);"));
             Assert.That(source, Does.Contain("private static float ResolveSeaLevel(float seaLevel)"));
-            Assert.That(source, Does.Contain("math.abs(seaLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(seaLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Not.Contain("math.abs(seaLevel) > 0.0001f"));
             Assert.That(source, Does.Not.Contain("GenerateEmergencyMockOceanAdapter(float seaLevel = 0f)"));
             Assert.That(source, Does.Not.Contain("math.select(0f, seaLevel"));
         }
@@ -37,13 +40,15 @@ namespace Hecton8.Tests.Editor
                 "WaterOptics",
                 "WaterOpticsRuntime.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultOceanSurfaceWorldY = 14.02f;"));
+            Assert.That(source, Does.Contain("private const float DefaultOceanSurfaceWorldY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("private float _oceanSurfaceWorldY = DefaultOceanSurfaceWorldY;"));
             Assert.That(source, Does.Contain("_oceanSurfaceWorldY = SanitizeOceanSurfaceWorldY(oceanSurfaceWorldY);"));
             Assert.That(source, Does.Contain("math.isfinite(localSurfaceY) ? localSurfaceY : DefaultOceanSurfaceWorldY"));
             Assert.That(source, Does.Contain("float surfaceWorldY = SanitizeOceanSurfaceWorldY(_oceanSurfaceWorldY);"));
+            Assert.That(source, Does.Contain("return SanitizeCrestOceanSurfaceWorldY(oceanKinematics.SeaLevel);"));
+            Assert.That(source, Does.Contain("private static float SanitizeCrestOceanSurfaceWorldY(float value)"));
             Assert.That(source, Does.Contain("private static float SanitizeOceanSurfaceWorldY(float value)"));
-            Assert.That(source, Does.Contain("math.abs(value) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Not.Contain("[SerializeField] private float _oceanSurfaceWorldY;"));
             Assert.That(source, Does.Not.Contain("math.isfinite(localSurfaceY) ? localSurfaceY : 0f"));
         }
@@ -77,6 +82,17 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("private const float DefaultWaterLevelY = 14.02f;"));
             Assert.That(source, Does.Contain("_cachedWaterLevelBaseY = DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("_cachedCurrentWaterLevelY = DefaultWaterLevelY;"));
+            Assert.That(source, Does.Contain("ResolveCelestialSkyDirectionReadModel"));
+            Assert.That(source, Does.Contain("ResolveCelestialRuntimeSnapshotReadModel"));
+            Assert.That(source, Does.Contain("CacheCelestialSkyDirectionReadModel(currentService as ICelestialSkyDirectionReadModel)"));
+            Assert.That(source, Does.Contain("CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel)"));
+            Assert.That(source, Does.Contain("IsCelestialSkyDirectionReadModelUsable"));
+            Assert.That(source, Does.Contain("IsCelestialRuntimeSnapshotReadModelUsable"));
+            Assert.That(source, Does.Contain("readModel is Behaviour behaviour"));
+            Assert.That(source, Does.Contain("_celestialEngineRuntime = null;"));
+            Assert.That(source, Does.Contain("_celestialSnapshotReadModel = null;"));
+            Assert.That(source, Does.Contain("ClearCachedCelestialRuntimeSnapshot();"));
+            Assert.That(source, Does.Contain("IsCelestialRuntimeSnapshotReadModelUsable(fallback) ? fallback : null"));
             Assert.That(source, Does.Contain("float resolvedBaseWaterLevelY = ResolveWaterLevelY(baseWaterLevelY);"));
             Assert.That(source, Does.Contain("math.abs(_cachedWaterLevelBaseY - resolvedBaseWaterLevelY) <= 0.0001f"));
             Assert.That(source, Does.Contain("float resolvedWaterLevelY = resolvedBaseWaterLevelY;"));
@@ -85,6 +101,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevelY) > 0.0001f"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevelY) <= 1000f"));
             Assert.That(source, Does.Not.Contain("_cachedCurrentWaterLevelY = 0f;"));
+            Assert.That(source, Does.Not.Contain("_celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;"));
             Assert.That(source, Does.Not.Contain("float resolvedWaterLevelY = baseWaterLevelY;"));
             Assert.That(source, Does.Not.Contain("_cachedWaterLevelBaseY = baseWaterLevelY;"));
         }
@@ -104,8 +121,10 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ExternalWaterlineAup = ResolveExternalWaterlineAup()"));
             Assert.That(source, Does.Contain("new double3(0d, ResolveExternalWaterlineRuntimeY(externalWaterlineRuntimeY), 0d)"));
             Assert.That(source, Does.Contain("private static float ResolveExternalWaterlineRuntimeY(float candidateWaterlineY)"));
+            Assert.That(source, Does.Contain("TrySanitizeOceanExternalWaterlineRuntimeY(oceanKinematics.SeaLevel, out waterlineY)"));
+            Assert.That(source, Does.Contain("private static bool TrySanitizeOceanExternalWaterlineRuntimeY(float candidateWaterlineY, out float waterlineY)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterlineY) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterlineY) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterlineY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain(": DefaultExternalWaterlineRuntimeY;"));
             Assert.That(source, Does.Not.Contain("[SerializeField, Min(0f)] private float externalWaterlineRuntimeY = 0f;"));
             Assert.That(source, Does.Not.Contain("new double3(0d, externalWaterlineRuntimeY, 0d)"));
@@ -163,7 +182,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void HydrodynamicKccRuntime_RejectsStaleZeroWaterlineInMathAndTuning()
+        public void HydrodynamicKccRuntime_AllowsOceanZeroWaterlineButRejectsStaleFallbackZero()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -173,13 +192,23 @@ namespace Hecton8.Tests.Editor
                 "KCC",
                 "HydrodynamicKccRuntime.cs");
 
-            Assert.That(source, Does.Contain("public const float DefaultWaterSurfaceY = 14.02f;"));
+            Assert.That(source, Does.Contain("public const float DefaultWaterSurfaceY = Hecton8.World.WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("public static float ResolveWaterSurfaceY(float candidateWaterSurfaceY)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) > MinDenominator"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) <= 1000f"));
-            Assert.That(source, Does.Contain("float waterSurfaceY = HydrodynamicKccMath.ResolveWaterSurfaceY(Tuning.WaterSurfaceY);"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Contain("public static float ResolveRuntimeWaterSurfaceY(float candidateWaterSurfaceY)"));
+            Assert.That(source, Does.Contain("float waterSurfaceY = HydrodynamicKccMath.ResolveRuntimeWaterSurfaceY(Tuning.WaterSurfaceY);"));
             Assert.That(source, Does.Contain("internal const float DefaultWaterSurfaceY = HydrodynamicKccMath.DefaultWaterSurfaceY;"));
             Assert.That(source, Does.Contain("tuning.WaterSurfaceY = HydrodynamicKccMath.ResolveWaterSurfaceY(tuning.WaterSurfaceY);"));
+            Assert.That(source, Does.Contain("private IHectonOceanKinematicsService _oceanKinematicsService;"));
+            Assert.That(source, Does.Contain("CacheOceanKinematicsRuntimeCold();"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = GlobalRegistry.OceanKinematics;"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = null;"));
+            Assert.That(source, Does.Contain("serviceSlot == GlobalRegistryServiceSlot.OceanKinematics"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = currentService as IHectonOceanKinematicsService;"));
+            Assert.That(source, Does.Contain("tuning.WaterSurfaceY = ResolveRuntimeWaterSurfaceY();"));
+            Assert.That(source, Does.Contain("WaterSurfaceY = ResolveRuntimeWaterSurfaceY(),"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out waterSurfaceY)"));
             Assert.That(source, Does.Not.Contain("float waterSurfaceY = math.isfinite(Tuning.WaterSurfaceY) ? Tuning.WaterSurfaceY"));
             Assert.That(source, Does.Not.Contain("tuning.WaterSurfaceY = math.isfinite(tuning.WaterSurfaceY) ? tuning.WaterSurfaceY : DefaultWaterSurfaceY;"));
         }
@@ -264,17 +293,19 @@ namespace Hecton8.Tests.Editor
                 "OceanSinglePassRuntime.cs");
 
             Assert.That(source, Does.Contain("private float ResolveWaterSurfaceAupY()"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceAupY(oceanKinematics.SeaLevel, out waterSurfaceY)"));
             Assert.That(source, Does.Contain("TryResolveWaterSurfaceAupY(terrainProvider.WaterSurfaceLevel, out float terrainWaterSurfaceY)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterSurfaceAupY(float candidateWaterSurfaceY, out float waterSurfaceY)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterSurfaceAupY(float candidateWaterSurfaceY, out float waterSurfaceY)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterSurfaceY = OceanSinglePassConstants.DefaultSeaLevelMeters;"));
             Assert.That(source, Does.Not.Contain("terrainProvider != null && math.isfinite(terrainProvider.WaterSurfaceLevel)"));
             Assert.That(source, Does.Not.Contain("return terrainProvider.WaterSurfaceLevel;"));
         }
 
         [Test]
-        public void UnderwaterVisuals_RejectsStaleZeroVisualWaterlineFallback()
+        public void UnderwaterVisuals_AllowsRuntimeZeroWaterlineButRejectsStaleFallbackZero()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -282,19 +313,24 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "HectonUnderwaterVisuals.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterLevelFallback = 14.02f;"));
+            Assert.That(source, Does.Contain("private const float DefaultWaterLevelFallback = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("[SerializeField] private float waterLevelFallback = DefaultWaterLevelFallback;"));
             Assert.That(source, Does.Contain("SetWaterLevelFallback(float y) => waterLevelFallback = SanitizeVisualWaterLevel(y, DefaultWaterLevelFallback);"));
             Assert.That(source, Does.Contain("float terrainWaterLevel = SanitizeVisualWaterLevel(waterLevelFallback, DefaultWaterLevelFallback);"));
             Assert.That(source, Does.Contain("float waterLevel = SanitizeVisualWaterLevel(waterLevelFallback, DefaultWaterLevelFallback);"));
-            Assert.That(source, Does.Contain("TryResolveVisualWaterLevel(atmosphereSeaLevel, out float resolvedAtmosphereSeaLevel)"));
+            Assert.That(source, Does.Contain("TryResolveRuntimeVisualWaterLevel(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY)"));
+            Assert.That(source, Does.Contain("TryResolveRuntimeVisualWaterLevel(oceanKinematics.SeaLevel, out float oceanSeaLevel)"));
+            Assert.That(source, Does.Contain("TryResolveRuntimeVisualWaterLevel(atmosphereSeaLevel, out float resolvedAtmosphereSeaLevel)"));
             Assert.That(source, Does.Contain("TryResolveVisualWaterLevel(terrainRuntime.WaterSurfaceLevel, out float mapMagicWaterLevel)"));
-            Assert.That(source, Does.Contain("TryResolveVisualWaterLevel(fluidWaterLevel, out float resolvedFluidWaterLevel)"));
+            Assert.That(source, Does.Contain("TryResolveRuntimeVisualWaterLevel(fluidWaterLevel, out float resolvedFluidWaterLevel)"));
             Assert.That(source, Does.Contain("math.abs(resolvedFluidWaterLevel - terrainWaterLevel) <= 128f"));
+            Assert.That(source, Does.Contain("private static bool TryResolveRuntimeVisualWaterLevel(float waterLevel, out float resolvedWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveVisualWaterLevel(float candidateWaterLevel, out float waterLevel)"));
+            Assert.That(source, Does.Contain("math.abs(waterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = DefaultWaterLevelFallback;"));
+            Assert.That(source, Does.Not.Contain("TryResolveOceanVisualWaterLevel"));
             Assert.That(source, Does.Not.Contain("if (math.isfinite(atmosphereSeaLevel))"));
             Assert.That(source, Does.Not.Contain("return math.isfinite(fallbackWaterLevel) ? fallbackWaterLevel : 0f;"));
             Assert.That(source, Does.Not.Contain("[SerializeField] private float waterLevelFallback = 14.02f;"));
@@ -312,11 +348,12 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("private const float DefaultVegetationWaterLevel = 14.02f;"));
             Assert.That(source, Does.Contain("TryResolveVegetationWaterLevel(mapMagicRuntime.WaterSurfaceLevel, out float mapMagicWaterLevel)"));
-            Assert.That(source, Does.Contain("TryResolveVegetationWaterLevel(_oceanKinematicsProvider.SeaLevel, out float oceanWaterLevel)"));
+            Assert.That(source, Does.Contain("TryResolveOceanVegetationWaterLevel(_oceanKinematicsProvider.SeaLevel, out float oceanWaterLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanVegetationWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("TryResolveVegetationWaterLevel(fluidReadModel.WaterLevel, out float fluidWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveVegetationWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = DefaultVegetationWaterLevel;"));
             Assert.That(source, Does.Not.Contain("math.isfinite(mapMagicRuntime.WaterSurfaceLevel)"));
             Assert.That(source, Does.Not.Contain("math.isfinite(_oceanKinematicsProvider.SeaLevel)"));
@@ -334,10 +371,12 @@ namespace Hecton8.Tests.Editor
                 "EcosystemDirector.cs");
 
             Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = 14.02f;"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterSurfaceLevel(bridge.WaterSurfaceLevel, out float bridgeWaterSurfaceLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterSurfaceLevel = DefaultWaterSurfaceLevelY;"));
             Assert.That(source, Does.Not.Contain("return bridge.WaterSurfaceLevel;"));
         }
@@ -354,10 +393,12 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("private const float DefaultWaterLevel = 14.02f;"));
             Assert.That(source, Does.Contain("private float waterLevel = DefaultWaterLevel;"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out resolvedWaterLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(bridgedWaterLevel, out float resolvedWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = DefaultWaterLevel;"));
             Assert.That(source, Does.Not.Contain("if (!math.isfinite(bridgedWaterLevel))"));
         }
@@ -374,10 +415,12 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("private const float DefaultWaterLevel = 14.02f;"));
             Assert.That(source, Does.Contain("private float waterLevel = DefaultWaterLevel;"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out resolvedWaterLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(bridgedWaterLevel, out float resolvedWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = TryResolveWaterLevel(waterLevel, out float resolvedWaterLevel)"));
             Assert.That(source, Does.Contain("waterLevel = DefaultWaterLevel;"));
             Assert.That(source, Does.Not.Contain("private float waterLevel = 14.02f;"));
@@ -397,10 +440,12 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = 14.02f;"));
             Assert.That(source, Does.Contain("private float ResolveWaterSurfaceLevel()"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterSurfaceLevel(bridge.WaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterSurfaceLevel = DefaultWaterSurfaceLevelY;"));
             Assert.That(source, Does.Not.Contain("float waterSurface = mapMagicBridge.WaterSurfaceLevel;"));
             Assert.That(source, Does.Not.Contain("if (!math.isfinite(waterSurface))"));
@@ -418,12 +463,14 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("private const float DefaultWaterLevel = 14.02f;"));
             Assert.That(source, Does.Contain("private float ResolveMaskWaterLevel(float fallbackY)"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out waterLevel)"));
+            Assert.That(source, Does.Contain("private static bool TryResolveOceanWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(mapMagicVegetationBridge.ActiveSurfaceDrawBounds.center.y, out float vegetationWaterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(terrainBridge.WaterSurfaceLevel, out float terrainWaterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(fallbackY, out float fallbackWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = DefaultWaterLevel;"));
             Assert.That(source, Does.Not.Contain("terrainBridge != null && math.isfinite(terrainBridge.WaterSurfaceLevel)"));
             Assert.That(source, Does.Not.Contain("return terrainBridge.WaterSurfaceLevel;"));
@@ -431,7 +478,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void HectonPlayerSpawner_RejectsStaleZeroWaterlineBeforeSpawnWindowRefresh()
+        public void HectonPlayerSpawner_UsesCrestWaterlineBeforeTerrainFallbackAndStillRejectsTerrainZero()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -439,10 +486,18 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "HectonPlayerSpawner.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterLevel = 14.02f;"));
-            Assert.That(source, Does.Contain("TryResolveWaterLevel(terrainBridge.WaterSurfaceLevel, out float terrainWaterLevel)"));
+            Assert.That(source, Does.Contain("private const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
+            Assert.That(source, Does.Contain("RefreshWaterSurfaceFromRuntimeWaterline();"));
+            Assert.That(source, Does.Contain("private void RefreshWaterSurfaceFromRuntimeWaterline()"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterLevel(out float resolvedWaterLevel)"));
+            Assert.That(source, Does.Contain("TryResolveTerrainBridgeWaterLevel(out resolvedWaterLevel)"));
+            Assert.That(source, Does.Contain("IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;"));
+            Assert.That(source, Does.Contain("oceanKinematics.IsAvailable"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterLevel(oceanKinematics.SeaLevel, out waterLevel)"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Contain("TryResolveWaterLevel(terrainBridge.WaterSurfaceLevel, out waterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(waterLevel, out float resolvedPreviousWaterLevel)"));
-            Assert.That(source, Does.Contain("waterLevel = terrainWaterLevel;"));
+            Assert.That(source, Does.Contain("waterLevel = resolvedWaterLevel;"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
@@ -459,17 +514,23 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "WorldStreamingDirector.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = 14.02f;"));
+            Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
+            Assert.That(source, Does.Contain("private IHectonOceanKinematicsService _oceanKinematicsService;"));
+            Assert.That(source, Does.Contain("case GlobalRegistryServiceSlot.OceanKinematics:"));
             Assert.That(source, Does.Contain("depth = Mathf.Max(0f, ResolveWaterSurfaceLevel() - playerTransform.position.y);"));
             Assert.That(source, Does.Contain("private float ResolveWaterSurfaceLevel()"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("oceanKinematics.IsAvailable"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= 1000f"));
+            Assert.That(source, Does.Not.Contain("math.abs(candidateWaterSurfaceLevel) <= 1000f"));
             Assert.That(source, Does.Not.Contain("mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y"));
         }
 
         [Test]
-        public void FaunaDirector_RejectsStaleZeroWaterlineBeforeSpawnHeightValidation()
+        public void FaunaDirector_UsesCrestWaterlineBeforeTerrainFallbackAndStillRejectsTerrainZero()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -477,14 +538,29 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "FaunaDirector.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = 14.02f;"));
+            Assert.That(source, Does.Contain("private IHectonOceanKinematicsService _oceanKinematicsService;"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = GlobalRegistry.OceanKinematics;"));
+            Assert.That(source, Does.Contain("case GlobalRegistryServiceSlot.OceanKinematics:"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = currentService as IHectonOceanKinematicsService;"));
+            Assert.That(source, Does.Contain("_oceanKinematicsService = null;"));
             Assert.That(source, Does.Contain("float waterSurfaceLevel = ResolveWaterSurfaceLevel(bridge);"));
             Assert.That(source, Does.Contain("if (spawnY >= waterSurfaceLevel || spawnY <= bottomHeight)"));
-            Assert.That(source, Does.Contain("private static float ResolveWaterSurfaceLevel(ITerrainProvider terrainProvider)"));
-            Assert.That(source, Does.Contain("TryResolveWaterSurfaceLevel(terrainProvider.WaterSurfaceLevel, out float waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("private float ResolveWaterSurfaceLevel(ITerrainProvider terrainProvider)"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("TryResolveTerrainWaterSurfaceLevel(terrainProvider.WaterSurfaceLevel, out float terrainWaterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("oceanKinematics.IsAvailable"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Contain("private static bool TryResolveTerrainWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) > 0.0001f"));
             Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceLevel) <= 1000f"));
             Assert.That(source, Does.Not.Contain("spawnY >= bridge.WaterSurfaceLevel"));
+
+            int oceanIndex = source.IndexOf("TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel)", StringComparison.Ordinal);
+            int terrainIndex = source.IndexOf("TryResolveTerrainWaterSurfaceLevel(terrainProvider.WaterSurfaceLevel", StringComparison.Ordinal);
+            Assert.That(oceanIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(terrainIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(oceanIndex, Is.LessThan(terrainIndex));
         }
 
         [Test]
@@ -508,7 +584,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void OceanAdapterVaultRoute_RejectsStaleZeroWaterlineBeforePublishingGlobalDto()
+        public void OceanAdapterVaultRoute_AllowsCalibratedZeroWaterlineBeforePublishingGlobalDto()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -517,17 +593,45 @@ namespace Hecton8.Tests.Editor
                 "Environment",
                 "Fluids",
                 "OceanAdapterVaultRoute.cs");
+            string asmdef = ReadProjectFile(
+                "Assets",
+                "_Project",
+                "Scripts",
+                "Environment",
+                "Fluids",
+                "Hecton8.Environment.Fluids.asmdef");
 
-            Assert.That(source, Does.Contain("public const float DefaultWaterLevel = 14.02f;"));
+            Assert.That(source, Does.Contain("using Hecton8.World;"));
+            Assert.That(source, Does.Contain("public const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("row.WaterLevel = ResolveWaterLevel(waterLevel);"));
             Assert.That(source, Does.Contain("private static float ResolveWaterLevel(float candidateWaterLevel)"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Not.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
             Assert.That(source, Does.Not.Contain("row.WaterLevel = math.select(0f, waterLevel, math.isfinite(waterLevel));"));
+            Assert.That(asmdef, Does.Contain("\"Hecton8.World.Contracts\""));
         }
 
         [Test]
-        public void HectonCrestOceanDepthCacheBootstrap_RejectsStaleZeroWaterlineBeforeDepthCacheAlignment()
+        public void HectonPlayerMovement_SanitizesOceanProviderSeaLevelBeforeFallbackSurface()
+        {
+            string source = ReadProjectFile(
+                "Assets",
+                "_Project",
+                "Scripts",
+                "HectonPlayerMovement.cs");
+
+            Assert.That(source, Does.Contain("private float ResolveOceanSeaLevel(PhysicsOceanKinematics oceanKinematics)"));
+            Assert.That(source, Does.Contain("oceanKinematics.IsAvailable"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out float waterSurfaceY)"));
+            Assert.That(source, Does.Contain("return waterSurfaceY;"));
+            Assert.That(source, Does.Contain("return _fallbackWaterSurfaceY;"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
+            Assert.That(source, Does.Not.Contain("math.abs(candidateWaterSurfaceY) <= 1000f"));
+            Assert.That(source, Does.Not.Contain("return oceanKinematics.SeaLevel;"));
+        }
+
+        [Test]
+        public void HectonCrestOceanDepthCacheBootstrap_AllowsCalibratedZeroWaterlineBeforeDepthCacheAlignment()
         {
             string source = ReadProjectFile(
                 "Assets",
@@ -537,15 +641,15 @@ namespace Hecton8.Tests.Editor
                 "Crest",
                 "HectonCrestOceanDepthCacheBootstrap.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterLevel = 14.02f;"));
+            Assert.That(source, Does.Contain("private const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(seaLevel, out baseWaterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(bridgedWaterLevel, out float resolvedBridgedWaterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(oceanRenderer.transform.position.y, out float rendererWaterLevel)"));
             Assert.That(source, Does.Contain("TryResolveWaterLevel(transform.position.y, out float ownerWaterLevel)"));
             Assert.That(source, Does.Contain("private static bool TryResolveWaterLevel(float candidateWaterLevel, out float waterLevel)"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= 1000f"));
+            Assert.That(source, Does.Contain("math.abs(candidateWaterLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("waterLevel = DefaultWaterLevel;"));
+            Assert.That(source, Does.Not.Contain("math.abs(candidateWaterLevel) > 0.0001f"));
             Assert.That(source, Does.Not.Contain("if (IsFinite(seaLevel))"));
             Assert.That(source, Does.Not.Contain("if (IsFinite(bridgedWaterLevel))"));
             Assert.That(source, Does.Not.Contain("return oceanRenderer != null ? oceanRenderer.transform.position.y : transform.position.y;"));
@@ -560,12 +664,18 @@ namespace Hecton8.Tests.Editor
                 "Scripts",
                 "ScatterBudgetController.cs");
 
-            Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = 14.02f;"));
+            Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
+            Assert.That(source, Does.Contain("private IHectonOceanKinematicsService _oceanKinematicsService;"));
+            Assert.That(source, Does.Contain("GlobalRegistryServiceSlot.OceanKinematics"));
             Assert.That(source, Does.Contain("depth = Mathf.Max(0f, ResolveWaterSurfaceLevel() - playerTransform.position.y);"));
             Assert.That(source, Does.Contain("private float ResolveWaterSurfaceLevel()"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("oceanKinematics.IsAvailable"));
+            Assert.That(source, Does.Contain("TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel)"));
+            Assert.That(source, Does.Contain("Mathf.Abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
             Assert.That(source, Does.Contain("TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel)"));
             Assert.That(source, Does.Contain("Mathf.Abs(candidateWaterSurfaceLevel) > 0.0001f"));
-            Assert.That(source, Does.Contain("Mathf.Abs(candidateWaterSurfaceLevel) <= 1000f"));
+            Assert.That(source, Does.Not.Contain("Mathf.Abs(candidateWaterSurfaceLevel) <= 1000f"));
             Assert.That(source, Does.Not.Contain("mapMagicBridge.WaterSurfaceLevel - playerTransform.position.y"));
         }
 

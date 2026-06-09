@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "Небесное окно лунной лестницы Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# Небесное окно лунной лестницы Aegir
 
-The Aegir moon ladder is route grammar, not decoration.
+Луны Aegir - не календарное украшение. Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 и Mute отмечают транспортные линии, тени реле, приливное время, риск blackout и цену transfer. Игрок читает небо как давление маршрута, а не как точную астрономическую модель.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+Игроку не нужны точные орбитальные константы, чтобы пользоваться небом. Луна за погодой все еще может означать плохой путь реле. Яркое окно может означать один чистый пакет. Соединение может означать приливную нагрузку, а не чудо. Лестница делает небо читаемым, не превращая его в лекцию.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/ru_RU. -->

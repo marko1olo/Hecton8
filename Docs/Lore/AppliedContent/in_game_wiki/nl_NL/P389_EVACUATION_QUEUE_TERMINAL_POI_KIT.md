@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Bewijskit Evacuatiewachtrijterminal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Evacuation Queue Terminal POI Kit
+# Bewijskit Evacuatiewachtrijterminal
 
-NL LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+De Evacuatiewachtrijterminal is niet waardevol omdat hij zegt dat mensen wachtten. Hij is waardevol omdat deurstatus, klokdrift, arbeidersaantal en routecapaciteit ter plekke controleerbaar botsen.
 
 ## Scanner
 
-NL LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+POI-bewijskit: de wachtrijterminal bewijst vertraging via deurstatus, klokdrift, arbeidersverschil en routecapaciteit.
 
 ## Terminal
 
-NL LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+WACHTRIJTERMINAL-KIT: routehoudlijst, quarantainevrijgavevertraging, Atlas-wegingsnotitie, arbeidersaantalverschil, salvage-conflicttag, hatchstatusstrip, badgeresidu.
 
 ## Audio
 
-NL LOC HOLD: A queue is a body count with cleaner formatting.
+Een wachtrij is een lichaamstelling met nettere opmaak.
 
 ## Field Note
 
-NL LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Marauder-notitie: wrik de hatchstrip niet los voordat het badgeresidu is gescand. Metaal betaalt minder dan de tijdstempel.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/nl_NL. -->

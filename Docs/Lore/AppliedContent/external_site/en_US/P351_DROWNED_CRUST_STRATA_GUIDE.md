@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Drowned Crust Strata Guide
 
-Drowned Crust Strata Guide makes HECTON-8's seabed feel built and broken: terrain, salvage routes and mineral samples all come from the same layered pressure history.
+HECTON-8's crust does not behave like untouched seabed. The colony cut it, heated it, sealed it, loaded it with pressure glass, and then abandoned it to an ocean that kept working after the payroll stopped. A wall can show tool marks from a service bore, a pale shelf from ice collapse, a green-black mineral band from seep flow, and a hairline seam where Atlas later found a path.
 
-## Scanner
-
-Flooded strata expose old cut marks, pressure-glass seams and mineral bands that do not fail in the same direction twice.
-
-## Terminal
-
-FIELD GUIDE: HECTON-8's drowned crust is stacked settlement rock, collapsed ice memory, pressure glass and extraction scars under moving brine. Fracture lines outrank clean surfaces.
-
-## Audio
-
-The map is not terrain. It is a stack of drownings.
-
-## Field Note
-
-If a band rings hollow, do not trust the flat face. Mark the fracture, take the sample, leave the wall holding.
+For a salvage crew, strata are navigation. A flat face may ring hollow. A pretty mineral edge may be the only thing still holding a service canyon together. Good route reading means taking the sample without teaching the wall to fall. That is why the drowned crust matters in the field: the seabed is not backdrop. It is the archive, the road, and sometimes the trap.
 
 <!-- External Site; generated from P351_DROWNED_CRUST_STRATA_GUIDE/en_US. -->

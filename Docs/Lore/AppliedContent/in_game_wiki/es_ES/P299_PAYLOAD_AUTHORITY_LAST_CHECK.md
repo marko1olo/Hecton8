@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Payload Authority Last Check"
+title: "Última comprobación de autoridad del payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Payload Authority Last Check
+# Última comprobación de autoridad del payload
 
-ES LOC HOLD: Payload Authority Last Check gives the final UI its hard question.
+La última comprobación da a la interfaz final su pregunta dura. El jugador no elige un cofre de premio; elige quién recibe masa, prueba, nombres, coordenadas y permiso para actuar.
 
 ## Scanner
 
-ES LOC HOLD: Payload check: receiver changes meaning, not only reward.
+Comprobación de payload: elegir receptor cambia propiedad, no solo recompensa.
 
 ## Terminal
 
-ES LOC HOLD: PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: seleccionar receptor, masa, custodia de pruebas, consecuencia ecológica y responsabilidad post-retorno. La elección del receptor define quién puede actuar sobre la prueba tras la salida.
 
 ## Audio
 
-ES LOC HOLD: What leaves will own what remains.
+Lo que salga será dueño de lo que quede.
 
 ## Field Note
 
-ES LOC HOLD: Use immediately before irreversible ending route selection.
+Usar justo antes de la selección irreversible de ruta final.
 
 <!-- In-Game Wiki; generated from P299_PAYLOAD_AUTHORITY_LAST_CHECK/es_ES. -->

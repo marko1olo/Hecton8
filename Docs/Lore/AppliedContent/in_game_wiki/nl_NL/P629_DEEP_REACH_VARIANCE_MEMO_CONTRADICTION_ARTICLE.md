@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Tegenstrijdigheid in Deep Reach variance-memo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Tegenstrijdigheid in Deep Reach variance-memo
 
-The memo becomes useful when physical evidence contradicts it.
+De variance-memo is op zichzelf geen bewijs. Hij wordt bruikbaar wanneer pompkamersporen, tijdstempels en accepted-margin-stempels de schone kantoortaal tegenspreken.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+TEGENSPRAAKTAG // De memo zegt variance. Het pompspoor toont late handmatige ingreep.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // Waterinbraak blijft binnen beheerde tolerantie tot return-action review. Lokale reparatiewachtrij mag niet-kritieke escalatietaal uitstellen.
 
 ## Audio
 
-Trust the room before the clean word.
+Niemand schrijft variance op een muur die nog drupt.
 
 ## Field Note
 
-Trust the wet room first.
+Als een kantoorwoord schoner is dan de kamer, geloof dan eerst de kamer.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/nl_NL. -->

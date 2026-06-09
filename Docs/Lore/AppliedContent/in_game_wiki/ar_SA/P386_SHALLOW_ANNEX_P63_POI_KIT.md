@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "عدة أدلة الملحق الضحل P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Shallow Annex P-63 POI Kit
+# عدة أدلة الملحق الضحل P-63
 
-AR LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+الملحق الضحل P-63 هو أول مكان تتقاسم فيه إجراءات النجاة وأدلة المسؤولية الطاولة نفسها. يعيد المشغل تشغيل مضخة، يغلق جيب مأوى، يقرأ ملف حادث، ويجد إشعار مسار لا يطابق الضرر خارج الغرفة.
 
 ## Scanner
 
-AR LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+عدة أدلة نقطة اهتمام: يحمل P-63 جيب مأوى يعمل، وإصلاح مضخة، وأول تناقض رسمي.
 
 ## Terminal
 
-AR LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+عدة P-63: مضخة حوض، صينية حشيات، أثر قاطع، خط بينغر، ملف حادث، إشعار مسار مختوم، خزانة جافة، مشبك تجاوز يدوي.
 
 ## Audio
 
-AR LOC HOLD: First room with air. First room with a lie.
+أول غرفة فيها هواء. أول غرفة فيها كذبة.
 
 ## Field Note
 
-AR LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+ملاحظة مارودر: أبق المضخة تعمل قبل قراءة الملف. المأوى الميت يصنع دليلا رديئا.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/ar_SA. -->

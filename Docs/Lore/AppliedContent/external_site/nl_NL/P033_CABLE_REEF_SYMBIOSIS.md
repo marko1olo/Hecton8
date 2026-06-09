@@ -19,22 +19,27 @@ localization_flags: 1
 
 # Kabelrif-symbiose
 
-Kabelrif-symbiose maakt verlaten infrastructuur tot een leesbare ecologische en industriële hybride.
+Kabelrif-symbiose is HECTON-8s waarschuwing op middeldiepte: leven kan verlaten servicelijnen werkend houden terwijl het isolatiefouten verbergt die later Atlas-reparatielogica aantrekken.
 
 ## Scanner
 
-Flora groeit op stroomstammen en signaallijnen. Het rif gebruikt koloniebekabeling als skelet.
+Kabel-wortelmat grijpt de P63-stroomstam bij drie klemringen. Signaal loopt nog onder de groene sleeve. Isolatiefout zichtbaar aan onderrand. Gevaar: drone- en grazerverkeer volgt levende stroom.
 
 ## Terminal
 
-Onderhoud: kabelwortelmatten verminderen slijtage en bewaren signaal, maar trekken drones en grazende fauna aan.
+SERVICEGEUL-NOTITIE
+Lijn: P63-stroomstam / relaispaar C
+Conditie: biologische sleeve vermindert slijtage
+Fout: oranje isolatie bloot onder onderste mat
+Verkeer: grazers en onderhoudsdrones nabij levende stroom
+Actie: continuïteit scannen voor groei wordt gesneden
 
 ## Audio
 
-Een levend rif leerde de vorm van een servicegang.
+Het rif is geen decoratie. Het houdt dat relais droog, en de drones weten dat de stroom leeft.
 
 ## Field Note
 
-De eerste versmelting is nuttig voordat ze afschuwelijk wordt.
+Strip groene groei niet alleen omdat het er verkeerd uitziet. Als het de mantel droog houdt, markeer de fout en routeer eromheen.
 
 <!-- External Site; generated from P033_CABLE_REEF_SYMBIOSIS/nl_NL. -->

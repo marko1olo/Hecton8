@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rakitan Handshake Legal Karantina"
+title: "Rangkaian Jabat Tangan Legal Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rakitan Handshake Legal Karantina
+# Rangkaian Jabat Tangan Legal Karantina
 
-Komponen pelarian terakhir sekaligus legal, medis, dan evidensial. Quarantine status, receiver identity, payload custody, dan evidence state menentukan apakah ascent menjadi penyelamatan, claim capture, atau public proof.
+Jabat tangan legal karantina adalah komponen pelarian terakhir karena HECTON-8 tidak memperlakukan kedatangan sebagai kejadian mekanis murni. Kapsul bisa memiliki ring tersegel, dudukan bermuatan, relai bekerja, dan waktu benar, lalu tetap tiba di bawah otoritas yang salah.
+
+Handshake membawa identitas penerima, keadaan karantina, kelas custody payload, pengungkapan lien, dan jeda ledger publik. Keelmark bisa menerima massa dan utang sebelum menerima orang. Recovery Compliance bisa menerima koordinat sambil menahan palka di bawah kunci medis. Ledger publik bisa menerima bukti hanya setelah paket melewati jeda dan pemeriksaan.
+
+Rangkaian ini membuat pilihan akhir menjadi konkret. Kunci cepat bisa membuka palka ke klaim korporat. Kunci compliance bisa mengubah bertahan hidup menjadi tahanan karantina. Rute publik bisa melindungi bukti sambil membuat tubuh menunggu. Mesin mengangkat kapsul; handshake menentukan arti recovered saat docking.
 
 ## Scanner
 
-Soket handshake. Kapsul bisa siap secara mekanis dan tetap menjadi milik receiver yang salah.
+SOKET HANDSHAKE // Kunci penerima tidak ada. Mekanik bisa mensertifikasi jalur peluncuran; stack custody masih memilih siapa yang boleh menyebut kedatangan recovered.
 
 ## Terminal
 
-RECOVERY HANDSHAKE: receiver key diperlukan. Keelmark menerima mass dan lien. Recovery Compliance menerima coordinates dan quarantine status. Public ledger menerima proof setelah jeda. Unkeyed launch default menjadi custody dispute.
+RECOVERY HANDSHAKE: muat set kunci penerima, keadaan karantina, kelas custody payload, jeda ledger publik, dan pengungkapan lien. Peluncuran tanpa kunci masuk antrean sengketa setelah pendakian bersih.
 
 ## Audio
 
-Siapa yang menjawab menentukan arti penyelamatan.
+Mesin bisa mengangkatmu. Soket memutuskan siapa yang membuka palka.
 
 ## Field Note
 
-Komponen terakhir bukan logam. Itu nama sistem yang diizinkan menyebutmu recovered.
+Kunci terakhir adalah nama, keadaan karantina, dan tanda tangan buku besar. Baja tidak menentukan mana yang menjawab.
 
 <!-- In-Game Wiki; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/id_ID. -->

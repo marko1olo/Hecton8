@@ -19,22 +19,26 @@ localization_flags: 0
 
 # Ascent Energy Charge Assembly
 
-The ascent charge turns deep resources into a mechanical and moral trade. High-pressure materials can lift the capsule, preserve evidence through custody, or become payout that weakens the route home.
+The ascent energy charge converts HECTON-8's deep materials into a controlled launch impulse. It is not a pile of fuel. It is a cradle of vent-forged heat cells, pressure-history insulation, staged impulse sleeves and custody marks that tell the receiver what kind of material survived the burn.
+
+Blue debt makes the charge valuable before it makes it safe. A pressure-grown Xenon-Omega sample can pay a carrier bill, anchor an upgrade, prove what Deep Reach left running, or fracture under launch load if its history was handled like loose loot. The charge has to carry energy and paperwork at the same time: mass, pressure state, contamination class and custody stamp.
+
+That is why the assembly creates a real salvage decision. Strip the cradle for payout and the capsule loses certified lift. Load raw material and the impulse profile becomes unstable. Keep the signed charge and the ascent route gets heavier, poorer and much harder to deny.
 
 ## Scanner
 
-Energy cradle scored by pressure pulse. A cheap charge makes a clean coffin.
+ENERGY CRADLE // Pressure-pulse scoring, warped heat-cell pockets, custody stamp socket empty. Raw blue debt may burn; it will not certify lift.
 
 ## Terminal
 
-ASCENT CHARGE: vent-forged heat cell, pressure-history insulator and custody stamp required. Raw fuel rejected. Uncertified blue debt fractures under launch impulse and voids recovery claim.
+ASCENT CHARGE: load vent-forged heat cell, pressure-history insulator, staged impulse sleeve and signed custody stamp. Reject raw fuel, chipped insulator and unstamped blue debt.
 
 ## Audio
 
-You can sell the lift or ride it. Not both.
+Sell the lift and the capsule becomes inventory.
 
 ## Field Note
 
-Every gram in the cradle is escape, evidence or blue-debt payout. The capsule does not forgive greed.
+The charge is the part everyone wants to steal because it is also the part that gets you off the seafloor.
 
 <!-- In-Game Wiki; generated from P364_ASCENT_ENERGY_CHARGE_ASSEMBLY/en_US. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Factory Temple Entry Fragment"
+title: "工厂神殿入口碎片"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Factory Temple Entry Fragment
+# 工厂神殿入口碎片
 
-ZH LOC HOLD: At the bottom, HECTON-8 stops separating colony, ocean, machine and evidence. The place itself becomes the argument.
+在底部，HECTON-8 不再区分殖民地、海洋、机器和证据。地点本身变成论点：不是崇拜，不是魔法，而是重复到像仪式的工业。
 
 ## Scanner
 
-ZH LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+合金、贝壳密封层、手工工具和活跃维修脉冲被登记为同一表面。
 
 ## Terminal
 
-ZH LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER：维护类别塌缩。工具伤痕、密封壳、缆根、过滤组织和执行器肋骨登记为单一维修表面。人类路径标记不再享有优先权。
 
 ## Audio
 
-ZH LOC HOLD: This is not a room. This is a habit.
+这不是房间。这是习惯。
 
 ## Field Note
 
-ZH LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+视觉规则：它像神殿，只是因为工业、组织和重复已经变成仪式。
 
 <!-- External Site; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/zh_CN. -->

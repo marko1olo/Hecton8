@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Deep Reach 当前通信窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Deep Reach 当前通信窗口
 
-CN LOC HOLD: Deep Reach Present Windows keeps hard-sci-fi distance while preserving active antagonism: Deep Reach cannot teleoperate HECTON-8, but its old contracts and local automation still shape rescue, payout and cleanup pressure.
+Deep Reach 当前通信窗口保留了 HECTON-8 的硬科幻距离，同时让公司压力保持活性。Deep Reach 不能远程操作海床，不能瞬间救出操作员，也不能实时改写这颗行星。对故事来说，它能做的事情更糟：把程序、代理和索赔系统留在原地，然后只在玩家拥有可交易物时，通过罕见窗口开口说话。这篇条目定义了后期压力。公司的力量不是魔法通信，而是灾难后仍存活的所有权语言；它仍然知道如何把一条人命和证据、隔离、打捞物放在同一张价目表上。
 
 ## Scanner
 
-CN LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach 不能靠无线电操纵 HECTON-8，但延迟窗口、代理通知和 Black Keel 条款仍在决定帮助的价格。
 
 ## Terminal
 
-CN LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP REACH 代理：操作员回收可在证据审查、载荷保管、隔离合规和 Atlas 权限密钥转交后协商。拒绝将保留索赔人身份，但取消即时撤离优先级。
 
 ## Audio
 
-CN LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+当他们的声音抵达你这里，它已经是一份合同。
 
 ## Field Note
 
-CN LOC HOLD: Their voice is delayed. Their leverage is already here.
+他们的答复来得很晚。他们的条件很多年前就到了。
 
 <!-- External Site; generated from P070_DEEP_REACH_PRESENT_WINDOWS/zh_CN. -->

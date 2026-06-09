@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Worker Locker Nameplate Sample"
+title: "Probe einer Arbeiterspind-Namensplatte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Worker Locker Nameplate Sample
+# Probe einer Arbeiterspind-Namensplatte
 
-DE LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+Die Probe einer Arbeiterspind-Namensplatte macht einen einzelnen Spind zu einem kompakten menschlichen Datensatz. Ren Okoye überlebt durch Routenzugang, Werkzeugzertifizierung, Essensmarke und Löschungsnarbe. Das Objekt zeigt HECTON-8s Kernstil für Beweise: Identität bleibt durch Arbeit erhalten, nachdem Lohnerinnerung versagt.
 
 ## Scanner
 
-DE LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Ren Okoyes Platte behält den Namen, weil die Lohnzeile leichter zu löschen war als die Arbeit.
 
 ## Terminal
 
-DE LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-DE LOC HOLD: Name retained. Payline erased.
+Name erhalten. Lohnzeile gelöscht. Arbeit noch verbunden.
 
 ## Field Note
 
-DE LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / Essensmarke unter Tape. Lohnstreifen abgeschliffen; Handschuhgrößenmarke noch sichtbar.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/de_DE. -->

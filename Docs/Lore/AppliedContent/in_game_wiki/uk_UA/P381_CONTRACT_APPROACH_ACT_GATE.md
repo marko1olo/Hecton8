@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Contract Approach Act Gate"
+title: "Вхід через контракт"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Contract Approach Act Gate
+# Вхід через контракт
 
-UK LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+Перший шлюз - це папери з тиском за спиною. Black Keel не посилає туриста у води Aegir. Оператор приймає передачу претензії, боргову експозицію, слот bathydrop і рахунок за інструмент до першого глибокого скану. Старий профіль Deep Reach важливий, бо впізнавання процедур починається раніше, ніж маршрут стає особистим.
 
 ## Scanner
 
-UK LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Маршрутний шлюз: контракт прийнято. Боргова експозиція, час bathydrop і стара процедура Deep Reach активні до спуску.
 
 ## Terminal
 
-UK LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+МАРШРУТ КАМПАНІЇ // КОНТРАКТНИЙ ПІДХІД. Власник: дошка претензій Black Keel. Прийняти передачу претензії, боргову експозицію, слот bathydrop і борг за інструмент. У профілі оператора знайдено залишок облікових даних Deep Reach. Відновлення умовне.
 
 ## Audio
 
-UK LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Ти прийшов по роботу. Контракт уже знає, де ти працював раніше.
 
 ## Field Note
 
-UK LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Нотатка мародера: прочитай дошку контракту двічі. На другому проході видно, які старі дозволи досі лягають у руки.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/uk_UA. -->

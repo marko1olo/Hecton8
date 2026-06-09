@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Locker Name Protocol"
+title: "储物柜姓名协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Locker Name Protocol
+# 储物柜姓名协议
 
-ZH LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+储物柜姓名协议让个人证据可玩：姓名通过物件、磨损、路线许可和 Marauder 注释存活。
 
 ## Scanner
 
-ZH LOC HOLD: A locker is personal without needing a family plot.
+储物柜痕迹 // 姓名牌、工具磨损、pressure tape、修正便条、路线贴纸。没有家庭剧情的个人证据。
 
 ## Terminal
 
-ZH LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+储物柜规则：保存 Deep Reach 从 payroll 中移除的名字。储物柜应绑定徽章、角色、路线许可、维修习惯和留在里面的未完成之物。
 
 ## Audio
 
-ZH LOC HOLD: The company deleted the employee. The rust kept the label.
+公司删除了员工。锈迹留下了标签。
 
 ## Field Note
 
-ZH LOC HOLD: The smallest human trace should survive corporate cleanup.
+最小的人类痕迹也应该熬过企业清理。
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/zh_CN. -->

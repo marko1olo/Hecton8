@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set B"
+title: "앵커 작업자 이름 세트 B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set B
+# 앵커 작업자 이름 세트 B
 
-KO LOC HOLD: Anchor Worker Name Set B carries colony evidence into brine canyon and abyssal machine field layers.
+앵커 작업자 이름 세트 B는 명부를 더 어두운 증거층으로 운반한다. Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel은 플레이어가 실패가 설계상 반복된다는 것을 이해한 뒤에 나타나야 한다. 그들의 기록은 염수 협곡 작업, 심연 기계장, triage 예외, Atlas 수리 모순, salvage 부채에 속한다. Set B는 익숙한 일터 이야기가 여전히 이름이 붙은 고발로 바뀌는 순간처럼 느껴져야 한다.
 
 ## Scanner
 
-KO LOC HOLD: Roster tier B: names recur in brine and abyssal records after the damage pattern is already visible.
+더 깊은 이름은 플레이어가 손상 패턴을 이미 이해한 뒤에 도착해야 한다. 물이 범죄를 증명하기 시작했기 때문에 더 무겁다.
 
 ## Terminal
 
-KO LOC HOLD: ANCHOR SET B: brine and abyssal recurrence. Witness hashes, route holds, triage exceptions, and Atlas repair contradictions belong to this deeper roster.
+ANCHOR SET B: 염수 협곡과 심연 기계장 반복. 이 이름들은 witness hashes, 항로 보류, triage 예외, Atlas 수리 모순, salvage 부채 흔적에 묶어야 한다. Set B는 작업자 증거가 지역 비극을 멈추고 기업 원인이 되는 지점이다.
 
 ## Audio
 
-KO LOC HOLD: A deep name costs more because the water has already proved what happened.
+깊은 이름은 더 비싸다. 물이 이미 무슨 일이 있었는지 증명했기 때문이다.
 
 ## Field Note
 
-KO LOC HOLD: Set B anchors: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
+Set B 앵커: Nadiya Rook, Tomas Eline, Keiko Madsen, Harun Vale, Estel Nwosu, Dima Korr, Sofia Leung, Bram Kessel.
 
 <!-- In-Game Wiki; generated from P209_ANCHOR_WORKER_NAME_SET_B/ko_KR. -->

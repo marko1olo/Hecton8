@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Memori Rumor Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Memori Rumor Dossier
 
-ID LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+Dossier Marauder bukan loker penyimpanan. Itu bagian pekerjaan yang selamat dari claim gagal: nama yang terdengar separuh lewat relay, klausul kontrak yang terasa salah, keluarga akhir yang sudah terbuka, peringatan yang dibayar dengan menit terakhir orang lain. Run baru harus mulai dengan kecurigaan lebih tajam, bukan kapal selam lebih baik.
 
 ## Scanner
 
-ID LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+MEMORI DOSSIER // Rumor, peringatan, konteks kontrak, dan catatan akhir bertahan. Lambung, oksigen, alat, kargo, dan peta tidak.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+ATURAN PERSISTENSI: dossier boleh menyimpan keluarga rumor, kategori bukti, penanda akhir, dan peringatan rute lintas kampanye. Ia tidak membawa alat, sumber daya, geografi seed, atau kepemilikan kebenaran.
 
 ## Audio
 
-ID LOC HOLD: Your file remembers what your hands cannot carry.
+Berkas itu mengingat apa yang tak bisa dibawa tanganmu.
 
 ## Field Note
 
-ID LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Biarkan pengetahuan bertahan. Biarkan tekanan tetap ada.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/id_ID. -->

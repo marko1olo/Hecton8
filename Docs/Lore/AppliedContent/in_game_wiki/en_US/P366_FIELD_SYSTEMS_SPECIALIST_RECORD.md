@@ -19,15 +19,19 @@ localization_flags: 0
 
 # Field Systems Specialist Record
 
-This record explains the operator's first competence without turning them into a chosen witness. Deep Reach trained them around pumps, seal ratings, relay rooms, bypass cards, evacuation queues, and route-safe language. The old systems reject their name and still expose familiar procedure. The guilt begins as recognition: a drain order, a clamp rating, a sanitized hold phrase, a room that failed in the order they were taught to prevent.
+The field systems record explains competence without turning the operator into a secret commander. Deep Reach trained this trade around pumps, seal ratings, bypass cards, relay rooms, evacuation queues and route-safe certification. It was infrastructure labor with enough access to know what a buried route looked like.
+
+After revocation, the credential stops opening secure doors. The training does not disappear. A drain order, a clamp rating, a sealed manual-count field or a sanitized hold phrase still reads like work once trusted. That is why drowned machinery becomes evidence instead of scenery: the operator can see where a safety process was bent until abandonment looked complete.
+
+The record keeps the background narrow. No command authority. No clean confession. No heroic passenger status. Just a former Deep Reach systems worker who can read the machine that filed people out of the count.
 
 ## Scanner
 
-Old field-systems credential. Not command staff. Infrastructure labor with enough access to recognize where a route was buried.
+FIELD SYSTEMS CREDENTIAL // Evacuation infrastructure, route-safe certification, pump-room access. Command clearance absent; procedure memory still useful.
 
 ## Terminal
 
-PERSONNEL TRACE: field systems, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir silence review. Procedure cache still matches operator sequence.
+PERSONNEL TRACE: field systems specialist, evacuation infrastructure, route-safe certification. Clearance revoked after Aegir signal review. Procedure cache still matches operator sequence.
 
 ## Audio
 

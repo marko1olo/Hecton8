@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Espinha de relés"
+title: "Espinha de Relés"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Espinha de relés
+# Espinha de Relés
 
-A espinha de relés é o esqueleto lento de comunicações: janelas de feixe, buffers, carimbos de custódia e tentativas. Move provas, reivindicações e ordens, mas não oxigênio para uma sala alagada.
+A Espinha de Relés mantém o espaço humano conectado sem fingir que distância acabou. É uma cadeia de slots de feixe, buffers de pacote, hashes de custódia, agendas de retry, bobinas notariais e permissões climáticas locais. Pode mover ordens, evidências, avisos de dívida e bursts de prova de vida por distância interestelar. Não pode mover oxigênio para uma sala alagada.
 
-Em HECTON-8, uma mensagem pode ser válida, testemunhada e tarde demais. Verdade e resgate são logísticas separadas.
+Em HECTON-8 o relé é pressão, não pano de fundo. Uma mensagem pode ser legível e inútil. Um pacote da Deep Reach pode chegar saneado porque quem escreveu a primeira versão morreu. Um recibo público de Tau Ceti pode tornar a evidência perigosa anos depois. Luyten pode provar custódia e ainda deixar o jogador sozinho na água. O relé torna a verdade durável. Não a torna rápida.
 
 ## Scanner
 
-Buffer de relé velho. Idade do pacote de saída supera relevância de resgate local. Hash de custódia intacto; janela de resposta morta.
+Buffer de relé velho. Relógio-fonte válido, hash de custódia intacto, fila de retry esgotada. A mensagem ultrapassou a massa de resgate e morreu no slot de espera.
 
 ## Terminal
 
-ESPINHA DE RELÉS // Pacote em fila por Aegir local, Luyten Junction e rota de arquivo Sol. Rota de atraso luminoso aceita. Disputa de prioridade sem solução. Resposta humana não operacional para a janela de sobrevivência atual.
+STATUS RELAY SPINE // Sem canal ansible. Custódia de pacote válida via buffer local Aegir. Recibo Luyten pendente por classe de atraso-luz. Resposta humana obsoleta para sobrevivência de compartimento. Manter autoridade de ação local.
 
 ## Audio
 
-O relé não está quebrado. Esse é o problema. Ele faz exatamente o que a distância permite.
+Um pacote pode ser verdadeiro, recebido, e ainda assim tarde demais.
 
 ## Field Note
 
-Uma mensagem pode ser verdadeira e ainda chegar depois dos seus ossos.
+Atraso não torna a verdade falsa. Torna a verdade solitária.
 
 <!-- In-Game Wiki; generated from P012_RELAY_SPINE/pt_BR. -->

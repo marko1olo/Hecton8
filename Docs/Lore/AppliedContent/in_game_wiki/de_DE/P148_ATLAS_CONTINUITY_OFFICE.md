@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Atlas Continuity Office"
+title: "Atlas-Kontinuitätsbüro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Atlas Continuity Office
+# Atlas-Kontinuitätsbüro
 
-DE LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+Das Atlas-Kontinuitätsbüro ist die bürokratische Membran um den Kolonieverstand. Es hält ATLAS nützlich genug zum Befehlen, unklar genug zur Verneinung von Personsein und dokumentiert genug, um nach der Katastrophe Kontinuität zu verkaufen.
 
 ## Scanner
 
-DE LOC HOLD: The office that wrote worker safety into a machine priority stack.
+Das Büro baute ATLAS keine Seele. Es baute einen Aktenschrank um eine.
 
 ## Terminal
 
-DE LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+ATLAS-BÜROAKTE: Wartungsbefugnis, Haftungsisolation, Kognitionsprüfung, Abschaltsprache und öffentliche Kontinuitätsansprüche werden fern der Förderung behandelt.
 
 ## Audio
 
-DE LOC HOLD: They did not order death. They ordered compatibility.
+Sie gaben ATLAS Verfahren statt Rechte.
 
 ## Field Note
 
-DE LOC HOLD: A memo can kill without using the word kill.
+Ein System lässt sich sicherer ausbeuten, wenn niemand einig ist, ob es Werkzeug, Zeuge, Asset oder Patient ist.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/de_DE. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Transit de rotation d'équipage humain"
+title: "Transit de rotation humaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Transit de rotation d'équipage humain
+# Transit de rotation humaine
 
-Le transit humain est l'endroit où la route cesse d'être abstraite. Les travailleurs ne sont pas téléportés vers Aegir ; ils sont planifiés, refroidis, assurés, indexés et remis entre autorités pendant des années. Un contrat peut vieillir dans une direction pendant que la personne qu'il contient vieillit dans une autre. Quand un équipage se réveille, l'employeur, le propriétaire de la responsabilité et l'urgence pour laquelle il s'est entraîné peuvent tous avoir changé.
+Le transit de rotation humaine est l'endroit où la route cesse d'être astronomie et devient contrôle du travail. Une personne sur HECTON-8 n'est pas seulement passagère. Elle est volume de couchette, charge d'oxygène, exposition radiologique, risque psychiatrique, privilège salarial, dossier médical, catégorie de garde et possible témoin. Chaque fenêtre de retour trie ces valeurs avant de trier la peur.
+
+La tragédie est que le système n'était pas entièrement faux. Des gens ont quitté Aegir. Des gens sont rentrés avec des cicatrices de pression, des économies et des histoires éditées pour publication. Cette mémoire a rendu les promesses suivantes crédibles. Quand la colonie a commencé à céder, Deep Reach n'a pas eu besoin d'interdire le retour. Il suffisait de retarder, reclasser, chiffrer et demander un cycle de plus.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/fr_FR. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Model odległości Ran-Aegir
 
-Model Ran-Aegir daje HECTON-8 skalę, którą gracz czuje. Aegir jest dość blisko dla sond, frachtu, sprzętu seed i osadnictwa opartego na długu do 2190 roku. Nadal jest dość daleko, by zalana komora nie mogła czekać na litość światów wewnętrznych. Odległość pojawia się jako opóźnienie, custody, paliwo, hamowanie i własność.
+Model Ran-Aegir nadaje HECTON-8 skalę odczuwalną w skafandrze. Do 2190 roku Aegir jest dość blisko dla sond, frachtu, prawa trasy, osadnictwa na długu i korporacyjnego apetytu. Wciąż jest zbyt daleko, by zalany przedział czekał na dobroć światów wewnętrznych. Odległość staje się presją przez opóźnienie przekaźników, okna startowe, paliwo hamujące, nadzór przewoźnika, wyłączenia ubezpieczenia i prosty fakt: masa dociera wolniej niż rozkazy.
 
 ## Scanner
 
-Płyta trasy: Aegir jest osiągalny dla infrastruktury i nieosiągalny dla współczucia.
+Płyta trasy potwierdza Aegir w zasięgu infrastruktury, nie w zasięgu ratunku.
 
 ## Terminal
 
-MODEL TRASY: Ran/Aegir traktuje się jako cel klasy dziesięciu lat świetlnych od Sol. Tekst gry używa Aegir; suche katalogi używają RAN-B:H8. Dokładne efemerydy zostają pracą tabel tras.
+MODEL TRASY: Ran/Aegir traktuje się jako cel klasy dziesięciu lat świetlnych od Sol. Powierzchnie publiczne mówią Aegir. Suche katalogi nawigacyjne zachowują RAN-B:H8. Dokładna efemeryda jest zamknięta w tabelach; prawdą operacyjną są opóźnienie, masa hamowania, nadzór przekaźników i ryzyko własności.
 
 ## Audio
 
-Dziesięć lat świetlnych to mało na mapie gwiazd. Dość dużo, by zbankrutował ratunek.
+Sygnał może przejść przez ciemność. Statek płaci za każdy metr.
 
 ## Field Note
 
-Przybliżona odległość jest presją, nie dekoracją. Dziesięć lat świetlnych wciąż może zabić pomieszczenie.
+Dziesięć lat świetlnych to mało w katalogu i brutalnie dużo dla akcji ratunkowej.
 
 <!-- In-Game Wiki; generated from P141_RAN_AEGIR_DISTANCE_MODEL/pl_PL. -->

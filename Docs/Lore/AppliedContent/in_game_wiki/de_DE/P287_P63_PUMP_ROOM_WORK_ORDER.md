@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: P-63 Pump Room Work Order"
+title: "P-63-Pumpraum-Arbeitsauftrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: P-63 Pump Room Work Order
+# P-63-Pumpraum-Arbeitsauftrag
 
-DE LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+Der P-63-Pumpraum-Arbeitsauftrag lässt die erste Reparatur wie geerbte Kolonieprozedur wirken, nicht wie Tutorialtext. Er ist durchnässt, praktisch und in kleinen Details verängstigt. Der Auftrag sagt, den sump zu leeren, den cold seam zu flicken, auf den return pinger zu warten und den fused latch erst zu schneiden, wenn Druck hält. Diese Reihenfolge lehrt, wie HECTON-8-Arbeiter dachten: Wasser zuerst, Abdichtung danach, Klang vor Kraft, Routenvertrauen zuletzt. Fehlende Supervisor-Initialen und der doppelte Kreis um die Schnittzeile lassen das Papier benutzt wirken, nicht für den Spieler geschrieben. Es ist ein kleines Artefakt, trägt aber die ganze Spielschleife in Miniatur: Raum lesen, System wiederherstellen, dem einfachen Schnitt misstrauen.
 
 ## Scanner
 
-DE LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Die erste Reparatur liest sich wie eine Koloniegewohnheit: pumpen, abdichten, hören, nur schneiden, wenn der Raum nicht mehr lügt.
 
 ## Terminal
 
-DE LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: sump leeren; cold seam flicken; return pinger prüfen; fused latch erst schneiden, wenn Druck hält; gasket aus lokalem Bestand drucken; route safe nach dreifachem acoustic return markieren. Supervisor-Initialen unter Wasserfleck fehlend.
 
 ## Audio
 
-DE LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Erst pumpen. Dann abdichten. Wenn es singt, hör auf zu schneiden.
 
 ## Field Note
 
-DE LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Das Clipboard ist unten durchweicht. Die Schnittzeile ist noch lesbar, weil jemand sie zweimal umkreiste und schrieb wenn es singt, aufhören.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/de_DE. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "إيليا فارنيك: هامش المد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# إيليا فارنيك: هامش المد
 
-AR LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+مقالة إيليا فارنيك: هامش المد هي إحدى أولى نقاط HECTON-8 التي تكشف بوضوح طريقة عمل مسؤولية Deep Reach. لا تختار النسخة السهلة من شر الشركات. فارنيك لا يحتاج إلى زر فيضان. هو يوقّع تفسيرا للخطر.
 
-## Scanner
+في عام 2147 كان نموذج المد العظيم لا يزال ينجح بالمتوسط. هذه هي الكلمة الخطرة. السلوك المتوسط أبقى جدول الإنتاج حيا بينما بقي التكدس المتطرف داخل تعرّض العمال: نوافذ مد Aegir، ارتداد الرف الجليدي، حركة المسارات المضغوطة، ولاموثوقية تعويض Atlas. يمكن لمسار أن يكون مقبولا إحصائيا وقاتلا لمن يلتقي بذيل المنحنى.
 
-AR LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-AR LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-AR LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-AR LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+بالنسبة إلى اللاعب، يحوّل هذا الدليل الكارثة من حادث إلى سلسلة قرارات. مذكرة فارنيك ليست اعترافا. إنها وثيقة تجعل اللوم قابلا للقراءة: عُرفت اللاموثوقية، خُفّضت قيمتها، ودُفعت إلى الأسفل. الرعب بيروقراطي من دون أن يصبح جافا. صُغّر الهامش بما يكفي ليموت العمال داخله.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/ar_SA. -->

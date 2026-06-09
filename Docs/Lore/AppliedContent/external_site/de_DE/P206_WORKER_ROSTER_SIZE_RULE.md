@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Roster Size Rule"
+title: "Regel für die Größe der Arbeiterliste"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Roster Size Rule
+# Regel für die Größe der Arbeiterliste
 
-DE LOC HOLD: Worker Roster Size Rule keeps the colony inhabited without turning names into uncontrolled noise.
+Die Regel für die Größe der Arbeiterliste ist der Bevölkerungsvertrag für lesbare Koloniebeweise. Sie gibt HECTON-8 72 Arbeiteridentitäten: 24 Anker für wiederkehrende erzählerische Beweise und 48 Seed-Role-Identitäten für Replay-Variation. Der Spieler soll Namen allmählich erkennen, weil die Welt sie mit Arbeit wiederholt: Spind, Werkzeug, Routenstempel, Reparaturauftrag, letzter Audio-Tag. Die Kolonie wirkt größer als ihre Besetzung, doch der Beweis bleibt geschrieben genug, um erinnert zu werden.
 
 ## Scanner
 
-DE LOC HOLD: The colony roster is large enough to feel inhabited and small enough to stay authored.
+Zweiundsiebzig Namen sind kein Stimmungstext. Sie sind das Gedächtnisbudget der Kolonie: genug Hände, damit der Ort gearbeitet wirkt, wenige genug, damit Spind, Reparaturmarke und letzte Schicht auf dieselbe Person zurückzeigen.
 
 ## Terminal
 
-DE LOC HOLD: ROSTER RULE: 72 worker identities. Anchor names recur across lockers, ledgers, and audio. Seed-role identities vary object pairing by run.
+ROSTER RULE: Die aktive Liste führt 72 Arbeiteridentitäten. Vierundzwanzig sind Ankernamen, die in Spinden, Büchern, beschädigten Werkzeugen, Genehmigungsstempeln und Audiofragmenten wiederkehren können. Achtundvierzig sind Seed-Role-Namen für Replay-Variation. Ein generierter Name darf die Reihenfolge von Beweisen verschieben; er darf kein wegwerfbarer Fülltext werden.
 
 ## Audio
 
-DE LOC HOLD: A name is evidence only when the room can prove the job.
+Ein Name wird Beweis, wenn der Raum die Arbeit beweisen kann.
 
 ## Field Note
 
-DE LOC HOLD: The roster holds 24 anchor names for recurring evidence and 48 seed-role names for replay variation.
+Wenn ein Name später nicht mit einer Arbeit zurückkehren kann, streich ihn aus der Liste.
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/de_DE. -->

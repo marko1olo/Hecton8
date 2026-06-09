@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Last Normal Day Evidence Set"
+title: "Set Bukti Hari Normal Terakhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Last Normal Day Evidence Set
+# Set Bukti Hari Normal Terakhir
 
-ID LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+Hari normal terakhir bukan tanggal. Itu bentuk yang ditinggalkan ruangan ketika kerja terputus. Pelat loker menunggu tangan yang tidak pernah kembali. Catatan koreksi tidak bertanda tangan karena seseorang bermaksud kembali setelah turun. Tugas pompa tetap terbuka. Token makan siang masih terjepit di bawah pita. Jam rute terus menunggu cap pulang karena jam tidak punya kategori untuk diam.
+
+Benda-benda ini lebih dapat dipercaya daripada pidato. Tidak ada yang menyusunnya untuk dikenang. Papan masih berusaha menjalankan shift, memberi makan kru, mengosongkan sump, menghitung alat, dan menjaga rute tetap jujur. Itu sebabnya bukti ini terasa sakit. Koloni belum selesai berubah menjadi bencana. Ia masih cukup normal untuk berdebat tentang gelas, kunci, dan tanda tangan terlambat sementara kegagalan sudah masuk ke dinding.
+
+Bagi Marauder, set ini juga peringatan terhadap salvage malas. Pelat berharga bisa dilepas dalam detik, tetapi koreksi tanpa tanda tangan mungkin menjelaskan mengapa kolom sebab resmi dibiarkan kosong. Token makan yang terjepit bisa membuktikan seorang pekerja berharap pulang sebelum jam pintu berhenti. Kategori jenazah bisa tampak rapi sampai sertifikat pompa dan hitungan shift saling bertentangan.
+
+Baca keterputusannya sebelum mengambil benda. Ruangan tenggelam HECTON-8 tidak membutuhkan pesan terakhir yang sempurna. Kesaksiannya yang paling kuat lebih kecil: kerja yang terbuka, tugas yang belum diserahkan, jam yang menunggu orang yang sudah diambil samudra.
 
 ## Scanner
 
-ID LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+SET HARI NORMAL TERAKHIR // Pelat loker belum diambil, catatan koreksi belum ditandatangani, tugas pompa masih terbuka, token makan siang masih terjepit, jam rute menunggu pulang. Bukti terkuat adalah kerja yang belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+SET BUKTI: pelat loker belum diambil; koreksi belum ditandatangani; tugas pompa terbuka; token makan siang terjepit; jam rute menunggu. Sebab resmi kosong. Koreksi Marauder: cocokkan sertifikat pompa, hitungan shift, kategori jenazah, dan selisih jam pintu sebelum pengambilan salvage.
 
 ## Audio
 
-ID LOC HOLD: The last day did not know it was last.
+Hari terakhir tidak tahu bahwa ia hari terakhir.
 
 ## Field Note
 
-ID LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Tidak ada yang menata ruangan untuk sejarah. Biarkan kontradiksi utuh: tugas terbuka, token makan terjepit, kolom sebab kosong, jam rute masih menunggu seseorang.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/id_ID. -->

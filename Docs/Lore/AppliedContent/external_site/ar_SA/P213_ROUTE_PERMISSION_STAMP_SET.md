@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "مجموعة أختام تصريح المسار"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# مجموعة أختام تصريح المسار
 
-AR LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+تحدد مجموعة أختام تصريح المسار أدوات الوصول في HECTON-8. تربط الأختام هوية العامل بالحدود المادية: الأبواب، والمركبات، والبدلات، والمصاعد، ولوحات المسار. وبما أن كل ختم يمكن أن يناقض لاحقا سجلا أو شظية صوت، يصبح الوصول سيرة تحت الضغط وطريقة أساسية لقراءة آخر حركة للمستعمرة.
 
 ## Scanner
 
-AR LOC HOLD: A route stamp is stronger than a diary line.
+ختم المسار أقوى من سطر يوميات لأنه يثبت من سُمح له بعبور حد الضغط.
 
 ## Terminal
 
-AR LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: يجب أن يربط تصريح المسار عاملا واحدا، وبابا أو مركبة واحدة، وعائلة طاقم واحدة، وتناقضا لاحقا واحدا. الختم بلا حد مادي زخرفة. الختم على فتحة، أو حامل بدلات، أو سكة crawler، أو وسم مصعد يصبح دليل حركة.
 
 ## Audio
 
-AR LOC HOLD: Access is biography under pressure.
+الوصول سيرة ذاتية تحت الضغط.
 
 ## Field Note
 
-AR LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+الأختام: PUMP وSEAL وRELAY وBRINE وFORGE وTRIAGE وBOTANY وWITNESS. اربطها بحالة الفتحة وجسم العمل.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/ar_SA. -->

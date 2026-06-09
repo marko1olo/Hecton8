@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "Reguły strojenia komponentów ucieczki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# Reguły strojenia komponentów ucieczki
 
-PL LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+Reguły strojenia komponentów ucieczki dają HECTON-8 wspólną gramatykę craftingu i zakończeń. Gracz nie grinduje arbitralnych rzadkich części. Składa fizyczny, nawigacyjny i prawny argument, dlaczego coś z otchłani powinno zostać przyjęte ponad oceanem.
 
 ## Scanner
 
-PL LOC HOLD: Escape parts should force depth and evidence, not grind.
+Części ucieczki mają wymuszać głębokość i dowody, nie grind. Opuszczenie HECTON-8 to łańcuch dowodów, nie jeden drogi craft.
 
 ## Terminal
 
-PL LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+KOMPONENTY UCIECZKI / relay spine dowodzi kontaktu / clamp rings dowodzą klasy ciśnienia / guidance core dowodzi timingu / ascent charge dowodzi energii / legal handshake decyduje, kto odpowiada / evidence payload zmienia konsekwencję i pieczę.
 
 ## Audio
 
-PL LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+Odejście nie jest jednym craftem. Jest łańcuchem dowodów.
 
 ## Field Note
 
-PL LOC HOLD: Every ascent component must have a physical and legal reason.
+Każdy komponent wznoszenia potrzebuje powodu fizycznego i prawnego: kontaktu, klasy, timingu, energii, odbiorcy, ładunku. Brak jednego powinien zmienić zakończenie, nie tylko zablokować przycisk.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/pl_PL. -->

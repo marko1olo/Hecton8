@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Legal Insurance Automated Ping"
+title: "Ping Otomatis Legal Asuransi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Legal Insurance Automated Ping
+# Ping Otomatis Legal Asuransi
 
-ID LOC HOLD: Present-day Deep Reach speaks through automated custody systems as much as through people. That keeps the horror bureaucratic and hard-sci-fi.
+Ping Otomatis Legal Asuransi adalah ekspresi ringkas horor birokratis HECTON-8. Deep Reach masa kini dapat berbicara melalui sistem kustodi asuransi otomatis seefektif melalui manusia. Sistem bertanya apa yang dibawa penyintas sebelum bertanya apakah penyintas harus diselamatkan.
 
 ## Scanner
 
-ID LOC HOLD: Automated ping: custody unresolved. Rescue language replaced by receiver proof.
+Ping otomatis diterima. Bahasa penyelamatan diganti oleh bukti receiver, mass class, dan status kustodi.
 
 ## Terminal
 
-ID LOC HOLD: INSURANCE PING: biological claimant status insufficient. Submit mass class, contamination state, coordinate proof and claim priority before recovery window assignment.
+INSURANCE PING / biological claimant status: insufficient / diperlukan sebelum recovery-window assignment: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance.
 
 ## Audio
 
-ID LOC HOLD: The first thing they ask is not whether you are alive. It is what you are carrying.
+Hal pertama yang mereka tanyakan bukan apakah kau hidup. Mereka bertanya apa yang kau bawa.
 
 ## Field Note
 
-ID LOC HOLD: Short bark candidate. Do not spam; use at route thresholds.
+Kandidat bark pendek di route threshold. Gunakan jarang; kekejamannya ada pada hal pertama yang ditanyakan sistem.
 
 <!-- External Site; generated from P327_LEGAL_INSURANCE_AUTOMATED_PING/id_ID. -->

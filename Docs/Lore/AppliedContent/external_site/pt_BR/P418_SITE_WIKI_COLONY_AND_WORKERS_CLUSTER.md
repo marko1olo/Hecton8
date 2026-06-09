@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Colônia e Trabalhadores
 
-O cluster de colônia e trabalhadores impede HECTON-8 de virar mapa de salas vazias. A versão oficial da Deep Reach comprime pessoas em categorias de perda, mas registros sobreviventes as preservam pelo trabalho: pump chief em pressure board, relay operator em witness trays, brine crew em rotas de sal e ration ledgers, triage technician em repair tags, forge shift em rejects que ninguém teve tempo de esconder. Esses não são ganchos familiares para o protagonista. São provas de trabalho. O Marauder lê por que uma porta ficou aberta, por que uma bomba religou tarde e por que um name tag pequeno pode pesar mais que um loss summary limpo.
+A linha de colônia e trabalhadores impede HECTON-8 de virar uma ruína bonita cheia de salas sem nome. A Deep Reach registrou a catástrofe como storm, collapse, failed autonomy, Atlas rescue e lost data. Essas palavras são úteis porque comprimem responsabilidade. Os worker records sobreviventes fazem o oposto. Mantêm nomes presos a decisões.
+
+Um pump chief continua visível por uma pressure board que não reiniciou quando devia. Um relay hand continua visível numa bandeja de witness tags removidas antes de a linha ficar cega. Uma brine crew deixa sua forma em route stamps, ration ledgers e luvas queimadas por sal. Um triage technician aparece onde um repair tag diz quem pôde gastar oxigênio com um estranho. Um vent-forge operator sobrevive em rejected parts que deveriam ter sido escondidas se o loss report fosse limpo.
+
+Por isso o worker cluster rejeita o cheap family hook. HECTON-8 não precisa de pai secreto do protagonista, irmão perdido ou foto sentimental para tornar a colônia humana. Uma pessoa fica legível quando uma porta permaneceu aberta por causa de um nome na pump card, quando um shift swap mudou quem morreu no corredor, quando uma assinatura moveu um quarantine delay de safety para liability.
+
+O Marauder lê pessoas como pressure evidence. Todo bom dossier deve responder primeiro a uma pergunta prática: o que esse trabalhador possuía, atrasou, consertou, recusou, falsificou ou protegeu? Quando a resposta fica clara, a emoção chega sem ser implorada.
+
+A colônia não estava vazia antes de o oceano entrar. Ela estava cheia de rotinas, rancores, competência, shortcuts, medo e orgulho profissional. Os registros que restam não são placas memoriais. Ainda são documentos de trabalho, e alguns ainda podem acusar.
 
 <!-- External Site; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/pt_BR. -->

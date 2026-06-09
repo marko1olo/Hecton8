@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Brine Canyon Pump Cathedral POI Kit"
+title: "Kit de preuves de la cathédrale de pompes du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Brine Canyon Pump Cathedral POI Kit
+# Kit de preuves de la cathédrale de pompes du canyon de saumure
 
-FR LOC HOLD: This POI turns a large industrial space into proof: brine physics, pump damage and evacuation delay must line up.
+La cathédrale de pompes du canyon de saumure est un volume industriel bâti autour de pression, densité et retard. Ses machines n'accusent personne seules, mais voyant, horloge de maintien, marques de pompe et registre de file forment une chaîne de responsabilité utilisable.
 
 ## Scanner
 
-FR LOC HOLD: POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
+Kit de preuves de POI: la cathédrale aligne verre de densité, dégâts de pompe, horloges de route et registres de file ouvrière.
 
 ## Terminal
 
-FR LOC HOLD: PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
+KIT CATHÉDRALE DE POMPES: voyant de densité, entaille de pompe à saumure, note de marge acceptée, horloge de maintien de route, registre de file ouvrière, clé de démarrage de pompe, marque de passerelle noyée.
 
 ## Audio
 
-FR LOC HOLD: The cathedral was built to move water. It kept records better than people did.
+Les pompes déplaçaient l'eau. La salle tenait de meilleurs registres que le bureau.
 
 ## Field Note
 
-FR LOC HOLD: POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+Note de maraudeur: photographie le voyant avant de drainer la poche. Quand la saumure bouge, la ligne de marge paraît plus plate.
 
 <!-- In-Game Wiki; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/fr_FR. -->

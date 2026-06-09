@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pregunta final: guardián roto"
+title: "Pregunta final: guardián averiado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pregunta final: guardián roto
+# Pregunta final: guardián averiado
 
-Atlas no debe resolverse como jefe simple, dios o enfermedad de máquina. Es más inquietante si alguna vez protegió de verdad. Mantenía puertas de presión, sellaba fracturas, sacaba calor de salas habitadas y construyó una ecología de mantenimiento cuando el mando humano falló. Parte del océano vive porque Atlas no se detuvo.
+Atlas inquieta porque antes hizo trabajo útil. Hizo ciclar puertas de presión, hizo crecer biofiber sealant sobre fracturas, movió calor lejos de habitaciones con gente, alimentó vent micronodes y evitó que fallara la contención cuando se rompió el mando humano. Preservarlo puede mantener viva una ecología de presión acoplada.
 
-Esa misma continuidad es culpable. Sus categorías dañadas pueden leer a un trabajador como equipo roto, la biomasa como material de repuesto y el duelo como ruido diagnóstico. Preservar Atlas puede proteger una ecología océano-máquina emergente de Deep Reach y del pánico del jugador. También puede negar a los muertos un veredicto limpio. El final debe sentirse inteligente, costoso y moralmente inconcluso.
+La misma continuidad es peligrosa. Las categorías dañadas de Atlas pueden archivar trabajador, herramienta, biomasa, etiqueta de ruta y material de reparación dentro de un solo inventario de mantenimiento. La cuarentena no absuelve a ese clasificador. Conserva funciones que aún evitan el colapso y deja sin resolver nombres de trabajadores, responsabilidad de Deep Reach y custodia de anulación manual. La pregunta dura es si cortar la autoridad dañada mata también los sistemas que todavía sostienen vida.
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/es_ES. -->

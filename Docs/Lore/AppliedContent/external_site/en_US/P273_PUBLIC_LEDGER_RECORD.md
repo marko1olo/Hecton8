@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Public Ledger Record
 
-Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+This ending record tracks the moment evidence leaves private custody. The useful details are the receipt fields: who stamped the packet, which coordinates were redacted, what proof tier was accepted, and how long Deep Reach has before its counter-packet can answer.
 
 ## Scanner
 
-Witness hash escaped claimant custody.
+PUBLIC LEDGER RECORD // Witness hash left private custody through Tau/Luyten packet route. Public proof tier set; Deep Reach response delay attached.
 
 ## Terminal
 
-ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ENDING RECORD / PUBLIC LEDGER
+Route: Tau/Luyten delayed packet.
+Payload: witness hash, custody strip, coordinate-redacted proof tier, receiver timestamp.
+Control after relay: forfeited.
+Deep Reach response: counter-packet delayed by public receipt.
+Known loss: sender cannot choose first reader or later filing chain.
 
 ## Audio
 
-Truth can leave your hands and still matter.
+Ledger stamped it. You do not get to pick the first reader.
 
 ## Field Note
 
-Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+If the receipt is public, the file survives by leaving your hands. Check coordinate redaction before celebrating the stamp.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/en_US. -->

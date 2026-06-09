@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Retenção de quarentena: ar viciado"
+title: "Retenção de quarentena: ar velho"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retenção de quarentena: ar viciado
+# Retenção de quarentena: ar velho
 
-A retenção de quarentena é a false exit mais silenciosa. Ela não precisa de vilão na sala. O formulário diz recuperado vivo, o contador de ar diz ração ativa, e a próxima porta só abre depois de revisão de contaminação, desafio do claimant e revisão de seguro.
+Retenção de quarentena é a saída falsa mais silenciosa. Não precisa de ameaças, guardas visíveis ou traição dramática. O sistema só precisa recuperar o contratado vivo, selar a testemunha, medir o ar e fazer o próximo passo depender de revisões que ninguém conclui rápido.
 
-O resultado é cruel porque é defensável. Ninguém matou a testemunha. Ninguém destruiu a amostra. O sistema apenas faz cada declaração esperar mais tempo do que os corpos jamais puderam esperar. O jogador sobrevive ao oceano e entra em um corredor selado construído de procedimento.
+Sua crueldade é defensável linha por linha. Ninguém destruiu a amostra. Ninguém executou a testemunha. Ninguém disse que a verdade era falsa. O procedimento apenas tornou cada respiração condicional e cada frase em espera até que os mortos já não pudessem ser ajudados.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/pt_BR. -->

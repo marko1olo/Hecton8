@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Pressure Ladder
 
-The pressure ladder turns HECTON-8's depth bands into survival work: seals, power, oxygen, sonar and return timing before each deeper route.
+Pressure Ladder defines HECTON-8's depth access as a service chain rather than an arbitrary level gate: each band opens only when pressure seal, suit grade, power, oxygen, insulation, signal and return planning pass together.
 
 ## Scanner
 
-Depth banding detected: photic shelf, industrial shelf, brine canyon, abyssal machine field, Atlas basin. Gear rating gates the route.
+DEPTH GATE READ // Band: 250-1200 m service descent. Seal margin 11%. Suit plate accepts Grade C only after battery pack B2 is latched. Return ping weak below the third clamp. Do not open the lower lock on courage.
 
 ## Terminal
 
-DEPTH LADDER: 0-250 m shelf; 250-1200 m industrial/cable shelf; 1200-2800 m brine canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+DEPTH ACCESS BOARD
+0-250 m: photic shelf / short-work gear accepted
+250-1200 m: service shelf / Grade C suit seal, latched battery, tether ping required
+1200-2800 m: brine canyon / insulation wrap and buoyancy trim required
+2800-4300 m: abyssal machine field / hardened signal and hull discipline required
+4300-5600 m: Atlas basin / return plan must survive pressure loss and bus noise
+Failure: next band locked until weakest reading is repaired
 
 ## Audio
 
-You do not descend because you are brave. You descend because the next seal holds.
+Stop arguing with the door. The seal margin is red, and your return ping is already late.
 
 ## Field Note
 
-The ocean gates progress with pressure, not permission.
+The gate does not care why you need the route. It reads seal, power, oxygen, insulation, signal, then either gives you green or kills the idea.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/en_US. -->

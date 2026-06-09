@@ -19,25 +19,10 @@ localization_flags: 0
 
 # Deep Reach Public Dossier
 
-Deep Reach Extraterrestrial Development Combine is the corporate power behind HECTON-8’s industrial history. It built pressure routes, worker habitats, extraction systems and the paperwork that made them legal. Publicly it is a failed development authority. Deeper evidence shows the harsher shape: evacuation capacity underbuilt, delay language sanitized, Atlas continuity weighting protected, and claim law preserved while workers became losses.
+Deep Reach Extraterrestrial Development Combine should sound capable before it sounds guilty. It built pressure corridors, worker habitats, extraction machinery, route paperwork, insurance custody and autonomous maintenance systems because a remote ocean moon cannot be run by inspirational speeches. That competence is why the later evidence hurts. The disaster did not need a villain pulling one red lever. It needed risk tables that treated workers as exposure, continuity language that protected the project, and a relay economy slow enough for accountability to arrive stale.
 
-## Scanner
+Publicly, Deep Reach is a failed development authority with valuable assets lost under pressure. The deeper truth is less theatrical and more useful: the company learned how to make every document defensible while the physical system became less humane. Evacuation could become containment. Recovery could mean cargo. Safety language could preserve infrastructure before people.
 
-The public company name is cleaner than its route history. Start with infrastructure. Let the liability show through the joints.
-
-## Terminal
-
-PUBLIC ARTICLE TIER / DEEP REACH
-allowed: development combine, colony operator, infrastructure authority, evacuation capacity problem, public failure language
-gated: named signoff chain, Atlas weighting internals, final receiver consequences
-editor note: plausible institution first; crime through procedure second.
-
-## Audio
-
-Deep Reach did not need to sound cruel. It only needed every dangerous sentence to sound finished.
-
-## Field Note
-
-Do not make Deep Reach hiss. Make it certify, defer, preserve, and invoice.
+This article stays spoiler-aware. It can show Deep Reach as old, bureaucratic and culpable without revealing every final payload consequence. The player should meet the company through paperwork that still works, rooms that contradict it and signatures that look ordinary until the waterline proves what they cost.
 
 <!-- External Site; generated from P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE/en_US. -->

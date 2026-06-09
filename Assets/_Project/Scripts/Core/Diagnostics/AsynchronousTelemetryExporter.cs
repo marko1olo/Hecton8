@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -731,10 +732,13 @@ namespace Hecton8.Core.Diagnostics
         private uint _lastKccHeatmapFrame;
         private uint _lastFrameTimeSignalFrame;
         private uint _lastSurvivalDeathFrame;
+        private uint _survivalDeathSignalSourceId;
         private int _lastSurvivalDeathSignalSequence;
         private uint _fallbackFrameCounter;
         private uint _sessionTimestampSeconds;
         private double3 _lastKnownPlayerAup;
+        private IPlayerRuntimeContext _playerRuntimeContext;
+        private HectonSurvivalSystem _survivalSystem;
         private float _heatmapTimerSeconds;
         private float _mockTimerSeconds;
         private float _sessionTimestampAccumulator;
@@ -938,6 +942,8 @@ namespace Hecton8.Core.Diagnostics
             _fallbackDirectory = ResolveFallbackDirectory();
 
             ResetHotPathCounters();
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            RefreshSurvivalSignalBinding();
             AllocateColdManagedObjects();
             _storageReady = TryAcquireVaultStorage();
             LoadEndpointConfigurationCold();
@@ -960,6 +966,7 @@ namespace Hecton8.Core.Diagnostics
 
             Volatile.Write(ref _acceptingIngress, 0);
             TryUnregisterHotSwapListener();
+            ClearPlayerRuntimeContext();
             if (!StopWorker())
             {
                 _storageReady = false;
@@ -973,6 +980,7 @@ namespace Hecton8.Core.Diagnostics
         {
             Volatile.Write(ref _acceptingIngress, 0);
             TryUnregisterHotSwapListener();
+            ClearPlayerRuntimeContext();
             if (StopWorker())
                 TeardownStoppedWorkerState();
         }
@@ -982,6 +990,13 @@ namespace Hecton8.Core.Diagnostics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                RefreshSurvivalSignalBinding();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -1739,35 +1754,43 @@ namespace Hecton8.Core.Diagnostics
             if (!_hasLastKnownPlayerAup)
                 return;
 
-            IngestLatestSurvivalDeathSignal(timestampSeconds, frameId);
+            uint sourceId = _survivalDeathSignalSourceId;
+            if (sourceId == 0u)
+                return;
+
+            IngestLatestSurvivalDeathSignal(timestampSeconds, frameId, sourceId);
 
             ReadOnlySpan<SurvivalVitalsChangedSignal> signals = SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
                 SurvivalVitalsChangedSignal signal = signals[i];
                 uint signalFrame = ResolveSurvivalDeathSignalFrame(in signal, frameId);
-                TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame);
+                TryRecordSurvivalDeathTelemetry(in signal, sourceId, timestampSeconds, signalFrame);
             }
         }
 
-        private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId)
+        private void IngestLatestSurvivalDeathSignal(uint timestampSeconds, uint frameId, uint sourceId)
         {
-            if (!SurvivalSignalRoute.TryGetLatestDeath(out SurvivalVitalsChangedSignal signal, out int sequence))
+            if (!SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out SurvivalVitalsChangedSignal signal, out int sequence))
                 return;
 
             if (sequence == _lastSurvivalDeathSignalSequence)
                 return;
 
             uint signalFrame = ResolveSurvivalDeathSignalFrame(in signal, frameId);
-            if (TryRecordSurvivalDeathTelemetry(in signal, timestampSeconds, signalFrame))
+            if (TryRecordSurvivalDeathTelemetry(in signal, sourceId, timestampSeconds, signalFrame))
                 _lastSurvivalDeathSignalSequence = sequence;
         }
 
         private bool TryRecordSurvivalDeathTelemetry(
             in SurvivalVitalsChangedSignal signal,
+            uint sourceId,
             uint timestampSeconds,
             uint signalFrame)
         {
+            if (sourceId == 0u || signal.SourceId != sourceId)
+                return false;
+
             if ((signal.Flags & SurvivalVitalsChangedSignalFlags.Death) == 0u)
                 return false;
 
@@ -1784,6 +1807,40 @@ namespace Hecton8.Core.Diagnostics
         private static uint ResolveSurvivalDeathSignalFrame(in SurvivalVitalsChangedSignal signal, uint fallbackFrameId)
         {
             return signal.Frame != 0u ? signal.Frame : fallbackFrameId;
+        }
+
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
+            _survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;
+        }
+
+        private void ClearPlayerRuntimeContext()
+        {
+            _playerRuntimeContext = null;
+            _survivalSystem = null;
+            _survivalDeathSignalSourceId = 0u;
+            _lastSurvivalDeathSignalSequence = 0;
+        }
+
+        private void RefreshSurvivalSignalBinding()
+        {
+            uint sourceId = ResolveSurvivalSignalSourceId(_survivalSystem);
+            if (_survivalDeathSignalSourceId == sourceId)
+                return;
+
+            _survivalDeathSignalSourceId = sourceId;
+            _lastSurvivalDeathSignalSequence = sourceId != 0u &&
+                                               SurvivalSignalRoute.TryGetLatestDeathForSource(sourceId, out _, out int sequence)
+                ? sequence
+                : 0;
+        }
+
+        private static uint ResolveSurvivalSignalSourceId(HectonSurvivalSystem system)
+        {
+            return system != null
+                ? RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(system.GetEntityId()))
+                : 0u;
         }
 
         private void IngestFrameTimeSignals(uint timestampSeconds, uint frameId)

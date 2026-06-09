@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Normal Citizen Aegir Memory"
+title: "Пам'ять звичайних громадян про Аегір"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Normal Citizen Aegir Memory
+# Пам'ять звичайних громадян про Аегір
 
-UA LOC HOLD: Normal Citizen Aegir Memory defines the public distance of HECTON-8: not secret, not understood, and not close enough to save.
+Публічна пам'ять HECTON-8 навмисно тонка. Людському простору не потрібно бути неосвіченим; достатньо бути втомленим, далеким і навченим приймати зведення про втрати. Аегір досить відомий, щоб впливати на ціни й політику, але недостатньо живий, щоб змусити когось рятувати. Повернення в океан відкриває щілину між публічною пам'яттю та приватними доказами.
 
 ## Scanner
 
-UA LOC HOLD: Public memory: old disaster, distant resource, no faces.
+Уламок публічного архіву: про Аегір чули всі, але майже ніхто не пам'ятає імен.
 
 ## Terminal
 
-UA LOC HOLD: PUBLIC SUMMARY CACHE: HECTON-8 loss event, 2147. Storm cascade. Evacuation failure. Automation corruption. Biological quarantine. Data unreliable. Claim dormant.
+PUBLIC SUMMARY CACHE: подія втрати HECTON-8, 2147. Офіційні причини: штормовий каскад, провал евакуації, корупція автоматики, біологічний карантин, ненадійна телеметрія. Поточний статус: претензія спить, страховий індекс активний, цивільні маршрути не рекомендовані.
 
 ## Audio
 
-UA LOC HOLD: Most people know the place as a line under insurance rates.
+Більшість людей знає Аегір як рядок під своєю страховою ставкою.
 
 ## Field Note
 
-UA LOC HOLD: Aegir is famous enough to price, forgotten enough to bury.
+Катастрофа стає звичайною, коли її вже внесли в рахунок.
 
 <!-- External Site; generated from P124_NORMAL_CITIZEN_AEGIR_MEMORY/uk_UA. -->

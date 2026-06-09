@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "制导时序核心组件"
+title: "制导定时核心组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 制导时序核心组件
+# 制导定时核心组件
 
-制导时序核心组件让 HECTON-8 的航天保持硬度：extraction 是由时钟、阴影和受损信任组成的航路问题。
+制导定时核心组件把逃离变成轨道工程，而不是一次简单的向上推送。HECTON-8的上升胶囊必须穿过水体、天气、月球几何和企业接收规则，燃烧才可能被称为可回收。
 
-## Scanner
+这个部件保存定时地图：Aegir星历、Black Keel接收航道、月面中继快门缓存、风暴羽流漂移和custody时钟容差。没有一项是装饰。胶囊可以密封、充能、机械状态完好，但如果数据包在错误时间进入错误航道，仍会错过回收。
 
-空白 timing core。Aegir 几何决定升空会变成 recovery、capture，还是沉默。
-
-## Terminal
-
-GUIDANCE CORE: 将胶囊时钟对齐 Aegir window、Black Keel receiver lane、月面 relay shutter 和 storm-plume drift。迟到 packets 变成证据丢失；过早 packets 变成 capture noise。
-
-## Audio
-
-向上不是方向，而是有见证人的窗口。
-
-## Field Note
-
-从 HECTON-8 出发没有简单的“向上”。只有接收器、阴影、风暴漂移，以及早已比你的恐慌更老的 packet queue。
+这就是HECTON-8逃离幻想里的苦味。幸存者不是从深处进入自由。胶囊进入的是海面上方一条狭窄的记账窗口，而海仍在扭曲每一个信号。修复定时核心给发射在窗口里争到位置。它不会让窗口变得仁慈。
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/zh_CN. -->

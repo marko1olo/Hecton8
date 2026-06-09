@@ -68,7 +68,7 @@ public sealed class AtmosphereManagerEditorPreviewTests
     }
 
     [Test]
-    public void AtmosphereWaterSurfaceRouteRejectsStaleZeroFallback()
+    public void AtmosphereWaterSurfaceRouteAllowsRuntimeZeroButRejectsStaleFallback()
     {
         string source = File.ReadAllText(AtmosphereManagerPath).Replace("\r\n", "\n");
         string setterBody = SliceBetween(
@@ -84,22 +84,26 @@ public sealed class AtmosphereManagerEditorPreviewTests
             "private float ResolveSeaLevelY()",
             "private static float SanitizeWaterSurfaceY(float worldY)");
 
-        Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceY = 14.02f;"));
+        Assert.That(source, Does.Contain("private const float DefaultWaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;"));
         Assert.That(source, Does.Contain("[SerializeField] private float _waterSurfaceY = DefaultWaterSurfaceY;"));
         Assert.That(source, Does.Contain("private static float SanitizeWaterSurfaceY(float worldY)"));
         Assert.That(source, Does.Contain("math.abs(worldY) > 0.0001f"));
+        Assert.That(source, Does.Contain("math.abs(worldY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY"));
         Assert.That(setterBody, Does.Contain("_waterSurfaceY = SanitizeWaterSurfaceY(worldY);"));
         Assert.That(syncBody, Does.Contain("TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState)"));
         Assert.That(syncBody, Does.Contain("movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters)"));
         Assert.That(syncBody, Does.Contain("if (HasPlayerRuntimeContext())"));
-        Assert.That(syncBody, Does.Contain("_waterSurfaceY = SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);"));
+        Assert.That(syncBody, Does.Contain("TryResolveRuntimeWaterSurfaceY(movementWaterSurfaceY, out float resolvedMovementWaterSurfaceY)"));
+        Assert.That(syncBody, Does.Contain("TryResolveRuntimeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY)"));
         Assert.That(resolverBody, Does.Contain("TryResolveMovementRuntimeState(out PlayerMovementRuntimeState movementState)"));
         Assert.That(resolverBody, Does.Contain("movementState.WorldPosition.y + math.max(0f, movementState.DepthMeters)"));
         Assert.That(resolverBody, Does.Contain("if (!HasPlayerRuntimeContext() && _playerMovement != null)"));
-        Assert.That(resolverBody, Does.Contain("return SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY);"));
+        Assert.That(resolverBody, Does.Contain("TryResolveRuntimeWaterSurfaceY(movementWaterSurfaceY, out float resolvedMovementWaterSurfaceY)"));
+        Assert.That(resolverBody, Does.Contain("TryResolveRuntimeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY, out float playerWaterSurfaceY)"));
         Assert.That(resolverBody, Does.Contain("return SanitizeWaterSurfaceY(_waterSurfaceY);"));
         Assert.That(syncBody.IndexOf("TryResolveMovementRuntimeState", System.StringComparison.Ordinal), Is.LessThan(syncBody.IndexOf("_playerMovement.CurrentWaterSurfaceY", System.StringComparison.Ordinal)));
         Assert.That(resolverBody.IndexOf("TryResolveMovementRuntimeState", System.StringComparison.Ordinal), Is.LessThan(resolverBody.IndexOf("_playerMovement.CurrentWaterSurfaceY", System.StringComparison.Ordinal)));
+        Assert.That(source, Does.Not.Contain("SanitizeWaterSurfaceY(_playerMovement.CurrentWaterSurfaceY)"));
         Assert.That(source, Does.Not.Contain("_waterSurfaceY = math.isfinite(worldY) ? worldY : DefaultWaterSurfaceY;"));
         Assert.That(source, Does.Not.Contain("return math.isfinite(_waterSurfaceY) ? _waterSurfaceY : DefaultWaterSurfaceY;"));
         Assert.That(source, Does.Not.Contain("[SerializeField] private float _waterSurfaceY = 0f;"));

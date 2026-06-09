@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "payload座標売却受領プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# payload座標売却受領プロトコル
 
-JA LOC HOLD: The sale route is not a fake bad ending. It pays and recovers the player while giving Deep Reach the route back into HECTON-8.
+座標売却プロトコルはHECTON-8を回収可能な財産として扱う。最終payloadをDeep Reach用の受領者パケットへ変換する。盆地ベクトル、信頼グリッド、証拠ダイジェスト、salvageアクセスクラス。送信者は金と債務軽減を受け取る。Deep Reachは接近マップと、請求へ戻るよりきれいな経路を受け取る。
 
 ## Scanner
 
-JA LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
+座標売却ルート起動。盆地ベクトル、信頼マップ、証拠ダイジェストはDeep Reach Recovery Complianceへ向かう。
 
 ## Terminal
 
-JA LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
+PAYLOAD受領者 // 座標売却。受領者: Deep Reach Recovery Compliance。送信: 盆地ベクトル、信頼グリッド、XO proof digest、salvageアクセスクラス。返却: 支払領収、先取特権軽減、回収優先印。領収ロックでアクセスマップ転送。
 
 ## Audio
 
-JA LOC HOLD: This is the cleanest way out if you stop reading after the amount.
+支払い完了。マップ転送。作業者台帳はまだ開いている。
 
 ## Field Note
 
-JA LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+略奪者メモ: 一行目が金額なら、二行目を読め。二行目はaccess map transferredだ。
 
 <!-- In-Game Wiki; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/ja_JP. -->

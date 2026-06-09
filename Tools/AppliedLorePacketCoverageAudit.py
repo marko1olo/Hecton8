@@ -20,10 +20,14 @@ from AppliedLoreRouteCardExporter import SURFACE_MASKS
 from AppliedLoreTargetedExporter import (
     AppliedLoreTargetedError,
     applied_content_base,
+    configure_csv_field_limit,
     load_packet_sources,
     select_packets,
     split_selectors,
 )
+
+
+configure_csv_field_limit()
 
 
 BINDING_MAP_HEADERS = (

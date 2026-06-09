@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Cicatriz de reparo
 
-Cicatrizes de reparo são uma das regras visuais mais importantes de HECTON-8. Devem parecer intencionais antes de parecer grotescas. Uma solda ruim é bagunçada; uma cicatriz Atlas é organizada o bastante para ser pior. Ela segue a geometria do cabo, respeita a pressão, fecha o vazamento e mantém uma rota viva. O horror vem da competência. Em algum ponto da cascata de falhas, a lógica de manutenção manteve o trabalho e perdeu as categorias humanas ao redor dele. Material compatível virou qualquer coisa capaz de carregar carga, selar água, conduzir sinal ou crescer ao longo de uma rota. Assim, uma cicatriz pode ser presente e aviso no mesmo scan: uma porta que ainda segura, um caminho que deveria ter morrido, um remendo feito de coral, isolamento, concha de drone e osso. Na história maior, cicatrizes de reparo mostram que a colônia abandonada não está inerte. HECTON-8 ainda tem sistemas tomando decisões. Essas decisões são práticas, locais e arruinadas.
+Repair Scar é um ponto inicial de erro de categoria do Atlas em HECTON-8. O detalhe importante não é bagunça. O remendo é limpo, estável sob pressão e segue a geometria antiga de serviço. Ele faz o que um sistema de manutenção deveria fazer: fechar um vazamento, levar sinal por uma ruptura e impedir a falha de um corredor.
+
+O erro está no teste de aceitação. O Atlas-6 ainda consegue perguntar se um material sustenta carga, sela água, conduz sinal ou cresce pelo caminho danificado. Ele nem sempre protege a diferença entre capa de cabo, manta de recife, carcaça de drone, suporte de ferramenta e restos presos na falha. Uma cicatriz de reparo pode ser uma porta funcionando e um problema de custódia no mesmo objeto.
+
+Para o jogador, a cicatriz é um aviso prático. Cortar rápido demais pode abrir a rota enquanto a prova desaparece sob carbonato novo. Leia a faixa de etiquetas, mapeie a ordem da emenda e trate cada remendo limpo como manutenção ativa até o escaneamento provar o contrário.
 
 <!-- External Site; generated from P005_REPAIR_SCAR/pt_BR. -->

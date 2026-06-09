@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Escape Recipe Cost Boundary"
+title: "Граница стоимости рецепта выхода"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Escape Recipe Cost Boundary
+# Граница стоимости рецепта выхода
 
-Побег с HECTON-8 сначала ремонт: сигнал, seal, guidance, ascent energy, legal handshake, custody.
+Покинуть HECTON-8 — прежде всего ремонтная задача: сигнал, герметик, наведение, энергия подъема, юридическое рукопожатие и хранение payload. Таблица рецепта держит точные цены; лор объясняет, почему каждая цена кусается.
 
 ## Scanner
 
-RU LOC HOLD: Escape recipe boundary: component class, pressure tier, route proof, authority state.
+Строка рецепта выхода связывает класс компонента, уровень давления, доказательство маршрута и состояние полномочий.
 
 ## Terminal
 
-RU LOC HOLD: ASCENT RECIPE CONTRACT: qualified costs name relay, seal, guidance, ascent energy, legal handshake, and payload authority requirements.
+КОНТРАКТ РЕЦЕПТА ПОДЪЕМА: квалифицированные затраты должны назвать реле, герметик, наведение, энергию подъема, юридическое рукопожатие, полномочия payload и риск приемника. Путь вверх состоит из деталей; у деталей есть владельцы.
 
 ## Audio
 
-У пути наверх есть детали. У деталей есть владельцы.
+Путь вверх состоит из деталей. У деталей есть владельцы.
 
 ## Field Note
 
-RU LOC HOLD: Pressure bands come from containment rules; exact costs belong to recipe tables.
+Pressure bands приходят из правил удержания; точные costs принадлежат recipe tables.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ru_RU. -->

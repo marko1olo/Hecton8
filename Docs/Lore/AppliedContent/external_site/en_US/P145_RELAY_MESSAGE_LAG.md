@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Relay Message Lag
 
-Relay lag lets HECTON-8 receive authority without receiving care. A packet can carry law, debt, ownership, or warning across hours, days, or years, but it cannot bring hands into a flooded room. That split is the core communication pressure: remote systems remain powerful because they were written early, queued early, and priced to survive distance. Compassion arrives as a person; contract arrives as data. The data wins too often.
+Relay message lag is the reason HECTON-8 can be abandoned and governed at the same time. There is no magical voice channel that collapses distance into comfort. There are windows, queues, repeaters, custody stamps, compression losses, legal receipts, and packets that arrive with perfect authority and useless timing.
+
+Deep Reach's pressure depends on that asymmetry. A lien notice can remain valid after a medical plea expires. A denial can execute after the manager who signed it has rotated home. A confession can arrive after the witness dies. The ocean is silent, but the route is not. It keeps delivering old decisions into rooms that needed living help.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/en_US. -->

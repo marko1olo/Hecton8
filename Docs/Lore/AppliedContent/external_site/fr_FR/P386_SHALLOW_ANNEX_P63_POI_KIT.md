@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Kit de preuves de l'annexe peu profonde P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Shallow Annex P-63 POI Kit
+# Kit de preuves de l'annexe peu profonde P-63
 
-FR LOC HOLD: P-63 is the first playable proof that HECTON-8 is practical survival before it becomes a liability case.
+P-63 fonctionne parce qu'il refuse de séparer abri et preuve. La salle donne à l'opérateur de l'air, une pompe de cale, des joints, une ligne de pinger et un contact de découpeur. Ces pièces servent d'abord; le contrat peut attendre, l'eau non.
 
-## Scanner
-
-FR LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
-
-## Terminal
-
-FR LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
-
-## Audio
-
-FR LOC HOLD: First room with air. First room with a lie.
-
-## Field Note
-
-FR LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Une fois la salle stable, les mêmes objets changent de poids. L'avis de route scellé parle d'une fermeture sous conditions contrôlées, tandis que la pompe abîmée, le plateau de joints rapiécé et le dossier d'accident mouillé montrent une sortie plus rude. La première contradiction n'est pas cachée dans un discours. Elle est boulonnée à l'endroit qui a gardé l'opérateur vivant.
 
 <!-- External Site; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/fr_FR. -->

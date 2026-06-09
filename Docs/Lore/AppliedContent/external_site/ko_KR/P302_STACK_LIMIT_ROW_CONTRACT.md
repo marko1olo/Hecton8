@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Stack Limit Data Boundary"
+title: "스택 제한 데이터 경계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Stack Limit Data Boundary
+# 스택 제한 데이터 경계
 
-KO LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+HECTON-8의 인벤토리 압박은 격리, 인증, 오염된 질량에서 온다. 게임은 단순한 스택을 보여줄 수 있지만, lore는 왜 스택이 안전한지, 왜 깨지는지, 왜 바다가 아이콘에 관심 없는지 말한다.
 
 ## Scanner
 
-KO LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+스택 행은 아이콘 더미를 거부한다. 용기 등급, 압력 등급, 오염, 질량이 수량을 결정한다.
 
 ## Terminal
 
-KO LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: 스택 수는 용기 유형, 압력 등급, 오염 단계, 질량 등급, 경고 티어, save-stable identity를 요구한다. 상자는 압력 용기가 아니다.
 
 ## Audio
 
-KO LOC HOLD: A crate is not a pressure vessel.
+상자는 압력 용기가 아니다.
 
 ## Field Note
 
-KO LOC HOLD: Stack limits stay table-owned and stable for save identity.
+스택 제한은 table-owned로 유지되고 save identity에 안정적이어야 한다.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/ko_KR. -->

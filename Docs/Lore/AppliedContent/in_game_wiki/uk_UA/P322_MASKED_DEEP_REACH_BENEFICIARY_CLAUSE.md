@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "Прихована beneficiary clause Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Masked Deep Reach Beneficiary Clause
+# Прихована beneficiary clause Deep Reach
 
-UK LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+Прихована beneficiary clause Deep Reach утримує змову на рівні контрактного тиску, а не театру лиходіїв. Deep Reach не мусить з'являтися у видимому hire sheet, щоб формувати місію. Вона з'являється в порядку доступу: який recovery channel відкривається першим, який receiver застрахований, який coordinate packet переживає редагування і який стіл отримає виплату, якщо claim виживе. Clause використовує proxy loss desk, щоб відвести liability від старої назви, зберігши головне, чого Deep Reach досі хоче: доступ до затопленого ланцюга координат, який вони не змогли поховати. Від цього знахідка холодніша за зізнання. Гравець читає не монолог. Він читає машину, яка вже розклала його на asset, witness, contractor і recoverable debt. Deep Reach присутня як тиск, а не дим. Відсутнє ім'я і є доказом.
 
 ## Scanner
 
-UK LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach не надрукована в hire sheet. Вона з'являється там, де сходяться гроші, пріоритет приймача і доступ до координат.
 
 ## Terminal
 
-UK LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+BENEFICIARY TRACE / видимий наймач: proxy loss desk / прихований beneficiary: shell, пов'язана з Deep Reach / liability: ізольована / coordinate access: збережений / priority recovery channel: відкривається раніше contractor distress lane.
 
 ## Audio
 
-UK LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+Якщо імені немає, але канал відкривається першим, власник усе ще в кімнаті.
 
 ## Field Note
 
-UK LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Тримати процедурно: редагування, proxy loss desk, beneficiary trace, recovery channel. Нехай гравець сам виведе тиск.
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/uk_UA. -->

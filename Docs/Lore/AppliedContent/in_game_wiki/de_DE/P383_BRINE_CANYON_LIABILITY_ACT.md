@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Brine Canyon Liability Act"
+title: "Haftungstor Brine-Canyon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Brine Canyon Liability Act
+# Haftungstor Brine-Canyon
 
-DE LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+Der Brine-Canyon macht Zeit zu Beweisen. Sensoren, Uhren, Warteschlangenstatus und gebrochene Routenplatten zeigen, dass die Flut real war und das akzeptierte Risiko auch. Der Operator sammelt keine Gerüchte mehr, sondern trägt eine Dokumentenkette, die Empfängerprüfung überstehen kann.
 
 ## Scanner
 
-DE LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Routentor: Brine-Canyon. Dichteschichten, beschädigte Uhren und akzeptierte Margen werden physische Haftungsbeweise.
 
 ## Terminal
 
-DE LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+KAMPAGNENROUTE // BRINE-CANYON. Erforderlich: Margenspur, Evakuierungswarteschlange, Routenbruch und Druckuhr vergleichen. Great-Tide-Ereignis bestätigt. Kommerzielle Ausnahme und Atlas-Gewichtung umstritten.
 
 ## Audio
 
-DE LOC HOLD: The ocean did not lie. The timetable did.
+Der Ozean brach die Wand. Der Zeitplan brach die Menschen.
 
 ## Field Note
 
-DE LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Plünderernotiz: Streite nicht mit der Tide. Streite mit dem Zeitstempel, dessen Entfernung jemand bezahlt hat.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/de_DE. -->

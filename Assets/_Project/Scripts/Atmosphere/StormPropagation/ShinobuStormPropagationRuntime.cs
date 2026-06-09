@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -56,6 +58,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<float4> _audioScalarHandle;
         private VaultGenerationHandle<float4> _biolumScalarHandle;
         private VaultGenerationHandle<float4> _fogScalarHandle;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private StormPropagationJobStagingBuffers _jobStagingBuffers;
         private ref NativeArray<WeatherStateDTO> _jobWeatherSnapshot => ref _jobStagingBuffers.WeatherSnapshot;
@@ -218,6 +221,7 @@ namespace Hecton8.Atmosphere
             TryUnregisterLate();
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
+            _oceanKinematicsService = null;
             ReleaseRuntimeClaim();
         }
 
@@ -236,6 +240,7 @@ namespace Hecton8.Atmosphere
             DisposeJobStagingCold();
             ReleaseVaultStateForLifecycle(_vault);
             _vault = null;
+            _oceanKinematicsService = null;
         }
 
         public void Tick(float deltaTime)
@@ -449,6 +454,7 @@ namespace Hecton8.Atmosphere
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.OceanKinematics, GlobalRegistry.OceanKinematics);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
         }
 
@@ -471,6 +477,9 @@ namespace Hecton8.Atmosphere
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
                     RebindDataVaultForLifecycle(nextVault);
+                    break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     IPlayerRuntimeContext nextPlayer = currentService as IPlayerRuntimeContext;
@@ -1378,6 +1387,15 @@ namespace Hecton8.Atmosphere
 
         private double3 ResolveSeaLevelAupDouble(double3 runtimeOriginAup, in WeatherStateDTO weather, bool weatherAvailable)
         {
+            float seaLevelLocal = ResolveRuntimeSeaLevelLocalY(in weather, weatherAvailable);
+            return new double3(runtimeOriginAup.x, runtimeOriginAup.y + seaLevelLocal, runtimeOriginAup.z);
+        }
+
+        private float ResolveRuntimeSeaLevelLocalY(in WeatherStateDTO weather, bool weatherAvailable)
+        {
+            if (TryResolveOceanSeaLevelLocalY(out float oceanSeaLevelLocal))
+                return oceanSeaLevelLocal;
+
             float seaLevelLocal = ResolveSeaLevelLocalY(seaLevelAupY);
             if (weatherAvailable)
             {
@@ -1385,16 +1403,58 @@ namespace Hecton8.Atmosphere
                     seaLevelLocal = ResolveSeaLevelLocalY(weather.SurfaceScalars.x);
             }
 
-            return new double3(runtimeOriginAup.x, runtimeOriginAup.y + seaLevelLocal, runtimeOriginAup.z);
+            return seaLevelLocal;
+        }
+
+        private bool TryResolveOceanSeaLevelLocalY(out float seaLevelLocal)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanSeaLevelLocalY(oceanKinematics.SeaLevel, out seaLevelLocal))
+            {
+                return true;
+            }
+
+            seaLevelLocal = (float)DefaultSeaLevelLocalY;
+            return false;
+        }
+
+        private static bool TryResolveOceanSeaLevelLocalY(float value, out float seaLevelLocal)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelLocal = value;
+                return true;
+            }
+
+            seaLevelLocal = (float)DefaultSeaLevelLocalY;
+            return false;
         }
 
         private static float ResolveSeaLevelLocalY(double value)
         {
-            return math.isfinite(value) &&
-                math.abs(value) > 0.0001d &&
-                math.abs(value) <= 1000d
-                ? (float)value
+            return TryResolveSeaLevelLocalY(value, out float seaLevelLocal)
+                ? seaLevelLocal
                 : (float)DefaultSeaLevelLocalY;
+        }
+
+        private static bool TryResolveSeaLevelLocalY(double value, out float seaLevelLocal)
+        {
+            if (math.isfinite(value) &&
+                math.abs(value) > 0.0001d &&
+                math.abs(value) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelLocal = (float)value;
+                return true;
+            }
+
+            seaLevelLocal = (float)DefaultSeaLevelLocalY;
+            return false;
         }
 
         private void RefreshCachedOriginFallbackAupCold()

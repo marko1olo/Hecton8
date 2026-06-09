@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_flora_contact |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS170_FIRST_FLORA_CONTACT_ARTICLES.md |
 | Speaker | Field scanner, shallow flora note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first flora contact |
@@ -39,7 +39,7 @@ SALT REED // Tips burned white. Read base color before judging sample state.
 
 The white tips draw the eye, but the base tells the better story. Salt burn can bleach the frond while the lower tissue remains darker and wet. A useful scan records both.
 
-The brightest damage is not always the best evidence.
+The root line decides whether the sample is still wet tissue or spent burn.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ READ BASE COLOR
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | SALT REED // Tips burned white. Read base color before judging sample state. |
-| ar_SA | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| de_DE | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| es_ES | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| fr_FR | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| he_IL | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| id_ID | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| ja_JP | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| ko_KR | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| nl_NL | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| pl_PL | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| pt_BR | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| ru_RU | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| uk_UA | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
-| zh_CN | draft_machine_or_llm | SALT REED // Tips burned white. Read base color before judging sample state. |
+| ar_SA | draft_machine_or_llm | قصب ملحي // الأطراف محروقة بيضاء. اقرأ لون القاعدة قبل الحكم على حالة العينة. |
+| de_DE | draft_machine_or_llm | SALZSCHILF // Spitzen weiss verbrannt. Grundfarbe lesen, bevor du den Probenzustand beurteilst. |
+| es_ES | draft_machine_or_llm | JUNCO SALINO // Puntas quemadas en blanco. Lee el color de la base antes de juzgar la muestra. |
+| fr_FR | draft_machine_or_llm | ROSEAU SALIN // Pointes blanchies par brulure. Lire la couleur de base avant de juger l'echantillon. |
+| he_IL | draft_machine_or_llm | קנה מלח // הקצוות נצרבו לבן. בדוק את צבע הבסיס לפני הערכת מצב הדגימה. |
+| id_ID | draft_machine_or_llm | GELAGAH GARAM // Ujungnya terbakar putih. Baca warna pangkal sebelum menilai kondisi sampel. |
+| ja_JP | draft_machine_or_llm | ソルトリード // 先端が白く焼けている。試料状態は基部色を読んでから判断。 |
+| ko_KR | draft_machine_or_llm | 염분 갈대 // 끝이 흰색으로 탔다. 표본 상태는 밑동 색을 읽은 뒤 판단한다. |
+| nl_NL | draft_machine_or_llm | ZOUTRIET // Punten wit verbrand. Lees de basiskleur voordat je de monsterstaat beoordeelt. |
+| pl_PL | draft_machine_or_llm | TRZCINA SOLNA // Koncowki biale od wypalenia. Przed ocena probki sprawdz kolor podstawy. |
+| pt_BR | draft_machine_or_llm | CANICO SALINO // Pontas queimadas de branco. Leia a cor da base antes de julgar a amostra. |
+| ru_RU | draft_machine_or_llm | СОЛЯНОЙ ТРОСТНИК // Кончики выжжены добела. Состояние образца оценивай после цвета основания. |
+| uk_UA | draft_machine_or_llm | СОЛЯНА ОЧЕРЕТИНА // Кінчики вигоріли добіла. Стан зразка оцінюй після кольору основи. |
+| zh_CN | draft_machine_or_llm | 盐芦 // 顶端烧白。先看基部颜色，再判断样本状态。 |

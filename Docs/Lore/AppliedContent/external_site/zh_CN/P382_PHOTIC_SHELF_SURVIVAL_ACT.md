@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Photic Shelf Survival Act"
+title: "透光陆棚生存门"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Photic Shelf Survival Act
+# 透光陆棚生存门
 
-ZH LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+陆棚给路线一套工作词汇：泵、密封、切割、ping、补片、补给。每个动作都小而具体。门会打开，是因为夹具撑住了，不是因为殖民地想被探索。
 
-## Scanner
-
-ZH LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-ZH LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-ZH LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-ZH LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Atlas 残留在这里作为维护线索进入，而不是最终答案。修好的面板、导电膜或错误路由的服务补片，可以帮助操作员活下去，同时证明系统已经接触过路线。明亮让工作可读；债务让工作紧急。
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/zh_CN. -->

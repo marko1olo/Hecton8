@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "마로더 법적 허점"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# 마로더 법적 허점
 
-KO LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+마라우더는 하나의 깃발을 든 부족이 아니다. 그들은 계약자, 빚진 승무원, 잔해 잠수부, 막다른 정비공이며 지연이 만든 허점 안에서 일한다. 죽은 식민지도 소유자는 있지만, 소유권은 선체를 때우거나 브라인을 퍼내거나 찌그러진 서비스 덱에서 기록기를 끌어내지 않는다. Deep Reach는 부인할 수 있는 승무원이 필요하다. 도메인들은 직접 수집하지 않아도 되는 증거가 필요하다. 승무원들은 다음 순찰을 넘길 만큼의 서류가 필요하다.
 
 ## Scanner
 
-KO LOC HOLD: License valid in one lane, criminal in the next.
+한 항로에서는 유효한 면허가 다음 항로에서는 기소 사유가 된다.
 
 ## Terminal
 
-KO LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: Aegir Reclamation Pool custody 아래서는 licensed salvage contractor. Deep Reach 자산 문구에서는 묵인된 trespasser. 깨끗한 Sol 요약에서는 기소 가능한 raider. 회수된 기록이 중요한 사람을 곤란하게 만들지 않을 때만 emergency responder.
 
 ## Audio
 
-KO LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+같은 절단기가 도구, 범죄, 혹은 남은 유일한 구조 장비가 될 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder는 올바른 법정이 이익을 얻을 수 있을 때만 직함이다.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/ko_KR. -->

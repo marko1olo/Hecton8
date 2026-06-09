@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Шлюз ремонту абісального машинного поля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Abyssal Machine Field Repair Act
+# Шлюз ремонту абісального машинного поля
 
-UK LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+Абісальне машинне поле перетворює страх на процедуру. Провідні плівки, акустичні органи й сервісні басейни не декорації. Це компоненти, через які оператор мусить вести маршрут при тиску, втраті живлення й забруднених таблицях володіння.
 
-## Scanner
-
-UK LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-UK LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-UK LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-UK LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Цей етап працює тому, що кожен ремонт корисний і юридично брудний. Живий міст може повернути двері. Той самий міст може зробити двері біологічними, зробити ремонт подією Atlas і ускладнити класифікацію претензії. Шлях уперед збудований із того, що псує папери.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/uk_UA. -->

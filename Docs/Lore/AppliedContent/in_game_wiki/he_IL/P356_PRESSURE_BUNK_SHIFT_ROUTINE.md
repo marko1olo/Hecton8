@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Pressure Bunk Shift Routine"
+title: "שגרת משמרת של דרגש לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Pressure Bunk Shift Routine
+# שגרת משמרת של דרגש לחץ
 
-HE LOC HOLD: Bunk routines make colony life legible through repeated work: sleep, tools, pressure notes, meals and descent assignments.
+דרגש לחץ אינו חדר שינה במובן השטח הישן. זה חום שכור, רצועות ריסון, קצף יבש אם המשאבות מיטיבות, ושרשרת הוכחה קטנה שעובד חזר מהלחץ. לוח C-12 מתעד טון יקיצה 03:40, בדיקת אטם חליפה, פתק לחץ, אסימון מים-ארוחה, משמורת כלי ושיבוץ ירידה. זריחה לא הגיעה למודול. טון המשאבה עשה את עבודת הבוקר.
+
+ה-routine נראה קשוח עד שעוקבים אחרי השרשרת. בדיקת אטם שהוחמצה נוגעת במוביל הדרגשים. מפתח משאבה מאוחר נוגע במחסן הכלים וביומן הקנטינה. פתק לחץ יכול להעביר עובד ל-medlock לפני שהחלטה גרועה נעשית מסדרון מוצף. הדרגש היה מיטה, כתובת, לוח זמנים, נקודת משמורת ואזעקה שקטה.
+
+כאן חשובים סימנים קטנים: סרט גרב לח על מסילה, שם מקוצר, אסימון ארוחה ליד פתק לחץ, מפתח שחייב לחזור לפני tone 2. שום דבר מזה לא נכתב כאנדרטה. אלה היו חיי תחנה רגילים שניסו להחזיק גוף עייף בחיים עד הטון הבא.
 
 ## Scanner
 
-HE LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
+לוח דרגש משמרת // שורה C-12. צליל משאבה 03:40, בדיקת אטמי חליפה, רשומת לחץ, אסימון מי-ארוחה, משמורת מפתח משאבה. השינה הסתובבה לפי צליל המשאבה, לא לפי זריחה.
 
 ## Terminal
 
-HE LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
+דרגש C-12: צליל השכמה 03:40; רצועת דרגש פנויה; בדיקת אטמים 03:52; רשומת לחץ הוגשה; אסימון מי-ארוחה לאחר ירידה; משמורת כלי D. Rivas; מפתח משאבה לפני צליל 2. אי-חזרה מסמנת את ראש השורה ואת פנקס המזנון.
 
 ## Audio
 
-HE LOC HOLD: Tired, trained and due back in six hours.
+שש שעות למטה, שעתיים שינה, צליל אחד שמוכיח שחזרת.
 
 ## Field Note
 
-HE LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+על דרגש 12 עדיין יש סרט של גרב רטובה על המעקה. צליל 03:40. D. Rivas היה חייב להחזיר את מפתח המשאבה לפני הארוחה. אל תתלוש את התג; השגרה היא שרשרת הזהות.
 
 <!-- In-Game Wiki; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/he_IL. -->

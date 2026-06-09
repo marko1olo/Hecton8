@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Riskier Contract Seeds"
+title: "より危険な契約seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riskier Contract Seeds
+# より危険な契約seed
 
-JP LOC HOLD: Riskier Contract Seeds make replayability economic and procedural: the contract changes the ocean's demands.
+より危険な契約seedはリプレイ性を経済と手順で作る。海の要求が変わるだけで、持ち込める力は変わらない。
 
 ## Scanner
 
-JP LOC HOLD: You can choose a worse contract, not a stronger body.
+契約SEED // 悪い窓、深い初期目標、厳格な証拠保管、希少な試料、大きい債務軽減。継承パワーなし。
 
 ## Terminal
 
-JP LOC HOLD: CONTRACT SEED OPTION: higher lien relief, deeper initial target, worse weather window, stricter evidence custody or rarer resource requirement. No equipment power carryover.
+SEED選択: 悪い軌道タイミング、深い初期目的、厳しい証拠保管、希少資源の証明、きつい帰還会計を受け入れることで支払いを増やす。装備性能と所持品はリセットされる。
 
 ## Audio
 
-JP LOC HOLD: The board pays more when it expects less of you to return.
+戻る期待が低いほど、掲示板は多く払う。
 
 ## Field Note
 
-JP LOC HOLD: Replay should ask for greed, courage or stupidity, not grind.
+リプレイが問うべきは欲、勇気、愚かさだ。作業量ではない。
 
 <!-- External Site; generated from P137_RISKIER_CONTRACT_SEEDS/ja_JP. -->

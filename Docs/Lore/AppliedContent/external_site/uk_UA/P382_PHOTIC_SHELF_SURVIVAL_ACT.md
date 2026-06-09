@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Photic Shelf Survival Act"
+title: "Шлюз фотичного шельфу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Photic Shelf Survival Act
+# Шлюз фотичного шельфу
 
-UK LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+Шельф дає маршруту робочий словник: насос, ущільнення, різ, ping, латка, дозаправка. Кожна дія мала й фізична. Двері відкриваються тому, що хомут тримає, а не тому, що колонія хоче бути дослідженою.
 
-## Scanner
-
-UK LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-UK LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-UK LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-UK LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Залишок Atlas входить тут як підказка обслуговування, а не фінальна відповідь. Відремонтована панель, провідна плівка або неправильно заведена сервісна латка можуть допомогти оператору вижити й водночас довести, що система вже торкалася маршруту. Яскравість робить роботу читабельною; борг робить її терміновою.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/uk_UA. -->

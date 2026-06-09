@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "회수 준수 좌표 요구"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Recovery Compliance Coordinate Demand
+# 회수 준수 좌표 요구
 
-KO LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+식민지가 사라진 뒤 Deep Reach는 도움의 손을 내밀며 돌아오지 않았다. 첫 정상 채널은 자산의 위치, 소유권을 증명할 사람, 살아 있는 증인이 격리와 유치권 검토를 받아들일지 묻는다. HECTON-8에서 구조는 거부되지 않는다. 압박 수단이 될 때까지 지연된다.
 
 ## Scanner
 
-KO LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Deep Reach Recovery Compliance로 인증된 패킷: 구조라는 문장 안에 좌표, 보관 증명, 오염 상태 요구가 감겨 있다.
 
 ## Terminal
 
-KO LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+RECOVERY COMPLIANCE 통지 DR-RC-8: Atlas 접근 벡터, Xenon-Omega 보관 증명, 생물학적 오염 상태, 현재 분지 좌표를 전송하라. 의료 회수는 자산 연쇄, 구조 유치권, 현장 통제권이 조정될 때까지 보류된다. 무단 송신은 생존자 우선순위를 증거 보류로 강등할 수 있다.
 
 ## Audio
 
-KO LOC HOLD: They can say rescue without meaning rescue.
+그들은 구조를 영장처럼 들리게 하는 법을 찾아냈다.
 
 ## Field Note
 
-KO LOC HOLD: Use near payload authority decisions and receiver selection.
+플레이어가 무엇을 전송할지 선택하는 지점에 둔다. 위협은 연극적이 아니라 절차적으로 느껴져야 한다. 악당의 연설이 아니라 사람을 묻어 버릴 수 있는 대기열이다.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/ko_KR. -->

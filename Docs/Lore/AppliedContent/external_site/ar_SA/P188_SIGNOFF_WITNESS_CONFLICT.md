@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "تعارض التوقيع والشاهد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# تعارض التوقيع والشاهد
 
-AR LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+يحدد تعارض التوقيع والشاهد التناقض خلف تقرير Deep Reach العام. تستطيع الشركة أن تزعم أن المحيط جعل الإنقاذ مستحيلاً؛ لكنها لا تستطيع بأمان أن تزعم أن أحداً لم ير التعارض قبل حجز سلطة الإفراج. تحول هذه المقالة دليل الغرفة إلى ضغط سردي: سجل باب، وتجزئة شاهد، وساعة مسار تالفة تجعل التوقيع الرسمي يبدو أقل كعدم يقين وأكثر كحذف مضبوط. إنها تبقي الكارثة فيزيائية، لكنها تثبت أن قصة التغطية كانت بشرية.
 
 ## Scanner
 
-AR LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+يقول التوقيع إن مراجعة الإخلاء لم تحمل تناقضاً حياً. تقول تجزئات الشهود إن التناقض كان في الغرفة.
 
 ## Terminal
 
-AR LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: التوقيع العام يسجل فشل المد كسبب وحيد. تجزئة شاهد محلية تضع مستشار الإخلاء وAtlas Safety وعمليات المسار في غرفة المراجعة قبل حجز الإفراج. قارن سجل الباب وختم الاسم وساعة المسار المكسورة.
 
 ## Audio
 
-AR LOC HOLD: The signatures line up. The bodies do not.
+يقول التقرير إن أحداً لم يكن يستطيع أن يعرف. سجل الباب لا يوافق.
 
 ## Field Note
 
-AR LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+يبقى التوقيع نظيفاً فقط حتى تتذكر الغرفة من كان يقف بجانبه.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/ar_SA. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 殖民地与工人
 
-回收worker index：water ledgers、relay witness trays、brine route stamps、triage repair tags和vent-forge rejects通过工作保存姓名。
+工人档案枢纽：HECTON-8通过shift boards、maintenance debts、pressure calls、handoff marks以及Deep Reach试图压平成损失类别的记录记住人。
 
 ## Scanner
 
-WORKER INDEX // 五条route-linked姓名记录。Pump、relay、brine、triage、forge。拆除硬件前保留tag chain。
+WORKER INDEX // pump boards、relay trays、brine stamps、triage tags和vent-forge rejects把人保留为route evidence。
 
 ## Terminal
 
-KEELMARK LOSS DESK：若name tags关联route、claim、custody或pressure work，必须保留。
+KEELMARK LOSS DESK：当name tags解释pressure decision、delay、custody claim或repair route时必须保留。
 
 ## Audio
 
-Mara Venn，pump chief：如果泵唱得干净，就记录。如果它不再唱，向上跑。
+pump card上的名字不是背景。它解释门为什么一直开着。
 
 ## Field Note
 
-不是家庭。是工作。pump card上的名字解释了门为什么开着。
+不是家庭钩子。工作、压力、签名、错误。死者就是这样继续争辩。
 
 <!-- In-Game Wiki; generated from P418_SITE_WIKI_COLONY_AND_WORKERS_CLUSTER/zh_CN. -->

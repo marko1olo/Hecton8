@@ -47,6 +47,7 @@ VALIDATOR_COMMANDS = (
     ValidatorCommand("mesh_prefab_review_queue", ("Tools/ValidateMeshPrefabReviewQueue.py",)),
     ValidatorCommand("texture_import_role_matrix", ("Tools/ValidateTextureImportRoleMatrix.py",)),
     ValidatorCommand("texture_role_technical_ledger", ("Tools/ValidateTextureRoleTechnicalLedger.py", "--no-fail")),
+    ValidatorCommand("aegir_gas_giant_source_contract", ("Tools/ValidateAegirGasGiantSourceContract.py", "--no-fail")),
     ValidatorCommand("batch31_local_pbr_import_intent_artifacts", ("Tools/ValidateBatch31LocalPbrImportIntentArtifacts.py",)),
     ValidatorCommand("batch31_promotion_prep_artifacts", ("Tools/ValidateBatch31PromotionPrepArtifacts.py",)),
     ValidatorCommand("vfx_particle_budget_catalog", ("Tools/ValidateVfxParticleBudgetCatalog.py",)),

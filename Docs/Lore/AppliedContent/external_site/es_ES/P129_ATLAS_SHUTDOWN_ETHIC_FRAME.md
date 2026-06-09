@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Marco ético del apagado de Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Marco ético del apagado de Atlas
 
-ES LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+El marco de apagado impide que Atlas se vuelva un mito cómodo de muerte final. El último problema de autoridad de HECTON-8 es la custodia: qué se termina, qué se libera y quién posee el resultado cuando el cable se oscurece.
 
 ## Scanner
 
-ES LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Apagar no es un solo acto: piedad, ejecución, liberación, robo.
 
 ## Terminal
 
-ES LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+MARCO ÉTICO: cortar Atlas puede terminar un bucle de reparación dañado, destruir una continuidad océano-máquina única, liberar pruebas del procedimiento corporativo o transferir material estratégico al siguiente custodio. Registrar custodia antes de aplicar lenguaje moral.
 
 ## Audio
 
-ES LOC HOLD: Pull one cable and four courts invent four verbs.
+Tira de un cable y cuatro tribunales inventan cuatro verbos.
 
 ## Field Note
 
-ES LOC HOLD: The game should not give the player a clean word for this.
+Un verbo limpio sería otra historia de encubrimiento.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/es_ES. -->

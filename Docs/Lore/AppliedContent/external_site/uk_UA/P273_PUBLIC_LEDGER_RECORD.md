@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Public Ledger Record"
+title: "Запис публічного реєстру"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Public Ledger Record
+# Запис публічного реєстру
 
-UA LOC HOLD: Public Ledger Record explains how HECTON-8 treats evidence as custody, delay and consequence.
+Цей запис фіналу фіксує момент, коли доказ виходить із приватного зберігання. Важливі поля квитанції: хто проштампував пакет, які координати закриті, який рівень доказу прийнято і скільки часу має Deep Reach до зустрічного пакета.
 
 ## Scanner
 
-UA LOC HOLD: Witness hash escaped claimant custody.
+ЗАПИС ПУБЛІЧНОГО РЕЄСТРУ // Свідковий хеш вийшов із приватного зберігання пакетним маршрутом Tau/Luyten. Публічний рівень доказу задано; затримку відповіді Deep Reach додано.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: public ledger route accepted; control surrendered after relay custody.
+ЗАПИС ФІНАЛУ / ПУБЛІЧНИЙ РЕЄСТР
+Маршрут: відкладений пакет Tau/Luyten.
+Вантаж: свідковий хеш, смуга зберігання, рівень доказу із закритими координатами, мітка часу приймача.
+Контроль після реле: втрачено.
+Відповідь Deep Reach: зустрічний пакет затримано публічною квитанцією.
+Відома втрата: відправник не обирає першого читача й подальший ланцюг подання.
 
 ## Audio
 
-UA LOC HOLD: Truth can leave your hands and still matter.
+Реєстр поставив штамп. Першого читача ти вже не обираєш.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: Tau/Luyten packet route, witness hash, public proof tier, Deep Reach response delay and uncontrolled consequence.
+Якщо квитанція публічна, файл виживає тому, що виходить із твоїх рук. Перевір закриття координат, перш ніж радіти штампу.
 
 <!-- External Site; generated from P273_PUBLIC_LEDGER_RECORD/uk_UA. -->

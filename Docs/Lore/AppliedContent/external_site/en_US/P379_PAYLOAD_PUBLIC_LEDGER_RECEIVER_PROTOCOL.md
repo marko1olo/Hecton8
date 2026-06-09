@@ -19,22 +19,8 @@ localization_flags: 0
 
 # Payload Public Ledger Receiver Protocol
 
-Public truth in HECTON-8 is not a clean win. It breaks silence, but the player loses control over who uses the evidence.
+The public ledger lane is the least private receiver and the least obedient. It refuses coordinate sale, refuses direct recovery claim and refuses a clean payout receipt. What it accepts is an incident packet with the route map removed: attestation hashes, liability chain, Atlas weighting digest and receiver timestamp.
 
-## Scanner
-
-Ledger route. Public proof leaves the ocean before anyone can own the story cleanly.
-
-## Terminal
-
-PAYLOAD ROUTE LEDGER: witness hashes, liability chain, Atlas weighting, coordinate redaction. Relay delay accepted. Control forfeited.
-
-## Audio
-
-Once it leaves, it is no longer your truth. That is the point and the cost.
-
-## Field Note
-
-Receiver record: public ledger release moves proof outside Deep Reach custody and outside player control.
+The delay matters. The packet will not summon immediate rescue or instant justice. It will travel through a slow lane built to survive injunctions, receiver disputes and custody pressure. Once accepted, it cannot be pulled back by the carrier. That loss of control is the price of making the proof harder to purchase.
 
 <!-- External Site; generated from P379_PAYLOAD_PUBLIC_LEDGER_RECEIVER_PROTOCOL/en_US. -->

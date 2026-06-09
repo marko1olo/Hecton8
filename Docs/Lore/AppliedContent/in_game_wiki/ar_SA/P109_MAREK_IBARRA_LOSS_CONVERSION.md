@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "ماريك إيبارا: تحويل الخسائر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# ماريك إيبارا: تحويل الخسائر
 
-AR LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+ماريك إيبارا هو أثر خبير التسوية في Keelmark Mutual الذي يحول العمال المفقودين إلى حالات محاسبية غير محلولة. الجدول ليس مكتوبا للحزن، بل لكلفة الإغلاق: جسد غير مستعاد، حالة ضغط غير مصدقة، تلوث قيد الانتظار، وهوية أجور معلقة.
+
+لهذا تهم الأسماء في HECTON-8. لوحة خزانة أو وسم بدلة أو صف في سجل الجثث أو ساعة مسار مستعادة يمكن أن تعيد العامل من حمولة غير محلولة إلى مطالبة. الالتباس أرخص من الإنقاذ، وأرخص من التعويض، وأسهل دفنا في نزاع ناقلين.
+
+بالنسبة إلى Marauder، الهوية المستعادة ليست زينة. إنها تضر بالخدعة المحاسبية التي جعلت الشخص يختفي مرتين: أولا في الماء، ثم في السجل.
 
 ## Scanner
 
-AR LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+جدول خبير تسوية // حوّل M. إيبارا العمال المفقودين إلى فئات حمولة غير محلولة حتى يمكن تصديق حالة الضغط أو التلوث أو كشوف الأجور.
 
 ## Terminal
 
-AR LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual تحويل الخسائر // تبقى الأصول البيولوجية غير المستعادة غير محلولة بانتظار تصديق حالة الضغط أو التلوث أو كشوف الأجور. لا تغلق فئة المطالب بلا دليل حيازة.
 
 ## Audio
 
-AR LOC HOLD: A missing person became a pending category. That was cheaper.
+تحول الشخص المفقود إلى فئة معلقة. كان ذلك أرخص.
 
 ## Field Note
 
-AR LOC HOLD: Insurance language should feel colder than gunfire.
+يجب أن تكون لغة التأمين أبرد من إطلاق النار. الاسم المستعاد ليس جوا؛ إنه يكسر الفئة الأرخص.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/ar_SA. -->

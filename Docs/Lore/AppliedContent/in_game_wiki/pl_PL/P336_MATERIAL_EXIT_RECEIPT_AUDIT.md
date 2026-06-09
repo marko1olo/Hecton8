@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Material Exit Receipt Audit"
+title: "Audyt kwitu wyjścia materiałowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Material Exit Receipt Audit
+# Audyt kwitu wyjścia materiałowego
 
-PL LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+Audyt kwitu sprawia, że zakończenie za pieniądze jest prawdziwe i gorzkie. Gracz wydobył wartość i przetrwał kontrakt, ale instytucja nadal posiada zapis, nazwiska i oficjalny kształt katastrofy.
 
 ## Scanner
 
-PL LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+Kwit wyjścia potwierdza odzyskaną masę. Dozór dowodów jest przerwany; nazwiska pracowników nie zostały przyjęte.
 
 ## Terminal
 
-PL LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+KWIT AFTER-ACTION: wypłata salvage zwolniona za odzyskiwalną masę i ryzyko kontraktowe. Prawda współrzędnych nierozstrzygnięta. Status odpowiedzialności Deep Reach bez zmian. Rejestr nazwisk pracowników odrzucony jako dowód poza dozorem. Wyjście przyznane; sprawa pozostaje własnością nośnika.
 
 ## Audio
 
-PL LOC HOLD: You got paid. That is not the same as getting out clean.
+Zapłacili ci. To nie znaczy, że wyszedłeś czysto.
 
 ## Field Note
 
-PL LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+Raport poakcyjny dla płatnego, ale moralnie niepełnego wyjścia: nagroda przechodzi, łańcuch dowodowy zawodzi, nazwiska pozostają poza oficjalnym dozorem.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/pl_PL. -->

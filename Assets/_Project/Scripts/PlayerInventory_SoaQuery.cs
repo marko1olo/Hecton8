@@ -93,7 +93,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleSoaInventoryQuery(
                 itemHashIds,
-                SoaInventoryQueryEngine.AsUIntQuantityView(quantities),
+                SoaInventoryQueryEngine.AsUIntQuantityOwnerAlias(quantities),
                 activeSlotCount,
                 results,
                 targetHashId,
@@ -141,7 +141,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleSoaInventoryQueryBatch(
                 itemHashIds,
-                SoaInventoryQueryEngine.AsUIntQuantityView(quantities),
+                SoaInventoryQueryEngine.AsUIntQuantityOwnerAlias(quantities),
                 activeSlotCount,
                 targetHashIds,
                 results,
@@ -191,7 +191,7 @@ namespace Hecton8.Inventory
         {
             return ScheduleSoaInventoryMutation(
                 itemHashIds,
-                SoaInventoryQueryEngine.AsUIntQuantityView(quantities),
+                SoaInventoryQueryEngine.AsUIntQuantityOwnerAlias(quantities),
                 durabilities,
                 activeSlotCount,
                 result,
@@ -384,7 +384,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            NativeArray<uint> quantityView = SoaInventoryQueryEngine.AsUIntQuantityView(buffers.Quantities);
+            NativeArray<uint> quantityView = SoaInventoryQueryEngine.AsUIntQuantityOwnerAlias(buffers.Quantities);
             if (!quantityView.IsCreated)
                 return false;
 
@@ -599,7 +599,7 @@ namespace Hecton8.Inventory
             if (targetHashId == 0u || quantityDelta == 0)
                 return false;
 
-            NativeArray<uint> quantityView = SoaInventoryQueryEngine.AsUIntQuantityView(buffers.Quantities);
+            NativeArray<uint> quantityView = SoaInventoryQueryEngine.AsUIntQuantityOwnerAlias(buffers.Quantities);
             if (!quantityView.IsCreated)
                 return false;
 

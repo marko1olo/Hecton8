@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Таблица pressure crew archetypes"
+title: "Таблица архетипов напорных бригад"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Таблица pressure crew archetypes
+# Таблица архетипов напорных бригад
 
-Pressure crew archetypes держат worker evidence привязанным к системам, которые игрок понимает и чинит.
+Таблица архетипов напорных бригад делает колониальные улики функциональными до того, как они становятся сентиментальными. Рабочий Pump должен вести игрока к воде, клапанам, скачкам давления и лжи обслуживания. Рабочий Seal принадлежит дверям, заплатам корпуса, шлюзовым ритуалам и комнатам, которые слишком долго оставались сухими. Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness делают то же самое для сигналов, маршрутов, изготовления, медицинской задержки, пищевого выживания и вещи, которую Deep Reach не хотела называть. Таблица держит горе привязанным к системам, которых игрок может коснуться.
 
 ## Scanner
 
-Бригады это verbs: pump, seal, relay, map, forge, triage, cultivate, witness.
+Бригады сначала глаголы, а уже потом биографии: качать, герметизировать, ретранслировать, картировать, ковать, сортировать, выращивать, свидетельствовать.
 
 ## Terminal
 
-CREW FAMILIES: Pump / Seal / Relay / Brine Map / Vent Forge / Triage / Pressure Botany / Payload Witness. Имена сначала крепятся к route function.
+CREW FAMILIES: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany и Payload Witness. Каждая личность рабочего привязывается к бригадной семье до личных деталей. Так улика остается связанной с машинами, маршрутами, отказами давления, пищевой культурой, законом мародерства и финальной цепью payload.
 
 ## Audio
 
-Сначала работа. Потом память. Так колония выживает.
+Сначала работа. Потом память. Так колония выживает на бумаге.
 
 ## Field Note
 
-RU LOC HOLD: Eight crew families anchor the roster: Pump, Seal, Relay, Brine Map, Vent Forge, Triage, Pressure Botany, and Payload Witness.
+Мертвый рабочий читается честнее, когда помещению все еще нужна работа, которую он знал.
 
 <!-- In-Game Wiki; generated from P207_PRESSURE_CREW_ARCHETYPE_TABLE/ru_RU. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Personeelszaden van Subkantoren"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Personeelszaden van Subkantoren
 
-NL LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+Personeelszaden van Subkantoren definiëren hoe lagere Deep Reach-namen in HECTON-8-lore moeten verschijnen. Het doel is niet nog een schurkenlijst te verzinnen; het is bureaucratie leesbaar en menselijk maken. Spelers moeten initialen op beschadigde memo's, herhaalde bureaustempels, getuigenhashes en tegenstrijdige aftekeningen tegenkomen tot Deep Reach niet meer als logo voelt, maar als gebouw vol mensen die zijn getraind om het verkeerde te beschermen. Deze zaden houden toekomstige artikelen ook consistent: namen hechten aan functies, functies aan bewijs, en bewijs aan kamers die de speler begrijpt.
 
 ## Scanner
 
-NL LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+De lagere Deep Reach-namen doen ertoe omdat de ramp werd gedragen door handen, initialen en inboxen, niet door een abstract bedrijfslogo.
 
 ## Terminal
 
-NL LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: risicomarge-inname / juridisch evacuatiequeue / Atlas-continuïteitsanalist / pakketnotaris / recovery-bewaringsklerk. Gebruik namen als handtekeningankers, getuigenconflicten en kamerbewijs, niet als simpele commandoladder.
 
 ## Audio
 
-NL LOC HOLD: A clerk can damage a life without owning the whole disaster.
+De bureaus hadden namen. Daarom doet het papier pijn.
 
 ## Field Note
 
-NL LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Een corporatie wordt echt wanneer achter een stempel een moe persoon zit.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/nl_NL. -->

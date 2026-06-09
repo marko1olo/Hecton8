@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "作業員ジョブカード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# 作業員ジョブカード
 
-JP LOC HOLD: Worker Job Cards turn names into evidence objects.
+作業員ジョブカードは名前を証拠オブジェクトに変える。サバイバルループを止めずにコロニーを人間にする、プレイ可能な手がかりだ。
 
 ## Scanner
 
-JP LOC HOLD: A job card is a face the budget could read.
+JOB CARD // 名前、役割、最後の作業、経路許可、工具認証。予算が読める顔。
 
 ## Terminal
 
-JP LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+証拠規則: 回収された名前は、実行された何かに結びつくべきだ。ポンプ経路、厨房台帳、医療呼び出し、カッター保管、圧力確認、製造バッチ。作業が名前を証拠にする。
 
 ## Audio
 
-JP LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+作業のない名前は祭壇になる。作業はそれを証拠にする。
 
 ## Field Note
 
-JP LOC HOLD: Make names useful before making them tragic.
+名前を悲劇にする前に、役に立つものにする。
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/ja_JP. -->

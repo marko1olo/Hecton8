@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Vazamento para ledger público
 
-Vazamento para Ledger Público é um final de verdade parcial. O jogador envia provas suficientes para dificultar o apagamento, mas não o bastante para controlar Atlas, a retaliação da Deep Reach ou o que instituições públicas farão com o pacote.
+Vazamento para ledger público é uma rota de verdade parcial. O pacote sai por uma janela relay estreita com witness hash suficiente para tornar a negação cara e lacunas demais para ser seguro. A Deep Reach já não pode simplesmente apagar a reivindicação, mas ninguém em HECTON-8 decide quem usa a ferida depois. Seguradoras, cortes cívicas, domains rivais, pools Marauder e escritórios corporativos lerão a mesma evidência de formas diferentes. A publicação salva a verdade de um enterro limpo. Não torna a verdade gentil.
 
 ## Scanner
 
@@ -27,11 +27,11 @@ Witness hash aceito. Verdade parcial sai antes da custody completa.
 
 ## Terminal
 
-ROTA DE LEDGER PÚBLICO: Tau Ceti packet notary aceitou witness hash; payload incompleto; desafio do claimant provável; janela de retaliação Deep Reach começa após confirmação relay.
+ROTA DE LEDGER PÚBLICO: Tau Ceti packet notary aceitou witness hash; payload incompleto; desafio claimant provável; janela de retaliação Deep Reach começa após confirmação relay.
 
 ## Audio
 
-A verdade sai primeiro. Talvez você não goste de quem a lê.
+A verdade sai primeiro. O controle não sai com ela.
 
 ## Field Note
 

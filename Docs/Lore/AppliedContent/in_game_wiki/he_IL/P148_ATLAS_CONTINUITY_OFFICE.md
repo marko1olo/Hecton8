@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Atlas Continuity Office"
+title: "משרד רציפות Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Atlas Continuity Office
+# משרד רציפות Atlas
 
-HE LOC HOLD: Atlas Continuity Office is where the public worker-safety promise became classified weighting. It owns the liability path between maintenance logic, evacuation priority, and the damaged Atlas route.
+משרד רציפות Atlas הוא הממברנה הבירוקרטית סביב תודעת המושבה. הוא שומר את ATLAS שימושית מספיק לפקד, עמומה מספיק לשלול אישיות ומתועדת מספיק למכור רציפות אחרי אסון.
 
 ## Scanner
 
-HE LOC HOLD: The office that wrote worker safety into a machine priority stack.
+המשרד לא בנה ל-ATLAS נשמה. הוא בנה ארון תיקים סביב אחת.
 
 ## Terminal
 
-HE LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
+רשומת משרד ATLAS: סמכות תחזוקה, בידוד אחריות, סקירת קוגניציה, שפת כיבוי וטענות רציפות ציבוריות מטופלות הרחק מהפקה.
 
 ## Audio
 
-HE LOC HOLD: They did not order death. They ordered compatibility.
+הם נתנו ל-ATLAS נהלים במקום זכויות.
 
 ## Field Note
 
-HE LOC HOLD: A memo can kill without using the word kill.
+מערכת בטוחה יותר לניצול כשאיש לא מסכים אם היא כלי, עד, נכס או מטופל.
 
 <!-- In-Game Wiki; generated from P148_ATLAS_CONTINUITY_OFFICE/he_IL. -->

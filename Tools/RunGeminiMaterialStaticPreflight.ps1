@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $projectRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")
 $packValidator = Join-Path $projectRoot "Tools\ValidateExternalPbrPack.py"
+$litPreviewValidator = Join-Path $projectRoot "Tools\ValidateExternalPbrLitPreview.py"
 $bindingValidator = Join-Path $projectRoot "Tools\ValidateExternalPbrImporterBindings.py"
 $geminiStateValidator = Join-Path $projectRoot "Tools\ValidateGeminiGeneratedMaterialState.py"
 $geminiUnityApplyRunnerValidator = Join-Path $projectRoot "Tools\ValidateGeminiUnityApplyRunner.py"
@@ -15,6 +16,8 @@ $worldProxyValidator = Join-Path $projectRoot "Tools\ValidateWorldProxyGeminiBio
 $constructionValidator = Join-Path $projectRoot "Tools\ValidateConstructionGeminiMaterialAssignments.py"
 $floraImportedValidator = Join-Path $projectRoot "Tools\ValidateGeminiBiomeFloraImportedAssignments.py"
 $batch34DirectPromptQueueValidator = Join-Path $projectRoot "Tools\ValidateBatch34DirectPromptQueue.py"
+$batch34TargetedPromptQueueValidator = Join-Path $projectRoot "Tools\ValidateBatch34TargetedPromptQueues.py"
+$batch34RegenTargetsValidator = Join-Path $projectRoot "Tools\ValidateBatch34RegenTargets.py"
 $batch34TextureExpansionIntakeManifestValidator = Join-Path $projectRoot "Tools\ValidateBatch34TextureExpansionIntakeManifest.py"
 $batch34SourceAtlasValidator = Join-Path $projectRoot "Tools\ValidateBatch34SourceAtlasPack.py"
 $batch34AlphaCandidateValidator = Join-Path $projectRoot "Tools\ValidateBatch34AlphaCandidatePack.py"
@@ -32,6 +35,7 @@ $batch34PaddedAtlasSourcesValidator = Join-Path $projectRoot "Tools\ValidateBatc
 $batch34SplitAtlasCandidatesValidator = Join-Path $projectRoot "Tools\ValidateBatch34SplitAtlasCandidates.py"
 $oopHitboxScanner = Join-Path $projectRoot "Tools\OOP_Hitbox_Scanner.py"
 $catalogBuilder = Join-Path $projectRoot "Tools\BuildGeminiMaterialCatalog.py"
+$catalogBuilderTest = Join-Path $projectRoot "Tools\test_build_gemini_material_catalog.py"
 
 function Invoke-PbrPackValidation {
     param(
@@ -73,7 +77,25 @@ if (Test-Path -LiteralPath $geminiAtlasRoot) {
     }
 }
 
+$litPreviewManifests = @(
+    (Join-Path $geminiAtlasRoot "Batch20260607_MicroPanel\GeminiMaterialAtlas_Manifest.json"),
+    (Join-Path $geminiAtlasRoot "Batch20260608_TextureExpansion\GeminiMaterialAtlas_Manifest.json")
+)
+foreach ($litPreviewManifest in $litPreviewManifests) {
+    if (-not (Test-Path -LiteralPath $litPreviewManifest)) {
+        continue
+    }
+
+    & python -B $litPreviewValidator --manifest $litPreviewManifest --tile-size 220 --columns 4
+    if ($LASTEXITCODE -ne 0) {
+        throw "Gemini lit material preview validation failed: $litPreviewManifest"
+    }
+}
+
 Invoke-RequiredPythonValidator -ValidatorPath $catalogBuilder
+if (Test-Path -LiteralPath $catalogBuilderTest) {
+    Invoke-RequiredPythonValidator -ValidatorPath $catalogBuilderTest
+}
 Invoke-RequiredPythonValidator -ValidatorPath $geminiStateValidator
 Invoke-RequiredPythonValidator -ValidatorPath $geminiUnityApplyRunnerValidator
 Invoke-RequiredPythonValidator -ValidatorPath $bindingValidator
@@ -84,6 +106,12 @@ Invoke-RequiredPythonValidator -ValidatorPath $constructionValidator
 Invoke-RequiredPythonValidator -ValidatorPath $floraImportedValidator
 if (Test-Path -LiteralPath $batch34DirectPromptQueueValidator) {
     Invoke-RequiredPythonValidator -ValidatorPath $batch34DirectPromptQueueValidator
+}
+if (Test-Path -LiteralPath $batch34TargetedPromptQueueValidator) {
+    Invoke-RequiredPythonValidator -ValidatorPath $batch34TargetedPromptQueueValidator
+}
+if (Test-Path -LiteralPath $batch34RegenTargetsValidator) {
+    Invoke-RequiredPythonValidator -ValidatorPath $batch34RegenTargetsValidator
 }
 if (Test-Path -LiteralPath $batch34TextureExpansionIntakeManifestValidator) {
     Invoke-RequiredPythonValidator -ValidatorPath $batch34TextureExpansionIntakeManifestValidator

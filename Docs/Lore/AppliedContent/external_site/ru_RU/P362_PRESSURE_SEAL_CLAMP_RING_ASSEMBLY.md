@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Сборка прижимного кольца гермоуплотнения"
+title: "Сборка зажимного кольца pressure seal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Сборка прижимного кольца гермоуплотнения
+# Сборка зажимного кольца pressure seal
 
-Сборка прижимного кольца гермоуплотнения превращает ремонт капсулы в торг с давлением: deep-rated металл, посадка стекла и Atlas bio-sealant могут спасти или запереть путь взлета.
+Сборка зажимного кольца pressure seal - второй жесткий предел в ascent-chain HECTON-8. Acoustic spine может заставить орбиту слушать, но clamp ring решает, сможет ли капсула физически отделиться от затонувшей конструкции.
 
-## Scanner
+Отказ правдоподобен именно потому, что неправильный ремонт выглядит успешным. Shallow seal может держать воздух, остановить течь и оставить комнату рабочей. Он же может перекинуться через separation seam капсулы, забить pressure-glass seat или оставить Atlas shell-sealant на поверхности, которая обязана отпустить под launch impulse. Static pressure - не тот же тест, что ascent.
 
-Шрам clamp-ring. Взлетная муфта пережила удар, потратив уплотнение, которое должно было вернуть ее домой.
-
-## Terminal
-
-SEAL CERT: shallow patch держит только давление отсека. Ascent seal требует deep-rated clamp ring, pressure-glass seat, shell-sealant map и проверенный профиль Deep Reach. Atlas-grown sealant может сохранить habitat, одновременно блокируя чистое отделение.
-
-## Audio
-
-Полезное уплотнение живет не в ту сторону.
-
-## Field Note
-
-Заплата safe-room может купить час воздуха. Она не удержит импульс старта.
+Этому компоненту нужны deep-rated metal, проверенный crush profile, чистая геометрия seat и sealant map с намеренным краем. Недостаточно сделать так, чтобы капсула перестала течь. Ремонт должен знать, когда отпустить.
 
 <!-- External Site; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ru_RU. -->

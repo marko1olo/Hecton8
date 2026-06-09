@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Deep Reach Faction Message Split"
+title: "Deep Reach-berichtensplitsing"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Deep Reach Faction Message Split
+# Deep Reach-berichtensplitsing
 
-NL LOC HOLD: Deep Reach Faction Message Split prevents a flat villain. The corporation is guilty as a system, but present messages can conflict: recovery, silence, engineering caution and liability containment.
+De splitsing houdt Deep Reach institutioneel in plaats van karikaturaal één geheel. Een bedrijf kan tegelijk reddingsbevelen, doofpotbevelen en eerlijke technische waarschuwingen uitsturen omdat elk kantoor een ander verliesboek verdedigt.
 
 ## Scanner
 
-NL LOC HOLD: Message sources conflict: asset recovery, legal silence, old engineering warning.
+Drie Deep Reach-bronnen spreken elkaar tegen: recovery wil coördinaten, legal wil stilte, legacy engineering waarschuwt dat het bekken zal antwoorden.
 
 ## Terminal
 
-NL LOC HOLD: SOURCE SPLIT: Recovery Compliance requests coordinates. Asset Silence rejects publication. Legacy engineering node warns against basin disturbance. Same corporation, different survival instincts.
+SOURCE SPLIT // DR-LIVE: Recovery Compliance vraagt navigeerbare coördinaten. Asset Silence beveelt bewijsbeheersing en geen publieke erkenning. Legacy Engineering Node 4 herhaalt een waarschuwing van voor de instorting: verstoor de onderste bekkenrelais niet tijdens de Aegir-schaduw. Dit zijn geen rebellen. Het zijn afdelingen die verschillende verliezen beschermen.
 
 ## Audio
 
-NL LOC HOLD: A company can be one logo and three knives.
+Eén logo. Drie stemmen. Geen enkele schoon.
 
 ## Field Note
 
-NL LOC HOLD: This is not redemption. It is pressure-source readability.
+Gebruik nadat de speler minstens twee Deep Reach-tonen heeft gehoord. De beat is dubbelzinnigheid met tanden: tegenstrijdige instructies, gedeeld eigendom, geen schone bondgenoot.
 
 <!-- In-Game Wiki; generated from P329_DEEP_REACH_FACTION_MESSAGE_SPLIT/nl_NL. -->

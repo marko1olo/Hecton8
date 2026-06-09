@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Contract Risk Reward Boundary
 
-Contract Risk Reward Boundary converts replay pressure into table-owned contract records.
+Contract Risk Reward Boundary converts replay pressure into table-owned contract records. The route changes because debt, storm timing, custody, and liability clauses changed, not because the world forgot what happened.
 
 ## Scanner
 
-Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Contract row binds lien, storm window, custody order, payout ceiling, and clause weight.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight. The contract is the first predator.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The contract is the first predator.
 
 ## Field Note
 
-Reward changes belong to the contract row, not to improvised lore text.
+Reward changes belong to the contract row, not improvised lore text.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/en_US. -->

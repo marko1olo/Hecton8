@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Pressure Job Title Table"
+title: "圧力職務名テーブル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Pressure Job Title Table
+# 圧力職務名テーブル
 
-JA LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+圧力職務名テーブルは HECTON-8 の労働語彙を定義する。職名は部屋と物で読ませるためのもので、説明文だけの設定ではない。良い職名はプレイヤーに次の捜索先を推測させる。シールならハッチ、リレーならタイミング票、medlock なら拒否書式である。
 
 ## Scanner
 
-JA LOC HOLD: Job titles should explain what kept the colony alive.
+JOB BOARD // 職名は人事用の飾りではない。作業員が応答しなくなった時、どのシステムが失敗したかを示す。
 
 ## Terminal
 
-JA LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+PRESSURE JOB TITLES // ポンプ技師、シールリガー、経路事務員、brine ダイバー、ファブリケータ操作者、medlock 補助員、リレー管理者、vent-kiln 作業員、Atlas 安全読取員、シフト監督は社会的な飾りではない。これはアクセス論理である。職名は作業員が何を知り、どのパネルがバッジを受け入れ、どの部屋に工具があり、Great Tide 後にどの失敗を背負わされるかを定義する。
 
 ## Audio
 
-JA LOC HOLD: Nobody died as Employee 438. They died doing a job.
+誰も Employee 438 として死んだのではない。海がまだ必要としていた仕事を持ったまま死んだ。
 
 ## Field Note
 
-JA LOC HOLD: Every title should imply a tool, route or failure.
+すべての職名は工具、部屋、経路許可、または体が解放されなかった理由へつながるべきだ。
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/ja_JP. -->

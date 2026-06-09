@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rastro de margem da Grande Maré"
+title: "Rastro de margem da maré"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rastro de margem da Grande Maré
+# Rastro de margem da maré
 
-O rastro prova duas coisas ao mesmo tempo: a Grande Maré foi real, e a margem letal estava visível antes de o relatório admitir. A Deep Reach não mandou a água subir. Aceitou uma janela de rota quando o envelope de pressão da colônia já não tinha folga, depois publicou a cascade sem o sign-off.
+Este sensor não torna a Grande Maré falsa. Ele fixa o horário. A folga de projeto da colônia falhou antes de a Deep Reach admitir o risco no relatório público. A autoridade de rota manteve a janela aberta por exceção comercial e depois publicou a cadeia de cascata sem essa exceção.
 
 ## Scanner
 
-Sensor de maré recuperado. O cisalhamento de pico excedeu o projeto colonial, mas a ruptura da margem de alerta foi registrada antes do carimbo público da cascade.
+Sensor de maré recuperado. O pico de cisalhamento é real; a quebra de margem aparece dezesseis minutos antes do relógio público de cascata da Deep Reach.
 
 ## Terminal
 
-SENSOR MARGIN // P-63 NORTH SPINE. Limiar de tail-risk aceito pela autoridade de rota. Nota de operador removida da cadeia pública do incidente. Rastro bruto preservado em memória brine-buffer.
+MATRIZ DE MARÉ // ESPINHA NORTE P-63. Margem residual abaixo do piso de parada. Janela de rota mantida por exceção comercial. Cadeia pública do incidente omite a nota de exceção. Checksum brine-buffer intacto.
 
 ## Audio
 
-O oceano não mentiu. O relatório mentiu.
+A maré quebrou o corredor. A mentira começa no relógio.
 
 ## Field Note
 
-Nota de saqueador: não procure discurso de vilão. Procure a linha que alguém apagou.
+Nota de saqueador: guarde o rastro bruto. Uma linha de margem apagada vence qualquer discurso.
 
 <!-- In-Game Wiki; generated from P371_GREAT_TIDE_SENSOR_MARGIN_PROOF/pt_BR. -->

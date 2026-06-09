@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Устав claim-pool Black Keel"
+title: "Хартия claim-pool корабля Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Устав claim-pool Black Keel
+# Хартия claim-pool корабля Black Keel
 
-Black Keel решает проблему корабля-побега в hard-sci-fi ключе: полезный орбитальный актив остается долговой инфраструктурой, а не личным верным судном.
+Black Keel - hard-sci-fi ответ HECTON-8 на проблему корабля для побега. У игрока есть доступ к орбитальному активу, но доступ не равен владению, а близость не равна спасению. Carrier является инфраструктурой долга: достаточно полезной, чтобы побег казался возможным, и достаточно ограниченной, чтобы каждый маршрут возврата был связан с претензиями, карантином и recovery value.
 
 ## Scanner
 
-Charter carrier: claim-pool recovery asset, активный lien, минимальная crew authority.
+Black Keel - не твой корабль. Это recovery asset claim-pool, где твое имя стоит в долговой книге.
 
 ## Terminal
 
-CHARTER: BLACK KEEL работает как автоматический salvage carrier под custody Aegir Reclamation Pool. Доставка подрядчика не дает rescue priority, ownership корпуса или clean exit rights.
+ВЫДЕРЖКА ИЗ ХАРТИИ / BLACK KEEL: автономный salvage carrier / хранение: Aegir Reclamation Pool / транспорт подрядчика: разрешен / владение корпусом: отказано / приоритет спасения: ниже состояния insured receiver, карантинного handshake и claim value.
 
 ## Audio
 
-Carrier пришел не за тобой. Он пришел за claim, к которому прикреплено твое имя.
+Корабль пришел не за тобой. Он пришел за претензией, к которой прикреплено твое имя.
 
 ## Field Note
 
-Использовать на первом contract или carrier-status screen.
+Для первого экрана статуса carrier: доступ выдан, владение отказано, приоритет спасения условный, lien активен.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ru_RU. -->

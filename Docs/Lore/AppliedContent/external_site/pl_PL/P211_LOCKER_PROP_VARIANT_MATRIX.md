@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Macierz wariantów rekwizytów szafek"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Macierz wariantów rekwizytów szafek
 
-PL LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+Macierz wariantów rekwizytów szafek definiuje, jak HECTON-8 zmienia osobiste przechowywanie w czytelny dowód. Szafki nie są zrzutami biografii. To zwarte obiekty świata, które łączą pracownika, pracę, dostęp do trasy, uszkodzenie i późniejszą manipulację. Dzięki temu gracz czyta życie kolonii, oglądając rzeczy, które nadal należą do pomieszczenia.
 
 ## Scanner
 
-PL LOC HOLD: A locker should show work, route access and what got erased.
+Szafka powinna pokazywać pracę, dostęp do trasy i to, co ktoś próbował wymazać. Pamiątki są dozwolone dopiero wtedy, gdy praca jest czytelna.
 
 ## Terminal
 
-PL LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX: każda autorska szafka potrzebuje trzech czytelnych wskazówek: pracy, trasy i uszkodzenia. Dekoracyjna pamięć jest drugorzędna. Szafka może zawierać rodzinny żeton albo prywatny żart, ale dopiero po tym, jak narzędzie, ślad zezwolenia lub blizna wymazania powie graczowi, jak ta osoba dotykała kolonii.
 
 ## Audio
 
-PL LOC HOLD: The locker is not a shrine. It is a failed work order.
+Szafka nie jest kapliczką. To nieudane zlecenie pracy.
 
 ## Field Note
 
-PL LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Warianty: zużycie narzędzia, tag zezwolenia trasy, taśma ciśnieniowa, naklejka zmiany, blizna po wymazaniu płacy, znak zachowania maraudera.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/pl_PL. -->

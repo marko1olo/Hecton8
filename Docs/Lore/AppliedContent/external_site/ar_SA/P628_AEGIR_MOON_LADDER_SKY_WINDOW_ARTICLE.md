@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Public Archive Aegir Primer
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "نافذة سماء سلم أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# نافذة سماء سلم أقمار Aegir
 
-The Aegir moon ladder is route grammar, not decoration.
+أقمار Aegir ليست زينة تقويم. Skarn و Vela و Claw و Lumen و Thorne و Anvil و Kestrel و HECTON-8 و Mute تحدد ممرات حركة، ظلال مرحلات، توقيت مد، خطر blackout وكلفة transfer. يقرأ اللاعب السماء كضغط طريق، لا كرياضيات مدارية دقيقة.
 
-## Scanner
-
-Moon tag visible; relay noise falling.
-
-## Terminal
-
-Ephemeris band favors a short packet window.
-
-## Audio
-
-Read the sky, then send.
-
-## Field Note
-
-Pretty moons are weights.
+لا يحتاج اللاعب إلى ثوابت مدارية دقيقة لاستخدام السماء. قمر خلف الطقس قد يعني مسار relay سيئا. نافذة ساطعة قد تعني حزمة نظيفة واحدة. اقتران قد يعني حمل مد لا عجبا. السلم يجعل السماء مقروءة من دون تحويلها إلى محاضرة.
 
 <!-- External Site; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/ar_SA. -->

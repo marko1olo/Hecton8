@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "מעמד הראיות של אמת חילוץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# מעמד הראיות של אמת חילוץ
 
-HE LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+ראיות שהוחזרו מעניקות ל-HECTON-8 את הקנוניה האיטית שלו. המושבה אינה שותקת מפני שלא קרה דבר, אלא מפני שלכל חפץ ראייתי יש ערך שוק, ערך אחריות וערך משפטי. האמת עולה דרך נתיבי משמורת וחפצים פגומים, לא דרך הודאה נוחה אחת.
 
 ## Scanner
 
-HE LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+חבילת קופסה שחורה: אמת עד ששולחן התביעות נוגע בה.
 
 ## Terminal
 
-HE LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: חילוץ גולמי הופך כברירת מחדל לחומר תביעה. ראיה ציבורית דורשת האש מקור שלם, חותמת לחץ-זמן, חבילת עד, נוטריון ממסר מחוץ לשליטת התובע ונתיב משמורת ששורד אובדן ספינה, חשיפה לתמלחת ועריכות ידניות.
 
 ## Audio
 
-HE LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+גופה היא ראיה רק אחרי שמישהו נכשל בתיוק הלא נכון שלה.
 
 ## Field Note
 
-HE LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+עובדה מן העומק מסוכנת רק אם היא שומרת את העדים שלה.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/he_IL. -->

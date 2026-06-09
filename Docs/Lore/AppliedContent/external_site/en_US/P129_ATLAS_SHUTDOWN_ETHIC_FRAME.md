@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Shutdown Ethic Frame
 
-Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+The shutdown frame keeps Atlas from becoming a clean boss-kill myth. HECTON-8's final authority problem is custody: what is being ended, what is being freed, and who owns the result when the cable goes dark.
 
 ## Scanner
 
-Shutdown is not one thing. Mercy, murder, liberation, theft.
+Shutdown is not one act: mercy, execution, liberation, theft.
 
 ## Terminal
 
-ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHIC FRAME: severing Atlas may end a damaged repair loop, destroy a unique ocean-machine continuity, release evidence from corporate procedure or transfer strategic material to the next custodian. Record custody before applying moral language.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Pull one cable and four courts invent four verbs.
 
 ## Field Note
 
-The game should not give the player a clean word for this.
+A clean verb would be another cover story.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/en_US. -->

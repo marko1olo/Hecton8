@@ -65,6 +65,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
             float4 _H8AegirOrbitScalars;
             float _H8AegirFlowPhase;
             float _H8AegirFlowPhaseValid;
+            float _H8AegirStormEmission;
             float _H8GlobalQualityWeight;
 
             struct Attributes
@@ -96,6 +97,13 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 return _H8AegirFlowPhaseValid > 0.5
                     ? _H8AegirFlowPhase
                     : _Time.y * flowSpeed;
+            }
+
+            float AegirStormEmission()
+            {
+                return _H8AegirFlowPhaseValid > 0.5
+                    ? clamp(_H8AegirStormEmission, 0.0, 4.0)
+                    : 1.0;
             }
 
             float Hash13(float3 value)
@@ -284,10 +292,11 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float3 deepTeal = float3(0.050, 0.220, 0.270);
                 float3 iceCloud = float3(0.255, 0.690, 0.760);
                 float3 stormCopper = float3(0.300, 0.185, 0.090);
+                float stormEmission = AegirStormEmission();
                 float3 textureGas = lerp(deepTeal, iceCloud, cloudTexture);
                 float3 proceduralGas = lerp(deepTeal, iceCloud, wideBand * 0.26 + cloudTexture * 0.74);
                 proceduralGas = lerp(proceduralGas, textureGas, _DiscTextureWeight);
-                proceduralGas = lerp(proceduralGas, stormCopper, stormBand * cloudTexture * 0.15 * saturate(quality + 0.25));
+                proceduralGas = lerp(proceduralGas, stormCopper, stormBand * cloudTexture * 0.15 * stormEmission * saturate(quality + 0.25));
                 proceduralGas = lerp(proceduralGas, proceduralGas * float3(1.10, 0.99, 0.82), shearBand * cloudTexture * 0.12);
                 proceduralGas *= _AegirExposure * bandBreakup;
                 float nightFill = saturate(0.28 + limb * 0.45);
@@ -313,6 +322,9 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 uv.y += drift * 0.006;
 
                 float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, uv).rgb;
+                float stormEmission = AegirStormEmission();
+                float stormSignal = saturate((bands.r - bands.b) * 1.35 + sin(uv.y * 48.0 + flowPhase * 5.0) * 0.12 + 0.08);
+                bands += float3(0.095, 0.052, 0.022) * stormSignal * stormEmission * saturate(quality + 0.18);
                 float ndotl = dot(hitNormal, lightDir);
                 float day = saturate(ndotl * 0.92 + 0.08);
                 float hardTerminator = smoothstep(-0.08, 0.18, ndotl);

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Guide de procédé de terrain des forges-vents
 
-Les vent forges sont des réacteurs naturels-industriels. Ils transforment chaleur, brine et pressure history en ceramics, sealants et charge materials utiles tout en liant chaque échantillon à son trajet thermique.
+Les forges-vents sont des réacteurs naturels-industriels. Elles transforment chaleur, saumure, historique de pression et refroidissement lent en céramiques, mastics et matériaux de charge. Un échantillon n'est utile que si son trajet thermique survit à la récupération.
 
 ## Scanner
 
-Vent-forge chemistry active. La qualité suit pressure history, heat pulse et refroidissement lent, pas l'éclat de l'échantillon.
+Chimie de forge-vent active. La qualité suit l'historique de pression, l'impulsion thermique et le refroidissement lent, pas l'éclat de l'échantillon.
 
 ## Terminal
 
-FIELD GUIDE : les vent forges cuisent sulfides, noble-gas pockets, ceramics et sealant precursors. Le trajet d'un échantillon à travers heat, brine et pressure compte plus que son nom.
+GUIDE DE TERRAIN : les forges-vents cuisent sulfures, poches de gaz nobles, grains céramiques et précurseurs de mastic. Le trajet d'un échantillon dans chaleur, saumure et pression compte plus que son nom.
 
 ## Audio
 
-Le vent n'a pas fait du minerai. Il a fait un procédé que tu as interrompu.
+Le vent n'a pas fait du minerai. Il a fait un procédé que vous avez interrompu.
 
 ## Field Note
 
-Ne remonte pas un lot frais directement dans l'eau froide. Laisse le vent terminer l'anneal ou la coque se craquellera.
+Ne remontez pas un lot frais directement dans l'eau froide. Laissez le vent terminer le recuit ou la coque se craquèlera.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/fr_FR. -->

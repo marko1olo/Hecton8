@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Шлюз ремонта абиссального машинного поля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Abyssal Machine Field Repair Act
+# Шлюз ремонта абиссального машинного поля
 
-RU LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Абиссальное поле заставляет оператора использовать систему, повредившую претензию. Рост Atlas может мостить питание, латать маршрутное железо и проводить сигнал через живой материал. Каждый успешный ремонт также меняет классификацию: инструмент, организм, актив, загрязнение и доказательство постоянно пересекают поля.
 
 ## Scanner
 
-RU LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Маршрутный шлюз: абиссальное машинное поле. Ремонтная экология Atlas становится пригодным маршрутным оборудованием с риском custody.
 
 ## Terminal
 
-RU LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+МАРШРУТ КАМПАНИИ // АБИССАЛЬНОЕ МАШИННОЕ ПОЛЕ. Нужно: проводящая пленка, акустический орган, сервисный бассейн, pressure-safe reroute. Ремонтный выход может восстановить железо и испортить класс владения за один проход.
 
 ## Audio
 
-RU LOC HOLD: It fixed the wall before it decided what the wall was.
+Он починил стену раньше, чем назвал стену.
 
 ## Field Note
 
-RU LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Заметка мародера: если оно растет через панель, сканируй до реза. Возможно, только поэтому панель еще работает.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/ru_RU. -->

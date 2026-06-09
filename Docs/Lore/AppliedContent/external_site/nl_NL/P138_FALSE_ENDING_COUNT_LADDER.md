@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Ladder van valse eindes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Ladder van valse eindes
 
-NL LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+De ladder van valse eindes houdt replay leesbaar: meerdere uitgangen, vier grote onvolledige families en het Atlas-bekken als zwaartepunt.
 
 ## Scanner
 
-NL LOC HOLD: Four major false families before the deep Atlas resolutions.
+EINDLADDER // Material-uitbetaling, gedeeltelijke terugkeer, bedrijfsgevangenschap of quarantaine, openbaar ledger-lek. Vier valse families vóór de diepe Atlas-antwoorden.
 
 ## Terminal
 
-NL LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIERBEREIK: markeer veel uitgangen, maar groepeer ze in duidelijke families. Material-uitbetaling, gedeeltelijke exit/terugkeer, bedrijfsgevangenschap/quarantaine en openbaar ledger-lek staan onder de payload-resoluties in het Atlas-bekken.
 
 ## Audio
 
-NL LOC HOLD: The dossier can mark many exits before it marks an answer.
+Het dossier kan uitgangen markeren voordat het een antwoord markeert.
 
 ## Field Note
 
-NL LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Genoeg eindes voor speelstijlen. Niet genoeg om waarheid goedkoop te maken.
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/nl_NL. -->

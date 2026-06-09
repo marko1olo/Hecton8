@@ -19,22 +19,8 @@ localization_flags: 1
 
 # 塩水峡谷密度梯子ガイド
 
-塩水峡谷密度梯子ガイドは HECTON-8 の溝を工学地理として扱う。下り道は風景ではなく密度でできている。
+塩水峡谷は、ライトの縁が曲がり、計器がためらい、落とした工具が止まるべきでない場所で止まるまで、空の水に見える。HECTON-8の高密度層は深度を建築に変える。淡水、塩荷重、冷たい湧出残渣、粘土シルト、化学膜が見えない床となり、鉱物片の雲を運ぶこともあれば、ドローン信号を丸ごと飲むこともある。
 
-## Scanner
-
-brine ladder 検出: 層状密度、偽の床、ソナー屈曲。縁を辿れ。ここでは開けた水が嘘をつく。
-
-## Terminal
-
-FIELD GUIDE: brine 峡谷は pressure shelves、current ledges、resource pockets、scanner false positives を隠す。Hull rating と density transition が、どの棚が航路でどれが落下かを決める。
-
-## Audio
-
-船殻が各段の代金を払えるなら、峡谷は階段になる。
-
-## Field Note
-
-vane の影を階段のように使え。brine 中の空白読みは空間ではない。計器が議論に負けているだけだ。
+峡谷は利益より先に生存を教える。ベーンの影を追う。泥の線を見る。塩水内では、静かな計器を外より疑え。密度が有用物の落下を遅らせる場所には資源ポケットが集まるが、同じポケットは滞留ガス、死んだセンサー、安い船体を罰するほど鋭い圧力変化を隠す。下ることは、ただ深くなることではない。流体同士の取り決めを渡ることだ。
 
 <!-- External Site; generated from P352_BRINE_CANYON_DENSITY_LADDER_GUIDE/ja_JP. -->

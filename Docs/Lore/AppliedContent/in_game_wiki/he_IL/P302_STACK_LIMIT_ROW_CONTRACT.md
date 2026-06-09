@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Stack Limit Data Boundary"
+title: "גבול נתוני מגבלת ערימה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Stack Limit Data Boundary
+# גבול נתוני מגבלת ערימה
 
-HE LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+הגבול שומר על מלאי פיזי. פריטים נערמים רק כאשר המכל, דירוג הלחץ, המסה ומצב הזיהום יכולים לשרוד את אותו מסלול בלי לשקר לקובץ השמירה.
 
 ## Scanner
 
-HE LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+שורת ערימה דוחה ערימות אייקונים: סוג כלי, דירוג לחץ, זיהום ומסה קובעים כמות.
 
 ## Terminal
 
-HE LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: ספירת ערימה דורשת סוג כלי, דירוג לחץ, שלב זיהום, מחלקת מסה, דרגת אזהרה וזהות שמירה יציבה. ארגז אינו כלי לחץ.
 
 ## Audio
 
-HE LOC HOLD: A crate is not a pressure vessel.
+ארגז אינו כלי לחץ.
 
 ## Field Note
 
-HE LOC HOLD: Stack limits stay table-owned and stable for save identity.
+מגבלות ערימה נשארות בבעלות הטבלה ויציבות לזהות שמירה.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/he_IL. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guia de Escada de Densidade do Cânion de Salmoura"
+title: "Guia da escada de densidade do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guia de Escada de Densidade do Cânion de Salmoura
+# Guia da escada de densidade do cânion de salmoura
 
-Cânions de brine tornam profundidade física. Eles ensinam camadas de densidade, limites de casco, falhas de pressão e resource pockets antes de rotas inferiores abrirem.
+Cânions de salmoura tornam a profundidade física. Camadas de densidade, silte suspenso, bolsões de seep frio e zonas cegas de instrumentos ensinam limites de casco antes da abertura das rotas inferiores. O caminho para baixo não é escada de rocha. É uma escada de fluidos que discordam sobre onde um corpo pertence.
 
 ## Scanner
 

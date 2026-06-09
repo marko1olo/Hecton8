@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Pressure Bunk Shift Routine"
+title: "Сменный распорядок койки давления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Pressure Bunk Shift Routine
+# Сменный распорядок койки давления
 
-RU LOC HOLD: Bunk routines make colony life legible through repeated work: sleep, tools, pressure notes, meals and descent assignments.
+Pressure bunk - не спальня в старом поверхностном смысле. Это арендованное тепло, стропа фиксации, сухая пена, если насосы добры, и маленькая цепочка доказательств, что работник вернулся из давления. Slate C-12 пишет тон пробуждения 03:40, проверку шва костюма, pressure note, meal-water token, custody инструмента и назначение спуска. В модуль не доходил рассвет. Утром становился тон насоса.
+
+Routine кажется жесткой, пока не проследишь цепь. Пропущенная проверка шва задевает ведущего коек. Поздний ключ насоса цепляет инструментальную и водный журнал. Pressure note может убрать работника с маршрута в medlock до того, как плохое решение станет затопленным коридором. Койка была кроватью, но еще адресом, расписанием, точкой custody и тихой тревогой.
+
+Здесь важна малая улика: лента с мокрым носком на рейке, сокращенное имя, жетон еды рядом с заметкой давления, ключ до tone 2. Ничто из этого не писали как памятник. Это была обычная станционная жизнь, пытавшаяся удержать усталое тело живым до следующего тона.
 
 ## Scanner
 
-RU LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
+СМЕННАЯ ТАБЛИЧКА КОЙКИ // Ряд C-12. Сигнал насоса 03:40, проверка уплотнений скафандра, отметка давления, жетон воды к еде, хранение насосного ключа. Сон шел по тону насоса, не по рассвету.
 
 ## Terminal
 
-RU LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
+КОЙКА C-12: сигнал подъема 03:40; стропа койки чиста; проверка уплотнений 03:52; отметка давления внесена; жетон воды после спуска; инструмент у D. Rivas; насосный ключ вернуть до тона 2. Пропущенное возвращение отмечает старший ряда и столовый журнал.
 
 ## Audio
 
-RU LOC HOLD: Tired, trained and due back in six hours.
+Шесть часов внизу, два часа сна, один сигнал, чтобы доказать, что ты вернулся.
 
 ## Field Note
 
-RU LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+На койке 12 еще держится лента от мокрого носка. Сигнал 03:40. D. Rivas должен был вернуть насосный ключ до еды. Не срывай бирку: распорядок и есть цепочка личности.
 
 <!-- In-Game Wiki; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/ru_RU. -->

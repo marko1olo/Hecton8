@@ -42,7 +42,7 @@ Runtime layer: Narrative
 
 Surface targets: wiki relation note, public sidebar, PDA evidence graph hint, scanner relation tag, terminal index annotation, evidence caption
 
-Spoiler level: relation existence visible at level 1; exact proof path and final consequence held until later proof gates.
+Spoiler level: relation existence visible at level 1; exact proof path and final consequence held until later evidence records.
 
 Canon sources: AGENTS.md, VISION_LOCKS.md, TASTE.md, writing.md, narrative.md, localization.md, data.md, authoring.md, quality.md, Docs/Lore/Canon_Locks.md, Docs/Lore/Lore_Bible.md, Docs/Lore/Lore_Content_System.md, Docs/Lore/Lore_Localization_Model.md, Docs/Lore/Website_Publication_Map.md.
 
@@ -78,129 +78,118 @@ Localization status: English authority row; non-English draft rows require futur
 
 **Website article seed:**
 
-Public readers need connections, but a connection is not a confession. HECTON-8 archive relations are therefore written as edges with limits: supports, disputes, shares custody, shares route, names the same object, repeats a witness hash, or is held behind a spoiler cap. The edge tells a reader where to look next. It does not answer the route for them.
+Public readers need links between records, but a link is not a confession. HECTON-8 archive relations are written as limited edges: supports, disputes, shares custody, shares route alias, names the same object, repeats a witness hash, contradicts public label, or held. The edge tells the reader where to inspect next. It does not hand over the route answer.
 
-This matters because a clean wiki page can accidentally spoil the evidence game by turning every hidden relation into a public conclusion. A page may say that a quarantine tag is related to a receiver ambiguity note. It should not say which receiver the route proves, who benefited from the quarantine, or whether the legal hold was a shield or a delay. The edge exists so the reader can move without being handed the ending.
+This matters because a clean wiki page can spoil an evidence trail by turning every hidden relation into a public conclusion. A page may say that a quarantine tag relates to a receiver ambiguity note. It should not name which receiver the route proves, who benefited from the quarantine, or whether the legal hold was protection or delay. The edge exists so the reader can move without being given the ending.
 
 **Wiki article seed:**
 
-Spoiler-safe relation edge: a visible link between two evidence packets that describes relation type without exposing the protected fact. Common labels include related, supports, disputes, shares custody, shares route alias, repeats witness hash, contradicts public label, and held. Edge confidence must stay qualified until the proof order resolves the object, custody, and witness route.
+Spoiler-safe relation edge: a visible link between two evidence packets that names relation type without exposing the protected fact. Common labels: related, supports, disputes, shares custody, shares route alias, repeats witness hash, contradicts public label, held. Edge confidence remains qualified until proof order resolves object mark, custody, and witness route.
 
-**PDA / codex entry:**
+**PDA/codex seed:**
 
-Evidence graph note: a line between two packets is a route prompt. It is not the route answer. If the edge says "disputes," inspect the object and custody marks. If the edge says "held," the graph is deliberately hiding a later proof. Do not treat a missing edge as innocence.
+Evidence graph note: a line between packets is a route prompt, not a route answer. If the edge says disputes, inspect object and custody marks. If it says held, the graph is hiding a later proof field on purpose. A missing edge is not innocence.
 
-**Scanner entry:**
+**Scanner seed:**
 
-Relation edge detected. Source packet and target packet share custody or route evidence. Spoiler cap active. Confidence: partial. Required next evidence: object proof, witness hash, or terminal receipt.
+RELATION EDGE // Source and target packets share custody or route evidence. Spoiler cap active. Confidence: partial. Required next evidence: object proof, witness hash, terminal receipt, or counter-index note.
 
-**Terminal note:**
+**Terminal seed:**
 
 WIKI RELATION EDGE
-
+Source packet: retained.
+Target packet: retained.
 Edge label: related.
-
 Spoiler cap: active.
+Public copy: show relation type, hide final proof field.
 
-Do not expand the hidden route in public copy.
+**Evidence caption seed:**
 
-Action: show relation type, hide final proof field.
+Relation-edge card. Two packets touch the same evidence family, but the route conclusion is still withheld.
 
-**Evidence caption:**
+**Spoiler policy seed:**
 
-Spoiler-safe relation card. The edge shows that two packets touch the same evidence family while keeping the route conclusion withheld.
-
-**Spoiler policy:**
-
-Relation labels may appear early. Edge target, exact contradiction, protected claimant, final receiver, Atlas consequence, and legal result stay masked until later proof gates.
-
-**String-pool key plan:**
-
-Use hashed LocIDs in the Narrative layer. Keep edge labels short for scanner and PDA graph surfaces. Longer wiki/public copy remains tied to this packet ID. Runtime must not parse this Markdown.
-
-## Future Integration Notes
-
-Proposed LocID rows:
-
-| LocID | Layer | Category | Purpose |
-|---|---|---|---|
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_TITLE | Narrative | codex_title | Canonical title string |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_WEBSITE | Narrative | website_article | Public article seed |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_WIKI | Narrative | wiki_article | Wiki note |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_PDA | Narrative | pda_codex | PDA note |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_SCANNER | Narrative | scanner_entry | Scanner relation tag |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_TERMINAL | Narrative | terminal_note | Terminal annotation |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_CAPTION | Narrative | evidence_caption | Evidence caption |
-| LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_SPOILER | Narrative | spoiler_policy | Spoiler policy |
-
-P497 relation: relation graph dossier supplies the broad graph concept; this packet narrows the edge label rule.
-
-P499 relation: public index spoiler caps decide which edge details stay hidden.
-
-P503 relation: Marauder counter-index notes often challenge public edge labels.
-
-P506 relation: proof order decides when a relation edge can move from related to supports or disputes.
-
-Runtime boundary: future runtime systems must consume baked string-pool rows or binary source data only, never this Markdown.
+Relation labels may appear early. Exact edge target, protected contradiction, protected claimant, final receiver, Atlas consequence, legal result, and ending branch stay hidden until later evidence records open.
 
 ## Locale Rows
 
+Live locale text is source-owned by:
+
+`Docs/Lore/AppliedContent/packets/RS102_PROOF_ORDER_RELATION_RECEIPT_BRIDGE.packets.json::P507_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE.localized`
+
+Do not maintain duplicate translated prose in this production brief. Edit the packet JSON, then regenerate or resync this brief.
+
 ### en_US
 Status: source_authority
-Text: A spoiler-safe relation edge says that two evidence packets touch without giving away the route answer. Use labels such as related, supports, disputes, shares custody, shares route alias, repeats witness hash, or held. The edge is a navigation aid, not a verdict. Keep final receiver, protected claimant, Atlas consequence, and legal result behind later proof gates.
+Title: Wiki Spoiler-Safe Relation Edge
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_en_US_PRIMARY`
 
 ### ar_SA
 Status: draft_machine_or_llm
-Text: حافة العلاقة الآمنة من الحرق تقول إن حزمتين من الدليل تلتقيان من غير كشف جواب المسار. استخدم وسوما مثل مرتبط، يدعم، يعارض، يشترك في الحيازة، يشترك في اسم مسار، يكرر بصمة شاهد، او محجوب. الحافة أداة ملاحة وليست حكما. ابق المستلم النهائي والمطالب المحمي ونتيجة Atlas والحكم القانوني خلف بوابات دليل لاحقة.
+Title: حافة علاقة آمنة من الحرق في الويكي
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ar_SA_PRIMARY`
 
 ### de_DE
 Status: draft_machine_or_llm
-Text: Eine spoiler-sichere Relationskante sagt, dass zwei Beweispakete sich beruehren, ohne die Routenantwort preiszugeben. Nutze Labels wie verbunden, stuetzt, bestreitet, teilt Verwahrung, teilt Routenalias, wiederholt Zeugenhash oder gehalten. Die Kante ist Navigation, kein Urteil. Finalen Empfaenger, geschuetzten Anspruch, Atlas-Folge und Rechtsresultat hinter spaeteren Beweistoren halten.
+Title: Spoilergeschützte Wiki-Beziehungskante
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_de_DE_PRIMARY`
 
 ### es_ES
 Status: draft_machine_or_llm
-Text: Una arista de relacion segura contra spoilers dice que dos paquetes de evidencia se tocan sin dar la respuesta de ruta. Usa etiquetas como relacionado, apoya, disputa, comparte custodia, comparte alias de ruta, repite hash testigo o retenido. La arista guia, no sentencia. Mantiene receptor final, reclamante protegido, consecuencia Atlas y resultado legal detras de puertas posteriores.
+Title: Arista wiki segura contra spoilers
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_es_ES_PRIMARY`
 
 ### fr_FR
 Status: draft_machine_or_llm
-Text: Une arrete relationnelle sans spoiler dit que deux paquets de preuve se touchent sans donner la reponse de route. Utilisez lie, soutient, conteste, partage garde, partage alias de route, repete hash temoin ou retenu. L'arrete guide, elle ne juge pas. Gardez receveur final, reclamant protege, consequence Atlas et resultat legal derriere des preuves plus tardives.
+Title: Arête wiki protégée des spoilers
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_fr_FR_PRIMARY`
 
 ### he_IL
 Status: draft_machine_or_llm
-Text: קצה קשר בטוח מספוילר אומר ששתי חבילות ראיה נוגעות זו בזו בלי למסור את תשובת המסלול. השתמשו בתוויות כמו קשור, תומך, חולק, חולק משמורת, חולק כינוי מסלול, חוזר על גיבוב עד, או מוחזק. הקצה הוא ניווט, לא פסק דין. שמרו את המקבל הסופי, התובע המוגן, תוצאת Atlas והתוצאה המשפטית לשערי הוכחה מאוחרים.
+Title: קצה קשר ויקי מוגן מספוילרים
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_he_IL_PRIMARY`
 
 ### id_ID
 Status: draft_machine_or_llm
-Text: Tepi relasi aman-spoiler mengatakan dua paket bukti bersentuhan tanpa memberi jawaban rute. Gunakan label seperti terkait, mendukung, membantah, berbagi kustodi, berbagi alias rute, mengulang hash saksi, atau ditahan. Tepi adalah alat navigasi, bukan putusan. Simpan penerima akhir, klaiman terlindungi, konsekuensi Atlas, dan hasil legal di balik gerbang bukti berikutnya.
+Title: Tepi Relasi Wiki Aman Spoiler
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_id_ID_PRIMARY`
 
 ### ja_JP
 Status: draft_machine_or_llm
-Text: スポイラー安全な関係エッジは、二つの証拠パケットが接していることだけを示し、ルートの答えは渡さない。関連、支持、異議、保管共有、ルート別名共有、証人ハッシュ反復、保留などのラベルを使う。エッジは案内であり判決ではない。最終受信者、保護請求者、Atlasの結果、法的結果は後の証拠ゲートに残す。
+Title: Wiki用ネタバレ保護関係エッジ
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ja_JP_PRIMARY`
 
 ### ko_KR
 Status: draft_machine_or_llm
-Text: 스포일러 안전 관계 엣지는 두 증거 패킷이 닿아 있음을 말하지만 경로의 답은 주지 않는다. 관련, 지지, 반박, 보관 공유, 경로 별칭 공유, 증인 해시 반복, 보류 같은 라벨을 쓴다. 엣지는 항법 도구이지 판결이 아니다. 최종 수신자, 보호 청구인, Atlas 결과, 법적 결과는 뒤의 증거 관문에 둔다.
+Title: 위키 스포일러 보호 관계 엣지
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ko_KR_PRIMARY`
 
 ### nl_NL
 Status: draft_machine_or_llm
-Text: Een spoilerveilige relatierand zegt dat twee bewijsbundels elkaar raken zonder het routeantwoord te geven. Gebruik labels als gerelateerd, steunt, betwist, deelt bewaring, deelt routealias, herhaalt getuigehash of vastgehouden. De rand is navigatie, geen vonnis. Houd finale ontvanger, beschermde claimant, Atlas-gevolg en juridisch resultaat achter latere bewijspoorten.
+Title: Spoilerveilige wikirelatierand
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_nl_NL_PRIMARY`
 
 ### pl_PL
 Status: draft_machine_or_llm
-Text: Bezpieczna od spoilerow krawedz relacji mowi, ze dwa pakiety dowodu sie stykaja, ale nie zdradza odpowiedzi trasy. Uzyj etykiet: powiazane, wspiera, spiera sie, dzieli depozyt, dzieli alias trasy, powtarza hash swiadka albo wstrzymane. Krawedz prowadzi, nie wydaje wyroku. Odbiorca finalny, chroniony roszczacy, skutek Atlas i wynik prawny zostaja za pozniejszymi bramami.
+Title: Bezpieczna spoilerowo krawędź relacji wiki
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_pl_PL_PRIMARY`
 
 ### pt_BR
 Status: draft_machine_or_llm
-Text: Uma aresta de relacao segura contra spoiler diz que dois pacotes de evidencia se tocam sem entregar a resposta da rota. Use rotulos como relacionado, apoia, disputa, compartilha custodia, compartilha alias de rota, repete hash de testemunha ou retido. A aresta orienta, nao julga. Mantenha receptor final, reclamante protegido, consequencia Atlas e resultado legal atras de provas futuras.
+Title: Aresta wiki segura contra spoiler
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_pt_BR_PRIMARY`
 
 ### ru_RU
 Status: draft_machine_or_llm
-Text: Спойлер-безопасное ребро связи говорит, что два пакета доказательств соприкасаются, но не выдает ответ маршрута. Используй метки: связано, поддерживает, спорит, делит хранение, делит псевдоним маршрута, повторяет хэш свидетеля или удержано. Ребро помогает навигации, а не выносит приговор. Финальный получатель, защищенный заявитель, последствие Atlas и правовой итог остаются за поздними воротами доказательств.
+Title: Спойлер-безопасное wiki-ребро связи
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_ru_RU_PRIMARY`
 
 ### uk_UA
 Status: draft_machine_or_llm
-Text: Спойлер-безпечне ребро зв'язку каже, що два пакети доказів торкаються, але не віддає відповідь маршруту. Використовуй мітки: пов'язано, підтримує, заперечує, ділить зберігання, ділить псевдонім маршруту, повторює хеш свідка або утримано. Ребро веде, а не судить. Фінальний отримувач, захищений заявник, наслідок Atlas і правовий результат лишаються за пізнішими воротами доказів.
+Title: Спойлер-безпечне wiki-ребро зв'язку
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_uk_UA_PRIMARY`
 
 ### zh_CN
 Status: draft_machine_or_llm
-Text: 防剧透关系边只说明两个证据包相互接触，不交出路线答案。可用相关、支持、争议、共享保管、共享路线别名、重复见证哈希或保留等标签。关系边是导航，不是判决。最终接收方、受保护索赔人、Atlas后果和法律结果留在后续证据门之后。
+Title: Wiki 防剧透关系边
+String pool key: `LORE_EVIDENCE_WIKI_SPOILER_SAFE_RELATION_EDGE_BRIDGE_zh_CN_PRIMARY`

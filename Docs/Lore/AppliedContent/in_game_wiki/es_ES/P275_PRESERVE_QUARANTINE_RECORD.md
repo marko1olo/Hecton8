@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Preserve Quarantine Record"
+title: "Registro de preservación en cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Preserve Quarantine Record
+# Registro de preservación en cuarentena
 
-ES LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+El Registro de preservación en cuarentena es la orden de retención para el mejor final dañado posible. La carga queda fuera de la custodia directa de Deep Reach, las coordenadas siguen cegadas y un recibo parcial mantiene presión exterior activa. Atlas sigue respirando mediante lógica de reparación dañada, protegiendo ecología de presión y vida de mantenimiento superviviente mientras nombres de trabajadores, responsabilidad de cuenca y futuras presentaciones salvage quedan sin resolver.
 
 ## Scanner
 
-ES LOC HOLD: Payload withheld. Consequence deferred.
+REGISTRO DE PRESERVACIÓN EN CUARENTENA // Carga retenida frente a Deep Reach. Atlas sigue dañado pero activo; orden de retención ecológica bloquea transferencia limpia de propiedad.
 
 ## Terminal
 
-ES LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+REGISTRO DE FINAL / PRESERVACIÓN EN CUARENTENA
+Carga: retenida fuera de custodia directa de Deep Reach.
+Orden: retención ecológica, coordenadas cegadas, recibo público parcial.
+Estado de Atlas: lógica de reparación dañada activa.
+Protegido: ecología de presión y vida de mantenimiento superviviente.
+Sin resolver: nombres de trabajadores, responsabilidad de cuenca, futuras presentaciones salvage.
+Pérdida conocida: preservar no se vuelve inocencia.
 
 ## Audio
 
-ES LOC HOLD: Leaving something alive is not the same as saving it.
+Lo dejaste vivo. No es lo mismo que salvarlo.
 
 ## Field Note
 
-ES LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Retener el paquete protege algunos sistemas vivos y deja respirar a la autoridad rota. Vigila la cola de reclamaciones ciegas.
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/es_ES. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder 수정층"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder 수정층
 
-KO LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+Marauder 수정층은 Deep Reach 절차와 플레이어 agency를 잇는다. 짧은 주석이 공식 언어를 생존의 진실로 바꾼다.
 
 ## Scanner
 
-KO LOC HOLD: Marauders turn corporate language back into survival facts.
+수정층 // 기업 라벨: temporary atmospheric variance. Marauder 메모: CO2는 판단을 먼저 먹는다.
 
 ## Terminal
 
-KO LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+주석 규칙: Deep Reach 언어를 다시 생존 사실로 번역한다. 메모는 짧고, 실용적이고, 화가 나 있으며, 압력 아래에서 유용해야 한다.
 
 ## Audio
 
-KO LOC HOLD: A good note does not sound clever. It keeps someone alive.
+좋은 메모는 영리하게 들리지 않는다. 누군가를 살려 둔다.
 
 ## Field Note
 
-KO LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+플레이어는 오래된 Deep Reach 언어가 시신 수로 번역되는 느낌을 받아야 한다.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/ko_KR. -->

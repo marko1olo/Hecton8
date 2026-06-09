@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Protokół zachowania kwarantanny payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Protokół zachowania kwarantanny payload
 
-PL LOC HOLD: The strongest HECTON-8 endings should save something real while leaving visible damage, delay or uncertainty.
+Zachowanie kwarantanny to trasa ostrożna, a ostrożna nie znaczy nieszkodliwa. Payload blokuje bezpośredni transfer Deep Reach i trzyma wektor koordynat zapieczętowany. Ekologia powiązana z Atlas pozostaje dość cała do przeglądu, a basen nie trafia do kupca odzysku na pokwitowanie.
 
-## Scanner
-
-PL LOC HOLD: Preserve route. No clean owner. No clean release.
-
-## Terminal
-
-PL LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
-
-## Audio
-
-PL LOC HOLD: Keeping it alive does not mean keeping it free.
-
-## Field Note
-
-PL LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Zagrożenie jest instytucjonalne. Escrow kwarantanny może przeżyć sytuację awaryjną, która je uzasadniła. Chroniony basen może stać się basenem zatrzymanym, potem basenem przypisanym, potem roszczeniem z lepszym językiem. Ta trasa ratuje czas i żywą strukturę, ale zostawia znaki dozoru na całej przyszłości.
 
 <!-- External Site; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/pl_PL. -->

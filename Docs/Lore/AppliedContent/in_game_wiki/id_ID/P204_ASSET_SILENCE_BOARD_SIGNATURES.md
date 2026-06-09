@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Asset Silence Board Signatures"
+title: "Tanda Tangan Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Asset Silence Board Signatures
+# Tanda Tangan Asset Silence Board
 
-ID LOC HOLD: Asset Silence Board signatures let the player trace how bureaucracy converts people into missing load categories.
+Catatan Asset Silence Board berada di antara buku pekerja dan laporan publik. Catatan itu tidak menciptakan kehilangan; ia menentukan bagian kehilangan mana yang boleh berjalan. Redaction vote bisa membiarkan load class, locker count, dan claim value tetap terlihat sambil membisukan nama saksi dan lampiran rute. Karena itu tanda tangan ini cocok di dekat loker, redaction cards, dan packet mute flags. Tanda tangan Brigit Senn tidak menjadikannya komandan tersembunyi. Ia mengidentifikasi kantor bawah yang mengubah fakta manusia yang bisa dipulihkan menjadi kategori asset-risk setelah relay review.
 
 ## Scanner
 
-ID LOC HOLD: A silence vote is not a gun. It can still make people disappear.
+Kartu redaction vote dipulihkan: bidang nama pekerja dibisukan, kategori asset-risk masih terlihat, jumlah loker dipertahankan. Visibilitas paket perlu custody approval.
 
 ## Terminal
 
-ID LOC HOLD: SIGNATURE SEED: Brigit Senn, Asset Silence Board. Function: routes witness names into asset-risk silence categories after relay review.
+SIGNATURE SEED: Brigit Senn, Asset Silence Board. Board item ASB-17: pindahkan lampiran witness-name ke kategori asset-risk silence setelah relay review. Pertahankan load class, locker count, dan claim value. Rilis memerlukan approval pemilik kustodi.
 
 ## Audio
 
-ID LOC HOLD: Erase the route and the body becomes cargo math.
+Board menyimpan jumlah peti. Mereka memotong nama.
 
 ## Field Note
 
-ID LOC HOLD: Pair these signatures with erased names, muted packets and unexplained accounting categories.
+Nama hilang, tag loker masih ada. Asset Silence Board memilih visibilitas paket, bukan apakah pekerja itu pernah ada.
 
 <!-- In-Game Wiki; generated from P204_ASSET_SILENCE_BOARD_SIGNATURES/id_ID. -->

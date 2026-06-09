@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Tiempo de preparación de carga pesada
 
-El flete pesado esconde tiempo dentro de la infraestructura. Hardware Atlas, carga de siembra, reservas de blindaje y piezas de frenado pueden llegar temprano porque se lanzan años antes de que el lenguaje público de asentamiento las alcance. Eso no vuelve fácil el rescate de emergencia. Una ruta preparada mueve masa porque depósitos, ventanas de haz, corrientes de pellets y etapas de captura ya estaban esperando. Una ruta de desastre no conserva esa paciencia.
+La preparación de carga pesada es donde la logística interestelar se vuelve violencia sin necesitar arma. Un anillo de hábitat, una carcasa de reactor, un crawler de corte, una costilla de presión o una reserva de comida son demasiado caros para tratarlos como promesa casual. Acumulan aseguradoras, gravámenes, transportistas, inspectores y cláusulas de respaldo antes de llegar a Aegir.
+
+Cuando cambiaron las condiciones, Deep Reach no tuvo que inventar crueldad desde cero. Solo tuvo que seguir honrando la cadena de carga. Cada tonelada ya preparada exigía receptor, cada receptor exigía sitio de trabajo y cada sitio exigía cuerpos. La colonia se volvió la respuesta humana a una carga ya pagada.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/es_ES. -->

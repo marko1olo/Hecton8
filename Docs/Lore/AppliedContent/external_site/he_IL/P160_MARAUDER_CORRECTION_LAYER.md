@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "שכבת תיקון Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# שכבת תיקון Marauder
 
-HE LOC HOLD: Marauder Correction Layer is the tone bridge between Deep Reach procedure and player agency.
+שכבת תיקון Marauder מחברת בין הליך Deep Reach לסוכנות השחקן: הערות קצרות הופכות שפה רשמית לאמת הישרדות.
 
 ## Scanner
 
-HE LOC HOLD: Marauders turn corporate language back into survival facts.
+שכבת תיקון // תווית תאגידית: temporary atmospheric variance. הערת Marauder: CO2 אוכל קודם את שיקול הדעת.
 
 ## Terminal
 
-HE LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+כלל הערה: לתרגם שפת Deep Reach בחזרה לעובדות הישרדות. לשמור הערות קצרות, מעשיות, כועסות ושימושיות תחת לחץ.
 
 ## Audio
 
-HE LOC HOLD: A good note does not sound clever. It keeps someone alive.
+הערה טובה לא נשמעת חכמה. היא משאירה מישהו חי.
 
 ## Field Note
 
-HE LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+השחקן צריך להרגיש שפת Deep Reach ישנה מתורגמת לספירת גופות.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/he_IL. -->

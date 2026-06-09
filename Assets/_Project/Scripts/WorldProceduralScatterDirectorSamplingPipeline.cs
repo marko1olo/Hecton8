@@ -518,7 +518,10 @@ namespace Hecton8.World
                                 activeFieldSample.resolvedZoneKind,
                                 activeFieldSample.depthMeters,
                                 activeFieldSample.slopeDegrees,
-                                activeFieldSample.biomeFamilyFlags))
+                                activeFieldSample.biomeFamilyFlags,
+                                activeFieldSample.terrainDetailEligibilityFlags,
+                                activeFieldSample.terrainSurfaceMaterialClass,
+                                activeFieldSample.hasTerrainDetailSample))
                         {
                             continue;
                         }

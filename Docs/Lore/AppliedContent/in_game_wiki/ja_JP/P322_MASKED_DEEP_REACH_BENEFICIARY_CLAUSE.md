@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Masked Deep Reach Beneficiary Clause"
+title: "隠されたDeep Reach受益者条項"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Masked Deep Reach Beneficiary Clause
+# 隠されたDeep Reach受益者条項
 
-JA LOC HOLD: Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded. Deep Reach is not a magical puppeteer; it is a contract pressure layer using shell custody, insurance priority and recovery compliance.
+隠されたDeep Reach受益者条項は、陰謀を悪役劇ではなく契約圧として地面に固定する。Deep Reachは任務を形作るために、可視の雇用表へ名前を出す必要がない。どの回収チャンネルが最初に開くか、どの受信者が保険対象か、どの座標パケットが黒塗りを逃れるか、claimが生き残った場合にどの窓口が支払われるか、そのアクセス順に現れる。条項はproxy loss deskを使って古い名前から責任を遠ざける一方、Deep Reachが今も欲しがるものだけを保存する。彼らが埋め損ねた水没座標連鎖へのアクセスだ。だからこの発見は告白より冷たい。プレイヤーは独白を読んでいるのではない。自分をasset、witness、contractor、recoverable debtへ既に分類した機械を読んでいる。Deep Reachは煙ではなく圧力として存在する。消えた名前こそが証拠だ。
 
 ## Scanner
 
-JA LOC HOLD: Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+雇用表にDeep Reachの名は印字されていない。金、受信者優先度、座標アクセスが重なる場所にだけ現れる。
 
 ## Terminal
 
-JA LOC HOLD: BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+受益者追跡 / 表示雇用者: proxy loss desk / 隠し受益者: Deep Reach関連shell / liability: 隔離 / coordinate access: 保持 / priority recovery channel: contractor distress laneより先に開く。
 
 ## Audio
 
-JA LOC HOLD: If the name is missing but the channel opens first, the owner is still in the room.
+名前が消えていても、そのチャンネルが最初に開くなら、所有者はまだ部屋にいる。
 
 ## Field Note
 
-JA LOC HOLD: Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+手続きとして書くこと。黒塗り、proxy loss desk、受益者追跡、回収チャンネル。圧力はプレイヤーに推測させる。
 
 <!-- In-Game Wiki; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/ja_JP. -->

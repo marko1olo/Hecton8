@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Final Question: Severance, Mercy, Theft
 
-Severance forces the player to decide what Atlas-ocean continuity has become. If it is only a broken tool, cutting it is repair. If it is a life system, cutting it is killing. If it is evidence, cutting it may be destruction of testimony.
+Severance cuts through the Atlas-ocean repair layer, not a single switch. It can stop damaged category logic and deny Deep Reach a live recovery path. It can also quiet vent micronodes, break shell-sealant pulses, strand tagged fauna routes, damage worker-record buffers, and leave pressure rooms without the system that kept them sealed. A severance payload needs proof-hash preservation because the act will be argued after the room goes dark.
 
 ## Scanner
 
-Cutting Atlas is not a shutdown button. It is surgery with no clean anatomy.
+SEVERANCE AXIS // Continuity cut crosses Atlas repair layer: pressure doors, conductor film, worker-record buffers, tagged fauna routes, vent micronodes, payload paths. Proof state changes custody label.
 
 ## Terminal
 
-SEVERANCE AXIS: cut Atlas continuity, isolate pressure ecology, deny Deep Reach payload routing, risk basin collapse or preserve only partial repair memory. Meaning depends on proof carried into the final room.
+FINAL AXIS / ATLAS SEVERANCE
+Action: continuity cut through Atlas-ocean repair layer.
+Affected: pressure doors, living conductor film, vent micronodes, shell sealant pulses, tagged fauna routes, worker-record buffers, payload paths.
+Receiver effect: Deep Reach route denied unless a separate payload path survives.
+Risk: basin instability, repair route loss, ecological injury, disputed custody.
+Known loss: the same cut can be rescue, damage, sabotage, or theft depending on proof state.
 
 ## Audio
 
-A clean switch would be merciful. You do not get one.
+The cut is real. The label arrives later.
 
 ## Field Note
 
-The same act can free trapped workers, kill ocean-machine life, deny Deep Reach and steal a living infrastructure from itself.
+A cut can free a trapped record, stop a harmful loop, break living repair, or deny Deep Reach a road back in. The console only shows which links go dark.
 
 <!-- In-Game Wiki; generated from P194_FINAL_QUESTION_SEVERANCE_MERCY_THEFT/en_US. -->

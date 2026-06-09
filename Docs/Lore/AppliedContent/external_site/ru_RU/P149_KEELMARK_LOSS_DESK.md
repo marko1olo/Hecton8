@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Loss Desk Keelmark"
+title: "Стол убытков Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Loss Desk Keelmark
+# Стол убытков Keelmark
 
-Loss Desk Keelmark дает false endings и долгу Black Keel корпоративного owner.
+Стол убытков Keelmark не та рука, которая топит коридор. Это рука, которая решает, как затопленный коридор войдет в книги. Поэтому он важен. Страховщик может сделать убийство похожим на погоду, если категории готовы достаточно рано.
 
-## Scanner
-
-Страхование не прятало мертвых. Оно переименовывало их, пока никого не требовалось доставать.
-
-## Terminal
-
-LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-Ledger сухой, потому что комната была мокрой.
-
-## Field Note
-
-Loss category - могила с лучшим stationery.
+Таблицы Keelmark учат Deep Reach языку, который переживет расследование. Оборудование амортизируется. Жилье получает impairment. Труд приостанавливается. Свидетели становятся exposed, compromised или unrecoverable. Имена тяжелее, поэтому стол избегает их до принуждения.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/ru_RU. -->

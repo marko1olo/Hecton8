@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Guía de proceso de campo de forja de ventilas"
+title: "Guía de proceso de campo de forja-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guía de proceso de campo de forja de ventilas
+# Guía de proceso de campo de forja-vent
 
-La Guía de proceso de campo de forja de ventilas ata el valor del recurso al manejo en campo: importa no solo qué se encontró, sino cómo pressure y cooling le permiten sobrevivir a recovery.
+Una forja-vent no es un cofre de tesoro en el fondo. Es un reactor lento hecho de filtración caliente, densidad de salmuera, alimentación mineral triturada y presión que no perdona la prisa. El material útil suele estar a medio camino entre depósito natural y lote industrial arruinado: granos cerámicos crecidos en gargantas minerales, precursores de sellante cocidos en grietas, películas cargadas que solo siguen estables si el enfriamiento ocurre en el orden correcto.
 
-## Scanner
-
-Vent-forge chemistry activa. La calidad sigue pressure history, heat pulse y enfriamiento lento, no el brillo de la muestra.
-
-## Terminal
-
-FIELD GUIDE: las vent forges cocinan sulfides, noble-gas pockets, ceramics y sealant precursors. La ruta de una muestra por heat, brine y pressure importa más que su nombre.
-
-## Audio
-
-La ventila no hizo mena. Hizo un proceso que interrumpiste.
-
-## Field Note
-
-No levantes un lote fresco directo al agua fría. Deja que la ventila termine el anneal o la concha se cuarteará.
+El manejo de campo forma parte del recurso. Saca un lote fresco al agua fría y la cáscara se cuartea. Purga el calor demasiado rápido y una muestra limpia se vuelve polvo. Espera demasiado y el vent escribe otra química sobre la capa deseada. Las cuadrillas salvage valoran las forjas-vent porque hacen que HECTON-8 parezca trabajado por el propio planeta: el océano no solo esconde materiales, aún los fabrica.
 
 <!-- External Site; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/es_ES. -->

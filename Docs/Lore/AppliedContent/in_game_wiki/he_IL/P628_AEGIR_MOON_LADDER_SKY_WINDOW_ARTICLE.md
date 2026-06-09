@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: PDA Sky Window Note
 spoiler_tier: 0
-title: "Aegir Moon Ladder Sky Window"
+title: "חלון שמים של סולם ירחי Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Moon Ladder Sky Window
+# חלון שמים של סולם ירחי Aegir
 
-Aegir moon tags show signal, tide and transfer-window pressure.
+סולם ירחי Aegir הוא מידע נתיב. תגי ירחים מלמדים איכות אות, לחץ גאות, צל ממסר וסיכון חלון transfer בלי לדרוש סימולציית מסלול חיה.
 
 ## Scanner
 
-Moon tag visible; relay noise falling.
+תג ירח // רעש ממסר יורד. חלון שמיש אם רצועת הסערה תחזיק.
 
 ## Terminal
 
-Ephemeris band favors a short packet window.
+הערת אפמריס // רצועת חלון HECTON-8 נוחה. צל ממסר Kestrel עולה. חלון חבילת חזק קצר.
 
 ## Audio
 
-Read the sky, then send.
+אל תבהה בשמים. קרא אותם, ואז שלח.
 
 ## Field Note
 
-Pretty moons are weights.
+ירחים יפים הם עדיין משקולות על הקו.
 
 <!-- In-Game Wiki; generated from P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE/he_IL. -->

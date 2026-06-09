@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Протокол orbital recovery window"
+title: "Протокол орбитального окна возврата"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Протокол orbital recovery window
+# Протокол орбитального окна возврата
 
-Протокол recovery window привязывает побег к hard-sci-fi ограничениям: storm tops, magnetic windows, transfer geometry, pressure-rated ascent hardware и legal receiver state.
+Протокол орбитального окна возврата - жесткое ограничение, превращающее спасение в инженерную задачу, а не надежду. Black Keel проходит над HECTON-8 достаточно часто, чтобы быть важным, но carrier не может просто выхватить мокрый непроверенный объект из штормового поля размером с луну. Верхняя атмосфера Aegir рвет плохие углы подъема, магнитный шум съедает слабое наведение, а приемник не принимает массу без quarantine handshake. Поэтому протокол требует несколько доказательств одновременно: rated ascent object, guidance core, способный попасть в окно, историю давления, которой доверяет приемник, и юридическое состояние хранения, объясняющее carrier, что ему разрешено ловить. Поэтому почти работающий побег все еще опасен. Запустишься рано - шторм заберет объект. Запустишься поздно - Black Keel станет голосом, уходящим над облаками. Запустишься без quarantine sync - carrier может услышать, отметить и все равно отказать массе. Окно делает небо настоящим: видимым, достижимым, рассчитанным и не милосердным.
 
 ## Scanner
 
-Recovery window blocked: storm shear, магнитный шум Aegir, плохая ascent geometry.
+Black Keel достаточно близко, чтобы слышать тебя, и слишком ограничен, чтобы поймать по первому запросу. Aegir открывает только узкие окна возврата.
 
 ## Terminal
 
-RECOVERY WINDOW: Black Keel принимает rated ascent object только при узкой Aegir geometry, низком magnetic interference и verified quarantine handshake.
+RECOVERY WINDOW / приемник Black Keel принимает rated ascent object только при низком storm-top shear, ослабленном магнитном шуме Aegir, подтвержденном guidance core, совпавшем quarantine handshake и receiver custody state. Дрейф окна делает ручной launch недействительным.
 
 ## Audio
 
-Корабль достаточно близко, чтобы иметь значение, и слишком далеко, чтобы быстро спасти тебя.
+Корабль достаточно близко, чтобы это имело значение, и слишком далеко, чтобы быстро спасти.
 
 ## Field Note
 
-Для route timers, carrier UI и объяснения false exits.
+Для route timers, carrier UI и объяснения false-exit: штормовой срез, магнитный шум, геометрия подъема, карантинный handshake.
 
 <!-- In-Game Wiki; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/ru_RU. -->

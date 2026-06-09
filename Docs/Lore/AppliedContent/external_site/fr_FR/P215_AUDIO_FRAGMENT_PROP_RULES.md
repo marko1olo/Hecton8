@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Fragment Prop Rules"
+title: "Règles de props de fragments audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Fragment Prop Rules
+# Règles de props de fragments audio
 
-FR LOC HOLD: Audio Fragment Prop Rules keep voice tied to hydrophone strips, suit recorders, terminal caches, and black-box fragments instead of free-floating monologues.
+Les Règles de props de fragments audio définissent comment HECTON-8 utilise la voix sans noyer le monde sous les monologues. Chaque fragment audio a besoin d'une source physique, d'un état de transcription endommagé, d'un horodatage et d'une contradiction. La voix ne doit pas remplacer la preuve environnementale ; elle doit l'aiguiser, faire parler ensemble pièces, props et registres de route.
 
 ## Scanner
 
-FR LOC HOLD: Voice is expensive. It must prove something the room also proves.
+La voix coûte cher. Elle doit prouver quelque chose que la pièce peut aussi prouver par métal, eau, horodatage ou dommage.
 
 ## Terminal
 
-FR LOC HOLD: AUDIO RULE: no free-floating monologues. Voice belongs to hydrophone strip, suit recorder, terminal cache or black-box fragment.
+AUDIO RULE : pas de monologues flottants. La voix appartient à une bande hydrophone, un enregistreur de combinaison, un cache terminal, un combiné de maintenance ou un fragment de boîte noire. Chaque ligne jouable doit avoir une source, un état de transcription endommagé, un horodatage de route et une contradiction que le joueur peut inspecter.
 
 ## Audio
 
-FR LOC HOLD: If the room cannot prove me, cut the line.
+Si la pièce ne peut pas me prouver, coupe la ligne.
 
 ## Field Note
 
-FR LOC HOLD: Audio fragments need a source prop, transcript damage, route timestamp, and one physical contradiction.
+Les fragments audio ont besoin d'un prop source, d'une transcription endommagée, d'un horodatage de route et d'une contradiction physique.
 
 <!-- External Site; generated from P215_AUDIO_FRAGMENT_PROP_RULES/fr_FR. -->

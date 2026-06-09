@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "Geruchtengeheugen van het dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# Geruchtengeheugen van het dossier
 
-NL LOC HOLD: Dossier Rumor Unlocks define replay memory as narrative intelligence instead of roguelite strength.
+Het geruchtengeheugen van het dossier maakt replay-kennis diegetisch: de registratie bewaart argwaan en gevolg zonder de volgende run een sterker lichaam te geven.
 
 ## Scanner
 
-NL LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+DOSSIERGEHEUGEN // Geruchten, waarschuwingen, contractcontext en eindrecords blijven. Romp, zuurstof, gereedschap, lading en kaart niet.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+PERSISTENTIEREGEL: het dossier mag geruchtenfamilies, bewijscategorieën, eindmarkeringen en routewaarschuwingen tussen campagnes bewaren. Het draagt geen uitrusting, middelen, seed-geografie of eigendom van waarheid over.
 
 ## Audio
 
-NL LOC HOLD: Your file remembers what your hands cannot carry.
+Het dossier onthoudt wat je handen niet kunnen dragen.
 
 ## Field Note
 
-NL LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+Laat kennis blijven. Laat druk blijven.
 
 <!-- External Site; generated from P136_DOSSIER_RUMOR_UNLOCKS/nl_NL. -->

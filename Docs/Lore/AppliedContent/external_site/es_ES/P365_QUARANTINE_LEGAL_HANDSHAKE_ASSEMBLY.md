@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Conjunto de handshake legal de cuarentena"
+title: "Conjunto de Handshake Legal de Cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Conjunto de handshake legal de cuarentena
+# Conjunto de Handshake Legal de Cuarentena
 
-El Conjunto de handshake legal de cuarentena ensucia la extracción a propósito: un motor funcional aún puede entregar al superviviente a corporate custody, verdad pública demorada o cuarentena sin resolver.
+El Conjunto de Handshake Legal de Cuarentena es el componente final porque la ruta de escape de HECTON-8 termina en autoridad, no en vacío. La cápsula puede estar lista mecánicamente, pero recovery todavía necesita un receptor dispuesto a nombrar la llegada.
 
-## Scanner
+El zócalo carga los hechos que deciden ese nombre: clave receptora, estado de cuarentena, custody de carga, lien de deuda y demora del libro público. Cada ruta acepta una versión distinta de la misma cápsula. Keelmark quiere masa y lien. Recovery Compliance quiere coordenadas y estado de contaminación. El libro público quiere prueba capaz de sobrevivir al tiempo y a la disputa.
 
-Conector de handshake. La cápsula puede estar mecánicamente lista y seguir perteneciendo al receiver equivocado.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key requerido. Keelmark acepta mass y lien. Recovery Compliance acepta coordinates y quarantine status. Public ledger acepta proof tras demora. Unkeyed launch pasa por defecto a custody dispute.
-
-## Audio
-
-Quien responde decide qué significa rescate.
-
-## Field Note
-
-El último componente no es metal. Es el nombre del sistema autorizado a llamarte recovered.
+Eso hace que la extracción sea deliberadamente incómoda. El lanzamiento más limpio todavía puede entregar al superviviente a una oficina de reclamaciones, a una retención médica cerrada o a un caso público lento. Reparar el handshake no libera a la cápsula de la política. Le permite al Marauder elegir qué política pone primero la mano sobre la escotilla.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/es_ES. -->

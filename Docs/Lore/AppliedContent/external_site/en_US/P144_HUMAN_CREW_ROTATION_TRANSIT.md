@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Human Crew Rotation Transit
 
-Human transit is the place where the route stops being abstract. Workers are not teleported to Aegir; they are scheduled, chilled, insured, indexed, and handed between authorities over years. A contract can age in one direction while the person inside it ages in another. By the time a crew wakes, the employer, liability owner, and emergency they trained for may all have changed. That makes abandonment feel procedural rather than melodramatic.
+Human crew rotation is where the route stops being astronomy and becomes labor control. A person on HECTON-8 is not just a passenger. They are berth volume, oxygen load, radiation exposure, psychiatric risk, wage lien, medical file, custody category, and possible witness. Every return window sorts those values before it sorts fear.
+
+The tragedy is that the rotation system was not entirely fake. People did leave Aegir. People did come home with pressure scars and savings and stories edited for public release. That history made later promises believable. When the colony began to fail, Deep Reach did not need to deny return. It only had to delay, reclassify, price, and ask for one more cycle.
 
 <!-- External Site; generated from P144_HUMAN_CREW_ROTATION_TRANSIT/en_US. -->

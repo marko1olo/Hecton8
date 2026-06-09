@@ -24,6 +24,8 @@ namespace Hecton8.EditorTools
                 RunStage("world_support_generated_decal_materials", delegate { WorldSupportGeneratedDecalMaterialBuilder.Build(); });
                 RunStage("batch34_visor_trauma_decal_array", delegate { Batch34VisorTraumaDecalArrayIntegrator.BakeAndBindVisorTraumaArray(); });
                 RunStage("batch34_terrain_layers", delegate { Batch34TerrainLayerAssetBuilder.BuildTerrainLayers(false); });
+                RunStage("mapmagic_clean_terrain_material_route", ApplyCleanMapMagicTerrainMaterialRoute);
+                RunStage("mapmagic_clean_terrain_material_validate", ValidateCleanMapMagicTerrainMaterialRoute);
                 RunStage("product_face_player_suit_materials", delegate { Hecton8.Editor.ProductFace.ProductFacePlayerSuitGeminiMaterialApplier.Apply(false); });
                 RunStage("resource_pickup_materials", delegate { ResourcePickupGeminiMaterialApplier.Apply(false); });
                 RunStage("world_support_materials", delegate { WorldSupportGeminiMaterialApplier.Apply(false); });
@@ -65,6 +67,23 @@ namespace Hecton8.EditorTools
             }
 
             Debug.Log("[GeminiMaterialIntegrationApplier] Stage complete: " + stageName);
+        }
+
+        private static void ApplyCleanMapMagicTerrainMaterialRoute()
+        {
+            Hecton8.Editor.HectonCleanTerrainMapMagicGraphIntegrator.IntegrationResult result =
+                Hecton8.Editor.HectonCleanTerrainMapMagicGraphIntegrator.ApplyMaterialRoute(
+                    Hecton8.Editor.HectonCleanTerrainMapMagicGraphIntegrator.ActiveSandboxGraphPath);
+            if (!result.Success)
+                throw new InvalidOperationException(result.Message);
+        }
+
+        private static void ValidateCleanMapMagicTerrainMaterialRoute()
+        {
+            Hecton8.Editor.HectonCleanTerrainMapMagicGraphIntegrator.ValidationResult result =
+                Hecton8.Editor.HectonCleanTerrainMapMagicGraphIntegrator.ValidateActiveSandboxGraph();
+            if (!result.Success)
+                throw new InvalidOperationException(result.Message);
         }
     }
 }

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Factory Temple Entry Fragment"
+title: "Fragment van fabriek-tempelingang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Factory Temple Entry Fragment
+# Fragment van fabriek-tempelingang
 
-NL LOC HOLD: Factory-Temple Entry Fragment defines the final-zone visual grammar.
+Het fragment definieert de visuele grammatica van de finale zone. Het sacrale gevoel is toevallig: duizenden reparaties herhaalden zich tot machine, biologie en menselijke schade één patroon werden.
 
 ## Scanner
 
-NL LOC HOLD: Entry fragment: alloy, shell sealant, human tool, active repair pulse.
+Legering, schelpafdichting, handgereedschap en actieve reparatiepuls registreren als één oppervlak.
 
 ## Terminal
 
-NL LOC HOLD: ENTRY MARKER: maintenance category overlap. Tool, sealant, cable and tissue registered as one repair surface.
+ENTRY MARKER: onderhoudscategorieën ingestort. Gereedschapssporen, afdichtingsschaal, kabelwortels, filterweefsel en actuatorribben geregistreerd als één reparatieoppervlak. Menselijke routemarkeringen niet langer bevoorrecht.
 
 ## Audio
 
-NL LOC HOLD: This is not a room. This is a habit.
+Dit is geen kamer. Dit is een gewoonte.
 
 ## Field Note
 
-NL LOC HOLD: Visual rule: temple only because industry and tissue have become ritual through repetition.
+Visuele regel: het lijkt alleen tempelachtig omdat industrie, weefsel en herhaling ritueel zijn geworden.
 
 <!-- In-Game Wiki; generated from P298_FACTORY_TEMPLE_ENTRY_FRAGMENT/nl_NL. -->

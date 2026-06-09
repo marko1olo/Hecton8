@@ -31,6 +31,11 @@ namespace Hecton8.UI
         [SerializeField] private float safeDepthCriticalMargin = 6f;
         [SerializeField] private float resetHysteresis = 0.06f;
 
+        [Header("Celestial Visibility")]
+        [SerializeField, Range(0.02f, 0.6f)] private float celestialVisibilityWarningThreshold = 0.22f;
+        [SerializeField, Range(0.01f, 0.35f)] private float celestialVisibilityCriticalThreshold = 0.10f;
+        [SerializeField, Min(0f)] private float celestialVisibilityAdvisoryCooldownSeconds = 18f;
+
         [Header("Audio")]
         [SerializeField] private AudioClip warningClip;
         [SerializeField] private AudioClip criticalClip;
@@ -57,6 +62,11 @@ namespace Hecton8.UI
         private int _lastSurvivalVitalsSnapshotGeneration;
         private IAudioService _cachedAudioService;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private ICelestialLightReadabilityReadModel _cachedCelestialLightReadModel;
+        private bool _celestialVisibilityWarned;
+        private bool _celestialVisibilityCritical;
+        private uint _lastCelestialLightSequence;
+        private float _nextCelestialVisibilityAdvisoryTime;
         private FixedCharBuffer _advisoryMessageBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - suit advisory notification staging buffer - owner: SuitAdvisoryController
 
         private const string MsgOxygenWarning = "OXYGEN RESERVES LOW";
@@ -79,11 +89,22 @@ namespace Hecton8.UI
         private const string MsgColdCritical = "EXTREME COLD // SUIT HEAT FAILING";
         private const string MsgHeatWarning = "HEAT LOAD RISING // HYDRATION LOSS ACTIVE";
         private const string MsgHeatCritical = "THERMAL OVERLOAD // BODY HEAT UNSAFE";
+        private const string MsgCelestialVisibilityWarning = "CELESTIAL VISIBILITY LOW";
+        private const string MsgCelestialVisibilityCritical = "SKY LIGHT LOST // ACTIVE BEACONING REQUIRED";
+        private static readonly uint _CelestialVisibilityWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibilityWarning"));
+        private static readonly uint _CelestialVisibilityCriticalHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibilityCritical"));
+        private static readonly uint _CelestialVisibilityContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility"));
+        private static readonly uint _CelestialVisibilityCriticalContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility.Critical"));
+        private static readonly uint _CelestialVisibilityArtificialContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility.Artificial"));
+        private static readonly uint _CelestialVisibilityFallbackContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility.Fallback"));
+        private static readonly uint _CelestialVisibilityTwilightContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility.Twilight"));
+        private static readonly uint _CelestialVisibilityNightContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SuitAdvisory.CelestialVisibility.Night"));
 
         private void Awake()
         {
             CacheAudioService(GlobalRegistry.Audio);
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
             ResolveReferences();
         }
 
@@ -91,11 +112,13 @@ namespace Hecton8.UI
         {
             CacheAudioService(GlobalRegistry.Audio);
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+            CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
             TryRegisterHotSwapListener();
             ResolveReferences();
             RefreshSurvivalSignalBinding();
             Subscribe();
             EvaluateAll();
+            EvaluateCelestialVisibilityAdvisory();
             RegisterSurvivalSignalPump();
         }
 
@@ -105,6 +128,11 @@ namespace Hecton8.UI
             UnregisterSurvivalSignalPump();
             TryUnregisterHotSwapListener();
             _cachedPlayerContext = null;
+            _cachedCelestialLightReadModel = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalSignalSequence = 0u;
+            _lastSurvivalVitalsSnapshotGeneration = 0;
+            ResetCelestialVisibilityAdvisoryState();
         }
 
         private void OnDestroy()
@@ -112,6 +140,12 @@ namespace Hecton8.UI
             Unsubscribe();
             UnregisterSurvivalSignalPump();
             TryUnregisterHotSwapListener();
+            _cachedPlayerContext = null;
+            _cachedCelestialLightReadModel = null;
+            _survivalSignalSourceId = 0u;
+            _lastSurvivalSignalSequence = 0u;
+            _lastSurvivalVitalsSnapshotGeneration = 0;
+            ResetCelestialVisibilityAdvisoryState();
             BaseIntegrityEvents.AssertUnregistered(this, nameof(SuitAdvisoryController));
         }
 
@@ -124,6 +158,11 @@ namespace Hecton8.UI
                 CacheAudioService(currentService as IAudioService);
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+            else if (serviceSlot == GlobalRegistryServiceSlot.CelestialEngineRuntime)
+            {
+                ResetCelestialVisibilityAdvisoryState();
+                CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
+            }
         }
 
         private void ResolveReferences()
@@ -151,8 +190,11 @@ namespace Hecton8.UI
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
         {
             _cachedPlayerContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
-            if (survival == null && _cachedPlayerContext != null)
+            if (_cachedPlayerContext != null)
                 survival = _cachedPlayerContext.SurvivalSystem;
+            else if (Application.isPlaying)
+                survival = null;
+            RefreshSurvivalSignalBinding();
         }
 
         private void Subscribe()
@@ -186,6 +228,9 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            RefreshCelestialLightReadabilityBinding();
+            EvaluateCelestialVisibilityAdvisory();
+
             if (survival == null)
                 return;
 
@@ -595,6 +640,167 @@ namespace Hecton8.UI
             NotifyWarning(in _advisoryMessageBuffer);
         }
 
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _cachedCelestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _cachedCelestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
+        }
+
+        private void RefreshCelestialLightReadabilityBinding()
+        {
+            if (!IsCelestialLightReadModelUsable(_cachedCelestialLightReadModel))
+            {
+                ResetCelestialVisibilityAdvisoryState();
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+            }
+        }
+
+        private void EvaluateCelestialVisibilityAdvisory()
+        {
+            ICelestialLightReadabilityReadModel readModel = _cachedCelestialLightReadModel;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                ResetCelestialVisibilityAdvisoryState();
+                return;
+            }
+
+            CelestialLightReadabilitySnapshot light = readModel.LightReadabilitySnapshot;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u ||
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) == 0u)
+            {
+                ResetCelestialVisibilityAdvisoryState();
+                return;
+            }
+
+            float visibility01 = ResolveCelestialVisibilityAdvisory01(in light);
+            float resetWarningThreshold = math.saturate(celestialVisibilityWarningThreshold + resetHysteresis);
+            float resetCriticalThreshold = math.saturate(celestialVisibilityCriticalThreshold + resetHysteresis);
+            if (visibility01 > resetWarningThreshold)
+            {
+                _celestialVisibilityWarned = false;
+                _celestialVisibilityCritical = false;
+            }
+            else if (visibility01 > resetCriticalThreshold)
+            {
+                _celestialVisibilityCritical = false;
+            }
+
+            if (light.Sequence == 0u || light.Sequence == _lastCelestialLightSequence)
+                return;
+
+            _lastCelestialLightSequence = light.Sequence;
+            float now = Time.unscaledTime;
+            if (now < _nextCelestialVisibilityAdvisoryTime)
+                return;
+
+            bool artificialLightCritical =
+                (light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u;
+            if (!_celestialVisibilityCritical &&
+                (visibility01 <= celestialVisibilityCriticalThreshold || artificialLightCritical))
+            {
+                _celestialVisibilityCritical = true;
+                _celestialVisibilityWarned = true;
+                _nextCelestialVisibilityAdvisoryTime = now + celestialVisibilityAdvisoryCooldownSeconds;
+                _advisoryMessageBuffer.Clear();
+                AppendCelestialVisibilityMessage(ref _advisoryMessageBuffer, in light, critical: true);
+                PublishCelestialVisibilityTelemetry(in light, visibility01, critical: true);
+                NotifyCritical(in _advisoryMessageBuffer);
+                return;
+            }
+
+            if (!_celestialVisibilityWarned && visibility01 <= celestialVisibilityWarningThreshold)
+            {
+                _celestialVisibilityWarned = true;
+                _nextCelestialVisibilityAdvisoryTime = now + celestialVisibilityAdvisoryCooldownSeconds;
+                _advisoryMessageBuffer.Clear();
+                AppendCelestialVisibilityMessage(ref _advisoryMessageBuffer, in light, critical: false);
+                PublishCelestialVisibilityTelemetry(in light, visibility01, critical: false);
+                NotifyWarning(in _advisoryMessageBuffer);
+            }
+        }
+
+        private void ResetCelestialVisibilityAdvisoryState()
+        {
+            _celestialVisibilityWarned = false;
+            _celestialVisibilityCritical = false;
+            _lastCelestialLightSequence = 0u;
+            _nextCelestialVisibilityAdvisoryTime = 0f;
+        }
+
+        private static float ResolveCelestialVisibilityAdvisory01(in CelestialLightReadabilitySnapshot light)
+        {
+            float visibilityMeters = math.max(0f, math.select(light.UnderwaterVisibilityMeters, 0f, !math.isfinite(light.UnderwaterVisibilityMeters)));
+            float range01 = math.saturate(visibilityMeters * math.rcp(112f));
+            float ambient01 = math.saturate(math.max(light.DirectSun01 * 0.55f, light.AmbientReadability01));
+            float rescueLight01 = math.saturate(light.ArtificialLightWeight01 * 0.22f + light.BiolumWeight01 * 0.08f + light.BlackCrushFloor01 * 0.12f);
+            float deepLoss01 = math.saturate(light.DeepDarkness01);
+            float fogLoss01 = math.saturate((math.max(0f, light.FogDensityMultiplier) - 1f) * 0.22f);
+            float visibility01 = range01 * math.lerp(0.32f, 1f, ambient01);
+            visibility01 *= 1f - deepLoss01 * 0.72f;
+            visibility01 *= 1f - fogLoss01;
+            return math.saturate(visibility01 + rescueLight01);
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
+        }
+
+        private static void PublishCelestialVisibilityTelemetry(
+            in CelestialLightReadabilitySnapshot light,
+            float visibility01,
+            bool critical)
+        {
+            try
+            {
+                uint warningHash = critical ? _CelestialVisibilityCriticalHash : _CelestialVisibilityWarningHash;
+                uint contextHash = ResolveCelestialVisibilityTelemetryContext(in light, critical);
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, math.saturate(visibility01));
+            }
+            catch (Exception telemetryException)
+            {
+                LogCelestialVisibilityTelemetryException(telemetryException);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogCelestialVisibilityTelemetryException(Exception telemetryException)
+        {
+            Debug.LogWarning("[SuitAdvisoryController] Celestial visibility telemetry failed: " + telemetryException.Message);
+        }
+
+        private static uint ResolveCelestialVisibilityTelemetryContext(
+            in CelestialLightReadabilitySnapshot light,
+            bool critical)
+        {
+            uint contextHash = _CelestialVisibilityContextHash;
+            if (critical)
+                contextHash ^= _CelestialVisibilityCriticalContextHash;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.ArtificialLightCritical) != 0u)
+                contextHash ^= _CelestialVisibilityArtificialContextHash;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Fallback) != 0u)
+                contextHash ^= _CelestialVisibilityFallbackContextHash;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseNight) != 0u)
+                contextHash ^= _CelestialVisibilityNightContextHash;
+            else if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseTwilight) != 0u)
+                contextHash ^= _CelestialVisibilityTwilightContextHash;
+
+            return contextHash;
+        }
+
         private void NotifyWarning(ReadOnlySpan<char> message)
         {
             _advisoryMessageBuffer.Clear();
@@ -779,6 +985,40 @@ namespace Hecton8.UI
             AppendText(ref buffer, "BASE AIR QUALITY LOW // SCRUBBERS ");
             AppendInt(ref buffer, reservePercent);
             AppendText(ref buffer, "%");
+        }
+
+        private static void AppendCelestialVisibilityMessage(
+            ref FixedCharBuffer buffer,
+            in CelestialLightReadabilitySnapshot light,
+            bool critical)
+        {
+            AppendText(ref buffer, critical ? MsgCelestialVisibilityCritical : MsgCelestialVisibilityWarning);
+            AppendText(ref buffer, " // VIS ");
+            AppendFloat(ref buffer, math.max(0f, light.UnderwaterVisibilityMeters), 0);
+            AppendText(ref buffer, "M // DEPTH ");
+            AppendFloat(ref buffer, math.max(0f, light.DepthMeters), 0);
+            AppendText(ref buffer, "M // AMB ");
+            AppendInt(ref buffer, Mathf.Clamp(Mathf.RoundToInt(math.saturate(light.AmbientReadability01) * 100f), 0, 100));
+            AppendText(ref buffer, "%");
+            AppendText(ref buffer, " // PHASE ");
+            AppendCelestialLightPhase(ref buffer, in light);
+        }
+
+        private static void AppendCelestialLightPhase(ref FixedCharBuffer buffer, in CelestialLightReadabilitySnapshot light)
+        {
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseNight) != 0u)
+            {
+                AppendText(ref buffer, "NIGHT");
+                return;
+            }
+
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.LightPhaseTwilight) != 0u)
+            {
+                AppendText(ref buffer, "TWILIGHT");
+                return;
+            }
+
+            AppendText(ref buffer, "DAY");
         }
 
         private void EvaluateColdStress()

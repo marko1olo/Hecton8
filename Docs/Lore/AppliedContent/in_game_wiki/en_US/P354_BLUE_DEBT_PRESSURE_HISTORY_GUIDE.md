@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Blue Debt Pressure History Guide
 
-Blue debt is contract language wrapped around a dangerous substrate. Pressure history, custody marks and signal drift decide whether it becomes clean payout, Atlas leverage or Deep Reach return motive.
+Blue debt is contract language wrapped around a dangerous substrate. Pressure history, custody marks, and signal drift decide whether it becomes clean payout, Atlas leverage, or Deep Reach return motive.
 
 ## Scanner
 
-Blue debt sample tagged. Verify pressure history, containment stage and signal drift before export.
+Blue debt sample tagged. Verify pressure history, containment stage, custody chain, and signal drift before export.
 
 ## Terminal
 

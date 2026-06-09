@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantainevrijgave Hold"
+title: "Quarantainevrijgave-hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Quarantainevrijgave Hold
+# Quarantainevrijgave-hold
 
-Het hold-record maakt quarantaine niet slecht. Het maakt timing zichtbaar. Deep Reach kon onzekerheid benoemen, vrijgave vertragen, verzekeringspositie bewaren en de werker in de zone houden tot de route stierf.
+Contaminatie is reëel op HECTON-8. Drukblootstelling, brinechemie en Atlas-compatibele groei kunnen een slordige redding dodelijk maken. De holdplaat toont hoe dat echte gevaar dekking werd. Deep Reach riep quarantaine in nadat de uitgangsroute gesloten was, accepteerde herstelbare activamassa en hield arbeidersvrijgave onder de lijn.
 
 ## Scanner
 
-Quarantaine-holdplaat. Beschermingstaal verschijnt nadat de uitgang al vergrendeld is.
+Holdplaat geborgen. Contaminatiebeoordeling start nadat de uitgangsroute al vergrendeld is en arbeidersvrijgave onder activa-herstel blijft.
 
 ## Terminal
 
-RELEASE GATE // BIO-PRESSURE UNCERTAINTY. Hold until review. Recovery queue accepts asset mass before worker release. Insurance ping active.
+VRIJGAVEPOORT // BIO-DRUK ONZEKER. Houden tot commissie bevestigt. Activamassa geaccepteerd in herstelwachtrij voor arbeidersvrijgave. Verzekeringsping actief.
 
 ## Audio
 
-Quarantaine kan een lichaam redden. Het kan een lichaam ook laten wachten tot het papierwerk wordt.
+Quarantaine kocht het bedrijf tijd voordat het iemand redde.
 
 ## Field Note
 
-Marauder-notitie: bescherming wordt niet bewezen door het woord bescherming. Controleer de klok.
+Plunderaarsnotitie: bescherming is een klok, geen woord. Controleer wanneer die begint.
 
 <!-- In-Game Wiki; generated from P374_QUARANTINE_RELEASE_DELAY_PROOF/nl_NL. -->

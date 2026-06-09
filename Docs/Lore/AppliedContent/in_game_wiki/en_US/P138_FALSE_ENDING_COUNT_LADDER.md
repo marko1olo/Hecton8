@@ -19,22 +19,22 @@ localization_flags: 0
 
 # False Ending Count Ladder
 
-HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 can have many ways out without turning truth into noise. The dossier should sort false or partial outcomes into a small number of legible families: take the material and leave, escape only to be pulled back, fall into corporate custody or quarantine, or leak enough ledger truth to wound the machine without ending it. Each exit is real. None is the bottom.
 
 ## Scanner
 
-Four major false families before the deep Atlas resolutions.
+ENDING LADDER // Material payout, partial return, corporate capture or quarantine, public ledger leak. Four false families before the deep Atlas answers.
 
 ## Terminal
 
-ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+DOSSIER SCOPE: mark many exits, but group them into clear families. Material payout, partial exit/return, corporate capture/quarantine and public ledger leak sit below the Atlas basin payload resolutions.
 
 ## Audio
 
-The dossier can mark many exits before it marks an answer.
+The dossier can mark exits before it marks an answer.
 
 ## Field Note
 
-Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Enough endings to reward playstyles. Not enough to make truth cheap.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/en_US. -->

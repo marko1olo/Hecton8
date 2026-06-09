@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Tool Certification Board"
+title: "Доска сертификации инструментов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Tool Certification Board
+# Доска сертификации инструментов
 
-RU LOC HOLD: The colony rituals in HECTON-8 are industrial: checklists, custody marks, pressure gloves and tool signatures.
+Tool Certification Board фиксирует культуру, где отметкам доверяли больше, чем речам. Голова резака проиндексирована. Картридж sealant взвешен. Pressure glove подписана двумя. Ключ насоса поздний. Комплект спуска удержан. Каждая строка грубая, потому что грубая процедура держала людей живыми там, где почти правильный инструмент мог убить тихо.
 
-## Scanner
+Доска выглядит ritualistic, потому что опасная работа повторяет одни и те же движения, пока страху некуда становится деваться. Взвесить, проверить, подписать, вернуть, перепроверить. Вторая подпись не была украшением; она делала доверие accountable. Если glove отказывала под давлением, отметка на доске говорила, кто видел, кто торопил и кто все равно пытался отправить ее вниз.
 
-RU LOC HOLD: Tool certification board. Trust was stamped into cutters, gloves and pump keys.
-
-## Terminal
-
-RU LOC HOLD: CERT BOARD: cutter head checked; sealant cartridge weighed; pressure glove dual-signed; pump key returned late; descent tools held until recheck.
-
-## Audio
-
-RU LOC HOLD: They did not pray before descent. They checked each other's tools.
-
-## Field Note
-
-RU LOC HOLD: Cutter head checked. Sealant cartridge weighed. Pressure glove signed by two hands. Pump key returned late and nobody erased the warning.
+Это рабочая вера без мистики. Колония не молилась над резаками. Она заставляла другого усталого человека смотреть на кромку, шов, вес и возврат ключа. Выживание становилось общим, потому что каждый инструмент нес чужое имя до того, как касался маршрута.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/ru_RU. -->

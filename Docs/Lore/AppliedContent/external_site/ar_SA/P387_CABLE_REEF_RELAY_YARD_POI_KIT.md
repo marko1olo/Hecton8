@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "عدة أدلة ساحة ترحيل الشعاب الكبلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Cable Reef Relay Yard POI Kit
+# عدة أدلة ساحة ترحيل الشعاب الكبلية
 
-AR LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+تحول ساحة الترحيل النفور إلى انضباط أدوات. تشققت أغلفة الكبلات، وتقشر العزل، وعبر غشاء خدمة Atlas مقابس لم تصمم لتشارك سطحا واحدا. تمريرة قاطع نظيفة قد تدمر الطريق الوحيد الذي ما زال يحمل إشارة.
 
-## Scanner
-
-AR LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-AR LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-AR LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-AR LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+عدة الأدلة مادية: استجابة بينغر، خريطة ساق ميتة، تحذير قطع، تفرع ترحيل، وعلامة خدمة حيث استولت مادة حية على مسار مكسور. يجب أن يبدو المكان نافعا قبل أن يبدو غريبا. خطره إصلاح قد ينقذ المشغل بينما يفسد سجل المطالبة.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ar_SA. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: High Custody Sample Contract Seed"
+title: "High-Custody-Proben-Vertragssamen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: High Custody Sample Contract Seed
+# High-Custody-Proben-Vertragssamen
 
-DE LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+High-Custody-Probe beginnt mit besserem Preis und schlechterer Box. Das Brett markiert bestimmte Proben als receiver-zertifiziert: Blue-debt-Körnung, Gewebe-Eisen-Flocken, versiegelte Brine, Filterpacks und Wachstumsschrott, der noch Routenkontext trägt. Jedes Stück braucht Behälter, Massenprüfung, Siegelzustand und Custody-Tag, bevor es zahlbar wird.
 
-## Scanner
-
-DE LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-DE LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-DE LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-DE LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Der Druck ist gewöhnlich und hässlich. Eine schwere Probe verlangsamt den Aufstieg. Ein gerissenes Siegel kann Auszahlung in Quarantäneverzug verwandeln. Ein voller sauberer Locker kann den Operator zwischen Beweispaket, Reparaturteil und zertifiziertem Material wählen lassen. Der Vertrag zahlt mehr, weil er Eigentum zu einem tragenden System macht.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/de_DE. -->

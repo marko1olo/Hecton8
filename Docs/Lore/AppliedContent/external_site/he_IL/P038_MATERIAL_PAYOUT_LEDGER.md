@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ספר תשלום חומרי"
+title: "ספר הסדר חומרי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ספר תשלום חומרי
+# ספר הסדר חומרי
 
-מתעד נתיב הצלחה מזויף בסגנון Stalker: רווח אפשרי, סגירה מוסרית לא.
+ספר ההסדר החומרי מגדיר נתיב עזיבה בתשלום. אפשר לעזוב את HECTON-8 עם חשבון סגור אם החומר המאושר נמסר, אבל רשומת האירוע נשארת בהסגר אלא אם ארכיון הראיות יוצא.
 
 ## Scanner
 
-דגימת blue debt אושרה. תשלום אפשרי. אמת אופציונלית. Deep Reach מעדיפה את הסדר הזה.
+דגימת blue debt אושרה: מסה, טוהר, יומן לחץ, שרשרת custody. האשראי יכול להיסגר לפני הראיות.
 
 ## Terminal
 
-לוח תשלום: מסה, טוהר, היסטוריית לחץ ושרשרת custody התקבלו. ארכיון ראיות פתוח.
+ההסדר נפתח כשהמזוודה האטומה תואמת לספר הדגימה, היסטוריית לחץ הירידה חסרת פער, וקוד ההצעה של Deep Reach מקבל את שרשרת custody. סגירה חומרית מעבירה אשראי ל-escrow ומסמנת את ארכיון Atlas כשארית שאינה לחיוב.
 
 ## Audio
 
-החשבון מתנקה. המים לא.
+החשבון נסגר. המים שומרים את הקבלה.
 
 ## Field Note
 
-חוזה מוצלח עדיין יכול להיות חיים כושלים.
+העברה נקייה יכולה להיות גם קבורה.
 
 <!-- External Site; generated from P038_MATERIAL_PAYOUT_LEDGER/he_IL. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Marauder Dossier Persistence
 
-The Marauder dossier retains endings, discovered contract types, rumor families, evidence categories, and route warnings. Equipment power and world truth reset with each seed. Knowledge changes decisions; it does not make pressure harmless.
+The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Dossier spool. You keep knowledge, not superpowers.
 
 ## Terminal
 
-DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories, route warnings, and public-ledger consequences retained. Equipment power, world truth, and local pressure state reset per seed.
 
 ## Audio
 

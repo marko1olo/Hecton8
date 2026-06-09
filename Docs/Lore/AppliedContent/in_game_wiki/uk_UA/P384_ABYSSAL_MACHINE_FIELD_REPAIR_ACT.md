@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Шлюз ремонту абісального машинного поля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Abyssal Machine Field Repair Act
+# Шлюз ремонту абісального машинного поля
 
-UK LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Абісальне поле змушує оператора використовувати систему, що пошкодила претензію. Ріст Atlas може мостити живлення, латати маршрутне залізо й проводити сигнал через живий матеріал. Кожен успішний ремонт також змінює класифікацію: інструмент, організм, актив, забруднення й доказ постійно перетинають поля.
 
 ## Scanner
 
-UK LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Маршрутний шлюз: абісальне машинне поле. Ремонтна екологія Atlas стає придатним маршрутним обладнанням із ризиком custody.
 
 ## Terminal
 
-UK LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+МАРШРУТ КАМПАНІЇ // АБІСАЛЬНЕ МАШИННЕ ПОЛЕ. Потрібно: провідна плівка, акустичний орган, сервісний басейн, pressure-safe reroute. Ремонтний вихід може відновити залізо й зіпсувати клас володіння за один прохід.
 
 ## Audio
 
-UK LOC HOLD: It fixed the wall before it decided what the wall was.
+Він полагодив стіну раніше, ніж назвав стіну.
 
 ## Field Note
 
-UK LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Нотатка мародера: якщо воно росте через панель, скануй до різу. Можливо, тільки тому панель ще працює.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/uk_UA. -->

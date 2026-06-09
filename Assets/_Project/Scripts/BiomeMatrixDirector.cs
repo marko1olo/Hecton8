@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Collections;
@@ -865,6 +866,7 @@ namespace Hecton8.Environment
         private HectonPlayerMovement _playerMovement;
         private IFluidDecalPresentationSink _resolvedFluidDecals;
         private IFluidSurfaceCurrentReadModel _resolvedFluidEngine;
+        private IHectonOceanKinematicsService _resolvedOceanKinematicsService;
         private ITerrainProvider _resolvedTerrainProvider;
         private IAtmosphereReadModel _resolvedAtmosphereReadModel;
         private bool _editorPreviewDirty = true;
@@ -1039,6 +1041,9 @@ namespace Hecton8.Environment
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _resolvedFluidEngine = currentService as IFluidSurfaceCurrentReadModel;
                     break;
+                case GlobalRegistryServiceSlot.OceanKinematics:
+                    _resolvedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                    break;
                 case GlobalRegistryServiceSlot.TerrainProviderRuntime:
                     _resolvedTerrainProvider = currentService as ITerrainProvider;
                     break;
@@ -1061,6 +1066,7 @@ namespace Hecton8.Environment
             _playerRuntimeContext ??= Hecton8.Core.GlobalRegistry.Player;
             _resolvedFluidDecals ??= GlobalRegistry.FluidDecalPresentation;
             _resolvedFluidEngine ??= GlobalRegistry.FluidSurfaceCurrent;
+            _resolvedOceanKinematicsService ??= GlobalRegistry.OceanKinematics;
             if (_resolvedTerrainProvider == null)
             {
                 MapMagicBridge mapMagicBridge = null;
@@ -1078,6 +1084,7 @@ namespace Hecton8.Environment
             _playerMovement = null;
             _resolvedFluidDecals = null;
             _resolvedFluidEngine = null;
+            _resolvedOceanKinematicsService = null;
             _resolvedTerrainProvider = null;
             _resolvedAtmosphereReadModel = null;
         }
@@ -1428,6 +1435,12 @@ namespace Hecton8.Environment
                 return _resolvedFluidEngine.WaterLevel;
             }
 
+            if (TryResolveOceanSurfaceLevelY(out float oceanSurfaceLevelY))
+            {
+                _debugDepthSource = "OceanKinematics";
+                return oceanSurfaceLevelY;
+            }
+
             if (_resolvedTerrainProvider != null)
             {
                 _debugDepthSource = "TerrainProvider";
@@ -1442,6 +1455,37 @@ namespace Hecton8.Environment
 
             _debugDepthSource = "SurfaceOffset";
             return surfaceOffsetMeters;
+        }
+
+        private bool TryResolveOceanSurfaceLevelY(out float surfaceLevelY)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _resolvedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanSurfaceLevelY(oceanKinematics.SeaLevel, out surfaceLevelY))
+            {
+                return true;
+            }
+
+            surfaceLevelY = surfaceOffsetMeters;
+            return false;
+        }
+
+        private static bool TryResolveOceanSurfaceLevelY(float candidateSurfaceLevelY, out float surfaceLevelY)
+        {
+            if (math.isfinite(candidateSurfaceLevelY) &&
+                math.abs(candidateSurfaceLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                surfaceLevelY = candidateSurfaceLevelY;
+                return true;
+            }
+
+            surfaceLevelY = 0f;
+            return false;
         }
 
         private int ResolveDepthTier(float depth)

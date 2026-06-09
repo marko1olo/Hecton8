@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Brine Canyon Liability Act"
+title: "Brama odpowiedzialności kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Brine Canyon Liability Act
+# Brama odpowiedzialności kanionu solanki
 
-PL LOC HOLD: The brine canyon act turns HECTON-8 from mystery to case file. The player starts proving how real physics became corporate loss language.
+Kanion solanki zmienia czas w dowód. Czujniki, zegary, stany kolejek i pęknięte płyty trasy pokazują, że powódź była prawdziwa i przyjęte ryzyko też było prawdziwe. Operator przestaje zbierać plotki i zaczyna nosić łańcuch dokumentów zdolny przetrwać przegląd odbiorcy.
 
 ## Scanner
 
-PL LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
+Brama trasy: kanion solanki. Warstwy gęstości, uszkodzone zegary i przyjęte marginesy stają się fizycznym dowodem odpowiedzialności.
 
 ## Terminal
 
-PL LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
+TRASA KAMPANII // KANION SOLANKI. Wymagane: porównać ślad marginesu, kolejkę ewakuacji, pęknięcie trasy i zegar ciśnienia. Wielki Pływ potwierdzony. Wyjątek komercyjny i wagi Atlas sporne.
 
 ## Audio
 
-PL LOC HOLD: The ocean did not lie. The timetable did.
+Ocean złamał ścianę. Harmonogram złamał ludzi.
 
 ## Field Note
 
-PL LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+Notatka szabrownika: nie kłóć się z pływem. Kłóć się ze znacznikiem czasu, za którego usunięcie ktoś zapłacił.
 
 <!-- In-Game Wiki; generated from P383_BRINE_CANYON_LIABILITY_ACT/pl_PL. -->

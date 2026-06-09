@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Juristisches Schlupfloch der Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Juristisches Schlupfloch der Marauder
 
-DE LOC HOLD: Marauders are not a single faction. They are licensed contractors where a dead claim needs work, tolerated criminals where recovery is cheaper than enforcement, and illegal raiders when evidence threatens a claimant. The player lives inside that legal ambiguity.
+Marauder sind kein Stamm mit einer Flagge. Sie sind Auftragnehmer, Schuldencrews, Wracktaucher und verzweifelte Mechaniker, die in einer von Verzögerung gebauten Lücke arbeiten. Eine tote Kolonie hat noch Eigentümer, aber Eigentum flickt keine Hüllen, pumpt keine Sole und zieht keine Recorder aus zerdrückten Servicedecks. Deep Reach braucht Crews, die es verleugnen kann. Die Domänen brauchen Beweise, die sie nicht selbst bergen müssen. Die Crews brauchen genug Papier, um die nächste Patrouille zu überstehen.
 
 ## Scanner
 
-DE LOC HOLD: License valid in one lane, criminal in the next.
+Lizenz in einer Spur gültig, in der nächsten anklagbar.
 
 ## Terminal
 
-DE LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor unter Aegir Reclamation Pool custody; geduldeter Eindringling in Deep-Reach-Asset-Sprache; strafbarer raider in sauberen Sol-Zusammenfassungen; emergency responder nur, wenn der geborgene Datensatz niemand Wichtigen bloßstellt.
 
 ## Audio
 
-DE LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Derselbe Cutter kann Werkzeug, Verbrechen oder das letzte Rettungsgerät sein.
 
 ## Field Note
 
-DE LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder ist nur dann ein Berufstitel, solange das richtige Gericht daran verdient.
 
 <!-- In-Game Wiki; generated from P122_MARAUDER_LEGAL_LOOPHOLE/de_DE. -->

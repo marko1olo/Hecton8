@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Libro de pago material"
+title: "Libro de liquidación material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Libro de pago material
+# Libro de liquidación material
 
-El pago material es éxito real hecho de extracción, certificación y silencio. No es final de verdad.
+El libro de liquidación material es la ruta contable del blue debt certificado. Paga prueba de muestra, historial de custodia y cláusulas de silencio, dejando testimonio Atlas y responsabilidad Deep Reach fuera de la factura.
 
 ## Scanner
 
-Muestra blue debt certificada. Pago posible. Verdad opcional. Deep Reach prefiere ese orden.
+Muestra blue debt certificada: masa, pureza, registro de presión, cadena de custodia. El crédito puede cerrarse antes que la evidencia.
 
 ## Terminal
 
-Calendario: masa, pureza, historial de presión y custodia aceptados. Archivo de pruebas sin resolver.
+La liquidación se abre cuando la caja sellada coincide con el libro de muestra, el historial de presión no tiene huecos y el código de oferta Deep Reach acepta la custodia. El cierre material mueve el crédito a escrow y etiqueta el archivo Atlas como residuo no facturable.
 
 ## Audio
 
-La cuenta se limpia. El agua no.
+La cuenta se cierra. El agua guarda el recibo.
 
 ## Field Note
 
-Un contrato exitoso puede seguir siendo una vida fallida.
+Una transferencia limpia también puede ser entierro.
 
 <!-- In-Game Wiki; generated from P038_MATERIAL_PAYOUT_LEDGER/es_ES. -->

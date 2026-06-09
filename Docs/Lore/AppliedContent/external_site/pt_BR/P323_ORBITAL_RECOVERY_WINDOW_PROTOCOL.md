@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Orbital Recovery Window Protocol"
+title: "Protocolo de Janela de Recuperação Orbital"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Orbital Recovery Window Protocol
+# Protocolo de Janela de Recuperação Orbital
 
-PT LOC HOLD: HECTON-8 does not strand the player with arbitrary game logic. The system geometry and damaged landing chain make rescue a timed engineering route.
+O Protocolo de Janela de Recuperação Orbital ancora o loop de fuga de HECTON-8 em astronomia local e engenharia de sistemas. O jogador não está preso porque a história mandou. Está preso porque o cisalhamento de Aegir, a interferência magnética, a cadeia de ascensão danificada e o estado legal do receptor só se alinham em janelas estreitas. Resgate vira uma rota a construir, não um botão a apertar.
 
 ## Scanner
 
-PT LOC HOLD: Recovery window blocked by storm shear, Aegir magnetic noise and bad ascent geometry.
+Black Keel está perto o bastante para ouvir você e restrita demais para capturar você quando pedir. Aegir só abre janelas estreitas de recuperação.
 
 ## Terminal
 
-PT LOC HOLD: RECOVERY WINDOW: Black Keel can receive a rated ascent object only during narrow Aegir geometry, low magnetic interference and verified quarantine handshake.
+JANELA DE RECUPERAÇÃO / receptor Black Keel aceita rated ascent object apenas com baixo storm-top shear, ruído magnético de Aegir reduzido, guidance core verificado, quarantine handshake compatível e receiver custody state. Deriva da janela invalida launch manual.
 
 ## Audio
 
-PT LOC HOLD: The ship is close enough to matter and too far to save you quickly.
+A nave está perto o bastante para importar e longe demais para salvar você rápido.
 
 ## Field Note
 
-PT LOC HOLD: Useful for route timers, carrier UI and false-exit explanation.
+Para timers de rota, UI do carrier e explicação de falsa saída: cisalhamento de tempestade, ruído magnético, geometria de ascensão, handshake de quarentena.
 
 <!-- External Site; generated from P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL/pt_BR. -->

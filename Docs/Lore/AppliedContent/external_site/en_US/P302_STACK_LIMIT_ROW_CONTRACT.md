@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Stack Limit Data Boundary
 
-Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+Inventory pressure in HECTON-8 comes from containment, certification, and contaminated mass. The game can show simple stacks, but the lore says why a stack is safe, why it breaks, and why the ocean does not care about item icons.
 
 ## Scanner
 
-Stack boundary: vessel class and contamination stage beat icon count.
+Stack row rejects icon piles: vessel class, pressure rating, contamination, and mass decide count.
 
 ## Terminal
 
-STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: stack count requires vessel type, pressure rating, contamination stage, mass class, warning tier, and save-stable identity. A crate is not a pressure vessel.
 
 ## Audio
 

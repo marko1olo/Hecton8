@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Atlas Continuity Office"
+title: "Atlas継続オフィス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Atlas Continuity Office
+# Atlas継続オフィス
 
-JA LOC HOLD: Atlas Continuity Office ties Deep Reach bureaucracy directly to Atlas behavior.
+このオフィスが存在するのは、ATLASが捨てるには価値が高く、はっきり認めるには危険すぎるからだ。道具ならDeep Reachは使える。証人なら問題になる。患者なら植民地には犯罪がある。
 
-## Scanner
-
-JA LOC HOLD: The office that wrote worker safety into a machine priority stack.
-
-## Terminal
-
-JA LOC HOLD: ORG NODE: Atlas Continuity Office owns directive language, safety exceptions, infrastructure priority and process continuity. Its work made Atlas defensible in court and dangerous at depth.
-
-## Audio
-
-JA LOC HOLD: They did not order death. They ordered compatibility.
-
-## Field Note
-
-JA LOC HOLD: A memo can kill without using the word kill.
+だからオフィスは手順を書く。ケアを保守、恐怖を異常、記憶を継続、拒否を安全審査と呼ぶ。答えではなく、知性を動かし続けながら周囲の道徳分類を未解決に保つ場所である。
 
 <!-- External Site; generated from P148_ATLAS_CONTINUITY_OFFICE/ja_JP. -->

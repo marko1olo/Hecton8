@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variants"
+title: "Spind-Beweisvarianten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variants
+# Spind-Beweisvarianten
 
-DE LOC HOLD: Locker Prop Variants defines reusable art and wiki hooks for colony evidence.
+HECTON-8 nutzt Spinde als Beweisflächen, nicht als Nostalgiekisten. Ein Spind kann Druckband, Dichtungsreste, Werkzeugmarken, Essensgutschriften, Routen-Kreide, Schichtaufkleber, Medlock-Ablehnungen und spätere Marauder-Korrekturen enthalten. Kein Objekt muss die Katastrophe erklären. Zusammen zeigen sie eine versunkene Kolonie, die zuerst ein Arbeitsplatz mit Gewohnheiten war.
+
+Die Stärke liegt in Zurückhaltung. Der Spind soll Trauer nicht befehlen. Er zeigt, was jemand mit nassen Händen und knapper Luft tat: ein Leck schließen, eine Dichtung borgen, eine Route markieren, eine medizinische Ablehnung aufbewahren, eine Mahlzeit sparen oder ein Werkzeug schmutzig lassen, weil die nächste Schicht fertig werden sollte. So behalten prozedurale Räume Menschlichkeit ohne eigene Szene für jede tote Person.
+
+Bergung ist eine Entscheidung. Kleine Dinge haben Wert, aber ihre Ordnung hat Bedeutung. Ein guter Marauder zeichnet den Satz auf, bevor er ihn nimmt. Ein schlechter macht aus einem Menschen lose Teile.
 
 ## Scanner
 
-DE LOC HOLD: A locker should say what a worker touched before the flood.
+SPIND // Druckband, abgenutzte Dichtung, Essensgutschrift, Werkzeugmarke, Routen-Kreide und Medlock-Ablehnung liegen auf einem Fach. Letzter praktischer Bestand eines Arbeiters, keine Dekoration.
 
 ## Terminal
 
-DE LOC HOLD: LOCKER VARIANTS: pressure tape, worn gasket, tool crib token, meal-credit strip, shift sticker, route chalk, medlock denial slip, and Marauder correction note.
+SPINDVARIANTEN // Reihenfolge vor Bergung lesen: Druckband bei Handschuhen = Leckarbeit; abgenutzte Dichtung = wiederholte Luken; Essensstreifen = Schichtschuld; Kreide = improvisierte Route; Medlock-Ablehnung = krank weiterarbeiten; Marauder-Notiz = späterer Beweisstreit.
 
 ## Audio
 
-DE LOC HOLD: The best memorial is a tool still dirty from the last shift.
+Das beste Denkmal ist keine Plakette. Es ist ein Werkzeug, das noch weiß, welche Hand müde war.
 
 ## Field Note
 
-DE LOC HOLD: Avoid sentimental clutter. Use work marks.
+Dekoriere keine Spinde. Baue sie aus Dingen, die eine müde Hand wirklich berühren musste.
 
 <!-- External Site; generated from P168_LOCKER_PROP_VARIANTS/de_DE. -->

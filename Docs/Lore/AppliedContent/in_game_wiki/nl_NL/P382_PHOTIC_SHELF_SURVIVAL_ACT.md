@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Photic Shelf Survival Act"
+title: "Fotische-schelfpoort"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Photic Shelf Survival Act
+# Fotische-schelfpoort
 
-NL LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+De fotische schelf leert via objecten, niet via comfort. De operator leert welke pomphuizen nog lucht houden, welke patches minuten kopen en welke heldere organismen een tool vervuilen. Atlas verschijnt eerst als reparatieresidu: nuttig, op plekken verkeerd, en dichtbij genoeg om aan te raken.
 
 ## Scanner
 
-NL LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Routepoort: fotische schelf. Zuurstofzakken, pompkamers, eerste sneden en ondiep Atlas-reparatieresidu zijn leesbaar in dagwater.
 
 ## Terminal
 
-NL LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+CAMPAGNEROUTE // FOTISCHE SCHELF. Vereist: pomp herstarten, afdichting patchen, kabel snijden, scanner-ping. Stijghardware niet beschikbaar; verbruikte cellen naar overlevingssystemen gerouteerd. Atlas-residu geclassificeerd als nuttig met contaminatiewaarschuwing.
 
 ## Audio
 
-NL LOC HOLD: The shallow water is not safe. It is only readable.
+Het ondiepe water is niet veilig. Het is leesbaar.
 
 ## Field Note
 
-NL LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Plunderaarsnotitie: daglicht helpt. Het maakt een gebarsten zuurstoflijn niet vrijgevig.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/nl_NL. -->

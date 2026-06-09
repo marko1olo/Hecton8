@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Assinaturas da Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Assinaturas da Return Action Queue
 
-PT LOC HOLD: Return Action Queue signatures prove Deep Reach is not only old logs; someone still wants the payload first.
+Assinaturas da Return Action Queue conectam o caso antigo de HECTON-8 à pressão presente em 2190. A fila não é arquivo histórico. Ela lida com pacotes atrasados durante janelas Aegir ativas e classifica o que Black Keel ou um dono de relé deve fazer primeiro. Na faixa recuperada, payload custody, coordinate receipt e quarantine handshake passam à frente de contractor recovery. Isso torna a Deep Reach perigosa sem colocar um comandante na sala: um escritório inferior ainda pode guiar uma janela de resgate ao decidir qual ação está limpa o bastante para execução.
 
 ## Scanner
 
-PT LOC HOLD: The old crime has a live queue.
+Live return strip recebido: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 aberta por doze minutos.
 
 ## Terminal
 
-PT LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Ação: priorizar payload custody, coordinate receipt e quarantine handshake antes de contractor recovery. Carrier clause: Black Keel pode atrasar pickup até custody state ficar clean.
 
 ## Audio
 
-PT LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+A fila de Keene está ativa. Rescue fica atrás de payload custody a menos que a gente mude o handshake.
 
 ## Field Note
 
-PT LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Isso não é papel velho. O carimbo da fila é recente: pacote atrasado, carrier clause, ordem payload-first. Confira a linguagem de recovery da Black Keel antes de confiar no pickup.
 
 <!-- In-Game Wiki; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/pt_BR. -->

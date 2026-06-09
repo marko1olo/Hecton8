@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Photic Shelf Survival Act"
+title: "Porte du plateau photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Photic Shelf Survival Act
+# Porte du plateau photique
 
-FR LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+Le plateau photique enseigne par les objets, pas par le confort. L'opérateur apprend quels corps de pompe gardent encore de l'air, quels patchs achètent des minutes et quels organismes vifs encrassent un outil. Atlas apparaît d'abord comme résidu de réparation: utile, faux par endroits, assez proche pour être touché.
 
 ## Scanner
 
-FR LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Porte de route: plateau photique. Poches d'oxygène, salles de pompe, premières coupes et résidu de réparation Atlas peu profond sont lisibles dans l'eau claire.
 
 ## Terminal
 
-FR LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+ROUTE DE CAMPAGNE // PLATEAU PHOTIQUE. Requis: redémarrer pompe, patch de joint, coupe de câble, ping scanner. Matériel d'ascension indisponible; cellules dépensées routées vers systèmes de survie. Résidu Atlas classé utile avec avertissement contamination.
 
 ## Audio
 
-FR LOC HOLD: The shallow water is not safe. It is only readable.
+L'eau peu profonde n'est pas sûre. Elle est lisible.
 
 ## Field Note
 
-FR LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Note de pillard: la lumière aide. Elle ne rend pas généreuse une conduite d'oxygène fendue.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/fr_FR. -->

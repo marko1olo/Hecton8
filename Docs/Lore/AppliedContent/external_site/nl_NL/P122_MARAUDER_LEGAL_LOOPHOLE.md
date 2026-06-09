@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "Juridische maas voor marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# Juridische maas voor marauders
 
-NL LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+Het woord marauder draagt twee waarheden tegelijk. Zo noemen nette burgers mensen die verzegelde ruïnes opensnijden, en zo verbergt de bergingseconomie arbeid waarvan ze niet kan toegeven dat ze die nodig heeft. Op HECTON-8 kan elke terugwinning legaal werk, kansdiefstal of de eerste eerlijke redding zijn die de kolonie in decennia heeft gezien.
 
 ## Scanner
 
-NL LOC HOLD: License valid in one lane, criminal in the next.
+Licentie geldig in de ene baan, aanklacht in de volgende.
 
 ## Terminal
 
-NL LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor onder custody van de Aegir Reclamation Pool; gedoogde trespasser in Deep Reach asset language; vervolgbare raider in schone Sol-samenvattingen; emergency responder alleen als het geborgen dossier niemand belangrijks in verlegenheid brengt.
 
 ## Audio
 
-NL LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+Dezelfde cutter kan gereedschap, misdaad of het laatste reddingsmiddel zijn.
 
 ## Field Note
 
-NL LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder is alleen een functietitel zolang de juiste rechtbank eraan verdient.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/nl_NL. -->

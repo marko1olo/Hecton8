@@ -27,6 +27,7 @@ REQUIRED_MATERIAL_IDS = {
     "gemini_20260607_fine_ribbed_metal_trim",
     "gemini_20260607_black_waterproof_grip_rubber",
     "gemini_20260607_clean_nasa_punk_tool_housing_metal",
+    "gemini_Batch20260608_TextureExpansion_b34_3417_amber_emergency_lens_material",
 }
 DETAIL_PATTERN = re.compile(
     r'new\("(?P<prefab>Assets/[^"]+\.prefab)",\s*"(?P<child>[^"]+)",\s*(?P<provider>[^,]+),\s*"(?P<material>[^"]+)"',
@@ -183,7 +184,8 @@ def validate_static(errors: list[str], warnings: list[str]) -> tuple[list[dict],
         runner_text = UNITY_APPLY_RUNNER.read_text(encoding="utf-8-sig")
         if "Hecton8.EditorTools.ToolSurfaceDetailGeminiIntegrator.Apply" in runner_text:
             errors.append("Unity apply-all runner must not launch ToolSurfaceDetailGeminiIntegrator separately; central applier owns this stage")
-        if "ValidateToolSurfaceDetailGeminiRoute.py" not in runner_text:
+        expected_post_apply_call = 'Invoke-PythonValidator -ValidatorPath $toolSurfaceDetailValidator -Arguments @("--post-apply")'
+        if expected_post_apply_call not in runner_text:
             errors.append("Unity apply-all runner must post-apply validate tool surface detail route")
 
     if not STATIC_PREFLIGHT.exists():

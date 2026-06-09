@@ -1,45 +1,86 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# TRIEBWERKSDESIGN UND INTERSTELLARE LOGISTIK
+<!-- localization_status: draft_machine_or_llm_de_DE -->
+# NAHLICHT-ANTRIEBE UND ROUTENLOGISTIK
 
-> **Quelle:** Technischer Lehrplan, Barnard-Werften. Dokument 44-A. Pflichtlektüre für alle ausreisenden Vertragsnehmer.  
-> **Sprecher:** Silas Vane, Antriebstechniker Erster Klasse (im Ruhestand).  
-> **Anmerkung des Prüfers:** Dieser Lehrplan wird den Auftragnehmern nach dem Erwachen aus dem Kälteschlaf ausgehändigt. Er enthält keinerlei proprietäre Deep Reach Telemetriedaten.
+> **Quelle:** Black-Keel-Auftragsbibliothek, Routenmechanik-Grundlage 02.  
+> **Freigabe:** Für die Einführung von Maraudern zugelassen. Proprietäre Strahltaktung, Empfängergeometrie und Verwahrungspreise wurden entfernt.  
+> **Hinweis:** Dieser Artikel erklärt nicht, wie man HECTON-8 verlässt. Er erklärt, warum niemand HECTON-8 schnell verlässt.
 
 ---
 
-## 1. Die Fiktion der Geschwindigkeit
+## 1. Die erste Lüge ist ein einzelner Antrieb
 
-Lassen Sie mich das klarstellen, bevor Sie in die kalte Röhre steigen: Es gibt keinen magischen Knopf. Sie sind mit Videos über Sprungtore und den Hyperraum aufgewachsen. Vergessen Sie sie. Im Universum gibt es keinen Überlichtantrieb. Es gibt keine Ansibles für den sofortigen Plausch mit Mama. Es gibt keine reaktionslosen Triebwerke, die die Impulserhaltung überlisten.
+Menschen sprechen von interstellaren Antrieben, weil es beruhigend ist, sich eine Maschine am Heck vorzustellen: eine Feuerkehle, eine entscheidende Zündung. So funktioniert der Korridor von Ran nach Aegir nicht.
 
-Die Expansion ins All ist langsam, zermürbend und verbrennt Geld in einer Größenordnung, die Nationalstaaten zum Weinen bringt. Genau deshalb gehört der tiefe Raum den Megakonzernen. Nur eine Instanz mit einem finanziellen Horizont von einem Jahrhundert kann es sich leisten, zwanzig Jahre auf eine Rendite zu warten.
+Der Antrieb ist die Route.
 
-Wenn Sie dieses Dock verlassen, sind Sie an die Physik gebunden, nicht an Poesie.
+Er beginnt, bevor ein Rumpf überhaupt einen Namen erhält: Startlaser und Pelletkanonen in den inneren Werften, Schlepperflotten, die stumpfe Masse in den richtigen Schatten bringen, Buchhaltungsuhren, die ein Bremsfenster Jahrzehnte vor dem Erwachen der Besatzung reservieren, Zeugenrelais, die bestätigen, dass ein Frachtsiegel beim Kreuzen einer bestimmten Linie noch unversehrt war. Der Bordtrieb eines Schiffes ist nur der Teil, auf den man zeigen kann. Der Rest verteilt sich über Stationen, alte Schulden, Wartungsverträge, Wärmekapazität, Orbitalpolitik und Maschinen, die das Ziel nie sehen, auf das sie Fracht zuschieben.
 
-## 2. Wie man dorthin gelangt
+Darum liest sich ein Transitvertrag weniger wie ein Ticket als wie ein vorab verfasstes Obduktionsformular. Er legt fest, welche Masse beschleunigt werden darf, wo Wärme abgeladen wird, welche Pakete beantwortet werden dürfen, welche Körper geweckt werden können und welche Behörde das Recht besitzt, die Verzögerung zu verwalten.
 
-Die Logistikkette nach Aegir hängt von drei harten Fakten der Ingenieurskunst ab:
+Dem Vakuum ist das gleichgültig. Den Registern nicht.
 
-### A. Der Pelletstrahl-Schub
-Die ersten Dinge, die Aegir erreichten, waren keine Schiffe; es waren autonome Sonden. Wir haben ihnen keine Raketen umgeschnallt. Wir haben orbitale Laseranlagen gebaut — kolossale Pelletstrahl-Installationen am Luyten-Knotenpunkt — und sie buchstäblich durch die Leere geschossen. Die Sonden sind klein, unbemannt und billig genug, dass der Konzern ein Dutzend in einen Transitkorridor werfen kann, noch bevor irgendjemand weiß, ob die Route sicher ist. Es war einer dieser Wegwerf-Späher, der zum ersten Mal die Xenon-Omega-Signatur auffing.
+## 2. In den Zahlen gibt es keine Abkürzung
 
-### B. Die fliegende Hypothek
-Sie reisen auf einem schweren kolonialen Frachter der *Atlas*-Klasse. Er wird von Fusions-elektrischen Pulstriebwerken angetrieben. Er transportiert Fabriken, Bohranlagen und Sie — schlafend im Torpor, damit Sie die Gewinnmarge nicht auffressen. Der Transit dauert Jahre.
+Ran und Aegir trennen Lichtjahre und eine noch größere Distanz aus Geld. Es gibt keinen versteckten Kanal für einen Rettungsbefehl, kein privates Flüstern, das ein Notfallpaket überholt, keinen alten Trick hinter einem Firmensiegel. Jede Nachricht, jeder Anspruch, jede Entschuldigung reist unter derselben harten Grenze wie das Schiff.
 
-Romantisieren Sie das Schiff nicht. Es ist buchstäblich eine Hypothek mit Triebwerken. Deep Reach verbrennt keine Reaktionsmasse, um einen gestrandeten Techniker zu retten. Sie schicken nur dann einen Frachter los, wenn die Mathematik beweist, dass die Fracht mehr wert ist als der Treibstoff.
+Das ist wichtiger als jedes Antriebsdiagramm. Eine Katastrophe auf HECTON-8 kann perfekt aufgezeichnet, perfekt gesendet und trotzdem als alte Nachricht ankommen. Eine Antwort kann ehrlich und dennoch nutzlos sein. Bis ein Gremium eine Routenkorrektur genehmigt, können die im Bericht genannten Körper länger Knochen, Schlick oder Bergungsgut sein, als der Sachbearbeiter lebt, der das Paket prüft.
 
-### C. Das Bremsproblem
-Die Beschleunigung auf annähernde Lichtgeschwindigkeit ist einfach; das Anhalten ist der Albtraum. Wenn sich Ihr Schiff Aegir nähert, wird es nicht einfach umdrehen und Triebwerke zünden. Das verschwendet Masse. Stattdessen entfaltet der Frachter Magsegel — riesige magnetische Segel, die sich über Hunderte von Kilometern erstrecken. Sie werden gegen das interstellare Medium selbst bremsen. In den letzten, gewaltsamen Phasen des Einschwenkens in den Orbit wird das Schiff aerodynamisch bremsen und wie ein Kieselstein auf dem Wasser über die Atmosphäre von Gasriesen hüpfen oder seinen Bauch durch die Sturmhülle von HECTON-8 selbst ziehen. Wenn die Mathematik auch nur um den Bruchteil eines Prozents falsch ist, verglüht das Schiff.
+Kolonien werden um diese Grausamkeit herum konstruiert. Sie sind keine tapferen Außenposten, die auf Hilfe von zu Hause warten. Sie sind lokale Systeme, die weiterarbeiten müssen, nachdem das Gespräch historisch geworden ist.
 
-## 3. Die Rettungsdoktrin (oder das Fehlen selbiger)
+Deshalb wurde Atlas installiert. Deshalb gibt es lokale Fabrikationsspeicher, juristische Stellvertreter, versiegelte medizinische Vorräte und das hässliche kleine Gericht der Black Keel aus Anspruchsmarken und Verwahrungspings. Die Verzögerung ist kein Fehler der Zivilisation. Sie ist ihre Form.
 
-Da die Lichtgeschwindigkeit das absolute Limit ist, ist eine Rettung von den Kernwelten aus physikalisch unmöglich.
+## 3. Der Routenstapel
 
-Wenn eine Druckkaskade einen Sektor auf HECTON-8 auslöscht, braucht das Notsignal über zehn Jahre, um die Erde zu erreichen. Die Antwort — falls sie sich überhaupt die Mühe machen, eine zu senden — braucht weitere zehn Jahre, um anzukommen.
+Eine Nahlichtroute wird in Schichten gebaut.
 
-Aus diesem Grund hat Deep Reach die Atlas-6 KI installiert. Sie wurde als „Fabrik-Gouverneur" gebaut, um die Kolonie aufrechtzuerhalten, ohne zu Hause anrufen zu müssen. Sie sollte das Licht brennen und die Pumpen am Laufen halten.
+Die erste Schicht ist der Schub: Startstrahlen, Pelletströme, orbitale Massentreiber und fusionselektrische Schlepper, die Jahre damit verbringen, Fracht in eine künftige Ankunft zu verwandeln. Aus der Nähe fühlt sich daran nichts heroisch an. Es sind Gerüste, Staub, verbrannte Abschirmung, Spulenwartung und Besatzungen, die auf Zündungen herunterzählen, deren Wiederholung sie nicht mehr erleben werden.
 
-Wenn Sie auf die Meeresoberfläche absteigen, werden Sie vom orbitalen Versorgungsschiff *Black Keel* abgeworfen. Sie werden in einer Kapsel der „Styx"-Klasse reisen. Verstehen Sie folgendes: Die Styx ist für einen One-Way-Trip konzipiert. Ihr Rahmen ist so gebaut, dass er sich unter dem abgrundtiefen Druck verformt, und ihre Avionik ist darauf ausgelegt, zu fluten, sobald Sie den Grund berühren.
+Die zweite Schicht ist Ausdauer: opferbare Frontplatten, magnetische Feldkäfige, Wärmeschotts, strahlungsfeste Sensorbetten, Kryotresore und Leitsysteme, die alt genug sind, um allem Eleganten zu misstrauen. Xenon-Omega taucht hier als Druckprozessmaterial auf, nicht als Wunder. Es wird dort eingesetzt, wo starke Felder, thermisches Schalten oder tiefe Strahlung gewöhnliche Komponenten bestrafen. Es verbessert Reserven. Es vergibt keine Dummheit.
 
-Um in den Orbit zurückzukehren, müssen Sie thermochemische Aufstiegsladungen finden, reparieren oder sie aus den Händen der toten Kolonie reißen.
+Die dritte Schicht ist Empfang. Ein Schiff muss gefangen werden. Magnetsegel blühen zu dunkler Geometrie auf. Pelletfänger erwachen. Empfängerfelder verbrauchen Wärmebudget, das sie vielleicht jemand anderem zugesagt haben. Schlepper laufen aus, wenn der Vertrag ihnen das erlaubt. Quarantänetanks öffnen sich, wenn die Frachtkategorie es zulässt. Ein Schiff, das seinen Slot verpasst, wird nicht romantisch. Es wird ein Problem mit Geschwindigkeit.
 
-Sie sind keine Entdecker. Sie sind keine Passagiere. Sie sind entbehrliche Masse am Ende eines sehr langen, sehr langsamen Seils, das durch die Leere gespannt ist. Handeln Sie entsprechend.
+Von innen erlebt ein Passagier den Stapel als Schlaf, Alarme, Übelkeit, schlechtes Licht und Dokumente, vorgelesen von Maschinen mit angenehmen Stimmen. Von außen zieht eine Zivilisation eine andere durch ein enges Buchhaltungsloch, ohne die Fracht zu zerreißen.
+
+## 4. Beschleunigung verkauft sich leicht
+
+Beschleunigung sieht gut aus. Ein Startstrahl lässt sich in blauweißem Glanz darstellen. Eine Fusionsfahne lässt Geldgeber glauben, Geschichte steige noch immer nach oben. Schiffbauer lieben diesen Teil, weil er den Mythos der Abreise verkauft: alte Welt verlassen, in die Schwärze eintreten, ein Name am Rand werden.
+
+Die arbeitenden Ingenieure sprechen über Langweiligeres. Wärme. Lagerabrieb. Pelletstreuung. Narben in der Abschirmung. Sensordrift. Die Massenstrafe für einen weiteren schlafenden Auftragnehmer. Die juristische Strafe, diesen Auftragnehmer in der falschen Zuständigkeit zu wecken. Die zusätzlichen Monate durch ein Frachtschloss, das ohne drei abwesende Unterschriften nicht geöffnet werden darf.
+
+Die Logistik von Deep Reach ist voll solcher Details, weil Details billiger sind als Beerdigungen und billiger als Klagen. Niemand schickt einen Routenstapel aus Romantik durch die Dunkelheit. Er transportiert Erzrechte, Druckglas, versiegelte Vermessungsdaten, Ersatzmark, Maschinensaat, Anspruchszeugen, Schuldenpläne, gefrorene Arbeit und Menschen, deren Verträge sie als operative Masse beschreiben.
+
+Dieser letzte Ausdruck ist nicht poetisch. So kann ein Routenbuchhalter einen lebenden Körper bewegen, ohne so zu tun, als sei der Körper der Zweck der Reise.
+
+## 5. Das Teure ist das Anhalten
+
+Geschwindigkeit ist nicht die Eroberung. Anhalten ist es.
+
+Um bei Aegir anzukommen, muss einem Schiff erlaubt werden, an einem bestimmten Ort zu einer bestimmten Zeit langsam zu werden. Die Empfängerseite muss Wärmekapazität, Schlepperstunden, Parkorbit, medizinische Inspektion, Verwahrungsvolumen, Datenquarantäne und juristische Aufmerksamkeit reservieren. Fehlt eines davon, kann das Schiff existieren, senden, voller Menschen sein und trotzdem zum Warten angewiesen werden.
+
+Das ist die Wahrheit, die neue Auftragnehmer bricht: Ein Notruf kann geglaubt und abgelehnt werden. Nicht weil der Zuhörer böse ist. Sondern weil die Route bereits andere Verpflichtungen trägt, mit Namen, Unterschriften, Versicherungsklauseln und Strafen, groß genug, um ein Habitat zu ruinieren.
+
+Black-Keel-Besatzungen verstehen das besser als jeder andere auf HECTON-8. Sie sitzen nah genug am Ozean, um die Folgen zu hören, und weit genug vom Routenstapel entfernt, um den Zeitplan nicht ändern zu können. Sie können einen Anspruch protokollieren. Sie können Bergungsverwahrung zuweisen. Sie können bescheinigen, dass ein Marauder mit gültiger Schuldenkette und funktionierendem Anzug ins Wasser ging. Sie können kein wohlwollendes Schiff aus der Physik rufen.
+
+## 6. Warum Rettung lokal ist
+
+Jedes ernsthafte Koloniesystem entwickelt deshalb eine eigene Rettungsdoktrin, und jede Doktrin wird hässlicher als die Broschüre.
+
+Auf HECTON-8 bedeutet Rettung eine Drucktür, die noch taktet. Einen nassen Drucker, der aus verdorbenem Ausgangsstoff eine Dichtung herstellen kann. Atlas, das genug intakte Leitungen findet, um eine Pumpe von einem Sarg zu unterscheiden. Einen Class-IV-Anzug, der einen Körper warm hält, während die Station ringsum vergisst, wie eine Station funktioniert. Einen Bergungstender mit der Autorität, deinen Tod zu registrieren, nicht ihn zu verhindern.
+
+Der Marauder lernt das schnell. Der Ozean ist nicht isoliert, weil draußen niemand Bescheid weiß. Er ist isoliert, weil die richtige Antwort auf die meisten Notfälle nicht im selben Leben eintreffen kann wie der Schrei.
+
+Darum ist die spielbare Welt voller lokaler Antworten: zusammengeschusterte Bojen, tote Relais, versteckte Anzugflicken, Routenzeugnis-Marken, Batterierafte, Druckkarten, Blackboxsplitter, versiegelte Fracht, die noch glaubt, im Transit zu sein. Das ist keine Dekoration. Es sind gescheiterte Versprechen der Zivilisation, physisch geworden.
+
+## 7. Was das Wrack sagt
+
+Ein Spieler kann interstellare Logistik lesen, ohne ein Lehrbuch zu öffnen.
+
+Achte auf ablatierte Frontplattenflocken in alten Frachträumen. Auf Empfängerschott-Keramik, die an Maschinen geschraubt wurde, die nie wieder fliegen sollten. Auf Narben von Pelletfängern an Splittern, die Menschen als Glücksbringer tauschen, obwohl sie nicht an Glück glauben. Auf Xenon-Omega-Komponenten unter Verwahrungssiegel, immer sorgfältiger dokumentiert als die Menschen, die sie handhaben. Auf Kryokistennummern, in Kojen geritzt, weil jemand zu früh erwachte und Beweise wollte, dass die Jahre wirklich vergangen waren.
+
+Vor allem aber höre den Unterschied zwischen einem Antrieb und einer Flucht.
+
+Ein Antrieb bewegt Masse durch eine Route, deren Wartung jemand bezahlt hat.
+
+Eine Flucht verlangt, dass der Route wichtig ist, wer du bist.
+
+HECTON-8 wurde nach dem ersten Prinzip gebaut. Nach dem zweiten wurde es aufgegeben.

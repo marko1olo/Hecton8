@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Sonar Pinger Route Beacons"
+title: "Сонарні pinger-маркери маршруту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Sonar Pinger Route Beacons
+# Сонарні pinger-маркери маршруту
 
-UA LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+Сонарний pinger дешевий, але не стає зайвим. Він створює лінію повернення, мітить ящики з доказами, відрізняє хибні відлуння від справжніх стін і залишає втрачений маршрут у звуку. Водночас він повідомляє океану, де ти є. Тому це засіб безпеки, маркер боргу й іноді приманка.
 
 ## Scanner
 
-UA LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+pinger-поплавець позначає геометрію повернення, викриває хибні відлуння й притягує як порятунок, так і небажане життя.
 
 ## Terminal
 
-UA LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-UA LOC HOLD: One ping is a promise. Two pings are a bill.
+Один ping — це обіцянка. Два ping — це рахунок.
 
 ## Field Note
 
-UA LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger — перший чесний інструмент: він звуком каже про відстань, борг, втрату маршруту й ризик істот.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/uk_UA. -->

@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "假结局数量阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# 假结局数量阶梯
 
-CN LOC HOLD: False Ending Count Ladder controls scope: many exits, few clear families, and deep Atlas endings as the campaign's gravity center.
+假结局数量阶梯让重玩范围可读：多个出口、四个主要未完成族群，以及作为重心的 Atlas 盆地。
 
 ## Scanner
 
-CN LOC HOLD: Four major false families before the deep Atlas resolutions.
+结局阶梯 // 物资结算，部分返回，企业捕获或隔离，公共 ledger 泄露。深层 Atlas 答案前的四个假结局族。
 
 ## Terminal
 
-CN LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+档案范围：可以标记许多出口，但要归入清晰族群。物资结算、部分离开/返回、企业捕获/隔离、公共 ledger 泄露位于 Atlas 盆地 payload 解决之下。
 
 ## Audio
 
-CN LOC HOLD: The dossier can mark many exits before it marks an answer.
+档案可以先标记出口，再标记答案。
 
 ## Field Note
 
-CN LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+结局要足以奖励玩法。又不能多到让真相廉价。
 
 <!-- External Site; generated from P138_FALSE_ENDING_COUNT_LADDER/zh_CN. -->

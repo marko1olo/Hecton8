@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Obsługa kasety niebieskiego długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Obsługa kasety niebieskiego długu
 
-Blue debt is condition-dependent salvage.
+Niebieski dług to salvage zależny od stanu. Utrzymaj go szczelny, zimny i stabilny ciśnieniowo, zanim zdecydujesz, czy jest materiałem, wartością roszczenia, przynętą czy dowodem.
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+KASETA CIŚNIENIOWA // Stabilna, gdy zimna i zaplombowana. Nie odpowietrzać. Załóż obejmę przed transportem, jeśli szew się nagrzewa.
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+SUBSTRAT CIĄGŁOŚCI XO // Zachować stan ciśnienia. Magazyn cywilny zabroniony. Telemetrię próbki prowadzić wyłącznie przez custody klasy roszczenia.
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+Jeśli kaseta zaczyna liczyć na sonarze, nie należy już tylko do ciebie.
 
 ## Field Note
 
-Stabilize before you spend it.
+Niebieski dług płaci, bo przychodzi z trzema właścicielami: tym, kto znalazł, tym, kto chce, i tym, co zauważyło ruch.
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/pl_PL. -->

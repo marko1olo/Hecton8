@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "케이블 리프 중계 야드 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Cable Reef Relay Yard POI Kit
+# 케이블 리프 중계 야드 증거 키트
 
-KO LOC HOLD: The cable reef POI teaches the repair-network rule: life is not decoration when Atlas has turned it into infrastructure.
+케이블 리프 중계 야드는 수리장이 자기 고장 방식을 키워 낸 장소다. 전도성 막, 케이블 재킷, 음향 소켓은 신호를 복구할 수 있지만, 같은 다리는 오퍼레이터가 스캔 없이 자를 경우 오래된 서비스 다리로 경로를 보낼 수 있다.
 
 ## Scanner
 
-KO LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
+POI 증거 키트: 중계 야드는 살아 있는 다리막으로 전도하고 손상된 케이블 기억으로 오경로를 만든다.
 
 ## Terminal
 
-KO LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
+중계 야드 키트: 음향 스파인 소켓, 바이오필름 다리, 절단 경고, 핑거 응답, Atlas 서비스 표식, 벗겨진 절연, 릴레이 포크, 사지 맵.
 
 ## Audio
 
-KO LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
+성장물을 전부 벗기지 마라. 그중 일부가 네 신호를 운반한다.
 
 ## Field Note
 
-KO LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+마로더 메모: 프로브 아래에서 막이 울리면 자르기 전에 표시하라. 보기 좋은 케이블은 대개 죽은 케이블이다.
 
 <!-- In-Game Wiki; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ko_KR. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "Конфлікт підпису й свідка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# Конфлікт підпису й свідка
 
-UA LOC HOLD: Signoff Witness Conflict defines the evidence contradiction behind the public Deep Reach report.
+Конфлікт підпису й свідка визначає протиріччя за публічним звітом Deep Reach. Компанія може стверджувати, що океан зробив порятунок неможливим; вона не може безпечно стверджувати, що ніхто не бачив конфлікту до утримання повноваження на випуск. Ця стаття перетворює докази кімнати на сюжетний тиск: лог дверей, хеш свідка й пошкоджений маршрутний годинник змушують офіційний підпис читатися не як невизначеність, а як контрольоване замовчування. Вона зберігає катастрофу фізичною, але доводить, що історію прикриття створили люди.
 
 ## Scanner
 
-UA LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+Підпис стверджує, що огляд евакуації не мав живого протиріччя. Хеші свідків кажуть, що протиріччя було в кімнаті.
 
 ## Terminal
 
-UA LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: публічний підпис позначає припливний збій як єдину причину. Локальний хеш свідка ставить юристів евакуації, Atlas Safety і route operations у кімнату огляду до утримання випуску. Звірити лог дверей, штамп імені й зламаний маршрутний годинник.
 
 ## Audio
 
-UA LOC HOLD: The signatures line up. The bodies do not.
+У звіті сказано, що ніхто не міг знати. Лог дверей не згоден.
 
 ## Field Note
 
-UA LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+Підпис чистий лише доти, доки кімната не згадує, хто стояв поруч.
 
 <!-- External Site; generated from P188_SIGNOFF_WITNESS_CONFLICT/uk_UA. -->

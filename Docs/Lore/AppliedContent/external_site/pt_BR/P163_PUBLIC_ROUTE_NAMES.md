@@ -19,10 +19,14 @@ localization_flags: 1
 
 # Nomes Públicos De Rota
 
-## Names That Bill
+## Nomes que cobram
 
-Nomes públicos de rota não são poesia no escuro. São rótulos de trabalho que sobrevivem a contratos, placas de casco, filas de relé e peças de tribunal. Sol-Centauri Charter Spine leva legitimidade, Barnard Breaker Run cheira a desmanche e dívida. Luyten Packet Ladder é a cadeia de custódia que torna prova admissível ou inútil, Tau Public Ledger Lane é pressão pública lenta, e Ran Long Claim diz que o trabalho já é caro antes de o oceano cobrar.
+As rotas públicas de HECTON-8 não existem para ser bonitas. Existem para sobreviver a faturas, lacres, tabelas de seguro e disputas de salvage. Um nome de rota é a parte do mapa que ainda importa quando a imagem desaparece e só resta o contrato.
 
-A player should read each name as a working pressure mark: whose law travels here, whose cargo moves, whose proof survives, and whose body was left off the return manifest.
+Sol-Centauri Charter Spine é a linha respeitável. Carrega legitimidade antiga, linguagem de compatibilidade e a redação que a Deep Reach gosta de citar quando quer que um projeto de fronteira pareça civilizado. Barnard Breaker Run é mais feia e honesta: desmanche de naves, hardware de pressão, equipes endividadas, cascos stripped e a cultura prática que torna Marauders possíveis.
+
+Luyten Packet Ladder não é sociedade romântica. É infraestrutura de custódia de pacotes. Explica por que uma mensagem pode virar prova, por que a prova pode atrasar e por que pacote honesto não é ajuda. Tau Public Ledger Lane é onde a evidência vira pressão pública depois do trabalho lento da luz.
+
+Ran Long Claim é o nome mais próximo de HECTON-8. Não é rodovia, mas caminho de reivindicação por distância, lei, direitos de frenagem e custo de frete. Uma placa de rota deve ler como marca de pressão: qual lei viaja aqui, qual carga se move, qual prova sobrevive e qual corpo ficou fora do manifesto de retorno.
 
 <!-- External Site; generated from P163_PUBLIC_ROUTE_NAMES/pt_BR. -->

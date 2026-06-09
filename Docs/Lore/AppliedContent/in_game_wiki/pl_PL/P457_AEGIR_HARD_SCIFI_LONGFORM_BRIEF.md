@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir: niebo odmawiające ratunku"
+title: "Aegir: niebo, które odmawia ratunku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir: niebo odmawiające ratunku
+# Aegir: niebo, które odmawia ratunku
 
-Aegir to działające niebo. Księżyce mogą spóźnić lub zepsuć pakiet bez stałej ciemności na powierzchni. Ratunek psują dystans, geometria, prawo i koszt.
+Aegir to orbitalna maszyna nad HECTON-8: moon ladder, relay shadow, storm permission, debris weather, mass window i powód, dla którego rescue podróżuje wolniej niż papiery.
 
 ## Scanner
 
-Primer trasy nieba. Nie ma FTL ani ansible. Okna Aegir przechodzą przez księżyce, gruz, custody przekaźnika, burze i rachunek masy Black Keel.
+Publiczna astronomia: bez FTL, bez ansible, Aegir relay geometry, hazards moon ladder, orbital custody Black Keel, route windows przed prawem.
 
 ## Terminal
 
-PRIMER NAWIGACJI AEGIR // PASMO PUBLICZNE. Używać klas zagrożeń: cień trasy, impuls naładowany, rozproszenie lodu, pióropusz burzy, opóźnienie naprowadzania, custody odbiorcy.
+SITE LONGFORM: niebo ma być praktyczne i wrogie; każdy packet, drop, pickup i claim ma physics, timing, mass i custody.
 
 ## Audio
 
-Harmonogram Black Keel: "Sygnał prawdziwy nie znaczy użyteczny. Okno trzyma masa, pogoda, custody i blokada odbiorcy."
+Niebo nad HECTON-8 nie jest puste. To schedule z zębami.
 
 ## Field Note
 
-Reguła Maraudera: nie pytaj, czy sygnał wysłano. Pytaj, który księżyc go zasłonił, który ledger go złapał i czy odbiorca usłyszał człowieka czy klasę masy.
+Patrz w górę po timing, nie po pociechę. Na HECTON-8 moonlight może być relay opening, storm warning albo claim clock.
 
 <!-- In-Game Wiki; generated from P457_AEGIR_HARD_SCIFI_LONGFORM_BRIEF/pl_PL. -->

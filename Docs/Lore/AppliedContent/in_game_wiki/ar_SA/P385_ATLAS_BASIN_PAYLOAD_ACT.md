@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Atlas Basin Payload Act"
+title: "بوابة payload حوض Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Atlas Basin Payload Act
+# بوابة payload حوض Atlas
 
-AR LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+بوابة الحوض قرار مستقبل تحت الضغط. يستطيع payload بيع الإحداثيات، قطع Atlas، حفظ الحجر، نشر حزمة سجل منقحة أو البقاء محليا بلا إيصال. كل مسار يغير الحيازة والدين والبيئة والوصول إلى الأدلة. لا يعيد أي منها الحوض إلى حالة غير ممسوسة.
 
 ## Scanner
 
-AR LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+بوابة مسار: حوض Atlas. يتطلب payload النهائي مسارا ومستقبلا وproof hash وحالة بيئية وحالة رهن ونافذة نجاة.
 
 ## Terminal
 
-AR LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+مسار حملة // PAYLOAD حوض ATLAS. حل أو ارفض: بيع الإحداثيات، قطع Atlas، escrow حجر، سجل عام، blind return. ختم المستقبل يغير الحيازة. لا حالة مطالبة نظيفة متاحة.
 
 ## Audio
 
-AR LOC HOLD: The last question is not what happened. It is who you send it to.
+سؤال المسار الأخير هو من يتلقى الحزمة.
 
 ## Field Note
 
-AR LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+ملاحظة نهب: اختر المستقبل قبل أن تأخذ الحقيبة ماء. الإجابة الكاملة لا تدخل في هذه الحقيبة.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/ar_SA. -->

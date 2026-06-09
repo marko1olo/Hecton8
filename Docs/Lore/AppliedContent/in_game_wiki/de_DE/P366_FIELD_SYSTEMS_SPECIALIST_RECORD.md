@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Akte eines Feldsystem-Spezialisten"
+title: "Akte des Feldsystem-Spezialisten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akte eines Feldsystem-Spezialisten
+# Akte des Feldsystem-Spezialisten
 
-Diese Akte erklärt die erste Kompetenz des Operators, ohne ihn zum auserwählten Zeugen zu machen. Deep Reach schulte ihn an Pumpen, Dichtwerten, Relaisräumen, Bypass-Karten, Evakuierungswarteschlangen und route-safe-Sprache. Die alten Systeme lehnen seinen Namen ab und legen trotzdem vertraute Prozedur offen. Die Schuld beginnt als Wiedererkennen: eine Entwässerungsreihenfolge, ein Klemmenwert, eine bereinigte Halteformel, ein Raum, der genau in der Reihenfolge versagte, die er verhindern sollte.
+Die Feldsystemakte erklärt Kompetenz, ohne den Operator zum geheimen Kommandanten zu machen. Deep Reach bildete dieses Handwerk an Pumpen, Dichtwerten, Bypasskarten, Relaisräumen, Evakuierungswarteschlangen und route-safe-Zertifizierung aus. Es war Infrastrukturarbeit mit genug Zugriff, um eine begrabene Route zu erkennen.
+
+Nach dem Widerruf öffnet der Ausweis keine sicheren Türen mehr. Die Ausbildung verschwindet nicht. Ein Drainagebefehl, ein clamp-Wert, ein versiegeltes manuelles Zählfeld oder eine bereinigte Hold-Formel liest sich noch wie einst vertraute Arbeit. Deshalb wird ertrunkene Maschine zu Beweis statt Kulisse: Der Operator sieht, wo ein Sicherheitsprozess gebogen wurde, bis Verlassen vollständig wirkte.
+
+Die Akte hält den Hintergrund eng. Keine Kommandogewalt. Kein sauberes Geständnis. Kein Heldenpassagierstatus. Nur ein ehemaliger Deep-Reach-Systemarbeiter, der die Maschine lesen kann, die Menschen aus der Zählung abgelegt hat.
 
 ## Scanner
 
-Alte Feldsystem-Berechtigung. Kein Führungspersonal. Infrastrukturarbeit mit genug Zugriff, um zu erkennen, wo eine Route begraben wurde.
+FIELD-SYSTEMS-AUSWEIS // Evakuierungsinfrastruktur, route-safe-Zertifizierung, Pumpenraumzugang. Keine Kommandofreigabe; Verfahrensgedächtnis bleibt nützlich.
 
 ## Terminal
 
-PERSONALSPUR: Feldsysteme, Evakuierungsinfrastruktur, route-safe-Zertifizierung. Freigabe nach Aegir-Schweigeprüfung widerrufen. Prozedurcache passt weiterhin zur Sequenz des Operators.
+PERSONNEL TRACE: Feldsystem-Spezialist, Evakuierungsinfrastruktur, route-safe-Zertifizierung. Freigabe nach Aegir signal review widerrufen. Verfahrenscache passt noch zur Operator-Sequenz.
 
 ## Audio
 
@@ -35,6 +39,6 @@ Du hast die Lüge nie unterschrieben. Du kanntest die Grammatik, mit der sie dur
 
 ## Field Note
 
-Der Ausweis öffnete keine Türen mehr. Er löschte nicht die Reihenfolge des Versagens.
+Der Ausweis öffnete keine Türen mehr. Er verlernte nicht die Reihenfolge des Versagens.
 
 <!-- In-Game Wiki; generated from P366_FIELD_SYSTEMS_SPECIALIST_RECORD/de_DE. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Exigencia de coordenadas de Cumplimiento de Recuperación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Recovery Compliance Coordinate Demand
+# Exigencia de coordenadas de Cumplimiento de Recuperación
 
-ES LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Después de que la colonia desapareciera, Deep Reach no volvió con la mano tendida. Su primer canal limpio pregunta dónde está el activo, quién puede probar la propiedad y si el testigo vivo se someterá a cuarentena y revisión de gravámenes. En HECTON-8, el rescate no se niega; se retrasa hasta que sirve de palanca.
 
 ## Scanner
 
-ES LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paquete autenticado como Deep Reach Recovery Compliance: lenguaje de rescate envuelto en exigencias de coordenadas, custodia y contaminación.
 
 ## Terminal
 
-ES LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+AVISO RECOVERY COMPLIANCE DR-RC-8: transmita vector de acceso Atlas, prueba de custodia Xenon-Omega, estado de contaminación biológica y coordenadas actuales de la cuenca. La recuperación médica queda pendiente hasta conciliar cadena de activo, gravamen de salvamento y derechos de control del sitio. Una emisión no autorizada puede degradar la prioridad del superviviente a retención probatoria.
 
 ## Audio
 
-ES LOC HOLD: They can say rescue without meaning rescue.
+Encontraron la forma de hacer que rescate sonara a orden judicial.
 
 ## Field Note
 
-ES LOC HOLD: Use near payload authority decisions and receiver selection.
+Colocar donde el jugador pueda elegir qué transmite. La amenaza debe sentirse procedural, no teatral: nada de discurso de villano, solo una cola capaz de enterrar un cuerpo.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/es_ES. -->

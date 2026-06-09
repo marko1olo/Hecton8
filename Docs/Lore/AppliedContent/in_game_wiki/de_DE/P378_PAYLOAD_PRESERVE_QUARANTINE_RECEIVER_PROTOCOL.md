@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Payload Preserve Quarantine Receiver Protocol"
+title: "Payload-Protokoll Quarantäneerhalt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Payload Preserve Quarantine Receiver Protocol
+# Payload-Protokoll Quarantäneerhalt
 
-DE LOC HOLD: The preserve route protects the ocean-machine ecology from direct corporate reclamation, but quarantine can become another form of custody.
+Das Erhaltungsprotokoll hält das Becken aus direkter Corporate-Recovery heraus, befreit es aber nicht. Die Payload versiegelt Koordinaten, hält Atlas-Ökologie unter Quarantäne-Escrow und schiebt Prüfung in eine verzögerte öffentliche Lane. Das kann lebende Systeme vor sofortiger Extraktion schützen. Es kann auch einen saubereren Käfig bauen.
 
 ## Scanner
 
-DE LOC HOLD: Preserve route. No clean owner. No clean release.
+Erhaltungsroute scharf. Payload weist Empfängerverwahrung verzögerter Quarantäneprüfung zu und blockiert direkte Deep-Reach-Übertragung.
 
 ## Terminal
 
-DE LOC HOLD: PAYLOAD ROUTE PRESERVE: quarantine receiver, no Deep Reach transfer, ecological continuity retained under delayed public review. Player freedom not guaranteed.
+PAYLOAD-EMPFÄNGER // QUARANTÄNE ERHALTEN. Empfänger: Quarantäne-Escrow-Lane. Beckenvektor versiegelt halten, Atlas-Ökologiekontinuität erhalten, direkte Corporate-Recovery verweigern. Öffentliche Prüfung verzögert. Freigabeautorität ungeklärt.
 
 ## Audio
 
-DE LOC HOLD: Keeping it alive does not mean keeping it free.
+Am Leben gehalten ist nicht freigegeben.
 
 ## Field Note
 
-DE LOC HOLD: Receiver record: preservation blocks direct corporate transfer while risking quarantine as another custody system.
+Plünderernotiz: Eine verschlossene Tür kann einen Raum schützen. Sie kann auch der Raum werden.
 
 <!-- In-Game Wiki; generated from P378_PAYLOAD_PRESERVE_QUARANTINE_RECEIVER_PROTOCOL/de_DE. -->

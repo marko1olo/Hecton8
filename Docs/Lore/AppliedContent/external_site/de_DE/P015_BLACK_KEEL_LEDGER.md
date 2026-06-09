@@ -19,8 +19,6 @@ localization_flags: 1
 
 # Black-Keel-Ledger
 
-Black Keel ist kein freundliches Heimatschiff, sondern ein Claim-Pool-Tender. Es liest Körper, Nutzlast, Quarantänerisiko, Aufstiegsmasse und Versicherung als Ledgerposten.
-
-Es muss den Spieler nicht hassen. Es kann höflich antworten, einen Distress-Hash akzeptieren und Pickup verweigern, bis die Zahlen anders aussehen.
+Black Keel ist kein freundliches Heimatschiff über HECTON-8. Es ist ein Claim-Pool-Tender: Arbeitstier, Ledger, Quarantänetor und Versicherungsmaschine. Es kann den Spieler hören, Pakete routen, Fenster rechnen und Masse heben. Es kann auch Beweiskern, Probe oder versicherten Rumpfschnitt höher werten als die bittende Person. Kein Bösewicht, sondern zuverlässig im Vertrag und gefährlich, wenn man Vertrag mit Gnade verwechselt.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/de_DE. -->

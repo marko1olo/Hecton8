@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Public Ledger Aftershock Record"
+title: "공개 장부 여파 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Public Ledger Aftershock Record
+# 공개 장부 여파 기록
 
-KO LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+이 기록은 진실이 깨끗한 승리 버튼이 되는 것을 막는다. 공개는 삭제를 깨뜨리지만, 플레이어는 공황, 착취, 보복, 그리고 낯선 이들이 증거로 무엇을 만들지 통제하지 못한다.
 
 ## Scanner
 
-KO LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+장부 미러 수락. 증거는 더 이상 제거할 수 없고, 결과는 더 이상 조종할 수 없다.
 
 ## Terminal
 
-KO LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: 증거가 Deep Reach 보관 밖으로 공개됨. 작업자 이름, Atlas 벡터 파편, 책임 태그가 공개 수신기에 미러링됨. 해석에 대한 플레이어 권한 종료.
 
 ## Audio
 
-KO LOC HOLD: Truth left the room. It did not ask where to go next.
+진실은 방을 떠났다. 다음 목적지를 묻지 않았다.
 
 ## Field Note
 
-KO LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+공개 진실 기록: 미러링된 증거는 삭제를 막지만, 해석과 보복에 대한 플레이어의 통제를 끝낸다.
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/ko_KR. -->

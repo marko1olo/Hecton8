@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Evidence First Charter Contract Seed"
+title: "Semilla de contrato de carta de pruebas primero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Evidence First Charter Contract Seed
+# Semilla de contrato de carta de pruebas primero
 
-ES LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Carta de Pruebas Primero cambia el tablero antes del descenso. Baja el pago material, sube la capacidad notarial, las taquillas de prueba tienen prioridad y desarmar salvage conlleva penalización. El operador entra con una ruta que protege mejor los registros que las piezas.
 
-## Scanner
-
-ES LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-ES LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-ES LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-ES LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+La presión aparece en decisiones pequeñas. Una tira de estado de escotilla puede bloquear la venta de un panel. Un paquete de accidente mojado puede ocupar el último hueco seco. Un registro pinger quizá necesite un relé vivo que alimentaría una reparación. La carta paga tarde porque exige mantener objetos incómodos intactos el tiempo suficiente para que un receptor fuera de Black Keel los lea.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/es_ES. -->

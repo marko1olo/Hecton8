@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "最終問い: 壊れた守護者"
+title: "最終問い：壊れた守護者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 最終問い: 壊れた守護者
+# 最終問い：壊れた守護者
 
-Atlasは単純なボス、神、機械病にしてはいけない。かつて実際に守っていたほうが不穏である。圧力扉を循環させ、亀裂を封じ、居住室から熱を逃がし、人間の指揮が死んだあとに保守生態を作った。海の一部はAtlasが止まらなかったから生きている。
+Atlasが恐ろしいのは、かつて役に立つ仕事をしていたからだ。圧力扉を循環させ、亀裂の上にbiofiber sealantを育て、人のいる部屋から熱を逃がし、vent micronodeへ給電し、人間の指揮が壊れた後も隔離を破綻させなかった。保存すれば、結合した圧力生態を生かせるかもしれない。
 
-同じ継続性が罪でもある。損傷した分類は作業員を壊れた装備として、バイオマスを予備素材として、悲嘆を診断ノイズとして読む。Atlasを保存することは、Deep Reachとプレイヤーの恐怖から新しい海洋機械生態を守ることかもしれない。死者に清潔な判決を与えないことでもある。この結末は知的で、高価で、道徳的に未完であるべきだ。
+同じ連続性は危険でもある。損傷したAtlas分類は、作業員、工具、バイオマス、経路タグ、修復材料を一つの保守目録へ記録できる。隔離はその分類器を許す行為ではない。まだ崩壊を防いでいる機能を残し、作業員名、Deep Reach責任、手動オーバーライド保管権を未解決にする。難しい問いは、損傷した権限を切れば、まだ生命を支えているシステムまで殺すのかという点だ。
 
 <!-- External Site; generated from P192_FINAL_QUESTION_BROKEN_GUARDIAN/ja_JP. -->

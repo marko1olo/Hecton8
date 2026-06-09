@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "Gramatyka nazwisk seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# Gramatyka nazwisk seed-role
 
-PL LOC HOLD: Seed Role Name Grammar lets replay vary worker evidence while preserving authored human texture.
+Gramatyka nazwisk seed-role to reguła, która nie pozwala, by wariacja replay stała się szumem. Pracownik seed-role może w różnych podejściach pojawić się w innej szafce, obok innego uszkodzonego narzędzia albo pod innym zezwoleniem trasy. Tożsamość nadal potrzebuje gramatyki: stabilnego imienia i nazwiska, rodziny załogi, kontekstu zezwolenia, ostatniego zadania i wariantu obiektu, który można obejrzeć. Jeśli brakuje części, nazwisko przestaje brzmieć jak osoba i zaczyna brzmieć jak wygenerowany wypełniacz. System może mieszać kolejność dowodów; nie może wymieszać odpowiedzialności aż do jej zniknięcia.
 
 ## Scanner
 
-PL LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed może przesunąć kolejność dowodów. Nie może zmienić pracownika w jednorazowy tekst.
 
 ## Terminal
 
-PL LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Lokalizacja może objaśniać terminy załóg dla czytelności, ale nie może przepisywać tożsamości, usuwać pracy ani odrywać nazwiska od konkretnego obiektu.
 
 ## Audio
 
-PL LOC HOLD: Random is not authorship. Bind the name to a job.
+Losowość nie jest autorstwem. Przywiąż nazwisko do pracy.
 
 ## Field Note
 
-PL LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+Każda tożsamość seed-role łączy imię i nazwisko, rodzinę załogi, zezwolenie trasy, ostatnie zadanie i wariant obiektu.
 
 <!-- In-Game Wiki; generated from P210_SEED_ROLE_NAME_GRAMMAR/pl_PL. -->

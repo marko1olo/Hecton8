@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "payload blind return 보류 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Payload Withhold Blind Return Protocol
+# payload blind return 보류 프로토콜
 
-KO LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+blind return은 거부 경로다. payload를 모든 공식 수신자 밖에 두고 분지 벡터를 로컬로 남긴다. Deep Reach는 접근 지도를 받지 못한다. 공개 원장은 사고 패킷을 받지 못한다. 격리는 escrow 배정을 받지 못한다. Atlas는 절단 키를 받지 못한다.
 
-## Scanner
-
-KO LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-KO LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-KO LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-KO LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+거부에는 이빨과 비용이 있다. 포식자를 한 간격 더 분지에서 멀리 둘 수 있지만, 증거는 연약한 사람의 연약한 용기 안에 남는다. 부채는 열려 있다. 보관은 비공식으로 남는다. 패킷이 침수되거나 운반자가 복도에서 죽으면, 아무도 억누르지 않아도 연쇄는 사라질 수 있다.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/ko_KR. -->

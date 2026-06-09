@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Salvage Truth Evidence Status"
+title: "Bewijsstatus van geborgen waarheid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Salvage Truth Evidence Status
+# Bewijsstatus van geborgen waarheid
 
-NL LOC HOLD: Salvage Truth Evidence Status turns lore into mechanics: a recovered log matters only if the player protects the packet route.
+Geborgen bewijs geeft HECTON-8 zijn langzaam brandende samenzwering. De kolonie zwijgt niet omdat er niets is gebeurd, maar omdat elk bewijsobject marktwaarde, aansprakelijkheidswaarde en juridische waarde heeft. Waarheid komt boven via bewaringsroutes en beschadigde objecten, niet via één handige bekentenis.
 
 ## Scanner
 
-NL LOC HOLD: Evidence only if custody survives pressure, salt and lawyers.
+Blackboxpakket: waarheid tot de claimbalie het aanraakt.
 
 ## Terminal
 
-NL LOC HOLD: EVIDENCE STATUS: salvage record becomes claim material by default. It becomes public evidence only with preserved chain-of-custody, packet witness hash and a relay notary outside claimant control.
+EVIDENCE STATUS: ruwe berging wordt standaard claimmateriaal. Publiek bewijs vereist intacte bronhash, druk-tijdstempel, getuigenpakket, relaisnotaris buiten controle van de claimant en een bewaringspad dat scheepsverlies, pekelblootstelling en handmatige edits overleeft.
 
 ## Audio
 
-NL LOC HOLD: A corpse is proof only after somebody agrees not to misfile it.
+Een lichaam is pas bewijs nadat iemand het niet verkeerd kon archiveren.
 
 ## Field Note
 
-NL LOC HOLD: Truth is not enough. It needs a route that cannot be bought before arrival.
+Een feit uit de diepte is pas gevaarlijk als het zijn getuigen behoudt.
 
 <!-- External Site; generated from P123_SALVAGE_TRUTH_EVIDENCE_STATUS/nl_NL. -->

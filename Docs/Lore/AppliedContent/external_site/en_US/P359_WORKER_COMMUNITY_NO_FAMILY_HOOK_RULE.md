@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Community Notice"
+title: "Worker Contact Notice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Community Notice
+# Worker Contact Notice
 
-HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+The Worker Contact Notice is a small social document with a hard edge. It lists bunk rows, route leads, medlock witnesses, tool-crib contacts and relay windows. It looks administrative until the pressure logic becomes clear: an offworld contact can grieve, argue and remember, but cannot reach the hatch before water does.
 
-## Scanner
+HECTON-8 uses that rule to make the colony feel lived-in without leaning on a convenient family secret. Emergency contact means on-station, trained, reachable by tone, and cleared for the worker's route. That definition is severe, but it is not loveless. It is the shape care takes when a missed return can become a flood path.
 
-Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-They built a roster, not a legend.
-
-## Field Note
-
-NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+The board also links daily evidence into a community web. A pump key in one artifact, a canteen correction in another, a tool signature on a third: each mark attaches one tired worker to another. The result is not melodrama. It is a believable pressure settlement where responsibility becomes a form of intimacy.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/en_US. -->

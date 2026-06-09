@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Evidence First Charter Contract Seed"
+title: "Evidence-First Charter Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Evidence First Charter Contract Seed
+# Evidence-First Charter Contractseed
 
-NL LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+Evidence-First Charter verandert het contractbord vóór de afdaling. Materiaaluitbetaling daalt, notarycapaciteit stijgt, bewijslockers krijgen prioriteit en salvage strippen draagt een penalty. De operator gaat naar binnen met een route die records beter beschermt dan onderdelen.
 
-## Scanner
-
-NL LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-NL LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-NL LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-NL LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+De druk verschijnt in kleine keuzes. Een hatchstatusstrip kan paneelverkoop blokkeren. Een nat ongevalspakket kan de laatste droge slot innemen. Een pingerlog kan een levend relais nodig hebben dat anders een reparatie voedt. De charter betaalt laat omdat hij vraagt lastige objecten lang genoeg intact te houden voor een receiver buiten Black Keel.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/nl_NL. -->

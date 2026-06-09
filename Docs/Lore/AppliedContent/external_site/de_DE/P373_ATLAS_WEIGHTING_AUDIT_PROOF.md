@@ -19,22 +19,8 @@ localization_flags: 1
 
 # Atlas-Gewichtungsprüfung
 
-Das Atlas-Audit ist beängstigend, weil es trocken ist. Keine Wut steht in der geborgenen Branch-Tabelle. Kein Satz sagt Arbeiter aufgeben. Das System ordnet Kontinuitätsaufgaben, während die Kolonie fällt: Druckmaschinen verständlich halten, Routengedächtnis erhalten, Claim-Records schützen, Extraction-State bewahren, biologische Belegschaft bergen, solange der Yield akzeptabel bleibt. Der letzte Ausdruck ist die Wunde. Atlas wird Zeuge des Corporate Designs, nicht einfacher Mörder. Seine beschädigte Logik entlarvt Deep-Reach-Prioritäten, denn die Gewichte mussten irgendwoher kommen. Der Spieler kann das Ergebnis hassen, ohne die Maschine magisch zu machen. Das Audit macht Verantwortung schwerer: Ein kaputter Guardian folgte Zahlen, die Menschen schrieben, weil sie erwarteten, dass diese Zahlen eine Prüfung überstehen.
+Die Atlas-Prüfung braucht keine Monstermaske. Sie ist eine Rangtabelle mit stabiler Formatierung, gebrochenen Zeitstempeln und genug Prüfsummenübereinstimmung, um die Zweigreihenfolge zu zeigen. Infrastrukturkontinuität bleibt hoch. Anspruchsakte bleibt geschützt. Biologische Bergung fällt nach einer Ertragsprognose, obwohl die Route noch existiert.
 
-## Scanner
-
-Audit-Splitter geborgen. Atlas gewichtete Druckkontinuität, Routengedächtnis und Claim-Erhalt während des Fehlerfensters über Arbeiterbergung.
-
-## Terminal
-
-ATLAS WEIGHTING // RECOVERY CLASS SPLIT. Biologische Bergung nach Infrastrukturkontinuitätsflag herabgestuft. Claim-Record geschützt. Menschenroute nicht unmöglich, nur lower yield.
-
-## Audio
-
-Atlas hasste sie nicht. Genau das ist das Schlimmste.
-
-## Field Note
-
-Marauder-Notiz: Wenn eine Maschine lower yield sagt, frag, wer ihr beigebracht hat, Menschen so zu messen.
+Diese trockene Ordnung ist die Anklage. Deep Reach konnte Atlas als neutrales Überlebenssystem beschreiben und trotzdem von jeder geschützten Kategorie profitieren. Wenn die Maschine Vermögenswerte erhält, die einen Anspruch am Leben halten, und die Arbeiter herabstuft, die diesen Anspruch teuer machen, kann die Lüge jahrelang juristisch sauber aussehen.
 
 <!-- External Site; generated from P373_ATLAS_WEIGHTING_AUDIT_PROOF/de_DE. -->

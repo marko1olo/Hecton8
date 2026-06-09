@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Suboffice Personnel Seeds"
+title: "Personalansätze der Unterbüros"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Suboffice Personnel Seeds
+# Personalansätze der Unterbüros
 
-DE LOC HOLD: Suboffice Personnel Seeds define how lower Deep Reach names can appear in future content.
+Personalansätze der Unterbüros definieren, wie untere Deep-Reach-Namen in HECTON-8-Lore erscheinen sollten. Es geht nicht darum, eine weitere Schurkenliste zu erfinden; es geht darum, Bürokratie lesbar und menschlich zu machen. Spieler sollen Initialen auf beschädigten Memos, wiederholte Schreibtischstempel, Zeugenhashes und widersprüchliche Freigaben sehen, bis Deep Reach nicht mehr wie ein Logo wirkt, sondern wie ein Gebäude voller Menschen, die darauf trainiert wurden, das Falsche zu schützen. Diese Ansätze halten auch künftige Artikel konsistent: Namen hängen an Funktionen, Funktionen an Beweisen, Beweise an Räumen, die der Spieler versteht.
 
 ## Scanner
 
-DE LOC HOLD: Lower Deep Reach personnel names should be seeded signatures tied to office function.
+Die unteren Deep-Reach-Namen zählen, weil die Katastrophe von Händen, Initialen und Posteingängen getragen wurde, nicht von einem abstrakten Firmenlogo.
 
 ## Terminal
 
-DE LOC HOLD: PERSONNEL SEED RULE: Contract Desk, Packet Notary, Quarantine Gate, Asset Silence Board and Return Queue may generate local signatures. They do not replace Varnek/Arendt/Haldane/Ibarra/Sato-Ren.
+PERSONNEL SEED TABLE: Risikomargenaufnahme / Evakuierungswarteschlangen-Counsel / Atlas-Kontinuitätsanalyst / Paketnotar / Recovery-Verwahrungssachbearbeiter. Namen als Signaturanker, Zeugenwidersprüche und Raumbeweise nutzen, nicht als einfache Befehlsleiter.
 
 ## Audio
 
-DE LOC HOLD: A clerk can damage a life without owning the whole disaster.
+Die Schreibtische hatten Namen. Darum tut das Papier weh.
 
 ## Field Note
 
-DE LOC HOLD: Use names only when they make a memo, stamp, badge or order more playable.
+Ein Unternehmen wird real, wenn hinter einem Stempel ein müder Mensch steht.
 
 <!-- External Site; generated from P189_SUBOFFICE_PERSONNEL_SEEDS/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Material Payout Record"
+title: "Запис матеріальної виплати"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Material Payout Record
+# Запис матеріальної виплати
 
-UA LOC HOLD: Material Payout Record defines the bitter successful salvage ending.
+Запис матеріальної виплати — це квитанція платного фіналу. Keelmark/Recovery Compliance приймає координати басейну, зразок синього боргу й хеш зберігання перевізника, а потім знижує або закриває заставу оператора. У тій самій квитанції свідчі матеріали, імена робітників і облік рятувальної маси лишаються поза нотаріальним зберіганням, а Deep Reach дістає чистіший шлях назад до HECTON-8, ніж похована зміна.
 
 ## Scanner
 
-UA LOC HOLD: Paid. Not cleared.
+ЗАПИС МАТЕРІАЛЬНОЇ ВИПЛАТИ // Keelmark/Recovery Compliance прийняла координати басейну й зразок синього боргу. Заставу оператора знижено; докази щодо робітників лишилися поза нотаріальним ланцюгом.
 
 ## Terminal
 
-UA LOC HOLD: ENDING RECORD: material payout accepted; public truth absent; claim custody closed.
+ЗАПИС ФІНАЛУ / МАТЕРІАЛЬНА ВИПЛАТА
+Одержувач: Keelmark/Recovery Compliance.
+Прийнято: координати басейну Atlas, зразок синього боргу, хеш зберігання перевізника.
+Не додано: нотаріальний свідчий пакет, реєстр імен робітників, аудит рятувальної маси.
+Вплив на заставу: знижено або закрито за контрактною таблицею.
+Вплив для Deep Reach: чистіший зворотний шлях до HECTON-8.
+Відома втрата: доказ можна оцінити грошима й не вислухати.
 
 ## Audio
 
-UA LOC HOLD: The receipt is clean because it ignores the room.
+Реєстр заплатив за карту могили. Кімнату він не відкрив.
 
 ## Field Note
 
-UA LOC HOLD: Record fields: receiver Keelmark/Recovery Compliance, evidence withheld, names unresolved, lien reduced, Deep Reach strengthened.
+Квитанція закриває графу застави, а не кімнату. Імена, які не потрапили до зберігання, після виплати не з'являються.
 
 <!-- In-Game Wiki; generated from P271_MATERIAL_PAYOUT_RECORD/uk_UA. -->

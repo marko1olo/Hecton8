@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Transit Primer
 spoiler_tier: 0
-title: "Trânsito da Ran Long Claim"
+title: "Trânsito Ran Long Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Trânsito da Ran Long Claim
+# Trânsito Ran Long Claim
 
-A placa de rota sob a pele do relé antigo responde a uma pergunta que a maioria dos Marauders faz tarde demais: a humanidade pode alcançar Aegir, mas alcance não é resgate. A Ran Long Claim fica numa cadeia lenta de carga semeada, escadas de pacote, depósitos de combustível, lei de quarentena e cargueiros que gastam anos cruzando o que um sinal cruza em uma estação. Um pulso de prova de vida pode passar por Sol, Luyten e Barnard enquanto o corpo que o enviou ainda está preso sob clima local, limites de massa e autoridade de dívida. Black Keel pode ouvir você. Pode registrar um gravame, abrir custódia e reservar uma tonne-window. Não pode empurrar um casco cargueiro pelo vácuo só porque um mergulhador está com medo na água.
+Ran Long Claim é o nome público de uma contradição prática. A civilização humana pode alcançar Aegir, enviar probes, staged freight, packet custody e claim tenders. Isso não significa que um Marauder encalhado será erguido quando pedir.
+
+A rota tem camadas. Pacotes se movem primeiro porque informação é leve e legalmente útil. Depósitos, reservas receiver e slots de quarentena são mais lentos. Massa pesada é mais lenta ainda, envolta em contratos de freio, dono de payload e risco de recovery.
 
 ## Scanner
 
-PLACA DE ROTA // Ran Long Claim, faixa de tráfego de Aegir. Pacotes passam por janelas; cascos passam por massa, tempo de reboque, quarentena e responsabilidade aceita.
+Placa de rota sob pele antiga de relé. Cadeia de custódia Ran Long Claim: packet ladder, depósito de combustível, lane de quarentena, fila carrier e recibo proof-of-life velho.
 
 ## Terminal
 
-ESCADA DE PACOTES LUYTEN // Recibo de Aegir em cache. Prova de sinal pode chegar onze anos antes do cargueiro. Autoridade de içamento ainda requer confirmação de beam-lane, selo de custódia e massa tonne-window.
+RAN LONG CLAIM // Alcance confirmado. Resgate não implicado. Classe de trânsito de sinal abaixo da classe de massa pesada. Resposta carrier pode preceder recovery física por anos contratuais. Manter autoridade local de sobrevivência até fechar janela de custódia.
 
 ## Audio
 
-Áudio de rota da Black Keel: Sol pode certificar a reivindicação. Luyten pode provar o pacote. Barnard pode vender as mãos. Nenhum deles pode te puxar de HECTON-8 nesta passagem.
+Alcance não é resgate. Um sinal cruza a escuridão enquanto o corpo que o enviou ainda está preso sob a água.
 
 ## Field Note
 
-Se uma placa lista Sol, Luyten, Barnard e Aegir na mesma linha, leia a ordem. Sol possui a lei. Luyten possui o pacote. Barnard possui as mãos. Aegir possui o clima. Nenhum deles possui seu próximo fôlego.
+A rota pode ouvir você antes de poder carregar você.
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/pt_BR. -->

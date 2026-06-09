@@ -1108,7 +1108,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("public const int ResourceRecyclerModulePersistenceVersion = 79;", saveData);
             StringAssert.Contains("public const int FabricatorPendingOutputPersistenceVersion = 81;", saveData);
             StringAssert.Contains("public const int CultivationSeedHashPersistenceVersion = 82;", saveData);
-            StringAssert.Contains("CurrentVersion = CultivationSeedHashPersistenceVersion", saveData);
+            StringAssert.Contains("public const int CelestialLightPhasePersistenceVersion = 84;", saveData);
+            StringAssert.Contains("public const int ProceduralTerrainIdentityContractPersistenceVersion = 85;", saveData);
+            StringAssert.Contains("CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion", saveData);
             StringAssert.Contains("public const int MaxRecyclerBufferedSlots = 8;", saveData);
             StringAssert.Contains("public const int MaxRecyclerPendingYieldSlots = 16;", saveData);
             StringAssert.Contains("public int recyclerBufferedSlotCount;", saveData);
@@ -1693,7 +1695,9 @@ namespace Hecton8.Tests.Editor
             string readModule = ExtractMethodBody(saveCodec, "private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)");
 
             StringAssert.Contains("public const int StorageCrateModulePersistenceVersion = 80;", saveData);
-            StringAssert.Contains("CurrentVersion = CultivationSeedHashPersistenceVersion", saveData);
+            StringAssert.Contains("public const int CelestialLightPhasePersistenceVersion = 84;", saveData);
+            StringAssert.Contains("public const int ProceduralTerrainIdentityContractPersistenceVersion = 85;", saveData);
+            StringAssert.Contains("CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion", saveData);
             StringAssert.Contains("public const int MaxStorageCrateSlots = 32;", saveData);
             StringAssert.Contains("public bool storageCrateContentsSerialized;", saveData);
             StringAssert.Contains("public int storageCrateSlotCount;", saveData);

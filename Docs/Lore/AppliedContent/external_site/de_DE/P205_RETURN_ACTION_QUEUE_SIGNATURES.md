@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Return Action Queue Signatures"
+title: "Signaturen der Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Return Action Queue Signatures
+# Signaturen der Return Action Queue
 
-DE LOC HOLD: Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+Return-Action-Queue-Datensätze sind die öffentliche Kante aktuellen Deep-Reach-Drucks. Die Katastrophe von 2147 hinterließ Logs, aber die Queue von 2190 bewegt noch immer Klauseln durch Relaisfenster: Koordinaten senden, payload custody zertifizieren, Quarantänesprache säubern, dann Recovery besprechen. Das Paket behauptet nicht, Black Keel sei nutzlos oder Deep Reach könne jemanden sofort retten. Es zeigt das Gegenteil: lokale Schiffe, verzögerte Rechtspakete und Custody Checks sind langsam genug, dass Prioritätsreihenfolge zu Lebenserhaltung wird.
 
 ## Scanner
 
-DE LOC HOLD: The old crime has a live queue.
+Live return strip empfangen: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 zwölf Minuten offen.
 
 ## Terminal
 
-DE LOC HOLD: SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Aktion: payload custody, coordinate receipt und quarantine handshake vor contractor recovery priorisieren. Carrier clause: Black Keel darf pickup verzögern, bis custody state clean ist.
 
 ## Audio
 
-DE LOC HOLD: They are not ghosts. They are delayed paperwork with engines.
+Keenes Queue ist live. Rettung steht hinter payload custody, solange wir den Handshake nicht ändern.
 
 ## Field Note
 
-DE LOC HOLD: Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+Das ist kein altes Papier. Der Queue-Stempel ist frisch: verzögertes Paket, Carrier Clause, payload-first order. Prüfe Black Keels recovery language, bevor du dem Pickup traust.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/de_DE. -->

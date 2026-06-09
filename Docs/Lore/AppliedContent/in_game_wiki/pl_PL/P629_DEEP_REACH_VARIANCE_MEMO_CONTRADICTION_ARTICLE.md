@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Proof-Order Note
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Sprzeczność notatki variance Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Sprzeczność notatki variance Deep Reach
 
-The memo becomes useful when physical evidence contradicts it.
+Notatka variance sama nie jest dowodem. Staje się użyteczna, gdy ślady pompowni, znaczniki czasu i stemple accepted-margin przeczą czystemu językowi biura.
 
 ## Scanner
 
-Memo says variance; room marks disagree.
+ZNACZNIK SPRZECZNOŚCI // Notatka mówi variance. Ślad pompy pokazuje późną ręczną interwencję.
 
 ## Terminal
 
-Deep Reach memo language treats dangerous margin as managed variance.
+INCIDENT VARIANCE // Napływ wody pozostaje w zarządzanej tolerancji do przeglądu return-action. Lokalna kolejka może odłożyć niekrytyczny język eskalacji.
 
 ## Audio
 
-Trust the room before the clean word.
+Nikt nie pisze variance na ścianie, która wciąż kapie.
 
 ## Field Note
 
-Trust the wet room first.
+Gdy słowo z biura jest czystsze niż pomieszczenie, najpierw wierz pomieszczeniu.
 
 <!-- In-Game Wiki; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/pl_PL. -->

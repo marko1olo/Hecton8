@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Abyssal Machine Field Warning"
+title: "Попередження машинного поля безодні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Abyssal Machine Field Warning
+# Попередження машинного поля безодні
 
-UK LOC HOLD: Before the final basin, the world stops looking abandoned and starts looking like a machine too large to show its whole body.
+Перед фінальним басейном HECTON-8 перестає виглядати покинутою і починає виглядати як машина, надто велика, щоб показати все тіло. Попередження лишається тихим, бо жах тут не погоня. Жах — масштаб.
 
 ## Scanner
 
-UK LOC HOLD: Machine field warning: silt motion does not match current.
+Мул рухається проти течії. Фільтрувальні тіла перебудовуються під вогнями.
 
 ## Terminal
 
-UK LOC HOLD: ROUTE WARNING: machine-field silt motion exceeds current model. Treat filter bodies as moving infrastructure.
+ROUTE WARNING: рух мулу в машинному полі безодні перевищує модель течій. Фільтрувальні тіла й поховані ребра приводів зареєстровано як рухому інфраструктуру. Тримати дистанцію; не якоритися в м'яке дно.
 
 ## Audio
 
-UK LOC HOLD: The floor is not still.
+Підлога не стоїть на місці.
 
 ## Field Note
 
-UK LOC HOLD: Late-game warning should be quiet and objective, not boss buildup.
+Пізнє попередження: тихий об'єктивний страх. Фінальне поле — це інфраструктура, що прокидається, а не розгін до боса.
 
 <!-- External Site; generated from P296_ABYSSAL_MACHINE_FIELD_WARNING/uk_UA. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Atlas Basin Pressure Gate
 
-Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof, and authority conflict. The door is not mystical; it is an industrial system deciding whether the player counts as access, evidence, or contamination.
 
 ## Scanner
 
-Basin gate requires pressure proof and authority response.
+Basin gate asks for pressure proof, route authority, and a body it can classify.
 
 ## Terminal
 
-ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: pressure proof incomplete. Suit grade accepted below descent threshold. Authority clamp recognizes revoked Deep Reach pattern, not current claimant. Manual override requires local load, receiver choice, and witness payload.
 
 ## Audio
 

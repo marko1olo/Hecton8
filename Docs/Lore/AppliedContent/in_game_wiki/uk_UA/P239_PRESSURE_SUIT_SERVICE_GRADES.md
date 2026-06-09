@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Pressure Suit Service Grades"
+title: "Сервісні класи тискових костюмів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Pressure Suit Service Grades
+# Сервісні класи тискових костюмів
 
-UA LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Класи тискових костюмів є сервісними записами, а не кольорами спорядження. Кожна глибина вимагає простежуваних ущільнень, запасу scrubber, теплової підкладки, меж забруднення й старих штампів, що ще мають вагу. Гравець іде глибше, бо відновлює стандарт безпеки, а не тому, що знайшов чарівну броню.
 
 ## Scanner
 
-UA LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Мітки костюма класифікують робочу глибину, втому ущільнень, запас scrubber, тепловий допуск і забруднення.
 
 ## Terminal
 
-UA LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-UA LOC HOLD: The suit does not make you brave. It only fails later.
+Костюм не робить тебе хоробрим. Він лише ламається пізніше.
 
 ## Field Note
 
-UA LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Глибший костюм — не кольорова броня. Це папери, деталі й брудне обслуговування.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/uk_UA. -->

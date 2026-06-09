@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Reisezeiten von Sondenpaketen
 
-Sondenpaketzeit machte Aegir wertvoll, bevor es vertraut wurde. Eine schmale Maschine konnte kreuzen, messen und berichten, während menschliche Institutionen noch über Budgets und Haftung stritten. Als Deep Reach Vertrauen verkaufte, waren die Pakete schon alt und die Risikomodelle schon poliert. Das ist die Gefahr maschinengetriebener Erkundung: Der Ozean kann aus veralteter Wahrheit bepreist werden, lange bevor jemand versteht, was Arbeit dort kostet.
+Die Reisezeit von Sondenpaketen ist eine der unscheinbarsten und schädlichsten Kräfte der Welt. Die frühen Ran-Aegir-Pakete waren keine Lügen. Sie trugen reale Spektralwerte, Massenschätzungen, Eischemie, Relaisgeometrie und Flachwasserhoffnung. Sie waren nur alt, als Menschen sie als Erlaubnis behandelten.
+
+Dadurch wird das Scheitern der Kolonie schärfer. HECTON-8 wurde nicht auf reiner Fantasie gegründet. Es wurde auf Daten gegründet, die die Route besser überstanden hatten als die Zeit. Als neuere Messungen dem ersten Versprechen widersprachen, hingen am alten Versprechen bereits Schulden, Verträge, Ausrüstung und menschliche Pläne.
 
 <!-- External Site; generated from P142_PROBE_PACKET_TRAVEL_TIMES/de_DE. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Marauder Correction Note Sample"
+title: "Échantillon de correction maraudeuse"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Marauder Correction Note Sample
+# Échantillon de correction maraudeuse
 
-FR LOC HOLD: Marauder notes let the world argue with official records. The best ones keep doubt useful and answers unpaid.
+Les notes maraudeuses sont des surfaces de preuve fortes dans HECTON-8 : elles contestent les systèmes officiels sans devenir un lore omniscient. Cet échantillon maintient le soupçon par des marques pratiques : horaires, certifications, mauvaise catégorie et retard de file. Il ne résout pas l'affaire pour le joueur. Il apprend à lire un mensonge classé comme maintenance.
 
 ## Scanner
 
-FR LOC HOLD: Marauder correction note rejects accident wording and points to authorization delay.
+Correction au crayon gras sur un rapport d'accident : pas la météo, pas la panique, mais un retard d'autorisation avec des corps au compte.
 
 ## Terminal
 
-FR LOC HOLD: MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch.
+NOTE MARAUDEUSE / CAUSE OFFICIELLE : REJETÉE / AVANT DÉCLARATION VÉRIFIER : certificat de pompe, effectif, catégorie des corps, décalage horloge-porte, file d'autorisation secours.
 
 ## Audio
 
-FR LOC HOLD: Someone else smelled the paperwork rot.
+Quelqu'un a senti la pourriture administrative avant que la pièce ne sèche.
 
 ## Field Note
 
-FR LOC HOLD: NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. If the body count is provisional, the claim is dirty.
+PAS LA MÉTÉO. RETARD D'AUTORISATION. Vérifier certificat de pompe, effectif, catégorie des corps. L'horloge de porte avance de six minutes sur le tampon de déclaration.
 
 <!-- External Site; generated from P289_MARAUDER_CORRECTION_NOTE_SAMPLE/fr_FR. -->

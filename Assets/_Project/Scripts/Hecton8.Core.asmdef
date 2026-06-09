@@ -16,6 +16,7 @@
         "Hecton8.UI.Diegetic.Contracts",
         "Hecton8.World.Contracts",
         "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.Environment.Fluids",
         "Unity.InputSystem",
         "Unity.Mathematics",
         "Unity.Burst",

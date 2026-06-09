@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UA LOC HOLD: Contract Risk Reward Boundary"
+title: "Межа ризику й нагороди контракту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Contract Risk Reward Boundary
+# Межа ризику й нагороди контракту
 
-UK LOC HOLD: Replayability is not inherited power. It is a worse contract, a tighter window and a route that asks for proof earlier.
+Replayability у HECTON-8 — не успадкована сила. Це гірший контракт, тісніше вікно, раніший запит доказів і носій, що пам'ятає, які частини тебе досі є заставою.
 
 ## Scanner
 
-UA LOC HOLD: Contract boundary: lien, storm window, custody, evidence order, clause weight.
+Рядок контракту зв'язує утримання, штормове вікно, порядок зберігання, стелю виплати і вагу пункту.
 
 ## Terminal
 
-UA LOC HOLD: CONTRACT RISK CONTRACT: rows require lien severity, payout ceiling, storm window, sample custody, evidence order, and Deep Reach clause weight.
+CONTRACT RISK CONTRACT: рядки потребують тяжкість утримання, стелю виплати, штормове вікно, зберігання зразка, порядок доказів і вагу пункту Deep Reach. Контракт — перший хижак.
 
 ## Audio
 
-UK LOC HOLD: The contract is the first predator.
+Контракт — перший хижак.
 
 ## Field Note
 
-UA LOC HOLD: Reward changes belong to the contract row, not to improvised lore text.
+Зміни нагороди належать рядку контракту, а не імпровізованому lore-тексту.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/uk_UA. -->

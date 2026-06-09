@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Claim 연속성 손실 전환"
+title: "청구 연속성 손실 전환"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Claim 연속성 손실 전환
+# 청구 연속성 손실 전환
 
-증거 사슬은 전환으로 끝난다. 작업자가 손실이 되고, 증거가 material custody가 되고, claim이 살아 있으면 Deep Reach는 피해를 인정하면서도 소유권을 유지할 수 있다. 그래서 플레이어가 드는 것은 진실만이 아니다. 시스템이 사는 법을 아는 물건이다.
+연쇄는 원장에서 끝난다. 원장은 다른 모든 것을 살아남을 수 있기 때문이다. 노동자는 회수 불가 손실이 되고, 손상 모듈은 물자 보관이 되며, 증거는 청구에 붙은 채 남는다. 이 문서를 운반하는 이는 감상을 운반하지 않는다. 시신 없이 청구를 원하는 모든 수령자에게 문제가 되는 것을 운반한다.
 
 ## Scanner
 
-손실 데스크 도장 회수. ledger는 자신이 이름을 바꾼 작업자들보다 더 잘 살아남았다.
+손실 데스크 도장 회수. 증거 보관이 활성 청구를 떠나기 전에 노동자 상태가 회수 불가로 전환된다.
 
 ## Terminal
 
-KEELMARK LOSS // CONTINUITY RETAINED. biological workforce converted to unrecoverable loss. Material and proof custody remain active pending receiver assignment.
+KEELMARK 손실 // 연속성 유지. 생물학적 노동력은 회수 불가 손실로 전환. 물자 보관 및 증거 보관은 수령자 배정까지 활성.
 
 ## Audio
 
-여기서 사람들은 깨끗한 열이 되었다.
+여기서 이름은 깨끗한 열이 되었다.
 
 ## Field Note
 
-Marauder 메모: ledger는 죽은 이를 기억하면서도 그들을 지출할 수 있다.
+약탈자 메모: 원장은 죽은 이를 기억하면서도 그들을 지출할 수 있다.
 
 <!-- In-Game Wiki; generated from P375_CLAIM_CONTINUITY_LOSS_CONVERSION_PROOF/ko_KR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT-BR LOC HOLD: Last Normal Day Evidence Set"
+title: "Conjunto de provas do último dia normal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT-BR LOC HOLD: Last Normal Day Evidence Set
+# Conjunto de provas do último dia normal
 
-PT-BR LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+O Conjunto de provas do último dia normal é um método de campo para ler a colônia afogada de HECTON-8. Ele reúne pequenos sinais de interrupção: uma placa de armário não retirada, uma correção sem assinatura, uma tarefa de bomba aberta, uma ficha de refeição presa, um relógio de rota ainda esperando. Nenhum desses objetos sabe que virou prova.
 
-## Scanner
+A força está na contenção. A sala não precisa de gravação de despedida nem de tragédia perfeitamente posicionada. Ela só precisa mostrar que o procedimento normal ainda estava vivo quando a falha cruzou o limiar. As pessoas contavam água, devolviam ferramentas, corrigiam quadros e esperavam almoço. Essa continuidade comum torna a ruptura pior.
 
-PT-BR LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-PT-BR LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-PT-BR LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-PT-BR LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+O conjunto também carrega culpa. A linguagem oficial de acidente costuma alisar a sala; as contradições físicas a deixam áspera de novo. Certificado de bomba, contagem de turno, categoria de corpo, descompasso relógio-porta: juntos, podem transformar um encerramento plano em uma pergunta que alguém tentou evitar. Em HECTON-8, o último dia normal é o momento em que routine ainda acredita que vai continuar.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/pt_BR. -->

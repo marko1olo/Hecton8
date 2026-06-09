@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_console_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS175_FIRST_CONSOLE_MARK_ARTICLES.md |
 | Speaker | Maintenance scanner, console surface note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first console reading |
@@ -39,7 +39,7 @@ KEYCAP // Salt crescent on edge. Clean bezel before trusting contact.
 
 The worn legend says what the key used to do. The salt crescent says how it was last handled. Moisture dried at one edge, close enough to the bezel to make the contact suspect.
 
-Control labels are not control proof.
+The contact stays suspect until the bezel is cleaned.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CLEAN BEZEL FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| ar_SA | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| de_DE | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| es_ES | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| fr_FR | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| he_IL | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| id_ID | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| ja_JP | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| ko_KR | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| nl_NL | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| pl_PL | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| pt_BR | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| ru_RU | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| uk_UA | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
-| zh_CN | draft_machine_or_llm | KEYCAP // Salt crescent on edge. Clean bezel before trusting contact. |
+| ar_SA | draft_machine_or_llm | غطاء مفتاح // هلال ملح على الحافة. نظف الإطار قبل الثقة بالتلامس. |
+| de_DE | draft_machine_or_llm | TASTENKAPPE // Salzhalbmond an der Kante. Blende reinigen, bevor du dem Kontakt traust. |
+| es_ES | draft_machine_or_llm | TECLA // Media luna de sal en el borde. Limpia el bisel antes de fiarte del contacto. |
+| fr_FR | draft_machine_or_llm | CABOCHON DE TOUCHE // Croissant de sel sur le bord. Nettoyer la lunette avant de croire le contact. |
+| he_IL | draft_machine_or_llm | מכסה מקש // סהר מלח על הקצה. נקה את המסגרת לפני אמון במגע. |
+| id_ID | draft_machine_or_llm | TUTUP TOMBOL // Sabit garam di tepi. Bersihkan bezel sebelum percaya kontak. |
+| ja_JP | draft_machine_or_llm | キーキャップ // 縁に塩の三日月。接点を信じる前にベゼルを清掃。 |
+| ko_KR | draft_machine_or_llm | 키캡 // 가장자리에 소금 초승달 흔적. 접점을 믿기 전에 베젤을 닦는다. |
+| nl_NL | draft_machine_or_llm | TOETSKAP // Zouthalve maan op rand. Maak bezel schoon voor je het contact vertrouwt. |
+| pl_PL | draft_machine_or_llm | NAKLADKA KLAWISZA // Solny polksiezyc na krawedzi. Przed zaufaniem stykowi wyczysc ramke. |
+| pt_BR | draft_machine_or_llm | CAPA DE TECLA // Crescente de sal na borda. Limpe a moldura antes de confiar no contato. |
+| ru_RU | draft_machine_or_llm | КОЛПАЧОК КЛАВИШИ // На кромке соляной полумесяц. Очисти рамку до доверия контакту. |
+| uk_UA | draft_machine_or_llm | КОВПАЧОК КЛАВІШІ // На крайці соляний півмісяць. Очисть рамку перед довірою до контакту. |
+| zh_CN | draft_machine_or_llm | 键帽 // 边缘有盐月痕。信任触点前先清洁边框。 |

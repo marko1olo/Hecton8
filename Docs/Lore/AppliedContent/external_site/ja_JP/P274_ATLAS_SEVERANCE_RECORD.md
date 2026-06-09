@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JP LOC HOLD: Atlas Severance Record"
+title: "Atlas切断記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JP LOC HOLD: Atlas Severance Record
+# Atlas切断記録
 
-JP LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+この切断記録で重要なのは、道徳ラベルより前に物理的な切断を並べることだ。静かになったリンク、落ちたマイクロノード、止まった修復パルス、Deep Reachが失った経路、残った盆地リスクである。
 
 ## Scanner
 
-JP LOC HOLD: Continuity cut. Damage not contained.
+Atlas切断記録 // 損傷した修復層で連続性を切断。マイクロノード応答は低下中。盆地安定性と保管効果は未解決。
 
 ## Terminal
 
-JP LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+エンディング記録 / ATLAS切断
+行為: Atlas修復層を横切る連続性切断。
+影響系: 噴出口マイクロノード、殻質シーラントパルス、タグ付き動物経路、損傷金属修復。
+拒否: 生きたAtlas層を通るDeep Reachペイロード経路。
+未解決: 盆地安定性、生存生態、閉じ込められた作業者の痕跡。
+既知の損失: 記録は切断が解放、殺害、盗取のどれかを決めない。
 
 ## Audio
 
-JP LOC HOLD: Stopping the machine does not sort what it had become.
+リンクは静かになった。盆地はそれが慈悲かどうか答えなかった。
 
 ## Field Note
 
-JP LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+切られたノードは慈悲にも盗みにも損傷にもなる。記録が知るのは、どのリンクが静かになったかだけだ。
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crews Not Heroes"
+title: "طواقم ورديات لا أبطال"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crews Not Heroes
+# طواقم ورديات لا أبطال
 
-AR LOC HOLD: Shift Crews Not Heroes is the writing rule for humanizing the drowned colony.
+طواقم ورديات لا أبطال هي قاعدة الكتابة البشرية في HECTON-8: يتذكر اللاعب العمال عبر الوظائف والتعب والعادات والفشل الإجرائي.
 
 ## Scanner
 
-AR LOC HOLD: The colony becomes human through schedules, not speeches.
+طبقة بشرية // تصير المستعمرة حقيقية عبر الجداول، الأدوات البالية، العودات المفقودة، والأسماء على لوحات الوردية. لا عبر الخطب.
 
 ## Terminal
 
-AR LOC HOLD: COLONY RULE: write workers as pump techs, medics, route clerks, divers, cooks, fabricator operators and tired supervisors. A shift roster can hurt more than a monologue.
+قاعدة كتابة: سجّل العمال كتقنيي مضخات، مسعفين، كتبة مسار، غواصين، طهاة، مشغلي fabricator ومشرفين متعبين. جدول وردية فيه عودة واحدة مفقودة يؤلم أكثر من نصب.
 
 ## Audio
 
-AR LOC HOLD: They were not symbols. They were late for shift.
+لم يكونوا رموزا. كانوا متأخرين عن الوردية.
 
 ## Field Note
 
-AR LOC HOLD: People are more believable as workers than as memorial statues.
+البشر أصدق كعمال منهم كتماثيل تذكارية.
 
 <!-- External Site; generated from P156_SHIFT_CREWS_NOT_HEROES/ar_SA. -->

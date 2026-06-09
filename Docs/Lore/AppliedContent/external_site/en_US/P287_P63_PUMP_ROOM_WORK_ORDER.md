@@ -19,15 +19,15 @@ localization_flags: 0
 
 # P-63 Pump Room Work Order
 
-P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+P-63 Pump Room Work Order is a small-scale HECTON-8 artifact: water in the room, one tool in hand, an acoustic return line, and a route that cannot be trusted until the environment answers. It makes mechanics feel like colony habit.
 
 ## Scanner
 
-Work order lists pump, seal, cut, pinger and gasket in pressure order.
+The first repair reads like a colony habit: pump, seal, listen, cut only if the room stops lying.
 
 ## Terminal
 
-WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: clear sump; patch cold seam; verify return pinger; cut fused latch only after pressure holds; print gasket from local stock; mark route safe after acoustic return repeats three times. Supervisor initials missing under water stain.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Pump first. Seal second. If it sings, stop cutting.
 
 ## Field Note
 
-Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Clipboard soaked through the lower half. The cut line is still readable because somebody circled it twice and wrote if it sings, stop.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/en_US. -->

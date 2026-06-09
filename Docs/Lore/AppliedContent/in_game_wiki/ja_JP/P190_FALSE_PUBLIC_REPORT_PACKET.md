@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "虚偽公開報告パケット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# 虚偽公開報告パケット
 
-JP LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+虚偽公開報告パケットは、Deep Reach が世界に安全に見せられる HECTON-8 の版である。偽の海を作るわけではない。大潮は本物で、リレー遅延も本物で、隔離不確実性も本物だった。だから報告は軽い読みには耐える。嘘は省略の中にある。承認済みのリスク余裕、遅らされた避難権限、Atlas 継続性重み付け、保険変換、回収保管圧力を取り除いている。プレイヤーはこれを最後の企業手として読むべきだ。冷静に聞こえるだけの物理を残し、罪を消すだけの決定を切り落とす。
 
 ## Scanner
 
-JP LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+公開報告が機能したのは、本物の海を残し、その中の人間の選択を取り除いたからだ。
 
 ## Terminal
 
-JP LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: HECTON-8 喪失は例外的潮汐カスケード、リレー遅延、隔離不確実性に起因。省略: 承認済みリスク余裕、避難解放保留、Atlas 継続性オーバーライド、請求変換、ペイロード優先回収要求。
 
 ## Audio
 
-JP LOC HOLD: They did not fake the storm. They buried the choice.
+彼らは水については真実を語り、手について嘘をついた。
 
 ## Field Note
 
-JP LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+最良の嘘は潮を否定しなかった。潮を隠れ蓑にした。
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/ja_JP. -->

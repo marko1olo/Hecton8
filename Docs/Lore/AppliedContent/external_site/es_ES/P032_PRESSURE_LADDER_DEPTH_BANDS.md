@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Escalera de presión
 
-Convierte la progresión de profundidad en estructura de supervivencia hard-sci-fi para exploración prolongada.
+La Escalera de presión define el acceso de profundidad de HECTON-8 como una cadena de servicio, no como un bloqueo arbitrario: cada banda solo abre si sello de presión, grado de traje, energía, oxígeno, aislamiento, señal y plan de retorno pasan juntos.
 
 ## Scanner
 
-La profundidad se divide por rating de presión, no por nombres de nivel. Cada banda exige otra respuesta de ingeniería.
+LECTURA DE COMPUERTA DE PROFUNDIDAD // Banda: descenso de servicio 250-1200 m. Margen de sello 11 %. La placa del traje acepta Grade C solo después de trabar el paquete de batería B2. Ping de retorno débil bajo la tercera abrazadera. No abras la esclusa inferior con valentía.
 
 ## Terminal
 
-Escalera: equipo de plataforma, refuerzo de cañón, aislamiento de salmuera, disciplina de casco abisal, señal endurecida de fábrica.
+TABLERO DE ACCESO DE PROFUNDIDAD
+0-250 m: plataforma fótica / admite trabajo corto con equipo dañado
+250-1200 m: plataforma de servicio / sello de traje Grade C, batería trabada y ping de cable requeridos
+1200-2800 m: cañón de salmuera / envoltura aislante y trim de flotabilidad requeridos
+2800-4300 m: campo de máquinas abisal / señal endurecida y disciplina de casco requeridas
+4300-5600 m: cuenca Atlas / el plan de retorno debe sobrevivir pérdida de presión y ruido de bus
+Fallo: siguiente banda bloqueada hasta reparar la lectura más débil
 
 ## Audio
 
-No desciendes por valentía. Desciendes porque el siguiente sello aguanta.
+Deja de discutir con la puerta. El margen del sello está en rojo y tu ping de retorno ya llega tarde.
 
 ## Field Note
 
-El océano cierra el progreso con matemáticas.
+A la compuerta no le importa por qué necesitas la ruta. Lee sello, energía, oxígeno, aislamiento y señal; luego da verde o mata la idea.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/es_ES. -->

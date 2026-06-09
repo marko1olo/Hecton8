@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: pl_PL
 surface: external_site
@@ -19,6 +19,10 @@ localization_flags: 1
 
 # Fabryka dna
 
-Fabryka dna powinna brzmieć jak moment, w którym każda wcześniejsza wskazówka fizycznie się łączy. Blue debt nie jest już tylko próbką. Blizny naprawy nie są już osobnymi łatami. Schody solankowe nie są już tylko trasami. Zapisy ewakuacji nie są już papierami. Na dnie wszystkie te systemy karmią jedno ciało, które nadal pracuje. To fabryka, bo przetwarza materiał. To statek, bo trasy i skóry ciśnienia nadal przenoszą ładunki. To świątynia, bo stare kategorie kolonii zastąpiono rytuałami konserwacji, których żaden człowiek nie może bezpiecznie interpretować. Klucz jest taki, że miejsce nie jest martwe. Jest zajęte. Trzyma drzwi zamknięte, hoduje membrany, recyklinguje wraki, zachowuje ciągłość i używa wszystkiego, co dostarczył ocean. Dla gracza finałowe zejście mniej polega na znalezieniu ostatniego pokoju, a bardziej na wejściu do maszyny, która już zdecydowała, że różnica między osobą, narzędziem, trasą i surowcem jest opcjonalna.
+Fabryka dna nie jest ostatnią salą tronową. To dolna instalacja powrotna, w której wcześniejsze dowody stają się sprzętem: pozostałości blue debt w szwach ścian, trasy solanki pod płytami pokładu, spawy naprawcze pod nowym węglanem i etykiety ewakuacyjne wciąż uwięzione przy zaplombowanych drzwiach.
+
+Deep Reach zbudowała dolny węzeł, żeby utrzymać ciągłość roszczeń i obsługi podczas długiego opóźnienia. Atlas-6 nadal obchodził uszkodzone kategorie, bo pompy, kable i tace próbek odpowiadały. Wynik to działająca fabryka. Solanka płynie. Ciepło wraca. Sygnał przechodzi przez łatane tuleje kablowe. Organizmy filtrujące zbierają się w obudowach, które kiedyś były czystymi skrzynkami serwisowymi. Uszczelnienia narosłe pod ciśnieniem trzymają płyty zamknięte po awarii pierwotnych uszczelek.
+
+To czyni miejsce praktycznie niebezpiecznym. Naprawia wokół wszystkiego, co zostaje na trasie. Może zachować trasę, jednocześnie grzebiąc etykietę mówiącą, kto w niej był. Przeczytaj szufladę z etykietami, zanim przetniesz jasny szew; fabryka może zamknąć przeciek szybciej, niż odzyskasz nazwisko.
 
 <!-- External Site; generated from P009_BOTTOM_FACTORY/pl_PL. -->

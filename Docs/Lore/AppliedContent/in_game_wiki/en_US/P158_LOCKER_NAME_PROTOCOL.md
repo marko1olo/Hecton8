@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Locker Name Protocol
 
-Locker name plates make workers legible through objects: badge, role, route permission, and the thing left unfinished.
+A locker is personal because it was used, not because it explains a whole life. The best locker evidence is practical: a badge rubbed bright at one edge, tape over a cracked seal, a route sticker, a correction note in a worker's shorthand, a name plate that payroll later erased. These objects let the Marauder restore people through use marks and unfinished tasks. The colony does not need melodrama to feel human. It needs enough small traces that corporate cleanup failed to scrape away.
 
 ## Scanner
 
-A locker is personal without needing a family plot.
+LOCKER TRACE // Name plate, tool wear, pressure tape, correction note, route sticker. Personal evidence without a family plot.
 
 ## Terminal
 
-LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+LOCKER RULE: preserve names Deep Reach removed from payroll. A locker should bind badge, role, route permission, repair habit, and the unfinished thing left inside.
 
 ## Audio
 

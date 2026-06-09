@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Quarantine Relay Fragment"
+title: "Fragment de relais de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Quarantine Relay Fragment
+# Fragment de relais de quarantaine
 
-FR LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+Le Fragment de relais de quarantaine est une petite fin avec des dents. Il prouve que HECTON-8 peut sauver quelqu'un de la pression tout en refusant de lui rendre son statut de personne. Le paquet porte deux vérités dans le même souffle administratif : extraction acceptée, libération refusée. Le corps est récupéré. La personne est retenue. La ligne de revue d'air est plus ancienne que le reçu de sauvetage, ce qui signifie que le verdict de quarantaine attendait avant même l'ouverture de l'écoutille. Pour le gameplay et le lore, ce fragment compte parce qu'il rend le sauvetage moralement incomplet. Un sol sec n'est pas la liberté. Un scellé médical n'est pas une libération. La colonie peut conserver ce dont elle a besoin comme preuve, échantillon, propriété de demandeur ou inventaire de témoin, puis garder l'être humain dans le système qui l'a blessé.
 
 ## Scanner
 
-FR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Le même paquet de relais approuve l'extraction et refuse la libération. L'océan rend le corps avant que la colonie ne rende la personne.
 
 ## Terminal
 
-FR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+MAINTIEN RELAIS QRF-17 / EXTRACTION : ACCEPTÉE / LIBÉRATION : REFUSÉE / MOTIFS : garde d'échantillon non résolue, revue d'air périmée, litige de demandeur actif, statut de témoin provisoire.
 
 ## Audio
 
-FR LOC HOLD: You are out of the water. You are not out of custody.
+Maintien relais. Extraction acceptée. Libération refusée. Tu es hors de l'eau, pas hors de garde.
 
 ## Field Note
 
-FR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Deux tampons : CORPS RÉCUPÉRÉ, PERSONNE RETENUE. La revue d'air précède le reçu de sauvetage ; litige de demandeur encore ouvert.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/fr_FR. -->

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
@@ -58,6 +59,7 @@ namespace Hecton8.Lighting
 
         private IDataVault _vault;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private BiomeMatrixDirector _cachedBiomeMatrix;
         private float _cachedGlobalQualityWeight01 = 1f;
         private VaultGenerationHandle<CelestialStateDTO> _celestialStateRead;
@@ -244,6 +246,12 @@ namespace Hecton8.Lighting
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _cachedOceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.BiomeMatrixRuntime)
                 _cachedBiomeMatrix = currentService as BiomeMatrixDirector;
         }
@@ -278,6 +286,7 @@ namespace Hecton8.Lighting
             }
 
             InvalidateShaderStateCache();
+            _cachedOceanKinematicsService = null;
         }
 
         private void InvalidateShaderStateCache()
@@ -455,6 +464,7 @@ namespace Hecton8.Lighting
         private void RefreshColdRuntimeDependencies()
         {
             _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight();
             if (_vault != null &&
@@ -680,13 +690,42 @@ namespace Hecton8.Lighting
                 {
                     double3 absolute = movementState.PredictedAup.ToAbsoluteDouble3();
                     if (math.all(math.isfinite(absolute)))
-                        return math.max(0f, (float)(DefaultSeaLevelAupY - absolute.y));
+                        return math.max(0f, (float)(ResolveGIRelaySeaLevelAupY() - absolute.y));
                 }
 
                 return 0f;
             }
 
             return 0f;
+        }
+
+        private double ResolveGIRelaySeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _cachedOceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return DefaultSeaLevelAupY;
+        }
+
+        private static bool TryResolveSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = DefaultSeaLevelAupY;
+            return false;
         }
 
         private static float ResolveFogLod(float depth01, float eclipse01, float biomeBlend01)

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Charte de pool de réclamation du Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Black Keel Claim-Pool Charter
+# Charte de pool de réclamation du Black Keel
 
-FR LOC HOLD: Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem: a useful orbital asset that remains debt infrastructure, not a loyal personal vessel.
+Black Keel est la réponse hard-sci-fi de HECTON-8 au problème du vaisseau d'évasion. Le joueur a accès à un actif orbital, mais l'accès n'est pas la propriété et la proximité n'est pas le sauvetage. Le carrier est une infrastructure de dette : assez utile pour rendre l'évasion imaginable, assez contraint pour lier chaque retour aux réclamations, à la quarantaine et à la valeur de récupération.
 
 ## Scanner
 
-FR LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Le Black Keel n'est pas votre vaisseau. C'est un actif de récupération de pool de réclamation avec votre nom dans son registre de dette.
 
 ## Terminal
 
-FR LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+EXTRAIT DE CHARTE / BLACK KEEL : carrier de salvage autonome / garde : Aegir Reclamation Pool / transport contractant : permis / propriété coque : refusée / priorité sauvetage : subordonnée à l'état insured receiver, handshake quarantaine et claim value.
 
 ## Audio
 
-FR LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Le carrier n'est pas venu pour vous. Il est venu pour une réclamation avec votre nom dessus.
 
 ## Field Note
 
-FR LOC HOLD: Use this on the first contract or carrier-status screen.
+À utiliser sur le premier écran d'état carrier : accès accordé, propriété refusée, priorité de sauvetage conditionnelle, lien actif.
 
 <!-- External Site; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/fr_FR. -->

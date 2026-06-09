@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Druck durch Schulden-Blacklist-Vertrag"
+title: "Druck des Schulden-Blacklist-Vertrags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druck durch Schulden-Blacklist-Vertrag
+# Druck des Schulden-Blacklist-Vertrags
 
-Schuldendruck hält den Einstieg ehrlich. Der Protagonist wird nicht durch Melodrama nach HECTON-8 gezerrt, ist aber in keinem nützlichen Sinn frei. Black Keel kann einen Vertrag anbieten, weil Claim Pools, Schuldenfenster, Sauerstoffkredite, Liegeplatzzugang und Verwahrungsnachweis zur selben Grenzökonomie gehören. Den Anspruch abzulehnen wäre legal. Es würde den Spieler auch auf der Blacklist lassen, bewegungslos machen und aus dem Routenpreis drängen. Die Annahme macht Black Keel nicht zu einem Schurken mit Gesicht. Sie macht den Träger zu einer Maschine, die Risiko in Papier verwandelt. Der Spieler taucht, weil der Vertrag hässlich, überlebbar und plausibel der einzige Weg zurück in Bewegung ist.
+Schuldendruck hält den Vertrag hässlich, ohne ihn theatralisch zu machen. Der Operator wird nicht in Ketten nach HECTON-8 gezerrt, aber der Ablehnungspfad ist so gebaut, dass er sich um ihn schließt. Black Keel kann einen claim anbieten, weil Schuldenfenster, oxygen credit, berth-Zugang, Routentiming und custody proof im selben Grenzledger liegen.
+
+Ablehnung bleibt legal. Sie lässt den Marauder auch blacklisted, am Boden und aus dem nächsten Aegir-Routenfenster herausgepreist. Annahme gibt Bewegung, aber keine Gnade: recoverable mass muss geliefert werden, custody muss halten, und receiver compliance entscheidet den Wert des claim. Der carrier braucht kein Schurkengesicht. Der Vertrag weiß bereits, wie Risiko zu Papier wird.
 
 ## Scanner
 
-Pfandhinweis an Black-Keel-Verwahrung gebunden. Ablehnung bleibt legal, aber macht bewegungslos: kein Liegeplatz, kein sauberer Sauerstoffkredit, kein Routenfenster aus Aegir.
+LIEN NOTICE // Black-Keel-claim-pool-custody. Ablehnung bleibt legal; berth-Zugang, oxygen credit und Aegir-Routenfenster bleiben geschlossen.
 
 ## Terminal
 
-ANSPRUCHSANNAHME / BLACKLIST-ENTLASTUNGSFENSTER
-Auftragnehmerstatus: schuldengebundener Marauder
-Träger: Black-Keel-Claim-Pool-Verwahrung
-Entlastungsbedingungen: verwertbare Masse, Verwahrungsnachweis, Empfänger-Compliance
-Fehlerzustand: Blacklist bleibt aktiv; Liegeplatzzugang verweigert; Sauerstofffürsorge wird abrechenbare Unterstützung.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-Das war keine Entführung. Es war die Art von Wahl, die die Grenze als Freiheit verkauft: unterschreiben, tauchen, oder auf Papier sauber bleiben und praktisch gefangen sein.
+Unterschreib, tauch, oder behalte saubere Hände, während die berth-Liste schließt.
 
 ## Field Note
 
-Das Pfand zeigte nicht mit einer Waffe. Es zeigte auf die Luftrechnung, die Liegeplatzliste und das nächste Routenfenster.
+Der lien zielte nicht mit einer Waffe. Er zeigte auf Luftrechnung, berth-Liste und das nächste Routenfenster.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/de_DE. -->

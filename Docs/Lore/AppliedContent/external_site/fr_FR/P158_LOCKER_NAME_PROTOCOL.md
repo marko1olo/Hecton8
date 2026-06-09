@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Locker Name Protocol"
+title: "Protocole de nom de casier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Locker Name Protocol
+# Protocole de nom de casier
 
-FR LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+Le protocole de nom de casier rend la preuve personnelle jouable : les noms survivent par objets, usure, permission de route et annotation Marauder.
 
 ## Scanner
 
-FR LOC HOLD: A locker is personal without needing a family plot.
+TRACE CASIER // Plaque de nom, usure d'outil, pressure tape, note de correction, sticker de route. Preuve personnelle sans drame familial.
 
 ## Terminal
 
-FR LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+RÈGLE CASIER : préserver les noms que Deep Reach a retirés du payroll. Un casier doit lier badge, rôle, permission de route, habitude de réparation et chose inachevée laissée dedans.
 
 ## Audio
 
-FR LOC HOLD: The company deleted the employee. The rust kept the label.
+La compagnie a supprimé l'employé. La rouille a gardé l'étiquette.
 
 ## Field Note
 
-FR LOC HOLD: The smallest human trace should survive corporate cleanup.
+La plus petite trace humaine doit survivre au nettoyage corpo.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/fr_FR. -->

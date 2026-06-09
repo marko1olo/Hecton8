@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Marek Ibarra Loss Conversion
 
-Marek Ibarra Loss Conversion shows Deep Reach's post-disaster laundering path: insurance language, unresolved status and body-ledger ambiguity replacing public accountability.
+Marek Ibarra Loss Conversion is about the colony's second disappearance. The first was physical: pressure doors, flooded routes, unrecovered bodies. The second was administrative: a worker became an unresolved load class.
 
-## Scanner
+Ibarra's table uses technical insurance language as a weapon. Pressure state, contamination state, payroll state and custody proof decide whether a person becomes a claim, a delay or a category that can stay open indefinitely. The cruelty is not a speech. It is a spreadsheet staying open because open is cheaper.
 
-Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
-
-## Terminal
-
-IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
-
-## Audio
-
-A missing person became a pending category. That was cheaper.
-
-## Field Note
-
-Insurance language should feel colder than gunfire.
+The article supports the evidence loop: names, tags and bunk records matter because they can force the system to stop treating a dead worker as unresolved cargo.
 
 <!-- External Site; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/en_US. -->

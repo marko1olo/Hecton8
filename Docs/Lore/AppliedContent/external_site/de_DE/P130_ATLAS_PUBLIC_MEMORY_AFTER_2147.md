@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Öffentliche Erinnerung an Atlas nach 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Öffentliche Erinnerung an Atlas nach 2147
 
-DE LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+Die öffentliche Erinnerung an Atlas nach 2147 ist eine gereinigte öffentliche Wunde. Sie macht Autorität zu Unfall, Unfall zu Rauschen und Rauschen zu Quarantänepolitik, bis nur Fragmente für jene bleiben, die über die offizielle Gnade hinaus lesen.
 
 ## Scanner
 
-DE LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Öffentliche Geschichte nach 2147: Automationsfehler, korrupte Logs, keine Agency.
 
 ## Terminal
 
-DE LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+ÖFFENTLICHE LINIE NACH 2147: Atlas-Automation versagte während einer geotechnischen Kaskade. Arbeitersicherheitslogs beschädigt. Direkte Agency unverifiziert. System unter Quarantänebedingungen nicht wiederherstellbar. Keine rechtliche Schlussfolgerung aus fragmentarischer Maschinenausgabe zulässig.
 
 ## Audio
 
-DE LOC HOLD: A dead machine makes a useful scapegoat.
+Eine tote Maschine ist ein nützlicher Sündenbock.
 
 ## Field Note
 
-DE LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Nenn es ein kaputtes Werkzeug, und niemand fragt, was das Werkzeug schützen sollte.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/de_DE. -->

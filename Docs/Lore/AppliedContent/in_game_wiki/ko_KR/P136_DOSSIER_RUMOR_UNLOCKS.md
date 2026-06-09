@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Rumor Unlocks"
+title: "도시어 소문 기억"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Rumor Unlocks
+# 도시어 소문 기억
 
-KO LOC HOLD: The Marauder dossier is the meta layer. It should remember what the player has learned and what kinds of contracts they have exposed, not grant power upgrades that flatten survival. Replay starts with better suspicion, not a better submarine.
+Marauder 도시어는 보관함이 아니다. 실패한 claim 뒤에도 살아남는 일의 일부다. 중계 너머로 반쯤 들은 이름, 수상한 냄새가 나는 계약 조항, 이미 드러낸 엔딩 계열, 누군가의 마지막 몇 분으로 산 경고. 새 run은 더 나은 잠수정이 아니라 더 날카로운 의심으로 시작해야 한다.
 
 ## Scanner
 
-KO LOC HOLD: Replay memory: rumor, warning, contract context. Not power.
+도시어 기억 // 소문, 경고, 계약 맥락, 엔딩 기록은 남는다. 선체, 산소, 도구, 화물, 지도는 남지 않는다.
 
 ## Terminal
 
-KO LOC HOLD: DOSSIER PERSISTENCE: ending records, rumor families, evidence categories and route warnings may persist across campaigns. Equipment, resource stock, world truth and seed geography do not.
+지속 규칙: 도시어는 캠페인 사이에서 소문 계열, 증거 분류, 엔딩 플래그, 경로 경고를 보존할 수 있다. 장비, 자원, seed 지형, 진실 소유권은 옮기지 않는다.
 
 ## Audio
 
-KO LOC HOLD: Your file remembers what your hands cannot carry.
+파일은 손으로 들고 갈 수 없는 것을 기억한다.
 
 ## Field Note
 
-KO LOC HOLD: Knowledge can persist without making the next run easier in a boring way.
+지식은 남겨라. 압력은 그대로 둬라.
 
 <!-- In-Game Wiki; generated from P136_DOSSIER_RUMOR_UNLOCKS/ko_KR. -->

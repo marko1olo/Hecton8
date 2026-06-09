@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Worker Name Pool Record"
+title: "Rejestr imion pracowników"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Worker Name Pool Record
+# Rejestr imion pracowników
 
-PL LOC HOLD: The worker name pool lets lockers, ledgers and job cards vary by seed while keeping the colony human and readable.
+Imię pracownika w HECTON-8 to krótki łańcuch dowodów. Mówi, która domena wysłała ciało do oceanu, jaka praca utrzymywała je w użyciu, do jakiej trasy wolno było wejść i jaki fragment identyfikatora przetrwał w szafce, klipsie manifestu albo na tablicy zmiany.
+
+Pula imion sprawia, że kolejne podejścia czują się zamieszkane bez przepisywania kanonu. Technik pomp może w jednym seed pojawić się obok rejestru uszczelek, a w innym obok odmowy medlock, ale Great Tide, wina Deep Reach i geografia stacji pozostają stałe. Zmienia się kolejność odkrycia, nie zbrodnia.
+
+Dobre imiona są przyziemne. Nie są żartem, kartą kolekcjonerską ani tanią tragedią. Mają brzmieć jak ludzie czekający na wypłatę, dodatek ciśnieniowy, kredyt obiadowy i kolejną zmianę. Gdy Marauder czyta imię przed zabraniem narzędzi, pomieszczenie na chwilę przestaje być pojemnikiem i znów jest miejscem pracy.
 
 ## Scanner
 
-PL LOC HOLD: Names are evidence, not collectible flavor.
+PASEK IMIENNY // Pas pochodzenia, zgoda na trasę, rola zmiany i uszkodzony fragment identyfikatora wskazują tę samą osobę. Przeczytaj imię, zanim szafka stanie się złomem.
 
 ## Terminal
 
-PL LOC HOLD: NAME POOL: workers derive from domain-origin bands, job role, shift, badge fragment, and route permission. Personal names stay stable across languages.
+PROTOKÓŁ PULI IMION // Tożsamość pracownika składa się ze stałego imienia, pasa pochodzenia, zawodu ciśnieniowego, litery zmiany, fragmentu identyfikatora i zgody na trasę. System może zmieniać kolejność i pary według seed, ale nie może robić z ludzi losowych etykiet łupu. Imiona są autorskie dla języka; rola, trasa i dostęp niosą sens mechaniczny.
 
 ## Audio
 
-PL LOC HOLD: A name is a route, a job, and a person Deep Reach tried to price.
+Imię było pierwszą rzeczą, którą kolonia próbowała rozebrać na części.
 
 ## Field Note
 
-PL LOC HOLD: Seed names must preserve identity without making family melodrama.
+Imię nie jest ozdobą. Mówi, kto miał prawo być w mokrym pomieszczeniu, gdy stacja zaczęła kłamać.
 
 <!-- In-Game Wiki; generated from P166_WORKER_NAME_POOL_PROTOCOL/pl_PL. -->

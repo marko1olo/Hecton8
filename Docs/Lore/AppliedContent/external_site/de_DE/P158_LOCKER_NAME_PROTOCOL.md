@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Locker Name Protocol"
+title: "Locker-Namenprotokoll"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Locker Name Protocol
+# Locker-Namenprotokoll
 
-DE LOC HOLD: Locker Name Protocol is personal evidence without melodrama.
+Locker-Namenprotokoll macht persönlichen Beweis spielbar: Namen überleben durch Objekte, Verschleiß, Routenerlaubnis und Marauder-Annotation.
 
 ## Scanner
 
-DE LOC HOLD: A locker is personal without needing a family plot.
+LOCKERSPUR // Namensplatte, Werkzeugverschleiß, pressure tape, Korrekturzettel, Routensticker. Persönlicher Beweis ohne Familienplot.
 
 ## Terminal
 
-DE LOC HOLD: LOCKER RULE: lockers hold tool wear, correction notes, shift stickers, pressure tape and names Deep Reach tried to remove from payroll. Marauder annotations preserve what the company normalized away.
+LOCKERREGEL: Namen bewahren, die Deep Reach aus payroll entfernte. Ein Locker soll Badge, Rolle, Routenerlaubnis, Reparaturgewohnheit und das Unfertige darin verbinden.
 
 ## Audio
 
-DE LOC HOLD: The company deleted the employee. The rust kept the label.
+Die Firma löschte den Angestellten. Der Rost behielt das Etikett.
 
 ## Field Note
 
-DE LOC HOLD: The smallest human trace should survive corporate cleanup.
+Die kleinste menschliche Spur soll Konzernreinigung überleben.
 
 <!-- External Site; generated from P158_LOCKER_NAME_PROTOCOL/de_DE. -->

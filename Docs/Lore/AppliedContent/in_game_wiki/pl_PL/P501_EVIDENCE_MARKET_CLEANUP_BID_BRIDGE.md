@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Oferta czyszczenia rynku dowodow"
+title: "Oferta oczyszczenia dowodu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,27 +17,31 @@ localization_status: draft_machine_or_llm
 localization_flags: 0
 ---
 
-# Oferta czyszczenia rynku dowodow
+# Oferta oczyszczenia dowodu
 
-Oferta czyszczenia to platna proba zmiany drogi fragmentu: oczyszczenie, zmiana nazwy, stlumienie, dolaczenie do lotu lub przeniesienie do bezpiecznej kategorii. Dowodzi, ze ktos chcial ingerowac w slad papierowy. Nie dowodzi prawdy, falszu ani winy kupujacego. W HECTON-8 sprawdzaj platnosc, stara etykiete, czysta etykiete, rewrite roszczenia i transfer depozytu.
+Oferta oczyszczenia nie jest wyrokiem. To zlecenie zakupu przeciwko trasie dowodu. Prośba może kazać pośrednikowi osuszyć znacznik, unormować etykietę, przenieść fragment do partii odzysku, opóźnić publikację, przetłumaczyć nazwisko pracownika na kategorię wypłaty albo zakopać surowy przedmiot za bezpiecznym dla roszczeń streszczeniem. Ważne jest to, że pieniądze pojawiają się przed zmianą rekordu. Płacący może być winny, przestraszony, niedbały albo może kupować czas; sama oferta dowodzi nacisku na ślad, nie prawdy fragmentu.
+
+Czytaj ofertę według sekwencji. Oryginalna etykieta, źródło oferty, blokada depozytu, konto obsługującego, oczyszczona etykieta, przekazanie przechowania i trasa przedmiotu muszą pozostać razem. Jeśli oczyszczona etykieta pojawia się przed płatnością, może to być zwykła obsługa archiwum. Jeśli płatność przychodzi przed zmianą etykiety, ktoś kupił zmianę trasy. Zachowaj brudną etykietę obok czystej, inaczej archiwum staje się częścią czyszczenia.
 
 ## Scanner
 
-OFERTA CZYSZCZENIA // Platna prosba o oczyszczenie, przeklasyfikowanie, stlumienie lub przekierowanie fragmentu. Tylko sygnal nacisku.
+OFERTA OCZYSZCZENIA // Płatna prośba przeciwko trasie dowodu. Wymagane: oryginalna etykieta, źródło oferty, blokada depozytu, konto obsługującego, oczyszczona etykieta, przekazanie przechowania, trasa przedmiotu.
 
 ## Terminal
 
-OFERTA CZYSZCZENIA DOWODU
-Nie czytaj platnosci jako wyroku.
-Nastepny dowod: zrodlo oferty, blokada platnosci, transfer depozytu, przepisanie roszczenia, trasa obiektu.
-Zachowaj stara etykiete przy czystej.
+OFERTA OCZYSZCZENIA DOWODU
+Nie traktuj płatności jak wyroku.
+Płatność przed zmianą etykiety = kupiona zmiana trasy.
+Zmiana etykiety przed płatnością = możliwa obsługa archiwum.
+Następny dowód: blokada depozytu, konto obsługującego, przekazanie przechowania, stara etykieta, oczyszczona etykieta, trasa przedmiotu.
+Działanie: zachować obie etykiety, dopóki trasa przedmiotu nie zostanie rozstrzygnięta.
 
 ## Audio
 
-Oferta to zapach, nie wyrok. Trzymaj brudna etykiete obok czystej.
+Płatność znaleziono przed zmianą etykiety. Zostaw starą nazwę na ekranie.
 
 ## Field Note
 
-Oferta to zapach, nie wyrok. Trzymaj brudna etykiete obok czystej.
+Nigdy nie archiwizuj samej czystej etykiety. Stara etykieta i zegar płatności są dowodem.
 
 <!-- In-Game Wiki; generated from P501_EVIDENCE_MARKET_CLEANUP_BID_BRIDGE/pl_PL. -->

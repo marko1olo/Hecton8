@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Suit Service Grades"
+title: "Grades de service des combinaisons de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Suit Service Grades
+# Grades de service des combinaisons de pression
 
-FR LOC HOLD: Pressure Suit Service Grades keep HECTON-8's gear progression hard-sci-fi. Better suits are not colored armor tiers; they are service records, seal proof, scrubber capacity, thermal margins and contamination limits.
+Les grades de service des combinaisons gardent la progression d'équipement de HECTON-8 dans le hard sci-fi : certifications de profondeur, consommables, marges thermiques et historiques de maintenance imparfaits.
 
 ## Scanner
 
-FR LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Les étiquettes de combinaison classent profondeur, fatigue des joints, réserve de scrubber, marge thermique et contamination.
 
 ## Terminal
 
-FR LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE : shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-FR LOC HOLD: The suit does not make you brave. It only fails later.
+La combinaison ne te rend pas brave. Elle échoue seulement plus tard.
 
 ## Field Note
 
-FR LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Une combinaison plus profonde n'est pas une armure colorée. C'est du papier, des pièces et une maintenance laide.
 
 <!-- External Site; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/fr_FR. -->

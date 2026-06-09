@@ -1,6 +1,6 @@
 {
   "artifact": "WorldNestedTerrainDetailPreview",
-  "artifactVersion": 1,
+  "artifactVersion": 2,
   "authoringSeed": 880031,
   "combinedSeed": 301469796,
   "detailDeltaMeters": {
@@ -29,7 +29,7 @@
     "detailMax": -32.45715894761574,
     "detailMin": -51.0920705623082
   },
-  "macroArtifactVersion": 4,
+  "macroArtifactVersion": 5,
   "metersPerPixel": 0.78125,
   "originMeters": {
     "x": 10000.0,

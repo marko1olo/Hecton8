@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Preserve Quarantine Record"
+title: "Zapis zachowania kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Preserve Quarantine Record
+# Zapis zachowania kwarantanny
 
-PL LOC HOLD: Preserve Quarantine Record defines the best-possible-but-not-clean preservation route.
+Zapis zachowania kwarantanny to nakaz zatrzymania dla najlepszego możliwego uszkodzonego zakończenia. Ładunek pozostaje poza bezpośrednią pieczą Deep Reach, współrzędne zostają ślepe, a częściowe pokwitowanie utrzymuje zewnętrzny nacisk. Atlas dalej oddycha przez uszkodzoną logikę naprawczą, chroniąc ekologię ciśnienia i ocalałe życie konserwacyjne, lecz nazwiska pracowników, odpowiedzialność basenu i przyszłe zgłoszenia salvage zostają nierozwiązane.
 
 ## Scanner
 
-PL LOC HOLD: Payload withheld. Consequence deferred.
+ZAPIS ZACHOWANIA KWARANTANNY // Ładunek zatrzymany przed Deep Reach. Atlas pozostaje uszkodzony, ale aktywny; nakaz zatrzymania ekologii blokuje czysty transfer własności.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+ZAPIS KOŃCOWY / ZACHOWANIE KWARANTANNY
+Ładunek: zatrzymany poza bezpośrednią pieczą Deep Reach.
+Nakaz: zatrzymanie ekologii, ślepe współrzędne, częściowe publiczne pokwitowanie.
+Stan Atlas: uszkodzona logika naprawcza aktywna.
+Chronione: ekologia ciśnienia i ocalałe życie konserwacyjne.
+Nierozwiązane: nazwiska pracowników, odpowiedzialność basenu, przyszłe zgłoszenia salvage.
+Znana strata: zachowanie nie staje się niewinnością.
 
 ## Audio
 
-PL LOC HOLD: Leaving something alive is not the same as saving it.
+Zostawiłeś to żywe. To nie to samo co uratować.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Przetrzymanie pakietu chroni część żywych systemów i pozwala oddychać złamanej władzy. Pilnuj kolejki ślepych roszczeń.
 
 <!-- In-Game Wiki; generated from P275_PRESERVE_QUARANTINE_RECORD/pl_PL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Blue Debt Sample Quality"
+title: "Blue Debt試料品質"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Blue Debt Sample Quality
+# Blue Debt試料品質
 
-JA LOC HOLD: Blue Debt Sample Quality defines payout and evidence classes.
+Blue Debt試料品質は、HECTON-8の資源の道徳を定義する。最高の試料は単に高く売れるものではない。保管連鎖、圧力履歴、証拠価値を運ぶ。だからサルベージ、クラフト、取引、エンディングは同じ言語を話せる。海から引き上げたものは、報酬にも告発にも、解放を難しくする理由にもなる。
 
 ## Scanner
 
-JA LOC HOLD: Blue debt quality is value, risk and evidence in one number.
+Blue Debtの品質は、価値、危険、証拠が一つの数値になったものだ。濃い試料ほど、戦利品らしく振る舞わない。
 
 ## Terminal
 
-JA LOC HOLD: QUALITY CLASSES: shard, casketed bloom, harmonic glass, live-contaminated sample and dead contaminated glass. Higher value increases Deep Reach pressure and handling cost.
+品質クラス / shard: 低保管、安全取引 / casketed bloom: 圧力定格価値 / harmonic glass: 音響証拠、高いDeep Reach関心 / live-contaminated sample: 証拠優先、不安定処理 / dead contaminated glass: 低支払い、強い法的臭気。
 
 ## Audio
 
-JA LOC HOLD: The more it is worth, the less it is only loot.
+価値が高いほど、それはただの戦利品ではなくなる。
 
 ## Field Note
 
-JA LOC HOLD: Quality should affect payout, containment and ending pressure.
+品質は支払い、封じ込め費用、経路圧力、エンディングの交渉力を変える。きれいな破片は金になる。生汚染試料は誰かに返答を強いる。
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/ja_JP. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "Story-seeds voor shiftcrews"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# Story-seeds voor shiftcrews
 
-NL LOC HOLD: Shift crew seeds make replayed colonies feel authored without changing core history.
+Shiftcrew-seeds geven HECTON-8 replaytextuur zonder de setting tot tegenspraakmachine te maken. Dezelfde kolonie kan andere paren, andere objectvolgorde en andere kanttekeningen tonen, maar Deep Reach wordt niet onschuldig en Great Tide krijgt geen nieuwe oorzaak.
+
+Nuttige variatie is lokaal. Een routeklerk kan in één run aan een brine-duiker gekoppeld zijn en in een andere aan een seal-rigger. De plek van een weigering kan veranderen. Dat verandert hoe de speler het bewijs samenstelt, niet het bewijs.
 
 ## Scanner
 
-NL LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // Het rooster mag veranderen. De schuld niet.
 
 ## Terminal
 
-NL LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+SHIFTCREW-SEEDS // Een run mag roostervolgorde, arbeidersparen, lockerinhoud, weigeringen, routekrijt, badgefragmenten en latere Marauder-correcties variëren. De seed verandert hoe de speler bewijs ontmoet, niet wat het bewijs bewijst.
 
 ## Audio
 
-NL LOC HOLD: A different locker can hurt the same truth again.
+Een andere locker kan dezelfde waarheid van een andere kant opensnijden.
 
 ## Field Note
 
-NL LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+Seedvariatie verandert objectvolgorde, jobkoppelingen en Marauder-notities. Ze verandert nooit Great Tide of Deep-Reach-aansprakelijkheid.
 
 <!-- In-Game Wiki; generated from P170_SHIFT_CREW_STORY_SEEDS/nl_NL. -->

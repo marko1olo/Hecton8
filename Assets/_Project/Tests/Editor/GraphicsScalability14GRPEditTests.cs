@@ -1058,6 +1058,20 @@ namespace Hecton8.Tests.Editor
             Assert.Less(firstIndex, secondIndex, first + " must appear before " + second);
         }
 
+        private static int CountToken(string source, string token)
+        {
+            int count = 0;
+            int index = 0;
+
+            while ((index = source.IndexOf(token, index, StringComparison.Ordinal)) >= 0)
+            {
+                count++;
+                index += token.Length;
+            }
+
+            return count;
+        }
+
         private static string ExtractMethodBlock(string source, string signature)
         {
             int start = source.IndexOf(signature, StringComparison.Ordinal);

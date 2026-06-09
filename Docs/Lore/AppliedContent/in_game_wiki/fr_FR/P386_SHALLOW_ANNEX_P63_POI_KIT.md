@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "Kit de preuves de l'annexe peu profonde P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Shallow Annex P-63 POI Kit
+# Kit de preuves de l'annexe peu profonde P-63
 
-FR LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+L'annexe peu profonde P-63 est le premier lieu où procédure de survie et preuve de responsabilité partagent la même table. L'opérateur relance une pompe, scelle une poche, lit un dossier d'accident et trouve un avis de route qui ne correspond pas aux dégâts dehors.
 
 ## Scanner
 
-FR LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+Kit de preuves de POI: P-63 contient une poche-abri fonctionnelle, une réparation de pompe et la première contradiction officielle.
 
 ## Terminal
 
-FR LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+KIT P-63: pompe de cale, plateau de joints, contact de découpeur, ligne de pinger, dossier d'accident, avis de route scellé, casier sec, bride de dérivation manuelle.
 
 ## Audio
 
-FR LOC HOLD: First room with air. First room with a lie.
+Première salle avec de l'air. Première salle avec un mensonge.
 
 ## Field Note
 
-FR LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+Note de maraudeur: garde la pompe en marche avant de lire le dossier. Un abri mort donne une mauvaise preuve.
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/fr_FR. -->

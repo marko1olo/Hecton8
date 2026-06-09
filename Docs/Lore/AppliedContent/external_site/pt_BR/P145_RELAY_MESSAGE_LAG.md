@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Atraso de mensagem de relé"
+title: "Atraso de mensagens de relé"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atraso de mensagem de relé
+# Atraso de mensagens de relé
 
-Lag de relé permite que HECTON-8 receba autoridade sem receber cuidado. Um pacote pode carregar lei, dívida, propriedade ou aviso por horas, dias ou anos, mas não consegue trazer mãos para uma sala inundada. Essa divisão é a pressão central da comunicação: sistemas remotos continuam poderosos porque foram escritos cedo, enfileirados cedo e precificados para sobreviver à distância. Compaixão chega como pessoa; contrato chega como dados.
+Atraso de mensagens de relé é a razão pela qual HECTON-8 pode ser abandonado e governado ao mesmo tempo. Não há canal de voz mágico que dobre distância em conforto. Há janelas, filas, repetidores, carimbos de custódia, perdas de compressão, recibos legais e pacotes que chegam com autoridade perfeita e tempo inútil.
+
+A pressão da Deep Reach depende dessa assimetria. Um aviso de gravame pode seguir válido depois que uma súplica médica expira. Uma recusa pode executar depois que o gerente que assinou voltou para casa. Uma confissão pode chegar depois que a testemunha morre. O oceano é silencioso, mas a rota não. Ela continua entregando decisões antigas a salas que precisavam de ajuda viva.
 
 <!-- External Site; generated from P145_RELAY_MESSAGE_LAG/pt_BR. -->

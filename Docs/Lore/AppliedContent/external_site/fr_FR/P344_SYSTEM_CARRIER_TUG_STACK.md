@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Pile transporteur-remorqueurs système
 
-Black Keel doit sembler assez proche pour être blâmé et assez loin pour rester inaccessible. Ce n'est pas le vaisseau d'un fantasme de sauvetage héroïque. C'est une pile industrielle louée : coque de transporteur, postes de remorqueurs, racks de cargaison, logiciel de garde, rails de capsules et registre qui ne dort jamais. Cela le rend utile : recevoir des échantillons, répondre aux paquets, tenir l'orbite, lancer du matériel dans une fenêtre. Cela le rend aussi cruel : chaque fonction utile dépend de propriété, timing et dette. Le joueur est coincé sous une machine réelle, présente, structurellement incapable de devenir abri.
+Black Keel doit paraître assez proche pour porter la faute et assez lointaine pour rester hors d'atteinte. Ce n'est pas le vaisseau d'une fantaisie de sauvetage héroïque. C'est une pile industrielle louée, faite d'une coque porteuse, de postes de remorqueurs, de racks cargo, de logiciels de garde, de rails de déploiement capsule et d'un registre qui ne dort jamais.
+
+C'est ce qui la rend utile : elle peut recevoir des échantillons, répondre aux paquets, tenir l'orbite, déployer des capsules et pousser du matériel dans une fenêtre étroite. C'est aussi ce qui la rend cruelle : chaque fonction utile dépend de la propriété, du timing, du langage de quarantaine, de la marge thermique et de la dette. Un corps peut rester échoué sous une machine réelle, présente, à l'écoute, et structurellement peu disposée à devenir un abri.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/fr_FR. -->

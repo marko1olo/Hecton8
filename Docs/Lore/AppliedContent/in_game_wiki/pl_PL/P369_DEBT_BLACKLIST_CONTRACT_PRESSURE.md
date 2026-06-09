@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Presja długu, czarnej listy i kontraktu"
+title: "Presja Kontraktu Blacklist Długu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Presja długu, czarnej listy i kontraktu
+# Presja Kontraktu Blacklist Długu
 
-Presja długu utrzymuje początek w uczciwym tonie. Protagonisty nie ciągnie na HECTON-8 melodramat, ale nie jest też wolny w żadnym użytecznym sensie. Black Keel może zaoferować kontrakt, bo pule roszczeń, okna długu, kredyty tlenowe, dostęp do koi i dowód pieczy należą do tej samej ekonomii pogranicza. Odmowa roszczenia byłaby legalna. Zostawiłaby też gracza na czarnej liście, uziemionego i wypchniętego poza cenę trasy. Przyjęcie nie czyni Black Keel złoczyńcą z twarzą. Czyni przewoźnika maszyną do zamiany ryzyka w dokumenty. Gracz nurkuje, bo kontrakt jest brzydki, możliwy do przeżycia i wiarygodnie jedyną trasą powrotu do ruchu.
+Presja długu utrzymuje kontrakt brzydki, ale nie teatralny. Operator nie zostaje zaciągnięty na HECTON-8 w kajdanach, lecz ścieżka odmowy zaprojektowano tak, by zamknęła się wokół niego. Black Keel może zaoferować claim, bo okna długu, oxygen credit, dostęp berth, timing trasy i custody proof leżą w tym samym granicznym rejestrze.
+
+Odmowa pozostaje legalna. Zostawia też Maraudera na blacklist, bez trasy i poza ceną następnego okna Aegir. Akceptacja daje ruch, nie łaskę: recoverable mass trzeba dostarczyć, custody musi się utrzymać, a receiver compliance decyduje o wartości claim. Carrier nie potrzebuje twarzy złoczyńcy. Kontrakt już umie zmienić ryzyko w papier.
 
 ## Scanner
 
-Zawiadomienie o zastawie powiązane z pieczą Black Keel. Odmowa pozostaje legalna, ale uziemia: bez koi, bez czystego kredytu tlenowego, bez okna trasy z Aegir.
+LIEN NOTICE // Black Keel claim-pool custody. Odmowa pozostaje legalna; dostęp berth, oxygen credit i okno trasy Aegir zostają zamknięte.
 
 ## Terminal
 
-AKCEPTACJA ROSZCZENIA / OKNO ZDJĘCIA Z CZARNEJ LISTY
-status wykonawcy: Marauder związany długiem
-przewoźnik: piecza puli roszczeń Black Keel
-warunki ulgi: masa odzyskiwalna, dowód pieczy, zgodność odbiorcy
-stan porażki: czarna lista aktywna; dostęp do koi odmówiony; wsparcie tlenowe zmienione w usługę rozliczaną.
+CLAIM ACCEPTANCE / BLACKLIST RELIEF WINDOW
+contractor status: debt-bound Marauder
+carrier: Black Keel claim-pool custody
+relief terms: recoverable mass, custody proof, receiver compliance
+failure state: blacklist active; berth access denied; oxygen welfare converted to billable support.
 
 ## Audio
 
-To nie było porwanie. To był wybór, który pogranicze sprzedaje jako wolność: podpisz, nurkuj, albo pozostań czysty na papierze i uwięziony w praktyce.
+Podpisz, nurkuj albo zachowaj czyste ręce, kiedy lista berth się zamyka.
 
 ## Field Note
 
-Zastaw nie wycelował broni. Wskazał rachunek za powietrze, listę koi i następne okno trasy.
+Lien nie wskazał broni. Wskazał rachunek za powietrze, listę berth i następne okno trasy.
 
 <!-- In-Game Wiki; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/pl_PL. -->

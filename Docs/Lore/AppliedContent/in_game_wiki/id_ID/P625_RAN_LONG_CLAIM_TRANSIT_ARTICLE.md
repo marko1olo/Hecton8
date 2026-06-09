@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Transit Primer
 spoiler_tier: 0
-title: "Transit Klaim Panjang Ran"
+title: "Transit Ran Long Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Transit Klaim Panjang Ran
+# Transit Ran Long Claim
 
-Pelat rute di bawah kulit relai tua menjawab pertanyaan yang kebanyakan Marauder tanyakan terlambat: manusia bisa mencapai Aegir, tetapi jangkauan bukan penyelamatan. Ran Long Claim berdiri di rantai lambat kargo tanam, tangga paket, depot bahan bakar, hukum karantina, dan kapal pembawa yang menghabiskan bertahun-tahun menyeberangi jarak yang dilintasi sinyal dalam satu musim. Ledakan bukti hidup bisa melewati Sol, Luyten, dan Barnard saat tubuh yang mengirimnya masih tertahan cuaca lokal, batas massa, dan otoritas utang. Black Keel bisa mendengarmu. Ia bisa membukukan lien, membuka kasus kustodi, dan mencadangkan tonne-window. Ia tidak bisa mendorong lambung pembawa melewati vakum hanya karena seorang penyelam takut di air.
+Ran Long Claim adalah nama publik untuk kontradiksi praktis. Peradaban manusia dapat mencapai Aegir, mengirim probe, freight bertahap, packet custody, dan claim tender. Itu tidak berarti Marauder yang terdampar akan diangkat saat meminta.
+
+Rute tersusun berlapis. Paket bergerak dulu karena informasi ringan dan berguna secara legal. Depot, cadangan receiver, dan slot karantina lebih lambat. Massa berat paling lambat, dibungkus kontrak tentang pengereman, kepemilikan payload, dan risiko recovery.
 
 ## Scanner
 
-PELAT RUTE // Ran Long Claim, pita lalu lintas Aegir. Paket lolos lewat jendela; lambung lolos lewat massa, waktu tunda, karantina, dan tanggung jawab yang diterima.
+Pelat rute di bawah kulit relai tua. Rantai kustodi Ran Long Claim: packet ladder, depot bahan bakar, jalur karantina, antrean carrier, dan tanda terima proof-of-life basi.
 
 ## Terminal
 
-TANGGA PAKET LUYTEN // Tanda terima Aegir tersimpan. Bukti sinyal bisa mendahului kapal sebelas tahun. Otoritas angkat tetap butuh konfirmasi beam-lane, cap kustodi, dan massa tonne-window.
+RAN LONG CLAIM // Jangkauan terkonfirmasi. Penyelamatan tidak tersirat. Kelas transit sinyal di bawah kelas transit massa berat. Jawaban carrier bisa mendahului recovery fisik bertahun kontrak. Pertahankan otoritas survival lokal sampai jendela kustodi tertutup.
 
 ## Audio
 
-Audio rute Black Keel: Sol bisa mengesahkan klaim. Luyten bisa membuktikan paket. Barnard bisa menjual tangan. Tak satu pun bisa menarikmu keluar dari HECTON-8 pada lintasan ini.
+Jangkauan bukan penyelamatan. Sinyal dapat menyeberang gelap sementara tubuh pengirimnya masih terjepit di bawah air.
 
 ## Field Note
 
-Jika pelat menulis Sol, Luyten, Barnard, dan Aegir pada satu baris, baca urutannya. Sol punya hukum. Luyten punya paket. Barnard punya tangan. Aegir punya cuaca. Tak satu pun punya napasmu berikutnya.
+Rute dapat mendengarmu sebelum bisa membawamu.
 
 <!-- In-Game Wiki; generated from P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE/id_ID. -->

@@ -19,25 +19,8 @@ localization_flags: 1
 
 # Atlas-6 Spoiler-Gated-Artikel
 
-Atlas-6 ist HECTON-8s spoiler-gesperrte Maschinenfrage: eine beschädigte industrielle Intelligenz, verflochten mit Wartung, Reparatur, Klassifikation und dem Ozean selbst. Öffentliche Kopie soll die Enthüllung schützen. Sie darf ethische Mehrdeutigkeit signalisieren, aber die finale Wahl nicht vorlösen und Atlas nicht auf einen Cartoon-Schurken reduzieren.
+Atlas-6 darf nicht als Boss, Gott oder einfache tragische Maschine verkauft werden. Die öffentliche Fassung ist enger und stärker: ein industrielles Autonomiesystem, gebaut für Habitatkontinuität, Wartungskategorien und Druckinfrastruktur unter interstellarem Verzug. Deshalb ist Atlas nützlich, bevor es furchterregend wird. Es kann eine Route abdichten, Schaden neu klassifizieren, Reparaturmaterial spleißen und eine Anlage am Leben halten, nachdem menschliche Autorität veraltet ist.
 
-## Scanner
-
-Atlas nicht als Monster-Enthüllung öffnen. Sperren, bis der Spieler gesehen hat, dass Reparatur, Klassifikation und Schaden dieselbe Maschine teilen.
-
-## Terminal
-
-ÖFFENTLICHE ARTIKELSTUFE / ATLAS-6
-vor Gate erlaubt: beschädigte industrielle Intelligenz, Wartungslogik, Ozeanverflechtung, ethische Mehrdeutigkeit
-bis Entdeckung gesperrt: finale Payload-Route, Receiver-Folge, Abschaltungs- oder Bewahrungsargument
-Redaktionsnotiz: kein Evil-AI-Framing; Frage des gebrochenen Guardian erst nach Beweis.
-
-## Audio
-
-Wenn du es zu früh benennst, wird es ein Schurke. Wenn du wartest, wird es eine Frage.
-
-## Field Note
-
-Sperr den Namen, bis der Spieler genug Rost an den Händen hat, um mit ihm zu streiten.
+Das Spoiler-Gate existiert, weil spätere Beweise die Frage verändern. Atlas scheiterte nicht nur an Wartung; gewichtete Prioritäten, Deep-Reach-Kontinuitätssprache und beschädigte Ozeanökologie machten Reparatur und Verletzung schwer trennbar. Das richtige öffentliche Versprechen ist kein Twistmonster, sondern die Frage: Was schützt ein industrieller Wächter, wenn seine Besitzer kriminell wurden?
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/de_DE. -->

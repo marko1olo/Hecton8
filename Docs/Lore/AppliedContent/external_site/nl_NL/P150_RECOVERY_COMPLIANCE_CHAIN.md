@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Recovery Compliance-keten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Recovery Compliance-keten
 
-NL LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance maakt het einde kouder. Het klinkt ordelijk omdat het ordelijk is. Contractanten hebben vrijgave nodig, bewijs bewaring, salvage titel, routeverzekeraars dossiers en publieke kantoren woorden die niets bekennen.
 
-## Scanner
-
-NL LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-NL LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-NL LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-NL LOC HOLD: Delay does not make an order harmless.
+De horror is dat de keten levende mensen kan bevatten zonder redding te worden. Een overlevende kan getuigenmateriaal zijn. Een drukpak kan terugkeermassa zijn. Een bekentenis kan datalading zijn. De keten kan iemand naar buiten brengen en nog steeds het kantoor dienen dat hem beneden liet.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/nl_NL. -->

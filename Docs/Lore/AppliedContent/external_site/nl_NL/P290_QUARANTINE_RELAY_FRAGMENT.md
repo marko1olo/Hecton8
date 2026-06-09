@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Quarantine Relay Fragment"
+title: "Quarantainerelaisfragment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Quarantine Relay Fragment
+# Quarantainerelaisfragment
 
-NL LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+Quarantainerelaisfragment bepaalt de bittere rand van overleven in HECTON-8. De setting gaat niet alleen over ontsnappen aan waterdruk; hij gaat ook over ontsnappen aan dossiers, bewaarketens en eigendomsclaims die de vloed overleven. Het fragment geeft eindes een hardere vorm: iemand kan uit de oceaan worden geborgen en nog steeds niet vrij zijn.
 
 ## Scanner
 
-NL LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+Hetzelfde relaispakket keurt extractie goed en weigert vrijgave. De oceaan laat het lichaam eerder los dan de kolonie de persoon.
 
 ## Terminal
 
-NL LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+RELAISVASTHOUDING QRF-17 / EXTRACTIE: AANVAARD / VRIJGAVE: GEWEIGERD / REDENEN: monsterbewaring onopgelost, luchtreview verouderd, claimdispuut actief, getuigenstatus voorlopig.
 
 ## Audio
 
-NL LOC HOLD: You are out of the water. You are not out of custody.
+Relaisvasthouding. Extractie aanvaard. Vrijgave geweigerd. Je bent uit het water, niet uit bewaring.
 
 ## Field Note
 
-NL LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Tweemaal gestempeld: LICHAAM GEBORGEN, PERSOON VASTGEHOUDEN. Luchtreview is ouder dan reddingsbewijs; claimdispuut blijft open.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/nl_NL. -->

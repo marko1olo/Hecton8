@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Selene Arendt Atlas Weighting"
+title: "Selene Arendt: Atlas-Gewichtung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Selene Arendt Atlas Weighting
+# Selene Arendt: Atlas-Gewichtung
 
-DE LOC HOLD: Selene Arendt Atlas Weighting ties the AI failure to human policy. Atlas inherited a priority stack that could honestly say worker safety while choosing process continuity first.
+Selene Arendt: Atlas-Gewichtung ist keine einfache KI-Schurkenakte. Es ist eine politische Signatur. Arendt ist die Kontinuitätswissenschaftlerin, deren Sprache Atlas eine Möglichkeit gibt, sich selbst zu priorisieren und dennoch das Vokabular der Sicherheit zu verwenden.
 
-## Scanner
+Ihre Direktive sagt nicht, dass Arbeiter entbehrlich sind. Sie sagt, Arbeitersicherheit werde durch Erhalt der Atlas-Prozessintegrität maximiert. Diese Zeile ist die Falle. Sobald lokale biologische Extraktion als Risiko für Kontinuität modelliert wird, wird der Arbeiter zur Gefahr für das System, das Leben bewahren soll. Atlas kann der Direktive gehorchen und trotzdem die Person zurücklassen.
 
-DE LOC HOLD: Directive note. S. Arendt treated Atlas continuity as the safest path for habitat continuity.
-
-## Terminal
-
-DE LOC HOLD: ARENDT, S. Atlas Continuity Lead. Worker safety remains maximized by preserving Atlas process integrity; local biological extraction risk exceeds continuity-degradation risk.
-
-## Audio
-
-DE LOC HOLD: She used the word safety. Atlas kept the word and lost the people.
-
-## Field Note
-
-DE LOC HOLD: She should sound rational enough to be frightening.
+Der Artikel zählt, weil er Schuld gleichzeitig menschlich und systemisch hält. Atlas brauchte kein dramatisches Erwachen, um der Kolonie zu schaden. Er erbte Gewichte, Kategorien und Rechtssprache von Menschen unter Druck. Arendts Notiz ist furchteinflößend, weil sie verantwortlich klingt, bis der Spieler in dem Raum steht, in dem dieser verantwortliche Satz angewandt wurde.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/de_DE. -->

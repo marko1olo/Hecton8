@@ -10,11 +10,11 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_habitat_marks |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Resource_Gameplay_Catalog.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS176_FIRST_HABITAT_MARK_ARTICLES.md |
 | Speaker | Habitat scanner, drain inspection note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first shelter inspection |
-| Location / route | Shelter floor drain, utility alcove, or airlock threshold |
+| Location / route | Shelter floor drain, utility alcove, or airlock entry lip |
 | Unlock context | Player scans a drain trap with a salt cap over the slot |
 | Evidence object | Drain trap, salt cap, slot edge, damp ring |
 | Connected packets | P1159_AIRLOCK_FLOOR_TIDE_STAIN; P1128_CANTEEN_THREAD_GRIT_RING; P1122_FILTER_GASKET_BITE_LINE |
@@ -39,7 +39,7 @@ DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock.
 
 The trap did not simply dry; it capped over. Salt has bridged the slot and left a damp ring where water kept returning. Floor-level storage near it will inherit the problem.
 
-Low places keep old water honest.
+The salt bridge and damp ring are enough reason to keep clean stock off the floor.
 
 ### PDA Log
 
@@ -72,17 +72,17 @@ CLEAR EDGE FIRST
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| ar_SA | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| de_DE | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| es_ES | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| fr_FR | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| he_IL | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| id_ID | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| ja_JP | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| ko_KR | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| nl_NL | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| pl_PL | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| pt_BR | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| ru_RU | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| uk_UA | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
-| zh_CN | draft_machine_or_llm | DRAIN TRAP // Salt cap over slot. Clear edge before storing floor-level stock. |
+| ar_SA | draft_machine_or_llm | مصيدة تصريف // غطاء ملح فوق الشق. نظف الحافة قبل تخزين مخزون على الأرض. |
+| de_DE | draft_machine_or_llm | ABLAUFFALLE // Salzkappe ueber Schlitz. Kante freilegen, bevor Bodenware gelagert wird. |
+| es_ES | draft_machine_or_llm | TRAMPA DE DESAGUE // Tapa de sal sobre la ranura. Despeja el borde antes de guardar stock a ras de suelo. |
+| fr_FR | draft_machine_or_llm | SIPHON DE DRAIN // Capuchon de sel sur la fente. Degager le bord avant stockage au sol. |
+| he_IL | draft_machine_or_llm | מלכודת ניקוז // כיפת מלח מעל החריץ. נקה את השפה לפני אחסון מלאי בגובה הרצפה. |
+| id_ID | draft_machine_or_llm | PERANGKAP DRAINASE // Tutup garam menutup celah. Bersihkan tepi sebelum menyimpan stok di lantai. |
+| ja_JP | draft_machine_or_llm | 排水トラップ // スロット上に塩蓋。床置き備蓄の前に縁を清掃。 |
+| ko_KR | draft_machine_or_llm | 배수 트랩 // 슬롯 위에 소금 덮개. 바닥 보관 전 가장자리를 치운다. |
+| nl_NL | draft_machine_or_llm | AFVOERVAL // Zoutkap over sleuf. Maak rand vrij voor opslag op vloerniveau. |
+| pl_PL | draft_machine_or_llm | SYFON ODPŁYWU // Czapka soli nad szczelina. Przed skladowaniem przy podlodze oczysc krawedz. |
+| pt_BR | draft_machine_or_llm | RALO COM SIFAO // Tampa de sal sobre a fenda. Limpe a borda antes de guardar estoque no piso. |
+| ru_RU | draft_machine_or_llm | ДРЕНАЖНЫЙ ЗАТВОР // Соляная крышка над прорезью. Очисти край до хранения запасов у пола. |
+| uk_UA | draft_machine_or_llm | ДРЕНАЖНИЙ ЗАТВОР // Соляна кришка над прорізом. Очисть край перед зберіганням запасів біля підлоги. |
+| zh_CN | draft_machine_or_llm | 排水存水弯 // 槽口覆有盐盖。地面存货前先清边。 |

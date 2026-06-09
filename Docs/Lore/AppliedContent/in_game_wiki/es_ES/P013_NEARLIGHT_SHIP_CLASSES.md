@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Clases de naves casi lumínicas"
+title: "Clases de nave casi-luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Clases de naves casi lumínicas
+# Clases de nave casi-luz
 
-Las naves casi lumínicas construyeron la esfera humana sin romper física. Llegaron primero sondas baratas de perder, luego naves semilla y cargueros Atlas con fábricas, durmientes, contratos y blindaje.
+Las naves casi-luz construyeron la esfera humana aceptando que la física no se seduce. Las needleprobes fueron primero porque eran estrechas, blindadas y lo bastante baratas para perderse. Luego llegaron seed ships con máquinas, genomas, instrucciones de ruta y hábitos de construcción capaces de aguantar años de preparación fría. Los cargueros Atlas movieron la masa cara: núcleos de fábrica, bahías durmientes, hielo de escudo, radiadores, taladros y contratos ya viejos cuando algunas tripulaciones despertaron.
 
-La tabla separa propiedad de rescate. Aegir puede estar reclamado por ley humana y seguir siendo difícil de alcanzar con cuerpos.
+La clase importa porque cada una falla distinto. Una sonda puede morir útil. Una seed ship puede llegar sin testigos. Un transporte durmiente conserva cuerpos mientras convierte trabajo en custodia. Un tender puede operar dentro de Aegir y no cruzar desde el núcleo bajo demanda. Black Keel no es libertad con motores; es una máquina de recuperación que cuenta masa, cuarentena, seguro y evidencia en el mismo libro.
+
+Ninguna clase rompe la luz. Velas de haz, carriles de pellets, gargantas fusion-electric, hielo de escudo, magsails y ventanas receptoras hacen posible viajar, no hacerlo casual. Llegar es la mitad cruel. Sin dueño del frenado, nada llega como masa útil.
 
 ## Scanner
 
-Manifiesto de tránsito lista sonda aguja, nave semilla, carguero Atlas, transporte durmiente, tender de sistema y carrier de claim-pool.
+Manifiesto de tránsito: sonda aguja, nave semilla, carguero Atlas, transporte durmiente, tender de sistema y carrier claim-pool. No hay clase FTL.
 
 ## Terminal
 
-TABLA DE CLASE DE TRÁNSITO // Sin carril FTL registrado. Todas las clases requieren infraestructura de lanzamiento, masa de blindaje, plan de frenado, custodia de ruta y autoridad de deuda. Propiedad interestelar no implica rescate local.
+TABLA DE CLASES // Needleprobe prescindible. Seed ship automatizada. Carguero Atlas calificado por masa. Transporte durmiente con custodia biológica. Tender de sistema local. Claim-pool carrier atado a gravamen. Todas requieren dueño de frenado.
 
 ## Audio
 
-Una nave puede cruzar estrellas y seguir siendo inútil para una sala inundada.
+Las naves no hicieron pequeña la distancia. La hicieron facturable.
 
 ## Field Note
 
-Las naves no son libertad. Son horarios con motores.
+Una nave es una ruta con casco alrededor de la parte cara.
 
 <!-- In-Game Wiki; generated from P013_NEARLIGHT_SHIP_CLASSES/es_ES. -->

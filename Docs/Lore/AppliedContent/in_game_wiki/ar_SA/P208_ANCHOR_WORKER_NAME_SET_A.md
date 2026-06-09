@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "مجموعة أسماء العمال المرساة A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Anchor Worker Name Set A
+# مجموعة أسماء العمال المرساة A
 
-AR LOC HOLD: Anchor Worker Name Set A keeps early colony names stable across lockers, ledgers and first evidence chains.
+مجموعة أسماء العمال المرساة A هي أول طبقة بشرية ينبغي للاعب أن يبدأ بالتعرف إليها. تنتمي Mara Venn وJuno Kade وRen Okoye وSahana Iqbal وLian Torres وOskar Neumann وAya Morita وPavel Sorn إلى أدلة الضحل والرف الصناعي. لا يجب أن تصل أسماؤهم كسير ذاتية. يجب أن تظهر على بطاقة خزانة، ووسم مضخة، وتصريح مسار، وقسيمة طعام ملطخة، وحافظة أداة متشققة، ثم تعود لاحقا في سجل يغير المعنى. تجعل Set A المستعمرة مأهولة قبل أن تتضح المؤامرة الأعمق.
 
 ## Scanner
 
-AR LOC HOLD: Anchor names should reappear through work, not personal exposition.
+يجب أن تعود الأسماء المبكرة عبر العمل، لا عبر الخطب. يعلّم المسار الضحل الذاكرة بالتكرار.
 
 ## Terminal
 
-AR LOC HOLD: ANCHOR SET A: shallow and industrial-shelf recurrence. Tie each name to one tool, one route permission and one damaged work object.
+ANCHOR SET A: تكرار في الضحل والرف الصناعي. يجب أن يرتبط كل اسم بأداة واحدة، وتصريح مسار واحد، وجسم عمل متضرر واحد، وتناقض لاحق واحد. هذه الأسماء هي أول دليل للاعب على أن المستعمرة كانت مكان عمل قبل أن تصير غنيمة إنقاذ.
 
 ## Audio
 
-AR LOC HOLD: Do not mourn the name until the tool tells you why.
+لا ترث الاسم قبل أن تخبرك الأداة لماذا.
 
 ## Field Note
 
-AR LOC HOLD: Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+مراسي Set A: Mara Venn وJuno Kade وRen Okoye وSahana Iqbal وLian Torres وOskar Neumann وAya Morita وPavel Sorn.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/ar_SA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Dossier Persistence"
+title: "Persistentie van het plunderaarsdossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Dossier Persistence
+# Persistentie van het plunderaarsdossier
 
-NL LOC HOLD: The Marauder dossier carries knowledge, records, and contract context into later salvage attempts without turning memory into inherited power.
+Persistentie van het plunderaarsdossier bepaalt het replaycontract van HECTON-8: de speler erft context, geen macht. Het dossier laat latere pogingen oude fouten sneller lezen, contractvallen eerder herkennen en begrijpen welke eindes onvolledig waren zonder geheugen te veranderen in een mechanisch voordeel dat de overlevingsdruk breekt.
 
 ## Scanner
 
-NL LOC HOLD: Dossier spool. You keep knowledge, not superpowers.
+Dossierspoel. Je behoudt kennis, geen superkrachten.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER PERSISTENCE: ending records, discovered contract types, rumor families, evidence categories and route warnings retained. Equipment power and world truth reset per seed.
+DOSSIERPERSISTENTIE: eindregistraties, ontdekte contracttypes, geruchtenfamilies, bewijscategorieën, routewaarschuwingen en gevolgen van het publieke grootboek blijven bewaard. Uitrustingskracht, wereldwaarheid en lokale drukstatus resetten per seed.
 
 ## Audio
 
-NL LOC HOLD: The next run starts with scars in the file, not muscles in the suit.
+De volgende run begint met littekens in het bestand, niet met spieren in het pak.
 
 ## Field Note
 
-NL LOC HOLD: The dossier remembers evidence and warnings; it does not make pressure forgiving.
+Het dossier onthoudt bewijs en waarschuwingen; het maakt druk niet vergevingsgezind.
 
 <!-- External Site; generated from P099_MARAUDER_DOSSIER_PERSISTENCE/nl_NL. -->

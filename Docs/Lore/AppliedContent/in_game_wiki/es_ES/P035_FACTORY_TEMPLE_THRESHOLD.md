@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Umbral fábrica-templo
 
-El umbral fábrica-templo marca la gramática final: Deep Reach, colonia, Atlas-6 y océano forman un solo sistema físico.
+El Umbral fábrica-templo es el conjunto final de compuerta inferior más allá de la Planta del fondo. No es una fusión mítica. Es un reparto de carga en funcionamiento: las cerchas de Deep Reach cargan la tensión del casco viejo, los tubos de retorno aún mueven salmuera y calor, el crecimiento de carbonato sella juntas fallidas y Atlas-6 enruta continuidad por los contactos que todavía responden. Se lee por orden de abrazaderas, marcas de flujo, ruido del bus de cable y posición de etiquetas.
 
 ## Scanner
 
-La estructura del fondo no es una base. Casco de fábrica, lógica de santuario y tejido de presión comparten carga.
+Lectura de compuerta inferior: cercha de fábrica, tubo de retorno, sello de presión y bus de rutas Atlas cargan el mismo esfuerzo. Ya no queda una frontera limpia entre muro y puerta.
 
 ## Terminal
 
-Aviso: cercha industrial, sello biogénico, calor xenon lattice y rutas Atlas comparten autoridad estructural.
+THRESHOLD LOAD NOTICE
+Cercha: bajo esfuerzo
+Tubo de retorno: activo
+Sello de presión: sobrecrecimiento de carbonato
+Bus de rutas: canal de continuidad ATLAS-6
+Acceso humano: sin verificar
+Acción: marcar orden de abrazaderas antes de abrir cualquier junta
 
 ## Audio
 
-El océano no enterró la fábrica. La volvió cuerpo.
+No lo llames puerta. Encuentra qué línea sostiene la presión antes de pedirle que se abra.
 
 ## Field Note
 
-Aquí el mapa deja de fingir ruinas coloniales.
+La etiqueta del mapa dice umbral. Revisa las abrazaderas, no la palabra. La compuerta aguanta porque cuatro sistemas toman la misma carga.
 
 <!-- In-Game Wiki; generated from P035_FACTORY_TEMPLE_THRESHOLD/es_ES. -->

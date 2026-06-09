@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "إيليا فارنيك: هامش المد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# إيليا فارنيك: هامش المد
 
-AR LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+إيليا فارنيك هو توقيع المخاطر في Deep Reach لعام 2147 المرتبط بهامش المد العظيم. ليس مديرا كرتونيا يمسك بذراع. المذكرة أسوأ لأنها عادية: جدول إنتاج، نموذج متوسط، سطر ثقة، ملاحظة عن تعرّض العمال، وتوصية بالاستمرار.
+
+العبارة المفتاحية هي ثقة النموذج المتوسطة. في المتوسط بدا المسار قابلا للنجاة. لكن في ذيل التوزيع، حيث تلتقي تكدسات مد Aegir وارتداد الرف الجليدي وحركة المسارات المضغوطة وأخطاء تعويض Atlas، يضيق الهامش حتى يصبح سماحية محاسبية. الناس داخل تلك الغرف لم يعيشوا في المتوسط. كانوا يعيشون داخل أسوأ ساعة.
+
+توقيع فارنيك يمنح اللاعب طبقة من المسؤولية. لا يثبت أنه عرف الكارثة الدقيقة القادمة. يثبت أن Deep Reach كانت تملك مسارا مقروءا للخطر واختارت التفسير الأرخص. الجريمة ليست معرفة كل شيء. الجريمة هي قبول اللاموثوقية لأن الأجساد التي ستحملها لم تكن في الغرفة التي سُعّر فيها الهامش.
 
 ## Scanner
 
-AR LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+مذكرة مخاطر // خفّض I. فارنيك هامش المد العظيم بعدما نجح النموذج بالمتوسط. تُرك خطر الذيل داخل غرف العمال المضغوطة.
 
 ## Terminal
 
-AR LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // مخاطر عمليات Aegir // التوصية: الحفاظ على جدول الإنتاج. يبقى تكدس المدود المتطرفة تباينا تشغيليا منخفض التكرار بانتظار مراجعة تعويض Atlas. تعرّض مسارات العمال مقبول وفق ثقة النموذج المتوسطة.
 
 ## Audio
 
-AR LOC HOLD: He did not order a flood. He priced it low enough to happen.
+لم يأمر بفيضان. لقد سعّره بثمن منخفض بما يكفي ليحدث.
 
 ## Field Note
 
-AR LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+لا تقرأ هذا كأمر بالقتل. اقرأه كبند ميزانية أصبحت فيه اللاموثوقية رخيصة بما يكفي لصرفها.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/ar_SA. -->

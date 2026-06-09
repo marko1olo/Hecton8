@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Public Archive Evidence Primer
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "Суперечність variance-мемо Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# Суперечність variance-мемо Deep Reach
 
-Clean office language can expose a lie when timestamps and pump marks disagree.
+Перше мемо Deep Reach не мусить зізнаватися. Йому досить бути чистим не там, де треба. Variance - офісне слово в кімнаті, де насос працював за межею, хомут поставили після тривоги, наряд лишився відкритим, а margin stamp прийняли до приходу води.
 
-## Scanner
-
-Memo says variance; room marks disagree.
-
-## Terminal
-
-Deep Reach memo language treats dangerous margin as managed variance.
-
-## Audio
-
-Trust the room before the clean word.
-
-## Field Note
-
-Trust the wet room first.
+Саме це протиріччя гравець може використати рано. Воно не розв'язує катастрофу. Воно вчить порядку доказів. Чисте мемо є голосом джерела, не правдою. Заїлий клапан, часова мітка й робоча позначка можуть важити більше, ніж правильний бланк.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/uk_UA. -->

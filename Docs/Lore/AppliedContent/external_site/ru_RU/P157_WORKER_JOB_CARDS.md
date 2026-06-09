@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Рабочие job cards
 
-Рабочие job cards превращают имена в evidence objects.
+Рабочие job cards превращают имена в объекты доказательства: игровые улики, которые очеловечивают колонию, не останавливая survival loop.
 
 ## Scanner
 
-Job card - лицо, которое бюджет мог прочитать.
+JOB CARD // Имя, роль, последняя задача, маршрутное разрешение, сертификат инструмента. Лицо, которое бюджет мог прочитать.
 
 ## Terminal
 
-JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. Player learns people through what they were doing when the system failed.
+ПРАВИЛО УЛИКИ: каждое найденное имя должно быть привязано к сделанному делу: маршрут насоса, столовый ledger, вызов медблока, хранение резака, проверка давления, партия фабрикации. Задача превращает имя в доказательство.
 
 ## Audio
 
-Имя без задачи становится shrine. Задача делает его evidence.
+Имя без задачи становится святыней. Задача делает его уликой.
 
 ## Field Note
 
-Сделай имена полезными до того, как сделать их трагичными.
+Сначала сделай имена полезными. Потом трагичными.
 
 <!-- External Site; generated from P157_WORKER_JOB_CARDS/ru_RU. -->

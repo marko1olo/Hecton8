@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Quiet Salvage Contract Seed"
+title: "זרע חוזה Salvage שקט"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Quiet Salvage Contract Seed
+# זרע חוזה Salvage שקט
 
-HE LOC HOLD: Quiet salvage is a replay seed for players who want slower discovery. It should still carry moral cost through custody clauses.
+Salvage שקט הוא משפחת חוזים עם פחות אזעקות מוקדמות ולשון בעלות קשוחה יותר. המסלול נותן למפעיל זמן לתקן, לנשום ולקרוא, אבל תגי דגימה, יומני pinger וארונות ראיה נקשרים למקלט לפני התשלום הגדול הראשון.
 
 ## Scanner
 
-HE LOC HOLD: Contract seed: quiet salvage. Fewer early hazards, cleaner payout, dirtier custody.
+זרע חוזה: salvage שקט. חשיפת סערה נמוכה, תשלום ראשון נקי ומשמורת מוגבלת על כל דבר שמוכיח היסטוריית מסלול.
 
 ## Terminal
 
-HE LOC HOLD: SEED QUIET: reduced storm risk, reduced early hostility, increased claim-custody restriction and evidence ambiguity.
+זרע QUIET: חלון סערה רגוע, חריץ bathydrop מאושר מראש, מגע מוקדם עם פאונה מופחת, נעילת משמורת חזקה, סעיף ביקורת מקלט-ראשון פעיל.
 
 ## Audio
 
-HE LOC HOLD: Low storm windows are never free. They are bought somewhere else.
+מים שקטים אומרים שמישהו כבר העביר את הסיכון אל הניירת.
 
 ## Field Note
 
-HE LOC HOLD: Replay seed record: quiet salvage lowers early pressure while hiding stronger custody compromise.
+הערת מרודר: מים רגועים נותנים לך לשמוע את השקר של לוח החוזה בדיקציה טובה יותר.
 
 <!-- In-Game Wiki; generated from P391_QUIET_SALVAGE_CONTRACT_SEED/he_IL. -->

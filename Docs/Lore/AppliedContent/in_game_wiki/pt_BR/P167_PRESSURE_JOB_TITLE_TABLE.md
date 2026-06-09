@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Pressure Job Title Table"
+title: "Tabela de cargos de pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Pressure Job Title Table
+# Tabela de cargos de pressão
 
-PT LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+A tabela de cargos é o esqueleto laboral da colônia. Ela liga pessoas a bombas, vedações, relays, medlocks, fabricators, quadros de rota, vent-kilns e consoles Atlas.
+
+Um cargo deve prometer evidência física. Montador de vedação deixa giz de gasket, marcas de clamp e logs de escotilha. Mergulhador brine deixa notas de densidade, cortes de linha pesada e manchas de lavagem do traje. Custodiante de relay deixa slips de tempo e negativas de acesso. Auxiliar medlock deixa formulários provando que a estação escolheu escala em vez de recuperação.
 
 ## Scanner
 
-PT LOC HOLD: Job titles should explain what kept the colony alive.
+QUADRO DE TRABALHO // O cargo não é enfeite de RH. Ele diz qual sistema falhou quando o trabalhador parou de responder.
 
 ## Terminal
 
-PT LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+CARGOS DE PRESSÃO // técnico de bombas, montador de vedação, escriturário de rota, mergulhador brine, operador de fabricator, auxiliar medlock, custodiante de relay, trabalhador vent-kiln, leitor de segurança Atlas e supervisor de turno não são cor social. São lógica de acesso. O cargo define o que o trabalhador sabia, qual painel aceitava o crachá, onde ficavam as ferramentas e qual falha seria jogada nele depois do Great Tide.
 
 ## Audio
 
-PT LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Ninguém morreu como Funcionário 438. Morreram segurando um trabalho que o oceano ainda precisava.
 
 ## Field Note
 
-PT LOC HOLD: Every title should imply a tool, route or failure.
+Todo cargo deve apontar para ferramenta, sala, permissão de rota ou razão pela qual o corpo não pôde sair.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/pt_BR. -->

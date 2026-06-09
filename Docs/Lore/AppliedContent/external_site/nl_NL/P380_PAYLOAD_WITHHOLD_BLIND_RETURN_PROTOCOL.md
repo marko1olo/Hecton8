@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "Payload-protocol blind return withholding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Payload Withhold Blind Return Protocol
+# Payload-protocol blind return withholding
 
-NL LOC HOLD: A HECTON-8 ending can be defined by refusal: the player may leave Deep Reach blind, but the cost is unresolved survival and unresolved truth.
+Blind return is de weigeringsroute. Ze houdt de payload buiten alle formele ontvangers en laat de bekkenvector lokaal. Deep Reach krijgt geen toegangskaart. Het openbare grootboek krijgt geen incidentpakket. Quarantaine krijgt geen escrowtoewijzing. Atlas krijgt geen snijsleutel.
 
-## Scanner
-
-NL LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
-
-## Terminal
-
-NL LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
-
-## Audio
-
-NL LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
-
-## Field Note
-
-NL LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+De weigering heeft tanden en kosten. Ze kan jagers nog één interval bij het bekken weghouden, maar laat bewijs in een fragiele container bij een fragiel persoon. Schuld blijft open. Bewaring blijft informeel. Als het pakket volloopt of de drager in een corridor sterft, kan de keten verdwijnen zonder dat iemand haar hoeft te onderdrukken.
 
 <!-- External Site; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/nl_NL. -->

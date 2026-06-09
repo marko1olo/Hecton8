@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "تجميعة حلقة مشبك ختم الضغط"
+title: "تجميع حلقة مشبك ختم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تجميعة حلقة مشبك ختم الضغط
+# تجميع حلقة مشبك ختم الضغط
 
-تشرح أختام الضغط لماذا يجب أن ينزل الإصلاح أعمق. المواد التي تبقي الماء خارج الغرفة تستطيع أيضا لصق الكبسولة بالحطام عندما تعتمد سلسلة ختم خاطئة.
+حلقة مشبك ختم الضغط هي المكان الذي يتوقف فيه الإصلاح عن كونه نجاة بسيطة. المادة نفسها التي تبقي الماء خارج safe room تستطيع حبس ascent capsule إذا عبرت separation seam. shallow patch لا يحتاج إلا إلى تثبيت الحجرة. launch-rated seal يجب أن يحمل الضغط، يمتص crush، ثم يترك نظيفا تحت impulse.
+
+تجعل HECTON-8 هذا قبيحا لأن Atlas-grown sealant مفيد فعلا. يتبع التسريبات، يملأ الشقوق، ويحفظ habitat volume كان سيغرق بدونه. هذا لا يجعله flight seal. إذا نمت sealant map فوق clamp ring seat أو حافة pressure-glass، قد تنجح الكبسولة في static pressure test وتفشل في الانفصال عند إطلاق charge.
+
+يحتاج التجميع إلى deep-rated metal، crush history معروفة، glass seat نظيف، وsealant map تنتهي قبل launch boundary. يجب قص الإصلاح المفيد بعيدا عن escape المفيد. Marauder الذي يترك الرقعة الخطأ قد يبني كبسولة تبقى جافة حتى اللحظة التي يجب أن تتحرك فيها.
 
 ## Scanner
 
-ندبة clamp-ring. نجت كم sleeve الصعود من الارتطام بإنفاق الختم الذي كان يفترض أن يعيدها إلى البيت.
+مقعد CLAMP RING // آثار اصطدام، بقايا shallow patch، وsealant يعبر separation seam. قد يثبت ضغط الحجرة؛ launch impulse سيمزق الطبقة الخطأ.
 
 ## Terminal
 
-SEAL CERT: shallow patch يحفظ ضغط الحجرة فقط. يتطلب Ascent seal حلقة deep-rated clamp ring، وpressure-glass seat، وshell-sealant map، وملف Deep Reach محقق. قد يحفظ Atlas-grown sealant الـ habitat بينما يمنع انفصالا نظيفا.
+SEAL CERT: shallow patch مصنف لـ compartment pressure فقط. Ascent seal يتطلب deep-rated clamp ring و pressure-glass seat و shell-sealant map و Deep Reach crush profile موثق. ارفض sealant growth عبر separation seam.
 
 ## Audio
 
-الختم المفيد حي في الاتجاه الخطأ.
+الرقعة تمسك الغرفة. لن تترك الكبسولة تذهب.
 
 ## Field Note
 
-رقعة safe-room قد تشتري ساعة من الهواء. لكنها لا تمسك اندفاع الإطلاق.
+رقعة الغرفة قد تشتري هواء. ختم الصعود يجب أن ينضغط، يترك، ويترك جلد الكبسولة نظيفا بما يكفي للـ burn التالي.
 
 <!-- In-Game Wiki; generated from P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY/ar_SA. -->

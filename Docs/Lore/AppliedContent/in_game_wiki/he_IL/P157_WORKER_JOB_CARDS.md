@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Job Cards"
+title: "כרטיסי עבודה של עובדים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Worker Job Cards
+# כרטיסי עבודה של עובדים
 
-HE LOC HOLD: Worker job cards let wiki, terminals and scanner fragments humanize the colony while staying functional for gameplay routes.
+כרטיס עבודה הוא הביוגרפיה הקטנה ביותר של המושבה. הוא לא צריך ילדות, רומן או נאום כדי להיות חשוב. הוא צריך תפקיד, חותמת הרשאה, משימה אחרונה ואת הדבר שהעובד ציפה לסיים אחרי הצליל הבא. כשהשחקן מוצא את הכרטיסים האלה, אנשים מפסיקים להיות נפגעי רקע והופכים לראיות מסלול: מישהו החזיק מפתח משאבה, עיכב hatch, בישל לצוות, חתם על cutter, אישר אטם או החמיץ חזרה כי המערכת גרמה לעזרה לחכות.
 
 ## Scanner
 
-HE LOC HOLD: A job card is a face the budget could read.
+JOB CARD // שם, תפקיד, משימה אחרונה, הרשאת מסלול, אישור כלי. פנים שהתקציב יכול לקרוא.
 
 ## Terminal
 
-HE LOC HOLD: JOB CARD LAYER: each recovered name should carry a role, last task, route permission or tool certification. The player learns people through what they were doing when the system failed.
+כלל ראיה: כל שם שנמצא צריך להיצמד לדבר שנעשה: מסלול משאבה, ledger מטבח, קריאת מד-ביי, משמורת cutter, בדיקת לחץ, אצוות ייצור. משימה הופכת שם לראיה.
 
 ## Audio
 
-HE LOC HOLD: A name without a task becomes a shrine. A task makes it evidence.
+שם בלי משימה הופך למקדש. משימה עושה ממנו ראיה.
 
 ## Field Note
 
-HE LOC HOLD: Make names useful before making them tragic.
+הפוך שמות לשימושיים לפני שאתה הופך אותם לטרגיים.
 
 <!-- In-Game Wiki; generated from P157_WORKER_JOB_CARDS/he_IL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Druck durch Schulden-Blacklist-Vertrag"
+title: "Druck des Schulden-Blacklist-Vertrags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druck durch Schulden-Blacklist-Vertrag
+# Druck des Schulden-Blacklist-Vertrags
 
-HECTON-8 rahmt seinen Protagonisten durch Grenzökonomie statt Schicksal. Schulden, Blacklists, Claim-Pool-Verwahrung, Sauerstoffkredit, Liegeplatzzugang und alte Deep-Reach-Nachweise machen den Bergungsvertrag zwanghaft, ohne den Spieler hilflos zu machen.
+Der Druck des Schulden-Blacklist-Vertrags erklärt, warum ein fähiger ehemaliger Deep-Reach-Arbeiter auf HECTON-8 Marauder wird. Der Vertrag braucht keine Entführung. Er braucht eine blacklist, ein berth-Ledger, oxygen credit und ein Routenfenster, das nicht wartet.
 
-## Scanner
-
-Pfandhinweis an Black-Keel-Verwahrung gebunden. Ablehnung bleibt legal, aber macht bewegungslos: kein Liegeplatz, kein sauberer Sauerstoffkredit, kein Routenfenster aus Aegir.
-
-## Terminal
-
-ANSPRUCHSANNAHME / BLACKLIST-ENTLASTUNGSFENSTER
-Auftragnehmerstatus: schuldengebundener Marauder
-Träger: Black-Keel-Claim-Pool-Verwahrung
-Entlastungsbedingungen: verwertbare Masse, Verwahrungsnachweis, Empfänger-Compliance
-Fehlerzustand: Blacklist bleibt aktiv; Liegeplatzzugang verweigert; Sauerstofffürsorge wird abrechenbare Unterstützung.
-
-## Audio
-
-Das war keine Entführung. Es war die Art von Wahl, die die Grenze als Freiheit verkauft: unterschreiben, tauchen, oder auf Papier sauber bleiben und praktisch gefangen sein.
-
-## Field Note
-
-Das Pfand zeigte nicht mit einer Waffe. Es zeigte auf die Luftrechnung, die Liegeplatzliste und das nächste Routenfenster.
+Black Keel bietet Arbeit innerhalb dieses Drucks. Den claim anzunehmen gibt dem Operator einen Weg zurück in Bewegung, doch jeder Teil des Weges wird gemessen: recoverable mass, custody proof, receiver compliance, debt relief. Ablehnen hält die Hände auf dem Papier sauber, während praktische Routen schließen. Das ist die Grausamkeit des Vertrags: Er lässt eine Wahl und bepreist eine Seite, bis sie kaum noch eine Wahl ist.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/de_DE. -->

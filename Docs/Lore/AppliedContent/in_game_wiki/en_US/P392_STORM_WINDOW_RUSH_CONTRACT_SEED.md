@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Storm Window Rush Contract Seed
 
-Storm-window rush changes pacing without changing truth. The player faces tighter timing and harsher recovery geometry.
+Storm Window Rush is a contract family where weather and orbit become the first pressure systems. The route does not add inherited power; it shortens safe work time, tightens recovery geometry and punishes sloppy repairs sooner.
 
 ## Scanner
 
-Contract seed: rush window. Faster claim, harsher timing and less tolerance for repair mistakes.
+Contract seed: rush window. Higher payout tied to closing storm cover, orbital shutter timing and reduced repair slack.
 
 ## Terminal
 
-SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, repair slack reduced.
+SEED RUSH: storm window compressed, orbital relay shutter hostile, payout ceiling raised, bathydrop recall earlier, repair tolerance reduced.
 
 ## Audio
 
-This contract pays because it hates waiting.
+This contract pays because the window is closing.
 
 ## Field Note
 
-Replay seed record: storm-window rush trades payout for hostile orbit, weather, and repair timing from the first hour.
+Marauder note: rush pay looks larger because the contract charges every minute twice.
 
 <!-- In-Game Wiki; generated from P392_STORM_WINDOW_RUSH_CONTRACT_SEED/en_US. -->

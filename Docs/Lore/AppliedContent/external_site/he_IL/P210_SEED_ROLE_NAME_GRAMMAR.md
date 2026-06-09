@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Role Name Grammar"
+title: "דקדוק שמות seed-role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Seed Role Name Grammar
+# דקדוק שמות seed-role
 
-HE LOC HOLD: Seed Role Name Grammar keeps replay-safe colony names tied to personal name, crew family, route permission, last task, and object variant.
+דקדוק שמות seed-role מגדיר איך HECTON-8 משתמשת בשונות פרוצדורלית בלי לאבד מרקם אנושי כתוב. Replay יכול לשנות איפה ראיית העובד מופיעה, אבל השם חייב להישאר קשור לעבודה, הרשאה, משימה וחפץ. כך המושבה נשארת מפתיעה בין ריצות ושומרת את התחושה שכל רשומה הייתה שייכת למישהו שעבודתו הייתה חשובה.
 
 ## Scanner
 
-HE LOC HOLD: A seed can move a worker's evidence order, not turn them into disposable text.
+Seed יכול להזיז את סדר הראיות. הוא לא יכול להפוך עובד לטקסט חד פעמי.
 
 ## Terminal
 
-HE LOC HOLD: SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. Localization may annotate; it must not rewrite identity.
+SEED GRAMMAR: personal_name + crew_family + route_permission + last_task + object_variant. לוקליזציה יכולה להוסיף ביאור למונחי צוות לצורך קריאות, אבל אסור לה לכתוב מחדש זהות, למחוק את העבודה או לנתק את השם מחפץ קונקרטי.
 
 ## Audio
 
-HE LOC HOLD: Random is not authorship. Bind the name to a job.
+אקראיות אינה כתיבה. קשור את השם לעבודה.
 
 ## Field Note
 
-HE LOC HOLD: Seed-role identities combine stable personal name, crew family, route permission, last task and object variant.
+כל זהות seed-role משלבת שם אישי, משפחת צוות, הרשאת נתיב, משימה אחרונה ווריאנט חפץ.
 
 <!-- External Site; generated from P210_SEED_ROLE_NAME_GRAMMAR/he_IL. -->

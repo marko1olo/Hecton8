@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "星域民事与公司法分裂"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# 星域民事与公司法分裂
 
-CN LOC HOLD: The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue.
+星域民事与公司法分裂，是 HECTON-8 孤立背后的法律结构：它不是拥挤的帝国，而是少数遥远权威、互相冲突的 claim、延迟的数据包，以及足以让 Deep Reach 把工人留在海底的模糊地带。
 
 ## Scanner
 
-CN LOC HOLD: Legal map. Same species, different owners of truth.
+法律地图：同一物种，却有多个记录所有者。
 
 ## Terminal
 
-CN LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core 掌握旧法金融与认证；Centauri 保存早期殖民宪章；Barnard Yards 让打捞劳务常态化；Tau Ceti 能把证据推入公共法律；Luyten 控制数据包 custody；Aegir 在被证明相反之前仍是公司 claim。
 
 ## Audio
 
-CN LOC HOLD: The farther you go, the more the law becomes a receipt.
+信号走得越远，法律听起来越像账本。
 
 ## Field Note
 
-CN LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+阻止救援的不只是距离，还有谁有资格把被困者称为公民。
 
 <!-- External Site; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/zh_CN. -->

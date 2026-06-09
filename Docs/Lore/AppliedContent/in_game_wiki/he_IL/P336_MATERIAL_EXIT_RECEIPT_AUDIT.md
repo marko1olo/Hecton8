@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Material Exit Receipt Audit"
+title: "ביקורת קבלת יציאה חומרית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Material Exit Receipt Audit
+# ביקורת קבלת יציאה חומרית
 
-HE LOC HOLD: Material Exit Receipt Audit makes the money ending legitimate and bitter. The player can win materially while leaving Deep Reach's lie mostly intact.
+ביקורת הקבלה הופכת את סוף הכסף ללגיטימי ומר. השחקן הוציא ערך ושרד את החוזה, אבל המוסד עדיין מחזיק ברשומה, בשמות ובצורה הרשמית של האסון.
 
 ## Scanner
 
-HE LOC HOLD: Exit receipt valid. Evidence custody incomplete. Names unreconciled.
+קבלת היציאה מאשרת מסה שחולצה. משמורת הראיות שבורה; שמות העובדים עדיין לא התקבלו.
 
 ## Terminal
 
-HE LOC HOLD: AFTER-ACTION: payout released for recovered mass. Coordinate truth unresolved. Deep Reach liability status unchanged. Worker-name ledger remains unaccepted.
+קבלת AFTER-ACTION: תשלום salvage שוחרר עבור מסה ברת חילוץ וסיכון חוזי. אמת הקואורדינטות לא נפתרה. מצב האחריות של Deep Reach לא השתנה. פנקס שמות העובדים נדחה כראיה שאינה במשמורת. יציאה אושרה; התיק נשאר בבעלות הנשא.
 
 ## Audio
 
-HE LOC HOLD: You got paid. That is not the same as getting out clean.
+קיבלת כסף. זה לא אותו דבר כמו לצאת נקי.
 
 ## Field Note
 
-HE LOC HOLD: After-action record: payout and recovery can close while evidence custody and worker names remain unresolved.
+רשומת אחרי פעולה ליציאה ששולמה אך אינה שלמה מוסרית: התגמול עובר, שרשרת הראיות נכשלת, השמות נשארים מחוץ למשמורת רשמית.
 
 <!-- In-Game Wiki; generated from P336_MATERIAL_EXIT_RECEIPT_AUDIT/he_IL. -->

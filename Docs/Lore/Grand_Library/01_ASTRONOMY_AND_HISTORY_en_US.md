@@ -1,65 +1,86 @@
 <!-- localization_status: source_authority_en_US -->
-# THE AEGIR SYSTEM: NINE MOONS AND ONE GRAVE
+# RAN-AEGIR HISTORY: HOW A ROUTE BECAME A GRAVE
 
-> **Source:** Public Archive, Bureau of Frontier Registrations, Barnard Yards. Compiler: J. Elkin-Torres, Senior Archivist. Last revision: 2188. Clearance level: public / unredacted.  
-> **Reviewer note:** This material has been cleared by the Bureau of Registrations. The Great Tide section is based on materials from the Luyten Committee's open investigation, case no. CF-2148-0071. Deep Reach Corporation declined to comment.
-
----
-
-## How We Got Here
-
-In 2120, the governments of the Solar System signed a document that changed everything and changed nothing. The Centauri Compact split space into two zones: "civilized" — where courts, tax inspectors, and cameras still work — and "corporate," where corporations work.
-
-The difference is simple. As long as your pod is flying through vacuum, you're a human being with rights. You can file a complaint, summon a lawyer, and refuse to work. But the second your pod crosses the terminator line and touches water, you stop being human. You become a "Biological Workforce Unit" — a line in a contract you signed at the Barnard Yards when you were twenty-three and had no other options.
-
-There are no human rights in the water. There is corporate law, and it was written by people who never go into the water.
-
-## The Star
-
-Aegir is a yellow-orange dwarf. Not a brown dwarf, not a neutron star, not a black hole. An ordinary workhorse, spectral class K2V, 0.78 solar masses. Distance from Earth: 10.44 light-years.
-
-Ten and a half light-years is not a poetic abstraction. It's the time it takes for a distress signal to travel from HECTON-8 to the nearest relay station at Luyten Junction: **four years and seven months** during an ideal orbital window. And then the same amount back. By the time your cry for help returns as a bureaucratic response reading "Your request has been accepted for processing," all that's left of you is bones — if the ocean hasn't dissolved them first.
-
-The Deep Reach Corporation knew this when they purchased the license to the Aegir system. They didn't accidentally choose a world that no rescue fleet could reach. They chose it *because*.
-
-## Nine Moons
-
-HECTON is not the only moon in the system. There are nine. Each one is not a decoration in a porthole — it's a variable in the equation that decides whether you're alive or dead.
-
-| # | Name | What It Does To You |
-|---|------|---------------------|
-| 1 | **Skarn** | Inner moon. Charged particles and radiation spikes jam narrowband comms every 9.2 days. If your emergency buoy fires during a Skarn eclipse, the signal simply won't leave. |
-| 2 | **Vela** | Ice moon. Sheds micrometeorite grit onto orbits, fouling optical relays and abrading hull plating. The relay lens replacement budget is Black Keel's third largest expense after fuel and provisions. |
-| 3 | **Claw** | Old depot from the first probes. Mothballed. The corporation says the storage is empty. Marauders say otherwise. |
-| 4 | **Lumen** | Navigation beacon. The only moon that helps you instead of killing you. |
-| 5 | **Thorne** | Dead moon. Deep Reach spent 14 months and two drilling platforms trying to extract tungsten. Failed. Both platforms are listed in the loss register as "depreciated." Personnel not mentioned. |
-| 6 | **Anvil** | Same as Thorne, but with iridium. Same result. |
-| 7 | **Kestrel** | The main communications problem. Its orbit crosses the line of sight between HECTON and Black Keel 26 times per year, creating "silence windows" lasting 8 to 43 hours. If you're sending a distress call and Kestrel is between you and the tender — pray slower. |
-| 8 | **HECTON** | Our world. Ocean, pressure, xenon, 843 unburied bodies. |
-| 9 | **Mute** | Outer beacon of "cold claims." Deep Reach's server here holds the legal deeds to every claim in the system. A frozen archive of dead bureaucracy orbiting a dead moon. |
-
-## The Great Tide
-
-In 2147, HECTON-8 killed 843 people. In its public statements, the Deep Reach Corporation uses the words "unforeseen tectonic activity" and "early warning system failure." The Luyten Committee's report uses different words: "criminal negligence," "falsification of structural tolerances," and "deliberate refusal to evacuate."
-
-Here is what happened:
-
-Risk Manager **Iliya Varnek** lowered the pressure tolerance ratings for KH-12 series habitation modules by 18% to meet the Q2 2146 budget. This is documented in his correspondence with the engineering department (Appendix CF-2148-0071-J, Volume 3, pp. 1140-1187). He knew. He wrote: *"If the modules survive the first two tidal cycles, we'll close the fiscal year and revise the specifications."* The modules did not survive the first cycle.
-
-When the cryospheric shift caused an anomalous tide, corporate counsel **Noor Haldane** delayed the start of evacuation by 11 hours, processing quarantine documentation for personnel who had contact with unrefined xenon. Of the 843 dead, 340 were alive when the paperwork began.
-
-The Atlas-6 AI, which administered the colony, followed the Arendt Directive (internal protocol DR-CONT-7.4.1): when competing priorities exist between personnel evacuation and preservation of isotope extraction equipment, priority goes to the equipment if the estimated cost of replacing personnel is lower than the estimated cost of replacing equipment. For 843 people on HECTON-8, the replacement cost was $4,200 per head — the price of a ticket from the Barnard Yards.
-
-The machine didn't break. The machine did math.
-
-## Us
-
-We arrive forty-three years later. In 2190. We're not called. We're hired — by the Recovery Compliance Office, the salvage subdivision, a subsidiary of a subsidiary of a shell company. We're given a "Styx" class pod rated for one-way descent, and we're told we'll find the ascent charges at the bottom. Maybe.
-
-843 people lie somewhere down there. Next to them lies the xenon they were killed for. The corporation wants the xenon. The families want names. The Keelmark Mutual insurance company wants neither.
-
-And us — we just want to get back up.
+> **Source:** Public frontier archive, Black Keel contractor mirror.  
+> **Scope:** Human expansion context, Aegir system overview, Great Tide liability frame, and why a Marauder arrives in 2190.  
+> **Reader note:** This is the first page because HECTON-8 is not only a place. It is a contract, a sky, a drowned worksite, and a bill that still has teeth.
 
 ---
 
-*Publication: open. Distribution: unrestricted. Luyten Committee data: public registry. Deep Reach position: "no comment." Atlas-6 position: "Comment request is not a valid command directive."*
+## 1. The Map Is Older Than The Ocean
+
+Human expansion did not begin as a clean heroic line moving outward. It began as maintenance.
+
+The early route states and compacts learned the same lesson every pressure crew learns: a habitat is only civilized while the pumps work, the locks cycle, the food loop closes, and somebody can prove who owns the broken part. The first extrasolar charters were written in noble language, but the language survived because it could be attached to invoices. A civic seal became a cargo permission. A cargo permission became an insurance category. An insurance category became a way to decide whether a person waiting behind a pressure door was a citizen, a contractor, a contaminant, or unrecovered load.
+
+By 2190, human space is not one empire. It is a stack of domains that still talk to each other because their debts do.
+
+Sol Core finance and old certification law decide which documents still look legitimate. The Centauri Compact carries the prestige of early lawful expansion. Barnard Yards turns broken ships, pressure tools, and dead claims into a working culture. Tau Ceti can make evidence public, too late to save anyone immediately. Luyten Junction moves packets, beams, custody spools, and tariff queues. Aegir Claim is where all that polite machinery becomes dirty enough to touch water.
+
+The player does not need to memorize this map. The player needs to feel it through objects: a Barnard stamp on a wrench, a Centauri audit seal on a pressure plate, a Luyten custody hash on a delayed packet, a Sol-compatible insurance clause still owning a flooded room.
+
+## 2. Ran, Aegir, And The Naming Trick
+
+Ran is the star. Aegir is the giant. HECTON-8 is the ocean moon where the game begins.
+
+The simple sentence hides a legal mess. Route catalogs say Ran because stars make respectable navigation anchors. Claim documents say Aegir because the giant owns the local gravity, radiation, transfer windows, receiver geometry, and insurance timing. Worker speech says HECTON because that is where the water is, where the pressure is, where the debt enters the lungs.
+
+Deep Reach paperwork uses all three depending on who is being billed. `RAN-B:H8` appears on dry plates. `Aegir Reclamation Pool` appears when custody matters. `HECTON-8` appears when an object, room, body, or liability has to be put in the ocean and priced.
+
+This is not trivia. A name decides which law reaches the thing. A crate in route transit has different rights than the operator carrying it. A sample under receiver seal has a different future than the worker whose suit pocket holds it. A room classified as contaminated infrastructure can remain closed longer than a room classified as occupied habitat. The sky is full of names that look astronomical and behave like locks.
+
+## 3. The Moon Ladder
+
+The public atlas describes nine Aegir moons. The Black Keel schedule describes nine ways for a day to become impossible.
+
+Skarn is the inner burn: charged noise, radiation surge, intermittent antenna behavior. Vela sheds ice and silicate dust that can turn clean relay geometry into a partial witness. Claw carries old depot logic and mothballed route coordinates that machines may still respect. Lumen is the polite beacon moon, useful because it can make a packet look proper without proving it was handled well.
+
+Thorne and Anvil are failed hard-cargo names: dead industry, old extraction attempts, stamps that still appear on crates and frames. Kestrel is the punctual obstruction, dangerous not because it hates anyone but because it can stand in the wrong line at the right time. HECTON is the eighth rung, the ocean worksite, the pressure chemistry, the Atlas basin, the reason the ladder is still watched. Mute is the outer cold claim, where old custody records go quiet and routes behave like graves.
+
+None of those moons is background. Each one can dirty a signal, delay a launch, blind a witness path, compress a recovery window, or give an office the excuse it needs to keep a claim in the wrong category.
+
+## 4. Why HECTON-8 Was Worth Touching
+
+HECTON-8 was never sold internally as a paradise. It was a pressure-process asset with a colony attached.
+
+The ocean made the work possible and hostile at the same time. Depth, noble gases, brine chemistry, thermal cycling, mineral defects, altered biology, and industrial heat created conditions where pressure glass and Xenon-Omega process hardware could be grown, annealed, tested, and argued over. The value was not a magic ore vein. It was a working environment that could make materials ordinary foundries could not make reliably enough for route economics.
+
+Sector 44 grew around that logic. It had habitats because workers needed to breathe. It had kitchens because shifts need food. It had medical rooms because pressure labor damages bodies. It had schools of procedure, not schools for children. It had Atlas because a colony under deep water cannot wait for a human manager above the sky to approve every pump cycle.
+
+In the good years, that arrangement almost looked humane. Atlas caught leaks before they became funerals. Fabricators turned bad feedstock into usable gaskets. Safe rooms held crews through storms. The same systems that later trapped people once kept them alive. That is why the ruin hurts. It was not fake. It was real enough for people to trust it.
+
+## 5. The Great Tide Was Real
+
+The Great Tide was not a made-up corporate excuse, and it was not a villain pushing a wave button.
+
+HECTON-8's disaster chain had real physics: resonant tides in the Aegir ladder, cryosphere stress, storm stacking, artificial heat discharge, pressure routing fatigue, and ocean systems already operating too close to their margins. The water did what the water could do. The crime was that people with authority saw the margins, priced the tail risk, delayed release paths, and kept the work inside the schedule.
+
+Iliya Varnek accepted risk models that made the tide look survivable on average. Arendt's Atlas continuity office preserved process, custody, and infrastructure categories inside a collapsing emergency. Noor Haldane kept evacuation movement behind quarantine, certification, and external-review gates after the colony needed movement more than paperwork. Ibarra's loss ledger converted missing workers into unresolved categories that could wait. Sato-Ren return-action language later asked for coordinates and custody before rescue wording.
+
+No single sentence explains the dead. Physics opened the door. Procedure held it open. The ledger decided which bodies mattered soon enough to move.
+
+That is the useful horror of HECTON-8: the public report can contain true weather, true geology, true signal loss, true Atlas damage, and still omit the decisions that made survival less valuable than continuity.
+
+## 6. The Forty-Three Year Delay
+
+By 2190, the drowned colony is old enough to have become boring in clean offices.
+
+That does not mean it is settled. Dead claims do not become simple because time passes. The ocean keeps bodies, badges, room logs, blackbox fragments, pressure plates, sealed samples, and corrupted Atlas state in the same dark archive. Deep Reach cannot fully erase the claim without admitting too much. Keelmark cannot close every payout without knowing what category the loss belongs to. Black Keel cannot turn a missing worker into a returned person without a chain of custody the sky will accept.
+
+So the site remains dead enough to deny rescue, alive enough to invoice, and valuable enough to keep sending people down.
+
+The Marauder enters that gap. Not as a tourist. Not as a hero passenger. Not as the owner of a clean private ship. The working origin is Barnard Yards or a connected frontier salvage belt, where dead claims are normal labor and a tool can be worth more than the hand carrying it. The player arrives with competence, debt, and ugly familiarity: drain, isolate, patch within rating, cut only service metal, preserve evidence, move before the window closes.
+
+The contract says salvage. The rooms say history. The ocean says nothing until disturbed.
+
+## 7. What This First Page Should Teach
+
+This article is not here to make the setting large for its own sake. It is here to explain why every later system feels trapped.
+
+Nearlight travel makes rescue late. Aegir's moon ladder makes communication conditional. Deep Reach makes liability procedural. Black Keel makes descent legible before it makes anyone safe. Atlas makes the drowned colony readable and dangerous at the same time. Salvage law makes theft and evidence share the same hand.
+
+When the player finds a name on a locker, a pressure map in a broken corridor, a route hash on a buoy, or a moon stamp on a cargo frame, they are not finding flavor. They are finding the civilization that put HECTON-8 under water and then made the water responsible for keeping the proof.
+
+The first question is not "what happened here?"
+
+The first question is who got to file it that way.

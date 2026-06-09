@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Player Lien Contract Start Card"
+title: "玩家 lien 合同起始卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Player Lien Contract Start Card
+# 玩家 lien 合同起始卡
 
-ZH LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+玩家 lien 合同起始卡把 HECTON-8 的主角固定为一个受牵连的专业人员，而不是无辜游客。玩家以实用动机开始：一份 salvage contract、一项债务 lien、旧访问知识，以及足够相信这只是工作的自信。这很重要，因为游戏不需要 lost-relative hook 才能让下潜变得个人化。个人压力来自证据。前 Deep Reach field key 仍被 Black Keel 识别，不是便利，而是警告：旧系统从未完全忘记这个操作者。合同给玩家进入海洋的理由，也给玩家误读最初危险的理由。玩家以为自己在读 job file。文件也在读玩家：过去的 clearance、路线熟悉、liability 历史和 beneficiary conflict。等玩家意识到旧雇主不只是背景时，lien 已经把职业好奇变成了羁押。
 
 ## Scanner
 
-ZH LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+起始卡没有把你变成天选受害者。它把你变成带着 lien、钥匙和自我欺骗理由的前 Deep Reach 专业人员。
 
 ## Terminal
 
-ZH LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+合同开始 / 操作者：独立 salvage contractor / 旧访问：Deep Reach field key，失活但被识别 / lien：有效 / 声明动机：claim value / 未声明压力：prior exposure、路线熟悉、beneficiary conflict。
 
 ## Audio
 
-ZH LOC HOLD: You came for work. The file remembered you before you remembered it.
+你是为工作来的。文件比你更早想起了你。
 
 ## Field Note
 
-ZH LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+不要 lost-relative hook。动机从工作开始：salvage value、旧 field access、职业暴露、被遮蔽的个人压力。
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/zh_CN. -->

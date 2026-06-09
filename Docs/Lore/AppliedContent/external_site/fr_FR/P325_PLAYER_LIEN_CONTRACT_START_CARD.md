@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Player Lien Contract Start Card"
+title: "Carte de départ du contrat avec lien joueur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Player Lien Contract Start Card
+# Carte de départ du contrat avec lien joueur
 
-FR LOC HOLD: The HECTON-8 protagonist is not an outsider tourist. They are a compromised professional returning through salvage work to a disaster their old employer failed to contain.
+Le protagoniste de HECTON-8 est un ancien professionnel Deep Reach devenu salvage operator. Cette origine garde l'histoire adulte et pratique : le joueur vient pour du travail, pas pour le destin. Le tournant émotionnel est gagné par les preuves, les contrats et l'accès reconnu, ce qui permet au mystère de devenir personnel sans le réduire à une vengeance familiale.
 
 ## Scanner
 
-FR LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+La carte de départ ne fait pas de vous une victime choisie. Elle fait de vous un ancien professionnel Deep Reach avec un lien, une clé et une raison de vous mentir.
 
 ## Terminal
 
-FR LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+DÉPART CONTRAT / opérateur : salvage contractor indépendant / ancien accès : Deep Reach field key, inactive mais reconnue / lien : actif / motif déclaré : claim value / pression non déclarée : prior exposure, familiarité route, beneficiary conflict.
 
 ## Audio
 
-FR LOC HOLD: You came for work. The file remembered you before you remembered it.
+Vous êtes venu pour le travail. Le fichier s'est souvenu de vous avant vous.
 
 ## Field Note
 
-FR LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Pas de lost-relative hook. Le motif commence comme travail : salvage value, ancien field access, exposition professionnelle, pression personnelle masquée.
 
 <!-- External Site; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/fr_FR. -->

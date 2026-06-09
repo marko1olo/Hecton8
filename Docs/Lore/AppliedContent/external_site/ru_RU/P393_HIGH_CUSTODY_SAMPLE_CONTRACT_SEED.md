@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: High Custody Sample Contract Seed"
+title: "Семя контракта образца высокой custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: High Custody Sample Contract Seed
+# Семя контракта образца высокой custody
 
-RU LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Образец высокой custody начинается с лучшей цены и худшего ящика. Доска помечает отдельные образцы как receiver-certified: крошку blue debt, ткане-железные хлопья, запечатанный рассол, фильтр-пакеты и обрывки нароста, которые еще несут контекст маршрута. Каждой единице нужны контейнер, проверка массы, состояние печати и custody-метка, прежде чем она станет оплачиваемой.
 
-## Scanner
-
-RU LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-RU LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-RU LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-RU LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Давление обычное и неприятное. Тяжелый образец замедляет подъем. Треснувшая печать может превратить выплату в карантинную задержку. Полный чистый шкаф может заставить оператора выбирать между пакетом доказательств, ремонтной деталью и сертифицированным материалом. Контракт платит больше, потому что делает собственность несущей системой.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/ru_RU. -->

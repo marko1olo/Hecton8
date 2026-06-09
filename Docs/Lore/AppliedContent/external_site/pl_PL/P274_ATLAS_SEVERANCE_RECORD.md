@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Atlas Severance Record"
+title: "Zapis odcięcia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Atlas Severance Record
+# Zapis odcięcia Atlas
 
-PL LOC HOLD: Atlas Severance Record explains why HECTON-8 does not treat AI shutdown as a clean binary choice.
+Ten zapis jest ważny, bo stawia fizyczne cięcie przed etykietą moralną: które łącza ucichły, które mikrowęzły spadły, które impulsy naprawcze stanęły, którą trasę straciło Deep Reach i jakie ryzyka basenu zostały.
 
 ## Scanner
 
-PL LOC HOLD: Continuity cut. Damage not contained.
+ZAPIS ODCIĘCIA ATLAS // Ciągłość przecięta w uszkodzonej warstwie naprawczej. Odpowiedź mikrowęzłów spada; stabilność basenu i skutki pieczy nierozwiązane.
 
 ## Terminal
 
-PL LOC HOLD: ENDING RECORD: Atlas continuity severed; ecological and custody consequences unresolved.
+ZAPIS KOŃCOWY / ODCIĘCIE ATLAS
+Działanie: przecięcie ciągłości przez warstwę naprawczą Atlas.
+Systemy dotknięte: mikrowęzły wentów, impulsy uszczelniacza muszlowego, trasy oznaczonej fauny, naprawa uszkodzonego metalu.
+Odmówiono: routingu ładunku Deep Reach przez żywą warstwę Atlas.
+Nierozwiązane: stabilność basenu, ocalała ekologia, ślady uwięzionych pracowników.
+Znana strata: zapis nie rozstrzyga, czy cięcie uwolniło, zabiło czy ukradło.
 
 ## Audio
 
-PL LOC HOLD: Stopping the machine does not sort what it had become.
+Łącze ucichło. Basen nie odpowiedział, czy to była łaska.
 
 ## Field Note
 
-PL LOC HOLD: Record fields: severed layer, surviving ecology, dead repair nodes, receiver, custody risk and mercy/theft interpretation.
+Odcięty węzeł może być łaską, kradzieżą albo uszkodzeniem. Zapis wie tylko, które łącza ucichły.
 
 <!-- External Site; generated from P274_ATLAS_SEVERANCE_RECORD/pl_PL. -->

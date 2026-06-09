@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UA LOC HOLD: Stack Limit Data Boundary"
+title: "Межа даних ліміту стака"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UA LOC HOLD: Stack Limit Data Boundary
+# Межа даних ліміту стака
 
-UA LOC HOLD: Stack Limit Data Boundary keeps inventory physical: containment, pressure rating, mass, and contamination decide what can stack.
+Межа ліміту робить інвентар фізичним. Предмети складаються лише тоді, коли контейнер, тиск, маса і зараження можуть пережити той самий маршрут, не збрехавши save-файлу.
 
 ## Scanner
 
-UA LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Рядок стака відкидає купи іконок: посудина, тиск, зараження і маса визначають кількість.
 
 ## Terminal
 
-UA LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: кількість у stack вимагає тип посудини, рейтинг тиску, стадію зараження, клас маси, рівень попередження і save-stable identity. Ящик не є напірною посудиною.
 
 ## Audio
 
-UK LOC HOLD: A crate is not a pressure vessel.
+Ящик не є напірною посудиною.
 
 ## Field Note
 
-UA LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Ліміти stack лишаються table-owned і стабільними для save identity.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/uk_UA. -->

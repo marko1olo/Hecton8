@@ -535,7 +535,6 @@ namespace Hecton8.Gameplay
         [Tooltip("How quickly root obstacle pressure releases after the player clears nearby geometry. Lower values feel denser and more viscous.")]
         [SerializeField, Range(0.01f, 0.25f)] private float obstacleRootSmoothTime = 0.085f;
 
-#if UNITY_EDITOR
         [Header("-- Diagnostics ---------------------------")]
         [SerializeField] private string _debugMode = "None";
         [SerializeField] private float _debugStrokePhase;
@@ -552,7 +551,6 @@ namespace Hecton8.Gameplay
         [SerializeField] private int _debugLastDrivenFrame = -1;
         [SerializeField] private string _debugProfile;
         [SerializeField] private string _debugProfileSource;
-#endif
 
         private bool _registeredLateFrame;
         private bool _registeredColdReferenceRepair;

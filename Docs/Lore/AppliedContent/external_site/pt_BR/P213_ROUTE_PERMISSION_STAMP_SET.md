@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Conjunto de Carimbos de Permissão de Rota"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Conjunto de Carimbos de Permissão de Rota
 
-PT LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+O Conjunto de Carimbos de Permissão de Rota define props de acesso para HECTON-8. Carimbos conectam identidade de trabalhador a limites físicos: portas, veículos, suits, elevadores e painéis de rota. Como cada carimbo pode depois contradizer um livro ou fragmento de áudio, acesso vira biografia sob pressão e uma forma central de ler o último movimento da colônia.
 
 ## Scanner
 
-PT LOC HOLD: A route stamp is stronger than a diary line.
+Um carimbo de rota é mais forte que uma linha de diário porque prova quem podia cruzar o limite de pressão.
 
 ## Terminal
 
-PT LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: permissão de rota deve conectar um trabalhador, uma porta ou veículo, uma família de equipe e uma contradição posterior. Carimbo sem limite físico é decoração. Um carimbo em escotilha, rack de suit, trilho de crawler ou tag de elevador vira evidência de movimento.
 
 ## Audio
 
-PT LOC HOLD: Access is biography under pressure.
+Acesso é biografia sob pressão.
 
 ## Field Note
 
-PT LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Carimbos: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pareie com estado de escotilha e objeto de trabalho.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/pt_BR. -->

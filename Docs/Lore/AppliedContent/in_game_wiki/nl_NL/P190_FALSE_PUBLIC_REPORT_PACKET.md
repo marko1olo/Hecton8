@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Public Report Packet"
+title: "Vals Publiek Rapportpakket"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Public Report Packet
+# Vals Publiek Rapportpakket
 
-NL LOC HOLD: The false public report works because HECTON-8 physics really was catastrophic; Deep Reach erased the human decisions inside that physics.
+Vals Publiek Rapportpakket is de versie van HECTON-8 die Deep Reach veilig aan de werelden kon tonen. Het verzint geen valse oceaan. De Grote Getij was echt, de relaisvertraging was echt, de quarantaineonzekerheid was echt, en daarom overleeft het rapport een vluchtige lezing. De leugen leeft in de weglatingen. Ze verwijdert aanvaarde risicomarges, vertraagde evacuatiebevoegdheid, Atlas-continuïteitsweging, verzekeringsconversie en recovery-bewaringsdruk. De speler moet dit lezen als de laatste bedrijfszet: genoeg fysica bewaren om nuchter te klinken, genoeg beslissingen wegsnijden om schuld te wissen.
 
 ## Scanner
 
-NL LOC HOLD: The public lie says storm, geotechnical collapse, failed evacuation, corrupted Atlas logs and quarantine loss.
+Het publieke rapport werkte omdat het de echte oceaan behield en de menselijke keuzes erin verwijderde.
 
 ## Terminal
 
-NL LOC HOLD: PUBLIC REPORT: Great Tide geotechnical cascade; autonomous evacuation failure; Atlas stabilization corruption; biological and pressure quarantine; data loss. REDACTED: accepted tail margin, continuity weighting, release delay, insurance conversion.
+PUBLIC PACKET: verlies van HECTON-8 toegeschreven aan uitzonderlijke getijdencascade, relaisvertraging en quarantaineonzekerheid. Weggelaten: aanvaarde risicomarges, evacuatievrijgavehold, Atlas-continuïteitsoverride, claimconversie en recoveryverzoek met vracht eerst.
 
 ## Audio
 
-NL LOC HOLD: They did not fake the storm. They buried the choice.
+Ze vertelden de waarheid over het water en logen over de handen.
 
 ## Field Note
 
-NL LOC HOLD: The strongest lie is mostly true. It removes weighting, margin and delay.
+De beste leugen ontkende het getij niet. Ze gebruikte het getij als dekking.
 
 <!-- In-Game Wiki; generated from P190_FALSE_PUBLIC_REPORT_PACKET/nl_NL. -->

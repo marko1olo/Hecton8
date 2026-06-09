@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Capsule Blackbox Audio 01"
+title: "Capsule-blackboxaudio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Capsule Blackbox Audio 01
+# Capsule-blackboxaudio 01
 
-NL LOC HOLD: The capsule blackbox proves the opening blocker. The descent survived by spending hardware that would have made ascent possible.
+Capsule-blackboxaudio 01 verandert de openingssurvival in schuld. De capsule crashte niet gewoon op HECTON-8 om op reparatie te wachten. Ze koos de enige burn die de inzittende in leven hield en betaalde met de ascent sleeve, dezelfde hardware die een schone terugkeer mogelijk had gemaakt. De blackbox is nuttig omdat hij een verhaalfeit aan een fysieke blokkade bindt: gebarsten crush-frame, verbrande sleeve, recovery ring zonder lock, ontbrekende pressure frames en een boei die blijft vragen om te stijgen vanaf een diepte waaruit hij niet meer kan ontsnappen. De speler leeft omdat de machine de weg naar huis heeft uitgegeven.
 
 ## Scanner
 
-NL LOC HOLD: Blackbox fragment: survival burn spent the ascent sleeve.
+De eerste blackbox zegt niet dat je crashte. Hij zegt dat de capsule overleefde door de hardware te verbruiken die haar terug omhoog moest brengen.
 
 ## Terminal
 
-NL LOC HOLD: BLACKBOX EXTRACT 01 / SURVIVAL BURN: COMPLETE / ASCENT SLEEVE: SPENT / RECOVERY RING: NO-LOCK / BUOY: UNRELIABLE.
+BLACKBOX EVT 00:14:32: survival burn complete; daalimpact geabsorbeerd; ascent sleeve verbruikt; recovery ring vergrendelde niet; boei onbetrouwbaar; frames 12-19 verloren tijdens pressure shear. Handmatige stijging niet aanbevolen zonder externe sleeve-vervanging.
 
 ## Audio
 
-NL LOC HOLD: Burn spent. Ring no-lock. Do not request ascent.
+Black box event. Survival burn complete. Ascent sleeve spent. Recovery ring no-lock. Frames twelve through nineteen missing.
 
 ## Field Note
 
-NL LOC HOLD: Crush-frame cracked at lower ring. Avionics bay smells of warm salt. Recovery ring reports no-lock; buoy repeats a dead ascent request.
+RECORDER BKX-CAP-01: onderste crush-frame gebarsten; ascent sleeve doorgebrand; recovery ring no-lock; boei herhaalt nog steeds een dood stijgverzoek.
 
 <!-- In-Game Wiki; generated from P286_CAPSULE_BLACKBOX_AUDIO_01/nl_NL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Player Lien Contract Start Card"
+title: "Carte de départ du contrat avec lien joueur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Player Lien Contract Start Card
+# Carte de départ du contrat avec lien joueur
 
-FR LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+La Carte de départ du contrat avec lien joueur verrouille le protagoniste de HECTON-8 comme professionnel compromis, pas comme touriste innocent. Le joueur commence avec un motif pratique : salvage contract, lien de dette, ancienne connaissance d'accès et assez de confiance pour croire que c'est du travail. C'est important parce que le jeu n'a pas besoin d'un lost-relative hook pour rendre la descente personnelle. La pression personnelle vient des preuves. Le fait qu'une ancienne Deep Reach field key soit encore reconnue par Black Keel n'est pas une commodité ; c'est un avertissement que l'ancien système n'a jamais complètement oublié l'opérateur. Le contrat donne au joueur une raison d'entrer dans l'océan et une raison de mal comprendre le premier danger. Il pense lire un job file. Le fichier le lit aussi : ancienne clearance, familiarité de route, historique de liability et beneficiary conflict. Quand le joueur comprend que l'ancien employeur n'est pas seulement un décor, le lien a déjà transformé la curiosité professionnelle en garde.
 
 ## Scanner
 
-FR LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+La carte de départ ne fait pas de vous une victime choisie. Elle fait de vous un ancien professionnel Deep Reach avec un lien, une clé et une raison de vous mentir.
 
 ## Terminal
 
-FR LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+DÉPART CONTRAT / opérateur : salvage contractor indépendant / ancien accès : Deep Reach field key, inactive mais reconnue / lien : actif / motif déclaré : claim value / pression non déclarée : prior exposure, familiarité route, beneficiary conflict.
 
 ## Audio
 
-FR LOC HOLD: You came for work. The file remembered you before you remembered it.
+Vous êtes venu pour le travail. Le fichier s'est souvenu de vous avant vous.
 
 ## Field Note
 
-FR LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Pas de lost-relative hook. Le motif commence comme travail : salvage value, ancien field access, exposition professionnelle, pression personnelle masquée.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/fr_FR. -->

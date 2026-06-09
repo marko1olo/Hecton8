@@ -19,15 +19,19 @@ localization_flags: 0
 
 # Vera Sato-Ren Return Action
 
-Vera Sato-Ren is the 2190 Recovery Compliance Office signature. She represents the living Deep Reach pressure cell: payload first, rescue if useful, silence if affordable. Her messages should feel procedural, delayed and legally dangerous.
+Vera Sato-Ren is the 2190 Recovery Compliance Office signature that gives present-day Deep Reach a face without making them physically omnipresent. She acts through packets, custody windows, carrier clauses and delayed instructions. The pressure is procedural: recover coordinates, prove XO chain, report Atlas access state, keep contractor silence if the payload can still be controlled.
+
+Her return-action language is dangerous because it can sound like help. Rescue remains possible, but only after payload custody. Assistance can be offered, but only while evidence exposure stays manageable. A Marauder reading the packet is not being shouted at by a villain. They are being measured against a window that closes whether they answer or not.
+
+For the player, Sato-Ren turns Deep Reach from historical blame into present leverage. The old colony is not only a grave. It is an active claim site. Every recovered record can become proof, ransom, silence clause or bargaining weight depending on who receives it first. That is the modern Deep Reach threat: not a clean enemy fleet, but a legal pressure cell trying to own the return before truth leaves the water.
 
 ## Scanner
 
-Return-action packet. V. Sato-Ren wants recovery before rescue.
+RETURN-ACTION PACKET // V. Sato-Ren prioritizes recoverable payload, Atlas access state and contractor silence inside a narrow custody window.
 
 ## Terminal
 
-SATO-REN, V. Recovery Compliance Office. Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window.
+SATO-REN, V. // Recovery Compliance Office // Priority: coordinates, XO proof, Atlas access state, contractor silence if recoverable within window. Rescue assistance remains conditional on payload custody and evidence exposure risk.
 
 ## Audio
 
@@ -35,6 +39,6 @@ She does not need to threaten you. The window already does.
 
 ## Field Note
 
-Present Deep Reach should arrive as leverage, not a villain monologue.
+Present Deep Reach should arrive as leverage, not a villain monologue. The window is the threat.
 
 <!-- In-Game Wiki; generated from P110_VERA_SATO_REN_RETURN_ACTION/en_US. -->

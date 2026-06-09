@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Locker Prop Variant Matrix"
+title: "Matrice de variantes de props de casier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Locker Prop Variant Matrix
+# Matrice de variantes de props de casier
 
-FR LOC HOLD: Locker Prop Variant Matrix keeps worker lockers physical: job clue, route clue, damage clue, and erased-account scar before decorative memory.
+La Matrice de variantes de props de casier définit comment HECTON-8 transforme le rangement personnel en preuve lisible. Les casiers ne sont pas des dépôts de biographie. Ce sont des objets de monde compacts qui relient ouvrier, travail, accès de route, dommage et altération ultérieure. Le joueur lit ainsi la vie de la colonie en inspectant des choses qui appartiennent encore à la pièce.
 
 ## Scanner
 
-FR LOC HOLD: A locker should show work, route access and what got erased.
+Un casier doit montrer le travail, l'accès de route et ce que quelqu'un a tenté d'effacer. Les souvenirs ne viennent qu'après la lecture du métier.
 
 ## Terminal
 
-FR LOC HOLD: LOCKER MATRIX: every authored locker needs a job clue, route clue and damage clue. Decorative keepsakes are secondary.
+LOCKER MATRIX : chaque casier écrit a besoin de trois indices lisibles : travail, route et dommage. La mémoire décorative est secondaire. Un casier peut contenir un jeton familial ou une blague privée, mais seulement après qu'un outil, une trace d'autorisation ou une cicatrice d'effacement indique comment cette personne touchait la colonie.
 
 ## Audio
 
-FR LOC HOLD: The locker is not a shrine. It is a failed work order.
+Le casier n'est pas un sanctuaire. C'est un ordre de travail raté.
 
 ## Field Note
 
-FR LOC HOLD: Variants: tool wear, route permission tag, pressure tape, shift sticker, payroll erasure scar, Marauder preservation mark.
+Variantes : usure d'outil, tag d'autorisation de route, ruban de pression, autocollant de service, cicatrice d'effacement paie, marque de préservation maraudeur.
 
 <!-- External Site; generated from P211_LOCKER_PROP_VARIANT_MATRIX/fr_FR. -->

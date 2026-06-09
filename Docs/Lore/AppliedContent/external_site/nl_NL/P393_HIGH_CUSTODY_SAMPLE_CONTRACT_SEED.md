@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: High Custody Sample Contract Seed"
+title: "High-Custody Sample Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: High Custody Sample Contract Seed
+# High-Custody Sample Contractseed
 
-NL LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+High-Custody Sample begint met betere prijs en slechtere doos. Het bord markeert bepaalde samples als receiver-certified: blue-debt-gruis, weefsel-ijzervlokken, verzegelde brine, filterpacks en groeischroot dat nog routecontext draagt. Elk stuk heeft container, massacheck, zegelstatus en custodytag nodig voordat het betaalbaar wordt.
 
-## Scanner
-
-NL LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-NL LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-NL LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-NL LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+De druk is gewoon en lelijk. Een zwaar sample vertraagt een klim. Een gebarsten zegel kan uitbetaling veranderen in quarantainevertraging. Een volle schone locker kan de operator laten kiezen tussen bewijspakket, reparatieonderdeel en gecertificeerd materiaal. Het contract betaalt meer omdat het eigendom tot dragend systeem maakt.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/nl_NL. -->

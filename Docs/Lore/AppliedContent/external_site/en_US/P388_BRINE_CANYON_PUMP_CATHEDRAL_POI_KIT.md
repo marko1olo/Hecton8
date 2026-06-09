@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Brine Canyon Pump Cathedral POI Kit"
+title: "Brine Canyon Pump Cathedral Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Brine Canyon Pump Cathedral POI Kit
+# Brine Canyon Pump Cathedral Evidence Kit
 
-The brine pump cathedral is an example of HECTON-8's design rule: machines are navigation, survival and evidence at once.
+The pump cathedral gives mid-depth scale a job. The operator has to cross gantries, stabilize a brine pocket, read density glass and compare a route hold clock against a worker queue ledger. None of those objects is decorative; each one changes whether the delay looks like weather, negligence or claim protection.
 
-## Scanner
-
-POI kit: pump cathedral reads brine density and old evacuation timing in the same room.
-
-## Terminal
-
-PUMP CATHEDRAL KIT: density sightglass, pump scars, accepted margin note, route hold clock and worker queue ledger.
-
-## Audio
-
-The cathedral was built to move water. It kept records better than people did.
-
-## Field Note
-
-POI evidence kit: Brine Canyon Pump Cathedral turns mid-depth industrial scale into the liability chain's physical landmark.
+The evidence stays stronger when it respects the ocean. The Great Tide broke walls and moved water. The room does not deny that. It shows what the schedule did around the flood: accepted margin, late pump start, held route, crowded queue. The POI becomes a landmark because the machinery still remembers the order of work.
 
 <!-- External Site; generated from P388_BRINE_CANYON_PUMP_CATHEDRAL_POI_KIT/en_US. -->

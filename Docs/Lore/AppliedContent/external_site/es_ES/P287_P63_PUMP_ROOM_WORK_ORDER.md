@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: P-63 Pump Room Work Order"
+title: "Orden de trabajo de sala de bombas P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: P-63 Pump Room Work Order
+# Orden de trabajo de sala de bombas P-63
 
-ES LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+La Orden de trabajo de sala de bombas P-63 es HECTON-8 a pequeña escala: agua en la sala, una herramienta en la mano, una línea acoustic return y una ruta que no se puede confiar hasta que el entorno responda. Vuelve mecánicas en hábito colonial.
 
 ## Scanner
 
-ES LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+La primera reparación se lee como hábito colonial: bombear, sellar, escuchar, cortar solo si la sala deja de mentir.
 
 ## Terminal
 
-ES LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: despejar sump; parchear cold seam; verificar return pinger; cortar fused latch solo después de que la presión sostenga; imprimir gasket desde stock local; marcar route safe después de tres retornos acoustic return. Iniciales del supervisor ausentes bajo mancha de agua.
 
 ## Audio
 
-ES LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Bomba primero. Sello segundo. Si canta, deja de cortar.
 
 ## Field Note
 
-ES LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+La mitad inferior del portapapeles está empapada. La línea de corte aún se lee porque alguien la rodeó dos veces y escribió si canta, para.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/es_ES. -->

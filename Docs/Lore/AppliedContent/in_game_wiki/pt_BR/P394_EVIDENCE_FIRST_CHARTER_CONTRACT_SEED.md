@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Evidence First Charter Contract Seed"
+title: "Semente de contrato de carta prova primeiro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Evidence First Charter Contract Seed
+# Semente de contrato de carta prova primeiro
 
-PT LOC HOLD: Evidence-first contracts are replay routes for players who want the public-ledger axis earlier and at higher practical cost.
+Carta Prova Primeiro é uma família de contratos que paga menos por salvage solto e reserva mais capacidade de rota para prova. Pacotes de acidente, tiras de estado de escotilha, logs pinger e cassetes notariais passam à frente de peças pesadas quando a rota começa a falhar.
 
 ## Scanner
 
-PT LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
+Semente de contrato: carta prova primeiro. Pagamento material menor, maior capacidade notarial e conflitos mais duros de preservação de prova.
 
 ## Terminal
 
-PT LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
+SEED EVIDENCE: pagamento material reduzido, capacidade de cassete notarial elevada, prioridade de armário de prova ativa, penalidade de strip salvage ativa, pressão de receiver Deep Reach provável.
 
 ## Audio
 
-PT LOC HOLD: Truth has a lower listed value until someone tries to bury it.
+O registro mais limpo paga tarde e irrita cedo.
 
 ## Field Note
 
-PT LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+Nota de marauder: um armário de prova não perdoa dívida. Só impede a dívida de escolher qual prova morre primeiro.
 
 <!-- In-Game Wiki; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/pt_BR. -->

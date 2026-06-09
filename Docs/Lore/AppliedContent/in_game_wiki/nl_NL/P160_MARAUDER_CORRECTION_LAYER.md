@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder-correctielaag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Correction Layer
+# Marauder-correctielaag
 
-NL LOC HOLD: Marauder corrections let world writing stay short, useful and angry. They also show the player's new culture fighting the language that trained them.
+De Marauder-correctielaag is waar oude bedrijfstaal autoriteit verliest. Deep Reach schrijft variance, custody, hold, asset, exposure. Marauders schrijven wat een duiker vóór de volgende adem nodig heeft: CO2 maakt handen traag, brine verbergt de stap, seal tape faalt in de bocht, vertrouw het schone hatch niet. Deze notities moeten voelen als een cultuur die zichzelf herbouwt uit mensen die door het systeem zijn getraind en daarna leerden zijn woordenschat te haten.
 
 ## Scanner
 
-NL LOC HOLD: Marauders turn corporate language back into survival facts.
+CORRECTIELAAG // Bedrijfslabel: temporary atmospheric variance. Marauder-notitie: CO2 vreet eerst oordeel.
 
 ## Terminal
 
-NL LOC HOLD: CORRECTION LAYER: a company label says temporary atmospheric variance. A Marauder note says CO2 eats judgment first. The correction is short because the next diver needs it under pressure.
+ANNOTATIEREGEL: vertaal Deep Reach-taal terug naar overlevingsfeiten. Houd notities kort, praktisch, kwaad en bruikbaar onder druk.
 
 ## Audio
 
-NL LOC HOLD: A good note does not sound clever. It keeps someone alive.
+Een goede notitie klinkt niet slim. Ze houdt iemand in leven.
 
 ## Field Note
 
-NL LOC HOLD: The player should feel old Deep Reach language being translated into body count.
+De speler moet voelen hoe oude Deep Reach-taal wordt vertaald naar lichaamstelling.
 
 <!-- In-Game Wiki; generated from P160_MARAUDER_CORRECTION_LAYER/nl_NL. -->

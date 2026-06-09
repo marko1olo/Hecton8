@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: High Custody Sample Contract Seed"
+title: "Зерно контракту зразка високої custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: High Custody Sample Contract Seed
+# Зерно контракту зразка високої custody
 
-UK LOC HOLD: Blue debt is valuable because it is dangerous to own, move and certify. Replay contracts can expose that pressure.
+Зразок високої custody починається з кращої ціни й гіршого ящика. Дошка позначає окремі зразки як receiver-certified: крихту blue debt, тканинно-залізні пластівці, запечатаний розсіл, фільтр-пакети й уривки наросту, що ще несуть контекст маршруту. Кожній одиниці потрібні контейнер, перевірка маси, стан печатки і custody-мітка, перш ніж вона стане оплачуваною.
 
-## Scanner
-
-UK LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
-
-## Terminal
-
-UK LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
-
-## Audio
-
-UK LOC HOLD: A sample can weigh more after it enters the ledger.
-
-## Field Note
-
-UK LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Тиск звичайний і неприємний. Важкий зразок уповільнює підйом. Тріснута печатка може перетворити виплату на карантинну затримку. Повна чиста шафа може змусити оператора вибирати між пакетом доказів, ремонтною деталлю і сертифікованим матеріалом. Контракт платить більше, бо робить власність несною системою.
 
 <!-- External Site; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/uk_UA. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Escape Component Tuning Rules"
+title: "כללי כוונון רכיבי בריחה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escape Component Tuning Rules
+# כללי כוונון רכיבי בריחה
 
-HE LOC HOLD: Escape Component Tuning Rules gives crafting and endings a single route grammar.
+כללי כוונון רכיבי בריחה נותנים ל-HECTON-8 דקדוק אחד ליצירה ולסופים. השחקן אינו טוחן חלקים נדירים שרירותיים. הוא מרכיב טיעון פיזי, ניווטי וחוקי המסביר מדוע משהו מן התהום צריך להתקבל מעל האוקיינוס.
 
 ## Scanner
 
-HE LOC HOLD: Escape parts should force depth and evidence, not grind.
+רכיבי בריחה צריכים לדרוש עומק וראיות, לא grind. עזיבת HECTON-8 היא שרשרת הוכחות, לא יצירה יקרה אחת.
 
 ## Terminal
 
-HE LOC HOLD: ESCAPE RULES: relay spine proves contact, clamp rings prove pressure rating, guidance core proves timing, ascent charge proves energy, legal handshake decides who answers, evidence payload changes consequence.
+רכיבי בריחה / relay spine מוכיח קשר / clamp rings מוכיחות דירוג לחץ / guidance core מוכיח תזמון / ascent charge מוכיח אנרגיה / legal handshake קובע מי עונה / evidence payload משנה תוצאה ומשמורת.
 
 ## Audio
 
-HE LOC HOLD: Leaving is not one craft. It is a chain of proofs.
+עזיבה אינה יצירה אחת. היא שרשרת הוכחות.
 
 ## Field Note
 
-HE LOC HOLD: Every ascent component must have a physical and legal reason.
+כל רכיב עלייה צריך סיבה פיזית וסיבה חוקית: קשר, דירוג, תזמון, אנרגיה, מקבל, מטען. חסר של אחד צריך לשנות את הסוף, לא רק לחסום כפתור.
 
 <!-- External Site; generated from P175_ESCAPE_COMPONENT_TUNING_RULES/he_IL. -->

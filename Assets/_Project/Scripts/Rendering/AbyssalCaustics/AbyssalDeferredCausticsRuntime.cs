@@ -274,7 +274,7 @@ namespace Hecton8.Rendering
                     _weatherService = currentService as IWeatherService;
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
-                    _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+                    CacheCelestialLightReadModel(currentService as ICelestialLightReadabilityReadModel);
                     break;
                 case GlobalRegistryServiceSlot.CausticsRuntime:
                     _ownsRegistrySlot = ReferenceEquals(currentService, this);
@@ -1739,13 +1739,44 @@ namespace Hecton8.Rendering
             if (forceRefresh || _weatherService == null)
                 _weatherService = GlobalRegistry.Weather;
             if (forceRefresh || _celestialLightReadModel == null)
-                _celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+        }
+
+        private void CacheCelestialLightReadModel(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (IsCelestialLightReadModelUsable(readModel))
+            {
+                _celestialLightReadModel = readModel;
+                return;
+            }
+
+            ICelestialLightReadabilityReadModel fallback = GlobalRegistry.CelestialLightReadabilityReadModel;
+            _celestialLightReadModel = IsCelestialLightReadModelUsable(fallback) ? fallback : null;
         }
 
         private CelestialLightReadabilitySnapshot ResolveCelestialLightReadability()
         {
             ICelestialLightReadabilityReadModel readModel = _celestialLightReadModel;
-            return readModel != null ? readModel.LightReadabilitySnapshot : default;
+            if (!IsCelestialLightReadModelUsable(readModel))
+            {
+                CacheCelestialLightReadModel(GlobalRegistry.CelestialLightReadabilityReadModel);
+                readModel = _celestialLightReadModel;
+                if (!IsCelestialLightReadModelUsable(readModel))
+                    return default;
+            }
+
+            return readModel.LightReadabilitySnapshot;
+        }
+
+        private static bool IsCelestialLightReadModelUsable(ICelestialLightReadabilityReadModel readModel)
+        {
+            if (readModel == null)
+                return false;
+
+            if (readModel is Behaviour behaviour)
+                return behaviour != null && behaviour.isActiveAndEnabled;
+
+            return true;
         }
 
         private bool TryResolveVaultBuffer<T>(

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Worker Locker Nameplate Sample"
+title: "Зразок таблички робочої шафки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Worker Locker Nameplate Sample
+# Зразок таблички робочої шафки
 
-UK LOC HOLD: HECTON-8 remembers colonists through objects that had jobs: lockers, route tags, gloves, meal tokens and damaged ledgers.
+Зразок таблички робочої шафки перетворює одну шафку на щільний людський запис. Ren Okoye виживає через маршрутний доступ, сертифікацію інструмента, талон їжі й шрам стирання. Предмет показує головний стиль доказів HECTON-8: особа збережена роботою після відмови пам'яті зарплати.
 
 ## Scanner
 
-UK LOC HOLD: Locker plate: Ren Okoye, Route B, clamp certification active. Payroll stripe sanded off.
+Табличка Ren Okoye зберегла ім'я, бо рядок оплати було легше стерти, ніж роботу.
 
 ## Terminal
 
-UK LOC HOLD: LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK.
+LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
 
 ## Audio
 
-UK LOC HOLD: Name retained. Payline erased.
+Ім'я збережено. Рядок оплати стерто. Робота все ще прикріплена.
 
 ## Field Note
 
-UK LOC HOLD: REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Someone sanded the payline but missed the glove-size mark.
+REN OKOYE / Clamp Route B / cutter cert active / талон їжі під стрічкою. Payroll stripe зішліфовано; мітка розміру рукавички ще видима.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/uk_UA. -->

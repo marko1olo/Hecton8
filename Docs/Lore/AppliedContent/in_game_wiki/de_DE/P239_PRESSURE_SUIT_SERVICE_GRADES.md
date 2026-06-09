@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Pressure Suit Service Grades"
+title: "Servicegrade der Druckanzüge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Pressure Suit Service Grades
+# Servicegrade der Druckanzüge
 
-DE LOC HOLD: Pressure Suit Service Grades ground player progression in maintenance standards and depth certification.
+Druckanzuggrade sind Serviceakten, keine Farbstufen. Jede Tiefe verlangt nachweisbare Dichtungen, Scrubberreserve, Wärmeschicht, Kontaminationsgrenzen und alte Wartungsstempel. Der Spieler kommt tiefer, weil er Sicherheitsstandards wiederherstellt und belegt, nicht weil er eine bessere Rüstung findet.
 
 ## Scanner
 
-DE LOC HOLD: Suit tags classify service depth, seal fatigue, scrubber capacity, thermal tolerance and contamination handling.
+Anzugmarken erfassen Einsatztiefe, Dichtungsverschleiß, Scrubberreserve, Wärmetoleranz und Kontamination.
 
 ## Terminal
 
-DE LOC HOLD: SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
+SUIT GRADE: shelf service, industrial shelf, brine canyon, abyssal machine field, Atlas-basin restricted.
 
 ## Audio
 
-DE LOC HOLD: The suit does not make you brave. It only fails later.
+Der Anzug macht dich nicht mutig. Er versagt nur später.
 
 ## Field Note
 
-DE LOC HOLD: A deeper suit is paperwork, pressure proof and ugly maintenance before it is a stat upgrade.
+Ein tieferer Anzug ist keine farbige Rüstung. Er ist Papier, Ersatzteile und hässliche Wartung.
 
 <!-- In-Game Wiki; generated from P239_PRESSURE_SUIT_SERVICE_GRADES/de_DE. -->

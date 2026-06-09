@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Basin Payload Act"
+title: "Portão payload da bacia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Basin Payload Act
+# Portão payload da bacia Atlas
 
-PT LOC HOLD: The Atlas basin act ends through payload authority. A clean victory is forbidden because every receiver changes the crime scene.
+O portão da bacia é uma decisão de receptor sob pressão. O payload pode vender coordenadas, cortar Atlas, preservar quarentena, publicar um pacote de livro redigido ou ficar local sem recibo. Cada rota muda custódia, dívida, ecologia e acesso a provas. Nenhuma devolve a bacia a um estado intocado.
 
 ## Scanner
 
-PT LOC HOLD: Act gate: Atlas basin. Every ending is a receiver and custody decision.
+Portão de rota: bacia Atlas. Payload final exige rota, receptor, proof hash, estado ecológico, status de lien e janela de sobrevivência.
 
 ## Terminal
 
-PT LOC HOLD: PAYLOAD ACT: route, receiver, proof hash, ecology state, lien and survival clarity must be resolved or intentionally refused.
+ROTA DE CAMPANHA // PAYLOAD BACIA ATLAS. Resolver ou recusar: venda de coordenadas, corte Atlas, escrow de quarentena, livro público, blind return. Selo receptor muda custódia. Nenhum estado limpo de reivindicação disponível.
 
 ## Audio
 
-PT LOC HOLD: The last question is not what happened. It is who you send it to.
+A última pergunta da rota é quem recebe o pacote.
 
 ## Field Note
 
-PT LOC HOLD: Final act record: Atlas basin payload decisions decide what leaves the ocean, who receives it, and what remains damaged.
+Nota de saqueador: escolha o receptor antes de a bolsa pegar água. Uma resposta perfeita não cabe nesta bolsa.
 
 <!-- In-Game Wiki; generated from P385_ATLAS_BASIN_PAYLOAD_ACT/pt_BR. -->

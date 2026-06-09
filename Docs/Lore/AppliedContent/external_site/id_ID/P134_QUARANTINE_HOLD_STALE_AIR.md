@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Penahanan Karantina: Udara Apak"
+title: "Tahan Karantina: Udara Pengap"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Penahanan Karantina: Udara Apak
+# Tahan Karantina: Udara Pengap
 
-Penahanan karantina adalah false exit paling sunyi. Ia tidak membutuhkan penjahat di ruangan. Formulir berkata dipulihkan hidup, penghitung udara berkata ransum aktif, dan pintu berikutnya hanya terbuka setelah review kontaminasi, tantangan claimant, dan review asuransi.
+Tahan karantina adalah jalan keluar palsu yang paling sunyi. Ia tidak butuh ancaman, penjaga terlihat, atau pengkhianatan dramatis. Sistem hanya perlu memulihkan kontraktor hidup, menyegel saksi, menakar udara, dan membuat langkah berikutnya bergantung pada tinjauan yang tak bisa selesai cepat.
 
-Hasilnya kejam karena dapat dipertahankan. Tidak ada yang membunuh saksi. Tidak ada yang menghancurkan sampel. Sistem hanya membuat setiap pernyataan menunggu lebih lama daripada yang pernah bisa ditunggu tubuh. Pemain selamat dari laut dan masuk ke koridor tersegel yang dibangun dari prosedur.
+Kekejamannya bisa dibela baris demi baris. Tidak ada yang menghancurkan sampel. Tidak ada yang mengeksekusi saksi. Tidak ada yang berkata kebenaran itu palsu. Prosedur hanya membuat setiap napas bersyarat dan setiap kalimat menunggu sampai orang mati tak lagi bisa dibantu.
 
 <!-- External Site; generated from P134_QUARANTINE_HOLD_STALE_AIR/id_ID. -->

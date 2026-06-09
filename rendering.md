@@ -65,6 +65,27 @@ Evidence class: STATIC_SOURCE / STATIC_DOC only. These anchors do not prove Unit
 - RenderGraph ownership: `VisorFluidPass.RecordRenderGraph` reads active color, depth, opaque color, optional compute-resolved diegetic lens mask, and imported constant buffers; writes `_HectonVisorFluidDistortion`; and assigns `resourceData.cameraColor`. It uses authored `FeatureSettings.material` and optional `lensComputeShader`; it is not allowed to instantiate runtime materials or become gameplay water/pressure truth.
 - Presentation boundary: wet lens, hull-stress leaks, rain, water-density signal, dust, Snell/chromatic refraction, and lens-mask distortion are presentation approximations. They may sell water/pressure/visor material belief and scale through `GlobalQualityWeight`/visual-overkill fields, but they must not own flooding, pressure damage, fluid simulation, survival truth, save state, or navigation truth. Missing proof: renderer asset binding/import, Frame Debugger or RenderGraph Viewer pass order, GPU/CPU timing, GCMonitor, compact/high captures, and verification that the effect preserves center readability instead of hiding weak art.
 
+## Current Decal Routes
+
+Decals are presentation evidence, not gameplay truth.
+
+Runtime trauma and visor decals:
+
+- `DynamicDecalVaultRuntime` owns Vault-backed fixed decal request/runtime/telemetry buffers under the VFX owner route.
+- `DeferredDecalPass` is the current screen-space trauma consumer. It composites the published buffer in a bounded render pass; it must not spawn `DecalProjector`, Canvas blood, per-trauma GameObjects, particle splats, fracture meshes, or material clones.
+- Damage/impact producers publish typed unmanaged signals. The decal route consumes those snapshots and may fail closed on missing cold storage, non-finite matrices, upload stalls, queue overflow, or visual-sync ownership conflicts.
+- Screen-space decal output may be scaled by `GlobalQualityWeight` for active count, decay, refraction richness, atlas sampling, and density only. It must not change damage truth, save identity, rollback/Merkle state, DTO layout, or interaction authority.
+
+Generated world-support decals:
+
+- Batch34 decal and UV atlases are source assets until imported, padded/split/alpha-checked, and bound through editor tooling.
+- `WorldSupportGeneratedDecalMaterialBuilder` is the current first-party material builder for generated world-support decals. It must fail at the exact missing source id/path, use transparent render state, and avoid warning-only aggregate failure masking.
+- `WorldProceduralSupportFinalAuthoring` must attach deterministic first-party quad decal children for support/world props. It must not depend on vendor ScifiFacility decal prefabs or instantiate vendor decal objects.
+- `Batch34VisorTraumaDecalArrayIntegrator` bakes promoted Batch34 alpha candidates into the visor trauma `Texture2DArray` and binds compatible `DeferredDecalPass` renderer features.
+- `Tools/ValidateWorldSupportGeminiMaterialRoute.py` and `Tools/ValidateBatch34VisorTraumaDecalArrayRoute.py` are static contract guards. Passing them is not Unity import, renderer binding, Frame Debugger, profiler, visual, or player-build proof.
+
+Required failure modeling before runtime acceptance: no source texture, bad alpha/padding, missing material GUID, wrong transparent state, stale vendor prefab dependency, duplicate decal owner, queue full, stale renderer feature handle, missing atlas slice, scene unload, domain reload, and save/load attempts to treat decal presentation as gameplay state.
+
 ## Noir Color Doctrine
 
 Pure black is forbidden on scene geometry. Black water needs structure. The minimum abyssal floor luminance must preserve silhouette, route, and instrument readability.

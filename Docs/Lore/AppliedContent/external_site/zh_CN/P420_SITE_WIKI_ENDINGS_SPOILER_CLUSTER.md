@@ -19,6 +19,14 @@ localization_flags: 1
 
 # 结局与payload custody
 
-结局集群不能按简单的good或bad标签排列。在HECTON-8里，更关键的是谁接收payload，谁能读取proof，谁获得身体、数据和Atlas records的custody，以及哪一种真相能在路线之后存活。False exit也是结构的一部分：带着不完整证据离开可能看似救援，直到after-action records显示是谁买下了沉默。本区必须放在spoiler gates后，并按receiver consequences组织：Black Keel、Deep Reach、public archive、quarantine authority、Atlas continuity，以及解释权可能失控。
+HECTON-8的每个结局都开始于上升窗口之前。关键物体不只是舱内活着的身体，而是系在身体上的payload：坐标、压力样本、Atlas records、worker evidence、quarantine status、损坏的guidance logs、Black Keel的custody receipts，以及允许另一家机构定义这次recovery的法律措辞。
+
+简单的good/bad列表会毁掉真正有用的部分。Black Keel可以把Marauder吊上来，却把真相卖得很糟。Deep Reach可以收到干净坐标，再把它改写成compliance language。Public archive可以伤到公司，却不能让死者回来。Quarantine hold可以医学上合理，同时政治上方便。一次 payout 可以清掉一笔债，却把海洋最好的证人锁进receiver的保险库。
+
+False exits不是玩笑结局。它们是一条链关闭、另一条链仍未偿付的出口。身体离开了，worker proof仍被封存。Sample卖出去了，origin record被剥掉。Atlas被切断，危险的repair network死去，但殖民地作为保险索赔之外的最后记忆也可能随之死亡。Atlas被保留，records幸存，但学会把活系统当备件的maintenance intelligence也幸存。
+
+因此本集群把细节藏在spoiler gates后，并按receiver consequence命名结果。谁拥有proof？谁能阅读它？谁能重写它？谁决定payload到底是rescue、salvage、contamination、theft，还是evidence？
+
+最终上升不是干净落幕。它是在坏光线、坏天气和更糟合同下发生的custody transfer。只有当别人接收了这个故事之后，HECTON-8才会再次沉默。
 
 <!-- External Site; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/zh_CN. -->

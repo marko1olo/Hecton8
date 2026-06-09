@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Gerbang Ladang Mesin Abisal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Abyssal Machine Field Repair Act
+# Gerbang Ladang Mesin Abisal
 
-ID LOC HOLD: HECTON-8's late midgame is not just deeper water. It is infrastructure that has learned to use life as repair surface.
+Ladang mesin abisal mengubah takut menjadi prosedur. Film konduktif, organ akustik, dan cekungan layanan bukan hiasan. Itu komponen yang harus dirutekan operator di bawah tekanan, kehilangan daya, dan tabel kepemilikan tercemar.
 
-## Scanner
-
-ID LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
-
-## Terminal
-
-ID LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
-
-## Audio
-
-ID LOC HOLD: It fixed the wall before it decided what the wall was.
-
-## Field Note
-
-ID LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Tahap ini bekerja karena setiap perbaikan berguna dan kotor secara hukum. Jembatan hidup dapat memulihkan pintu. Jembatan yang sama dapat membuat pintu menjadi biologis, membuat perbaikan menjadi peristiwa Atlas, dan menyulitkan klasifikasi klaim. Jalan maju dibangun dari hal yang memperburuk dokumen.
 
 <!-- External Site; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/id_ID. -->

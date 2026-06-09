@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Photic Shelf Survival Act"
+title: "Portão da plataforma fótica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Photic Shelf Survival Act
+# Portão da plataforma fótica
 
-PT LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+A plataforma fótica ensina por objetos, não por conforto. O operador aprende quais carcaças de bomba ainda seguram ar, quais remendos compram minutos e quais organismos brilhantes sujam uma ferramenta. Atlas aparece primeiro como resíduo de reparo: útil, errado em pontos, e perto o bastante para tocar.
 
 ## Scanner
 
-PT LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+Portão de rota: plataforma fótica. Bolsas de oxigênio, salas de bomba, primeiros cortes e resíduo raso de reparo Atlas são legíveis em água diurna.
 
 ## Terminal
 
-PT LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+ROTA DE CAMPANHA // PLATAFORMA FÓTICA. Exige: reiniciar bomba, remendar vedação, cortar cabo, ping de scanner. Hardware de subida indisponível; células gastas roteadas para sistemas de sobrevivência. Resíduo Atlas classificado útil com alerta de contaminação.
 
 ## Audio
 
-PT LOC HOLD: The shallow water is not safe. It is only readable.
+A água rasa não é segura. Ela é legível.
 
 ## Field Note
 
-PT LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Nota de saqueador: luz do dia ajuda. Não torna generosa uma linha de oxigênio rachada.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/pt_BR. -->

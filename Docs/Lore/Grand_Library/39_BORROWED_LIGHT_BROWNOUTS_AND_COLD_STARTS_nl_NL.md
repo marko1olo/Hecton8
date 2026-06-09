@@ -1,58 +1,78 @@
 <!-- localization_status: draft_machine_or_llm -->
 # GELEEND LICHT, BROWNOUTS EN KOUDE STARTS
 
-> **Bron:** Deep Reach-cursus noodstroom, Black Keel-notities voor bergingswaardering, Marauder-opnamen uit schakelkasten.  
-> **Stem:** Instructeur infrastructuurstroom, met latere annotaties van schuldencrews.  
-> **Opmerking van de beoordelaar:** Op HECTON-8 bewijst licht geen leven. Het bewijst dat iets, ergens, nog bereid is opgeslagen orde tegen het donker uit te geven.
+> **Bron:** Deep Reach-cursus noodstroom, servicekaarten uit schakelkasten, Black Keel-waarderingsnotities voor berging en marauder-opnames uit herstelde annexen.  
+> **Bereik:** lastprioriteit, brownout-gedrag, koude starts, geleende reserves en stroomrecords gebruikt voor routes, claims en overlevingskeuzes.  
+> **Veldgebruik:** lezen voordat je een verlichte kamer vertrouwt, een breaker overbrugt, een dood paneel wekt, een gevoede locker opent of een cel verplaatst die misschien iets anders voedt.
 
 ---
 
-## 1. Licht Is Een Onderhandeling
+## 1. Een verlichte kamer is een last
 
-Mensen vertrouwen licht te snel.
+Op HECTON-8 bewijst licht niet dat een kamer gezond is. Het bewijst dat een circuit nog stroom uitgeeft.
 
-Op HECTON-8 kan een verlichte kamer levend zijn, stervend, liegend of de laatste beleefde seconden van een condensatorbank uitgeven. Een lamp kan op noodreserve draaien terwijl de deurcontroller ernaast geen autoriteit meer heeft om te ontgrendelen. Een gang kan gloeien omdat het habitat morale optics nog prioriteit geeft nadat elke nuttige pomp stil is. Een werkstation kan lang genoeg wakker worden om om een login te vragen en sterven voordat het antwoord telt.
+Een lamp kan op noodreserve draaien terwijl de deurcontroller ernaast geen bevoegdheid meer heeft om te ontgrendelen. Een gang kan gloeien omdat het habitat nog moraalverlichting beschermt nadat nuttige pompen zijn gestopt met rapporteren. Een werkstation kan lang genoeg wakker worden om een login te vragen en sterven voordat het antwoord de buffer bereikt. Een groen statuskraletje kan blijven leven omdat het aan de beschermde kant van een breaker zit, niet omdat het systeem erachter leeft.
 
-Deep Reach bouwde stroomsystemen rond prioriteit, niet comfort. Lucht eerst. Druk daarna. Warmte waar warmte afdichtingen flexibel houdt. Data waar data juridische en medische verliezen voorkomt. Licht kwam later, tenzij duisternis zelf een gevaar werd. De oude kolonie kon menselijk lijken omdat de hiërarchie werkte. Na verlatenheid werd die hiërarchie een veld half bewaarde beloften.
+Deep Reach bouwde de stroomhiërarchie rond overleven, aansprakelijkheid en gewoonte. Lucht eerst. Daarna drukregeling. Warmte waar warmte pakkingen flexibel hield. Koeling waar monsters, medicijnen of lichamen juridisch risico maakten. Data waar logs medische of contractuele verliezen voorkwamen. Licht kwam later, tenzij duisternis zelf een struikel-, snij- of paniekgevaar werd.
 
-Marauders leren vragen wie voor het licht betaalt. Een kamer die niet kan antwoorden is niet per se leeg. Ze leent misschien van iets dat de speler nog niet heeft gevonden.
+Na verlaten toestand werd die hiërarchie moeilijker te lezen. Een kamer kan bezet lijken omdat een goedkoop circuit nog werkt. Ze kan dood lijken omdat een hogere last elke cel pakte die ze kon bereiken. De nuttige vraag is niet of het licht brandt. De nuttige vraag is welke last ervoor betaalt.
 
-## 2. Brownout-Logica
+## 2. Brownout-volgorde
 
-Een brownout is een machine die kiest wat het verdient te blijven bestaan.
+Een brownout is geen blackout. Het is een reeks.
 
-Wanneer stroom daalt, werpen oude systemen lasten in volgorde af. Decoratieve panelen sterven voor pompen. Niet-kritische archieven slapen voor atmosferische controle. Deurmotoren vertragen voordat druksloten loslaten. Medische kasten kunnen koeling bewaren terwijl ze weigeren open te gaan. De hiërarchie was rationeel wanneer onderhouden, wreed wanneer verlaten en gevaarlijk wanneer gedeeltelijk gerepareerd door mensen die de oorspronkelijke aannames niet begrepen.
+Wanneer spanning valt, werpen onderhouden systemen lasten af in ontworpen volgorde. Wandlichtstrips vallen vóór circulatiepompen. Niet-kritieke terminals slapen vóór druklogica. Deurmotoren vertragen vóór harde sloten loslaten. Medische kasten kunnen koeling bewaren terwijl ze weigeren te openen. Een safe room kan luchtwisseling bewaren door elk stopcontact te doden waar een reparatieploeg op hoopte.
 
-Brownouts maken vreemde kamers. Een werkbank kan warmte hebben maar geen logs. Een pomp kan lopen maar niet meer rapporteren. Een waarschuwingslamp kan knipperen vanaf een beschermd circuit terwijl de sensor waarover ze waarschuwt dood is. Een veilige kamer kan lucht in beweging houden door elk stopcontact te doden dat de speler hoopte te gebruiken.
+Verlaten systemen volgen niet altijd de oude grafiek. Gezouten contactors plakken. Gepatchte gangen voeden panelen terug die moesten sterven. Een dode sensor kan een waarschuwingslamp levend houden omdat het waarschuwingscircuit makkelijker te voeden is dan de waarheid die het ooit meldde. Een pomp kan draaien zonder te rapporteren omdat zijn telemetrierail eerst stierf.
 
-Black Keel waardeert brownoutgeschiedenissen omdat ze de volgorde van falen onthullen. Welke circuits het eerst stierven kan bewijzen wanneer het habitat zijn crew verloor, wanneer een claim werd gemanipuleerd, of een samplekoelkast koud bleef en of een gesloten kamer door procedure of door honger werd verzegeld.
+Brownout-volgorde telt omdat ze zegt wanneer de kamer niet meer onderhouden werd. Welke lasten eerst stierven kan tonen of een monster koud bleef, of een deur door procedure of door stroomhonger was verzegeld, of een noodbeacon stroom had toen Black Keel hem inactief markeerde, en of iemand een breaker verplaatste nadat het officiële routelog sloot.
 
-## 3. Koude Starts
+## 3. Koude starts
 
-Een dode plek koud starten is niet hetzelfde als haar aanzetten.
+Een dode kamer koud starten is niet hetzelfde als haar aanzetten.
 
-Een koude start vraagt oude machines hun vorm te herinneren nadat druk, zout, tijd en verwaarlozing die hebben bewerkt. Lagers worden droog wakker. Contactors vonken door mineraalfilm. Batterijen nemen lading ongelijk aan. Veiligheidssystemen vergelijken vandaag met drempels geschreven voor een bemande kolonie en vinden de hele wereld verdacht. Soms klopt dat wantrouwen.
+Een koude start vraagt oude machines om te bewegen nadat druk, zout en tijd hun toleranties veranderden. Lagers worden droog wakker. Contactors vonken door mineraalfilm. Batterijstapels accepteren lading ongelijk. Ventilatoren gooien bezonken stof, schimmel of chemische damp in lucht die ademend leek. Veiligheidslogica vergelijkt een beschadigde kamer met drempels voor een bemande kolonie en verklaart half de plek verdacht.
 
-Goede Marauders rammen geen stroom in een dode kamer tenzij ze klaar zijn voor een slecht antwoord. Een ventilator kan gif in ademende lucht gooien. Een deur kan vergrendelen om een drukstaat te beschermen die niet meer bestaat. Een server kan het laatste nuttige crashlog overschrijven met een nette bootfout. Een verwarming kan een pakking zacht maken die alleen overleefde omdat ze koud was.
+Soms heeft de machine gelijk om te twijfelen. Een deur kan vergrendelen om een druktoestand te beschermen die niet meer bestaat. Een heater kan een pakking verzachten die alleen overleefde omdat ze koud bleef. Een server kan het laatste bruikbare crash record overschrijven met een verse bootfout. Een pomp kan water uit één kamer halen en het door een gebarsten tray in een andere duwen.
 
-Koude start is een keuze over volgorde. Maak het verkeerde eerst wakker en de kamer vertelt één verhaal. Maak haar voorzichtig wakker en ze kan een ander vertellen.
+Goede ploegen wekken een kamer niet in één keer. Ze wekken eerst meting, dan insluiting, dan beweging, dan comfort. Als de volgorde moet veranderen, schrijven ze waarom. Een koude start is een weddenschap op volgorde, en HECTON-8 int bij ploegen die uit gewoonte gokken.
 
-## 4. Geleende Stroom
+## 4. Geleende stroom
 
-Niets brengt een professional zo in verlegenheid als leren dat hij andermans reserve heeft gebruikt.
+Geleende stroom doet een taak die zijn label niet toegeeft.
 
-HECTON-8 zit vol geleende stroom. Noodcellen die via opgelapte gangen kruislings voeden. Dronechargers die safe-roomlichten voeden. Een dood lab dat druppelstroom steelt van een doodgeboren antenne-array. Een vergeten medische vriezer die één sample levend houdt door zes deuren motorautoriteit te onthouden. De kolonie faalde niet altijd in schone eilanden. Ze faalde in onderhandelingen die niemand levend heeft afgesloten.
+HECTON-8 zit er vol mee: noodcellen kruiselings gevoed door gepatchte gangen, drone-laders die safe-roomlichten levend houden, een dood lab dat druppelstroom steelt van een antenne-array, een medische vriezer die één monster bewaart door zes deuren motorbevoegdheid te ontnemen. De kolonie faalde zelden in schone eilanden. Lasten bleven onderhandelen nadat de mensen die de deal begrepen verdwenen waren.
 
-Marauders gebruiken dit en vrezen het. Een bruglijn kan een console lang genoeg herstellen om een bergingslot te prijzen. Ze kan ook de laatste reserve leegtrekken die een getuigenbaken levend houdt. Een draagbare cel kan een deur openen, een parasitair circuit wekken of Black Keel laten vragen waarom het stroomrecord niet meer bij de opgegeven route past.
+Marauders gebruiken geleende stroom omdat ze een dode route in een betaalde route kan veranderen. Een bruglijn kan een console lang genoeg wekken om een bergingspartij te prijzen. Een draagbare cel kan een locker openen voordat de afdichting uitdroogt. Een lader kan een pomp de paar minuten laten draaien die nodig zijn om een sump over te steken.
 
-Stroom is bewijs. Elke verplaatste kabel is een zin in dat bewijs.
+Dezelfde brug kan de laatste reserve leegtrekken die een bewijsbeacon voedt, het tijdgat in een powerlog wissen of een safe-roomdeur gesloten laten falen met medicijnen binnen. Black Keel-auditors houden van geleende stroom wanneer die winbare waarde verhoogt. Ze haten haar wanneer het nieuwe stroompad uitlegt waarom hun oude afwijzing vals was.
 
-## 5. Wat De Speler Leert
+## 5. Schakelkamers
 
-De speler leert dat stroom geen binaire staat is. Het is een sociale orde tussen machines.
+Een schakelkamer is een kaart met brandvlekken.
 
-Een levend paneel kan worden vertrouwd, belast, omzeild, uitgehongerd, hersteld of met rust gelaten. Elke actie verandert wat de plek kan onthouden. Een archief voeden kan een pomp doden. Een pomp redden kan een bericht ongelezen laten. Licht herstellen kan de kamer veiliger maken voor de speler en zichtbaarder voor alles anders dat de duisternis gebruikt.
+Deep Reach-labels zijn nuttig tot ze dat niet meer zijn. Een breaker gemarkeerd `Hab Lighting B` kan na drie noodpatches een pomp voeden. Een afgeplakte hendel kan een geïmproviseerde life-support cross-feed verbergen. Een schone breaker in een vuile kamer betekent meestal dat iemand hem na de overstroming aanraakte. Een warme breaker in een koude annex verdient aandacht vóór de deur ernaast.
 
-Goed stroomwerk gaat niet over alles helder maken. Het gaat over beslissen welke waarheid als eerste energie verdient. De beste Marauder is niet degene met de grootste cel, maar degene die begrijpt wat de kamer opofferde om één groen licht levend te houden.
+Marauder-opnames houden van feiten die snel te controleren zijn: hendelstand, bustemperatuur, zout in het scharnier, geur bij de contactor, welke lasten flikkeren wanneer celklemmen bijten. Lange uitleg doodt mensen in schakelkamers. Korte labels houden handen eerlijker.
 
-Op HECTON-8 is duisternis geen leegte en licht geen genade. Beide zijn boekhouding. De speler overleeft door de rekening te leren lezen voordat hij betaalt.
+De beste noot is niet `safe`. De beste noot is `voedt kliniekslot, tript bij 11 A, niet bruggen tijdens pompcyclus`.
+
+## 6. Stroom als bewijs
+
+Stroomrecords kunnen volgorde bewijzen wanneer kamers liegen.
+
+Een breaker-trip kan tonen dat een deur werd geopend na een beweerde evacuatie. Een laadcurve kan tonen dat een draagbare cel aan de verkeerde kant van een custody-zegel werd aangesloten. Een brownout-log kan tonen dat koeling lang genoeg bleef om een monster waarde te laten houden. Een ontbrekende uitval kan tonen dat iemand het archief bewerkte of het voedde via een niet-genoteerde lijn.
+
+Stroom schept ook aansprakelijkheid. Een ploeg die licht herstelt kan zichzelf tonen in een ontvangerlog. Een ploeg die een pomp levend houdt kan een terminalrecord vernietigen. Een ploeg die een cel steelt kan een stille safe room in een dode veranderen en de factuur in het spanningsspoor achterlaten.
+
+Elke verplaatste kabel verandert het verhaal dat de kamer kan bewijzen.
+
+## 7. Veldregel
+
+Vind de last voordat je licht vertrouwt.
+
+Noem wat stroom verliest voordat je stroom overbrugt.
+
+Wek vóór een koude start de instrumenten die kunnen zeggen wanneer je moet stoppen.
+
+Op HECTON-8 bewijst duisternis geen leegte en licht geen veiligheid. Beide zijn stroomtoestanden met eigenaars, kosten en records. Niet de ploegen met de grootste cellen overleven. De overlevenden weten welke breaker de kamer de goedkoopste leugen laat vertellen.

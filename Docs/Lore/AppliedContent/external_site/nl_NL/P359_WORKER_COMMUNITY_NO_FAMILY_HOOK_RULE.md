@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Worker Community Notice"
+title: "Werkcontactbericht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Worker Community Notice
+# Werkcontactbericht
 
-NL LOC HOLD: HECTON-8 makes its colony human through crews, shifts, notices and work contacts. The motive stays professional until the evidence makes it personal.
+Het werkcontactbericht is een klein sociaal document met een harde rand. Het noemt kooirijen, routeleiders, medlock-getuigen, gereedschapscontacten en relaisvensters. Het lijkt administratie tot de druklogica zichtbaar wordt: een offworld-contact kan rouwen, ruzie maken en herinneren, maar bereikt het luik niet voor het water.
 
-## Scanner
+Op HECTON-8 betekent noodcontact daarom: op station, getraind, per toon bereikbaar en vrijgegeven voor de route van de werker. De definitie is streng, niet liefdeloos. Wanneer een gemiste terugkeer een overstromingspad kan worden, neemt zorg die vorm aan.
 
-NL LOC HOLD: Notice board fragment. It records work contacts, not bloodline drama.
-
-## Terminal
-
-NL LOC HOLD: COMMUNITY NOTICE: emergency contact updates due before pump tone 3. Route leads sign work-contact columns. Personal calls queue behind relay traffic.
-
-## Audio
-
-NL LOC HOLD: They built a roster, not a legend.
-
-## Field Note
-
-NL LOC HOLD: NOTICE BOARD: swap shifts through crew lead. Mark bunk row, route, meal token and work contact. Personal calls wait for relay window.
+Het bord verbindt ook dagelijkse bewijzen tot een gemeenschapsnet. Een pompsleutel in het ene artefact, een watercorrectie in het andere, een gereedschapshandtekening in een derde: elke markering bindt een vermoeide werker aan een ander. Het resultaat is geen melodrama, maar een geloofwaardige druknederzetting waar verantwoordelijkheid een vorm van nabijheid wordt.
 
 <!-- External Site; generated from P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE/nl_NL. -->

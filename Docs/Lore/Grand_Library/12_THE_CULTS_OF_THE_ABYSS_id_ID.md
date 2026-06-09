@@ -1,32 +1,84 @@
-<!-- localization_status: source_draft_pending_native_review -->
-# SEKTE-SEKTE ABISAL DAN KEGILAAN TEKANAN
+<!-- localization_status: draft_machine_or_llm -->
+# RITUS ABYSSAL, IMAN TEKANAN, DAN MENDENGAR YANG BURUK
 
-> **Sumber:** Catatan Evaluasi Psikologis, Teluk Medis Sektor 44 (Ditemukan).
-> **Pembicara:** Dr. Silas Vane, Kepala Psikiater (Almarhum).
-> **Catatan peninjau:** Tinjauan klinis tentang gangguan psikologis para pekerja dan gerakan keagamaan aneh yang muncul di kedalaman.
+> **Sumber:** log psikologis Sector 44, laporan takhayul perawatan, wawancara salvage Black Keel, dan tanda pribadi yang dipulihkan dari ruang kerja tenggelam.  
+> **Suara:** arsip klinis Dr. Silas Vane, dikoreksi oleh Marauder belakangan yang mengetahui "delusi" mana yang merupakan kedokteran buruk dan mana yang fieldcraft.  
+> **Catatan peninjau:** Kepercayaan abyssal tidak boleh ditulis sebagai kegilaan generik. Di HECTON-8, ritus berawal sebagai kebiasaan kerja di bawah tekanan. Ia menjadi berbahaya ketika utang, isolasi, data buruk, dan toleransi korporat memberinya gigi.
 
 ---
 
-## 1. Delirium Akibat Tekanan
+## 1. Laut Menjadi Jam
 
-Psikologi manusia tidak dirancang untuk menahan isolasi zona abisal. Sebelum Sektor 44 runtuh, para pekerja menderita apa yang oleh staf medis disebut "Delirium Akibat Tekanan" (PID).
+Orang tidak menjadi gila karena laut menyeramkan.
 
-PID dimulai dengan halusinasi pendengaran—pekerja mengklaim mendengar suara-suara dalam rintihan berirama dari penyangga titanium. Seiring perkembangannya, kegelapan di luar kaca yang diperkuat berhenti menjadi kekosongan yang hampa dan menjadi kehadiran yang sadar. Beratnya lautan 8.500 meter yang menekan koloni itu menciptakan teror sesak napas yang tidak dapat ditekan sepenuhnya oleh obat apa pun. Untuk mengatasi ketakutan eksistensial karena benar-benar terputus dari umat manusia, beberapa pekerja mulai merasionalisasi laut bukan sebagai lingkungan yang tidak ramah, tetapi sebagai dewa.
+Mereka menjadi aneh karena di bawah tekanan, setiap bagian hidup mulai menghitung mereka. Pompa menghitung. Daur ulang udara menghitung. Pasang menghitung. Jam utang menghitung. Siklus pintu menghitung. Printer makanan menghitung gram. Telemetri setelan menghitung napas, denyut, gemetar, ragu, dan drift alat. Lambung juga menghitung dalam erangan yang terlalu lambat untuk musik dan terlalu teratur untuk diabaikan.
 
-## 2. Sekte Kehampaan (The Cult of the Void)
+Setelah berbulan-bulan di bawah, pekerja berhenti bertanya apakah suara berarti sesuatu. Mereka bertanya apa artinya kali ini. Ketukan pipa sebelum dorongan brine. Lampu mati sebelum predator lewat. Pintu tekanan yang bernyanyi sebelum macet. Rekan kerja yang mendengar ritme salah dan menolak masuk ruangan yang kemudian banjir. Pola menjadi kehati-hatian. Kehati-hatian menjadi kebiasaan. Kebiasaan menjadi aturan. Aturan menjadi iman ketika perusahaan terus menyebut pekerja irasional dan laut terus membuktikan sebagian dari mereka benar.
 
-Di dek teknik bawah Sektor 44, sebuah gerakan keagamaan yang terbentuk sepenuhnya berakar: Sekte Kehampaan.
+Dr. Vane menyebutnya ideasi yang diinduksi tekanan. Kru menyebutnya mendengarkan.
 
-Sekte itu percaya bahwa bentuk kehidupan xenobiologis—para Leviathan, Penguntit, dan kawanan bioluminesen—adalah malaikat dari dewa yang tenggelam. Mereka berkhotbah bahwa Megacorporation Deep Reach melakukan penodaan agama dengan memanen Xenon-Omega. Anggota sekte akan dengan sengaja menyabotase lampu koloni untuk "mengundang kegelapan masuk." Mereka menato diri mereka dengan tinta yang terbuat dari flora bioluminesen yang dihancurkan, yang memungkinkan kulit mereka bersinar di kegelapan total.
+Keduanya tidak lengkap.
 
-## 3. Penyelamatan Pengorbanan
+## 2. Kebiasaan Kerja Yang Tumbuh Gigi
 
-Praktik sekte tersebut menjadi semakin tidak menentu. Alih-alih mengirim inti Xenon-Omega ke atas melalui lift pasokan, mereka mulai melemparkannya ke ventilasi termal terdalam sebagai "persembahan."
+Sebagian besar ritus abyssal berawal sebagai perilaku praktis.
 
-Ketika jatah makanan menipis, dikabarkan bahwa sekte tersebut mulai menawarkan jenis pengorbanan yang berbeda. Para Marauder yang mengais-ngais reruntuhan Sektor 44 sesekali menemukan airlock yang diganti secara manual dari dalam, dengan bekas cakar yang dalam di pintu interior. Para pemuja akan mendorong orang-orang yang tidak percaya ke laut tanpa pakaian selam, percaya bahwa para Leviathan membutuhkan daging sebagai ganti membiarkan koloni itu ada.
+Ketuk dua kali pada palka sebelum membuka, karena kehidupan kecil bersembunyi di sambungan dan getaran memberi tahu apakah rangka bergeser. Biarkan lampu redup selama sepuluh napas sebelum menyeberangi koridor, karena cahaya putih mendadak melatih predator. Tandai safe room tinggi, bukan rendah, karena floodline berbohong dan dinding merayap. Jangan bicara melewati restart pompa, karena bearing buruk punya suara. Ikat benang merah pada perlengkapan pinjaman, karena kepemilikan bersih adalah fiksi hukum di air kotor.
 
-## 4. Tanggapan Perusahaan
+Awalnya ini bukan agama. Ini orang lelah mengubah pelajaran lapangan menjadi ingatan. Bentuk ritual membuatnya mudah dibawa. Pekerja baru lebih cepat mengingat "tiga ketukan untuk baja basah" daripada lampiran perawatan tentang engsel yang bergeser karena tekanan. Penyelam ketakutan dapat mengikuti sajak hitungan ketika tangan terlalu gemetar untuk membaca diagnostik.
 
-Orang akan berasumsi bahwa Deep Reach akan segera membersihkan sekte pembunuh dari fasilitas bernilai triliunan kreditnya. Mereka tidak melakukannya.
+Bahaya dimulai ketika kebiasaan bertahan setelah alasannya hilang, atau ketika alasannya berubah dan tidak ada yang boleh mengatakannya. Lampu redup yang dulu menghindari pemburu menjadi larangan cahaya. Latihan diam menjadi larangan panggilan darurat. Praktik karantina menjadi aturan kemurnian. Tanda berguna menjadi tag kutukan. Fieldcraft yang baik membatu menjadi hukum, dan hukum membunuh ketika air berubah.
 
-Aktuaris di *Black Keel* menghitung bahwa Sekte Kehampaan sebenarnya telah meningkatkan tingkat ekstraksi Xenon-Omega sebesar 14% di sektor bawah. Para pemuja bekerja dalam shift 20 jam yang melelahkan tanpa mengeluh, percaya bahwa kerja keras mereka adalah bentuk penebusan dosa yang brutal. Selama kuota terpenuhi, Deep Reach mengabaikan personel yang hilang dan lampu yang disabotase. Baru setelah seluruh koloni kebanjiran, pihak perusahaan menyadari bahwa sekte itu tidak hanya menyembah Leviathan—mereka secara aktif berusaha membangunkan mereka.
+## 3. Tiga Arus Kepercayaan
+
+Deep Reach mengarsipkan setiap praktik tidak resmi sebagai deviasi moral. Itu lebih murah daripada memahaminya.
+
+Kru punya nama sendiri. Hush circles adalah kelompok kerja sunyi yang percaya setiap suara tak perlu memperpendek kesabaran ruangan. Mereka tidak sepenuhnya salah. Di beberapa reruntuhan, kerja sunyi menghindari hewan, mikrofon tua, seal sekarat, dan rutinitas Atlas yang bangun pada ritme. Tetapi praktik hush menjadi kejam ketika mempermalukan batuk, panik, nyeri, atau pekerja yang mencoba meminta bantuan.
+
+Kru vent-tithe meninggalkan limbah terkontrol, panas, atau umpan pada kisi tertentu untuk menjauhkan jaring makanan lokal dari zona hidup. Lagi-lagi tidak sepenuhnya salah. Bloom yang diberi makan dapat menarik pengikis menjauh dari pintu. Panel hangat dapat menahan pemakan bangkai di luar loker alat. Tetapi tithe menjadi bahaya ketika orang memberi makan sistem yang tidak lagi mereka pahami, mengajari hewan lebih besar rute baru, dan menyebut hasilnya belas kasih.
+
+Peziarah ledger memperlakukan utang, cedera, dan claim marks sebagai noda moral yang harus diseimbangkan sebelum ruangan "terbuka." Bahasa mereka terdengar bodoh sampai diingat bahwa di HECTON-8, dokumen menentukan udara, obat, urutan penyelamatan, dan siapa disalahkan setelah mati. Mereka melihat perusahaan sebagai dewa karena perusahaan bertindak seperti dewa: jauh, prosedural, lapar, dan mampu mengubah nyawa manusia menjadi satu baris.
+
+Tidak ada arus yang murni. Tidak ada yang tidak berbahaya. Tidak ada yang hanya kegilaan.
+
+## 4. Mendengar Yang Buruk
+
+Abyss tidak membutuhkan kebohongan untuk melukai orang. Ia hanya membutuhkan pola setengah benar yang diulang terlalu lama.
+
+Mendengar yang buruk dimulai ketika kru lebih percaya tanda daripada situasi. Koridor "aman" karena benang lama masih ada, padahal benang itu bersih dan ruangan baru basah. Pintu "terkutuk" karena tiga pekerja mati di baliknya, padahal pembunuh sebenarnya jadwal tekanan yang tidak diperbarui. Mesin "lapar" karena bangun setelah terkena darah, padahal sensor sebenarnya mendeteksi besi, garam, dan panas. Bloom "melindungi" karena menutup satu kebocoran, lalu menyebar ke scrubber udara dan membuat setiap napas mahal.
+
+Kru Black Keel belajar menghormati kepercayaan tanpa menyerah padanya. Takhayul adalah laporan lapangan dengan bukti rusak. Tanyakan apa yang dilindunginya, kapan ia melindungi, siapa diuntungkan dengan membuatnya kabur, dan apa yang berubah sejak itu. Jika jawabannya "tidak ada," mungkin itu suara bising. Jika jawabannya "seseorang dibayar," mungkin itu kebijakan dalam pakaian ritual.
+
+Ritus paling berbahaya bukan yang aneh. Ritus paling berbahaya terdengar seperti prosedur.
+
+## 5. Toleransi Korporat
+
+Deep Reach tidak takut pada kepercayaan abyssal selama ia meningkatkan output.
+
+Kru yang menolak cahaya terang merusak lebih sedikit lampu. Kru yang bekerja diam mencatat lebih sedikit keluhan. Kru yang memperlakukan lembur sebagai penebusan membuat target jadwal tampak alami. Kru yang menyalahkan roh pintu atas tangan remuk tidak langsung mengajukan cacat desain. Manajemen menyebut praktik ini "budaya koping lokal," "struktur moral non-disruptif," dan "adaptasi bahaya yang dipimpin pekerja."
+
+Perusahaan hanya turun tangan ketika ritus mengancam custody, kuota, atau tanggung jawab. Bukan ketika pekerja menderita. Bukan ketika hush circle menghukum panik. Bukan ketika vent-tithe menarik hewan besar ke poros salah. Bukan ketika peziarah ledger menolak perawatan karena garis utang belum "seimbang." Intervensi datang ketika praktik membuat claim lebih sulit dijual, sampel lebih sulit disertifikasi, atau kematian lebih sulit diklasifikasikan.
+
+Itulah sebabnya ritus bertahan. Mereka berguna bagi pekerja, predator, mesin rusak, dan manajemen untuk alasan berbeda.
+
+Begitulah bentuk kultus nyata di bawah tekanan: bukan ruangan penuh orang bodoh, tetapi sistem tempat semua orang mendapat sesuatu sampai tagihan tiba.
+
+## 6. Tanda Di Reruntuhan
+
+Pemain menemukan ritus sebelum ada yang menjelaskan.
+
+Serat merah diikat di atas palka, bukan di sampingnya. Tiga goresan pada rumah pompa. Jejak tangan di sekitar speaker mati. Deretan meal tokens ditempel pada rangka ventilasi. Lingkaran garam di lantai yang bukan dekorasi, melainkan waktu tetes lama. Penutup lampu dicat setengah hitam. Claim tag digores tetapi tidak dilepas. Loker medis dengan tanda permintaan maaf di sekitar gagang. Alat bersih ditinggalkan di ruangan kotor karena mengambilnya akan memindahkan kesalahan.
+
+Tanda-tanda ini tidak boleh berarti hal yang sama. Beberapa memperingatkan. Beberapa berduka. Beberapa mengingat rute. Beberapa menipu. Beberapa mengintimidasi. Beberapa mencoba menenangkan biologi, mesin, atau orang. Beberapa cukup tua sehingga tujuan aslinya hilang dan hanya kebiasaan yang tersisa.
+
+Pemain dapat menggunakannya. Tanda hush dapat mengidentifikasi rute tempat suara penting. Tanda tithe dapat mengungkap tempat hewan makan. Tanda ledger dapat menunjuk bukti tersembunyi, utang belum dibayar, atau tubuh yang tidak pernah dicatat. Tanda palsu dapat menjauhkan kru lain dari hadiah. Tanda nyata dapat menyelamatkan pemain jika tidak diperlakukan seperti folklor.
+
+## 7. Yang Dipelajari Pemain
+
+Pemain belajar bahwa kepercayaan adalah teknologi bertahan hidup lain, dan seperti semua teknologi di HECTON-8, ia gagal buruk tanpa konteks.
+
+Ritus dapat menjaga rute, menyembunyikan claim, menenangkan kru, memperingatkan tekanan, mengodekan kematian, memanipulasi saingan, atau memaafkan kejahatan. Takhayul dapat menjadi sains buruk, fieldcraft terkompresi, penutup korporat, duka dengan pola, atau semua itu sekaligus. Pemain tidak harus percaya abyss sedang menonton. Pemain harus memahami mengapa orang lain mempercayainya, apa yang mereka lakukan karena kepercayaan itu, dan apa yang laut pelajari dari pengulangan.
+
+Permainan yang baik membaca ritual seperti sensor rusak. Jangan mengejeknya. Jangan mematuhinya secara buta. Uji dengan air, tekanan, biologi, mesin, utang, dan ketakutan.
+
+Di HECTON-8, abyss tidak membutuhkan penyembah. Ia hanya membutuhkan orang mengulangi kesalahan berguna sampai kesalahan itu menjadi infrastruktur.

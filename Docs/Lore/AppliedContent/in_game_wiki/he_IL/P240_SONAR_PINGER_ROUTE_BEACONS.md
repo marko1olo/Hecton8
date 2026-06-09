@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Sonar Pinger Route Beacons"
+title: "משואות route של sonar pinger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Sonar Pinger Route Beacons
+# משואות route של sonar pinger
 
-HE LOC HOLD: Sonar Pinger Route Beacons make early equipment stay relevant across exploration, salvage, creature telegraphing and false exits.
+sonar pinger הוא זול, אבל לא מפסיק להיות שימושי. הוא יוצר קו חזרה, מסמן ארגזי ראיות, מפריד בין הדים שקריים לקירות אמיתיים ומשאיר route אבוד כצליל. באותו זמן הוא מספר לאוקיינוס איפה אתה. לכן הוא כלי בטיחות, סימן חוב ולפעמים פיתיון.
 
 ## Scanner
 
-HE LOC HOLD: A pinger float marks return geometry, exposes false echoes and can draw both rescue attention and unwanted life.
+מצוף pinger מסמן גיאומטריית חזרה, חושף הדים שקריים ומושך גם חילוץ וגם חיים לא רצויים.
 
 ## Terminal
 
-HE LOC HOLD: PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
+PINGER RULE: return line first, sample tag second, distress packet third. Never trust one echo.
 
 ## Audio
 
-HE LOC HOLD: One ping is a promise. Two pings are a bill.
+ping אחד הוא הבטחה. שני ping הם חשבון.
 
 ## Field Note
 
-HE LOC HOLD: The pinger is the first honest tool: it tells distance, debt, route loss and creature risk through sound.
+pinger הוא הכלי הישר הראשון: הוא אומר בצליל מרחק, חוב, אובדן מסלול וסיכון יצורים.
 
 <!-- In-Game Wiki; generated from P240_SONAR_PINGER_ROUTE_BEACONS/he_IL. -->

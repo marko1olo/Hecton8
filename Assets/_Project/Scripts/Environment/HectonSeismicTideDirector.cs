@@ -1072,6 +1072,7 @@ namespace Hecton8.Environment
         private ITickDispatcher _tickDispatcher;
         private IWorldSeedProvider _worldSeedProvider;
         private IPlayerRuntimeContext _playerRuntime;
+        private ICelestialRuntimeSnapshotReadModel _celestialSnapshotReadModel;
         private CelestialRuntimeSnapshot _celestialSnapshot;
         private MathPrecisionLevel _mathPrecision = MathPrecisionLevel.Low;
         private double _fallbackAbsoluteUniverseTime;
@@ -1711,7 +1712,10 @@ namespace Hecton8.Environment
 
         private void PublishCelestialTideSnapshot(double h8Time, in TideSolveResult tide, in CelestialStateDTO celestialState, in EnvironmentStateDTO environmentState)
         {
-            CelestialRuntimeSnapshot celestial = _celestialSnapshot;
+            CelestialRuntimeSnapshot published = ReadPublishedCelestialSnapshot();
+            CelestialRuntimeSnapshot celestial = IsCelestialSnapshotReadable(in published)
+                ? published
+                : _celestialSnapshot;
             celestial.AbsoluteUniverseTime = h8Time;
             celestial.SunDirection = NormalizeSafeFloat3(new float3((float)celestialState.SunDirection.x, (float)celestialState.SunDirection.y, (float)celestialState.SunDirection.z), new float3(0f, 1f, 0f));
             celestial.Moon0Direction = NormalizeSafeFloat3(new float3((float)celestialState.MoonDirection.x, (float)celestialState.MoonDirection.y, (float)celestialState.MoonDirection.z), new float3(0f, -1f, 0f));
@@ -1734,11 +1738,30 @@ namespace Hecton8.Environment
 
             celestial.Sequence = unchecked(celestial.Sequence + 1u);
             _celestialSnapshot = celestial;
-            GlobalRegistry.PublishCelestialRuntimeSnapshot(in celestial);
             _pendingCelestialSunDirection = new Vector4((float)celestialState.SunDirection.x, (float)celestialState.SunDirection.y, (float)celestialState.SunDirection.z, 0f);
             _pendingCelestialMoonDirection = new Vector4((float)celestialState.MoonDirection.x, (float)celestialState.MoonDirection.y, (float)celestialState.MoonDirection.z, 0f);
             _pendingCelestialEclipseOcclusion = eclipseOcclusion;
             _celestialShaderDirty = true;
+        }
+
+        private CelestialRuntimeSnapshot ReadPublishedCelestialSnapshot()
+        {
+            ICelestialRuntimeSnapshotReadModel readModel = _celestialSnapshotReadModel;
+            if (readModel == null)
+            {
+                readModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+                _celestialSnapshotReadModel = readModel;
+            }
+
+            return readModel != null ? readModel.RuntimeSnapshot : default;
+        }
+
+        private static bool IsCelestialSnapshotReadable(in CelestialRuntimeSnapshot snapshot)
+        {
+            return (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u &&
+                   math.isfinite(snapshot.AbsoluteUniverseTime) &&
+                   math.all(math.isfinite(snapshot.SunDirection)) &&
+                   math.all(math.isfinite(snapshot.Moon0Direction));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4029,7 +4052,11 @@ namespace Hecton8.Environment
             _dataVault = GlobalRegistry.DataVault;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
             _playerRuntime = GlobalRegistry.Player;
-            _fallbackAbsoluteUniverseTime = (_celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
+            _celestialSnapshotReadModel = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
+            CelestialRuntimeSnapshot publishedCelestial = ReadPublishedCelestialSnapshot();
+            if (IsCelestialSnapshotReadable(in publishedCelestial))
+                _celestialSnapshot = publishedCelestial;
+            _fallbackAbsoluteUniverseTime = IsCelestialSnapshotReadable(in _celestialSnapshot)
                 ? _celestialSnapshot.AbsoluteUniverseTime
                 : Time.timeAsDouble;
             if (!math.isfinite(_fallbackAbsoluteUniverseTime) || _fallbackAbsoluteUniverseTime < 0d)
@@ -4091,6 +4118,7 @@ namespace Hecton8.Environment
             _celestialMechanicsGuardVault = null;
             _worldSeedProvider = null;
             _playerRuntime = null;
+            _celestialSnapshotReadModel = null;
             _tideTelemetryHandle = default;
             _seismicEventsHandle = default;
             _seismicStatesHandle = default;

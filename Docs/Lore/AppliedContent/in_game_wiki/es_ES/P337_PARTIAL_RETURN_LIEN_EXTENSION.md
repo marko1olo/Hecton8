@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Partial Return Lien Extension"
+title: "Extensión de gravamen de retorno parcial"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Partial Return Lien Extension
+# Extensión de gravamen de retorno parcial
 
-ES LOC HOLD: Partial Return Lien Extension locks replay persistence as knowledge, not equipment power. The player can return because the debt and dossier changed, not because the world became easier.
+La extensión fija la persistencia de repetición como conocimiento, no como poder de equipo. El jugador vuelve porque cambiaron el dossier y la deuda, no porque HECTON-8 se volviera más fácil.
 
 ## Scanner
 
-ES LOC HOLD: Return authorized under lien extension. Equipment not carried forward.
+Retorno aprobado bajo gravamen extendido. Las marcas de conocimiento persisten; el inventario queda en cuarentena y retirado.
 
 ## Terminal
 
-ES LOC HOLD: PARTIAL RETURN: same-seed reentry permitted under extended lien, revised storm window and knowledge-flag dossier. Physical inventory reset by custody quarantine.
+ORDEN PARTIAL RETURN: reentrada al mismo seed permitida bajo gravamen extendido, ventana de tormenta revisada y dossier de conocimiento retenido. Inventario físico reiniciado por cuarentena de custodia; las herramientas siguen siendo propiedad del portador hasta cerrar la revisión de pruebas.
 
 ## Audio
 
-ES LOC HOLD: The route remembers what you proved. The ocean does not owe you your tools.
+La ruta recuerda lo que probaste. El océano se queda lo demás.
 
 ## Field Note
 
-ES LOC HOLD: Reentry record: same-seed return carries knowledge flags, debt pressure, and custody reset instead of inherited equipment.
+Registro de reentrada: retorno mismo seed con conocimiento, presión de deuda, cambios de tormenta y reinicio de custodia en lugar de equipo heredado.
 
 <!-- In-Game Wiki; generated from P337_PARTIAL_RETURN_LIEN_EXTENSION/es_ES. -->

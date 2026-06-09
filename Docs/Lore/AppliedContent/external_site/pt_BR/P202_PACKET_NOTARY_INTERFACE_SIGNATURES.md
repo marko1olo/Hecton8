@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Assinaturas da Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Assinaturas da Packet Notary Interface
 
-PT LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+O atraso interestelar não tornou inútil toda mensagem de HECTON-8. Ele tornou cara a custódia da mensagem. Uma faixa Packet Notary registra qual janela de retransmissão carregou um pacote, qual hash o testemunhou e qual dono manteve a custódia antes da liberação. Nos registros recuperados de HECTON-8, esse mecanismo pode proteger um log de trabalhador ou deixá-lo preso em claim material até que uma segunda testemunha seja anexada. Nota de arquivo público: este registro identifica a rota da prova, não toda a cadeia de comando da Deep Reach.
 
 ## Scanner
 
-PT LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+Selo de pacote recuperado: faixa de hash intacta, janela de retransmissão 17-A, dono da custódia não resolvido. Tratar como prova só depois que a witness chain coincidir.
 
 ## Terminal
 
-PT LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED: Som Varela, Packet Notary Interface. Rota: Relay Spine / witness hash strip. Ação: selar packet hash, atraso local de retransmissão e dono da custódia. Exceção: anexo com nome de trabalhador ausente mantém o pacote na fila claim material. Escalação: public ledger só após segundo witness hash.
 
 ## Audio
 
-PT LOC HOLD: A seal is not mercy. It is a clock with a price.
+O selo está inteiro. A marca de tempo atrasou duas janelas. Se o witness hash bater, eles não podem chamar de estática.
 
 ## Field Note
 
-PT LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+Não venda isso como log. Venda como relógio com testemunha: tempo de retransmissão, packet hash, dono da custódia. Sem os três campos, a Deep Reach chama de ruído solto de portadora.
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/pt_BR. -->

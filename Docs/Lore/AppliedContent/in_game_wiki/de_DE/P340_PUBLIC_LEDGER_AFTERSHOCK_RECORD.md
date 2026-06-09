@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Public Ledger Aftershock Record"
+title: "Nachbebenakte des öffentlichen Ledgers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Public Ledger Aftershock Record
+# Nachbebenakte des öffentlichen Ledgers
 
-DE LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+Diese Akte verhindert, dass Wahrheit ein sauberer Siegknopf wird. Veröffentlichung bricht Auslöschung, aber der Spieler verliert Kontrolle über Panik, Ausbeutung, Vergeltung und das, was Fremde aus dem Beweis bauen.
 
 ## Scanner
 
-DE LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+Ledger-Spiegel akzeptiert. Beweise sind nicht mehr entfernbar; Folgen nicht mehr steuerbar.
 
 ## Terminal
 
-DE LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: Beweise außerhalb der Deep-Reach-Verwahrung veröffentlicht. Arbeiternamen, Atlas-Vektorfragmente und Haftungstags über öffentliche Empfänger gespiegelt. Spielerautorität über Interpretation beendet.
 
 ## Audio
 
-DE LOC HOLD: Truth left the room. It did not ask where to go next.
+Die Wahrheit verließ den Raum. Sie fragte nicht, wohin als Nächstes.
 
 ## Field Note
 
-DE LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+Öffentliche Wahrheitsakte: gespiegelte Beweise verhindern Löschung, beenden aber die Kontrolle des Spielers über Deutung und Vergeltung.
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/de_DE. -->

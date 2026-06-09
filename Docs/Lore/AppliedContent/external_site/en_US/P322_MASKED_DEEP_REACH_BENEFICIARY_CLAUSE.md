@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Masked Deep Reach Beneficiary Clause
 
-Deep Reach's modern role is not omnipotent control. It is paperwork with teeth: proxy ownership, recovery clauses and legal pressure around an old flooded disaster.
+The Masked Deep Reach Beneficiary Clause defines the modern shape of HECTON-8's conspiracy. Deep Reach is not an omnipotent puppet master. It is a beneficiary hidden in recovery priority, insurance routing and shell custody. The result is more frightening because it is ordinary: paperwork with teeth around a disaster that never stopped paying out.
 
 ## Scanner
 
-Contract clause redacted. Beneficiary chain routes through proxy loss desk.
+Deep Reach is not printed on the hire sheet. It appears where the money, receiver priority and coordinate access converge.
 
 ## Terminal
 
-BENEFICIARY TRACE: Deep Reach is absent from the visible hire sheet and present in the priority recovery channel. Proxy holder masks liability while preserving coordinate access.
+BENEFICIARY TRACE / visible hirer: proxy loss desk / masked beneficiary: Deep Reach-linked shell / liability: insulated / coordinate access: preserved / priority recovery channel: opens before contractor distress lane.
 
 ## Audio
 
@@ -35,6 +35,6 @@ If the name is missing but the channel opens first, the owner is still in the ro
 
 ## Field Note
 
-Do not write this as a villain monologue. Show the clause and let the player infer the pressure.
+Keep it procedural: redaction, proxy loss desk, beneficiary trace, recovery channel. Let the player infer the pressure.
 
 <!-- External Site; generated from P322_MASKED_DEEP_REACH_BENEFICIARY_CLAUSE/en_US. -->

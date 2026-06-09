@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra: konwersja strat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra: konwersja strat
 
-PL LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra jest śladem likwidatora Keelmark Mutual, który zmienia zaginionych robotników w nierozwiązane stany księgowe. Tabela nie jest napisana dla żałoby, lecz dla kosztu zamknięcia: ciało nieodzyskane, stan ciśnienia niecertyfikowany, skażenie oczekujące, tożsamość płacowa zawieszona.
+
+Dlatego nazwiska mają znaczenie w HECTON-8. Tabliczka szafki, znacznik kombinezonu, wiersz rejestru ciał albo odzyskany zegar trasy mogą przenieść robotnika z nierozwiązanego ładunku do roszczenia. Niejednoznaczność jest tańsza od ratunku, tańsza od odszkodowania i łatwiejsza do zakopania w sporze przewoźników.
+
+Dla Maraudera odzyskana tożsamość nie jest ozdobą. Uszkadza trik księgowy, który sprawił, że człowiek zniknął dwa razy: najpierw w wodzie, potem w rejestrze.
 
 ## Scanner
 
-PL LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+TABELA LIKWIDATORA // M. Ibarra przekształcał zaginionych robotników w nierozwiązane klasy ładunku do certyfikacji stanu ciśnienia, skażenia lub płac.
 
 ## Terminal
 
-PL LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual, konwersja strat // Nieodzyskane aktywa biologiczne pozostają nierozwiązane do certyfikacji stanu ciśnienia, skażenia lub płac. Nie zamykać klasy roszczącego bez dowodu opieki.
 
 ## Audio
 
-PL LOC HOLD: A missing person became a pending category. That was cheaper.
+Zaginiona osoba stała się kategorią oczekującą. To było tańsze.
 
 ## Field Note
 
-PL LOC HOLD: Insurance language should feel colder than gunfire.
+Język ubezpieczeń powinien być chłodniejszy niż strzały. Odzyskane nazwisko nie jest klimatem; łamie tańszą kategorię.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/pl_PL. -->

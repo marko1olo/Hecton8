@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Pressure Bunk Shift Routine"
+title: "روتين سرير الضغط في الوردية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Pressure Bunk Shift Routine
+# روتين سرير الضغط في الوردية
 
-AR LOC HOLD: Bunk routines make colony life legible through repeated work: sleep, tools, pressure notes, meals and descent assignments.
+سرير الضغط ليس غرفة نوم بالمعنى السطحي القديم. إنه دفء مستأجر، أحزمة تثبيت، رغوة جافة إذا كانت المضخات رحيمة، وسلسلة إثبات صغيرة تقول إن عاملا عاد من الضغط. تسجل لوحة C-12 نغمة إيقاظ 03:40، فحص ختم البدلة، ملاحظة ضغط، رمز ماء-وجبة، عهدة أداة، وتكليف نزول. لم يصل شروق إلى الوحدة. نغمة المضخة قامت بعمل الصباح.
+
+تبدو routine قاسية إلى أن تتبع السلسلة. فحص ختم فائت يمس قائد الأسرّة. مفتاح مضخة متأخر يمس مخزن الأدوات وسجل المقصف. ملاحظة ضغط قد تنقل عاملا إلى medlock قبل أن يصبح قرار سيئ ممرا مغمورا. كان السرير فراشا، وعنوانا، وجدولا، ونقطة عهدة، وإنذارا هادئا.
+
+الأدلة الصغيرة مهمة هنا: شريط جورب رطب على السكة، اسم مختصر، رمز وجبة بجانب ملاحظة ضغط، مفتاح مستحق قبل tone 2. لم يكتب شيء من ذلك كتذكار. كان حياة محطة عادية تحاول إبقاء جسد متعب حيا حتى النغمة التالية.
 
 ## Scanner
 
-AR LOC HOLD: Shift bunk slate. Sleep rotated by pump tone, not sunrise.
+لوح سرير الوردية // الصف C-12. نغمة المضخة 03:40، فحص أختام البدلة، ملاحظة ضغط، رمز ماء الوجبة، عهدة مفتاح المضخة. النوم كان يدور على نغمة المضخة لا على الشروق.
 
 ## Terminal
 
-AR LOC HOLD: BUNK SLATE: 03:40 pump tone; suit check; pressure note; meal token; tool custody; descent assignment. Missed return flags bunk lead.
+سرير C-12: نغمة إيقاظ 03:40؛ حزام السرير خال؛ فحص الأختام 03:52؛ ملاحظة الضغط مودعة؛ رمز ماء الوجبة بعد النزول؛ عهدة الأداة D. Rivas؛ مفتاح المضخة مستحق قبل النغمة 2. عدم العودة يعلّم قائد الصف وسجل المقصف.
 
 ## Audio
 
-AR LOC HOLD: Tired, trained and due back in six hours.
+ست ساعات في الأسفل، ساعتان من النوم، ونغمة واحدة تثبت أنك عدت.
 
 ## Field Note
 
-AR LOC HOLD: Bunk 12 still has damp sock tape on the rail. Wake tone was 03:40. Tool custody tag says D. Rivas owed the pump key back before meal.
+السرير 12 ما زال يحمل شريط جورب مبللة على السكة. النغمة 03:40. كان على D. Rivas أن يعيد مفتاح المضخة قبل الوجبة. لا تنزع البطاقة؛ الروتين هو سلسلة الهوية.
 
 <!-- In-Game Wiki; generated from P356_PRESSURE_BUNK_SHIFT_ROUTINE/ar_SA. -->

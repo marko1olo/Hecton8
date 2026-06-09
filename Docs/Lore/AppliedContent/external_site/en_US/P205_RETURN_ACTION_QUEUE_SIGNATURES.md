@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Return Action Queue Signatures
 
-Return Action Queue signatures keep Deep Reach pressure alive in the present through delayed packets, carrier clauses, and payload-first recovery.
+Return Action Queue records are the public edge of current Deep Reach pressure. The 2147 disaster left logs, but the 2190 queue still moves clauses through relay windows: send coordinates, certify payload custody, clear quarantine language, then discuss recovery. The packet does not claim that Black Keel is useless or that Deep Reach can instantly rescue anyone. It shows the opposite: local ships, delayed legal packets, and custody checks are slow enough that priority order becomes life support.
 
 ## Scanner
 
-The old crime has a live queue.
+Live return strip received: payload custody priority HIGH, contractor recovery BELOW-CLEARANCE, Aegir window 04 open for twelve minutes.
 
 ## Terminal
 
-SIGNATURE SEED: Amara Keene, Return Action Queue. Function: prioritizes payload custody before contractor rescue during live Aegir windows.
+SIGNATURE SEED: Amara Keene, Return Action Queue. Window: Aegir live relay. Action: prioritize payload custody, coordinate receipt and quarantine handshake before contractor recovery. Carrier clause: Black Keel may delay pickup until custody state is clean.
 
 ## Audio
 
-They are not ghosts. They are delayed paperwork with engines.
+Keene's queue is live. Rescue sits behind payload custody unless we change the handshake.
 
 ## Field Note
 
-Return Action signatures mark delayed packets, carrier clauses, payload bargains, and present-tense pressure from Deep Reach.
+This is not old paper. The queue stamp is fresh: delayed packet, carrier clause, payload-first order. Check Black Keel's recovery language before you trust the pickup.
 
 <!-- External Site; generated from P205_RETURN_ACTION_QUEUE_SIGNATURES/en_US. -->

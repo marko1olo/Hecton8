@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Contract Continuity Desk Signatures"
+title: "Handtekeningen van de Contractcontinuïteitsdesk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Contract Continuity Desk Signatures
+# Handtekeningen van de Contractcontinuïteitsdesk
 
-NL LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+Handtekeningen van de Contractcontinuïteitsdesk laten zien hoe de openingsklus van de speler juridische druk wordt voordat de speler de zee begrijpt. De val is geen enkele kwaadaardige zin. Hij wordt samengesteld uit routinehandtekeningen die saai genoeg lijken om te passeren: een pandrechtfusie van de Aegir Reclamation Pool, een Black Keel-bergingsclausule, een zuurstofkredietaddendum, een blacklistrisicobericht en een vrachtbewaringshold. Elke handtekening is klein. Samen maken ze weigering duur, stilte winstgevend en redding voorwaardelijk. Dit is het lage kantoorgezicht van Deep Reach: geen troon, maar bureaus die overleven in contractbreuk kunnen veranderen.
 
 ## Scanner
 
-NL LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+De openingscontractval wordt gebouwd uit lagere handtekeningen: pandrechtfusie, zuurstofaddendum, blacklistrisico en vrachtbewaring.
 
 ## Terminal
 
-NL LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Voeg pandvoorwaarden van Aegir Reclamation Pool samen met Black Keel-bergingsclausules. Voeg zuurstofkredietaddendum, blacklistrisicobericht en vrachtbewaringshold toe. Escalatie niet vereist als operator accepteert.
 
 ## Audio
 
-NL LOC HOLD: Nobody says trap. They say continuity.
+Een handtekening kan een drukdeur zijn wanneer elke clausule erna sluit.
 
 ## Field Note
 
-NL LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+Niemand stempelt een val. Ze stempelen continuïteit.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/nl_NL. -->

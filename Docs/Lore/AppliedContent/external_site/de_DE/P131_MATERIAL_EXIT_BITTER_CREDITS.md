@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Materieller Ausstieg: bittere Gutschriften
 
-Der materielle Ausstieg muss kalt legitim wirken. Der Spieler birgt Druckmaterial, hält die custody intakt, erfüllt Black Keels Masse-durch-Fenster-Buchhaltung und erhält eine echte Senkung des lien. Keine Warnung erklärt Scheitern; das System funktioniert genau wie vorgesehen.
+Der materielle Ausstieg soll juristisch kalt wirken, nicht cartoonhaft böse. Der Auftragnehmer hat die Arbeit erledigt, Druckmaterial geborgen, genug custody für Black-Keel-Buchhaltung erhalten und den lien wirklich gesenkt. Das Schiff schreit keinen Fehlschlag aus, weil das kommerzielle System keinen Grund hat, es so zu nennen.
 
-Der Schaden liegt in dem, was der Beleg auslässt. Vermisstennamen bleiben unabgeglichen, die Beweiskette ist unvollständig, und Deep Reach bekommt einen saubereren kommerziellen Grund zur Rückkehr. HECTON-8 bestraft den Spieler nicht für Professionalität. Es zeigt, was beruflicher Erfolg kostet, wenn die Arbeitsstelle zugleich ein Grab ist.
+Das Bittere liegt in dem, was der Beleg nicht erinnern muss. Arbeiternamen bleiben strittig, der Beweis-payload ist unvollständig, und Deep Reach erhält einen saubereren kommerziellen Vorwand zur Rückkehr, als die Koloniearbeiter je zum Verlassen bekamen. HECTON-8 bestraft Professionalität nicht. Es zeigt, was sie kostet, wenn der Arbeitsplatz zugleich ein Grab ist.
 
 <!-- External Site; generated from P131_MATERIAL_EXIT_BITTER_CREDITS/de_DE. -->

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ namespace Hecton8.World
         private const float DefaultDepthBandHysteresisMeters = 5f;
         private const float MinimumBudgetRefreshDepthDelta = 1f;
         private const float MinimumBudgetRefreshQualityDelta = 0.025f;
-        private const float DefaultWaterSurfaceLevelY = 14.02f;
+        private const float DefaultWaterSurfaceLevelY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
         internal static event System.Action<ScatterBudgetController> ActiveRuntimeInstanceChanged;
@@ -110,6 +111,7 @@ namespace Hecton8.World
         private float _cachedGlobalQualityWeight = 1f;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
+        private IHectonOceanKinematicsService _oceanKinematicsService;
         private bool _proximityColliderListenerRegistered;
         private bool _biomeSamplerListenerRegistered;
 
@@ -178,6 +180,7 @@ namespace Hecton8.World
             TryUnregister();
             UnregisterRuntimeDependencyListeners();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _oceanKinematicsService = null;
 
             if (ActiveRuntimeInstance == this)
                 ClearActiveRuntimeInstance();
@@ -188,6 +191,7 @@ namespace Hecton8.World
             TryUnregister();
             UnregisterRuntimeDependencyListeners();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _oceanKinematicsService = null;
 
             if (ActiveRuntimeInstance == this)
                 ClearActiveRuntimeInstance();
@@ -256,6 +260,13 @@ namespace Hecton8.World
 
                 scavengePopulator = currentService as ScavengePopulator;
                 WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
+            {
+                _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                _lastAppliedBand = (BudgetBand)(-1);
+                if (isActiveAndEnabled)
+                    ApplyCurrentBudget(force: true);
             }
         }
 
@@ -538,6 +549,9 @@ namespace Hecton8.World
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             }
 
+            if (force || _oceanKinematicsService == null)
+                _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+
             if (force || scavengePopulator == null || !scavengePopulator.IsRuntimeOwnerUsable)
             {
                 scavengePopulator = null;
@@ -630,7 +644,7 @@ namespace Hecton8.World
             if (mapMagicBridge == null || !mapMagicBridge.isActiveAndEnabled)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
 
-            if (playerTransform == null || mapMagicBridge == null || !mapMagicBridge.IsAvailable)
+            if (playerTransform == null)
                 return false;
 
             depth = Mathf.Max(0f, ResolveWaterSurfaceLevel() - playerTransform.position.y);
@@ -639,17 +653,51 @@ namespace Hecton8.World
 
         private float ResolveWaterSurfaceLevel()
         {
+            if (TryResolveOceanWaterSurfaceLevel(out float oceanWaterSurfaceLevel))
+                return oceanWaterSurfaceLevel;
+
             if (mapMagicBridge != null && TryResolveWaterSurfaceLevel(mapMagicBridge.WaterSurfaceLevel, out float waterSurfaceLevel))
                 return waterSurfaceLevel;
 
             return DefaultWaterSurfaceLevelY;
         }
 
+        private bool TryResolveOceanWaterSurfaceLevel(out float waterSurfaceLevel)
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceLevel(oceanKinematics.SeaLevel, out waterSurfaceLevel))
+            {
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
+        }
+
+        private static bool TryResolveOceanWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
+        {
+            if (float.IsFinite(candidateWaterSurfaceLevel) &&
+                Mathf.Abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                waterSurfaceLevel = candidateWaterSurfaceLevel;
+                return true;
+            }
+
+            waterSurfaceLevel = DefaultWaterSurfaceLevelY;
+            return false;
+        }
+
         private static bool TryResolveWaterSurfaceLevel(float candidateWaterSurfaceLevel, out float waterSurfaceLevel)
         {
             if (float.IsFinite(candidateWaterSurfaceLevel) &&
                 Mathf.Abs(candidateWaterSurfaceLevel) > 0.0001f &&
-                Mathf.Abs(candidateWaterSurfaceLevel) <= 1000f)
+                Mathf.Abs(candidateWaterSurfaceLevel) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceLevel = candidateWaterSurfaceLevel;
                 return true;

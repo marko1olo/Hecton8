@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render a simple lit contact sheet for the curated external PBR pack."""
+"""Render a simple lit contact sheet for an external/Gemini PBR manifest."""
 
 from __future__ import annotations
 
@@ -99,7 +99,11 @@ def render(args: argparse.Namespace) -> int:
         draw.rectangle((x, y + tile, x + tile, y + tile + label_h), fill=(5, 9, 11))
         draw.text((x + 6, y + tile + 6), f"{args.label_prefix} / {asset['id']}"[:38], fill=(196, 222, 225))
 
-    output = project_path(str(args.output)).resolve()
+    if args.output is not None:
+        output = project_path(str(args.output)).resolve()
+    else:
+        raw_preview = str(manifest.get("preview", "")).strip()
+        output = project_path(raw_preview).resolve() if raw_preview else DEFAULT_OUTPUT.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     canvas.save(output, "PNG")
     print("EXTERNAL_PBR_LIT_PREVIEW_STATUS: PASS")
@@ -112,7 +116,7 @@ def render(args: argparse.Namespace) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--label-prefix", default="Poly Haven")
     parser.add_argument("--tile-size", type=int, default=220)
     parser.add_argument("--columns", type=int, default=4)

@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS168 gives early survival supplies concrete inspection marks: foil pinholes, gel layering, algae paste separation, gritty canteen threads, and spent heat tabs. The player should read the container before trusting the contents.
+RS173 gives early survival supplies concrete inspection marks: foil pinholes, gel layering, algae paste separation, gritty canteen threads, and spent heat tabs. The player should read the container before trusting the contents.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 
@@ -24,7 +24,7 @@ These files do not create website pages, in-game wiki pages, route cards, bindin
 
 ## First-20 Boundary
 
-RS168 improves the first-20 route by making early food, water, and heat-support objects legible without claiming survival-system implementation.
+RS173 improves the first-20 route by making early food, water, and heat-support objects legible without claiming survival-system implementation.
 
 ## Localization Boundary
 

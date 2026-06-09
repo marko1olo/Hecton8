@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Audio Transcript Censor Rules"
+title: "Смуги пошкодження розшифрування"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,14 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Audio Transcript Censor Rules
+# Смуги пошкодження розшифрування
 
-UA LOC HOLD: Audio Transcript Censor Rules balance damaged recordings, redacted names, readable warnings, and localization clarity.
+Голосовий лог HECTON-8 не стає повним лише тому, що має звук. Розшифрування мусить показувати свої рани.
 
-## Scanner
+Смуги пошкодження роблять ці рани чесними. Вони можуть позначати статику, втрату пакетів, юридичну редакцію, спотворення тиском, погане розділення голосів, збій машинного перекладу або пізню правку. Без цього шару кожен зламаний запис стає або фальшивою ясністю, або фальшивою загадкою. З ним гравець бачить різницю між тим, що світ утратив, і тим, що хтось вирішив прибрати.
 
-UA LOC HOLD: Damaged audio can hide truth, but subtitles must still serve the player.
+Правило суворе, бо гра тримається на доказах. Пошкодження може ховати імена, серійники й спойлерні вантажі. Воно може створювати підозру. Воно може зробити маршрут небезпечним ще до дверей. Але решта розшифрування все одно має нести дію: не відкривай шлюз, повертайся службовою драбиною, рахуй кисень вручну, ігноруй зелену лампу статусу, лиши офіційний рядок видимим.
 
-## Terminal
-
-UA LOC HOLD: TRANSCRIPT RULE: damaged words may mask names, payloads or timestamps. Core warning, objective and route-critical text must remain readable.
-
-## Audio
-
-UA LOC HOLD: Static may hide the name. It cannot hide the alarm.
-
-## Field Note
-
-UA LOC HOLD: Diegetic censor marks can hide missing route facts; critical accessibility text stays readable.
+Для локалізації та доступності смуга є частиною контенту, а не приміткою після роботи. Перекладене розшифрування має зберігати роль мовця, тиск часу й читабельні попередження. Редакція є атмосферою лише тоді, коли гравець усе ще може діяти. Інакше це просто зламаний інтерфейс, який удає лор.
 
 <!-- External Site; generated from P218_AUDIO_TRANSCRIPT_CENSOR_RULES/uk_UA. -->

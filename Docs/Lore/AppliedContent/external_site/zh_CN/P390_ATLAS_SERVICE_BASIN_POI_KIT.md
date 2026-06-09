@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Service Basin POI Kit"
+title: "Atlas服务池证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Service Basin POI Kit
+# Atlas服务池证据套件
 
-ZH LOC HOLD: The factory-temple image works only if it still reads as a machine. Atlas' sacred feeling comes from broken maintenance logic, not mysticism.
+服务池的规模来自工作。轨道搬运修复工具。组织铁密封剂闭合压力切口。生长夹固定本该是死硬件的面板。接收插座等在一个空间里；如果操作员沿着螺栓而不是轮廓看，它仍像维护舱。
 
-## Scanner
-
-ZH LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
-
-## Terminal
-
-ZH LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
-
-## Audio
-
-ZH LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
-
-## Field Note
-
-ZH LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+最后的冲突是分类，不是神秘。旧殖民地类别、Atlas修复逻辑、载荷接收规则和切断风险接触同一块硬件。一次成功修复可以打开道路，也能在同一动作里污染记录。这个POI必须让金属、组织、标签和插座显示出这笔代价。
 
 <!-- External Site; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/zh_CN. -->

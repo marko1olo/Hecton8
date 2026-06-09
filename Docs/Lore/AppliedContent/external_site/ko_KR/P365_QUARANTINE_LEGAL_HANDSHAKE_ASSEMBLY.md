@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "격리 법적 핸드셰이크 조립체"
+title: "격리 법무 핸드셰이크 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 격리 법적 핸드셰이크 조립체
+# 격리 법무 핸드셰이크 조립체
 
-격리 법적 핸드셰이크 조립체는 extraction을 의도적으로 더럽게 만든다. 작동하는 엔진도 생존자를 corporate custody, 지연된 공공 진실, 또는 해결되지 않은 격리로 데려갈 수 있다.
+격리 법무 핸드셰이크 조립체가 최종 부품인 이유는 HECTON-8의 탈출 경로가 진공이 아니라 권한으로 끝나기 때문이다. 캡슐은 기계적으로 준비되어도, recovery에는 도착에 이름을 붙일 수신자가 필요하다.
 
-## Scanner
+소켓은 그 이름을 결정하는 사실을 적재한다. 수신자 키, 격리 상태, 페이로드 custody, 부채 lien, 공개 장부 지연이다. 각 경로는 같은 캡슐의 다른 버전을 받아들인다. Keelmark는 질량과 lien을 원한다. Recovery Compliance는 좌표와 오염 상태를 원한다. 공개 장부는 시간과 분쟁을 견디는 증거를 원한다.
 
-핸드셰이크 소켓. 캡슐은 기계적으로 준비되어도 여전히 잘못된 receiver의 소유일 수 있다.
-
-## Terminal
-
-RECOVERY HANDSHAKE: receiver key 필요. Keelmark는 mass와 lien 수락. Recovery Compliance는 coordinates와 quarantine status 수락. Public ledger는 지연 후 proof 수락. Unkeyed launch는 기본적으로 custody dispute.
-
-## Audio
-
-누가 응답하는지가 구조의 의미를 결정한다.
-
-## Field Note
-
-마지막 부품은 금속이 아니다. 너를 recovered라고 부를 수 있는 시스템의 이름이다.
+그래서 추출은 일부러 불편하다. 가장 깨끗한 발사도 생존자를 청구 사무실, 잠긴 의료 보류, 느린 공개 사건으로 보낼 수 있다. 핸드셰이크 수리는 캡슐을 정치에서 해방하지 않는다. Marauder가 어떤 정치가 먼저 해치에 손을 댈지 선택하게 한다.
 
 <!-- External Site; generated from P365_QUARANTINE_LEGAL_HANDSHAKE_ASSEMBLY/ko_KR. -->

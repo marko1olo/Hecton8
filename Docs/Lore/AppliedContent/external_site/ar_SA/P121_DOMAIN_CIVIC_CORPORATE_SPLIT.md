@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "انقسام النطاقات بين القانون المدني والشركات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# انقسام النطاقات بين القانون المدني والشركات
 
-AR LOC HOLD: The Domain Civic-Corporate Split keeps HECTON-8 from becoming dense space opera: a few named authorities, many implied footholds, and no instant rescue.
+انقسام النطاقات بين القانون المدني والشركات هو القانون خلف عزلة HECTON-8: ليس إمبراطورية مزدحمة، بل سلطات بعيدة قليلة، وclaim متعارضة، وحزم متأخرة، وغموض يكفي لكي تترك Deep Reach العمال تحت المحيط.
 
 ## Scanner
 
-AR LOC HOLD: Legal map. Same species, different owners of truth.
+خريطة قانونية: نوع واحد، وعدة مالكين للسجل.
 
 ## Terminal
 
-AR LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: يحتفظ Sol Core بالتمويل القانوني القديم والتصديق؛ تحمل Centauri مواثيق الاستعمار الأولى؛ جعلت Barnard Yards عمل salvage أمرا اعتياديا؛ تستطيع Tau Ceti تحويل الأدلة إلى قانون عام؛ تتحكم Luyten في custody الحزم؛ ويبقى Aegir claim شركة حتى يثبت أحد العكس.
 
 ## Audio
 
-AR LOC HOLD: The farther you go, the more the law becomes a receipt.
+كلما ابتعدت الإشارة، صار القانون أقرب إلى دفتر حسابات.
 
 ## Field Note
 
-AR LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+لا يمنع الإنقاذ البعد وحده. يمنعه السؤال عمّن يملك حق تسمية العالقين مواطنين.
 
 <!-- External Site; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/ar_SA. -->

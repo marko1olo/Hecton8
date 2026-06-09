@@ -19,7 +19,7 @@ localization_flags: 1
 
 # Przewodnik po zatopionych warstwach skorupy
 
-Zatopiona skorupa jest czytelną historią HECTON-8: stare cięcia kolonii, półki lodowego zawalenia, szwy pressure-glass i pasma minerałów pokazują, gdzie trasa utrzyma się, zetnie albo zawiedzie pod dotykiem.
+Zatopiona skorupa to czytelna historia HECTON-8. Stare kolonialne nacięcia, półki po zawaleniu lodu, szwy szkła ciśnieniowego i pasma minerałów pokazują, gdzie trasa utrzyma się, zetnie albo puści od dotyku. Ekipy salvage czytają ją jak uszkodzoną księgę: co zbudowano, co spadło i co ocean mieli od tamtej pory.
 
 ## Scanner
 

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "מדריך סולם צפיפות של קניון תמלחת"
+title: "מדריך סולם צפיפות קניון תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מדריך סולם צפיפות של קניון תמלחת
+# מדריך סולם צפיפות קניון תמלחת
 
-קניוני brine הופכים עומק לפיזי. הם מלמדים שכבות צפיפות, גבולות גוף, כשלי לחץ ו-resource pockets לפני פתיחת הנתיבים הנמוכים.
+קניוני תמלחת הופכים עומק לפיזי. שכבות צפיפות, סחף מרחף, כיסי seep קרים ואזורי עיוורון של מכשירים מלמדים את גבולות הגוף לפני שהנתיבים התחתונים נפתחים. הדרך מטה אינה מדרגות בסלע. היא סולם של נוזלים שאינם מסכימים היכן גוף שייך.
 
 ## Scanner
 

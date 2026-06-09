@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Recovered Custody Primer
 spoiler_tier: 0
-title: "حيازة tonne-window في Black Keel"
+title: "عهدة tonne-window لـ Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# حيازة tonne-window في Black Keel
+# عهدة tonne-window لـ Black Keel
 
-إيصال Keelmark يشرح لماذا تتكلم Black Keel بالكتلة قبل الإنقاذ. الحاملة تعمل بحيازة tonne-window: فتحة قانونية مطابقة لحمولة مادية، تعرض تأميني، ومرحلة من ساعة الطريق. جسد حي، نواة دليل مختومة، قطع من مادة عملية Xenon-Omega، وصندوق هيكل قابل للاسترداد قد تتنافس كلها على النافذة نفسها إذا وضعها العقد في السطر نفسه. النظام بارد، لكنه ليس عشوائيا. إنه يقول للاعب ما الذي يقدره الفرع الحدودي وأي الخيارات سيسافر إلى البيت أولا.
+Tonne-window هو أوضح تعبير عن قسوة frontier في HECTON-8. يبدو كحساب لأنه حساب، لكن المعدود شيء فيزيائي: كتلة عبر نافذة استرداد ضيقة. Black Keel لا ترفع كل شيء من المحيط، بل ما تسمح به الطريق والتأمين والحجر وسجل العهدة.
+
+لذلك يصبح كل payload اختيارا قاسيا. المتعاقد الحي له قيمة، لكن نواة دليل ضد Deep Reach لها قيمة أيضا. مادة Xenon-Omega قد تساوي أكثر من salvage عادي وتسمم الحجر. الهيكل قد يرضي شركة تأمين قبل أن يرضي dossier عامل العدالة.
 
 ## Scanner
 
-خط حيازة // كتلة tonne-window المقبولة قد تكون salvage أو دليلا أو جسدا أو غرض دين. سماع الحزمة لا يمنح أولوية رفع؛ إنه يوزع المسؤولية.
+إيصال Keelmark. كل tonne-window يربط كتلة payload، طور الطريق، تعرض التأمين، فئة الحجر وأولوية الاسترداد في slot carrier واحد.
 
 ## Terminal
 
-إيصال كتلة KEELMARK // النافذة تمنح الحيازة لفتحة، لا رحمة لشخص. الحمولة الزائدة تنتقل للعبور التالي ما لم تتطابق قيمة المطالبة، صنف الحجر، وهندسة الحاملة.
+عهدة TONNE-WINDOW // رهن 4.8 tonne-window فعال. المتعاقد الحي، نواة الدليل، سبيكة Xenon-Omega وصندوق الهيكل القابل للاسترداد يشتركون في فئة الاسترداد ما لم يغير proof custody الأولوية. حالة الإنسان وحدها لا تكفي.
 
 ## Audio
 
-صوت دين Black Keel: أستطيع حمل الدليل أو المعدن أو أنت. السجل سيسأل أيها يبقي السفينة قادرة على الدفع.
+تتحدث Black Keel بالطن لأن الأطنان هي ما تستطيع النافذة حمله.
 
 ## Field Note
 
-عندما تقول الحاملة كتلة مقبولة، فهي لا تقول شخص مقبول. اربط دليلك ببدلتك قبل أن يطلب منك السجل الاختيار.
+Tonne-window ليست مالا. إنها إذن للكتلة بالمغادرة.
 
 <!-- In-Game Wiki; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/ar_SA. -->

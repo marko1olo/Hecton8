@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Leak ins öffentliche Ledger"
+title: "Leck ins öffentliche Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Leak ins öffentliche Ledger
+# Leck ins öffentliche Ledger
 
-Das öffentliche Ledger-Leak ist keine perfekte Whistleblower-Fantasie. Es ist ein Paket, das durch ein enges relay-Fenster geht, mit witness hash, genug custody, um schwer bestreitbar zu sein, und zu vielen Lücken, um sicher zu sein. Tau Ceti kann den Datensatz öffentlich machen, lange nachdem es jemanden im Wasser retten könnte.
+Das Leck ins öffentliche Ledger ist keine perfekte Whistleblower-Fantasie. Es ist ein beschädigtes Paket, das vor vollständiger custody abgeht, mit genug Beweis, um Leugnen teuer zu machen, und genug fehlendem Kontext, um jeden Leser gefährlich zu machen. Tau Ceti kann den Eintrag öffentlich machen, lange nachdem er irgendwen im Wasser retten könnte.
 
-Diese Verzögerung ist der Punkt. Deep Reach kann den claim nicht mehr einfach löschen, aber der Spieler kann auch nicht entscheiden, wer ihn als Nächstes nutzt. Versicherer, Rivalen, Zivilgerichte, Marauder-Pools und Firmenbüros werden dieselbe Wunde unterschiedlich lesen. Dieses Ende macht Wahrheit schwerer zu begraben und schwerer zu besitzen.
+Diese Verzögerung ist der Punkt. Deep Reach verliert die sauberste Vertuschung, aber der Zeuge verliert ebenfalls Besitz. Derselbe Eintrag kann Anklage, Hebel, Versicherungsmathematik, Domänenpropaganda oder neuer Vertrag werden. Diese Route macht Wahrheit schwerer zu begraben und schwerer zu besitzen.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/de_DE. -->

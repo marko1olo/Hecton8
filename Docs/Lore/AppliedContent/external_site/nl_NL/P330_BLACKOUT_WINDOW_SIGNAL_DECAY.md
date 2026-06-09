@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Blackout Window Signal Decay"
+title: "Signaalverval in black-outvenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Blackout Window Signal Decay
+# Signaalverval in black-outvenster
 
-NL LOC HOLD: HECTON-8 uses Aegir's orbital and magnetic environment to make silence part of navigation and story structure.
+De stilte van HECTON-8 is deels astronomie, deels beschadigde infrastructuur, deels bedrijfsautomatisering. Aegirs schaduw, verdronken relais, carrier-timing en juridische wachtrijen maken communicatie tot weer: iets waar de speler omheen plant, bang voor is, repareert en soms uitbuit.
 
 ## Scanner
 
-NL LOC HOLD: Signal decay: relay wet, Aegir shadow rising, carrier geometry stale.
+Signaalvenster klapt dicht: natte relaisspine, Aegir-schaduw, verouderde carrier-geometrie, juridische wachtrij probeert nog steeds.
 
 ## Terminal
 
-NL LOC HOLD: BLACKOUT WINDOW: packet loss above tolerance. Voice disabled. Legal queue persists. Acoustic relay fallback available only through repaired spine nodes.
+BLACKOUT WINDOW: uplinkverlies boven tolerantie. Spraakkanaal opgeschort. Tekstfragmenten kunnen binnenkomen via gerepareerde akoestische spineknooppunten. Orbitale carrier-geometrie ververst nadat de magnetische Aegir-schaduw is verdwenen. Geautomatiseerde retentie- en bewaringstimers lopen door zonder operatorcontact.
 
 ## Audio
 
-NL LOC HOLD: When the sky closes, the paperwork keeps breathing.
+De lucht wordt eerst stil. De schuldmeldingen blijven kloppen.
 
 ## Field Note
 
-NL LOC HOLD: Comms cadence degrades by geometry first, then by relay damage; the legal queue keeps ticking through both.
+Koppel black-outvensters aan routepacing: minder stem, meer fragmentlezen, hogere waarde voor gerepareerde relais en lokale bakens.
 
 <!-- External Site; generated from P330_BLACKOUT_WINDOW_SIGNAL_DECAY/nl_NL. -->

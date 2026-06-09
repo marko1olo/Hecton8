@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "פרוטוקול blind return עם החזקת payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Payload Withhold Blind Return Protocol
+# פרוטוקול blind return עם החזקת payload
 
-HE LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+פרוטוקול blind return מסרב לכל מקבל. שום תאגיד, ספר, נתיב הסגר או יעד חיתוך אינם מקבלים את ה-payload הסופי. הנושא שומר את המפה והראיות מקומית, וכך מונע מ-Deep Reach מסלול נקי חזרה. הוא גם משאיר חוב פעיל, ראיות ציבוריות לא מוגשות וחבילה פגיעה למים, מוות או אחסון גרוע.
 
 ## Scanner
 
-HE LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+מסלול blind return חמוש. לא הוקצה מקבל. וקטור אגן, proof hashes ודרגת גישה נשארים מקומיים; שעבוד וחלון שחזור לא פתורים.
 
 ## Terminal
 
-HE LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+מקבל PAYLOAD // BLIND RETURN WITHHOLD. מקבל: אין. החזק וקטור אגן, proof hashes, דרגת salvage, חבילת ראיות מקומית. מנע מ-Deep Reach מפת גישה, קבלת תשלום ומשמורת מקבל. עלות ידועה: שעבוד לא פתור, סיכון מלא לאובדן חבילה.
 
 ## Audio
 
-HE LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+אין מקבל, אין קבלה. אם התיק יוצף, הראיות ילכו איתו.
 
 ## Field Note
 
-HE LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+הערת בוזז: לשמור את המפה זו בחירה. פשוט אין לך מקבל להאשים אם התיק נקרע.
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/he_IL. -->

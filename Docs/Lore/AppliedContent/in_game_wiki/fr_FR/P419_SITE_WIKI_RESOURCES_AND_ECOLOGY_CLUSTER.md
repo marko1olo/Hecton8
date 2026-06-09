@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Ressources et écologie
 
-Hub ressources/écologie : drowned crust, brine ladders, vent chemistry, living systems et repair logic endommagée d'Atlas.
+Hub ressources et écologie: Drowned Crust, échelles de saumure, chimie des évents, blue debt, indices de prédateurs, faune marquée et réparations Atlas qui traitent le vivant comme du matériel.
 
 ## Scanner
 
-Hub de publication : geology, blue debt, grammaire de faune et misuse du réseau de réparation Atlas.
+Hub public: Drowned Crust, échelles de saumure, historique de pression du blue debt, indices de faune et mésusage des réparations Atlas.
 
 ## Terminal
 
-SITE NAV : native geology, process feedstock, Atlas-altered resources, shallow ecology et encounter grammar comme une seule process map.
+SITE NAV: lire les échantillons par origine, historique de pression, contact vivant, dégâts d'extraction et valeur de custody.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Rien ici n'est seulement du loot.
 
 ## Field Note
 
-Ressources et écologie vont ensemble quand matériaux, biote et evidence pressure partagent la même route.
+Un échantillon propre est rarement le plus riche. Demande ce qui l'a formé, ce qui l'a touché et ce qui a été blessé quand il a été pris.
 
 <!-- In-Game Wiki; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/fr_FR. -->

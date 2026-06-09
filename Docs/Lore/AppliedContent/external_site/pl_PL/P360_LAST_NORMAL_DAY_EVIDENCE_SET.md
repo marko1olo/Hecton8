@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Last Normal Day Evidence Set"
+title: "Zestaw dowodów ostatniego normalnego dnia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Last Normal Day Evidence Set
+# Zestaw dowodów ostatniego normalnego dnia
 
-PL LOC HOLD: HECTON-8 uses ordinary unfinished work as horror. The colony ends while routine is still on the board.
+Zestaw dowodów ostatniego normalnego dnia to metoda terenowa czytania zatopionej kolonii HECTON-8. Zbiera drobne ślady przerwania: nieodebraną plakietkę szafki, niepodpisaną korektę, otwarte zadanie pompy, przypięty żeton posiłku, zegar trasy, który nadal czeka. Żaden z tych przedmiotów nie wie, że stał się dowodem.
 
-## Scanner
+Siła leży w powściągliwości. Pokój nie potrzebuje nagrania pożegnalnego ani idealnie ustawionej tragedii. Wystarczy pokazać, że normalna procedura wciąż żyła, gdy awaria przekroczyła próg. Ludzie liczyli wodę, oddawali narzędzia, poprawiali tablice i spodziewali się obiadu. Ta zwykła ciągłość czyni pęknięcie gorszym.
 
-PL LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
-
-## Terminal
-
-PL LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
-
-## Audio
-
-PL LOC HOLD: The last day did not know it was last.
-
-## Field Note
-
-PL LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Zestaw niesie też winę. Oficjalny język wypadku często wygładza pokój; fizyczne sprzeczności znów go chropowią. Certyfikat pompy, licznik zmiany, kategoria ciała, rozjazd zegar-drzwi: razem mogą zamienić płaskie zamknięcie w pytanie, którego ktoś nie chciał zadać. Dla HECTON-8 ostatni normalny dzień to chwila, w której routine nadal wierzy, że będzie trwać.
 
 <!-- External Site; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/pl_PL. -->

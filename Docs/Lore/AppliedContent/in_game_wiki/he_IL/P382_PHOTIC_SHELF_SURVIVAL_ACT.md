@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Photic Shelf Survival Act"
+title: "שער המדף הפוטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Photic Shelf Survival Act
+# שער המדף הפוטי
 
-HE LOC HOLD: The photic shelf act teaches beauty and danger together: pump rooms, first repairs, oxygen pockets, useful life and the first wrong repair.
+המדף הפוטי מלמד דרך חפצים, לא דרך נוחות. המפעיל לומד אילו בתי משאבה עדיין מחזיקים אוויר, אילו טלאים קונים דקות ואילו אורגניזמים בהירים מזהמים כלי. Atlas מופיע תחילה כשארית תיקון: שימושי, שגוי במקומות, וקרוב מספיק למגע.
 
 ## Scanner
 
-HE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
+שער מסלול: מדף פוטי. כיסי חמצן, חדרי משאבות, חיתוכים ראשונים ושארית תיקון Atlas רדודה קריאים במי יום.
 
 ## Terminal
 
-HE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
+מסלול קמפיין // מדף פוטי. נדרש: הפעלת משאבה, טלאי אטם, חיתוך כבל, ping סורק. חומרת עלייה אינה זמינה; תאים שנוצלו נותבו למערכות הישרדות. שארית Atlas סווגה שימושית עם אזהרת זיהום.
 
 ## Audio
 
-HE LOC HOLD: The shallow water is not safe. It is only readable.
+המים הרדודים אינם בטוחים. הם קריאים.
 
 ## Field Note
 
-HE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+הערת בוזז: אור יום עוזר. הוא לא עושה קו חמצן סדוק נדיב.
 
 <!-- In-Game Wiki; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/he_IL. -->

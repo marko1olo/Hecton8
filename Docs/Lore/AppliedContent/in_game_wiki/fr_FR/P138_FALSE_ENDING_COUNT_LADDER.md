@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "False Ending Count Ladder"
+title: "Échelle des fausses fins"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# False Ending Count Ladder
+# Échelle des fausses fins
 
-FR LOC HOLD: HECTON-8 should support multiple outcomes without dissolving into random endings. A practical target is four major false/partial families before the true deep endings: material, partial return, corporate/quarantine and public ledger. Each is real, replayable and incomplete.
+HECTON-8 peut offrir beaucoup de sorties sans transformer la vérité en bruit. Le dossier doit classer les issues fausses ou partielles en quelques familles lisibles : prendre le matériel et partir, sortir seulement pour être repris, tomber en garde corpo ou quarantaine, ou fuir assez de vérité du ledger pour blesser la machine sans l'arrêter. Chaque sortie est réelle. Aucune n'est le fond.
 
 ## Scanner
 
-FR LOC HOLD: Four major false families before the deep Atlas resolutions.
+ÉCHELLE DE FINS // Paiement matériel, retour partiel, capture corpo ou quarantaine, fuite du ledger public. Quatre familles fausses avant les réponses profondes d'Atlas.
 
 ## Terminal
 
-FR LOC HOLD: ENDING LADDER: material payout, partial exit/return, corporate capture/quarantine and public ledger leak form the major false/partial families before Atlas basin payload resolutions.
+PORTÉE DOSSIER : marquer beaucoup de sorties, mais les grouper en familles nettes. Paiement matériel, sortie/retour partiel, capture/quarantaine corpo et fuite du ledger public restent sous les résolutions de payload du bassin Atlas.
 
 ## Audio
 
-FR LOC HOLD: The dossier can mark many exits before it marks an answer.
+Le dossier peut marquer des sorties avant de marquer une réponse.
 
 ## Field Note
 
-FR LOC HOLD: Enough endings to reward playstyles. Not so many that the truth becomes noise.
+Assez de fins pour récompenser les styles. Pas assez pour rendre la vérité bon marché.
 
 <!-- In-Game Wiki; generated from P138_FALSE_ENDING_COUNT_LADDER/fr_FR. -->

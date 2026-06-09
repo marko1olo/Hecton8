@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Panduan Tangga Densitas Ngarai Brine"
+title: "Panduan Tangga Kepadatan Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Panduan Tangga Densitas Ngarai Brine
+# Panduan Tangga Kepadatan Ngarai Brine
 
-Ngarai brine membuat kedalaman menjadi fisik. Mereka mengajarkan lapisan densitas, batas lambung, kegagalan tekanan, dan resource pockets sebelum rute bawah terbuka.
+Ngarai brine membuat kedalaman menjadi fisik. Lapisan kepadatan, lumpur tersuspensi, kantong seep dingin, dan zona buta instrumen mengajarkan batas lambung sebelum rute bawah terbuka. Jalan turun bukan tangga di batu. Ia tangga dari cairan yang tidak sepakat tentang tempat tubuh seharusnya berada.
 
 ## Scanner
 

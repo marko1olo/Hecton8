@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Abyssal Machine Field Repair Act"
+title: "Gerbang Ladang Mesin Abisal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Abyssal Machine Field Repair Act
+# Gerbang Ladang Mesin Abisal
 
-ID LOC HOLD: The abyssal machine field should make the player use the system they fear. Atlas maintenance ecology becomes both toolkit and moral pressure.
+Ladang abisal memaksa operator memakai sistem yang merusak klaim. Pertumbuhan Atlas dapat menjembatani daya, menambal perangkat rute, dan membawa sinyal melalui material hidup. Setiap perbaikan berhasil juga mengubah klasifikasi: alat, organisme, aset, kontaminasi, dan bukti terus menyeberangi bidang.
 
 ## Scanner
 
-ID LOC HOLD: Act gate: abyssal machine field. Atlas repair ecology becomes the route, not only the threat.
+Gerbang rute: ladang mesin abisal. Ekologi perbaikan Atlas menjadi perangkat rute yang dapat dipakai dengan risiko kustodi.
 
 ## Terminal
 
-ID LOC HOLD: REPAIR ACT: conductive film, acoustic organs and service basins can restore route hardware while corrupting ownership categories.
+RUTE KAMPANYE // LADANG MESIN ABISAL. Wajib: film konduktif, organ akustik, cekungan layanan, reroute aman tekanan. Keluaran perbaikan dapat memulihkan perangkat keras dan merusak kelas kepemilikan dalam langkah yang sama.
 
 ## Audio
 
-ID LOC HOLD: It fixed the wall before it decided what the wall was.
+Ia memperbaiki dinding sebelum menamai dinding.
 
 ## Field Note
 
-ID LOC HOLD: Late-midgame act record: abyssal repair fields teach Atlas mechanisms through scan cards, route components, and creature pressure.
+Catatan perompak: jika tumbuh melintasi panel, pindai sebelum memotong. Mungkin itu satu-satunya alasan panel masih bekerja.
 
 <!-- In-Game Wiki; generated from P384_ABYSSAL_MACHINE_FIELD_REPAIR_ACT/id_ID. -->

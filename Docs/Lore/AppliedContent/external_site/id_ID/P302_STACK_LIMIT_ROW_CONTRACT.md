@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Stack Limit Data Boundary"
+title: "Batas Data Limit Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Stack Limit Data Boundary
+# Batas Data Limit Stack
 
-ID LOC HOLD: Inventory pressure in HECTON-8 comes from mass, certification and contaminated containment, not arbitrary item icons.
+Tekanan inventaris di HECTON-8 datang dari penahanan, sertifikasi, dan massa terkontaminasi. Game dapat menampilkan stack sederhana, tetapi lore menjelaskan mengapa stack aman, mengapa rusak, dan mengapa samudra tidak peduli pada ikon item.
 
 ## Scanner
 
-ID LOC HOLD: Stack boundary: vessel class and contamination stage beat icon count.
+Baris stack menolak tumpukan ikon: kelas wadah, rating tekanan, kontaminasi, dan massa menentukan jumlah.
 
 ## Terminal
 
-ID LOC HOLD: STACK CONTRACT: item stacks require vessel type, pressure rating, contamination stage, mass class, and warning tier.
+STACK CONTRACT: jumlah stack membutuhkan tipe wadah, rating tekanan, tahap kontaminasi, kelas massa, tier peringatan, dan identitas save-stable. Peti bukan bejana tekanan.
 
 ## Audio
 
-ID LOC HOLD: A crate is not a pressure vessel.
+Peti bukan bejana tekanan.
 
 ## Field Note
 
-ID LOC HOLD: Stack limits stay table-owned and stable for save identity.
+Limit stack tetap table-owned dan stabil untuk save identity.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/id_ID. -->

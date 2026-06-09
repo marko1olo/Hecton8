@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "Ланцюг recovery compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# Ланцюг recovery compliance
 
-UA LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+Recovery Compliance - фраза, яка робить фінал холоднішим. Вона звучить упорядковано, бо справді впорядкована. Підрядникам потрібен допуск, доказам опіка, salvage потребує титулу, маршрутним страховикам потрібні записи, а публічним офісам слова, що не визнають вини.
 
-## Scanner
-
-UA LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-UA LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-UA LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-UA LOC HOLD: Delay does not make an order harmless.
+Жах у тому, що ланцюг може включати живих людей і все одно не стати порятунком. Уцілілий може бути witness material. Скафандр може бути return mass. Зізнання може бути data payload. Ланцюг може вивести людину назовні й усе одно служити офісу, що залишив її внизу.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/uk_UA. -->

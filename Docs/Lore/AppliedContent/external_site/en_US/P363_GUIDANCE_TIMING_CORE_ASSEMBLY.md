@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Guidance Timing Core Assembly
 
-Guidance Timing Core Assembly keeps HECTON-8's spaceflight hard: extraction is a route problem made of clocks, shadows and damaged trust.
+The Guidance Timing Core Assembly turns escape into orbital engineering instead of a simple upward push. HECTON-8's ascent capsule has to cross water, weather, moon geometry and corporate receiver rules before anyone can call the burn recoverable.
 
-## Scanner
+The component holds the timed map: Aegir ephemeris, Black Keel receiver lane, moon-relay shutter cache, storm-plume drift and custody-clock tolerance. None of those pieces are decorative. A capsule can be sealed, charged and mechanically sound, then still miss recovery because its packet reaches the wrong lane at the wrong time.
 
-Blank timing core. Aegir geometry decides whether ascent becomes recovery, capture or silence.
-
-## Terminal
-
-GUIDANCE CORE: align capsule clock to Aegir window, Black Keel receiver lane, moon relay shutter and storm-plume drift. Late packets become evidence loss; early packets become capture noise.
-
-## Audio
-
-Up is not a direction. It is a window with a witness.
-
-## Field Note
-
-There is no simple up from HECTON-8. There is a receiver, a shadow, a storm drift and a packet queue already older than your panic.
+This is the bitter part of HECTON-8's escape bargain. The survivor is not escaping from depth into freedom. The capsule is entering a narrow accounting window above an ocean that keeps distorting every signal. Repairing the timing core gives the launch a place in that window. It does not make the window kind.
 
 <!-- External Site; generated from P363_GUIDANCE_TIMING_CORE_ASSEMBLY/en_US. -->

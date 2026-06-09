@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Pressure Job Title Table"
+title: "Table des métiers sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,26 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Pressure Job Title Table
+# Table des métiers sous pression
 
-FR LOC HOLD: The job title table turns worker evidence into mechanics: pump rooms, medlocks, routes, kilns and Atlas safety consoles.
+La table des métiers est le squelette de travail de la colonie. Elle rattache chaque personne aux pompes, joints, relais, medlocks, fabricateurs, tableaux de route, vent-kilns et consoles Atlas.
+
+Un titre doit promettre des preuves physiques. Un gréeur de joints laisse craie de gasket, cicatrices de clamp et journaux de trappe. Un plongeur brine laisse notes de densité, lignes lestées coupées et traces de rinçage de combinaison. Un gardien relais laisse fiches de timing et refus d'accès. Un aide medlock laisse des formulaires qui prouvent que la station a choisi l'effectif plutôt que le soin.
 
 ## Scanner
 
-FR LOC HOLD: Job titles should explain what kept the colony alive.
+TABLEAU DE POSTES // Le titre n'est pas une garniture RH. Il indique quel système a cédé quand le travailleur n'a plus répondu.
 
 ## Terminal
 
-FR LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+MÉTIERS SOUS PRESSION // Technicien pompe, gréeur de joints, commis de route, plongeur brine, opérateur fabricateur, aide medlock, gardien relais, ouvrier vent-kiln, lecteur sécurité Atlas et superviseur de quart ne sont pas du décor social. Ce sont des règles d'accès. Le titre définit ce que le travailleur savait, quel panneau acceptait son badge, où ses outils devaient se trouver et quel échec lui serait imputé après le Great Tide.
 
 ## Audio
 
-FR LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Personne n'est mort comme Employé 438. Ils sont morts en tenant un travail dont l'océan avait encore besoin.
 
 ## Field Note
 
-FR LOC HOLD: Every title should imply a tool, route or failure.
+Chaque titre doit mener à un outil, une pièce, une permission de route ou une raison pour laquelle le corps n'a pas pu partir.
 
 <!-- In-Game Wiki; generated from P167_PRESSURE_JOB_TITLE_TABLE/fr_FR. -->

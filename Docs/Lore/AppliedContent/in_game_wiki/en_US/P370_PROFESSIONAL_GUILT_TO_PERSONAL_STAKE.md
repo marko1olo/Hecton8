@@ -19,25 +19,27 @@ localization_flags: 0
 
 # Professional Guilt To Personal Stake
 
-Professional guilt becomes personal stake without turning the protagonist into the cause of the catastrophe. The player does not need a lost sibling, a revenge bloodline, or a secret chosen role. The pressure is colder and more adult. They recognize the procedure. They know why a witness field matters, why a route-safe stamp can lie, why a carrier can hear them and still not lift them out. HECTON-8 becomes personal because the old Deep Reach language is not abstract to them. It is work they once trusted, work they once performed near, and work now attached to names recovered from drowned rooms. The arc is not confession. It is refusal: once the player can read the abandonment machine, leaving it buried becomes another act of participation.
+Professional guilt becomes personal stake without making the operator the cause of the catastrophe. The pressure is narrower and harder to dismiss. They recognize the form, the route-safe omission, the sealed check field and the receiver language that turns a room into a settled claim.
+
+No family revenge is required. No hidden command role is required. The recovered tags attach names to a procedure the operator once trusted as work. Once that pattern is readable, leaving it buried becomes another filed omission. The stake is not bloodline. It is trade knowledge meeting evidence from drowned rooms.
 
 ## Scanner
 
-Signature pattern matches the old procedure cache. The names changed. The room failed the same way. Expertise is no longer distance.
+PROCEDURE MATCH // Old sequence appears in new failure record. Names changed; same route-safe omission. Expertise is no longer distance.
 
 ## Terminal
 
 DOSSIER RESOLUTION / PROFESSIONAL STAKE
-trigger evidence: procedure recognition, recovered worker tags, claim receiver conflict
-excluded motive: family relation, revenge lineage, chosen-witness status
+trigger evidence: procedure recognition, recovered worker tags, receiver conflict
+excluded motive: family relation, revenge lineage, chosen status
 active motive: former systems worker recognizes preventable abandonment and can still read the machine that filed it.
 
 ## Audio
 
-You came for a claim. You stayed because the paperwork knew your hands.
+You came for a claim. The form used your old hands.
 
 ## Field Note
 
-Not your signature. Still your trade. That is why the room will not stay quiet.
+Not your signature. Still your trade. That is why the room will not stay buried.
 
 <!-- In-Game Wiki; generated from P370_PROFESSIONAL_GUILT_TO_PERSONAL_STAKE/en_US. -->

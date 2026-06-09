@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "Zestaw dowodowy stoczni przekaźników rafy kablowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Cable Reef Relay Yard POI Kit
+# Zestaw dowodowy stoczni przekaźników rafy kablowej
 
-PL LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+Stocznia przekaźników zamienia odrazę w dyscyplinę narzędziową. Płaszcze kabli pękły, izolacja się łuszczy, a film serwisowy Atlas przechodzi przez gniazda, które nigdy nie miały dzielić powierzchni. Czyste cięcie może zniszczyć jedyną drogę niosącą sygnał.
 
-## Scanner
-
-PL LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-PL LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-PL LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-PL LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+Zestaw dowodowy jest fizyczny: odpowiedź pingera, mapa martwej odnogi, ostrzeżenie cięcia, widełki przekaźnika i znak serwisowy tam, gdzie żywy materiał przejął złamaną trasę. Miejsce powinno być użyteczne, zanim stanie się obce. Zagrożeniem jest naprawa, która może ocalić operatora i skazić rekord roszczenia.
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/pl_PL. -->

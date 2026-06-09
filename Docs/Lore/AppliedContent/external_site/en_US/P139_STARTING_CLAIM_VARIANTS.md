@@ -23,11 +23,11 @@ Starting Claim Variants let HECTON-8 replay with different economic hooks while 
 
 ## Scanner
 
-Same protagonist. Different claim pressure.
+CLAIM VARIANT // Same ex-Deep-Reach Marauder. Different first debt, bounty, route hardware, sample custody or blacklist relief.
 
 ## Terminal
 
-CLAIM VARIANTS: debt salvage, evidence bounty, missing route hardware, hazardous sample custody, Deep Reach blacklist relief. All keep the former Deep Reach / current Marauder spine.
+START RULE: variants alter initial pressure, rumor access, evidence weighting and payout logic. They do not create alternate heroes or erase the former Deep Reach spine.
 
 ## Audio
 
@@ -35,6 +35,6 @@ You can change the job without changing who took it.
 
 ## Field Note
 
-Variants should color motive, not erase the canon character.
+Change the claim. Keep the scar.
 
 <!-- External Site; generated from P139_STARTING_CLAIM_VARIANTS/en_US. -->

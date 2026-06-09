@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Fenêtre de vecteur retour
 
-Cette entrée explique pourquoi quitter HECTON-8 n'est pas simple: le transporteur existe, mais reste distant, automatisé et soumis au timing d'Aegir.
+La Fenêtre de vecteur retour décrit l'extraction de HECTON-8 comme procédure orbitale, pas comme sauvetage instantané. Black Keel peut recevoir un signal par les fenêtres étroites d'Aegir, mais le ramassage dépend des trous d'orage, des accalmies de particules chargées, de l'intégrité du relais et du matériel d'ascension reconstruit. Le packet relie le premier contact avec le transporteur aux futurs dossiers d'extraction partielle : une réponse prouve que la route peut exister, pas qu'elle est prête.
 
 ## Scanner
 
-La géométrie orbitale n'est pas un bouton de secours. Le Black Keel n'entend qu'à travers de rares fenêtres d'Aegir.
+LECTURE VECTEUR RETOUR // Ping Black Keel reçu par trou d'orage Aegir. Portée transporteur : piste de transfert haute. Ligne relais sale sous charge nuageuse. Montée capsule rejetée tant que cœur de guidage, bouclier thermique et poignée de retour ne sont pas verts.
 
 ## Terminal
 
-Prévision comm: transporteur haut au-dessus d'Aegir. Montée capsule exige trou de tempête, accalmie particulaire et relais net.
+PREDICTEUR DE FENETRE RETOUR
+Transporteur : BLACK KEEL / piste de transfert automatisée
+Fenêtre : 17 min 40 s après la prochaine accalmie de particules chargées
+Météo : trou de grain de surface requis
+Relais : ligne ciel bruitée / mât d'abri peut répéter une fois
+Matériel d'ascension : cœur de guidage manquant, bouclier thermique non certifié, réserve batterie basse
+Action : reconstruire la chaîne d'ascension avant de traiter le ping transporteur comme ramassage
 
 ## Audio
 
-Le Black Keel est assez vivant pour répondre. Pas assez proche pour sauver.
+Black Keel a entendu le ping. Ça donne une fenêtre, pas une échelle.
 
 ## Field Note
 
-Une réponse tient du timing, pas de la pitié.
+Une réponse n'est pas un secours. C'est une horloge qu'on peut manquer.
 
 <!-- External Site; generated from P036_RETURN_VECTOR_WINDOW/fr_FR. -->

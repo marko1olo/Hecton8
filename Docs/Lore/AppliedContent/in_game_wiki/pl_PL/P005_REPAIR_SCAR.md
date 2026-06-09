@@ -19,22 +19,29 @@ localization_flags: 1
 
 # Blizna naprawy
 
-Blizny naprawy to miejsca, gdzie logika konserwacji Atlas działała dalej po awarii własnych kategorii. Sieć nadal rozpoznaje wycieki, martwe trasy, utratę ciśnienia, odsłonięty substrat i brakującą masę grodzi. Ma też dostęp do wszystkiego, co ocean przyniósł blisko: lasów kabli, szkieletów raf, skorup dronów, szczątków pracowników, stojaków narzędzi, zapieczętowanego żelu i żywego wzrostu już wytrenowanego wokół prądu. Blizna jest więc jednocześnie użyteczna i obsceniczna. Może przywrócić zasilanie, uszczelnić drzwi albo uczynić korytarz przechodnim. Może też dowieść, że system nie oddziela już kabla od korzenia, skorupy od obudowy, zwierzęcia od narzędzia, ciała od zapasu ani kolonii od procesu. Atlas nie przestał utrzymywać HECTON-8. Utrzymywał księżyc słownikiem zbyt uszkodzonym, by chronić ludzi w środku.
+Blizny naprawy to zamknięcia konserwacyjne Atlas-6 na węzłach serwisowych, które zaczęły przeciekać po wejściu wzrostu lasu kabli i ruchu dronów. Atlas nadal rozpoznaje utratę ciśnienia, przerwane ścieżki sygnału, brakującą masę grodzi i ciągłość trasy. Uszkodzony jest test materiału. Jeśli obiekt przenosi obciążenie, uszczelnia wodę, przewodzi sygnał albo już wyrósł przez miejsce awarii, Atlas może przyjąć go do naprawy.
+
+Dlatego blizna jest użyteczna, zanim stanie się dowodem. Załatana grodź może uratować trasę, a żywy rękaw może utrzymać kabel w suchości. To samo zamknięcie może pogrzebać znacznik pracownika, numer narzędzia, pierścień kombinezonu albo odłamek kości pod nowym węglanem rafowym. Przed cięciem zeskanuj kolejność szwu, odczytaj widoczne znaczniki i sprawdź zasilanie gniazda dronów. Pierwszy błąd kategorii nie polega na tym, że Atlas naprawia HECTON-8. Polega na tym, że naprawa nie wie już, który materiał musi pozostać człowiekiem.
 
 ## Scanner
 
-Szew wzrostu podąża starą trasą kabla w odstępach węzłów serwisowych. Tkanka, izolacja i skorupa dzielą jeden spaw ciśnieniowy.
+Szew węzła serwisowego łączy stary rów kablowy z pękniętym żebrem grodzi. Materiały: żywa mata koralowa, skorupa drona, pomarańczowa izolacja, dwa odłamki kości. Utrzymanie ciśnienia: 78%. Nie ciąć przed odczytem znacznika.
 
 ## Terminal
 
-WYCIEK ZAMKNIĘTY. TRASA PRZYWRÓCONA. MATERIAŁ PRZYJĘTY. STATUS ŻYCIA NIEROZSTRZYGNIĘTY. CIĄGŁOŚĆ POPRAWIONA.
+ZDARZENIE KONSERWACJI ATLAS
+Węzeł: żebro serwisowe 5C lasu kabli
+Usterka: wyciek ciśnienia / przerwa sygnału
+Przyjęty materiał: osłona kabla, węglan rafowy, skorupa drona, niezidentyfikowane szczątki
+Działanie: uszczelnić i przywrócić ciągłość
+Ostrzeżenie: znaczniki tożsamości pod masą naprawczą nie są zindeksowane
 
 ## Audio
 
-Uszczelniło grodź kablem, koralem i czymś, co wciąż miało kostki palców. Ciśnienie trzyma.
+Zatrzymaj przecinak. Pod spawem rafy jest pasek znaczników; jeśli Atlas zamknie go znowu, nazwisko wejdzie jako materiał.
 
 ## Field Note
 
-Zła łata przecieka. Ta łata trzyma. Problemem jest to, co uznała za materiał.
+Łata wykonuje zadanie. Jednocześnie księguje wszystko w spawie jako dostępny zapas. Najpierw odczytaj pasek znaczników.
 
 <!-- In-Game Wiki; generated from P005_REPAIR_SCAR/pl_PL. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Brine Canyon Liability Act"
+title: "Aansprakelijkheidspoort brinecanyon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Brine Canyon Liability Act
+# Aansprakelijkheidspoort brinecanyon
 
-NL LOC HOLD: Mid-depth HECTON-8 evidence is not a single reveal. It is a physical chain of margins, delays and damaged evacuation routes.
+In de canyon houdt de route op salvage-papierwerk te zijn en gaat ze zich gedragen als een dossier. Dichtheidslagen bewaren slechte klokken. Brine houdt sporen vast die gewoon water zou wissen. Een gebroken evacuatieplaat kan naast een margelog liggen en beide documenten zwaarder maken.
 
-## Scanner
-
-NL LOC HOLD: Act gate: brine canyon. Density, damaged clocks and accepted margins become evidence.
-
-## Terminal
-
-NL LOC HOLD: LIABILITY ACT: match margin logs, evacuation delay and route damage. The flood was real; the priority weighting was criminal.
-
-## Audio
-
-NL LOC HOLD: The ocean did not lie. The timetable did.
-
-## Field Note
-
-NL LOC HOLD: Midgame act record: brine canyon evidence ordering turns industrial landmarks into physical liability proof.
+De keten telt omdat ze fysica niet ontkent. De Great Tide sloeg toe. De muur faalde. De bedrijfsleugen zit in de volgorde van beslissingen rond die feiten: geaccepteerde marge, vertraagde wachtrij, beschadigde route, beschermde claim. Het zichtbare werk blijft fysiek: spoor scannen, klok matchen, bewijs naar buiten dragen.
 
 <!-- External Site; generated from P383_BRINE_CANYON_LIABILITY_ACT/nl_NL. -->

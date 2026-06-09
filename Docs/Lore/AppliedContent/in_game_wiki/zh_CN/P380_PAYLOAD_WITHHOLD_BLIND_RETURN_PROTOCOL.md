@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Withhold Blind Return Protocol"
+title: "payload blind return 保留协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Withhold Blind Return Protocol
+# payload blind return 保留协议
 
-ZH LOC HOLD: Withholding the payload is an agency route, not a perfect ending. It denies corporate access while risking proof, payout and rescue clarity.
+blind return 协议拒绝所有接收方。没有公司、总账、检疫通道或切断目标会收到最终 payload。携带者把地图和证据保留在本地，从而拒绝 Deep Reach 干净返回路线。它也让债务保持有效，公共证据未提交，包裹暴露在水、死亡和糟糕存储之下。
 
 ## Scanner
 
-ZH LOC HOLD: Blind return route. Deep Reach gets no map. Neither do you get a clean receipt.
+blind return 路线已武装。未分配接收方。盆地向量、proof hashes 和访问等级保持本地；留置和回收窗口未解决。
 
 ## Terminal
 
-ZH LOC HOLD: PAYLOAD ROUTE WITHHOLD: receiver denied, evidence retained local, recovery uncertain, lien unresolved. Deep Reach remains blind to basin vector.
+PAYLOAD 接收方 // BLIND RETURN WITHHOLD。接收方：无。保留盆地向量、proof hashes、salvage 等级、本地证据包。拒绝向 Deep Reach 提供访问地图、付款收据和接收方保管。已知代价：留置未解决，包裹丢失风险为总量。
 
 ## Audio
 
-ZH LOC HOLD: Sometimes not sending is the only thing that still belongs to you.
+没有接收方，没有收据。如果包进水，证据也一起走。
 
 ## Field Note
 
-ZH LOC HOLD: Receiver record: withholding keeps Deep Reach blind while risking proof, payout, and clean extraction.
+拾荒者记录：保留地图是一种选择。只是如果包撕裂，你没有接收方可以责怪。
 
 <!-- In-Game Wiki; generated from P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL/zh_CN. -->

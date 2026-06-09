@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Guía de proceso de campo de forja de ventilas"
+title: "Guía de proceso de campo de forja-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Guía de proceso de campo de forja de ventilas
+# Guía de proceso de campo de forja-vent
 
-Las vent forges son reactores naturales-industriales. Convierten calor, brine y pressure history en ceramics, sealants y charge materials útiles mientras mantienen cada muestra ligada a su ruta térmica.
+Las forjas-vent son reactores natural-industriales. Convierten calor, salmuera, historial de presión y enfriamiento lento en cerámicas, sellantes y materiales de carga. Una muestra solo sirve si su ruta térmica sobrevive a la recuperación.
 
 ## Scanner
 
-Vent-forge chemistry activa. La calidad sigue pressure history, heat pulse y enfriamiento lento, no el brillo de la muestra.
+Química de forja-vent activa. La calidad sigue historial de presión, pulso térmico y enfriamiento lento, no el brillo de la muestra.
 
 ## Terminal
 
-FIELD GUIDE: las vent forges cocinan sulfides, noble-gas pockets, ceramics y sealant precursors. La ruta de una muestra por heat, brine y pressure importa más que su nombre.
+GUÍA DE CAMPO: las forjas-vent cuecen sulfuros, bolsas de gases nobles, granos cerámicos y precursores de sellante. La ruta de una muestra por calor, salmuera y presión importa más que su nombre.
 
 ## Audio
 
-La ventila no hizo mena. Hizo un proceso que interrumpiste.
+El vent no hizo mineral. Hizo un proceso que interrumpiste.
 
 ## Field Note
 
-No levantes un lote fresco directo al agua fría. Deja que la ventila termine el anneal o la concha se cuarteará.
+No subas un lote fresco directo al agua fría. Deja que el vent termine el recocido o la cáscara se cuarteará.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/es_ES. -->

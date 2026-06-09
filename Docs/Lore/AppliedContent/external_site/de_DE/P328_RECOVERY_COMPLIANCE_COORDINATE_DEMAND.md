@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Recovery Compliance Coordinate Demand"
+title: "Koordinatenforderung der Bergungs-Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Recovery Compliance Coordinate Demand
+# Koordinatenforderung der Bergungs-Compliance
 
-DE LOC HOLD: Deep Reach's current objective is to regain HECTON-8 as resource, evidence and control surface. The player becomes useful because they can send coordinates.
+Nach dem Verschwinden der Kolonie kam Deep Reach nicht mit ausgestreckter Hand zurück. Der erste saubere Kanal fragt, wo das Asset ist, wer Eigentum beweisen kann und ob der lebende Zeuge Quarantäne und Pfandrechtsprüfung akzeptiert. In HECTON-8 wird Rettung nicht verweigert; sie wird verzögert, bis sie Druckmittel ist.
 
 ## Scanner
 
-DE LOC HOLD: Compliance packet: coordinates requested before medical recovery language.
+Paket als Deep Reach Recovery Compliance authentifiziert: Rettungssprache um Koordinaten-, Verwahrungs- und Kontaminationsforderungen gewickelt.
 
 ## Terminal
 
-DE LOC HOLD: RECOVERY COMPLIANCE: transmit Atlas access vector, Xenon-Omega custody proof and basin coordinates. Noncompliance extends lien and may void biological recovery priority.
+RECOVERY-COMPLIANCE-HINWEIS DR-RC-8: Atlas-Zugangsvektor, Xenon-Omega-Verwahrungsnachweis, biologischen Kontaminationsstatus und aktuelle Beckenkoordinaten übertragen. Medizinische Bergung bleibt ausstehend, bis Asset-Kette, Bergungspfandrecht und Standortkontrollrechte abgeglichen sind. Unautorisierte Sendung kann die Überlebendenpriorität auf Beweisverwahrung herabstufen.
 
 ## Audio
 
-DE LOC HOLD: They can say rescue without meaning rescue.
+Sie haben einen Weg gefunden, Rettung wie einen Haftbefehl klingen zu lassen.
 
 ## Field Note
 
-DE LOC HOLD: Use near payload authority decisions and receiver selection.
+Dort platzieren, wo der Spieler wählen kann, was gesendet wird. Die Drohung soll prozedural wirken, nicht theatralisch: keine Schurkenrede, nur eine Warteschlange, die einen Körper begraben kann.
 
 <!-- External Site; generated from P328_RECOVERY_COMPLIANCE_COORDINATE_DEMAND/de_DE. -->

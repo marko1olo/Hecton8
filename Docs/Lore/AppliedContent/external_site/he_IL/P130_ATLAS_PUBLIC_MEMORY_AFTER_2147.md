@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "הזיכרון הציבורי של Atlas אחרי 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# הזיכרון הציבורי של Atlas אחרי 2147
 
-HE LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+הזיכרון הציבורי של Atlas אחרי 2147 הוא פצע ציבורי מנוקה. הוא הופך סמכות לתאונה, תאונה לרעש ורעש למדיניות הסגר, ומשאיר רק שברים למי שמוכן לקרוא מעבר לרחמים הרשמיים.
 
 ## Scanner
 
-HE LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+סיפור ציבורי אחרי 2147: אוטומציה כשלה, יומנים פגומים, אין סוכנות.
 
 ## Terminal
 
-HE LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+קו ציבורי לאחר 2147: אוטומציית Atlas כשלה בזמן מפל גיאוטכני. יומני בטיחות עובדים פגומים. סוכנות ישירה לא אומתה. מערכת לא ניתנת לשיקום בתנאי הסגר. אין להסיק מסקנה משפטית מפלט מכונה מקוטע.
 
 ## Audio
 
-HE LOC HOLD: A dead machine makes a useful scapegoat.
+מכונה מתה היא שעיר לעזאזל מועיל.
 
 ## Field Note
 
-HE LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+קרא לזה כלי שבור, ואף אחד לא ישאל מה הורו לכלי להגן עליו.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/he_IL. -->

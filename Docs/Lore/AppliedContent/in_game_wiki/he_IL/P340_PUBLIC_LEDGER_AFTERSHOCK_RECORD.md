@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Public Ledger Aftershock Record"
+title: "רשומת הדף של ספר ציבורי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Public Ledger Aftershock Record
+# רשומת הדף של ספר ציבורי
 
-HE LOC HOLD: Public Ledger Aftershock Record keeps truth from becoming a clean win button. Publication breaks erasure, but the player loses control over use, panic, exploitation and retaliation.
+הרשומה הזאת מונעת מן האמת להיות כפתור ניצחון נקי. הפרסום שובר מחיקה, אבל השחקן מאבד שליטה על פאניקה, ניצול, נקמה ומה שזרים יבנו מן הראיה.
 
 ## Scanner
 
-HE LOC HOLD: Ledger mirrors accepted. Evidence no longer removable. Consequence uncontrolled.
+מראות הספר התקבלו. ראיות כבר אינן ניתנות להסרה; התוצאה כבר אינה ניתנת להכוונה.
 
 ## Terminal
 
-HE LOC HOLD: PUBLIC LEDGER: evidence released outside Deep Reach custody. Worker names and Atlas vector fragments mirrored. Player authority over interpretation terminated.
+PUBLIC LEDGER AFTERSHOCK: ראיות שוחררו מחוץ למשמורת Deep Reach. שמות עובדים, שברי וקטור Atlas ותגי אחריות שוכפלו למקלטים ציבוריים. סמכות השחקן על הפרשנות הסתיימה.
 
 ## Audio
 
-HE LOC HOLD: Truth left the room. It did not ask where to go next.
+האמת יצאה מהחדר. היא לא שאלה לאן ללכת.
 
 ## Field Note
 
-HE LOC HOLD: Public truth record: mirrored evidence prevents erasure but ends the player's control over interpretation.
+רשומת אמת ציבורית: ראיות משוכפלות מונעות מחיקה, אך מסיימות את שליטת השחקן בפרשנות ובנקמה.
 
 <!-- In-Game Wiki; generated from P340_PUBLIC_LEDGER_AFTERSHOCK_RECORD/he_IL. -->

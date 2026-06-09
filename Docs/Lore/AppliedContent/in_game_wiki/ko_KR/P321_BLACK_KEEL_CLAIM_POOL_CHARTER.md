@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "KO LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Black Keel 청구 풀 헌장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Black Keel Claim-Pool Charter
+# Black Keel 청구 풀 헌장
 
-KO LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+Black Keel 청구 풀 헌장은 플레이어가 배라는 단어를 의심하게 만들어야 하는 첫 문서다. Black Keel은 유용하고, 가까이 있으며, 실제다. 그러나 머리 위에서 기다리는 충성스러운 선박은 아니다. 그것은 Aegir Reclamation Pool 안의 임대 회수 자산으로, 청구, 시신, 화물, 텔레메트리, 부채를 법적 채널을 통해 이동시키도록 만들어졌다. 계약자에게 선체 소유권을 주기 위해서가 아니다. 이 구분은 HECTON-8의 핵심 함정을 마법 없이 설명하기 때문에 중요하다. Carrier는 ping을 듣고, 텔레메트리를 팔고, 창을 예약하고, 낮은 위험의 보급품을 떨어뜨릴 수 있다. 그래도 플레이어가 경로의 소유자가 아니기 때문에 깨끗한 구조를 거부할 수 있다. 운송은 허가된다. 구조 우선순위는 조건부다. Lien은 계속 활성이다. 헌장은 궤도를 자유가 아니라 압력으로 바꾼다. 당신 위에 무언가가 있지만, 그것은 사람보다 청구에 먼저 답한다.
 
 ## Scanner
 
-KO LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel은 당신의 배가 아니다. 당신의 이름이 부채 장부에 붙은 청구 풀 회수 자산이다.
 
 ## Terminal
 
-KO LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+헌장 발췌 / BLACK KEEL: 자율 salvage carrier / 보관: Aegir Reclamation Pool / 계약자 운송: 허가 / 선체 소유권: 거부 / 구조 우선순위: insured receiver state, 검역 handshake, claim value에 종속.
 
 ## Audio
 
-KO LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+그 carrier는 당신을 위해 온 것이 아니다. 당신의 이름이 붙은 청구를 위해 왔다.
 
 ## Field Note
 
-KO LOC HOLD: Use this on the first contract or carrier-status screen.
+첫 carrier 상태 화면에 사용: 접근 허가, 소유권 거부, 구조 우선순위 조건부, lien 활성.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/ko_KR. -->

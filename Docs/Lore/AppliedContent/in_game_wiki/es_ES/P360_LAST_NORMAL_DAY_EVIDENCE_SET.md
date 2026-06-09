@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Last Normal Day Evidence Set"
+title: "Conjunto de pruebas del último día normal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Last Normal Day Evidence Set
+# Conjunto de pruebas del último día normal
 
-ES LOC HOLD: Last-normal-day evidence makes the disaster intimate without speeches: unfinished routine proves the colony was interrupted, not staged for memory.
+El último día normal no es una fecha. Es la forma que conserva una sala cuando el trabajo se interrumpe. Una placa de taquilla espera una mano que nunca volvió. Una corrección carece de firma porque alguien pensaba regresar después del descenso. Una tarea de bomba sigue abierta. Una ficha de almuerzo queda sujeta bajo cinta. El reloj de ruta sigue esperando un sello de regreso porque un reloj no tiene categoría para el silencio.
+
+Estos objetos son más fiables que los discursos. Nadie los colocó para la memoria. El tablero aún intentaba mover un turno, alimentar a una cuadrilla, vaciar un sumidero, contar una herramienta y mantener honesta una ruta. Por eso la prueba duele. La colonia aún no había terminado de convertirse en desastre. Todavía era lo bastante normal para discutir por vasos, llaves y firmas tardías mientras la falla ya había entrado en las paredes.
+
+Para un Marauder, el conjunto también advierte contra el salvage perezoso. Una placa valiosa se retira en segundos, pero una corrección sin firmar puede explicar por qué la causa oficial quedó vacía. Una ficha de comida sujeta puede probar que un trabajador esperaba volver antes de que el reloj de puerta se detuviera. Una categoría de cuerpo puede parecer limpia hasta que el certificado de bomba y el conteo de turno se contradicen.
+
+Lee la interrupción antes de llevarte el objeto. Las salas ahogadas de HECTON-8 no necesitan mensajes finales perfectos. Su testimonio más fuerte es más pequeño: trabajo abierto, deber no entregado, un reloj esperando a alguien que el océano ya retiró.
 
 ## Scanner
 
-ES LOC HOLD: Last-normal-day set. The strongest evidence is unfinished ordinary work.
+CONJUNTO ÚLTIMO DÍA NORMAL // Placa de taquilla sin reclamar, nota de corrección sin firmar, tarea de bomba abierta, ficha de almuerzo aún sujeta, reloj de ruta esperando regreso. La prueba más fuerte es el trabajo sin terminar.
 
 ## Terminal
 
-ES LOC HOLD: EVIDENCE SET: locker plate unclaimed; correction note unsigned; pump task open; lunch token clipped; route clock still waiting for return stamp.
+CONJUNTO DE PRUEBAS: placa sin reclamar; corrección sin firma; tarea de bomba abierta; ficha de almuerzo sujeta; reloj de ruta esperando. Causa oficial en blanco. Corrección Marauder: comparar certificado de bomba, conteo de turno, categoría de cuerpo y desfase reloj-puerta antes de retirar salvage.
 
 ## Audio
 
-ES LOC HOLD: The last day did not know it was last.
+El último día no sabía que era el último.
 
 ## Field Note
 
-ES LOC HOLD: Locker plate unclaimed. Correction note unsigned. Pump task open. Lunch token still clipped. Nobody packed the board for history.
+Nadie preparó la sala para la historia. Deja intacta la contradicción: tarea abierta, ficha de comida sujeta, causa en blanco, reloj de ruta esperando a una persona.
 
 <!-- In-Game Wiki; generated from P360_LAST_NORMAL_DAY_EVIDENCE_SET/es_ES. -->

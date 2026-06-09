@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Contract Approach Act Gate"
+title: "Porte d'approche contractuelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Contract Approach Act Gate
+# Porte d'approche contractuelle
 
-FR LOC HOLD: The opening act should frame HECTON-8 as professional salvage before the truth becomes personal. The player is not a tourist and not a family avenger.
+La première porte est du papier avec de la pression derrière. Black Keel n'envoie pas un touriste dans les eaux d'Aegir. L'opérateur accepte transfert de réclamation, exposition de dette, créneau bathydrop et facture d'outils avant le premier scan profond. L'ancien profil Deep Reach compte parce que la reconnaissance de procédure commence avant que la route paraisse personnelle.
 
 ## Scanner
 
-FR LOC HOLD: Act gate: contract accepted. Lien pressure and old Deep Reach procedure are already visible.
+Porte de route: contrat accepté. Exposition au gage, horaire bathydrop et ancienne procédure Deep Reach actifs avant la descente.
 
 ## Terminal
 
-FR LOC HOLD: CAMPAIGN ACT CONTRACT: Black Keel accepts claim transfer, lien exposure and bathydrop timing. Recovery is conditional.
+ROUTE DE CAMPAGNE // APPROCHE CONTRACTUELLE. Propriétaire: tableau de réclamations Black Keel. Accepter transfert de réclamation, exposition au gage, créneau bathydrop et dette d'outils. Résidu d'identifiants Deep Reach détecté dans le profil opérateur. Récupération conditionnelle.
 
 ## Audio
 
-FR LOC HOLD: You came for work. The paperwork already knows you worked for Deep Reach.
+Tu es venu pour le travail. Le contrat sait déjà où tu travaillais avant.
 
 ## Field Note
 
-FR LOC HOLD: Opening act record: contract board, Black Keel audio, and first route pressure establish debt before deep evidence appears.
+Note de pillard: lis le tableau de contrat deux fois. Au second passage, on voit quels anciens droits tiennent encore dans tes mains.
 
 <!-- In-Game Wiki; generated from P381_CONTRACT_APPROACH_ACT_GATE/fr_FR. -->

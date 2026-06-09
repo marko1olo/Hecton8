@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: P-63 Pump Room Work Order"
+title: "Ordre de travail salle des pompes P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: P-63 Pump Room Work Order
+# Ordre de travail salle des pompes P-63
 
-FR LOC HOLD: P-63 shows HECTON-8 at small scale: water in the room, one tool in hand, and a return route that has to be marked before it is trusted.
+L'Ordre de travail salle des pompes P-63 est HECTON-8 à petite échelle : de l'eau dans la pièce, un outil en main, une ligne acoustic return et une route qui ne peut pas être crue avant que l'environnement réponde. Il transforme la mécanique en habitude de colonie.
 
 ## Scanner
 
-FR LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+La première réparation se lit comme une habitude de colonie : pomper, sceller, écouter, couper seulement quand la pièce cesse de mentir.
 
 ## Terminal
 
-FR LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63 : vider le sump ; colmater le cold seam ; vérifier le return pinger ; couper le fused latch seulement après maintien de pression ; imprimer le gasket depuis stock local ; marquer route safe après trois retours acoustic return. Initiales du superviseur absentes sous tache d'eau.
 
 ## Audio
 
-FR LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Pompe d'abord. Scelle ensuite. Si ça chante, arrête de couper.
 
 ## Field Note
 
-FR LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Le bas du clipboard est trempé. La ligne de coupe reste lisible parce que quelqu'un l'a entourée deux fois et a écrit si ça chante, stop.
 
 <!-- External Site; generated from P287_P63_PUMP_ROOM_WORK_ORDER/fr_FR. -->

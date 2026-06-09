@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Pytanie finałowe: sprzedaż miejsca zbrodni
 
-To zakończenie działa najmocniej, gdy gra nie karze gracza mechanicznie. Zdesperowany Marauder może zrobić wszystko, czego żądał kontrakt: dotrzeć do basenu, odzyskać współrzędne, dowieść wartości próbki, zachować zapis XO i przekazać payload, który Black Keel potrafi wycenić. Wynik ma być legalny i zimny. Dług znika, bo system rozpoznał wartość, nie sprawiedliwość.
+Zakończenie sprzedaży powinno być dość legalne, by bolało. Zadłużony Marauder może wykonać kontrakt: dotrzeć do basenu, odzyskać współrzędne, udowodnić wartość próbki, zachować zapis XO i dostarczyć ładunek, który przewoźnik potrafi wycenić. Rejestr odpowiada, bo przedmioty mają wartość, nie dlatego, że martwi zostali wysłuchani.
 
-W tym tkwi groza. HECTON-8 nie zginął dlatego, że nikt nie umiał czytać dowodów. Zginął dlatego, że dowody da się zamienić we własność. Jeśli gracz sprzedaje scenę bez publicznego łańcucha świadków, Deep Reach dostaje czystsze papiery, lepszą geometrię podejścia i powód, by wrócić z prawnikami przed ratownikami. Finał płaci graczowi i pokazuje, jaka cywilizacja może sobie pozwolić na międzygwiezdny salvage.
+Pokwitowanie decyduje, co pojedzie dalej. Jeśli materiał świadka nie zostanie osobno poświadczony, Deep Reach dostaje geometrię podejścia, wycenę próbki i ścieżkę pieczy bez załączonego rejestru nazwisk pracowników. Keelmark może zapłacić. Operator może odejść. Pomieszczenie niżej staje się zapisem aktywa, zanim stanie się zeznaniem, dlatego trasa wypłaty należy do osi finału, a nie do kosza porażek.
 
 <!-- External Site; generated from P191_FINAL_QUESTION_CRIME_SCENE_SALE/pl_PL. -->

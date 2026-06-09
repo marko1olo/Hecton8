@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pressure Failure Thresholds"
+title: "Umbrales de fallo por presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pressure Failure Thresholds
+# Umbrales de fallo por presión
 
-ES LOC HOLD: Pressure failure thresholds define when containment, crafting, and salvage cross from useful sample into fracture, bloom, drift, or contamination.
+Los Umbrales de fallo por presión definen el borde legible entre recurso y peligro. Permiten que HECTON-8 convierta la profundidad en gramática visible para el jugador: estrés visual, tics de audio, avisos de escáner, riesgo de salvamento y consecuencias de craft apuntan a la misma regla física. Una muestra falla porque el mundo la presiona, no porque un número de inventario expire en silencio.
 
 ## Scanner
 
-ES LOC HOLD: A good sample can become a hazard by crossing the wrong pressure line.
+Una buena muestra se vuelve peligrosa al cruzar la línea de presión equivocada. Al océano no le importa que la etiqueta casi fuera correcta.
 
 ## Terminal
 
-ES LOC HOLD: THRESHOLDS: shallow-rated, industrial-rated, brine-rated, abyssal-rated and Atlas-rated containers are distinct. A mismatch causes drift, fracture, bloom or dead-sample contamination.
+FALLO DE PRESIÓN / shallow-rated: tic de sello y avance de agua / industrial-rated: deriva de junta y vibración de abrazadera / brine-rated: fisura fina y floración salina / abyssal-rated: eco fantasma, niebla de muestra muerta / Atlas-rated: bloqueo de custodia antes de pérdida estructural.
 
 ## Audio
 
-ES LOC HOLD: Pressure does not care that the label was almost right.
+A la presión no le importa que la etiqueta estuviera casi bien.
 
 ## Field Note
 
-ES LOC HOLD: Failure thresholds should be readable before they punish.
+Los umbrales deben leerse antes del castigo: tic, deriva, fisura fina, floración salina, niebla de muestra muerta. Si el jugador aprende solo tras perder, el mundo hace trampa.
 
 <!-- External Site; generated from P172_PRESSURE_FAILURE_THRESHOLDS/es_ES. -->

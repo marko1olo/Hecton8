@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Payload Authority Last Check
 
-Payload Authority Last Check gives the final UI its hard question.
+Payload Authority Last Check gives the final UI its hard question. The player is not choosing a prize chest; they are choosing who gets mass, proof, names, coordinates, and permission to act.
 
 ## Scanner
 
-Payload check: receiver changes meaning, not only reward.
+Payload check: receiver choice changes ownership, not only reward.
 
 ## Terminal
 
-PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence and post-return liability.
+PAYLOAD AUTHORITY CHECK: select receiver, mass, evidence custody, ecological consequence, and post-return liability. Receiver selection defines who may act on proof after departure.
 
 ## Audio
 

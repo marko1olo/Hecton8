@@ -1,0 +1,3 @@
+packet_id,packet_hash_hex,packet_hash_uint,release_set,primary_component,primary_field,secondary_component,secondary_field,suggested_world_target,unlock_moment,notes
+P6805_RECEIVER_COUNTERSTAMP_ROOM_NUMBER,0x034E3FC6,55459782,RS287_RECEIVER_COUNTERSTAMP_ROOM_NUMBER,NarrativeDiscovery,appliedLorePacketHash,MessageTerminal,appliedLorePacketHash,"poi.receiver_counterstamp_room_number, poi.quarantine_room_number_plate, poi.medical_owner_counterseal, poi.public_ledger_receiver_strip, poi.black_keel_lift_allocation_switch",receiver_counterstamp_room_number,Authoring evidence only; future runtime should bind the baked packet hash to receiver-room counterstamp objects without reading markdown or JSON.
+

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Pressure Job Title Table"
+title: "Tabla de oficios de presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Pressure Job Title Table
+# Tabla de oficios de presión
 
-ES LOC HOLD: Pressure job titles give the colony a stable labor vocabulary: pump chief, brine cartographer, vent-forge operator, relay notary, and the roles that make evidence physical.
+La Tabla de oficios de presión da a HECTON-8 su vocabulario laboral. Los cargos se leen en salas y objetos. Un buen cargo convierte un nombre en ruta: sellos cerca de escotillas, relés cerca de hojas de tiempo, medlock cerca de rechazos y mentiras de triaje.
 
 ## Scanner
 
-ES LOC HOLD: Job titles should explain what kept the colony alive.
+TABLERO DE PUESTOS // El cargo no es adorno de recursos humanos. Indica qué sistema falló cuando el trabajador dejó de responder.
 
 ## Terminal
 
-ES LOC HOLD: JOB TITLES: pump tech, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent kiln hand, Atlas safety reader and shift supervisor.
+OFICIOS DE PRESIÓN // Técnica de bombas, aparejador de sellos, escribiente de ruta, buzo brine, operadora de fabricador, auxiliar medlock, custodio de relé, peón vent-kiln, lector de seguridad Atlas y supervisora de turno no son color social. Son lógica de acceso. El cargo define qué sabía el trabajador, qué panel aceptaba su placa, qué sala debía tener sus herramientas y qué fallo se le culparía después del Great Tide.
 
 ## Audio
 
-ES LOC HOLD: Nobody died as Employee 438. They died doing a job.
+Nadie murió como Empleado 438. Murieron sosteniendo un trabajo que el océano aún necesitaba.
 
 ## Field Note
 
-ES LOC HOLD: Every title should imply a tool, route or failure.
+Cada cargo debe apuntar a una herramienta, una sala, un permiso de ruta o una razón por la que el cuerpo no pudo salir.
 
 <!-- External Site; generated from P167_PRESSURE_JOB_TITLE_TABLE/es_ES. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek: margines pływowy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek: margines pływowy
 
-PL LOC HOLD: Iliya Varnek Tide Margin names one layer of Deep Reach responsibility: not direct murder, but documented acceptance of extreme-tide risk under production pressure.
+Iliya Varnek: margines pływowy to jeden z pierwszych jasnych tekstów HECTON-8 o tym, jak działa odpowiedzialność Deep Reach. Unika łatwej wersji korporacyjnego zła. Varnek nie musi naciskać przycisku powodzi. Podpisuje interpretację ryzyka.
 
-## Scanner
+W 2147 roku model Wielkiego Pływu nadal przechodził średnio. To niebezpieczne słowo. Średnie zachowanie utrzymywało harmonogram produkcji, podczas gdy ekstremalny stos pozostawał w ekspozycji robotników: okna pływowe Aegir, odbicie szelfu lodowego, ruch tras ciśnieniowych i niepewność kompensacji Atlas. Trasa może być statystycznie akceptowalna i śmiertelna dla ludzi, którzy trafią na ogon krzywej.
 
-PL LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
-
-## Terminal
-
-PL LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
-
-## Audio
-
-PL LOC HOLD: He did not order a flood. He priced it low enough to happen.
-
-## Field Note
-
-PL LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Dla gracza ten dowód zmienia katastrofę z wypadku w łańcuch decyzji. Memo Varneka nie jest przyznaniem się. Jest dokumentem, który czyni winę czytelną: niepewność znano, przeceniono i przekazano w dół. Groza jest biurokratyczna, ale nie sucha. Margines stał się tak mały, że robotnicy mogli umrzeć w jego wnętrzu.
 
 <!-- External Site; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/pl_PL. -->

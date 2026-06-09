@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Legal Loophole"
+title: "הפרצה המשפטית של marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Legal Loophole
+# הפרצה המשפטית של marauder
 
-HE LOC HOLD: The Marauder Legal Loophole makes salvage a profession with teeth: useful enough to hire, dirty enough to abandon.
+המילה מאראודר נושאת שתי אמיתות. כך אזרחים נקיים קוראים למי שחותכים חורבות חתומות, וכך כלכלת החילוץ מסתירה עבודה שהיא אינה יכולה להודות שהיא צריכה. ב-HECTON-8 כל איסוף יכול להיות עבודה חוקית, גניבה מזדמנת או החילוץ הישר הראשון שהמושבה ראתה זה עשרות שנים.
 
 ## Scanner
 
-HE LOC HOLD: License valid in one lane, criminal in the next.
+רישיון תקף בנתיב אחד, וכתב אישום בנתיב הבא.
 
 ## Terminal
 
-HE LOC HOLD: CLAIM STATUS: licensed salvage contractor under Aegir Reclamation Pool custody; tolerated trespasser under Deep Reach asset language; prosecutable raider under clean Sol summaries.
+CLAIM STATUS: licensed salvage contractor תחת custody של Aegir Reclamation Pool; trespasser נסבל בשפת הנכסים של Deep Reach; raider שניתן להעמיד לדין בסיכומי Sol נקיים; emergency responder רק אם הרשומה שחולצה לא מביכה אף אדם חשוב.
 
 ## Audio
 
-HE LOC HOLD: The same cutter can be a tool, a crime, or a rescue device.
+אותו חותך יכול להיות כלי, פשע, או מכשיר החילוץ האחרון שנותר.
 
 ## Field Note
 
-HE LOC HOLD: Marauder is a job title only when the right court is listening.
+Marauder הוא תואר עבודה רק כל עוד בית המשפט הנכון יכול להרוויח ממנו.
 
 <!-- External Site; generated from P122_MARAUDER_LEGAL_LOOPHOLE/he_IL. -->

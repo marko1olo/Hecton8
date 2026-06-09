@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Atlas Basin Pressure Gate"
+title: "Portão de Pressão da Bacia Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Atlas Basin Pressure Gate
+# Portão de Pressão da Bacia Atlas
 
-PT LOC HOLD: Atlas Basin Pressure Gate anchors the final threshold in suit grade, pressure proof and authority conflict.
+O portão ancora o limiar final em grau do traje, prova de pressão e conflito de autoridade. A porta não é mística; é um sistema industrial decidindo se o jogador conta como acesso, prova ou contaminação.
 
 ## Scanner
 
-PT LOC HOLD: Basin gate requires pressure proof and authority response.
+O portão da bacia pede prova de pressão, autoridade de rota e um corpo que possa classificar.
 
 ## Terminal
 
-PT LOC HOLD: ATLAS BASIN GATE: pressure proof incomplete; authority clamp recognizes revoked Deep Reach pattern.
+ATLAS BASIN GATE: prova de pressão incompleta. Grau do traje aceito abaixo do limiar de descida. Authority clamp reconhece padrão Deep Reach revogado, não o reclamante atual. Override manual exige carga local, escolha de receptor e payload testemunha.
 
 ## Audio
 
-PT LOC HOLD: It knows the old key. It does not know you.
+Ele conhece a chave antiga. Não conhece você.
 
 ## Field Note
 
-PT LOC HOLD: Final threshold should read like a service gate to a living factory, not a fantasy portal.
+O limiar final deve parecer um portão de serviço para uma fábrica viva, não um portal de fantasia.
 
 <!-- In-Game Wiki; generated from P297_ATLAS_BASIN_PRESSURE_GATE/pt_BR. -->

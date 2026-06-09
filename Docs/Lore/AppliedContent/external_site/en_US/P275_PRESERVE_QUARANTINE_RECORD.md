@@ -19,22 +19,28 @@ localization_flags: 0
 
 # Preserve Quarantine Record
 
-Preserve Quarantine Record explains HECTON-8's refusal of clean endings.
+This quarantine record is useful because it lists what was withheld, what was protected, and what can still break later: payload custody, coordinate blindness, partial public receipt, Atlas damage, ecology hold, worker names, liability, and blind follow-up claims.
 
 ## Scanner
 
-Payload withheld. Consequence deferred.
+PRESERVE QUARANTINE RECORD // Payload withheld from Deep Reach. Atlas remains damaged but active; ecology hold order blocks clean ownership transfer.
 
 ## Terminal
 
-ENDING RECORD: preserve/quarantine; no clean ownership transfer; no clean closure.
+ENDING RECORD / PRESERVE QUARANTINE
+Payload: withheld from Deep Reach direct custody.
+Order: ecology hold, coordinate blind, partial public receipt.
+Atlas state: damaged repair logic active.
+Protected: pressure ecology and surviving maintenance life.
+Unresolved: worker names, basin liability, future salvage filings.
+Known loss: preservation does not become innocence.
 
 ## Audio
 
-Leaving something alive is not the same as saving it.
+You left it alive. That is not the same as saving it.
 
 ## Field Note
 
-Record fields: payload withheld, Deep Reach blind, ecology preserved, Atlas damage active, public truth partial and future pressure unresolved.
+Holding the packet protects some living systems and leaves the broken authority breathing. Watch the blind-claim queue.
 
 <!-- External Site; generated from P275_PRESERVE_QUARANTINE_RECORD/en_US. -->

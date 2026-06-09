@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Player Lien Contract Start Card"
+title: "Kartu Awal Kontrak Lien Pemain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Player Lien Contract Start Card
+# Kartu Awal Kontrak Lien Pemain
 
-ID LOC HOLD: Player Lien Contract Start Card locks the protagonist as a former Deep Reach professional turned marauder. The motive begins practical and becomes personal through evidence, not family revenge.
+Kartu Awal Kontrak Lien Pemain mengunci protagonis HECTON-8 sebagai profesional yang sudah terkompromi, bukan turis polos. Pemain memulai dengan motif praktis: salvage contract, lien utang, pengetahuan akses lama, dan kepercayaan diri cukup untuk percaya ini pekerjaan. Itu penting karena game tidak perlu lost-relative hook untuk membuat penurunan terasa personal. Tekanan personal datang dari bukti. Deep Reach field key lama yang masih dikenali Black Keel bukan kenyamanan; itu peringatan bahwa sistem lama tidak pernah sepenuhnya melupakan operator. Kontrak memberi pemain alasan memasuki laut dan alasan salah membaca bahaya pertama. Mereka pikir membaca job file. File itu juga membaca mereka: clearance lama, familiaritas rute, liability history, dan beneficiary conflict. Saat pemain mengerti mantan pemberi kerja bukan sekadar latar, lien sudah mengubah rasa ingin tahu profesional menjadi kustodi.
 
 ## Scanner
 
-ID LOC HOLD: Start card: ex-Deep-Reach key, salvage lien, professional interest, masked personal pressure.
+Kartu awal tidak menjadikanmu korban terpilih. Ia menjadikanmu mantan profesional Deep Reach dengan lien, kunci, dan alasan untuk membohongi diri sendiri.
 
 ## Terminal
 
-ID LOC HOLD: CONTRACT START: independent operator, former Deep Reach field access, salvage lien active. Initial motive: contract value. Secondary motive: unresolved professional exposure.
+AWAL KONTRAK / operator: salvage contractor independen / akses lama: Deep Reach field key, tidak aktif tetapi dikenali / lien: aktif / motif dinyatakan: claim value / tekanan tak dinyatakan: prior exposure, familiaritas rute, beneficiary conflict.
 
 ## Audio
 
-ID LOC HOLD: You came for work. The file remembered you before you remembered it.
+Kau datang untuk kerja. File itu mengingatmu sebelum kau mengingatnya.
 
 ## Field Note
 
-ID LOC HOLD: No lost-relative hook. Keep motive professional-to-personal.
+Tanpa lost-relative hook. Motif dimulai sebagai pekerjaan: salvage value, field access lama, paparan profesional, tekanan pribadi tersamar.
 
 <!-- In-Game Wiki; generated from P325_PLAYER_LIEN_CONTRACT_START_CARD/id_ID. -->

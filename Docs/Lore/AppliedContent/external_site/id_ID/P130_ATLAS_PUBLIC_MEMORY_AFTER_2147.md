@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Public Memory After 2147"
+title: "Ingatan Publik tentang Atlas setelah 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Public Memory After 2147
+# Ingatan Publik tentang Atlas setelah 2147
 
-ID LOC HOLD: Atlas Public Memory After 2147 is the cover story's AI layer: reduce authority to accident, reduce accident to noise.
+Ingatan publik tentang Atlas setelah 2147 adalah luka publik yang sudah dibersihkan. Ia mengubah otoritas menjadi kecelakaan, kecelakaan menjadi derau, dan derau menjadi kebijakan karantina, menyisakan fragmen bagi siapa pun yang mau membaca melewati belas kasihan resmi.
 
 ## Scanner
 
-ID LOC HOLD: Public story: failed automation, corrupted logs, no recoverable agency.
+Cerita publik setelah 2147: otomasi gagal, log rusak, tanpa agensi.
 
 ## Terminal
 
-ID LOC HOLD: POST-2147 PUBLIC LINE: Atlas automation failed during geotechnical cascade. Worker safety logs corrupted. Direct agency unverified. System unrecoverable under quarantine conditions.
+GARIS PUBLIK PASCA-2147: otomasi Atlas gagal selama kaskade geoteknis. Log keselamatan pekerja rusak. Agensi langsung tidak terverifikasi. Sistem tidak dapat dipulihkan dalam kondisi karantina. Inferensi hukum dari keluaran mesin fragmentaris tidak diizinkan.
 
 ## Audio
 
-ID LOC HOLD: A dead machine makes a useful scapegoat.
+Mesin mati adalah kambing hitam yang berguna.
 
 ## Field Note
 
-ID LOC HOLD: If the public remembers Atlas as a broken tool, nobody asks what it was ordered to value.
+Sebut saja alat rusak, maka tak ada yang bertanya apa yang diperintahkan untuk dilindungi alat itu.
 
 <!-- External Site; generated from P130_ATLAS_PUBLIC_MEMORY_AFTER_2147/id_ID. -->

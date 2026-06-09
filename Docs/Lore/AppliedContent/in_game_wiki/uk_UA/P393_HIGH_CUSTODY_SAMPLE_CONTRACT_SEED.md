@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: High Custody Sample Contract Seed"
+title: "Зерно контракту зразка високої custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: High Custody Sample Contract Seed
+# Зерно контракту зразка високої custody
 
-UK LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+Зразок високої custody - сімейство контрактів, де цінність ресурсу й поводження з доказами стикаються рано. Blue debt, тканинно-залізний осад, запечатана вода і забруднені фільтр-пакети платять більше тільки поки контейнер, мітка, маса і маршрутна custody цілі.
 
 ## Scanner
 
-UK LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+Зерно контракту: зразок високої custody. Більша виплата прив'язана до обліку маси, карантинної затримки й receiver-сертифікованих контейнерів.
 
 ## Terminal
 
-UK LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: зразки custody-grade активні, журнал маси суворий, карантинна затримка підвищена, печатка receiver обов'язкова, штраф за скидання маршруту активний.
 
 ## Audio
 
-UK LOC HOLD: A sample can weigh more after it enters the ledger.
+Зразок стає важчим після того, як журнал його прийняв.
 
 ## Field Note
 
-UK LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+Нотатка мародера: зваж мішок, перш ніж назвати його прибутком. Receiver може виставити відсутні грами жорсткіше, ніж ударить океан.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/uk_UA. -->

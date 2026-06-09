@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Finales y custody del payload
 
-Hub de dossier de finales: custody, evidence, futuro de Atlas y precio de salir.
+Hub de dossiers de finales: cada salida es transferencia de custody, no etiqueta moral.
 
 ## Scanner
 
-Spoiler hub: payload receivers, false exits, custody, verdad pública, Atlas continuity y after-action records.
+Spoiler hub: custody del payload, consecuencias por receiver, false exits, proof pública, presión de cuarentena y continuidad de Atlas.
 
 ## Terminal
 
-SITE NAV: ocultar final payload pages tras spoiler gates. Organizar por receiver y proof ownership.
+SITE NAV: mantener páginas finales tras spoiler gates; ordenar por control del cuerpo, coordenadas, samples, Atlas records y worker proof.
 
 ## Audio
 
-El final es quién posee la prueba después del ascenso.
+Salir no es el final. Es una transferencia de custody.
 
 ## Field Note
 
-Los finales quedan spoiler-gated y se organizan por receiver y custody consequence, no por etiquetas morales.
+Si el cuerpo escapa pero la proof queda poseída, el océano no ha cerrado el caso.
 
 <!-- In-Game Wiki; generated from P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER/es_ES. -->

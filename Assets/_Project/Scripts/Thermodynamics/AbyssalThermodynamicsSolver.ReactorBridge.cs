@@ -1,10 +1,13 @@
 using System;
 using System.IO;
+using Hecton8.Atmosphere;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay.AirlockPressurization;
 using Hecton8.Power;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -409,6 +412,7 @@ namespace Hecton8.Thermodynamics
                 publishJob.DamageWriterBudget = SignalBus<CombatDamageSignal>.ParallelWriterBudget;
                 publishJob.Tuning = nuclearTuning;
                 publishJob.GridTuning = gridTuning;
+                publishJob.SeaLevelAupY = ResolveReactorSeaLevelAupY();
                 publishJob.ReactorCount = resolvedCount;
                 publishJob.ReactorCapacity = ReactorThermalMath.MaxReactors;
                 publishJob.Frame = gridTuning.Frame;
@@ -460,6 +464,49 @@ namespace Hecton8.Thermodynamics
             telemetryJob.Frame = gridTuning.Frame;
             telemetryJob.LastInjectionMicroseconds = _lastReactorInjectionMicroseconds;
             return telemetryJob.Schedule(dependency);
+        }
+
+        private double ResolveReactorSeaLevelAupY()
+        {
+            IHectonOceanKinematicsService oceanKinematicsService = _oceanKinematicsService;
+            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+                ? oceanKinematicsService.ActiveProvider
+                : null;
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanReactorSeaLevelAupY(oceanKinematics.SeaLevel, out double seaLevelAupY))
+            {
+                return seaLevelAupY;
+            }
+
+            return OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+        }
+
+        private static bool TryResolveOceanReactorSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
+        }
+
+        private static bool TryResolveReactorSeaLevelAupY(float candidateSeaLevelY, out double seaLevelAupY)
+        {
+            if (math.isfinite(candidateSeaLevelY) &&
+                math.abs(candidateSeaLevelY) > 0.0001f &&
+                math.abs(candidateSeaLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
+            {
+                seaLevelAupY = candidateSeaLevelY;
+                return true;
+            }
+
+            seaLevelAupY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;
+            return false;
         }
 
         private static ReactorThermalTuningDTO SanitizeReactorTuning(ReactorThermalTuningDTO tuning, float gridQuality, uint frame)

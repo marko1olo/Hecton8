@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Route Permission Stamp Set"
+title: "Набір штампів маршрутного дозволу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route Permission Stamp Set
+# Набір штампів маршрутного дозволу
 
-UA LOC HOLD: Route Permission Stamp Set gives access props a visual vocabulary: worker, door or vehicle, job family, and later contradiction.
+Набір штампів маршрутного дозволу визначає реквізит доступу для HECTON-8. Штампи поєднують особу працівника з фізичними межами: дверима, машинами, костюмами, ліфтами й маршрутними дошками. Оскільки кожен штамп пізніше може суперечити реєстру або аудіофрагменту, доступ стає біографією під тиском і головним способом читати останній рух колонії.
 
 ## Scanner
 
-UA LOC HOLD: A route stamp is stronger than a diary line.
+Маршрутний штамп сильніший за рядок щоденника, бо доводить, кого пропустили через межу тиску.
 
 ## Terminal
 
-UA LOC HOLD: STAMP RULE: route permission must connect one worker, one door or vehicle, one job family and one later contradiction.
+STAMP RULE: маршрутний дозвіл має поєднати одного працівника, одні двері або машину, одну родину бригади й одну пізнішу суперечність. Штамп без фізичної межі це декор. Штамп на люку, стійці костюмів, рейці crawler або бірці ліфта стає доказом руху.
 
 ## Audio
 
-UA LOC HOLD: Access is biography under pressure.
+Доступ це біографія під тиском.
 
 ## Field Note
 
-UA LOC HOLD: Stamps: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Pair with hatch state and job object.
+Штампи: PUMP, SEAL, RELAY, BRINE, FORGE, TRIAGE, BOTANY, WITNESS. Поєднувати зі станом люка й робочим предметом.
 
 <!-- External Site; generated from P213_ROUTE_PERMISSION_STAMP_SET/uk_UA. -->

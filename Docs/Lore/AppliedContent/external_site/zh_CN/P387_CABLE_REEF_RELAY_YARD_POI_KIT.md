@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "电缆礁中继场证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Cable Reef Relay Yard POI Kit
+# 电缆礁中继场证据套件
 
-ZH LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+中继场把反感变成工具纪律。电缆护套开裂，绝缘层剥落，Atlas服务膜跨过了本不该共用表面的插座。一道干净切割可能毁掉唯一仍在传递信号的路径。
 
-## Scanner
-
-ZH LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-ZH LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-ZH LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-ZH LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+证据套件是物理的：信标响应、死支路地图、切割警告、中继叉，以及活体材料接管断裂航路处留下的服务标记。这个地点要先显得有用，再显得陌生。危险在于一种能救操作员、同时污染索赔记录的修复。
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/zh_CN. -->

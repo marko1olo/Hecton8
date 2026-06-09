@@ -14,7 +14,7 @@ Packet scope:
 
 ## Purpose
 
-RS189 gives early walkway and rail surfaces readable physical use traces: salt-polished handrail bands, boot crescents on ladder rungs, silt wedges in deck grates, layered paint chips on stanchions, and peeled warning-stripe edges.
+RS195 gives early walkway and rail surfaces readable physical use traces: salt-polished handrail bands, boot crescents on ladder rungs, silt wedges in deck grates, layered paint chips on stanchions, and peeled warning-stripe edges.
 
 Runtime readers must not parse these Markdown files. These are cold authoring sources for future importer/bake work.
 
@@ -24,7 +24,7 @@ These files do not create website pages, in-game wiki pages, route cards, bindin
 
 ## First-20 Boundary
 
-RS189 improves the first-20 route by making early movement surfaces communicate repeated grip, step, runoff, impact, and wet traffic without claiming navigation, collision, climbability, hazard logic, physics, UI, or interaction implementation.
+RS195 improves the first-20 route by making early movement surfaces communicate repeated grip, step, runoff, impact, and wet traffic without claiming navigation, collision, climbability, hazard logic, physics, UI, or interaction implementation.
 
 ## Localization Boundary
 

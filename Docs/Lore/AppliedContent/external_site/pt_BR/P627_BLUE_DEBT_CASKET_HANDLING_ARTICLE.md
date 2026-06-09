@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Public Archive Resource Primer
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "Manuseio do cofre de dívida azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# Manuseio do cofre de dívida azul
 
-Blue debt value depends on pressure, temperature, custody and silence.
+Dívida azul não se torna útil quando é encontrada. Ela se torna útil se permanecer na condição que a tornou valiosa. Um cofre de pressão selado é contêiner, aviso e recibo; impede que resíduo Xenon-Omega, rede crescida por pressão ou substrato contaminado vire ruído, pó, perda de prova ou sinal que o sistema errado possa ouvir.
 
-## Scanner
-
-Pressure casket stable while cold and sealed.
-
-## Terminal
-
-Preserve pressure state and route sample telemetry through custody.
-
-## Audio
-
-If the casket sings on sonar, somebody else has noticed it.
-
-## Field Note
-
-Stabilize before you spend it.
+A primeira escolha segura não é vender, fabricar ou esconder. É estabilizar. Um casket com faixa fria intacta pode se mover. Um casket com selo quente torna a prova suspeita. Manuseio ruim transforma pagamento em contaminação, ruído e risco de rota.
 
 <!-- External Site; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/pt_BR. -->

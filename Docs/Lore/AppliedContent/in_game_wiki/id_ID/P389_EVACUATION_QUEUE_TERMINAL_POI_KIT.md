@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Evacuation Queue Terminal POI Kit"
+title: "Kit Bukti Terminal Antrean Evakuasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Evacuation Queue Terminal POI Kit
+# Kit Bukti Terminal Antrean Evakuasi
 
-ID LOC HOLD: Evacuation terminals should not be abstract logs. They need physical doors, clocks, lists and route damage to make the proof playable.
+Terminal Antrean Evakuasi tidak berharga hanya karena mengatakan orang menunggu. Ia berharga karena status pintu, drift jam, jumlah pekerja, dan kapasitas rute berbeda dengan cara yang dapat diperiksa di tempat.
 
 ## Scanner
 
-ID LOC HOLD: POI kit: queue terminal proves delay through door state, clock drift and missing route capacity.
+Kit bukti POI: terminal antrean membuktikan penundaan lewat status pintu, drift jam, selisih pekerja, dan kapasitas rute.
 
 ## Terminal
 
-ID LOC HOLD: QUEUE KIT: route hold list, quarantine release delay, Atlas weighting note, worker count mismatch and salvage conflict.
+KIT TERMINAL ANTREAN: daftar tahan rute, penundaan lepas karantina, catatan pembobotan Atlas, selisih hitung pekerja, tag konflik salvage, strip status hatch, residu lencana.
 
 ## Audio
 
-ID LOC HOLD: A queue is a body count with cleaner formatting.
+Antrean adalah hitungan tubuh dengan format lebih rapi.
 
 ## Field Note
 
-ID LOC HOLD: POI evidence kit: Evacuation Queue Terminal frames rooms where salvage value and proof preservation conflict.
+Catatan marauder: jangan congkel strip hatch sebelum residu lencana dipindai. Logam membayar lebih rendah daripada timestamp.
 
 <!-- In-Game Wiki; generated from P389_EVACUATION_QUEUE_TERMINAL_POI_KIT/id_ID. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Recovery Compliance Chain"
+title: "سلسلة Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Recovery Compliance Chain
+# سلسلة Recovery Compliance
 
-AR LOC HOLD: Recovery Compliance Chain is the modern Deep Reach pressure route.
+تجعل عبارة Recovery Compliance النهاية أبرد. تبدو منظمة لأنها منظمة فعلا. يحتاج المقاولون إلى تصريح، والأدلة إلى حضانة، وsalvage إلى سند، ومؤمنو المسار إلى سجلات، والمكاتب العامة إلى كلمات لا تعترف.
 
-## Scanner
-
-AR LOC HOLD: The present threat is a compliance chain, not a villain on a screen.
-
-## Terminal
-
-AR LOC HOLD: 2190 CHAIN: Recovery Compliance receives stale evidence, activates shell rights, pressures Black Keel, bargains for coordinates and decides whether the player is contractor, witness or contamination.
-
-## Audio
-
-AR LOC HOLD: You are not rescued. You are classified.
-
-## Field Note
-
-AR LOC HOLD: Delay does not make an order harmless.
+الرعب أن السلسلة يمكن أن تشمل أحياء ولا تصبح إنقاذا. قد يعامل الناجي كمادة شاهد. قد تعد بدلة الضغط كتلة عودة. قد يكون الاعتراف حمولة بيانات. تستطيع السلسلة إخراج شخص وتظل تخدم المكتب الذي تركه في الأسفل.
 
 <!-- External Site; generated from P150_RECOVERY_COMPLIANCE_CHAIN/ar_SA. -->

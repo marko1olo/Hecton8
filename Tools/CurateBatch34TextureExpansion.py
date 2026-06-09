@@ -4,9 +4,13 @@
 from __future__ import annotations
 
 import csv
+import filecmp
 import json
 import math
+import os
 import shutil
+import stat
+import time
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageOps
@@ -18,6 +22,7 @@ QA_DIR = OUTPUT_ROOT / "QA"
 CONTACT_DIR = OUTPUT_ROOT / "ContactSheets"
 CURATED_DIR = OUTPUT_ROOT / "Curated"
 MANIFEST_PATH = QA_DIR / "Batch34_TextureExpansion_IntakeManifest.json"
+REGEN_TARGETS_MANIFEST = OUTPUT_ROOT / "RegenTargets/QA/Batch34_RegenTargets_IntakeManifest.json"
 
 
 CURATION_OVERRIDES: dict[str, dict[str, str]] = {
@@ -151,6 +156,40 @@ def load_entries() -> list[dict]:
     return list(data["entries"])
 
 
+def load_regen_overrides() -> dict[str, dict]:
+    if not REGEN_TARGETS_MANIFEST.exists():
+        return {}
+    payload = json.loads(REGEN_TARGETS_MANIFEST.read_text(encoding="utf-8"))
+    overrides: dict[str, dict] = {}
+    for entry in payload.get("entries", []):
+        if not entry.get("selected"):
+            continue
+        source_id = str(entry.get("sourceId", "")).strip()
+        final_candidate = str(entry.get("finalCandidatePath", "")).strip()
+        if not source_id or not final_candidate:
+            continue
+        source_type = str(entry.get("sourceType", "")).strip()
+        if source_type == "DECAL_ATLAS":
+            status = "CURATED_READY_ALPHA_SOURCE"
+        elif source_type in {"SEAMLESS_TILE", "TRIM_SHEET"}:
+            status = "CURATED_READY_STATIC"
+        else:
+            continue
+        overrides[source_id] = {
+            "curationStatus": status,
+            "baseColorCandidatePath": final_candidate,
+            "downloadSource": str(entry.get("downloadSource", "")),
+            "maps": entry.get("maps", {}),
+            "regenTargetId": str(entry.get("id", "")),
+            "regenTargetVariant": str(entry.get("variant", "")),
+            "regenTargetDecision": str(entry.get("decision", "")),
+            "regenTargetManifest": project_rel(REGEN_TARGETS_MANIFEST),
+            "regenBroadSeamlessAccepted": bool(entry.get("broadSeamlessAccepted", False)),
+            "integrationNote": f"Selected targeted regen candidate: {entry.get('decision', '')}. {entry.get('note', '')}",
+        }
+    return overrides
+
+
 def default_curation(entry: dict) -> dict[str, str]:
     if entry["verdict"] == "INTAKE_READY_STATIC":
         return {
@@ -167,10 +206,12 @@ def default_curation(entry: dict) -> dict[str, str]:
 
 def apply_curation(entries: list[dict]) -> list[dict]:
     curated: list[dict] = []
+    regen_overrides = load_regen_overrides()
     for entry in entries:
         merged = dict(entry)
         curation = default_curation(entry)
         curation.update(CURATION_OVERRIDES.get(str(entry["id"]), {}))
+        curation.update(regen_overrides.get(str(entry["id"]), {}))
         merged.update(curation)
         curated.append(merged)
     return curated
@@ -184,13 +225,45 @@ def curation_bucket(status: str) -> str:
     return "NeedsWork"
 
 
+def make_writable(path: Path) -> None:
+    try:
+        os.chmod(path, stat.S_IWRITE | stat.S_IREAD)
+    except OSError:
+        pass
+
+
+def remove_best_effort(path: Path, attempts: int = 5) -> bool:
+    for attempt in range(attempts):
+        try:
+            if path.is_dir():
+                shutil.rmtree(path, onerror=lambda func, raw, exc: make_writable(Path(raw)))
+            else:
+                make_writable(path)
+                path.unlink()
+            return True
+        except PermissionError:
+            if attempt + 1 >= attempts:
+                return False
+            time.sleep(0.2)
+        except FileNotFoundError:
+            return True
+    return False
+
+
+def copy2_idempotent(src: Path, dst: Path) -> None:
+    try:
+        shutil.copy2(src, dst)
+        return
+    except PermissionError:
+        if dst.exists() and filecmp.cmp(src, dst, shallow=False):
+            return
+        raise
+
+
 def copy_curated_assets(entries: list[dict]) -> None:
     if CURATED_DIR.exists():
         for path in CURATED_DIR.glob("*"):
-            if path.is_dir():
-                shutil.rmtree(path)
-            else:
-                path.unlink()
+            remove_best_effort(path)
     for entry in entries:
         rel = entry.get("baseColorCandidatePath")
         if not rel:
@@ -202,7 +275,7 @@ def copy_curated_assets(entries: list[dict]) -> None:
         dst_dir = CURATED_DIR / bucket
         dst_dir.mkdir(parents=True, exist_ok=True)
         dst = dst_dir / src.name
-        shutil.copy2(src, dst)
+        copy2_idempotent(src, dst)
         entry["curatedBaseColorPath"] = project_rel(dst)
 
 

@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Model Jarak Ran-Aegir
 
-Jarak Ran-Aegir adalah angka yang mengubah isolasi menjadi fisika. Jangkauan kelas sepuluh tahun cahaya cukup dekat untuk probe, kargo, hukum lama, dan nafsu korporat, tetapi terlalu jauh untuk belas kasihan yang tiba sesuai ritme napas manusia. HECTON-8 memakai celah itu sebagai tekanan: pesan bergerak lebih cepat daripada kapal, klaim lebih cepat daripada orang, dan ruangan banjir mati sebelum jawaban dunia dalam menjadi relevan.
+Model jarak Ran-Aegir adalah fondasi senyap dari tekanan HECTON-8. Aegir berada di jarak tengah yang kejam: cukup dekat untuk membenarkan pelat rute, perangkat seed, gadai kargo, notaris jarak jauh, dan koloni ekstraksi permanen; cukup jauh sehingga tak seorang pun bisa mengimprovisasi belas kasihan saat pintu tekanan gagal.
+
+Perbedaan itu penting. Pesan, klaim hukum, jadwal carrier, kapal penyelamat, dan tubuh manusia tidak memakai jam yang sama. Peringatan bisa bergerak sementara kapal yang harus menjawab masih terkunci oleh bahan bakar, jendela, massa, dan persetujuan pemilik. Deep Reach belajar memakai celah itu. Koloni hidup di dalamnya.
 
 <!-- External Site; generated from P141_RAN_AEGIR_DISTANCE_MODEL/id_ID. -->

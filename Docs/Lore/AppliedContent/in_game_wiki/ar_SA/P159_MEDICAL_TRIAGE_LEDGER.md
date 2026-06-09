@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Medical Triage Ledger"
+title: "دفتر الفرز الطبي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Medical Triage Ledger
+# دفتر الفرز الطبي
 
-AR LOC HOLD: Medical triage evidence lets the colony feel human while tying Deep Reach guilt to procedure, not cartoon violence.
+لا يجب أن يحول الدفتر الطبي HECTON-8 إلى gore استعراضي. قوته أبرد. يصير المريض pressure-state، ثم دين أكسجين، ثم تأخير قفل، ثم hold اعتماد. قد يعرف المسعفون العلاج الصحيح ويخسرون المريض لأن hatch أو ساعة مسار أو signoff من Deep Reach جعل المساعدة تصل متأخرة. الدفتر بشري لأنه يعرض أناسا يحاولون الدقة بينما يجعل النظام الدقة بلا فائدة.
 
 ## Scanner
 
-AR LOC HOLD: The medics knew the system was making patients faster than they could treat them.
+TRIAGE LEDGER // إصابة ضغط، نقص أكسجين، تأخير قفل، مسار مفقود، hold اعتماد. الرعب في دقة انتظار المساعدة.
 
 ## Terminal
 
-AR LOC HOLD: TRIAGE LEDGER: pressure injury, hypoxia, lock delay, missing route and certification hold. The horror is not blood; it is how neatly the ledger explains why help waited.
+قاعدة طبية: احسب الأجساد بلا gore. استخدم pressure-state، دين الأكسجين، تأخير المسار، أولوية triage وsignoff hold لإظهار كيف جعل الإجراء المرضى أسرع من قدرة الأطباء.
 
 ## Audio
 
-AR LOC HOLD: The cleanest handwriting is on the worst page.
+أنظف خط يد على أسوأ صفحة.
 
 ## Field Note
 
-AR LOC HOLD: Medical text should count bodies without becoming gore.
+يجب أن يحسب النص الطبي الأجساد من دون أن يصبح gore.
 
 <!-- In-Game Wiki; generated from P159_MEDICAL_TRIAGE_LEDGER/ar_SA. -->

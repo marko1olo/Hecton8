@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Contract Continuity Desk Signatures"
+title: "تواقيع مكتب استمرارية العقود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Contract Continuity Desk Signatures
+# تواقيع مكتب استمرارية العقود
 
-AR LOC HOLD: Contract Continuity Desk signatures show how a salvage job becomes legal pressure without inventing a new villain.
+تُظهر تواقيع مكتب استمرارية العقود كيف تتحول وظيفة اللاعب الافتتاحية إلى ضغط قانوني قبل أن يفهم اللاعب البحر. الفخ ليس جملة خبيثة واحدة. إنه مجمع من تواقيع روتينية مملة بما يكفي لتمر: دمج رهن من Aegir Reclamation Pool، وبند استرداد Black Keel، وملحق ائتمان أكسجين، وإشعار خطر قائمة سوداء، وحجز حيازة الحمولة. كل توقيع صغير. معاً تجعل الرفض مكلفاً، والصمت مربحاً، والإنقاذ مشروطاً. هذا هو وجه مكاتب Deep Reach السفلى: ليس عرشاً، بل مكاتب تستطيع تحويل النجاة إلى خرق عقد.
 
 ## Scanner
 
-AR LOC HOLD: The contract trap is assembled from clause fragments, not one villain order.
+تُبنى فخاخ العقد الافتتاحي من تواقيع أدنى: دمج رهن، ملحق أكسجين، خطر قائمة سوداء، وحجز حيازة الحمولة.
 
 ## Terminal
 
-AR LOC HOLD: SIGNATURE SEED: Edda Malk, Contract Continuity Desk. Function: merges Aegir Reclamation Pool lien terms with Black Keel recovery clauses. Not a mastermind.
+SIGNATURE SEED: Edda Malk, Contract Continuity Desk. دمج شروط رهن Aegir Reclamation Pool مع بنود استرداد Black Keel. إرفاق ملحق ائتمان أكسجين، وإشعار خطر قائمة سوداء، وحجز حيازة الحمولة. لا يلزم التصعيد إذا قبل المشغل.
 
 ## Audio
 
-AR LOC HOLD: Nobody says trap. They say continuity.
+يمكن للتوقيع أن يصبح باب ضغط عندما ينغلق كل بند بعده.
 
 ## Field Note
 
-AR LOC HOLD: Lower signatures act as procedure stamps: lien merge, oxygen addendum, blacklist risk, and payload hold.
+لا أحد يختم فخاً. يختمون الاستمرارية.
 
 <!-- In-Game Wiki; generated from P201_CONTRACT_CONTINUITY_DESK_SIGNATURES/ar_SA. -->

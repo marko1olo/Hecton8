@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Shallow Annex P-63 POI Kit"
+title: "浅水附舱P-63证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Shallow Annex P-63 POI Kit
+# 浅水附舱P-63证据套件
 
-ZH LOC HOLD: Shallow Annex P-63 should work as tutorial, shelter and evidence. It is not a lore kiosk.
+浅水附舱P-63是生存程序和责任证据第一次放在同一张桌上的地点。操作员恢复泵机，密封避难气室，读取事故包，并发现一份与外部损伤不符的航路通知。
 
 ## Scanner
 
-ZH LOC HOLD: POI kit: P-63 contains repair task, safe pocket and the first official contradiction.
+POI证据套件：P-63保留可用的避难气室、泵修复件和第一处官方矛盾。
 
 ## Terminal
 
-ZH LOC HOLD: P-63 KIT: bilge pump, gasket tray, cutter contact, pinger line, accident packet and sealed route notice.
+P-63套件：舱底泵、密封垫托盘、切割器接触痕、信标线、事故包、封存航路通知、干燥柜、手动旁路夹。
 
 ## Audio
 
-ZH LOC HOLD: First room with air. First room with a lie.
+第一间有空气的房间。第一间有谎言的房间。
 
 ## Field Note
 
-ZH LOC HOLD: POI evidence kit: Shallow Annex P-63 anchors first-hour shelter, repair pressure, and the first official contradiction.
+掠夺者备注：先让泵继续运行，再读事故包。死掉的避难室只会留下糟糕证据。
 
 <!-- In-Game Wiki; generated from P386_SHALLOW_ANNEX_P63_POI_KIT/zh_CN. -->

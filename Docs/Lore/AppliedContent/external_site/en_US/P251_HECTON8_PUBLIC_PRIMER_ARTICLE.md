@@ -19,25 +19,10 @@ localization_flags: 0
 
 # HECTON-8 Public Primer
 
-HECTON-8 is a drowned industrial ocean moon in the Aegir system. It is beautiful before it is incriminating: bright shelves, living shallows, hard blue light, pressure-rated colony bones, and deeper ruins where Deep Reach paperwork still argues with the machinery. You arrive as a Marauder under contract pressure, not as a tourist and not as a chosen savior. The public-facing premise is simple: survive the ocean, read the wreckage, recover what can still speak, and learn why rescue can hear you long before it can reach you.
+HECTON-8 is not introduced as a dead ruin. It is introduced as a place that was worth crossing interstellar distance for: bright photic shelves, hard blue water, pressure-rated colony bones, clear shallows where old machinery can be seen through living ocean. The first promise is beauty. The first threat is that beauty belongs to a system that has already priced it.
 
-## Scanner
+The playable premise begins with a Marauder under contract pressure, not a tourist, chosen heir or family avenger. You descend because debt, blacklist risk and Aegir salvage law make the job possible and dangerous at the same time. The drop goes wrong. The ocean does not care whether the contract was fair. The first hours are practical: shelter, pumps, seals, oxygen, tools, signal. The story enters through objects that still have owners.
 
-Public primer clearance: show the moon as beautiful first. Do not sell the ocean by hiding the crime.
-
-## Terminal
-
-PUBLIC PRIMER / SPOILER-SAFE
-allowed: Aegir ocean moon, bright shelves, drowned industrial colony, Marauder salvage return, Deep Reach ruins
-gated: final payload route, Atlas resolution, ending receiver consequences
-editor note: beauty first, evidence second, no false rescue promise.
-
-## Audio
-
-The shallow water is not a mask. It is what they almost managed to build before the depth kept the receipts.
-
-## Field Note
-
-Sell the ocean first. Then let the rust, tags, and route stamps prove why the ocean is not innocent.
+That is the public face of HECTON-8: ocean survival with industrial memory. Deep Reach built pressure routes and worker habitats here. Black Keel can answer from orbit but cannot erase distance, weather or custody law. The moon is beautiful enough to make the loss matter, and documented enough to make every recovered mark feel like evidence.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/en_US. -->

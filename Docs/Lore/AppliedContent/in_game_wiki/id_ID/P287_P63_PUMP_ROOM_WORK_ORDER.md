@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: P-63 Pump Room Work Order"
+title: "Perintah Kerja Ruang Pompa P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: P-63 Pump Room Work Order
+# Perintah Kerja Ruang Pompa P-63
 
-ID LOC HOLD: The P-63 work order makes the first repair a colony procedure, not a tutorial overlay.
+Perintah Kerja Ruang Pompa P-63 membuat perbaikan pertama terasa seperti prosedur koloni yang diwarisi, bukan teks tutorial. Ia basah, praktis, dan takut dalam hal-hal kecil. Perintahnya menyuruh membersihkan sump, menambal cold seam, menunggu return pinger, dan memotong fused latch hanya setelah tekanan bertahan. Urutan itu mengajarkan cara berpikir pekerja HECTON-8: air dulu, segel kedua, suara sebelum tenaga, kepercayaan rute paling akhir. Inisial supervisor yang hilang dan lingkaran ganda di sekitar baris potong membuat kertas terasa dipakai, bukan ditulis untuk pemain. Ini artefak kecil, tetapi membawa seluruh loop game dalam miniatur: baca ruangan, pulihkan sistem, curigai potongan mudah.
 
 ## Scanner
 
-ID LOC HOLD: Work order lists pump, seal, cut, pinger and gasket in pressure order.
+Perbaikan pertama terbaca seperti kebiasaan koloni: pompa, segel, dengarkan, potong hanya jika ruangan berhenti berbohong.
 
 ## Terminal
 
-ID LOC HOLD: WORK ORDER P-63: clear sump; patch cold seam; cut fused latch; deploy acoustic return line; print gasket only after pressure holds.
+WORK ORDER P-63: bersihkan sump; tambal cold seam; verifikasi return pinger; potong fused latch hanya setelah tekanan bertahan; cetak gasket dari stok lokal; tandai route safe setelah acoustic return berulang tiga kali. Inisial supervisor hilang di bawah noda air.
 
 ## Audio
 
-ID LOC HOLD: Pump first. Seal second. If it sings, stop cutting.
+Pompa dulu. Segel kedua. Jika ia bernyanyi, berhenti memotong.
 
 ## Field Note
 
-ID LOC HOLD: Clipboard is soaked through the lower half. The line about cutting is still readable because somebody circled it twice.
+Papan klip basah menembus setengah bawah. Baris tentang memotong masih terbaca karena seseorang melingkarinya dua kali dan menulis jika ia bernyanyi, berhenti.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/id_ID. -->

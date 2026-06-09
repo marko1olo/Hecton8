@@ -19,6 +19,7 @@ SLICE_CONTRACT = (
 RUNTIME_SOURCE = ROOT / "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs"
 DEFERRED_DECAL_PASS_SOURCE = ROOT / "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs"
 COMBAT_DAMAGE_SOURCE = ROOT / "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+CORE_LOW_LEVEL_UTILITIES_SOURCE = ROOT / "Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs"
 SIGNAL_BUS_SOURCE = ROOT / "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs"
 POWER_GRID_SOURCE = ROOT / "Assets/_Project/Scripts/PowerGrid.cs"
 SCRIPT_ROOT = ROOT / "Assets/_Project/Scripts"
@@ -287,6 +288,55 @@ def validate_runtime_bridge(errors: list[str], contract_slices: dict[int, str]) 
         errors.append("ResolveRequestDecalPayload must normalize both packed and raw request material payloads")
     if "decalPayload = DynamicDecalVaultRuntime.ResolveRequestDecalPayload(request.MaterialHash);" not in text:
         errors.append("decal matrix generation must resolve request MaterialHash through ResolveRequestDecalPayload")
+    visual_sync_start = text.find("public static bool ExecuteVisualSync(")
+    visual_sync_end = text.find("private static bool TryExecuteVisualSyncInVault(", visual_sync_start)
+    if visual_sync_start < 0 or visual_sync_end <= visual_sync_start:
+        errors.append("missing ExecuteVisualSync runtime visual bridge")
+    else:
+        visual_sync_body = text[visual_sync_start:visual_sync_end]
+        if "int ingressDroppedBeforeJob = SnapshotDroppedIngress();" not in visual_sync_body:
+            errors.append("ExecuteVisualSync must snapshot public ingress drops before the visual-sync job")
+        if "_droppedIngressThisFrame = 0;" in visual_sync_body:
+            errors.append("ExecuteVisualSync must not clear ingress drops before vault commit succeeds")
+        if "ConsumeDroppedIngress(ingressDroppedBeforeJob);" not in visual_sync_body:
+            errors.append("ExecuteVisualSync must consume public ingress drops only after a successful vault commit")
+        if "DumpBlackBox(faultFlags);" not in visual_sync_body:
+            errors.append("ExecuteVisualSync must dump interrupted visual-sync fault flags to the black-box route")
+        consume_drops_position = visual_sync_body.find("ConsumeDroppedIngress(ingressDroppedBeforeJob);")
+        final_fault_dump_position = visual_sync_body.rfind("if (faultFlags != 0u)")
+        if (
+            consume_drops_position >= 0
+            and final_fault_dump_position >= 0
+            and consume_drops_position > final_fault_dump_position
+        ):
+            errors.append("ExecuteVisualSync must consume committed ingress drops before fault dumping can return control")
+    if "private static int SnapshotDroppedIngress()" not in text:
+        errors.append("runtime bridge missing SnapshotDroppedIngress helper")
+    if "private static void ConsumeDroppedIngress(int consumed)" not in text:
+        errors.append("runtime bridge missing ConsumeDroppedIngress helper")
+    if "WriteUInt32LittleEndian(header, 4, reasonFlags);" not in text:
+        errors.append("runtime black-box dump header must persist visual-sync fault reason flags")
+    for token in (
+        "private const uint RuntimeVisualCommitFaultFlag",
+        "private const uint RuntimeRequestConsumeFaultFlag",
+        "private const uint RuntimeRequestSnapshotFaultFlag",
+        "TrySnapshotVisualSyncRequests(maxActive, out int stagedRequests)",
+        "TryConsumeCommittedVisualSyncRequests(requestCount)",
+        "faultFlags |= RuntimeRequestSnapshotFaultFlag;",
+        "faultFlags |= RuntimeVisualCommitFaultFlag;",
+        "faultFlags |= RuntimeRequestConsumeFaultFlag;",
+    ):
+        if token not in text:
+            errors.append(f"runtime interrupted visual-sync failure path missing token: {token}")
+    if "TryDrainVisualSyncRequests(" in text:
+        errors.append("runtime visual-sync must not drain request queue before successful visual vault commit")
+    snapshot_position = text.find("TrySnapshotVisualSyncRequests(maxActive, out int stagedRequests)")
+    commit_position = text.find("if (!TryCommitVisualSyncVault(in tuning, in finalizedState, in telemetryEntry))")
+    consume_position = text.find("TryConsumeCommittedVisualSyncRequests(requestCount)")
+    if snapshot_position < 0 or commit_position < 0 or consume_position < 0:
+        errors.append("runtime visual-sync snapshot/commit/consume sequence is incomplete")
+    elif not snapshot_position < commit_position < consume_position:
+        errors.append("runtime visual-sync must snapshot requests, commit visual state, then consume committed requests")
     if "TryResolveMaterialProfileForRequest(" not in text:
         errors.append("signal impact profile lookup must fall back from preferred/source hash to compact material hash")
     if "TryResolveMaterialProfile(preferredHash, profiles, profileCapacity, out profile)" not in text:
@@ -310,6 +360,31 @@ def validate_runtime_bridge(errors: list[str], contract_slices: dict[int, str]) 
         enqueue_body = enqueue_match.group("body")
         if "if (!IsInitializedForRead())" not in enqueue_body or "AccumulateDroppedIngress(1);" not in enqueue_body:
             errors.append("TryEnqueueRequest must count no-data/stale-owner enqueue drops before returning false")
+    runtime_impact_start = text.find("public static bool TryEnqueueRuntimeImpact(")
+    runtime_impact_end = text.find("public static bool TryEnqueueAupImpact(", runtime_impact_start)
+    if runtime_impact_start < 0 or runtime_impact_end <= runtime_impact_start:
+        errors.append("missing TryEnqueueRuntimeImpact public ingress route")
+    else:
+        runtime_impact_body = text[runtime_impact_start:runtime_impact_end]
+        for token in (
+            "if (!IsInitializedForRead())\n                {\n                    AccumulateDroppedIngress(1);\n                    return false;\n                }",
+            "if (!IsFinite(runtimePosition))\n                {\n                    AccumulateDroppedIngress(1);\n                    return false;\n                }",
+            "if (!TryResolveRuntimeAup(runtimePosition, out double3 aup))\n                {\n                    AccumulateDroppedIngress(1);\n                    return false;\n                }",
+        ):
+            if token not in runtime_impact_body:
+                errors.append(f"TryEnqueueRuntimeImpact must count dropped ingress before failure: {token.splitlines()[0]}")
+    aup_impact_start = text.find("public static bool TryEnqueueAupImpact(")
+    aup_impact_end = text.find("public static bool GenerateMockDecals(", aup_impact_start)
+    if aup_impact_start < 0 or aup_impact_end <= aup_impact_start:
+        errors.append("missing TryEnqueueAupImpact public ingress route")
+    else:
+        aup_impact_body = text[aup_impact_start:aup_impact_end]
+        for token in (
+            "if (!IsInitializedForRead())\n                {\n                    AccumulateDroppedIngress(1);\n                    return false;\n                }",
+            "if (!math.all(math.isfinite(impactAup)))\n                {\n                    AccumulateDroppedIngress(1);\n                    return false;\n                }",
+        ):
+            if token not in aup_impact_body:
+                errors.append(f"TryEnqueueAupImpact must count dropped ingress before failure: {token.splitlines()[0]}")
     if "HighSpeedImpactSignal.ComposeMaterialHash" in text:
         errors.append("visor trauma high-speed bridge must not treat composed entity/material ids as Batch34 decal material hashes")
     if "signal.SourceHash ^ signal.TargetHash" in text:
@@ -470,9 +545,24 @@ def validate_render_lifecycle(errors: list[str]) -> None:
         return
 
     text = DEFERRED_DECAL_PASS_SOURCE.read_text(encoding="utf-8-sig")
+    def require_sequence(name: str, *tokens: str) -> None:
+        position = -1
+        for token in tokens:
+            next_position = text.find(token, position + 1)
+            if next_position < 0:
+                errors.append(f"DeferredDecalPass lifecycle sequence missing `{token}` in {name}")
+                return
+            position = next_position
+
     if text.count("DynamicDecalVaultRuntime.TryInitializeColdStorage();") < 2:
         errors.append("DeferredDecalPass must initialize DynamicDecalVaultRuntime on Create and DataVault replacement")
     required_tokens = (
+        "public void ClearFrameState()",
+        "private void ClearPendingVisualSyncContext()",
+        "_pendingVisualSyncCamera = null;",
+        "_hasPendingVisualSyncCamera = false;",
+        "_pass?.ClearFrameState();",
+        "_pass = null;",
         "GlobalRegistryServiceSlot.DataVault",
         "DynamicDecalVaultRuntime.ResetColdStorageForRebind();",
         "DynamicDecalVaultRuntime.TryInitializeColdStorage();",
@@ -487,6 +577,55 @@ def validate_render_lifecycle(errors: list[str]) -> None:
     for token in required_tokens:
         if token not in text:
             errors.append(f"DeferredDecalPass lifecycle missing token: {token}")
+    require_sequence(
+        "DataVault replacement clears stale visual state before vault rebind",
+        "if (serviceSlot == GlobalRegistryServiceSlot.DataVault)",
+        "ClearPendingVisualSyncContext();",
+        "DynamicDecalVaultRuntime.ResetColdStorageForRebind();",
+        "DynamicDecalVaultRuntime.TryInitializeColdStorage();",
+        "DynamicDecalVaultRuntime.RefreshColdPlayerContext();")
+    require_sequence(
+        "Player replacement clears stale visual state before player context refresh",
+        "if (serviceSlot == GlobalRegistryServiceSlot.Player)",
+        "ClearPendingVisualSyncContext();",
+        "DynamicDecalVaultRuntime.RefreshColdPlayerContext(currentService as IPlayerRuntimeContext);")
+    require_sequence(
+        "Dispatcher replacement clears staged frame before late-frame rebind",
+        "if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)",
+        "ClearPendingVisualSyncContext();",
+        "TryUnregisterLateFrame();",
+        "if (currentService != null && isActive)",
+        "TryRegisterLateFrame();")
+    require_sequence(
+        "Dispose clears pending visual state before unregister and pass release",
+        "protected override void Dispose(bool disposing)",
+        "ClearPendingVisualSyncContext();",
+        "TryUnregisterLateFrame();",
+        "TryUnregisterHotSwapListener();",
+        "_pass?.Dispose();",
+        "_pass = null;")
+
+
+def validate_native_fault_dump_writer(errors: list[str]) -> None:
+    if not CORE_LOW_LEVEL_UTILITIES_SOURCE.exists():
+        errors.append(f"missing NativeFaultDumpWriter source: {display(CORE_LOW_LEVEL_UTILITIES_SOURCE)}")
+        return
+
+    text = CORE_LOW_LEVEL_UTILITIES_SOURCE.read_text(encoding="utf-8-sig")
+    required_tokens = (
+        "public static bool TryWriteAll(string absolutePath, NativeArray<byte> payload, int byteCount)",
+        "public static bool TryWriteAll(string absolutePath, ReadOnlySpan<byte> payload, int byteCount)",
+        "TryResolveWritablePath(absolutePath, out string fullPath)",
+        'string tempPath = fullPath + ".tmp";',
+        "Directory.CreateDirectory(directory);",
+        "TryDeleteFaultDumpTempFile(tempPath);",
+        "TryFlushAndValidateFaultDumpFile(tempPath, byteCount)",
+        "File.Move(tempPath, fullPath);",
+        "TryFlushAndValidateFaultDumpFile(fullPath, byteCount)",
+    )
+    for token in required_tokens:
+        if token not in text:
+            errors.append(f"NativeFaultDumpWriter must keep durable temp/flush/directory fault dump route token: {token}")
 
 
 def validate_signal_bus_bridge(errors: list[str]) -> None:
@@ -599,6 +738,7 @@ def main() -> int:
     contract_slices = load_slice_contract(errors)
     validate_runtime_bridge(errors, contract_slices)
     validate_render_lifecycle(errors)
+    validate_native_fault_dump_writer(errors)
     validate_signal_bus_bridge(errors)
     validate_power_grid_visual_only_origin(errors)
     validate_visual_only_damage_origin_scan(errors)
@@ -609,6 +749,7 @@ def main() -> int:
     print(f"sliceContract={display(SLICE_CONTRACT)}")
     print(f"runtimeSource={display(RUNTIME_SOURCE)}")
     print(f"renderFeature={display(DEFERRED_DECAL_PASS_SOURCE)}")
+    print(f"nativeFaultDumpWriter={display(CORE_LOW_LEVEL_UTILITIES_SOURCE)}")
     print(f"signalBus={display(SIGNAL_BUS_SOURCE)}")
     print(f"powerGrid={display(POWER_GRID_SOURCE)}")
     print(f"scriptRoot={display(SCRIPT_ROOT)}")

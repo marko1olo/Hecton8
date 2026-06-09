@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: PDA Resource Handling Note
 spoiler_tier: 1
-title: "Blue Debt Casket Handling"
+title: "青い負債カスケット取扱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blue Debt Casket Handling
+# 青い負債カスケット取扱
 
-Blue debt is condition-dependent salvage.
+青い負債は状態依存のサルベージだ。工具材料、請求価値、餌、証拠のどれにするか決める前に、密封、低温、圧力安定を保て。
 
 ## Scanner
 
-Pressure casket stable while cold and sealed.
+圧力カスケット // 冷却密封中は安定。ベント禁止。継ぎ目温度が上がるなら輸送前にクランプ。
 
 ## Terminal
 
-Preserve pressure state and route sample telemetry through custody.
+XO連続性基質 // 圧力状態を保持。民間保管禁止。サンプル遠隔測定は請求級保管経路のみ。
 
 ## Audio
 
-If the casket sings on sonar, somebody else has noticed it.
+カスケットがソナーで数え始めたら、それはもう君だけのものではない。
 
 ## Field Note
 
-Stabilize before you spend it.
+青い負債が払うのは、三人の所有者を連れて来るからだ。見つけた者、欲しがる者、動いたことに気づいたもの。
 
 <!-- In-Game Wiki; generated from P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE/ja_JP. -->

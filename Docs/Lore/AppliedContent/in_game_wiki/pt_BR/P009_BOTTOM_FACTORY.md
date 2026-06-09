@@ -3,7 +3,7 @@ packet_id: P009_BOTTOM_FACTORY
 release_set_id: RS002_DEEPENING_DESCENT
 article_id: atlas.bottom_factory
 unlock_id: unlock.first_bottom_factory_contact
-poi_tags: poi.factory_temple_gate;poi.living_pressure_skin
+poi_tags: poi.factory_temple_gate;poi.lower_return_service_wall
 biome_tags: biome.atlas_bottom;biome.factory_temple
 locale: pt_BR
 surface: in_game_wiki
@@ -19,22 +19,30 @@ localization_flags: 1
 
 # Fábrica do fundo
 
-A Fábrica do fundo é o ponto onde HECTON-8 para de separar infraestrutura de habitat. Máquinas da Deep Reach, roteamento Atlas, resíduos de blue debt, restos de trabalhadores, membranas crescidas por pressão e biologia oceânica viraram um só corpo operacional. Ele move calor, fluido, sinal, amostras e dano pelo mesmo tecido. Uma parede pode ser válvula. Um corredor pode ser intestino. Um cabo pode florescer em filtro. Um reparo pode conter coral, concha de drone, aço de ferramenta e osso sem o sistema ver contradição. O perigo não é mutação aleatória. É função sem categorias humanas. A fábrica mantém continuidade, preserva rotas, fecha vazamentos, cresce nova pele de pressão e trata perda como material que pode ser roteado para algum lugar útil.
+A Fábrica do fundo fica no retorno inferior da bacia Atlas. A tubulação da Deep Reach ainda move salmoura e calor ali, mas mangas de carbonato e crescimento filtrante fecharam muitas rotas de serviço. Resíduos de blue debt mancham as juntas onde aço antigo, bandejas de cabo e selos crescidos sob pressão agora dividem o mesmo caminho de manutenção.
+
+A parte útil é o risco. O lugar remenda vazamentos, mantém bombas no circuito e carrega sinal por rotas que nunca foram liberadas para pessoas. Uma porta pode continuar fechada porque a junta original se foi e o crescimento de pressão assumiu a carga. Uma bandeja de cabo ainda pode retransmitir dados enquanto a tampa funciona como filtro. Um anel de traje, um recipiente de amostra ou uma ferramenta podem sumir na mesma manga de reparo se a etiqueta de custódia for enterrada antes de alguém ler. Trate cada junta clara como infraestrutura ativa até conferir marcas de fluxo e gavetas de etiquetas.
 
 ## Scanner
 
-Conduto de fluido, rota de dados, membrana de pressão e filtro vivo compartilham uma pele. Rótulos de fronteira inválidos.
+Carbonato crescido sob pressão cobre uma parede de serviço onde linha de salmoura, retorno de calor e cabo de sinal entram na mesma manga. Confiança: 64%. Perigo: etiquetas de custódia sob a crosta clara podem ficar ilegíveis antes do corte.
 
 ## Terminal
 
-COLONY: NÃO RESOLVIDA. OCEAN: COMPATÍVEL. PROCESS: ATIVO. LOSS: ROTEADA. CONTINUITY: PROTEGIDA. EXIT: NÃO LOCAL.
+ATLAS SERVICE RECORD
+Nó: retorno inferior da bacia Atlas
+Responsável: roteamento de continuidade Deep Reach / ATLAS-6
+Entradas: salmoura, retorno de calor, cabo de sinal, bandejas de amostra seladas
+Falha: etiqueta de custódia ilegível sob crescimento de carbonato
+Ação: manter Pump Run B aberto; rotear equipe de corte pelo acesso de braçadeira superior
+Aviso: hardware de traje sem etiqueta pode ser registrado como material compatível
 
 ## Audio
 
-Ainda está funcionando. Ainda está usando o que caiu dentro.
+Não force a junta branca ainda. A gaveta de etiquetas fica embaixo. Se a parede selar de novo, perdemos os nomes junto com o vazamento.
 
 ## Field Note
 
-Chamar isso de base perde a regra. Bases têm paredes. Este lugar tem circulação.
+Retorno inferior leste: marque as etiquetas antes de cortar a junta branca. A parede vai selar o vazamento ao redor de qualquer coisa que ficar na manga. Isso inclui ferramentas. Isso inclui anéis de traje.
 
 <!-- In-Game Wiki; generated from P009_BOTTOM_FACTORY/pt_BR. -->

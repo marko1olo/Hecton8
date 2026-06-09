@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Public Archive Evidence Primer
 spoiler_tier: 1
-title: "Deep Reach Variance Memo Contradiction"
+title: "تناقض مذكرة variance في Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Variance Memo Contradiction
+# تناقض مذكرة variance في Deep Reach
 
-Clean office language can expose a lie when timestamps and pump marks disagree.
+أول مذكرة من Deep Reach لا تحتاج إلى اعتراف. يكفي أن تكون نظيفة في المكان الخطأ. variance كلمة مكتبية داخل غرفة تظهر مضخة عملت بعد الحد، ومشبكا ركب بعد الإنذار، وأمر عمل بقي مفتوحا، وختم هامش قبل وصول الماء.
 
-## Scanner
-
-Memo says variance; room marks disagree.
-
-## Terminal
-
-Deep Reach memo language treats dangerous margin as managed variance.
-
-## Audio
-
-Trust the room before the clean word.
-
-## Field Note
-
-Trust the wet room first.
+هذا هو التناقض الذي يستطيع اللاعب استخدامه مبكرا. لا يحل الكارثة. إنه يعلّم ترتيب الأدلة. مذكرة نظيفة هي صوت مصدر، لا حقيقة. صمام عالق وطابع وقت وعلامة عامل قد تزن أكثر من ترويسة صحيحة.
 
 <!-- External Site; generated from P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE/ar_SA. -->

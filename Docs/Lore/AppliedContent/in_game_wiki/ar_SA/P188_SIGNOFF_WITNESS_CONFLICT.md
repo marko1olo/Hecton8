@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Signoff Witness Conflict"
+title: "تعارض التوقيع والشاهد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Signoff Witness Conflict
+# تعارض التوقيع والشاهد
 
-AR LOC HOLD: Signoff conflict evidence makes the Deep Reach lie break through records, room damage and worker traces.
+تعارض التوقيع والشاهد هو اللحظة التي تكف فيها قصة Deep Reach الرسمية عن كونها ناقصة فقط وتبدأ في أن تصبح كاذبة. يقدم التوقيع العام HECTON-8 ككارثة مد بلا تناقض قابل للفعل قبل تأخير الإخلاء. تقول تجزئات الشهود المحلية غير ذلك: كان مستشار الإخلاء وAtlas Safety وعمليات المسار في غرفة المراجعة نفسها بينما كان فقدان الهامش وضائقة العمال وتوقيت المسار مرئياً بالفعل. يمنح هذا التعارض اللاعب شكلاً قوياً من الأدلة. لا يكفي العثور على توقيع سيئ؛ يجب وضع التوقيع بجانب سجلات الأبواب والساعات التالفة وأختام الأسماء حتى ينكسر العذر.
 
 ## Scanner
 
-AR LOC HOLD: Signoff records should contradict worker witness hashes and damaged evacuation hardware.
+يقول التوقيع إن مراجعة الإخلاء لم تحمل تناقضاً حياً. تقول تجزئات الشهود إن التناقض كان في الغرفة.
 
 ## Terminal
 
-AR LOC HOLD: CONFLICT: Varnek margin accepted before field alarms closed; Arendt weighting preserved Atlas lanes; Haldane hold delayed external evacuation; worker witness hash reports pump access still occupied.
+WITNESS CONFLICT: التوقيع العام يسجل فشل المد كسبب وحيد. تجزئة شاهد محلية تضع مستشار الإخلاء وAtlas Safety وعمليات المسار في غرفة المراجعة قبل حجز الإفراج. قارن سجل الباب وختم الاسم وساعة المسار المكسورة.
 
 ## Audio
 
-AR LOC HOLD: The signatures line up. The bodies do not.
+يقول التقرير إن أحداً لم يكن يستطيع أن يعرف. سجل الباب لا يوافق.
 
 ## Field Note
 
-AR LOC HOLD: The contradiction is stronger than a villain confession because the player sees the room and the stamp disagree.
+يبقى التوقيع نظيفاً فقط حتى تتذكر الغرفة من كان يقف بجانبه.
 
 <!-- In-Game Wiki; generated from P188_SIGNOFF_WITNESS_CONFLICT/ar_SA. -->

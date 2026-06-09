@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Payload Sell Coordinates Receiver Protocol"
+title: "payload 坐标出售接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Payload Sell Coordinates Receiver Protocol
+# payload 坐标出售接收协议
 
-ZH LOC HOLD: One HECTON-8 ending sells the crime scene back to its maker. It is materially successful and morally compromised.
+这项协议不是简单出售战利品，而是转交可达性。Deep Reach 已经有足够文件去争夺 HECTON-8；它缺少的是穿过受损盆地返回的可靠路径。payload 把坐标、置信、证据保管和 salvage 等级打包，交出这条路。
 
-## Scanner
-
-ZH LOC HOLD: Receiver path: Recovery Compliance. Payout clean. Ocean future dirty.
-
-## Terminal
-
-ZH LOC HOLD: PAYLOAD ROUTE SALE: coordinates, XO proof, basin vector. Receiver gains access map. Lien reduced. Worker names remain contested.
-
-## Audio
-
-ZH LOC HOLD: This is the cleanest way out if you stop reading after the amount.
-
-## Field Note
-
-ZH LOC HOLD: Receiver record: material recovery pays out by handing Deep Reach the basin vector and leaving worker truth contested.
+付款是真实的，债务缓解也是真实的。这让路线危险，而不是滑稽。绝望的操作员可以清掉留置，同时把返回殖民地的路径交给埋葬时间记录的公司。接收方印章把生存变成服务。
 
 <!-- External Site; generated from P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL/zh_CN. -->

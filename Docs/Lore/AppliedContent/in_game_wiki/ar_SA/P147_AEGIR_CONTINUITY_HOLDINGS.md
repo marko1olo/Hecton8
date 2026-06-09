@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir Continuity Holdings
 
-AR LOC HOLD: Aegir Continuity Holdings keeps Deep Reach present without requiring live command. It is paperwork with enough teeth to steer the carrier.
+Aegir Continuity Holdings هي القشرة التي تسمح لـ Deep Reach بالاحتفاظ بالقيمة من دون الاعتراف بشيء. تمسك إيجارات مسار نائمة وخيارات سكن ومطالبات معادن وملكية عتاد تالف وحقوق recovery بينما يتكلم الاتحاد العام عن الخدمة.
 
 ## Scanner
 
-AR LOC HOLD: The dirty project needs a clean owner with no face.
+تملك Aegir Continuity Holdings النجاة كفعل في الميزانية.
 
 ## Terminal
 
-AR LOC HOLD: SHELL NODE: Aegir Continuity Holdings is the claim shell that can hold leases, quarantine duties, payload rights and post-2147 recovery language without saying Deep Reach too loudly.
+سجل الهولدنغ: إيجارات المسار ومطالبات السكن وخيارات المواقع الفاشلة وحقوق استمرارية الأصول تبقى خارج الاتحاد العام.
 
 ## Audio
 
-AR LOC HOLD: No one works there. Everyone signs through it.
+فشلت المستعمرة. واستمرت الشركة القابضة.
 
 ## Field Note
 
-AR LOC HOLD: Shell companies are how a crime scene learns to invoice itself.
+الاستمرارية تعني أن الرهون تعيش أطول من الطواقم والمساكن ونوافذ الاعتذار.
 
 <!-- In-Game Wiki; generated from P147_AEGIR_CONTINUITY_HOLDINGS/ar_SA. -->

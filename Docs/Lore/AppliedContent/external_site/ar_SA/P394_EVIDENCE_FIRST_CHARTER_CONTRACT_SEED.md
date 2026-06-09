@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Evidence First Charter Contract Seed"
+title: "بذرة عقد ميثاق الأدلة أولا"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Evidence First Charter Contract Seed
+# بذرة عقد ميثاق الأدلة أولا
 
-AR LOC HOLD: HECTON-8's replay model lets contract framing change what the player risks, not who the protagonist is.
+يغير ميثاق الأدلة أولا لوحة العقد قبل الهبوط. تنخفض دفعة المواد، ترتفع سعة الكاتب، تأخذ خزائن الدليل الأولوية ويحمل نزع salvage عقوبة. يدخل المشغل بمسار يحمي السجلات أفضل من القطع.
 
-## Scanner
-
-AR LOC HOLD: Contract seed: evidence first. Lower payout, stronger custody and more dangerous route decisions.
-
-## Terminal
-
-AR LOC HOLD: SEED EVIDENCE: payout reduced, notary capacity increased, proof-preservation conflict raised, Deep Reach hostility probable.
-
-## Audio
-
-AR LOC HOLD: Truth has a lower listed value until someone tries to bury it.
-
-## Field Note
-
-AR LOC HOLD: Replay seed record: evidence-first charter lowers material payout while strengthening chain-of-custody routes.
+يظهر الضغط في اختيارات صغيرة. شريط حالة فتحة قد يمنع بيع لوحة. ملف حادث مبلل قد يشغل آخر فتحة جافة. سجل pinger قد يحتاج ترحيلا حيا كان سيغذي إصلاحا. يدفع الميثاق متأخرا لأنه يطلب من المشغل إبقاء أشياء مزعجة سليمة مدة تكفي ليقرأها مستقبل خارج Black Keel.
 
 <!-- External Site; generated from P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED/ar_SA. -->

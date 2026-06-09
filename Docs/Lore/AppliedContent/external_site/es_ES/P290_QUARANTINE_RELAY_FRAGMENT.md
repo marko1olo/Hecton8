@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Quarantine Relay Fragment"
+title: "Fragmento de relé de cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Quarantine Relay Fragment
+# Fragmento de relé de cuarentena
 
-ES LOC HOLD: HECTON-8 endings can recover someone from the ocean without releasing them from the systems that sent them there.
+El Fragmento de relé de cuarentena define el borde amargo de la supervivencia en HECTON-8. El escenario no trata solo de escapar de la presión del agua; trata de escapar de registros, cadenas de custodia y reclamaciones de propiedad que sobreviven a la inundación. El fragmento da a los finales una forma más dura: alguien puede ser recuperado del océano y seguir sin ser libre.
 
 ## Scanner
 
-ES LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+El mismo paquete de relé aprueba la extracción y niega la liberación. El océano suelta el cuerpo antes de que la colonia suelte a la persona.
 
 ## Terminal
 
-ES LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+RETENCIÓN DE RELÉ QRF-17 / EXTRACCIÓN: ACEPTADA / LIBERACIÓN: DENEGADA / MOTIVOS: custodia de muestra sin resolver, revisión de aire obsoleta, disputa de reclamante activa, estado de testigo provisional.
 
 ## Audio
 
-ES LOC HOLD: You are out of the water. You are not out of custody.
+Retención de relé. Extracción aceptada. Liberación denegada. Estás fuera del agua, no fuera de custodia.
 
 ## Field Note
 
-ES LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+Sellado dos veces: CUERPO RECUPERADO, PERSONA RETENIDA. La revisión de aire es anterior al recibo de rescate; disputa del reclamante abierta.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/es_ES. -->

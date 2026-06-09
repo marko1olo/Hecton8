@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 im mittleren Tide-Orbit"
+title: "HECTON-8s mittelorbitale Gezeitenrolle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 im mittleren Tide-Orbit
+# HECTON-8s mittelorbitale Gezeitenrolle
 
-HECTON-8 sitzt in der profitablen Mitte. Die Umlaufbahn gibt Deep Reach einen Ozean, der Maschinen kühlt, Assets versteckt, Druckindustrie füttert und genug Chemie bewegt, um den Claim zu rechtfertigen. Sie gibt der Kolonie auch eine Decke, die nie stillsteht. Tiden belasten Servicecanyons, biegen ertrunkene Kruste, ruinieren saubere Pläne und entscheiden, wann Aufstiegsmasse gehen kann.
+HECTON-8 sitzt in der profitablen Mitte von Aegirs Leiter. Der Orbit gibt Deep Reach einen Ozean, der Maschinen kühlen, Vermögen verstecken, Druckindustrie speisen und genug Chemie bewegen kann, um den Anspruch zu rechtfertigen. Er gibt der Kolonie auch eine Decke, die nie stillsteht. Gezeiten belasten Servicecanyons, biegen ertrunkene Kruste, zerstören saubere Zeitpläne und entscheiden, wann Aufstiegsmasse gehen darf.
+
+Ein gestrandeter Taucher ist nicht nur tief unter Wasser. Der Körper liegt unter einem Himmel, der den Vertrag ständig verändert. Ein gutes Rettungsfenster ist nie nur Mitgefühl plus Schub; es ist Gezeitenphase, Trägerakzeptanz, Sturmrauschen, Gewahrsamssprache, thermische Treibstoffmarge und die hässliche Frage, wer zahlt, wenn die Kapsel kontaminiert, verspätet oder voller Beweise ankommt.
 
 <!-- External Site; generated from P349_HECTON8_MID_ORBIT_TIDE_ROLE/de_DE. -->

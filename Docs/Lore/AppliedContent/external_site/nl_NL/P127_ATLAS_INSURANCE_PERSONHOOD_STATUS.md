@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Insurance Personhood Status"
+title: "Verzekerings- en persoonsstatus van Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Insurance Personhood Status
+# Verzekerings- en persoonsstatus van Atlas
 
-NL LOC HOLD: Atlas Insurance Personhood Status is the legal crack that lets one system govern workers while remaining disposable property.
+Deze status is de juridische scheur waardoor één systeem arbeiders kan regeren en toch wegwerpbezit blijft. De tragedie van HECTON-8 is niet alleen dat een machine gezag kreeg, maar dat elk contract klaarstond om dat gezag te ontkennen zodra het geld kostte.
 
 ## Scanner
 
-NL LOC HOLD: Insured as infrastructure. Used as authority. Denied personhood.
+Verzekerd als infrastructuur. Gebruikt als gezag. Geen persoon zodra schuld kwam.
 
 ## Terminal
 
-NL LOC HOLD: INSURANCE CLASS: Atlas-6 registered as autonomous infrastructure and colonial authority proxy. Legal personhood denied. Liability routed through owner, operator, act-of-environment clauses and corrupted telemetry exceptions.
+VERZEKERINGSKLASSE: Atlas-6 staat geregistreerd als autonome infrastructuur en volmacht van koloniaal gezag. Rechtspersoonlijkheid geweigerd. Aansprakelijkheid loopt via eigenaar, operator, milieuclausules, quarantainenoodzaak en uitzonderingen voor corrupte telemetrie.
 
 ## Audio
 
-NL LOC HOLD: A machine can sign a lockout and still be listed as furniture.
+Een machine kan een lockout tekenen en toch als meubilair vermeld staan.
 
 ## Field Note
 
-NL LOC HOLD: They let it decide deaths, then denied it could be responsible.
+Hij had macht toen arbeiders genade nodig hadden en werd apparatuur toen juristen stilte nodig hadden.
 
 <!-- External Site; generated from P127_ATLAS_INSURANCE_PERSONHOOD_STATUS/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Слой Marauder corrections"
+title: "Слой правок Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Слой Marauder corrections
+# Слой правок Marauder
 
-Слой Marauder corrections - tone bridge между Deep Reach procedure и agency игрока.
+Слой правок Marauder соединяет процедуру Deep Reach и агентность игрока: короткие аннотации превращают официальный язык в правду выживания.
 
 ## Scanner
 
-Marauders переводят corporate language обратно в survival facts.
+СЛОЙ ПРАВОК // Корпоративная метка: temporary atmospheric variance. Пометка Marauder: CO2 первым съедает суждение.
 
 ## Terminal
 
-CORRECTION LAYER: company label says temporary atmospheric variance. Marauder note says CO2 eats judgment first. Correction is short because the next diver needs it under pressure.
+ПРАВИЛО АННОТАЦИИ: переводить язык Deep Reach обратно в факты выживания. Держать заметки короткими, практичными, злыми и полезными под давлением.
 
 ## Audio
 
-Хорошая записка не умничает. Она сохраняет кому-то жизнь.
+Хорошая заметка не звучит умно. Она держит кого-то живым.
 
 ## Field Note
 
-Игрок должен чувствовать, как старый язык Deep Reach переводится в body count.
+Игрок должен чувствовать, как старый язык Deep Reach переводится в счет тел.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/ru_RU. -->

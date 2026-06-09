@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: High Custody Sample Contract Seed"
+title: "זרע חוזה דגימה במשמורת גבוהה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: High Custody Sample Contract Seed
+# זרע חוזה דגימה במשמורת גבוהה
 
-HE LOC HOLD: High-custody sample seeds make resources compete with evidence and escape engineering. They should never become simple loot multipliers.
+דגימה במשמורת גבוהה היא משפחת חוזים שבה ערך משאב וטיפול בראיה מתנגשים מוקדם. Blue debt, שאריות רקמה-ברזל, מים חתומים וחבילות מסנן מזוהמות משלמות יותר רק כל עוד המכל, התג, המסה ומשמורת המסלול נשארים שלמים.
 
 ## Scanner
 
-HE LOC HOLD: Contract seed: high custody sample. Blue debt pays more and burdens every route choice.
+זרע חוזה: דגימה במשמורת גבוהה. תשלום גדול יותר קשור לחשבון מסה, עיכוב הסגר ומכלים מאושרי מקלט.
 
 ## Terminal
 
-HE LOC HOLD: SEED CUSTODY: custody-grade samples raise payout, mass accounting, quarantine delay and Deep Reach receiver pressure.
+SEED CUSTODY: דגימות בדרגת משמורת פעילות, פנקס מסת דגימות קשוח, עיכוב הסגר מוגבר, חותם מקלט נדרש, קנס השלכת מסלול פעיל.
 
 ## Audio
 
-HE LOC HOLD: A sample can weigh more after it enters the ledger.
+דגימה נעשית כבדה יותר אחרי שהפנקס מקבל אותה.
 
 ## Field Note
 
-HE LOC HOLD: Replay seed record: high-custody sample contracts stress inventory, custody labels, and payout temptation.
+הערת מרודר: שקול את השק לפני שאתה קורא לו רווח. המקלט יכול לחייב גרמים חסרים חזק יותר מהאוקיינוס.
 
 <!-- In-Game Wiki; generated from P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED/he_IL. -->

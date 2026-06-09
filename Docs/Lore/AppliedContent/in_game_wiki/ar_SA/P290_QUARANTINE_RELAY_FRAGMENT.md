@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Quarantine Relay Fragment"
+title: "شظية مرحّل الحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Quarantine Relay Fragment
+# شظية مرحّل الحجر
 
-AR LOC HOLD: Quarantine relay fragments make partial exits bitter: extraction can save a body while keeping the witness under custody.
+شظية مرحّل الحجر نهاية صغيرة ذات أسنان. إنها تثبت أن HECTON-8 يستطيع إنقاذ شخص من الضغط ثم يرفض إعادته إلى صفة الإنسان. تحمل الحزمة حقيقتين في النفس الإداري نفسه: الاستخراج مقبول، الإفراج مرفوض. الجسد مستعاد. الشخص محتجز. سطر مراجعة الهواء أقدم من إيصال الإنقاذ، أي أن حكم الحجر كان ينتظر قبل أن يفتح أحد الفتحة. في اللعب واللور، تهم هذه الشظية لأنها تجعل الإنقاذ غير مكتمل أخلاقيا. الأرض الجافة ليست حرية. الختم الطبي ليس إفراجا. تستطيع المستعمرة حفظ ما تحتاجه كدليل أو عينة أو ملكية مطالب أو جرد شاهد، ثم تبقي الإنسان داخل النظام الذي آذاه.
 
 ## Scanner
 
-AR LOC HOLD: Relay fragment approves extraction and denies clean release in the same packet.
+حزمة المرحّل نفسها توافق على الاستخراج وترفض الإفراج. المحيط يترك الجسد قبل أن تترك المستعمرة الشخص.
 
 ## Terminal
 
-AR LOC HOLD: RELAY HOLD / EXTRACTION: ACCEPTED / RELEASE: DENIED PENDING SAMPLE CUSTODY, AIR REVIEW, CLAIMANT DISPUTE.
+حجز المرحّل QRF-17 / الاستخراج: مقبول / الإفراج: مرفوض / الأسباب: حيازة العينة غير محسومة، مراجعة الهواء قديمة، نزاع المطالب نشط، صفة الشاهد مؤقتة.
 
 ## Audio
 
-AR LOC HOLD: You are out of the water. You are not out of custody.
+حجز مرحّل. الاستخراج مقبول. الإفراج مرفوض. أنت خارج الماء، لا خارج الحجز.
 
 ## Field Note
 
-AR LOC HOLD: Stamped twice: body recovered, person retained. The air review line is older than the rescue receipt.
+ختمان: الجسد مستعاد، الشخص محتجز. مراجعة الهواء أقدم من إيصال الإنقاذ؛ نزاع المطالب لا يزال مفتوحا.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/ar_SA. -->

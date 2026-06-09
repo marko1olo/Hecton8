@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Gids voor dichtheidsladder van pekelkloof"
+title: "Gids voor de dichtheidsladder van pekelcanyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,9 +17,9 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gids voor dichtheidsladder van pekelkloof
+# Gids voor de dichtheidsladder van pekelcanyons
 
-Brine-kloven maken diepte fysiek. Ze leren dichtheidslagen, romplimieten, drukfalen en resource pockets voordat lagere routes openen.
+Pekelcanyons maken diepte fysiek. Dichtheidslagen, zwevend slib, koude seep-zakken en blinde instrumentzones leren rompgrenzen voordat lagere routes openen. De weg omlaag is geen trap in steen. Het is een ladder van vloeistoffen die het oneens zijn over waar een lichaam hoort.
 
 ## Scanner
 

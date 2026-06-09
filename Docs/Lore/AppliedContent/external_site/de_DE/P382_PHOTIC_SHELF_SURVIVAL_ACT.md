@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Photic Shelf Survival Act"
+title: "Tor des photischen Schelfs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Photic Shelf Survival Act
+# Tor des photischen Schelfs
 
-DE LOC HOLD: The shallows are deliberately vivid. HECTON-8 is not a dark void; the darkness comes from pressure, failure and depth.
+Der Schelf gibt der Route ihr Arbeitsvokabular: Pumpe, Dichtung, Schnitt, Ping, Flicken, Nachfüllen. Jede Handlung ist klein und physisch. Eine Tür öffnet sich, weil eine Schelle hält, nicht weil die Kolonie erkundet werden will.
 
-## Scanner
-
-DE LOC HOLD: Act gate: shallow shelf. Bright life, first tools, first useful Atlas repair trace.
-
-## Terminal
-
-DE LOC HOLD: SURVIVAL ACT: pump, seal, cut and ping. Immediate escape remains impossible: ascent hardware was spent on survival.
-
-## Audio
-
-DE LOC HOLD: The shallow water is not safe. It is only readable.
-
-## Field Note
-
-DE LOC HOLD: Early survival record: bright photic shelf pacing keeps oxygen, shallow ecology, and first scanner unlocks readable before darker depth.
+Atlas-Rest kommt hier als Wartungshinweis hinein, nicht als letzte Antwort. Eine reparierte Platte, ein leitender Film oder ein falsch gerouteter Serviceflicken kann den Operator am Leben halten und zugleich beweisen, dass das System die Route schon berührt hat. Helligkeit macht die Arbeit lesbar; Schuld macht sie dringend.
 
 <!-- External Site; generated from P382_PHOTIC_SHELF_SURVIVAL_ACT/de_DE. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Ending Payout Data Boundary"
+title: "Batas Data Pembayaran Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Ending Payout Data Boundary
+# Batas Data Pembayaran Akhir
 
-ID LOC HOLD: Ending Payout Data Boundary keeps endings as records of tradeoffs, not victory scores.
+Batas ini menjaga ending sebagai catatan pertukaran, bukan skor kemenangan. Pembayaran penting, tetapi kustodi, bukti publik, karantina, utang, dan hak penerima bertindak setelah pemain pergi juga penting.
 
 ## Scanner
 
-ID LOC HOLD: Ending boundary: receiver, custody, evidence state, payout, consequence.
+Baris akhir mengikat penerima, kustodi, keadaan bukti, pembayaran, dan konsekuensi belum selesai.
 
 ## Terminal
 
-ID LOC HOLD: ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, and unresolved cost.
+ENDING PAYOUT CONTRACT: baris membutuhkan rute payload, penerima, keadaan bukti, pembayaran material, konsekuensi legal, delay karantina, dan biaya belum selesai. Kredit tidak menutup tempat kejahatan.
 
 ## Audio
 
-ID LOC HOLD: Credits do not close a crime scene.
+Kredit tidak menutup tempat kejahatan.
 
 ## Field Note
 
-ID LOC HOLD: Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Credit value, quarantine delay, dan dossier flags dicatat hanya setelah receiver dan evidence state jelas.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/id_ID. -->

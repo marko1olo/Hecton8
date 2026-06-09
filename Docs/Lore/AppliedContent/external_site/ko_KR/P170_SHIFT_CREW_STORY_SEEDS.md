@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Shift Crew Story Seeds"
+title: "교대조 이야기 seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Shift Crew Story Seeds
+# 교대조 이야기 seed
 
-KO LOC HOLD: Shift Crew Story Seeds turns worker evidence into replay-safe content.
+이 시스템은 작업자 증거의 안전한 변형층을 정의한다. 명단 순서, 물건 배치, 직무 짝, 사물함 props, 거부 양식, Marauder 주석은 seed로 변해도 된다. 핵심 역사, Great Tide, Deep Reach 책임, Atlas weighting, 대피 실패는 잠겨 있다.
 
 ## Scanner
 
-KO LOC HOLD: Microstories should change route evidence, not canon truth.
+SHIFT SEED // 명단은 바뀔 수 있다. 죄는 바뀌지 않는다.
 
 ## Terminal
 
-KO LOC HOLD: SHIFT SEEDS: each seed can vary roster order, job pairings, locker contents, denial slips and Marauder annotations while keeping the Great Tide and Deep Reach guilt stable.
+교대조 SEED // run은 명단 순서, 작업자 짝, 사물함 내용, 거부 쪽지, 경로 분필, 배지 조각, 이후 Marauder 수정 메모를 바꿀 수 있다. seed가 바꾸는 것은 플레이어가 증거를 만나는 방식이지 증거가 입증하는 내용이 아니다.
 
 ## Audio
 
-KO LOC HOLD: A different locker can hurt the same truth again.
+다른 사물함은 같은 진실을 다른 쪽에서 베어 낼 수 있다.
 
 ## Field Note
 
-KO LOC HOLD: Seed variety is for order, names and objects, not contradiction.
+seed 다양성은 물건 순서, 직무 짝, Marauder 주석을 바꾼다. Great Tide나 Deep Reach 책임은 바꾸지 않는다.
 
 <!-- External Site; generated from P170_SHIFT_CREW_STORY_SEEDS/ko_KR. -->

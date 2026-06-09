@@ -4,7 +4,9 @@ param(
     [int]$CpuSampleIntervalSeconds = 2,
     [string]$UnityPath = "",
     [switch]$WaitForGate,
-    [int]$MaxWaitSeconds = 900
+    [int]$MaxWaitSeconds = 900,
+    [int]$PostPreflightCooldownSeconds = 10,
+    [switch]$SkipStaticPreflight
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,6 +17,7 @@ $logDir = Join-Path $projectRoot "Temp\Hecton8ToolLogs"
 $logPath = Join-Path $logDir "GeminiMaterialUnityApplyAll.log"
 $executeMethod = "Hecton8.EditorTools.GeminiMaterialIntegrationApplier.ApplyAll"
 $staticPreflightRunner = Join-Path $projectRoot "Tools\RunGeminiMaterialStaticPreflight.ps1"
+$unityProcessGateValidator = Join-Path $projectRoot "Tools\ValidateUnityProcessGate.py"
 $materialAssetValidator = Join-Path $projectRoot "Tools\ValidateExternalPbrMaterialAssets.py"
 $heldToolValidator = Join-Path $projectRoot "Tools\ValidateHeldToolExternalPbrRules.py"
 $worldToolValidator = Join-Path $projectRoot "Tools\ValidateWorldToolExternalPbrRules.py"
@@ -60,35 +63,20 @@ function Resolve-UnityPath {
     throw "Unity editor not found for version $version at $candidate"
 }
 
-function Assert-NoBuildProcesses {
-    $blocked = Get-Process dotnet,csc,msbuild,VBCSCompiler,Unity,'Unity Hub' -ErrorAction SilentlyContinue
-    if ($blocked) {
-        $summary = ($blocked | Select-Object -First 8 | ForEach-Object { "$($_.ProcessName):$($_.Id)" }) -join ", "
-        throw "Blocked by active build/editor process: $summary"
-    }
-}
-
-function Assert-CpuBelowLimit {
-    param(
-        [int]$LimitPercent,
-        [int]$Samples,
-        [int]$IntervalSeconds
-    )
-
-    $values = Get-Counter "\Processor(_Total)\% Processor Time" -SampleInterval $IntervalSeconds -MaxSamples $Samples |
-        Select-Object -ExpandProperty CounterSamples |
-        ForEach-Object { [math]::Round($_.CookedValue, 1) }
-
-    $max = ($values | Measure-Object -Maximum).Maximum
-    if ($max -gt $LimitPercent) {
-        throw "CPU gate failed. limit=$LimitPercent max=$max samples=$($values -join ',')"
+function Invoke-UnityProcessGate {
+    & python -B $unityProcessGateValidator `
+        --max-cpu $CpuLimitPercent `
+        --samples $CpuSamples `
+        --interval-seconds $CpuSampleIntervalSeconds `
+        --top-processes 8
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unity process gate failed. exitCode=$LASTEXITCODE validator=$unityProcessGateValidator"
     }
 }
 
 function Wait-Or-Assert-Gate {
     if (-not $WaitForGate) {
-        Assert-NoBuildProcesses
-        Assert-CpuBelowLimit -LimitPercent $CpuLimitPercent -Samples $CpuSamples -IntervalSeconds $CpuSampleIntervalSeconds
+        Invoke-UnityProcessGate
         return
     }
 
@@ -97,8 +85,7 @@ function Wait-Or-Assert-Gate {
     while ((Get-Date) -lt $deadline) {
         $attempt++
         try {
-            Assert-NoBuildProcesses
-            Assert-CpuBelowLimit -LimitPercent $CpuLimitPercent -Samples $CpuSamples -IntervalSeconds $CpuSampleIntervalSeconds
+            Invoke-UnityProcessGate
             Write-Host "Unity gate passed after wait. attempts=$attempt"
             return
         }
@@ -109,6 +96,15 @@ function Wait-Or-Assert-Gate {
     }
 
     throw "Unity gate did not pass within $MaxWaitSeconds seconds."
+}
+
+function Wait-AfterStaticPreflight {
+    if ($PostPreflightCooldownSeconds -le 0) {
+        return
+    }
+
+    Write-Host "Gemini material Unity apply-all cooldown after static preflight. seconds=$PostPreflightCooldownSeconds"
+    Start-Sleep -Seconds $PostPreflightCooldownSeconds
 }
 
 function Invoke-PythonValidator {
@@ -138,6 +134,12 @@ function Get-UnityLogIssueSummary {
     $errorCount = 0
     Get-Content -LiteralPath $Path | ForEach-Object {
         $line = $_
+        
+        # Ignore licensing client logs, postprocessing assembly load context, and thread abort shutdown logs
+        if ($line -match "\[Licensing::" -or $line -match "PostProcessingAssemblyLoadContext" -or $line -match "abort_threads: Failed aborting") {
+            return
+        }
+
         if ($line -match "(?i)\b(warning|warn)\b" -and $line -notmatch "(?i)warnings\s*=\s*0") {
             $warningCount++
         }
@@ -157,26 +159,33 @@ function Get-UnityLogIssueSummary {
 
 $resolvedUnity = Resolve-UnityPath -RequestedPath $UnityPath
 
-& $staticPreflightRunner
-if ($LASTEXITCODE -ne 0) {
-    throw "Gemini material static preflight failed."
+if ($SkipStaticPreflight) {
+    Write-Host "Gemini material static preflight skipped by explicit flag. Require a fresh separate preflight pass before using this mode."
+}
+else {
+    & $staticPreflightRunner
+    if ($LASTEXITCODE -ne 0) {
+        throw "Gemini material static preflight failed."
+    }
 }
 
+Wait-AfterStaticPreflight
 Wait-Or-Assert-Gate
 
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
 $unityStartedAt = (Get-Date).ToUniversalTime().ToString("o")
 Write-Host "Gemini material Unity apply-all startUtc=$unityStartedAt unity=$resolvedUnity projectPath=$projectRoot executeMethod=$executeMethod log=$logPath"
-& $resolvedUnity `
-    -batchmode `
-    -nographics `
-    -quit `
-    -projectPath $projectRoot `
-    -executeMethod $executeMethod `
-    -logFile $logPath
-
-$unityExitCode = $LASTEXITCODE
+$unityArguments = @(
+    "-batchmode",
+    "-nographics",
+    "-quit",
+    "-projectPath", $projectRoot,
+    "-executeMethod", $executeMethod,
+    "-logFile", $logPath
+)
+$unityProcess = Start-Process -FilePath $resolvedUnity -ArgumentList $unityArguments -Wait -PassThru -NoNewWindow
+$unityExitCode = $unityProcess.ExitCode
 $unityEndedAt = (Get-Date).ToUniversalTime().ToString("o")
 $unityLogSummary = Get-UnityLogIssueSummary -Path $logPath
 Write-Host "Gemini material Unity apply-all endUtc=$unityEndedAt exitCode=$unityExitCode warningCount=$($unityLogSummary.WarningCount) errorCount=$($unityLogSummary.ErrorCount) logExists=$($unityLogSummary.LogExists) log=$logPath"

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Czas przygotowania ciężkiego frachtu"
+title: "Czas ustawiania ciężkiego frachtu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Czas przygotowania ciężkiego frachtu
+# Czas ustawiania ciężkiego frachtu
 
-Ciężki fracht ukrywa czas w infrastrukturze. Sprzęt Atlas, ładunki seed, zapasy osłon i części hamowania mogą dotrzeć wcześnie, bo startują lata przed tym, jak publiczny język osadnictwa je dogoni. To nie ułatwia ratunku awaryjnego. Przygotowana trasa przenosi masę, bo depoty, okna wiązki, strumienie pelletów i stopnie przechwycenia już czekały. Trasa katastrofy nie ma już tej cierpliwości.
+Ustawianie ciężkiego frachtu to miejsce, gdzie logistyka międzygwiezdna staje się przemocą bez broni. Pierścień habitatu, osłona reaktora, crawler tnący, żebro ciśnieniowe albo zapas żywności są zbyt drogie, by traktować je jak luźną obietnicę. Zbierają ubezpieczycieli, zastawy, przewoźników, inspektorów i klauzule awaryjne, zanim dotrą do Aegir.
+
+Gdy warunki się zmieniły, Deep Reach nie musiała wymyślać okrucieństwa od zera. Wystarczyło dalej honorować łańcuch ładunku. Każda tona już ustawiona na trasie żądała odbiorcy, każdy odbiorca żądał miejsca pracy, a każde miejsce pracy żądało ciał. Kolonia stała się ludzką odpowiedzią na fracht, za który już zapłacono.
 
 <!-- External Site; generated from P143_HEAVY_FREIGHT_STAGING_TIME/pl_PL. -->

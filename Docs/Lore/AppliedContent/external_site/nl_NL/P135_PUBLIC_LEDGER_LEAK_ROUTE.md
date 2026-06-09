@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Lek naar openbaar ledger
 
-Het lek naar openbaar ledger is geen perfecte klokkenluidersfantasie. Het is een pakket dat via een smal relay-venster vertrekt met witness hash, genoeg custody om moeilijk te ontkennen te zijn, en te veel ontbrekende stukken om veilig te zijn. Tau Ceti kan het record openbaar maken lang nadat het iemand in het water kan redden.
+Lek naar openbaar ledger is geen perfecte klokkenluidersfantasie. Het is een beschadigd pakket dat vóór volledige custody vertrekt, met genoeg bewijs om ontkenning duur te maken en genoeg ontbrekende context om elke lezer gevaarlijk te maken. Tau Ceti kan het record openbaar maken lang nadat het iemand in het water kon redden.
 
-Die vertraging is het punt. Deep Reach kan de claim niet simpel verwijderen, maar de speler kan ook niet beslissen wie hem daarna gebruikt. Verzekeraars, rivalen, burgerlijke rechtbanken, Marauder-pools en corporate kantoren zullen dezelfde wond anders lezen. Dit einde maakt waarheid moeilijker te begraven en moeilijker te bezitten.
+Die vertraging is het punt. Deep Reach verliest de schoonste cover-up, maar de getuige verliest ook eigendom. Hetzelfde record kan aanklacht, hefboom, verzekeringswiskunde, domain-propaganda of nieuw contract worden. Deze route maakt waarheid moeilijker te begraven en moeilijker te bezitten.
 
 <!-- External Site; generated from P135_PUBLIC_LEDGER_LEAK_ROUTE/nl_NL. -->

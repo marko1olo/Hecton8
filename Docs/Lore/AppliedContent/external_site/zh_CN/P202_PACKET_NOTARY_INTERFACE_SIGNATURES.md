@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Packet Notary Interface Signatures"
+title: "Packet Notary Interface 签名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Packet Notary Interface Signatures
+# Packet Notary Interface 签名
 
-CN LOC HOLD: Packet Notary Interface signatures turn interstellar delay into legal evidence: relay time, hash witness, custody owner, and price.
+星际延迟没有让 HECTON-8 的每条消息失效。它让消息保管变得昂贵。Packet Notary 条带记录哪个中继窗口承载了包件、哪个哈希见证了包件、哪个保管方在放行前持有记录。在回收的 HECTON-8 记录中，这套机制可以保护工人日志，也可以让日志停在 claim material，直到第二个见证被接上。公共档案注记：这条记录标识证据路线，不标识 Deep Reach 的完整指挥链。
 
 ## Scanner
 
-CN LOC HOLD: A packet seal can protect truth or bury it under custody delay.
+已回收包封印：哈希条完整，中继窗口印记 17-A，保管方未解析。仅在 witness chain 匹配后按证据处理。
 
 ## Terminal
 
-CN LOC HOLD: SIGNATURE SEED: Som Varela, Packet Notary Interface. Function: seals packet hashes, relay delay and custody status. Treat as evidence routing, not motive.
+SIGNATURE SEED：Som Varela，Packet Notary Interface。路径：Relay Spine / witness hash strip。操作：封存 packet hash、本地中继延迟、保管方。例外：缺少工人姓名附件，包件留在 claim-material queue。升级：第二个 witness hash 后进入 public ledger。
 
 ## Audio
 
-CN LOC HOLD: A seal is not mercy. It is a clock with a price.
+封印还在。时间戳晚了两个窗口。witness hash 对上后，他们就不能把它叫静电噪声。
 
 ## Field Note
 
-CN LOC HOLD: The notary surface is useful because it names relay time, hash witness and custody owner in one place.
+别把它当日志卖。把它当成时钟加见证：中继时间、packet hash、保管方。少一个字段，Deep Reach 就会把它写成散乱载波噪声。
 
 <!-- External Site; generated from P202_PACKET_NOTARY_INTERFACE_SIGNATURES/zh_CN. -->

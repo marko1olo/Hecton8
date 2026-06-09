@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marek Ibarra Loss Conversion"
+title: "Marek Ibarra: Verlustumwandlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marek Ibarra Loss Conversion
+# Marek Ibarra: Verlustumwandlung
 
-DE LOC HOLD: Marek Ibarra is the Keelmark Mutual adjuster trace that turns bodies into unresolved accounting states. His files explain why names matter: a recovered name breaks the conversion that made a dead worker cheaper than a rescued one.
+Marek Ibarra ist die Keelmark-Mutual-Reguliererspur, die vermisste Arbeiter in ungeklärte Buchhaltungszustände verwandelt. Die Tabelle ist nicht für Trauer geschrieben, sondern für Abschlusskosten: Körper nicht geborgen, Druckzustand nicht zertifiziert, Kontamination ausstehend, Lohnidentität ausgesetzt.
+
+Darum zählen Namen in HECTON-8. Eine Spindplatte, ein Anzugtag, eine Leichenregisterzeile oder eine geborgene Routenuhr kann einen Arbeiter aus ungeklärter Last zurück in einen Anspruch bringen. Mehrdeutigkeit ist billiger als Rettung, billiger als Entschädigung und leichter in einem Trägerstreit zu begraben.
+
+Für einen Marauder ist geborgene Identität kein Schmuck. Sie beschädigt den Buchhaltungstrick, der eine Person zweimal verschwinden ließ: zuerst im Wasser, dann im Register.
 
 ## Scanner
 
-DE LOC HOLD: Adjuster table. M. Ibarra converted missing workers into unresolved load classes.
+REGULIERERTABELLE // M. Ibarra wandelte vermisste Arbeiter in ungeklärte Lastklassen um, bis Druckzustand, Kontaminationszustand oder Lohnstatus zertifiziert werden konnten.
 
 ## Terminal
 
-DE LOC HOLD: IBARRA, M. Keelmark Mutual loss conversion. Unrecovered biological assets remain unresolved until pressure-state, contamination-state or payroll-state can be certified.
+IBARRA, M. // Keelmark Mutual Verlustumwandlung // Nicht geborgene biologische Vermögenswerte bleiben ungeklärt bis zur Zertifizierung von Druckzustand, Kontaminationszustand oder Lohnstatus. Anspruchsklasse nicht ohne Verwahrungsnachweis schließen.
 
 ## Audio
 
-DE LOC HOLD: A missing person became a pending category. That was cheaper.
+Eine vermisste Person wurde zu einer offenen Kategorie. Das war billiger.
 
 ## Field Note
 
-DE LOC HOLD: Insurance language should feel colder than gunfire.
+Versicherungssprache soll kälter sein als Schüsse. Ein geborgener Name ist keine Stimmung; er bricht die billigere Kategorie.
 
 <!-- In-Game Wiki; generated from P109_MAREK_IBARRA_LOSS_CONVERSION/de_DE. -->

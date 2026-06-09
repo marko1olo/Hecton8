@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach Present Windows"
+title: "Aktuelle Deep-Reach-Fenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach Present Windows
+# Aktuelle Deep-Reach-Fenster
 
-DE LOC HOLD: Deep Reach Present Windows defines how the corporation exists in the 2190 run. There is no live core-world villain on a radio, but there are rare relay windows, proxy AI notices, legal packets, Black Keel clauses and bargaining once the player holds evidence.
+Aktuelle Deep-Reach-Fenster erklären, wie ein abwesendes Unternehmen im Jahr 2190 dennoch aktiver Antagonist bleibt. Es gibt keinen überlichtschnellen Rettungsschalter und keinen lebenden Vorstand, der HECTON-8 von einem Kernwelt-Sessel aus steuert. Die Entfernung ist real: Fenster sind selten, verspätet und durch Relaisspines, lokale Proxys, automatische Rechtsmitteilungen und Black-Keel-Anspruchssprache gefiltert. Das macht Deep Reach nicht harmlos. Wenn ein Signal die Kluft überquert hat, ist die Kolonie längst von alten Verträgen, Quarantäne-Vorgaben, Auszahlungsschwellen und Verwahrungsregeln geformt. Hält der Spieler Beweise, wird die Stimme des Unternehmens als Angebot hörbar: Atlas-Autoritätsschlüssel abgeben, Nutzlastverwahrung akzeptieren, Prüfung zulassen und vielleicht Bergung statt Aufgabe erhalten.
 
 ## Scanner
 
-DE LOC HOLD: Deep Reach is too far for command and close enough through law, relays, proxies and Black Keel clauses to make every answer conditional.
+Deep Reach kann HECTON-8 nicht per Funk steuern, doch verzögerte Fenster, Proxy-Hinweise und Black-Keel-Klauseln bestimmen noch immer den Preis von Hilfe.
 
 ## Terminal
 
-DE LOC HOLD: LIVE WINDOW: operator recovery available after evidence review, payload custody and quarantine compliance. Alternate route: transmit Atlas authority keys for immediate claim consideration.
+LIVE WINDOW / DEEP-REACH-PROXY: Operatorbergung verhandelbar nach Beweisprüfung, Nutzlastverwahrung, Quarantänekonformität und Übergabe der Atlas-Autoritätsschlüssel. Ablehnung erhält Anspruchstellerstatus, streicht aber Priorität für sofortige Extraktion.
 
 ## Audio
 
-DE LOC HOLD: When they finally speak, they ask for the thing that proves they should not have it.
+Wenn ihre Stimme dich erreicht, ist sie bereits ein Vertrag.
 
 ## Field Note
 
-DE LOC HOLD: Their voice is delayed. Their leverage is already here.
+Ihre Antwort kommt spät. Ihre Bedingungen kamen vor Jahren an.
 
 <!-- In-Game Wiki; generated from P070_DEEP_REACH_PRESENT_WINDOWS/de_DE. -->

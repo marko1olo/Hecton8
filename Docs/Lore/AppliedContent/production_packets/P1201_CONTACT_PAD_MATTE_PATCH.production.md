@@ -10,7 +10,7 @@
 | Runtime layer | future_import_candidate |
 | Surfaces | scanner, codex, pda_log, environmental_label |
 | Spoiler level | arrival_power_status |
-| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; HECTON8_Field_Atlas.md; CP01_Arrival_Shallow_Water.md |
+| Canon sources | Lore_Bible.md; Canon_Locks.md; Lore_Content_System.md; RS185_FIRST_POWER_STATUS_TRACE_ARTICLES.md |
 | Speaker | Service scanner, contact-pad note |
 | Audience | Player, later PDA/codex route |
 | Date / era | Route 1, first power-panel inspection |
@@ -72,17 +72,17 @@ NOT CONTINUITY PROOF
 | Locale | Status | Text |
 |---|---|---|
 | en_US | source_authority | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| ru_RU | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| ja_JP | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| zh_CN | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| fr_FR | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| es_ES | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| de_DE | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| pl_PL | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| uk_UA | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| ar_SA | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| id_ID | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| ko_KR | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| he_IL | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| pt_BR | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
-| nl_NL | draft_machine_or_llm | CONTACT PAD // Matte patch on one corner. Surface condition is not continuity proof. |
+| ru_RU | draft_machine_or_llm | КОНТАКТНАЯ ПЛОЩАДКА // Матовый участок на одном углу. Состояние поверхности не доказывает проводимость. |
+| ja_JP | draft_machine_or_llm | 接点パッド // 一角に艶消しの跡。表面状態は導通証拠ではない。 |
+| zh_CN | draft_machine_or_llm | 接触垫 // 一角有哑光斑。表面状态不能证明连续导通。 |
+| fr_FR | draft_machine_or_llm | PLAGE DE CONTACT // Patch mat sur un coin. Etat de surface ne prouve pas la continuite. |
+| es_ES | draft_machine_or_llm | PLACA DE CONTACTO // Parche mate en una esquina. La superficie no prueba continuidad. |
+| de_DE | draft_machine_or_llm | KONTAKTPAD // Matte Stelle an einer Ecke. Oberflaechenzustand ist kein Durchgangsbeweis. |
+| pl_PL | draft_machine_or_llm | POLE STYKOWE // Matowa plama na jednym rogu. Stan powierzchni nie dowodzi ciaglosci. |
+| uk_UA | draft_machine_or_llm | КОНТАКТНА ПЛОЩИНКА // Матовий слід на одному куті. Стан поверхні не доводить провідність. |
+| ar_SA | draft_machine_or_llm | لوح تماس // بقعة مطفية على زاوية واحدة. حالة السطح ليست دليلا على الاستمرارية. |
+| id_ID | draft_machine_or_llm | PAD KONTAK // Tambalan kusam di satu sudut. Kondisi permukaan bukan bukti kontinuitas. |
+| ko_KR | draft_machine_or_llm | 접점 패드 // 한쪽 모서리에 무광 얼룩. 표면 상태는 연속성 증거가 아니다. |
+| he_IL | draft_machine_or_llm | משטח מגע // כתם מט בפינה אחת. מצב פני השטח אינו הוכחת רציפות. |
+| pt_BR | draft_machine_or_llm | PASTILHA DE CONTATO // Mancha fosca em um canto. Condicao da superficie nao prova continuidade. |
+| nl_NL | draft_machine_or_llm | CONTACTPAD // Matte plek op een hoek. Oppervlakconditie is geen continuiteitsbewijs. |

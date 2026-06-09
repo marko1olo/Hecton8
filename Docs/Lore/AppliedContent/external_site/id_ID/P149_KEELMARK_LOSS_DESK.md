@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Loss Desk"
+title: "Meja Kerugian Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Loss Desk
+# Meja Kerugian Keelmark
 
-ID LOC HOLD: Keelmark Loss Desk gives the false endings and Black Keel debt a corporate owner.
+Meja Kerugian Keelmark bukan tangan yang membanjiri koridor. Ia tangan yang memutuskan bagaimana koridor banjir masuk pembukuan. Itulah sebabnya ia penting. Penanggung bisa membuat pembunuhan tampak seperti cuaca jika kategori siap cukup awal.
 
-## Scanner
-
-ID LOC HOLD: Insurance did not hide the dead. It renamed them until nobody had to recover them.
-
-## Terminal
-
-ID LOC HOLD: LOSS DESK: Keelmark Mutual converts missing workers, damaged payload and carrier risk into categories. The categories decide whether rescue is authorized or merely accounted.
-
-## Audio
-
-ID LOC HOLD: The ledger is dry because the room was not.
-
-## Field Note
-
-ID LOC HOLD: A loss category is a grave with better stationery.
+Tabel Keelmark mengajari Deep Reach bahasa yang akan bertahan dari penyelidikan. Peralatan disusutkan. Habitat diturunkan nilainya. Tenaga kerja ditangguhkan. Saksi dibuat terpapar, terkompromi, atau tak terpulihkan. Nama lebih berat, jadi meja menghindarinya sampai dipaksa.
 
 <!-- External Site; generated from P149_KEELMARK_LOSS_DESK/id_ID. -->

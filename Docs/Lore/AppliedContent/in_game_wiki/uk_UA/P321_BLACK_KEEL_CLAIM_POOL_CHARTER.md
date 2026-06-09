@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Black Keel Claim-Pool Charter"
+title: "Хартія claim-pool корабля Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Black Keel Claim-Pool Charter
+# Хартія claim-pool корабля Black Keel
 
-UK LOC HOLD: Black Keel Claim-Pool Charter fixes the player carrier as rented salvage infrastructure. The player has access, not ownership; transport, recovery and payout are all filtered through claim-pool debt.
+Хартія claim-pool корабля Black Keel - перший документ, який має змусити гравця не довіряти слову корабель. Black Keel корисний, близький і реальний, але це не вірне судно, що чекає нагорі. Це орендований recovery asset усередині Aegir Reclamation Pool, створений для переміщення претензій, тіл, вантажу, телеметрії і боргу через правовий канал без передачі підряднику власності на корпус. Ця різниця важлива, бо пояснює центральну пастку HECTON-8 без магії. Carrier може чути ping, продавати телеметрію, планувати вікна і скидати низькоризикові припаси, але все одно відмовити у чистому порятунку, бо гравець не володіє маршрутом. Транспорт дозволено. Пріоритет порятунку умовний. Lien лишається активним. Хартія перетворює орбіту на тиск, а не свободу: над тобою щось є, але воно відповідає претензії раніше, ніж людині.
 
 ## Scanner
 
-UK LOC HOLD: Carrier charter: claim-pool recovery asset, lien active, crew authority minimal.
+Black Keel - не твій корабель. Це recovery asset claim-pool, де твоє ім'я стоїть у борговій книзі.
 
 ## Terminal
 
-UK LOC HOLD: CHARTER: BLACK KEEL operates as an automated salvage carrier under Aegir Reclamation Pool custody. Contractor transport does not imply rescue priority, hull ownership or clean exit rights.
+ВИТЯГ ІЗ ХАРТІЇ / BLACK KEEL: автономний salvage carrier / опіка: Aegir Reclamation Pool / транспорт підрядника: дозволено / власність корпусу: відмовлено / пріоритет порятунку: нижче insured receiver state, карантинного handshake і claim value.
 
 ## Audio
 
-UK LOC HOLD: The carrier did not come for you. It came for a claim with your name attached.
+Carrier прийшов не по тебе. Він прийшов по претензію, до якої прикріплене твоє ім'я.
 
 ## Field Note
 
-UK LOC HOLD: Use this on the first contract or carrier-status screen.
+Для першого екрана статусу carrier: доступ надано, власність відмовлено, пріоритет порятунку умовний, lien активний.
 
 <!-- In-Game Wiki; generated from P321_BLACK_KEEL_CLAIM_POOL_CHARTER/uk_UA. -->

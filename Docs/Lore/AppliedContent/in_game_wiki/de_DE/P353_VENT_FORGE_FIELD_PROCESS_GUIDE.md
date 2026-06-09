@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Feldführer zum Vent-Forge-Prozess"
+title: "Feldprozessführer für Vent-Schmieden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feldführer zum Vent-Forge-Prozess
+# Feldprozessführer für Vent-Schmieden
 
-Vent forges sind natürlich-industrielle Reaktoren. Sie verwandeln Hitze, brine und pressure history in nützliche ceramics, sealants und charge materials und binden jede Probe an ihren thermischen Weg.
+Vent-Schmieden sind natürlich-industrielle Reaktoren. Sie machen aus Hitze, Sole, Druckverlauf und langsamer Kühlung Keramik, Dichtstoffe und Ladungsmaterialien. Eine Probe ist nur nützlich, wenn ihr thermischer Weg die Bergung übersteht.
 
 ## Scanner
 
-Vent-forge chemistry aktiv. Qualität folgt pressure history, heat pulse und langsamer Kühlung, nicht dem Glanz der Probe.
+Vent-Schmieden-Chemie aktiv. Qualität folgt Druckverlauf, Hitzepuls und langsamer Kühlung, nicht dem Glanz der Probe.
 
 ## Terminal
 
-FIELD GUIDE: vent forges kochen sulfides, noble-gas pockets, ceramics und sealant precursors. Der Weg einer Probe durch heat, brine und pressure zählt mehr als ihr Name.
+FELDFÜHRER: Vent-Schmieden kochen Sulfide, Edelgastaschen, Keramikkörner und Dichtstoffvorstufen. Der Weg einer Probe durch Hitze, Sole und Druck zählt mehr als ihr Name.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Der Vent machte kein Erz. Er machte einen Prozess, den du unterbrochen hast.
 
 ## Field Note
 
-Heb eine frische Charge nicht direkt in kaltes Wasser. Lass den Vent das anneal beenden, sonst reißt die shell.
+Eine frische Charge nicht direkt in kaltes Wasser heben. Lass den Vent das Glühen beenden, sonst reißt die Schale netzförmig.
 
 <!-- In-Game Wiki; generated from P353_VENT_FORGE_FIELD_PROCESS_GUIDE/de_DE. -->

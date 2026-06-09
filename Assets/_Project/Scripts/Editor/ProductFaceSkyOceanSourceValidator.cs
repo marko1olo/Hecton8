@@ -59,6 +59,7 @@ namespace Hecton8.EditorTools
             ValidatePrefabSource(SkySystemPrefabPath, report);
             ValidatePrefabSource(OceanCrestPrefabPath, report);
             ValidateSargassumBoidMesh(report);
+            ValidateAegirGasGiantSource(report);
             AddSceneOverrideBoundaryFindings(report);
             return report;
         }
@@ -202,6 +203,35 @@ namespace Hecton8.EditorTools
                     OceanCrestPrefabPath,
                     componentPath,
                     $"SargassumMicroFaunaBoids.boidMesh uses non-built-in mesh source '{AssetDatabase.GetAssetPath(boidMesh)}'. This does not prove runtime visual quality.");
+            }
+        }
+
+        private static void ValidateAegirGasGiantSource(ProductFaceSkyOceanSourceValidationReport report)
+        {
+            AegirGasGiantSourceValidationReport aegirReport = AegirGasGiantSourceValidator.ValidateSources();
+            report.CheckedPrefabCount += aegirReport.CheckedPrefabCount;
+
+            for (int i = 0; i < aegirReport.Findings.Count; i++)
+            {
+                AegirGasGiantSourceValidationFinding finding = aegirReport.Findings[i];
+                ProductFaceSkyOceanSourceFindingCategory category =
+                    finding.Category == AegirGasGiantSourceFindingCategory.SceneOverrideRisk
+                        ? ProductFaceSkyOceanSourceFindingCategory.SceneOverrideRisk
+                        : ProductFaceSkyOceanSourceFindingCategory.SkyDomeBodyPrimitiveRisk;
+
+                string message = "Aegir gas giant source contract: " + finding.Message;
+                if (finding.Severity == AegirGasGiantSourceFindingSeverity.Fail)
+                {
+                    report.AddFail(category, finding.AssetPath, finding.ComponentPath, message);
+                }
+                else if (finding.Severity == AegirGasGiantSourceFindingSeverity.Warning)
+                {
+                    report.AddWarning(category, finding.AssetPath, finding.ComponentPath, message);
+                }
+                else
+                {
+                    report.AddInfo(category, finding.AssetPath, finding.ComponentPath, message);
+                }
             }
         }
 

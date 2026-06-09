@@ -19,22 +19,28 @@ localization_flags: 1
 
 # Drukladder
 
-Ze maakt HECTON-8-diepte tot hard-sci-fi survivalsysteem voor lange verkenning.
+De Drukladder definieert HECTON-8s dieptetoegang als serviceketen in plaats van willekeurige levelpoort: elke band opent pas als drukafdichting, pakklasse, stroom, zuurstof, isolatie, signaal en terugkeerplan samen slagen.
 
 ## Scanner
 
-Diepte wordt verdeeld door drukratings, niet door levelnamen. Elke band vraagt een technisch antwoord.
+DIEPTEPOORT-LEZING // Band: serviceafdaling 250-1200 m. Afdichtingsmarge 11%. Pakplaat accepteert Grade C pas nadat batterijpakket B2 is vergrendeld. Terugkeerping zwak onder de derde klem. Open het onderste slot niet op moed.
 
 ## Terminal
 
-Diepteladder: plateau-uitrusting, canyonversterking, pekelisolatie, abyssale rompdiscipline, fabriekssignaalharding.
+DIEPTETOEGANGSBORD
+0-250 m: fotisch plateau / kort werk met beschadigde uitrusting toegestaan
+250-1200 m: serviceplateau / Grade-C-pakafdichting, vergrendelde batterij en tetherping vereist
+1200-2800 m: pekelcanyon / isolatiewikkel en drijftrim vereist
+2800-4300 m: abyssaal machineveld / gehard signaal en rompdiscipline vereist
+4300-5600 m: Atlas-bekken / terugkeerplan moet drukverlies en busruis overleven
+Fout: volgende band vergrendeld tot zwakste lezing is gerepareerd
 
 ## Audio
 
-Je daalt niet omdat je dapper bent. Je daalt omdat de volgende afdichting houdt.
+Stop met ruziën met de deur. De afdichtingsmarge is rood, en je terugkeerping is al te laat.
 
 ## Field Note
 
-De oceaan vergrendelt voortgang met wiskunde.
+De poort geeft niets om waarom je de route nodig hebt. Hij leest afdichting, stroom, zuurstof, isolatie, signaal, en geeft dan groen of begraaft het plan.
 
 <!-- External Site; generated from P032_PRESSURE_LADDER_DEPTH_BANDS/nl_NL. -->

@@ -19,26 +19,10 @@ localization_flags: 1
 
 # Spoor van Ingetrokken Toegangstaal
 
-De protagonist leest Deep Reach-blokkades als bewijs. Ingetrokken credentials blokkeren toegang, maar de formulering legt nog steeds de begraven route bloot: gedegradeerde tellingen, vervangende getuigen, onderhoudsherclassificatie en claimbehoudtaal.
+Spoor van Ingetrokken Toegangstaal draait om een simpele HECTON-8-regel: een gesloten deur kan zichzelf nog verraden. Deep Reach-systemen waren ontworpen om met zorgvuldige taal te weigeren, classificeren en claims te beschermen. Wanneer het oude credentiaal faalt, blijft die taal.
 
-## Scanner
+De bruikbare aanwijzingen zijn geen wachtwoorden. Het zijn bedrijfszinnen met fysieke gevolgen: maintenance reclassification, degraded counts, substitute checks en claim-preservation routes. Een normale bezoeker ziet weigering. Een voormalige field systems worker ziet een registratie van wat de deur moest verbergen.
 
-De blokkade zegt niet verboden. Ze zegt onderhoudsherclassificatie, continuïteitsstop en routemateriaal. Oude Deep Reach-taal: een weigering die nog steeds naar de begraven deur wijst.
-
-## Terminal
-
-TOEGANGSANTWOORD / ROUTE-VEILIG ARCHIEF
-credential: ingetrokken
-reden: evacuatiecontinuïteitsmateriaal beperkt tot gecertificeerd Deep Reach-personeel
-zichtbare termen: gedegradeerde telling, vervangende getuige, claimbehoudroute, onderhoudsherclassificatie
-notitie: voormalig veldpersoneel mag weigeringstaal alleen zien voor incidentafstemming.
-
-## Audio
-
-Ze hebben de gang niet gewist. Ze hebben hem ingepakt in woordenschat die alleen schuldig personeel nog begrijpt.
-
-## Field Note
-
-De badge is dood. De blokkade spreekt nog het kantoordialect dat de route heeft begraven.
+Zo blijft onderzoek gegrond in arbeid en aansprakelijkheid. De operator heeft geen magische sleutel of schurkenbekentenis nodig. Een dode badge, een weigeringsscherm en de verkeerde maintenance-termen zijn genoeg om de route te gaan volgen die Deep Reach onder procedure probeerde te begraven.
 
 <!-- External Site; generated from P367_REVOKED_ACCESS_LANGUAGE_TRACE/nl_NL. -->

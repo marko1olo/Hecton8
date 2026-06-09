@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Iliya Varnek Tide Margin"
+title: "Iliya Varnek : marge de marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Iliya Varnek Tide Margin
+# Iliya Varnek : marge de marée
 
-FR LOC HOLD: Iliya Varnek is the 2147 risk signature tied to HECTON-8 tide margins. He is not a monster with a lever. He is the kind of executive who lets a model pass because average behavior protects the schedule and tail risk belongs to workers in pressure rooms.
+Iliya Varnek est la signature de risque Deep Reach de 2147 liée à la marge de la Grande Marée. Ce n'est pas un dirigeant de caricature avec un levier. La note est pire parce qu'elle est ordinaire : calendrier de production, modèle moyenné, ligne de confiance, exposition ouvrière et recommandation de continuer.
+
+Le terme décisif est confiance moyenne du modèle. En moyenne, la route semblait survivable. Dans la queue de distribution, là où l'empilement des marées Aegir, le rebond de la banquise, le trafic des routes pressurisées et les erreurs de compensation Atlas se rencontraient, la marge se resserrait jusqu'à devenir une tolérance comptable. Les gens dans ces salles ne vivaient pas en moyenne. Ils vivaient dans la pire heure.
+
+La signature de Varnek donne au joueur une couche de responsabilité. Elle ne prouve pas qu'il connaissait la catastrophe exacte à venir. Elle prouve que Deep Reach avait un chemin de risque lisible et a choisi l'interprétation la moins chère. Le crime n'est pas l'omniscience. Le crime est d'accepter l'incertitude parce que les corps qui allaient la porter n'étaient pas dans la pièce où la marge était chiffrée.
 
 ## Scanner
 
-FR LOC HOLD: Risk memo. I. Varnek downgraded the tide margin because the model passed on average.
+NOTE DE RISQUE // I. Varnek a réduit la marge de la Grande Marée après validation du modèle en moyenne. Le risque de queue est resté dans les salles pressurisées des ouvriers.
 
 ## Terminal
 
-FR LOC HOLD: VARNEK, I. Aegir Operations Risk. Recommendation: maintain production schedule; treat extreme tide stack as low-frequency operational variance pending Atlas compensation.
+VARNEK, I. // Risques opérations Aegir // Recommandation : maintenir le calendrier de production. L'empilement extrême des marées reste une variance opérationnelle basse fréquence en attente de révision de compensation Atlas. Exposition des routes ouvrières acceptable sous confiance moyenne du modèle.
 
 ## Audio
 
-FR LOC HOLD: He did not order a flood. He priced it low enough to happen.
+Il n'a pas ordonné l'inondation. Il lui a donné un prix assez bas pour qu'elle arrive.
 
 ## Field Note
 
-FR LOC HOLD: Do not make the signer omniscient. The crime is accepting cheap uncertainty.
+Ne lis pas ça comme un ordre de tuer. Lis ça comme une ligne budgétaire où l'incertitude est devenue assez bon marché pour être dépensée.
 
 <!-- In-Game Wiki; generated from P106_ILIYA_VARNEK_TIDE_MARGIN/fr_FR. -->

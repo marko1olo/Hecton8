@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8：圧力請求"
+title: "HECTON-8: 圧力下の請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,30 +17,54 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8：圧力請求
+# HECTON-8: 圧力下の請求
 
-## 最初の仕事
+## 最初に来るのは契約
 
-HECTON-8は契約で始まる。Black KeelはAegir窓を開き、4.8 tonne-windowの担保を記録し、損傷したbathydropをP-63へ落とす。そこにはルートを読む光があり、油断を殺す故障もある。
+HECTON-8は予言でも王族の血筋でも、きれいなdistress callでも始まらない。始まりは書類だ。Black KeelはAegir relay windowを記し、salvage lienを名付け、帰還可能な質量を値付けし、損傷したbathydropをP-63へ落とす。公式packetはこの月をrecoverable ocean claimと呼ぶ。その言葉は必要な法廷を生き残るほど冷たく、植民地が返答を止めた時にも働いていた人々を消せるほど狭い。
 
-最初の作業は小さい。水を抜く。等級内でシールを直す。カプセル障害を読む。金属を走査する。スキャナーは歴史を語らない。公式記録が装置の痕を知らない理由を確かめる。
+Capsuleの中のMarauderは観光客でも選ばれた相続人でもない。Deep Reachの訓練が手に残り、ledgerには借金があり、上へ戻るきれいな道はないsalvage専門家だ。これは重要だ。HECTON-8が個人的になるのは、プレイヤーが物語を信じる前に手順を理解するからだ。かつてpressure sealの検査を教えた同じ制度が、今度はその失敗に値段を付けろと言ってくる。
 
-P-63は光の中で美しい。美しさは安全ではない。石灰岩、モジュールの縁、ケーブルの傷、壊れた避難部品が、きれいな文書と食い違う。
+最初の数分は作業として感じるべきだ。Capsuleを確認する。fault boardを読む。shelterを排水する。rating内でsealを塞ぐ。shelfをscanする。ここに単なるtutorial propはない。小さな仕事はすべてclaim testだ。何がまだ動くのか、何が嘘をついたのか、次に何が殺すのか、何をproofとして持ち帰れるのか。
 
-契約は貨物を求める。部屋は証拠を出す。破れた回収リング、浸水した航空電子、歪んだフレームは、bathydropが落下を生き延びるために帰還能力を使ったことを示す。修理は下へ続く。工具、中継、brine、pressure glass、そして回収相手を決める法的ハンドシェイクへ。
+## P-63は信じるには明るすぎる
 
-Deep Reachは悪い海を作ったのではない。罪は受け入れたリスク、不足した避難、労働者を損失項目に変える言葉にある。
+最初のplayable shelfは黒いホラーではない。P-63にはまだ色がある。Limestone ledgesが淡い光を受ける。shell gritがcable scarsに残る。seagrass rootsが古いconcreteに絡む。coral-like growthは壊れたmodule ribsの静かな側を選ぶ。ここは読める場所だと思えるだけの視界がある。
 
-## 降下の読み方
+そこが危険だ。HECTON-8は未完成のartや弱いterrainを隠すために暗いゲームではない。depth、storm、pressure chemistry、壊れたmachinesが選択肢を奪う場所で暗くなる。序盤の水が美しいのは、美しさと安全が同じではないとプレイヤーに学ばせるためだ。澄んだ青いrouteは、Deep Reachが受け入れたloadに耐えるratedではなかったhatchで終わることがある。
 
-HECTON-8のロアは、必ずプレイヤーが確かめられる痕跡を持つ。契約番号はmass windowを変えるなら飾りではない。bathydropの傷は、上昇系が衝突前に作動した証拠なら背景ではない。水没室も、ポンプ、ガスケット、route log、scanner returnが公式記録と食い違うなら舞台装置ではない。
+shelfは月全体の文法を教える。pumpは部屋へ入れるかを語る。gasketはdoorが約束か罠かを語る。cable routeは誰が停電を予期していたかを語る。worker tagはcolonyが抽象的なasset classではなかったことを語る。abyssが色を奪う頃には、プレイヤーは物質を読む方法を知っている。
 
-だから序盤は作業に戻る。P-63は、明るさが安全ではないこと、浅瀬でもclaimの罠になること、生存がseal rating、intake pressure、relay drift、battery reserve、custody gradeでできていることを教える。
+## Accident fileは整いすぎている
 
-## 約束
+Deep Reachは海を発明する必要がなかった。Aegirにはすでにstorms、動くbrine、硬いpressure bands、悪いgeology、そしてdelayをpolicyへ変える距離があった。公開fileがstorm-and-collapse eventと言っても、そこには事実が含まれる。stormはあった。collapseもあった。Atlasはまともなoperating envelopeを越えてsystemsを生かそうとした。
 
-大きな物語は銀河救済の演説ではない。悪いlienと役に立つ記憶を持つ作業員をめぐる、長い圧力問題だ。海、契約、route windowが選択を狭める。プレイヤーはscan、sample、修理したsystemを積み上げ、証拠の鎖で答える。
+嘘はその事実の順序に住む。evacuation holdの前に何が知られていたのか。cost modelがrescueからrecoveryへ変わった時、どのcompartmentsにまだ人がいたのか。repairが人を守る意味を失った後もAtlasにrepairを続けさせたcontinuity ruleへ誰が署名したのか。なぜBlack Keelは、surfaceの誰かがbodyを受け取る前にclaimを受け取るのか。
 
-HECTON-8は物理的だから読める。重要なものには表面、代価、故障モード、証人がある。
+HECTON-8はそれらの問いをlore triviaではなく物理routeとして扱う。答えは一つのvillain speechに隠されていない。pump boards、brine stamps、pressure glass、relay drift、sample custody、そして人間の理由が消えた後もmachineがprocedureを続ける様子に散らばっている。
+
+## Salvageは生存システムである
+
+プレイヤーはlootを集めるだけではない。Salvageは世界が価値について争う方法だ。割れたringはspare materialであり、失敗したascentのproofであり、持つ余裕のないmassでもある。sampleはtool pathを開き、同時に誰かが封じたいevidenceになる。repair partは生かしてくれる一方で、ここへ連れてきたlienを深くする。
+
+だからHECTON-8は不格好な名詞へ戻る。seal rating、intake pressure、relay window、debt mass、custody grade、pump reserve、contamination class。これは飾りのhard sci-fiではない。プレイヤーへの約束だ。ゲームがpressure ratingを名付けるなら、そのratingが何を買い、越えた時に何が起こるかを感じられるべきだ。
+
+同じ規則が物語を守る。contract numberはcallに答えられる者を変えるならflavorではない。bathydrop scratchはimpact前にascent systemが発火したことを示すなら装飾ではない。flooded roomはpump stateが公式sequenceと矛盾するならbackgroundではない。海が読めるのは、evidenceがsurfaces、costs、failure modesに結び付くからだ。
+
+## 人間の部分は仕事である
+
+下降を痛くするために、ゲームは植民地に秘密の親を埋める必要がない。HECTON-8が人間的なのは、仕事が痕跡を残すからだ。shift boards、meal tags、tool lockers、終わっていないrepair、切られたinsulation、怒ったmaintenance notesは、説明台詞にはできないことをする。悲劇として理解する前に、colonyを労働として感じさせる。
+
+Professional guiltはbloodline coincidenceより強いhookだ。Marauderは、受け入れてはいけないものを認識できるだけの知識を持つ。clean formがriskを隠す方法を知っている。emergency repairとliability phraseの違いを知っている。古いDeep Reach systemsが、protagonistがかつて信じたprocedureにまだ応答する時、帰還はmelodramaなしで個人的になる。
+
+Atlasも同じ人間的問題の内側にある。spoiler gateの下で待つmagical monsterではない。人を守るはずだったfunctionを保つために訓練されたemergency maintenance intelligenceとして始まった。pressure、delay、壊れたprioritiesの中で、repairはwitnessとdangerに同時になる。
+
+## HECTON-8の読み方
+
+materialから始める。部屋が何をするために作られ、実際には何をしたのか、その差で誰が得をし、damageを生き残ったproofは何かを問う。routeが安全に見えるなら、誰がratedしたかを問う。voiceがrescueと言うなら、誰がreceiverを所有するかを問う。contractがcargoと言うなら、なぜそのcargoに名前があるかを問う。
+
+大きな物語は銀河を救うspeechではない。悪いlien、損傷したcapsule、有用な記憶を持つ一人のworkerをめぐるpressure problemだ。海は狭まる。契約は狭まる。route windowは狭まる。その中でプレイヤーは、一つのscan、一つのsample、一つのrepaired systemずつchain of proofを作る。
+
+HECTON-8は物理的だから読めるべきだ。重要なものにはsurface、cost、failure mode、witnessがある。最初の記事がここから始まるのは、それがゲームの約束だからだ。書類が何を沈めるために作られたのかを知るまで、pressureを生き延びる。
 
 <!-- External Site; generated from P456_SITE_HOME_LONGFORM_BRIEF/ja_JP. -->

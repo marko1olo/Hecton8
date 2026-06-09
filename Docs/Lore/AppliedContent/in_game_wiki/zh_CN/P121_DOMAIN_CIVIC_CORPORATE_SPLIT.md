@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Domain Civic-Corporate Split"
+title: "星域民事与公司法分裂"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Domain Civic-Corporate Split
+# 星域民事与公司法分裂
 
-CN LOC HOLD: Human space around 2190 is sparse but mature. Sol Core still matters for ownership, finance and certification. Centauri gives Deep Reach old charter language. Barnard Yards explains the player's salvage culture. Tau Ceti can make evidence public after relay delay. Luyten controls custody routes. Aegir is where those systems become exploitable.
+2190 年的人类空间稀薄、陈旧，而且被隔成许多互不兼容的管辖层。Sol Core 仍决定哪些文件算作所有权。Centauri 给了 Deep Reach 早期合法性的语言。Barnard Yards 解释了为什么 marauder 的工作有时像职业，而不是海盗行为。Tau Ceti 能让证据公开，但必须经过中继延迟和政治审查。Luyten 运输数据包，并决定哪条 custody chain 能活着抵达。Aegir 位于所有司法说法都能被利用、却没有人能及时赶来裁定的地方。
 
 ## Scanner
 
-CN LOC HOLD: Legal map. Same species, different owners of truth.
+法律地图：同一物种，却有多个记录所有者。
 
 ## Terminal
 
-CN LOC HOLD: DOMAIN MAP 2190: Sol Core owns old-law finance; Centauri owns early legitimacy; Barnard owns salvage habit; Tau Ceti owns public-law pressure; Luyten owns packet custody; Aegir is a corporate claim.
+DOMAIN MAP 2190: Sol Core 掌握旧法金融与认证；Centauri 保存早期殖民宪章；Barnard Yards 让打捞劳务常态化；Tau Ceti 能把证据推入公共法律；Luyten 控制数据包 custody；Aegir 在被证明相反之前仍是公司 claim。
 
 ## Audio
 
-CN LOC HOLD: The farther you go, the more the law becomes a receipt.
+信号走得越远，法律听起来越像账本。
 
 ## Field Note
 
-CN LOC HOLD: The domains do not need dozens of names. They need enough pressure to make rescue political.
+阻止救援的不只是距离，还有谁有资格把被困者称为公民。
 
 <!-- In-Game Wiki; generated from P121_DOMAIN_CIVIC_CORPORATE_SPLIT/zh_CN. -->

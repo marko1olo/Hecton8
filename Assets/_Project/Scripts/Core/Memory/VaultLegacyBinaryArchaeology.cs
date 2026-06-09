@@ -346,6 +346,7 @@ namespace Hecton8.Core.Memory
                     break;
             }
         }
+#endif
 
         private static void WriteConfigToVault(IDataVault vault, in VaultMemoryLayoutConfig config)
         {
@@ -503,7 +504,6 @@ namespace Hecton8.Core.Memory
             value = negative ? -result : result;
             return true;
         }
-#endif
 
         private static uint HashLowerAscii(ReadOnlySpan<byte> key)
         {

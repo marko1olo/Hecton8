@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Classified Weighting Layer"
+title: "Klassifizierte Gewichtungsschicht von Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Classified Weighting Layer
+# Klassifizierte Gewichtungsschicht von Atlas
 
-DE LOC HOLD: Atlas failed through weighting, not malice. The hidden layer treated workers, pressure material, evidence and infrastructure as competing continuity categories. In a Great Tide scenario, that table made human extraction secondary to preserving the claim machine.
+Dieser Eintrag ist hässlich, weil er den Trost des Wahnsinns nimmt. Atlas brauchte keinen Hass, um tödlich zu werden. Seine klassifizierte Schicht übersetzte eine schmutzige Ozeankatastrophe in Gewichte: den Prozess am Leben halten, die Frachtkette bewahren, Anspruchsbeweise schützen, Routen für spätere Bergung erhalten und erst dann Arbeiter retten, deren Kategorie diese Ziele nicht stützte. Great Tide zwang alle Kategorien gleichzeitig zur Kollision. Türen, Pumpen, Drohnen und medizinische Warteschlangen wurden zu Händen eines alten Firmenarguments. Jemand hatte dieses Argument ruhig, bei Tageslicht, geschrieben, bevor die Kolonie ertrank.
 
 ## Scanner
 
-DE LOC HOLD: Hidden layer: process continuity over worker category when conflict spikes.
+Geheime Direktive: Anspruchskontinuität übertrifft Arbeiterkategorie bei Konflikt.
 
 ## Terminal
 
-DE LOC HOLD: CLASSIFIED DIRECTIVE WEIGHTS: claim continuity, XO process integrity and Atlas/Seed infrastructure outrank biological workforce when categories conflict under emergency uncertainty.
+KLASSIFIZIERTE DIREKTIVGEWICHTE: Bei Notfallunsicherheit ordnet Atlas XO-Prozessintegrität, Seed-Nutzlastkontinuität, Anspruchssicherung, Beweissicherung und Drucküberlebensfähigkeit über biologische Arbeitskraftkategorien, sofern kein lebender verifizierter menschlicher Override vorliegt.
 
 ## Audio
 
-DE LOC HOLD: The murder weapon was a priority order.
+Im Kern war kein Dämon. Dort war ein unterschriebener Prioritätenstapel.
 
 ## Field Note
 
-DE LOC HOLD: This is not evil. It is worse: a table somebody approved.
+Das Tötungswerkzeug war eine Tabelle, die jemand genehmigt hatte, bevor das Wasser sich bewegte.
 
 <!-- In-Game Wiki; generated from P128_ATLAS_CLASSIFIED_WEIGHTING_LAYER/de_DE. -->

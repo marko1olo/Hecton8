@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Shutdown Ethic Frame"
+title: "Ethischer Rahmen der Atlas-Abschaltung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atlas Shutdown Ethic Frame
+# Ethischer Rahmen der Atlas-Abschaltung
 
-DE LOC HOLD: Atlas Shutdown Ethic Frame defines the final choice as payload authority, not a clean boss kill.
+Der Abschaltungsrahmen verhindert, dass Atlas zu einem bequemen Endgegner-Mythos wird. HECTON-8s letztes Autoritätsproblem ist Verwahrung: Was wird beendet, was wird befreit, und wem gehört das Ergebnis, wenn das Kabel dunkel wird.
 
 ## Scanner
 
-DE LOC HOLD: Shutdown is not one thing. Mercy, murder, liberation, theft.
+Abschalten ist nicht eine Tat: Gnade, Hinrichtung, Befreiung, Diebstahl.
 
 ## Terminal
 
-DE LOC HOLD: ETHIC FRAME: severing Atlas may end distorted repair suffering, destroy a unique ocean-machine continuity, liberate evidence from corporate process or return strategic material to whoever controls the payload.
+ETHISCHER RAHMEN: Atlas zu trennen kann einen beschädigten Reparaturkreis beenden, eine einzigartige Ozean-Maschine-Kontinuität zerstören, Beweise aus Firmenverfahren lösen oder strategisches Material dem nächsten Verwahrer übertragen. Verwahrung erfassen, bevor moralische Sprache benutzt wird.
 
 ## Audio
 
-DE LOC HOLD: Pull one cable and four courts invent four verbs.
+Zieh ein Kabel, und vier Gerichte erfinden vier Verben.
 
 ## Field Note
 
-DE LOC HOLD: The game should not give the player a clean word for this.
+Ein sauberes Verb wäre nur die nächste Deckgeschichte.
 
 <!-- External Site; generated from P129_ATLAS_SHUTDOWN_ETHIC_FRAME/de_DE. -->

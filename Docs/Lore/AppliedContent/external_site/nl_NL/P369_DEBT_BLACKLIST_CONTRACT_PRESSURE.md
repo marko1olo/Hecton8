@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Contractdruk door Schuld en Blacklist"
+title: "Druk van Schuld-Blacklistcontract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Contractdruk door Schuld en Blacklist
+# Druk van Schuld-Blacklistcontract
 
-HECTON-8 kadert zijn protagonist via grenseconomie in plaats van lot. Schuld, blacklists, claim-pool-bewaring, zuurstofkrediet, kooi-toegang en oude Deep Reach-credentials maken het salvage-contract dwingend zonder de speler hulpeloos te maken.
+Druk van Schuld-Blacklistcontract verklaart waarom een bekwame voormalige Deep Reach-werker Marauder wordt op HECTON-8. Het contract heeft geen ontvoering nodig. Het heeft een blacklist nodig, een berth-ledger, oxygen credit en een routevenster dat niet wacht.
 
-## Scanner
-
-Retentierechtmelding gekoppeld aan Black Keel-bewaring. Weigeren blijft legaal, maar houdt je aan de grond: geen kooi, geen schone zuurstofkrediet, geen routevenster uit Aegir.
-
-## Terminal
-
-CLAIMAANVAARDING / BLACKLIST-VERLICHTINGSVENSTER
-contractorstatus: schuldgebonden Marauder
-drager: Black Keel claim-pool-bewaring
-verlichtingsvoorwaarden: terugwinbare massa, bewijs van bewaring, ontvanger-compliance
-foutstatus: blacklist blijft actief; toegang tot kooi geweigerd; zuurstofwelzijn wordt factureerbare steun.
-
-## Audio
-
-Dit was geen ontvoering. Het was het soort keuze dat de grens als vrijheid verkoopt: teken, duik, of blijf schoon op papier en vast in de praktijk.
-
-## Field Note
-
-Het retentierecht wees geen wapen aan. Het wees naar de luchtrekening, de kooienlijst en het volgende routevenster.
+Black Keel biedt werk binnen die druk. De claim accepteren geeft de operator een pad terug naar beweging, maar elk deel van dat pad wordt gemeten: recoverable mass, custody proof, receiver compliance, debt relief. Weigeren houdt de handen op papier schoon terwijl praktische routes sluiten. Dat is de wreedheid van het contract: het laat een keuze en prijst één kant tot het nauwelijks nog een keuze is.
 
 <!-- External Site; generated from P369_DEBT_BLACKLIST_CONTRACT_PRESSURE/nl_NL. -->

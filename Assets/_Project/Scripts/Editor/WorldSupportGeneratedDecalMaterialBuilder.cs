@@ -19,6 +19,7 @@ namespace Hecton8.EditorTools
         public const string LeakRustMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_LeakRustBiofilmDecal.mat";
         public const string SaltMineralMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_SaltMineralDepositDecal.mat";
         public const string InstrumentGlassSmudgeMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_InstrumentGlassSmudgeDecal.mat";
+        public const string ViewportGlassEdgeMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_ViewportGlassEdgeWearDecal.mat";
         public const string PressureGlassCrackMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_PressureGlassCrackDecal.mat";
         public const string WarningStripeMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_WarningStripeDecal.mat";
         public const string CutterScorchMaterialPath = OutputFolder + "/MAT_B34_WorldSupport_CutterScorchDecal.mat";
@@ -46,6 +47,12 @@ namespace Hecton8.EditorTools
                 "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3426_instrument_glass_smudge_alpha_decal_atlas_AlphaCandidate.png",
                 new Color(0.72f, 0.86f, 0.92f, 0.38f),
                 "Instrument glass smudge support decal uses Batch34 glass wear atlas for viewport and panel overlays."),
+            new DecalMaterialSpec(
+                ViewportGlassEdgeMaterialPath,
+                "B34-3418",
+                "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/glass_decal/TX_B34-3418_thick_viewport_glass_edge_decal_atlas_AlphaCandidate.png",
+                new Color(0.70f, 0.88f, 0.96f, 0.42f),
+                "Viewport glass edge support decal uses regenerated Batch34 glass-edge atlas for cockpit, scanner, and pressure-window rim wear."),
             new DecalMaterialSpec(
                 PressureGlassCrackMaterialPath,
                 "B34-3427",

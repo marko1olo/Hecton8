@@ -19,6 +19,8 @@ localization_flags: 1
 
 # Systemträger-Tug-Stack
 
-Black Keel soll nah genug wirken, um schuld zu sein, und fern genug, um unerreichbar zu bleiben. Es ist nicht das Schiff aus einer heroischen Rettungsfantasie. Es ist ein gemieteter Industriestack aus Trägerrumpf, Tug-Liegeplätzen, Frachtracks, Verwahrungssoftware, Kapselschienen und einem Ledger, der nie schläft. Dadurch ist es nützlich: Es kann Proben empfangen, Pakete beantworten, Orbit halten und Hardware in ein Fenster werfen. Dadurch ist es auch grausam: Jede nützliche Funktion hängt an Eigentum, Timing und Schuld. Der Spieler ist unter einer realen, anwesenden Maschine gestrandet, die strukturell nicht zum Beschützer werden will.
+Black Keel soll nah genug wirken, um Schuld zu tragen, und fern genug, um unerreichbar zu bleiben. Sie ist nicht das Schiff aus einer heroischen Rettungsfantasie. Sie ist ein gemieteter Industriestapel aus Trägerhülle, Schlepperliegeplätzen, Frachtregalen, Gewahrsamssoftware, Kapselabwurfschienen und einem Hauptbuch, das nie schläft.
+
+Darum ist sie nützlich: Sie kann Proben empfangen, Pakete beantworten, Orbit halten, Kapseln aussetzen und Hardware in ein enges Fenster schieben. Darum ist sie auch grausam: Jede nützliche Funktion hängt an Besitz, Timing, Quarantänesprache, Hitzemarge und Schuld. Ein Körper kann unter einer Maschine stranden, die real ist, anwesend ist, zuhört und strukturell nicht bereit ist, Schutzraum zu werden.
 
 <!-- External Site; generated from P344_SYSTEM_CARRIER_TUG_STACK/de_DE. -->

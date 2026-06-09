@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Atlas Service Basin POI Kit"
+title: "Atlas服务池证据套件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Atlas Service Basin POI Kit
+# Atlas服务池证据套件
 
-ZH LOC HOLD: The Atlas service basin should ground the final zone in engineering. The horror is classification failure at industrial scale.
+Atlas服务池应把最终深度固定在工程逻辑上。维护轨道、活体密封剂和接收插座显示出一个系统：它试图修复压力基础设施，却仍挂着错误的类别表。
 
 ## Scanner
 
-ZH LOC HOLD: POI kit: service basin. Industrial rails, living sealant and worker categories share one repair plan.
+POI证据套件：服务池混合工业轨道、活体密封剂、工人类别和接收器插座。
 
 ## Terminal
 
-ZH LOC HOLD: SERVICE BASIN KIT: maintenance rail, tissue-iron seal, old colony category, payload receiver socket and severance risk marker.
+服务池套件：维护轨道、组织铁密封、旧殖民地类别表、载荷接收插座、切断风险标记、生长夹、工具托架。
 
 ## Audio
 
-ZH LOC HOLD: It did not build a temple. It forgot the difference between temple and workshop.
+它没有祈祷。它安排维护，直到类别崩坏。
 
 ## Field Note
 
-ZH LOC HOLD: POI evidence kit: Atlas Service Basin anchors final-depth repair, spoiler-gated art, and payload receiver decisions.
+掠夺者备注：触碰插座前先扫描类别表。服务池也许会通过改变航路对你的判定来修好航路。
 
 <!-- In-Game Wiki; generated from P390_ATLAS_SERVICE_BASIN_POI_KIT/zh_CN. -->

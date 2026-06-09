@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Cable Reef Relay Yard POI Kit"
+title: "ケーブルリーフ中継ヤード証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Cable Reef Relay Yard POI Kit
+# ケーブルリーフ中継ヤード証拠キット
 
-JA LOC HOLD: Cable reefs make the game's biomechanical horror functional. The player needs what they are afraid to touch.
+中継ヤードは嫌悪感を工具の規律に変える。ケーブルジャケットは割れ、絶縁は剥がれ、Atlasサービス膜は同じ面を共有する設計ではなかったソケットをまたいでいる。きれいな一太刀が、まだ信号を運ぶ唯一の道を壊すことがある。
 
-## Scanner
-
-JA LOC HOLD: POI kit: relay cable is alive enough to conduct and wrong enough to misroute.
-
-## Terminal
-
-JA LOC HOLD: RELAY YARD KIT: acoustic spine socket, biofilm bridge, cut warning, pinger response and Atlas service scar.
-
-## Audio
-
-JA LOC HOLD: Do not strip all growth. Some of it is carrying your signal.
-
-## Field Note
-
-JA LOC HOLD: POI evidence kit: Cable Reef Relay Yard links route repair, relay components, scanner stages, and visible industrial reef damage.
+証拠キットは物理でできている。ピンガー応答、死脚マップ、切断警告、リレーフォーク、生きた物質が壊れたルートを引き継いだサービス痕。場所は奇妙である前に役に立たなければならない。危険は修理そのものにある。オペレーターを救いながら請求記録を汚す修理である。
 
 <!-- External Site; generated from P387_CABLE_REEF_RELAY_YARD_POI_KIT/ja_JP. -->

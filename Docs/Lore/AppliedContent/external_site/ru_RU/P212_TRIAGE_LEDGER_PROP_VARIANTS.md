@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Варианты triage ledger props"
+title: "Варианты реквизита триажных реестров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Варианты triage ledger props
+# Варианты реквизита триажных реестров
 
-RU LOC HOLD: Triage Ledger Prop Variants keep medical evidence procedural: pressure injury, route denial, equipment state, certification delay, and witness gap.
+Варианты реквизита триажных реестров определяют медицинскую улику как улику процесса. HECTON-8 использует реестры, чтобы связать травму, отказ давления, отказ маршрута, состояние оборудования и провалы свидетельской цепи. Так ужас остается системным: игрок читает не просто о том, что людей ранили, а о том, как колония превращала вред в маршрутные решения.
 
 ## Scanner
 
-Medical evidence должен показывать delay и routing, а не украшать комнату страданием.
+Медицинская улика должна раскрывать задержку и маршрутизацию, а не украшать комнату страданием.
 
 ## Terminal
 
-TRIAGE PROP RULE: каждая ledger entry связывает injury с pressure, route denial, equipment state или certification delay.
+TRIAGE PROP RULE: каждая запись реестра должна связывать травму с давлением, отказом маршрута, состоянием оборудования, задержкой сертификации или разорванной цепью свидетеля. Одной боли недостаточно. Реквизит должен показывать, кто мог двигаться, кого удержали и какая система сделала задержку процедурной.
 
 ## Audio
 
-RU LOC HOLD: Pain is not proof until the route bears the mark.
+Боль не улика, пока маршрут не несет метку.
 
 ## Field Note
 
-Variants: crush-status shorthand, oxygen debt mark, route hold crossout, Atlas stabilization note, witness hash gap.
+Варианты: шифр crush-status, метка кислородного долга, зачеркнутый route hold, заметка стабилизации Atlas, разрыв witness hash.
 
 <!-- External Site; generated from P212_TRIAGE_LEDGER_PROP_VARIANTS/ru_RU. -->

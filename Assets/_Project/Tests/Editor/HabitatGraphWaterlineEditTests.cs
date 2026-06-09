@@ -11,14 +11,20 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Construction", "HabitatGraphManager.cs");
             string resolveBody = ExtractMethodBody(source, "private float ResolveRuntimeSeaLevelY()");
+            string oceanSanitizerBody = ExtractMethodBody(source, "private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)");
+            string fallbackSanitizerBody = ExtractMethodBody(source, "private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)");
 
             StringAssert.Contains("private const float DefaultSeaLevelY = OceanSurfaceAtmosphereConstants.DefaultSeaLevel;", source);
+            StringAssert.Contains("TryResolveOceanSeaLevelY(oceanKinematics.SeaLevel, out float oceanSeaLevelY)", resolveBody);
             StringAssert.Contains("TryResolveSeaLevelY(atmosphereReadModel.SeaLevelY, out float seaLevelY)", resolveBody);
             StringAssert.Contains("? seaLevelY", resolveBody);
             StringAssert.Contains(": DefaultSeaLevelY;", resolveBody);
+            StringAssert.Contains("private static bool TryResolveOceanSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
             StringAssert.Contains("private static bool TryResolveSeaLevelY(float candidateSeaLevelY, out float seaLevelY)", source);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", source);
-            StringAssert.Contains("math.abs(candidateSeaLevelY) <= 1000f", source);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", oceanSanitizerBody);
+            StringAssert.DoesNotContain("math.abs(candidateSeaLevelY) > 0.0001f", oceanSanitizerBody);
+            StringAssert.Contains("math.abs(candidateSeaLevelY) > 0.0001f", fallbackSanitizerBody);
+            StringAssert.Contains("WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY", fallbackSanitizerBody);
             StringAssert.Contains("seaLevelY = DefaultSeaLevelY;", source);
             StringAssert.DoesNotContain("math.isfinite(atmosphereReadModel.SeaLevelY)", resolveBody);
             StringAssert.DoesNotContain("? atmosphereReadModel.SeaLevelY", resolveBody);

@@ -340,6 +340,40 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("PlayerMovement", cacheRuntime);
         }
 
+        [Test]
+        public void ScanMarkerSystemUsesRuntimeMovementSnapshotAndClearsPlayerBinding()
+        {
+            string source = ReadSource("_Project/Scripts/HectonScanMarkerSystem.cs");
+            string onDisable = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroy = ExtractMethodBody(source, "private void OnDestroy()");
+            string serviceReplaced = ExtractMethodBody(source, "public void OnGlobalRegistryServiceReplaced(");
+            string refreshPresentation = ExtractMethodBody(source, "private bool RefreshPresentationReferencesFromCachedContext()");
+            string cacheContext = ExtractMethodBody(source, "private void CachePlayerContextCold()");
+            string resolveAup = ExtractMethodBody(source, "private bool TryResolvePlayerAup(");
+
+            StringAssert.Contains("_cachedPlayerContext = null;", onDisable);
+            StringAssert.Contains("_playerTransform = null;", onDisable);
+            StringAssert.Contains("_cachedPlayerContext = null;", onDestroy);
+            StringAssert.Contains("_playerTransform = null;", onDestroy);
+            StringAssert.Contains("IPlayerRuntimeContext previousContext = _cachedPlayerContext;", serviceReplaced);
+            StringAssert.Contains("Transform previousPlayerTransform = previousContext != null ? previousContext.PlayerTransform : null;", serviceReplaced);
+            StringAssert.Contains("ReferenceEquals(_playerTransform, previousPlayerTransform)", serviceReplaced);
+            StringAssert.Contains("_playerTransform = null;", serviceReplaced);
+            StringAssert.Contains("context != null && context.IsInitialized", refreshPresentation);
+            StringAssert.Contains("_cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;", cacheContext);
+            StringAssert.Contains("playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)", resolveAup);
+            StringAssert.Contains("(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", resolveAup);
+            StringAssert.Contains("playerAup = movementState.PredictedAup;", resolveAup);
+            StringAssert.Contains("playerAup.IsFinite()", resolveAup);
+            Assert.Less(
+                resolveAup.IndexOf("playerContext.TryGetMovementRuntimeState", StringComparison.Ordinal),
+                resolveAup.IndexOf("TryResolveAupFromRuntimeOrigin", StringComparison.Ordinal));
+            StringAssert.DoesNotContain("_cachedPlayerMovement", source);
+            StringAssert.DoesNotContain("playerContext.PlayerMovement", source);
+            StringAssert.DoesNotContain("HectonPlayerMovement movement", source);
+            StringAssert.DoesNotContain("PlayerMovement", cacheContext);
+        }
+
         private static ScannerSpatialEntityDTO MakeEntity(uint hash, double3 aup, uint metadataIndex)
         {
             return new ScannerSpatialEntityDTO

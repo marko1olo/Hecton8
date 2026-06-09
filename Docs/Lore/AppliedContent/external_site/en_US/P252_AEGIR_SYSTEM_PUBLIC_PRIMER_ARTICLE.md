@@ -19,25 +19,10 @@ localization_flags: 0
 
 # Aegir System Public Primer
 
-Aegir is the host system around HECTON-8, and it matters in every practical sense. Its moon ladder shapes tides and approach windows. Its relay geometry lets evidence travel faster than rescue mass. Its carrier orbits make Black Keel present but not instantly helpful. There is no miracle drive, no ansible rescue, and no clean emergency button. The public version of Aegir should feel reachable enough to be cruel: connected, scheduled, priced, and still too slow for the people trapped below.
+Aegir matters because it makes the sky practical. The system around HECTON-8 is not a decorative star map; it is a machine of moons, windows, radiation weather, relay shadows, ice-scatter hazards and carrier transfer geometry. A message can leave in a narrow signal window while a recovery body remains impossible. A sample can be valuable and still miss quarantine timing. Black Keel can be present in the system and still not be above you in the way a frightened diver wants.
 
-## Scanner
+This is how HECTON-8 stays hard-sci-fi without becoming homework. The player does not need an orbital mechanics lecture to feel Aegir. They feel it when the signal clears but the lift does not, when storm noise corrupts a relay, when a moon shadow turns a safe uplink into a dead slot, when a tide window decides whether a canyon route is survivable.
 
-Aegir is not backdrop. It is a timetable with gravity, radiation, tides, relay lag, and expensive mass windows.
-
-## Terminal
-
-PUBLIC ARTICLE TIER / AEGIR SYSTEM
-allowed: host system, HECTON-8 moon role, tide windows, relay geometry, carrier delay, no-FTL route language
-gated: ending payload routing, hidden receiver priority, exact late-game ephemeris locks
-editor note: explain delay without making the setting feel unreachable.
-
-## Audio
-
-The system is close enough to answer. That is the cruel part. It is not close enough to lift a body on command.
-
-## Field Note
-
-Do not call Aegir distant and stop there. Name what distance does: prices lift, delays bodies, and lets evidence outrun rescue.
+Aegir is also the reason the frontier is not empty. Other moons carry relay roles, cold claims, dead beacons, traffic scars and quarantine pressure. HECTON-8 is the playable crisis, not the whole system. The wider ladder makes rescue expensive, salvage legal, evidence delayed and every return window feel earned.
 
 <!-- External Site; generated from P252_AEGIR_SYSTEM_PUBLIC_PRIMER_ARTICLE/en_US. -->

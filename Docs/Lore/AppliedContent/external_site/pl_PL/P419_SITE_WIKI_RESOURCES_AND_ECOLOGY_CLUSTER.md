@@ -19,6 +19,14 @@ localization_flags: 1
 
 # Zasoby i ekologia
 
-Klaster zasobów ma pokazywać łańcuchy procesu, nie listę łupu. Minerał może pochodzić z drowned crust, osadu brine trap, śladu vent heat, starej maszyny albo tkanki, która urosła wokół metalu po ingerencji Atlas. Blue debt wiąże ekonomię z geologią: to, co można wynieść w górę, zostało już wycenione wyżej. Ekologia nie jest tłem ani zoo. Fauna reaguje na dźwięk, ciśnienie, światło, ślad soli i uszkodzone repair paths. Dlatego zasoby, biota i dowody trzeba czytać razem: jedna próbka może zasilić narzędzie, ujawnić wypadek i pokazać, gdzie Atlas pomylił naprawę z użyciem żywego.
+Pierwszy błąd to nazwać zasoby HECTON-8 surowcem. Na dole prawie nic użytecznego nie przychodzi nietknięte. Odłamek Drowned Crust niesie historię ciśnienia. Żyła blue debt zachowuje pamięć ciepła, solanki i metody wydobycia. Płyta pancerza może być osłoną rafy, nieudanym uszczelnieniem, skórą kabla wyhodowaną przez Atlas i dowodem prawnym, zanim Marauder włoży ją do pojemnika.
+
+Dlatego strony zasobów stoją obok stron ekologii. Stara kolonia nie wydobywała martwego dna. Deep Reach ciął drabiny solankowe, półki mineralne karmione kominami, zamulone maszyny i żywe systemy filtrujące, które znały już rytm księżyca. Po katastrofie Atlas wciskał model naprawy we wszystko, co mogło zamknąć przeciek albo przenieść sygnał. Biofilm stał się przewodnikiem. Mata korzeniowa stała się uszczelką. Oznakowana fauna stała się ruchomym sprzężeniem zwrotnym.
+
+Zwierzęta nie są skrzyniami z lootem i płetwami. Czytają wibrację, ciepło, spadek światła, chemię krwi, ślady soli i wzruszony muł. Roślinożerca może odsłonić bezpieczne strefy skrobania, robiąc to, co zawsze robił. Cień drapieżnika może wskazać korytarz niosący zły impuls akustyczny. Oznakowane zwierzę może być trasą naprawy, świadkiem i zagrożeniem w jednym przejściu.
+
+Blue debt brudzi rachunek moralny. Najlepsza próbka może być matowa, zapieczętowana i brzydka, bo zachowała stan ciśnienia dowodzący miejsca powstania. Jasny odłamek może być bezwartościowy, jeśli komin wypłukał z niego pamięć. Zabranie jednego albo drugiego może zmienić przepływ, obudzić łowcę, uszkodzić łatę Atlas albo zetrzeć ślad wypadku z epoki robotników ważniejszy niż wypłata.
+
+Użyteczne pytanie nigdy nie brzmi tylko, co da się zebrać. Brzmi, co ocean robił z tym materiałem, zanim ludzka ręka weszła w łańcuch. HECTON-8 staje się czytelny, kiedy geologia, życie, maszyny i custody są traktowane jak jeden system pamiętający szkodę.
 
 <!-- External Site; generated from P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER/pl_PL. -->
