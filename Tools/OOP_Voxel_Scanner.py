@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import json
 import re
+import ast
+import operator
 from pathlib import Path
 
 
@@ -154,6 +156,43 @@ def classify_native_allocation_hits(hits):
     return buckets
 
 
+def _safe_eval_node(node):
+    if isinstance(node, ast.Constant):
+        return node.value
+    elif isinstance(node, ast.BinOp):
+        left = _safe_eval_node(node.left)
+        right = _safe_eval_node(node.right)
+        ops = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.FloorDiv: operator.floordiv,
+            ast.Mod: operator.mod,
+            ast.Pow: operator.pow,
+            ast.LShift: operator.lshift,
+            ast.RShift: operator.rshift,
+            ast.BitOr: operator.or_,
+            ast.BitXor: operator.xor,
+            ast.BitAnd: operator.and_,
+        }
+        if type(node.op) not in ops:
+            raise ValueError(f"Unsupported operator {type(node.op)}")
+        return ops[type(node.op)](left, right)
+    elif isinstance(node, ast.UnaryOp):
+        operand = _safe_eval_node(node.operand)
+        ops = {
+            ast.UAdd: operator.pos,
+            ast.USub: operator.neg,
+            ast.Invert: operator.invert,
+        }
+        if type(node.op) not in ops:
+            raise ValueError(f"Unsupported operator {type(node.op)}")
+        return ops[type(node.op)](operand)
+    elif isinstance(node, ast.Expression):
+        return _safe_eval_node(node.body)
+    raise ValueError(f"Unsupported node {type(node)}")
+
 def eval_int_expr(expr, constants):
     normalized = expr.strip()
     normalized = normalized.replace("<<", " << ")
@@ -164,7 +203,7 @@ def eval_int_expr(expr, constants):
     if not re.fullmatch(r"[0-9+\-*/()<> \t]+", normalized):
         return None
     try:
-        return int(eval(normalized, {"__builtins__": {}}, {}))
+        return int(_safe_eval_node(ast.parse(normalized, mode='eval')))
     except Exception:
         return None
 
