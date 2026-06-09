@@ -44,6 +44,7 @@ namespace MantisLODEditor
         private int current_lod = -1;
 
         private Component[] allBasicRenderers = null;
+        private Component[] allMeshes = null;
 
         // How often to check lod changes, default four times per second.
         // You may increase the value to balance the load if you have hundreds of 3d models in the scene.
@@ -83,6 +84,7 @@ namespace MantisLODEditor
             Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
             foreach (Component child in allBasicRenderers)
             {
+                                if (child == null) continue;
                 Renderer rend = (Renderer)child;
                 Vector3 center = rend.bounds.center;
                 float radius = rend.bounds.extents.magnitude;
@@ -114,6 +116,7 @@ namespace MantisLODEditor
             Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
             foreach (Component child in allBasicRenderers)
             {
+                                if (child == null) continue;
                 Renderer rend = (Renderer)child;
                 Vector3 center = rend.bounds.center;
                 float radius = rend.bounds.extents.magnitude;
@@ -154,11 +157,10 @@ namespace MantisLODEditor
                     bool visable = false;
                     if (!culled)
                     {
-                        allBasicRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(Renderer)));
                         foreach (Component child in allBasicRenderers)
                         {
-                            if (((Renderer)child).isVisible) visable = true;
-                            break;
+                            if (child == null) continue;
+                            if (((Renderer)child).isVisible) { visable = true; break; }
                         }
                     }
                     // we only change levels when the game object had been culled by ourselves or is visable
@@ -168,7 +170,6 @@ namespace MantisLODEditor
                         // we only calculate ratio of screen when the main camera is active in hierarchy
                         if (Camera.main != null && Camera.main.gameObject != null && Camera.main.gameObject.activeInHierarchy)
                         {
-                            allBasicRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(Renderer)));
                             if (lod_strategy == 0) ratio = ratio_of_screen();
                             if (lod_strategy == 1) ratio = ratio_of_distance(disappear_distance);
                         }
@@ -179,9 +180,9 @@ namespace MantisLODEditor
                             if (!culled)
                             {
                                 // cull me
-                                allBasicRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(Renderer)));
                                 foreach (Component child in allBasicRenderers)
                                 {
+                                if (child == null) continue;
                                     ((Renderer)child).enabled = false;
                                 }
                                 culled = true;
@@ -193,9 +194,9 @@ namespace MantisLODEditor
                             if (culled)
                             {
                                 // show me
-                                allBasicRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(Renderer)));
                                 foreach (Component child in allBasicRenderers)
                                 {
+                                if (child == null) continue;
                                     ((Renderer)child).enabled = true;
                                 }
                                 culled = false;
@@ -209,12 +210,7 @@ namespace MantisLODEditor
                             // lod changed
                             if (current_lod != lod)
                             {
-                                Component[] MeshFilters = (Component[])(gameObject.GetComponentsInChildren(typeof(MeshFilter)));
-                                Component[] SkinnedMeshRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(SkinnedMeshRenderer)));
-                                Component[] Components = new Component[MeshFilters.Length + SkinnedMeshRenderers.Length];
-                                Array.Copy(MeshFilters, 0, Components, 0, MeshFilters.Length);
-                                Array.Copy(SkinnedMeshRenderers, 0, Components, MeshFilters.Length, SkinnedMeshRenderers.Length);
-                                int total_triangles_count = MantisLODEditorUtility.SwitchRuntimeLOD(progressiveMesh, mesh_lod_range, lod, Components);
+                                int total_triangles_count = MantisLODEditorUtility.SwitchRuntimeLOD(progressiveMesh, mesh_lod_range, lod, allMeshes);
                                 // update read only status
                                 if (lodHint) lodHint.text = "Level Of Detail: " + lod.ToString();
                                 if (triangleHint) triangleHint.text = "Triangle Count: " + (total_triangles_count / 3).ToString();
@@ -254,10 +250,10 @@ namespace MantisLODEditor
                 }
                 Component[] MeshFilters = (Component[])(gameObject.GetComponentsInChildren(typeof(MeshFilter)));
                 Component[] SkinnedMeshRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(SkinnedMeshRenderer)));
-                Component[] Components = new Component[MeshFilters.Length + SkinnedMeshRenderers.Length];
-                Array.Copy(MeshFilters, 0, Components, 0, MeshFilters.Length);
-                Array.Copy(SkinnedMeshRenderers, 0, Components, MeshFilters.Length, SkinnedMeshRenderers.Length);
-                MantisLODEditorUtility.GenerateRuntimeLOD(progressiveMesh, Components, optimize_on_the_fly);
+                allMeshes = new Component[MeshFilters.Length + SkinnedMeshRenderers.Length];
+                Array.Copy(MeshFilters, 0, allMeshes, 0, MeshFilters.Length);
+                Array.Copy(SkinnedMeshRenderers, 0, allMeshes, MeshFilters.Length, SkinnedMeshRenderers.Length);
+                MantisLODEditorUtility.GenerateRuntimeLOD(progressiveMesh, allMeshes, optimize_on_the_fly);
 
                 // get all renderers
                 allBasicRenderers = (Component[])(gameObject.GetComponentsInChildren(typeof(Renderer)));
@@ -286,6 +282,7 @@ namespace MantisLODEditor
             {
                 MantisLODEditorUtility.FinishRuntimeLOD(progressiveMesh);
                 allBasicRenderers = null;
+                allMeshes = null;
 
                 working = false;
             }
