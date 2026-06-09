@@ -23,7 +23,7 @@ These pillars housed the primary geothermal power taps and the main supply eleva
 
 The upper levels of Sector 44 were designed for the corporate executives and high-ranking engineers.
 
-Known as the Promenades, these areas featured bioluminescent botanical gardens, luxury habitation modules, and expansive, reinforced-glass observation decks. Today, the Promenades are fully flooded. The luxury apartments have become nesting grounds for swarms of Trench Stalkers. The reinforced glass of the observation decks has shattered, allowing the abyssal flora—the Iron Kelp—to overgrown the once-pristine hallways.
+Known as the Promenades, these areas featured bioluminescent botanical gardens, luxury habitation modules, and expansive, reinforced-glass observation decks. Today, the Promenades are fully flooded. The luxury apartments have become nesting grounds for swarms of Trench Stalkers. The reinforced glass of the observation decks has shattered, allowing the abyssal flora—the Iron Kelp—to overgrow the once-orderly hallways.
 
 ## 4. The Industrial Depths
 

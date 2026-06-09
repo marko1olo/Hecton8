@@ -5467,7 +5467,7 @@ MonoBehaviour:
       - t: 11
         v: 3316959399674642492
       - t: 11
-        v: 98
+        v: 114
       - t: 255
         v: 254
       - t: 255
@@ -12581,6 +12581,18 @@ MonoBehaviour:
       - guiPreview
       - guiAdvanced
       - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
       - enableThermalWeathering
       - thermalIterations
       - talusAngleDegrees
@@ -12610,6 +12622,30 @@ MonoBehaviour:
         v: 567
       - t: 255
         v: 72
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 11
+        v: 9077945131406983169
+      - t: 11
+        v: 4
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 11
+        v: 9077945131406983169
+      - t: 11
+        v: 4
       - t: 3
         v: 0
       - t: 3
@@ -12741,6 +12777,18 @@ MonoBehaviour:
       - guiPreview
       - guiAdvanced
       - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
       - dropletCount
       - maxLifetime
       - seed
@@ -12788,6 +12836,30 @@ MonoBehaviour:
         v: 570
       - t: 255
         v: 72
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 11
+        v: 9077947330430238722
+      - t: 11
+        v: 4
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 11
+        v: 9077947330430238722
+      - t: 11
+        v: 4
       - t: 3
         v: 0
       - t: 3
@@ -12955,6 +13027,18 @@ MonoBehaviour:
       - guiPreview
       - guiAdvanced
       - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
+      - enabled
+      - id
+      - version
+      - guiPreview
+      - guiAdvanced
+      - guiDebug
       - rockSlopeThresholdDegrees
       - slopeBlendWidthDegrees
       - cavityStrength
@@ -12978,6 +13062,30 @@ MonoBehaviour:
         v: 573
       - t: 255
         v: 72
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 1
+      - t: 11
+        v: 9077949529453494279
+      - t: 11
+        v: 7
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 0
+      - t: 3
+        v: 1
+      - t: 11
+        v: 9077949529453494279
+      - t: 11
+        v: 7
       - t: 3
         v: 0
       - t: 3

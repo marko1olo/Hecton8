@@ -56,12 +56,12 @@
   "flow_path": "Data/Textures/AbyssalFlowField_LowTier_RGBA.png",
   "noise": {
     "blue_spectrum": {
-      "dc_power": 2.0642223717004526e-06,
-      "high_mean": 6063.30078125,
+      "dc_power": 5.806223271065392e-07,
+      "high_mean": 6063.30029296875,
       "low_mean": 252.36935424804688,
       "low_mean_to_mid_mean": 0.07326260954141617,
-      "low_peak": 1075.4688720703125,
-      "low_peak_to_mid_mean": 0.3122076988220215,
+      "low_peak": 1075.4686279296875,
+      "low_peak_to_mid_mean": 0.3122076392173767,
       "mid_mean": 3444.722412109375
     },
     "bytes": 262737,

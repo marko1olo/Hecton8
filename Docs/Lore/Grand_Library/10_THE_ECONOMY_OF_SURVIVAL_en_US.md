@@ -55,7 +55,7 @@ The pressure shows up as a chain of small, defensible temptations. One more cabi
 
 Beginners chase weight. Survivors chase context.
 
-Raw scrap pays when it is clean, heavy, movable and uncontested. HECTON-8 rarely offers that kind of kindness. A beam cut from a flooded module may be too contaminated to lift. A pressure plate may be worth less if removing it ruins the structure around it. A pristine component may become disputed property if the room log says it belonged to a crew still listed as unresolved.
+Raw scrap pays when it is clean, heavy, movable and uncontested. HECTON-8 rarely offers that kind of kindness. A beam cut from a flooded module may be too contaminated to lift. A pressure plate may be worth less if removing it ruins the structure around it. An intact component may become disputed property if the room log says it belonged to a crew still listed as unresolved.
 
 Proof changes the price. A nameplate beside a pressure log. A tool with a work order still cached in its local memory. A route marker matching a delayed evacuation stamp. A body tag tied to a manifest line that should have been closed. These things are small, but they make offices nervous. Nervous offices settle, delay, suppress or overpay. Any of those reactions can become useful to a prepared Marauder.
 

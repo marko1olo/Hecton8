@@ -1,4 +1,4 @@
-﻿# PROJECT_ATLAS
+# PROJECT_ATLAS
 
 Date: 2026-05-28
 Status: TOOL CONTRACT / STATIC DOMAIN INDEX
@@ -27,6 +27,11 @@ These phrases are intentionally preserved because local validators and data tool
 - 85 Identified Domains
 - observedAssemblyCount = 83
 - observedDomainIndexCount = 85
+- Audio
+- Hecton8.Audio.Propagation
+- Hecton8.Audio.Synthesis
+- Hecton8.Audio.Echolocation
+- DSP/presentation consumers; no gameplay authority
 
 Compatibility note: `observedAssemblyCount = 83` is a preserved legacy tool token, not the current asmdef count. Current static source reality on 2026-06-01 is recorded in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`: `171` first-party asmdefs under `Assets/_Project`; generated dependency detail lives in `Docs/Generated/DEPENDENCY_GRAPH.md`.
 

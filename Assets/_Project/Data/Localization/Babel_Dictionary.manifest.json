@@ -1,17 +1,239 @@
 {
-  "compiler": "Tools/BabelCompiler.py",
-  "status": "BABEL COMPILED",
-  "polishStatus": "VERIFIED MASTER GRADE",
-  "verificationBoundary": "STATIC_VERIFIED_UNITY_TOOLCHAIN_PENDING",
-  "endianness": "little",
-  "structPackPrefix": "<",
   "alignmentBytes": 16,
+  "binaryRuntimeContract": {
+    "fontDataFields": [
+      "language.scriptFlags",
+      "language.fontWeightMask"
+    ],
+    "lookup": "(languageHash, keyHash) -> entry.offset/entry.byteLength",
+    "rtxOverkillRule": "residentLayerMask=Core|World|Narrative; enable extra visual text metadata below",
+    "strippedDataField": "entry.layer",
+    "toasterRule": "residentLayerMask=Core; World/Narrative streamable by layer and sourceHash"
+  },
   "blobBytes": 1534512,
   "blobLimitBytes": 5242880,
-  "wordCount": 171309,
-  "entryCount": 32788,
+  "collisionResolutions": [],
+  "compiler": "Tools/BabelCompiler.py",
   "constantsCount": 12884,
-  "sourceCount": 46,
+  "endianness": "little",
+  "entryCount": 32788,
+  "languages": {
+    "ar_AR": {
+      "entryCount": 1244,
+      "fontWeightMask": 103,
+      "hash": "0x71C9CD02",
+      "payloadBytesPadded": 59296,
+      "scriptFlags": 9
+    },
+    "de_DE": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xB2EBDAB2",
+      "payloadBytesPadded": 56656,
+      "scriptFlags": 1
+    },
+    "en_US": {
+      "entryCount": 10394,
+      "fontWeightMask": 71,
+      "hash": "0x21C7F287",
+      "payloadBytesPadded": 340144,
+      "scriptFlags": 1
+    },
+    "es_ES": {
+      "entryCount": 2489,
+      "fontWeightMask": 71,
+      "hash": "0x4E7BB0DA",
+      "payloadBytesPadded": 113248,
+      "scriptFlags": 1
+    },
+    "fr_FR": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xCD420DFA",
+      "payloadBytesPadded": 57456,
+      "scriptFlags": 1
+    },
+    "hi_IN": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xE1B0B18C",
+      "payloadBytesPadded": 63728,
+      "scriptFlags": 17
+    },
+    "id_ID": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0x13493F02",
+      "payloadBytesPadded": 56192,
+      "scriptFlags": 1
+    },
+    "it_IT": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xD4E76102",
+      "payloadBytesPadded": 57408,
+      "scriptFlags": 1
+    },
+    "ja_JP": {
+      "entryCount": 1244,
+      "fontWeightMask": 95,
+      "hash": "0x17560E1B",
+      "payloadBytesPadded": 57488,
+      "scriptFlags": 69
+    },
+    "ko_KR": {
+      "entryCount": 1244,
+      "fontWeightMask": 95,
+      "hash": "0xA4EBE2EF",
+      "payloadBytesPadded": 56960,
+      "scriptFlags": 33
+    },
+    "pl_PL": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0x681F5B4A",
+      "payloadBytesPadded": 56336,
+      "scriptFlags": 1
+    },
+    "pt_BR": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xCDB6BCDE",
+      "payloadBytesPadded": 56688,
+      "scriptFlags": 1
+    },
+    "ru_RU": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0x13004742",
+      "payloadBytesPadded": 59552,
+      "scriptFlags": 3
+    },
+    "tr_TR": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0xC22E7FEA",
+      "payloadBytesPadded": 55904,
+      "scriptFlags": 1
+    },
+    "uk_UA": {
+      "entryCount": 1244,
+      "fontWeightMask": 71,
+      "hash": "0x113A92A0",
+      "payloadBytesPadded": 56496,
+      "scriptFlags": 3
+    },
+    "zh_CN": {
+      "entryCount": 2489,
+      "fontWeightMask": 95,
+      "hash": "0x6FA11795",
+      "payloadBytesPadded": 125808,
+      "scriptFlags": 5
+    },
+    "zh_TW": {
+      "entryCount": 1244,
+      "fontWeightMask": 95,
+      "hash": "0xBF112A23",
+      "payloadBytesPadded": 55888,
+      "scriptFlags": 5
+    }
+  },
+  "layerCounts": {
+    "core": 4590,
+    "narrative": 2550,
+    "world": 25648
+  },
+  "payloadMetrics": {
+    "deduplicatedPayloadEntries": 11235,
+    "deduplicatedSavedBytes": 900560,
+    "rawPayloadBytes": 1385248,
+    "uniquePayloadBytes": 484688
+  },
+  "polishStatus": "VERIFIED MASTER GRADE",
+  "qualityTiers": {
+    "High": {
+      "extraDataFields": [
+        "scriptFlags",
+        "fontWeightMask",
+        "layer",
+        "sourceHash"
+      ],
+      "fontMode": "CJK/RTL fallback hot for all installed languages",
+      "residentLayers": [
+        "Core",
+        "World",
+        "Narrative"
+      ],
+      "visualTextTreatment": "prebaked glitch table + stable severity buckets"
+    },
+    "Low": {
+      "extraDataFields": [],
+      "fontMode": "Regular/Bold only; defer CJK/RTL fallback until language switch",
+      "residentLayers": [
+        "Core"
+      ],
+      "visualTextTreatment": "no glitch expansion, no per-label material sweep"
+    },
+    "Middle": {
+      "extraDataFields": [
+        "scriptFlags",
+        "fontWeightMask"
+      ],
+      "fontMode": "Regular/Medium/Bold plus selected active-language fallback",
+      "residentLayers": [
+        "Core",
+        "World"
+      ],
+      "visualTextTreatment": "static warning tint only"
+    },
+    "Ultra": {
+      "extraDataFields": [
+        "scriptFlags",
+        "fontWeightMask",
+        "layer",
+        "sourceHash",
+        "paddedLength"
+      ],
+      "fontMode": "all font masks hot; high-resolution SDF fallback allowed",
+      "residentLayers": [
+        "Core",
+        "World",
+        "Narrative"
+      ],
+      "visualTextTreatment": "complex harmonic text-noise and richer diegetic terminal styling driven by sourceHash/layer"
+    }
+  },
+  "sourceCount": 28,
+  "sourceHashesSha256": {
+    "Assets/_Project/Data/Localization/BabelMocks/es_ES.json": "d91dbde65dd21dbc6288e698df27349c65de660ab8b4e8f71da4c0fe1ede7a54",
+    "Assets/_Project/Data/Localization/BabelMocks/zh_CN.json": "8679fed457c6dc920a9c7616f02691329488de6c9571a9739c82eb191df34742",
+    "Assets/_Project/Scripts/Arabic.json": "428dba0c0d0902ae2302a7b1a972f068f8c3f4eab8525f0805240b8c4bb394f0",
+    "Assets/_Project/Scripts/ChineseSimplified.json": "5e3b0e690c0d0e6c0291573ffbc67fc82f8e89ec0fe2838a9d3ac4965e2476a2",
+    "Assets/_Project/Scripts/ChineseTraditional.json": "e97d0b13327fb0ad3e52a15c11dc3c53cd3d8daf1fe422348c4de47bd0b43328",
+    "Assets/_Project/Scripts/English.json": "e2caea162113be7250a2e72316433f7af345508bb500dba51ba2346445396613",
+    "Assets/_Project/Scripts/French.json": "9a6e85f35a9b869d135ec3bca061a0ead4ebfe85178fe6c7d6470c8ee6a1ce70",
+    "Assets/_Project/Scripts/German.json": "b2338b7c160a4218d557edbeab732fc886d74716849ac98a5748d2e9cdd23748",
+    "Assets/_Project/Scripts/Hindi.json": "2afb7aa56019779d42af6e3ea3a0130301ea93f006144c4449ce4c4ecf478fbc",
+    "Assets/_Project/Scripts/Indonesian.json": "452b5a2a99e060cade4e9821f518185ece45372626876d80d72a6f3191711b70",
+    "Assets/_Project/Scripts/Italian.json": "b4fb27ac915128194288a84e9729e40dbc2691ba71e2db7def8b033e90520a33",
+    "Assets/_Project/Scripts/Japanese.json": "9187b22938f8fbef173d741deba93b443460f5ac36f4f40df3222dbe874574c1",
+    "Assets/_Project/Scripts/Korean.json": "92289d5f3c1aafe7ef1ec5eed961b96c6a0093f5f3bcf900c9219df2f484f954",
+    "Assets/_Project/Scripts/Polish.json": "11eb086cc71d05bc2abe896a78e8e9a4f93d0ccd0821bfcebdca8e3a5eb4c83d",
+    "Assets/_Project/Scripts/PortugueseBrazilian.json": "f7cbed7d102954ae16270efedf9cd5a108c7501a4b8af8d2550f4777ce847708",
+    "Assets/_Project/Scripts/Russian.json": "ae125e0bfb4a82d2c7cc5e6a89e0652cdc698e2763e269cd1623d9ea5b4866ae",
+    "Assets/_Project/Scripts/Spanish.json": "6a6351ef320ca9f0fd26a92bc18ea609f1b42b293b4e2d587a6dc0b157c238d0",
+    "Assets/_Project/Scripts/Turkish.json": "31201fddb11e5dd9d5c5dda819ad2f2d7494c74641bb112a4812b2048954d266",
+    "Assets/_Project/Scripts/Ukrainian.json": "47e16188017dd521d04a450539baf944fca8b85f49cb2d13d931c15451e68098",
+    "Docs/Design/HardwareAdaptiveUIScaler.json": "65b678a017f713e3f7fe52c2e6b5bf11fb3957052f3489f080d957412dc830e0",
+    "Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json": "11bd2b08dec7889efd9c592ccaa10590922ee89fe4a7eaa61c1d8e21dcd27a86",
+    "Docs/Design/Missions/Outpost_FailSafe_Handoff.json": "49fa8851b464df011b0245542b6d2038406c9bcb4af65437ec9a2bb9f8138d19",
+    "Docs/Design/VR_Comfort_Profile_Quest.json": "e82c1b3e5746bd95840cdd628d9591f00f96f7930495edb6bda00a73344448a2",
+    "Docs/Design/VR_Haptic_Waveforms_Quest.json": "c7245fe43062ebf6b8129f1c3e1ebedbae16965b045b9a08adaa99e2bfc3f0c6",
+    "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.metadata.json": "5e182f2dd08800123e090ee59b5f031e2658657e6edefefa74793a75f5157e99",
+    "Docs/Modding/Signal_Schema.json": "37e0e2edd9531d85f51b859c4dd251c23322b65b1f930e92a5ec8221bf571521",
+    "Docs/Reports/H8_Hash_Catalog_Audit.json": "536072f5c2ba449ce6f46b3f448bf20eb7752532a6066ee550f81a33b7e991c0",
+    "Tools/AiBattleSim_Report.json": "e7e02fb5fcbd011d86d2ec8bf25822f3018c584f2b908fa50c5206e9604b2eda"
+  },
   "sources": [
     "Assets/_Project/Data/Localization/BabelMocks/es_ES.json",
     "Assets/_Project/Data/Localization/BabelMocks/zh_CN.json",
@@ -32,23 +254,6 @@
     "Assets/_Project/Scripts/Spanish.json",
     "Assets/_Project/Scripts/Turkish.json",
     "Assets/_Project/Scripts/Ukrainian.json",
-    "Docs/AgentLogs/LoreChecker_CORP_FAILURE_ARCHIVIST.json",
-    "Docs/AgentLogs/LoreChecker_ENCYCLOPEDIA_LORE_BAKER.json",
-    "Docs/AgentLogs/LoreChecker_ENCYCLOPEDIA_TECHNICAL_WRITER.json",
-    "Docs/AgentLogs/LoreChecker_NARRATIVE_SEMANTIC_AUDITOR.json",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER.json",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_loop1.json",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_loop4.json",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_polish.json",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_rewrite_probe.json",
-    "Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_Readability_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_StatusLogConsistency_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json",
-    "Docs/AgentLogs/UI_UnityTemplateAudit_UX_ENGINEER.json",
     "Docs/Design/HardwareAdaptiveUIScaler.json",
     "Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json",
     "Docs/Design/Missions/Outpost_FailSafe_Handoff.json",
@@ -57,251 +262,10 @@
     "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.metadata.json",
     "Docs/Modding/Signal_Schema.json",
     "Docs/Reports/H8_Hash_Catalog_Audit.json",
-    "Tools/AiBattleSim_Report.json",
-    "Tools/HeadlessScenarios.json"
+    "Tools/AiBattleSim_Report.json"
   ],
-  "sourceHashesSha256": {
-    "Assets/_Project/Data/Localization/BabelMocks/es_ES.json": "f31e879dd9d11ffa48094acb294ef7e1b3b08b640c289a890f3c79cad2239bb2",
-    "Assets/_Project/Data/Localization/BabelMocks/zh_CN.json": "fcb7e76d658c5ea1447edbea7d8dd54ae7cc0d7f9c8c9de0e52a31ace411cb81",
-    "Assets/_Project/Scripts/Arabic.json": "7c3821bddb73eec5fd69c9639bbd4b3f80194979bfca957286c3a08e0cde88f2",
-    "Assets/_Project/Scripts/ChineseSimplified.json": "e2cf2b70a27e4348b2c462711b797e89bb825e9da9f8703ad0c6730347244704",
-    "Assets/_Project/Scripts/ChineseTraditional.json": "ac88e7ad4c630295358d9af49b42ffddd59d6798d9217fa5575f34b2fb0f419d",
-    "Assets/_Project/Scripts/English.json": "0b66308124403c7e2d58c726a4823349a682111da3ca5ddd3d817d817913e618",
-    "Assets/_Project/Scripts/French.json": "fa235ee7be9348ba9fab0242df2cf6da32837a48180051c4b1c1faae3f20c935",
-    "Assets/_Project/Scripts/German.json": "89fe719a096dd156b34396934eb1307a5954acdc2ba601636d055a90dc385664",
-    "Assets/_Project/Scripts/Hindi.json": "3518aaa26b5451132e7010910a7351136c90e4eb0ca3cc9a0eeffeaaf704a2cc",
-    "Assets/_Project/Scripts/Indonesian.json": "904fd62f319728e3d43de76521a4a2840e535bd95fa3d90c657e2fc5856fe6e3",
-    "Assets/_Project/Scripts/Italian.json": "16d18d45af667296bee38a096d881a5ebf4db796eb49a5504c462d40a702d6e7",
-    "Assets/_Project/Scripts/Japanese.json": "41ab2da4cee766ab0da620262f39b9ca41bd09d54d2a4a14354d3604f7d2daec",
-    "Assets/_Project/Scripts/Korean.json": "c70259e79e553fa60a1ce752d9a658a622a9fea1fa39e75a43d9216fb5687947",
-    "Assets/_Project/Scripts/Polish.json": "abb8b13dda82197d8ec46bad3c7b15a7e5799c3a4409d61b80cceb31cb591852",
-    "Assets/_Project/Scripts/PortugueseBrazilian.json": "4fa7abd91bfb17b0cc455efe4427fb71e63488ea79d8ee7e683d209c2cbbec0a",
-    "Assets/_Project/Scripts/Russian.json": "88e99e3f7c849a708010caacac2cc6572ed74b193cd8bcb5e1baa72f3769ba71",
-    "Assets/_Project/Scripts/Spanish.json": "24eada5756baac2bc4485b99b8fc8e631301ff24ea8c116e1be682ba35e36e92",
-    "Assets/_Project/Scripts/Turkish.json": "499a59786d61b180795fd820709bb256a82c776fca6fb5c67de57fca2791a62a",
-    "Assets/_Project/Scripts/Ukrainian.json": "1fd5c481cea3e9a18601f61906742fe1313414fe552fcc2c4df9c2d65fe9c7ae",
-    "Docs/AgentLogs/LoreChecker_CORP_FAILURE_ARCHIVIST.json": "0173d439873e16e8264f0046c026cb7cc3a650d0aa1f70a2dc4645b8accbbc34",
-    "Docs/AgentLogs/LoreChecker_ENCYCLOPEDIA_LORE_BAKER.json": "5bdd2c423244133a1d3c77e2fd9232c5d5a27d9d9f3da5b0d2ff21fea0faab3b",
-    "Docs/AgentLogs/LoreChecker_ENCYCLOPEDIA_TECHNICAL_WRITER.json": "5bdd2c423244133a1d3c77e2fd9232c5d5a27d9d9f3da5b0d2ff21fea0faab3b",
-    "Docs/AgentLogs/LoreChecker_NARRATIVE_SEMANTIC_AUDITOR.json": "5bdd2c423244133a1d3c77e2fd9232c5d5a27d9d9f3da5b0d2ff21fea0faab3b",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER.json": "4d83506fec2a5479a52f5a7eb08d1399cbe2d103ee0942f79b0d172a8463723f",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_loop1.json": "a4bb0d1282719fb3e42acd075aaebbd1611c3b5b7a3f98a25d431110028e0d54",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_loop4.json": "a4bb0d1282719fb3e42acd075aaebbd1611c3b5b7a3f98a25d431110028e0d54",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_polish.json": "a4bb0d1282719fb3e42acd075aaebbd1611c3b5b7a3f98a25d431110028e0d54",
-    "Docs/AgentLogs/QuestCompiler_QUEST_LOGIC_DAG_BUILDER_rewrite_probe.json": "4d83506fec2a5479a52f5a7eb08d1399cbe2d103ee0942f79b0d172a8463723f",
-    "Docs/AgentLogs/UI_HardwareAdaptiveValidation_UX_ENGINEER.json": "ec6a79970e4ecb83604d091afddbfc951fa84ad3ca8895f920d08fc25f4afc80",
-    "Docs/AgentLogs/UI_PythonCacheCleanup_UX_ENGINEER.json": "289760ce6a08257524bbef3107dbc7448c112a3698049a6032c56ada56b2ee07",
-    "Docs/AgentLogs/UI_Readability_UX_ENGINEER.json": "7dec4b0a6dc289b6ea016244d91c383255d4051690618fdab322d9d4647a45ca",
-    "Docs/AgentLogs/UI_ShaderSampleAudit_UX_ENGINEER.json": "38c82cd53ab559586e912109f33ee65e1dc3c6b53d6d6346077a84eb0c632314",
-    "Docs/AgentLogs/UI_StatusLogConsistency_UX_ENGINEER.json": "308fdef9a7808cc17be56aac54220b6d551eac2ede8bc092fc6dfbe931eeb4f5",
-    "Docs/AgentLogs/UI_UnityEnvironmentProbe_UX_ENGINEER.json": "352ad23532ee1cf05f57690df5ab28e4b2aa1c330a2c145928c1f99fce8a632e",
-    "Docs/AgentLogs/UI_UnityReportAudit_UX_ENGINEER.json": "53f05fd228157ac3d5a4b84c185881c6b0ff8362f5e2c553bf49e966ccad1a77",
-    "Docs/AgentLogs/UI_UnityTemplateAudit_UX_ENGINEER.json": "e46300d78f302cdfd804922d3e7325cad7389a58ec2a45abac6bd6108704320d",
-    "Docs/Design/HardwareAdaptiveUIScaler.json": "0fdef3000ff1ff02717dce14de37f7012b6cf0b7f7bf6ac27147075c126c85ce",
-    "Docs/Design/HardwareAdaptiveUIScaler_UnityVerificationTemplate.json": "09a9628252ef769418c149383ad29252c44f2308a14405dcf801ede2b41958b3",
-    "Docs/Design/Missions/Outpost_FailSafe_Handoff.json": "49fa8851b464df011b0245542b6d2038406c9bcb4af65437ec9a2bb9f8138d19",
-    "Docs/Design/VR_Comfort_Profile_Quest.json": "53061d9c740e62741d3eb8d71d5630c2100356679f7e87092ba6fe971af9e298",
-    "Docs/Design/VR_Haptic_Waveforms_Quest.json": "64a4c2af80e65a93172808a0a76edf8a1af5390b68b8ffe29bc43ab1f053a51b",
-    "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.metadata.json": "1d9089e7f511428c86da96ddba9556036161af411fa0dbb8f56376af54211710",
-    "Docs/Modding/Signal_Schema.json": "8ddf7ad49cd685c4ec9935915805c16b1600c81587c9cd267847f8d48ed2ffb4",
-    "Docs/Reports/H8_Hash_Catalog_Audit.json": "fff8a818853527d9571a2d0889acd6f3e061a88217f2eb4e63fe8773cf1c4b3b",
-    "Tools/AiBattleSim_Report.json": "1eeecf854126946249f4f627aa4d38c1ca20fcb661e1e48e20f28254c55141b3",
-    "Tools/HeadlessScenarios.json": "d55a09d33e8ba7ae6008363a248bf37a400c68a62a5459623c36a9841cb2ccb4"
-  },
-  "layerCounts": {
-    "core": 4590,
-    "world": 25648,
-    "narrative": 2550
-  },
-  "languages": {
-    "ar_AR": {
-      "hash": "0x71C9CD02",
-      "entryCount": 1244,
-      "payloadBytesPadded": 59296,
-      "scriptFlags": 9,
-      "fontWeightMask": 103
-    },
-    "de_DE": {
-      "hash": "0xB2EBDAB2",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56656,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "en_US": {
-      "hash": "0x21C7F287",
-      "entryCount": 10394,
-      "payloadBytesPadded": 340144,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "es_ES": {
-      "hash": "0x4E7BB0DA",
-      "entryCount": 2489,
-      "payloadBytesPadded": 113248,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "fr_FR": {
-      "hash": "0xCD420DFA",
-      "entryCount": 1244,
-      "payloadBytesPadded": 57456,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "hi_IN": {
-      "hash": "0xE1B0B18C",
-      "entryCount": 1244,
-      "payloadBytesPadded": 63728,
-      "scriptFlags": 17,
-      "fontWeightMask": 71
-    },
-    "id_ID": {
-      "hash": "0x13493F02",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56192,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "it_IT": {
-      "hash": "0xD4E76102",
-      "entryCount": 1244,
-      "payloadBytesPadded": 57408,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "ja_JP": {
-      "hash": "0x17560E1B",
-      "entryCount": 1244,
-      "payloadBytesPadded": 57488,
-      "scriptFlags": 69,
-      "fontWeightMask": 95
-    },
-    "ko_KR": {
-      "hash": "0xA4EBE2EF",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56960,
-      "scriptFlags": 33,
-      "fontWeightMask": 95
-    },
-    "pl_PL": {
-      "hash": "0x681F5B4A",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56336,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "pt_BR": {
-      "hash": "0xCDB6BCDE",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56688,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "ru_RU": {
-      "hash": "0x13004742",
-      "entryCount": 1244,
-      "payloadBytesPadded": 59552,
-      "scriptFlags": 3,
-      "fontWeightMask": 71
-    },
-    "tr_TR": {
-      "hash": "0xC22E7FEA",
-      "entryCount": 1244,
-      "payloadBytesPadded": 55904,
-      "scriptFlags": 1,
-      "fontWeightMask": 71
-    },
-    "uk_UA": {
-      "hash": "0x113A92A0",
-      "entryCount": 1244,
-      "payloadBytesPadded": 56496,
-      "scriptFlags": 3,
-      "fontWeightMask": 71
-    },
-    "zh_CN": {
-      "hash": "0x6FA11795",
-      "entryCount": 2489,
-      "payloadBytesPadded": 125808,
-      "scriptFlags": 5,
-      "fontWeightMask": 95
-    },
-    "zh_TW": {
-      "hash": "0xBF112A23",
-      "entryCount": 1244,
-      "payloadBytesPadded": 55888,
-      "scriptFlags": 5,
-      "fontWeightMask": 95
-    }
-  },
-  "payloadMetrics": {
-    "deduplicatedPayloadEntries": 11235,
-    "deduplicatedSavedBytes": 900560,
-    "rawPayloadBytes": 1385248,
-    "uniquePayloadBytes": 484688
-  },
-  "collisionResolutions": [],
-  "binaryRuntimeContract": {
-    "lookup": "(languageHash, keyHash) -> entry.offset/entry.byteLength",
-    "strippedDataField": "entry.layer",
-    "fontDataFields": [
-      "language.scriptFlags",
-      "language.fontWeightMask"
-    ],
-    "toasterRule": "residentLayerMask=Core; World/Narrative streamable by layer and sourceHash",
-    "rtxOverkillRule": "residentLayerMask=Core|World|Narrative; enable extra visual text metadata below"
-  },
-  "qualityTiers": {
-    "Low": {
-      "residentLayers": [
-        "Core"
-      ],
-      "fontMode": "Regular/Bold only; defer CJK/RTL fallback until language switch",
-      "visualTextTreatment": "no glitch expansion, no per-label material sweep",
-      "extraDataFields": []
-    },
-    "Middle": {
-      "residentLayers": [
-        "Core",
-        "World"
-      ],
-      "fontMode": "Regular/Medium/Bold plus selected active-language fallback",
-      "visualTextTreatment": "static warning tint only",
-      "extraDataFields": [
-        "scriptFlags",
-        "fontWeightMask"
-      ]
-    },
-    "High": {
-      "residentLayers": [
-        "Core",
-        "World",
-        "Narrative"
-      ],
-      "fontMode": "CJK/RTL fallback hot for all installed languages",
-      "visualTextTreatment": "prebaked glitch table + stable severity buckets",
-      "extraDataFields": [
-        "scriptFlags",
-        "fontWeightMask",
-        "layer",
-        "sourceHash"
-      ]
-    },
-    "Ultra": {
-      "residentLayers": [
-        "Core",
-        "World",
-        "Narrative"
-      ],
-      "fontMode": "all font masks hot; high-resolution SDF fallback allowed",
-      "visualTextTreatment": "complex harmonic text-noise and richer diegetic terminal styling driven by sourceHash/layer",
-      "extraDataFields": [
-        "scriptFlags",
-        "fontWeightMask",
-        "layer",
-        "sourceHash",
-        "paddedLength"
-      ]
-    }
-  }
+  "status": "BABEL COMPILED",
+  "structPackPrefix": "<",
+  "verificationBoundary": "STATIC_VERIFIED_UNITY_TOOLCHAIN_PENDING",
+  "wordCount": 171309
 }

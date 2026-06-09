@@ -1,6 +1,5 @@
 # Auto-detect text files and normalize line endings.
 * text=auto
-
 # Keep Unity serialized assets byte-stable.
 *.meta -text
 *.asset -text
@@ -22,7 +21,6 @@
 *.renderTexture -text
 *.spriteatlas -text
 *.terrainlayer -text
-
 # Generated verification/build artifacts do not belong in source archives.
 .codexbuild/** export-ignore
 .codex-build/** export-ignore
@@ -35,3 +33,4 @@ Assets/_Recovery/** export-ignore
 *.sarif export-ignore
 *.rsp export-ignore
 *.mmf export-ignore
+Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/TextureArrays/TX_B34_VisorTrauma_DecalArray.asset filter=lfs diff=lfs merge=lfs -text
