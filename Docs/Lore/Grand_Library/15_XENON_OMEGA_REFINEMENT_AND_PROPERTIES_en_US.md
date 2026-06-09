@@ -81,7 +81,7 @@ The ocean destroys certainty in ways expensive drones hate. Salt bridges form wh
 
 A human in a rated suit is not better because flesh is noble. A human is useful because liability can be outsourced to the contract, judgment can be forced into the water, and a desperate worker can improvise around failures no procurement office wanted to model. The suit protects the carrier from calling that murder. The debt makes the descent repeatable.
 
-That is the real material property Deep Reach bought on HECTON-8: not just blue substrate, but a system where people could be made to carry unstable value through a place machines could not cheaply understand.
+That is the real material property Deep Reach bought on HECTON-8: a system where people could be made to carry unstable blue substrate through a place machines could not cheaply understand.
 
 ## 8. Field Grades
 
