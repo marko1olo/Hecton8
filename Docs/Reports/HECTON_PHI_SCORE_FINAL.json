@@ -61565,12 +61565,12 @@
   "ZeroGCPurity": 0.0,
   "all_source": {
     "counters": {
-      "files": 5523,
-      "lines": 2828275
+      "files": 5485,
+      "lines": 2799592
     }
   },
   "domain_index_count": 85,
-  "generated_at": "2026-06-09T20:54:48",
+  "generated_at": "2026-06-09T21:52:18",
   "h_phi_audit": {
     "observability_increased_by_this_pass": true,
     "runtime_data_sovereignty_increased_by_this_pass": false
