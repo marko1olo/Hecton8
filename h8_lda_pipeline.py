@@ -67,7 +67,7 @@ class H8LDAPipeline:
         player_decision_changed, canon_sources, localization_risk, implementation_note
         """
         # Enforce Tone Checks
-        for field in ["title", "scanner", "codex", "audio", "term", "field"]:
+        for field in ("title", "scanner", "codex", "audio", "term", "field"):
             self._check_tone(packet_data.get(f"{field}_en", ""), "en_US")
             self._check_tone(packet_data.get(f"{field}_ru", ""), "ru_RU")
 
