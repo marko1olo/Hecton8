@@ -12,7 +12,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ALIGNMENT_BYTES = 16
 EXCLUDED_PARTS = {"Build", "Builds", "Library", "Obj", "Temp", "__pycache__"}
-EXCLUDED_PREFIXES = (".git/", ".codex-artifacts/", ".codex-build/", ".codexbuild/")
+EXCLUDED_PREFIXES = (
+    ".git/",
+    ".codex-artifacts/",
+    ".codex-build/",
+    ".codexbuild/",
+    ".tmp/",
+    "Assets/Editor/x64/Bakery/",
+)
 
 
 def is_excluded(relative: Path) -> bool:

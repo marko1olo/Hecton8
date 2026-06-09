@@ -97,6 +97,8 @@ IGNORED_BINARY_DIRS = (
     "Builds",
     "Logs",
     "UserSettings",
+    "Bakery",
+    ".tmp",
 )
 
 
@@ -239,12 +241,25 @@ def verify_fnv_collisions(labels: list[str]) -> None:
 def iter_binary_payloads() -> list[Path]:
     payloads: list[Path] = []
     ignored = set(IGNORED_BINARY_DIRS)
+    excluded_prefixes = (
+        ".git/",
+        ".codex-artifacts/",
+        ".codex-build/",
+        ".codexbuild/",
+        ".tmp/",
+        "Assets/Editor/x64/Bakery/",
+    )
     for dirpath, dirnames, filenames in os.walk(ROOT):
         dirnames[:] = [name for name in dirnames if name not in ignored]
         current = Path(dirpath)
         for filename in filenames:
             if filename.endswith(".bin") or filename.endswith(".h8bin"):
-                payloads.append(current / filename)
+                full_path = current / filename
+                relative = full_path.relative_to(ROOT)
+                normalized = relative.as_posix()
+                if any(normalized.startswith(prefix) for prefix in excluded_prefixes):
+                    continue
+                payloads.append(full_path)
     return sorted(payloads)
 
 

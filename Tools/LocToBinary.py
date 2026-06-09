@@ -157,6 +157,10 @@ def pack(entries: list[dict[str, Any]]) -> tuple[bytes, list[tuple[int, int, int
     for h, offset, length, _ in records:
         blob.extend(RECORD_STRUCT.pack(h, offset, length))
     blob.extend(payload)
+    # Pad blob size to a multiple of 16
+    remainder = len(blob) % 16
+    if remainder != 0:
+        blob.extend(b"\x00" * (16 - remainder))
     return bytes(blob), records
 
 
@@ -177,8 +181,11 @@ def verify_blob(blob: bytes, records: list[tuple[int, int, int, str]]) -> None:
         raise ValueError("Unexpected table offset.")
     if data_offset != HEADER_SIZE + (entry_count * RECORD_SIZE):
         raise ValueError("Unexpected data offset.")
-    if data_offset + data_length != len(blob):
-        raise ValueError("Payload length mismatch.")
+    padding_bytes = len(blob) - (data_offset + data_length)
+    if padding_bytes < 0 or padding_bytes >= 16:
+        raise ValueError(f"Payload length mismatch: data_offset={data_offset}, data_length={data_length}, blob_len={len(blob)}")
+    if len(blob) % 16 != 0:
+        raise ValueError("Blob is not 16-byte aligned.")
     if flags != FLAGS:
         raise ValueError("Flag mismatch.")
 

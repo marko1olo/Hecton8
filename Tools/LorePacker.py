@@ -223,6 +223,10 @@ def load_source_entries(source_dir: Path = DEFAULT_SOURCE_DIR) -> list[SourceEnt
     seen_ids: set[str] = set()
     seen_hashes: dict[int, str] = {}
     for source_path in sorted(root.rglob("*.md")):
+        if "AppliedContent" in source_path.parts:
+            continue
+        if source_path.name == "README.md":
+            continue
         lore_id = lore_id_from_path(source_path)
         payload = source_path.read_bytes()
         validate_payload(lore_id, payload)
