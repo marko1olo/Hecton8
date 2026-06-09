@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import tempfile
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
