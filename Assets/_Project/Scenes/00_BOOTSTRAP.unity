@@ -2263,7 +2263,6 @@ MonoBehaviour:
   warmupPresets: []
   _debugPoolCount: 0
   _debugTotalPooled: 0
-  _debugTotalExpands: 0
 --- !u!4 &984333202
 Transform:
   m_ObjectHideFlags: 0

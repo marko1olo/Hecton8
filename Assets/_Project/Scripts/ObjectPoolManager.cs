@@ -29,7 +29,6 @@ namespace Hecton8.Core
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugPoolCount;
         [SerializeField] private int _debugTotalPooled;
-        [SerializeField] private int _debugTotalExpands;
 
         // COLD ALLOC: List<IPoolable>[8] — pooled component dispatch scratch — owner: ObjectPoolManager
         private static readonly List<IPoolable> s_poolableCache = new List<IPoolable>(8);
