@@ -39,10 +39,12 @@ def validate_post_apply_meta(source_path: Path, entry_id: str, alpha_is_transpar
         return
 
     text = meta_path.read_text(encoding="utf-8-sig")
+    is_alpha_mask_source = "AlphaMaskSources" in source_path.parts
+    expected_srgb = "sRGBTexture: 0" if is_alpha_mask_source else "sRGBTexture: 1"
     required_tokens = (
         "TextureImporter:",
-        "sRGBTexture: 1",
-        "mipmapEnabled: 1",
+        expected_srgb,
+        "enableMipMap: 1",
         "textureCompression: 1",
         "wrapU: 1",
         "wrapV: 1",
