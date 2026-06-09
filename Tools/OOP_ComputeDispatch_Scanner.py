@@ -1949,7 +1949,7 @@ def build_report(root: Path) -> dict[str, Any]:
     cs_files = [
         report
         for path in csharp_source_paths
-        for report in [analyze_cs_file(root, path)]
+        for report in (analyze_cs_file(root, path),)
         if report is not None
     ]
     graphics_buffer_lock_contract_violations = [
@@ -1970,13 +1970,13 @@ def build_report(root: Path) -> dict[str, Any]:
     payload_owner_query_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_payload_owner_query_contract(root, path)]
+        for report in (analyze_payload_owner_query_contract(root, path),)
         if report is not None
     ]
     strict_thread_query_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_strict_thread_query_contract(root, path)]
+        for report in (analyze_strict_thread_query_contract(root, path),)
         if report is not None
     ]
     kernel_support_contracts = [
@@ -1996,26 +1996,26 @@ def build_report(root: Path) -> dict[str, Any]:
     compute_support_gate_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_support_gate_contract(root, path)]
+        for report in (analyze_compute_support_gate_contract(root, path),)
         if report is not None
     ]
     high_resource_compute_api_guard_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_high_resource_compute_api_guard_contract(root, path)]
+        for report in (analyze_high_resource_compute_api_guard_contract(root, path),)
         if report is not None
     ]
     high_resource_compute_backend_policy = analyze_high_resource_compute_backend_policy(root)
     compute_service_bridge_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_service_bridge_contract(root, path)]
+        for report in (analyze_compute_service_bridge_contract(root, path),)
         if report is not None
     ]
     vendor_compute_integration_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_vendor_compute_integration_contract(root, path)]
+        for report in (analyze_vendor_compute_integration_contract(root, path),)
         if report is not None
     ]
     authored_asset_paths = (
@@ -2025,31 +2025,31 @@ def build_report(root: Path) -> dict[str, Any]:
     vendor_component_activation_contracts = [
         report
         for path in authored_asset_paths
-        for report in [analyze_vendor_component_activation_contract(root, path)]
+        for report in (analyze_vendor_component_activation_contract(root, path),)
         if report is not None
     ]
     compute_texture_random_write_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_texture_random_write_contract(root, path)]
+        for report in (analyze_compute_texture_random_write_contract(root, path),)
         if report is not None
     ]
     find_kernel_fail_closed_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_find_kernel_fail_closed_contract(root, path)]
+        for report in (analyze_find_kernel_fail_closed_contract(root, path),)
         if report is not None
     ]
     supported_kernel_resolve_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_supported_kernel_resolve_contract(root, path)]
+        for report in (analyze_supported_kernel_resolve_contract(root, path),)
         if report is not None
     ]
     dispatch_group_limit_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_dispatch_group_limit_contract(root, path)]
+        for report in (analyze_dispatch_group_limit_contract(root, path),)
         if report is not None
     ]
     literal_one_group_dispatch_violations = [
