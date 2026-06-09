@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from H8VerifyCore import fromstring_xml_safe
 import json
 import pathlib
 import sys
@@ -36,7 +37,7 @@ def read_text(path):
 def project_references(path):
     if not path.exists():
         return []
-    root = ET.fromstring(read_text(path))
+    root = fromstring_xml_safe(read_text(path))
     refs = []
     for elem in root.iter():
         if elem.tag.endswith("ProjectReference"):

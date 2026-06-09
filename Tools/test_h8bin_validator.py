@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Corruption tests for Tools/h8bin_validator.py."""
 
+from H8VerifyCore import parse_xml_safe
 from __future__ import annotations
 
 import json
@@ -1196,7 +1197,7 @@ class H8BinValidatorTests(unittest.TestCase):
             text = junit.read_text(encoding="utf-8")
             self.assertIn("STATIC_DATA_MISSING", text)
             self.assertIn("NO_H8BIN_FILES", text)
-            suite = ET.parse(junit).getroot()
+            suite = parse_xml_safe(junit).getroot()
             self.assertEqual(suite.attrib["tests"], str(len(suite.findall("testcase"))))
 
 

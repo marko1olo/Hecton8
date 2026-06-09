@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from H8VerifyCore import parse_xml_safe
 from __future__ import annotations
 
 import argparse
@@ -124,7 +125,7 @@ def test_live_self_audit_contract_stays_parseable() -> None:
 def test_live_self_audit_counts_match_static_summary() -> None:
     summary = scanner.load_json_object(scanner.path("Docs/Reports/SHINOBU_140_STATIC_GATE_SUMMARY.json"))
     assert_true(bool(summary), "Static gate summary JSON is missing or invalid.")
-    root = ET.parse(scanner.path("Docs/Reports/SHINOBU_140_SELF_AUDIT.xml")).getroot()
+    root = parse_xml_safe(scanner.path("Docs/Reports/SHINOBU_140_SELF_AUDIT.xml")).getroot()
     hygiene = root.find("Hygiene")
     assert_true(hygiene is not None, "Self-audit Hygiene row is missing.")
     scanners = summary.get("scanners", {})

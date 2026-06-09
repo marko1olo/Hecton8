@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from H8VerifyCore import ROOT, path
+from H8VerifyCore import parse_xml_safe, ROOT, path
 
 
 HOT_METHODS = {
@@ -813,7 +813,7 @@ def scan_self_audit() -> ScanResult:
         return result
 
     try:
-        root = ET.parse(candidate).getroot()
+        root = parse_xml_safe(candidate).getroot()
     except (OSError, ET.ParseError):
         result.add(candidate, 1, "SELF_AUDIT_INVALID_XML", "SHINOBU_140 forensic self-audit XML is not parseable.", 2)
         return result
@@ -855,14 +855,14 @@ def validate_self_audit_counts_against_results(result: ScanResult, results: list
         return
 
     try:
-        root = ET.parse(candidate).getroot()
+        root = parse_xml_safe(candidate).getroot()
     except (OSError, ET.ParseError):
         return
 
     expected = build_self_audit_count_model(results, baseline_path)
     sync_self_audit_counts(candidate, root, expected)
     try:
-        root = ET.parse(candidate).getroot()
+        root = parse_xml_safe(candidate).getroot()
     except (OSError, ET.ParseError):
         return
 

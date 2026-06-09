@@ -8,9 +8,25 @@ import hashlib
 import json
 import re
 import struct
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Iterable
 
+
+class SafeTreeBuilder(ET.TreeBuilder):
+    """A safe XML TreeBuilder that disables DTDs/Entities to prevent XXE attacks."""
+    def doctype(self, name, pubid, system):
+        raise ET.ParseError("DTDs and External Entities are not allowed")
+
+def parse_xml_safe(source):
+    """Safely parse XML by preventing DTDs and External Entities."""
+    parser = ET.XMLParser(target=SafeTreeBuilder())
+    return ET.parse(source, parser=parser)
+
+def fromstring_xml_safe(text):
+    """Safely parse XML string by preventing DTDs and External Entities."""
+    parser = ET.XMLParser(target=SafeTreeBuilder())
+    return ET.fromstring(text, parser=parser)
 
 ROOT = Path(__file__).resolve().parents[1]
 ALIGNMENT_BYTES = 16
