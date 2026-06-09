@@ -18,7 +18,6 @@ Owner: Core & Memory Infrastructure
 The project already contains:
 - `Assets/_Project/Scripts/Core/HectonArenaAllocator.cs`
 - `Assets/_Project/Scripts/Core/NativeArenaAllocator.cs`
-- `Assets/_Project/Scripts/Core/UnsafeArenaAllocator.cs`
 - `CharBufferPool.TryAcquireArenaSpan(...)`
 
 [BROKEN IF CLAIMED] "Arena 2.0 missing" is false. The allocator exists. The mandate gap is stricter ownership and telemetry.
