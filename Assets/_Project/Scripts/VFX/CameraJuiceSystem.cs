@@ -209,6 +209,8 @@ namespace Hecton8.VFX
         private BiomeProfile _currentBiome;
         private BiomeProfile _targetBiome;
         private BiomeProfile _biomeBlendFrom;
+        [SerializeField, Tooltip("Fallback biome profile to use if a transition receives a null profile.")]
+        private BiomeProfile _defaultFallbackBiome;
         private float _biomeBlendDuration;
         private float _biomeBlendElapsed;
         private bool _biomeBlendActive;
@@ -1275,8 +1277,14 @@ namespace Hecton8.VFX
             if (biome == null)
             {
                 LogNullBiomeProfile();
-                // TODO: Use default fallback biome
-                return;
+                if (_defaultFallbackBiome != null)
+                {
+                    biome = _defaultFallbackBiome;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             if (!_postProcessingEnabled || _urpVolume == null) return;
