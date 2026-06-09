@@ -514,6 +514,7 @@ namespace Shapes {
 				throw new NullReferenceException( "null mesh passed into Draw.Mesh" );
 			using( IMDrawer drawer = new IMDrawer( mpbCustomMesh, mat, mesh, drawType: IMDrawer.DrawType.Custom, allowInstancing: false ) ) {
 				// will draw on dispose
+				mpbCustomMesh.color.Add( Draw.Color.ColorSpaceAdjusted() );
 				mpbCustomMesh.mpbOverride = mpb;
 				// mpbCustomMesh.extraDrawCallProperties = properties;
 			}

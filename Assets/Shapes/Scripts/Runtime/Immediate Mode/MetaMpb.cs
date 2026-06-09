@@ -145,10 +145,10 @@ namespace Shapes {
 
 		internal void TransferAllProperties() {
 			// all shapes have a color property (except TMP text)
-			if( this is MpbCustomMesh )
-				return; // nothing to transfer. todo: transfer maybe color at least
 			if( this is MpbText == false )
 				Transfer( ShapesMaterialUtils.propColor, color );
+			if( this is MpbCustomMesh )
+				return; // nothing to transfer
 
 			if( this is IFillableMpb fillable ) {
 				Transfer( ShapesMaterialUtils.propFillType, fillable.fillType );
