@@ -1408,11 +1408,11 @@ def code_anchor_audit() -> dict:
         "expPositiveInfinityClampsToMaxRange": "ClampFiniteWithDirectionalInfinity(value, 0f, 4f, 0f)" in approx_body and "ClampFiniteWithDirectionalInfinity(value, 0f, 40f, 0f)" in core_text,
         "directionalInfinityClampIfCount": len(re.findall(r"\bif\s*\(", directional_clamp_scalar_body + directional_clamp_vector_body)),
         "directionalInfinityClampUsesMathSelect": "math.select" in directional_clamp_scalar_body and "math.select" in directional_clamp_vector_body,
-        "mathLodConfigBufferIdsPresent": all(token in h8memory_text for token in [
+        "mathLodConfigBufferIdsPresent": all(token in h8memory_text for token in (
             "ShinobuMathLodConfig = 74400",
             "ShinobuMathLodTelemetryRing = 74401",
             "ShinobuMathLodTelemetryCursor = 74402",
-        ]),
+        )),
         "mathLodConfigPublishedByHomeostasis": "MathLodRuntimeConfig.PublishConfig" in homeostasis_scalability_text and "MathLodRuntimeConfig.ResolveRequestedBytes()" in homeostasis_scalability_text,
         "mathLodReadAccessorPure": "TryReadLatestConfig(out MathLodConfigDTO config)" in core_text and "EnsureRuntimeBuffers" not in math_lod_read_body and "TryReadOnlyHandle" in math_lod_read_body,
         "mathLodBlackBoxFaultDumpIntegrated": "MathLodRuntimeConfig.TryDumpOnFault(null)" in homeostasis_scalability_text and "Dump_SHINOBU_300_MathLOD.bin" in core_text,
@@ -1420,7 +1420,7 @@ def code_anchor_audit() -> dict:
         "distanceMathContinuousDistanceWeight": "ResolveDistanceQualityWeight01(float distanceSq, float globalQualityWeight)" in distance_math_text,
         "mathLodTelemetryEntry64BytesDeclared": "StructLayout(LayoutKind.Explicit, Size = MathLodApproximation.TelemetryEntrySizeBytes)" in core_text,
         "mathLodTortureJobPresent": "struct MathLodTortureJob : IJob" in core_text,
-        "mathLodTortureCoversAngleKernels": all(token in torture_text for token in [
+        "mathLodTortureCoversAngleKernels": all(token in torture_text for token in (
             "ApproxSinBhaskara",
             "ApproxCosBhaskara",
             "ApproxTanClamped",
@@ -1428,16 +1428,16 @@ def code_anchor_audit() -> dict:
             "ApproxAtan2Fast",
             "ApproxAcosFast",
             "ApproxPow01Curve",
-        ]),
-        "mathLodTortureCoversExtremePressureTemperature": all(token in torture_text for token in [
+        )),
+        "mathLodTortureCoversExtremePressureTemperature": all(token in torture_text for token in (
             "1000000f",
             "1000f",
             "ResolveTemperature",
             "ResolvePressure",
             "WorstTemperatureCelsius",
             "WorstPressureAtm",
-        ]),
-        "mathLodTortureChecksNonFiniteAllKernels": all(token in torture_text for token in [
+        )),
+        "mathLodTortureChecksNonFiniteAllKernels": all(token in torture_text for token in (
             "math.isfinite(blended)",
             "math.isfinite(neg)",
             "math.isfinite(pos)",
@@ -1448,15 +1448,15 @@ def code_anchor_audit() -> dict:
             "math.isfinite(atan2)",
             "math.isfinite(acos)",
             "math.isfinite(pow)",
-        ]),
-        "mathLodTortureSanitizesEnvelope": all(token in torture_text for token in [
+        )),
+        "mathLodTortureSanitizesEnvelope": all(token in torture_text for token in (
             "safeBlended = MathLodApproximation.FiniteOr(blended, 0f)",
             "safeTangent = MathLodApproximation.FiniteOr(tangent, 0f)",
             "safeAtan2 = MathLodApproximation.FiniteOr(atan2, 0f)",
             "safeAcos = MathLodApproximation.FiniteOr(acos, 0f)",
             "safePow = MathLodApproximation.FiniteOr(pow, 0f)",
             "entry.ApproxOutput = safeBlended",
-        ]),
+        )),
         "mathLodBlackBoxDumpWriterPresent": "Dump_SHINOBU_300_MathLOD.bin" in core_text and "ReadOnlySpan<byte>" in core_text,
         "decompressionApproxPresent": "ApproxExpNegPade33Reduced" in physiology_text,
         "decompressionDirectExpRemoved": "math.exp(-effectiveK" not in physiology_text,
@@ -1492,7 +1492,7 @@ def code_anchor_audit() -> dict:
         "powerVoltageDestinationMaskBranchless": "bool validDestination = (uint)destination < (uint)potentialReadLimit;" in power_voltage_edge_loop and "int safeDestination = math.clamp(destination, 0, safePotentialMaxIndex);" in power_voltage_edge_loop and "conductance *= math.select(0f, 1f, validDestination);" in power_voltage_edge_loop and "FrontPotential[safeDestination]" in power_voltage_edge_loop and len(re.findall(r"\bif\s*\(", power_voltage_edge_loop)) == 0 and len(re.findall(r"\bcontinue\s*;", power_voltage_edge_loop)) == 0,
         "powerVoltageBrownoutUsesMathSelect": "node.Flags = math.select(flags & ~PowerGridJacobiConstants.NodeFlagBrownout, flags | PowerGridJacobiConstants.NodeFlagBrownout" in power_jacobi_text,
         "powerHotFiniteGuardsUseMathSelect": "math.isfinite(EdgeConductance[edgeCursor]) ? EdgeConductance[edgeCursor] : 0f" not in power_jacobi_text and "math.isfinite(DeltaTimeSeconds) ? DeltaTimeSeconds : 0f" not in power_jacobi_text and "math.isfinite(value) ? value : 0f" not in power_jacobi_text,
-        "auditedFiniteGuardTernariesRemoved": sum(len(re.findall(r"math\.isfinite\([^\n]*\?", text)) for text in [physiology_text, power_text, power_jacobi_text, abyssal_thermo_jobs_text]) == 0,
+        "auditedFiniteGuardTernariesRemoved": sum(len(re.findall(r"math\.isfinite\([^\n]*\?", text)) for text in (physiology_text, power_text, power_jacobi_text, abyssal_thermo_jobs_text)) == 0,
         "externalThermalInjectionQualityInvariantHeatShape": "float sample01 = near01 * near01 * (3f - 2f * near01);" in external_heat_text and "cheapStep" not in external_heat_text and "GlobalQualityWeight" not in external_heat_text,
         "externalHeatRetentionQualityInvariant": "const float ExternalHeatRetention = 0.55f;" in power_text and "ExternalHeat[nodeIndex] = externalHeat * ExternalHeatRetention;" in power_text and "ExternalHeat[nodeIndex] = externalHeat * math.lerp" not in power_text,
         "logisticsGraphReadsMathLodConfigQuality": "ResolveEvaluationQualityWeight()" in logistics_text and "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in logistics_text,
@@ -1666,7 +1666,7 @@ def main() -> int:
     anchors = code_anchor_audit()
     asmdef_audit = asmdef_dependency_audit(files)
     extremes = []
-    for value in [float("nan"), float("inf"), float("-inf"), -1.0e9, 1.0e6, 1000.0, 4.0, 1.0, 0.0]:
+    for value in (float("nan"), float("inf"), float("-inf"), -1.0e9, 1.0e6, 1000.0, 4.0, 1.0, 0.0):
         approx = float(approx_exp_neg_pade33_reduced_f32(value))
         extremes.append({
             "input": str(value),
@@ -1747,7 +1747,7 @@ def main() -> int:
         "extremeKernelFinitenessProof": extreme_kernel_finiteness,
         "powerDestinationMaskEquivalenceProof": power_destination_mask_equivalence,
         "jacobiProof": {
-            "samples": [jacobi_sample(q) for q in [0.0, 0.1, 0.5, 1.0]],
+            "samples": [jacobi_sample(q) for q in (0.0, 0.1, 0.5, 1.0)],
             "boundednessStress": jacobi_boundedness,
             "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
             "convergenceClaimAtMinQuality": "not claimed",
