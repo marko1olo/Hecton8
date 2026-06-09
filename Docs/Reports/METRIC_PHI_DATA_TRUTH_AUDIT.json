@@ -1,186 +1,1369 @@
 {
-  "atlas": {
-    "domainCount": 85
-  },
-  "binaryAlignment": {
-    "alignmentBytes": 16,
-    "fileCount": 45,
-    "unaligned": []
-  },
-  "checks": [
+  "schema": "hecton8.metric_phi.binary_schema_ast_rows.v1",
+  "rows": [
     {
-      "name": "verify_sweep_pass",
-      "passed": true
+      "legacyPayload": {
+        "atlas": {
+          "domainCount": 85
+        },
+        "binaryAlignment": {
+          "alignmentBytes": 16,
+          "fileCount": 45,
+          "unaligned": []
+        },
+        "checks": [
+          {
+            "name": "verify_sweep_pass",
+            "passed": true
+          },
+          {
+            "name": "verify_sweep_required_failures_zero",
+            "passed": true
+          },
+          {
+            "name": "verify_sweep_command_count_35",
+            "passed": true
+          },
+          {
+            "name": "all_data_binaries_aligned16",
+            "passed": true
+          },
+          {
+            "name": "project_atlas_has_85_domain_map",
+            "passed": true
+          },
+          {
+            "name": "python_struct_endianness_explicit",
+            "passed": true
+          },
+          {
+            "name": "hash_catalog_collision_count_zero",
+            "passed": true
+          },
+          {
+            "name": "hash_catalog_records_present",
+            "passed": true
+          },
+          {
+            "name": "economy_monte_carlo_million_steps",
+            "passed": true
+          },
+          {
+            "name": "data_inquisition_report_pass",
+            "passed": true
+          },
+          {
+            "name": "binary_hygiene_report_pass",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_raw_utf8",
+            "passed": true
+          },
+          {
+            "name": "lore_h8bin_aligned16",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_toaster_tier",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_rtx_overkill_tier",
+            "passed": true
+          },
+          {
+            "name": "optics_manifest_beer_lambert",
+            "passed": true
+          },
+          {
+            "name": "optics_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "optics_manifest_rtx_overkill",
+            "passed": true
+          },
+          {
+            "name": "dalton_manifest_dalton_law",
+            "passed": true
+          },
+          {
+            "name": "dalton_manifest_hydrostatic_pressure",
+            "passed": true
+          },
+          {
+            "name": "dalton_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "dalton_toaster_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "dalton_overkill_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "sabine_manifest_sabine_basis",
+            "passed": true
+          },
+          {
+            "name": "sabine_manifest_thorp_basis",
+            "passed": true
+          },
+          {
+            "name": "sabine_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "crafting_cost_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "crafting_toaster_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "babel_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "taxonomy_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "ai_navigation_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "vr_comfort_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "vram_budget_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "visual_lod_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "quest_dag_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "replay_hasher_reference_passed",
+            "passed": true
+          },
+          {
+            "name": "runtime_proof_boundary_declared",
+            "passed": true
+          }
+        ],
+        "economy": {
+          "status": "ECONOMY PROVEN",
+          "steps": 1000000
+        },
+        "endianness": {
+          "failures": [],
+          "formatSites": 371
+        },
+        "hashing": {
+          "collisionCount": 0,
+          "records": 1249
+        },
+        "schema": "H8.MetricPhi.DataTruthAudit.v1",
+        "status": "DATA_TRUTH_VERIFIED",
+        "summary": {
+          "failedChecks": 0,
+          "failedNames": [],
+          "totalChecks": 37
+        },
+        "tool": "Tools/VerifyMetricPhiDataTruth.py",
+        "verifySweep": {
+          "requiredFailures": 0,
+          "selfCheckPending": false,
+          "status": "VERIFY_SWEEP_PASS",
+          "totalCommands": 35
+        }
+      }
     },
     {
-      "name": "verify_sweep_required_failures_zero",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 4.114,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "verify_sweep_command_count_35",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.279,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "all_data_binaries_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 3.076,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "project_atlas_has_85_domain_map",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.676,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "python_struct_endianness_explicit",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 2,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.273,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "hash_catalog_collision_count_zero",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 3.952,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "hash_catalog_records_present",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.196,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "economy_monte_carlo_million_steps",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.898,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "data_inquisition_report_pass",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 7.21,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "binary_hygiene_report_pass",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 3.643,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_raw_utf8",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.078,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_h8bin_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.567,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_toaster_tier",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.37,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_rtx_overkill_tier",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.219,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_manifest_beer_lambert",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.111,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.091,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_manifest_rtx_overkill",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.334,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_manifest_dalton_law",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.763,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_manifest_hydrostatic_pressure",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.254,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.571,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_toaster_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.703,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_overkill_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.713,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_manifest_sabine_basis",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.092,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_manifest_thorp_basis",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.267,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 7.847,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "crafting_cost_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.978,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "crafting_toaster_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.258,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "babel_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.627,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "taxonomy_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.74,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "ai_navigation_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 0,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.183,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "vr_comfort_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.275,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "vram_budget_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 3.02,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "visual_lod_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.988,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "quest_dag_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.774,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "replay_hasher_reference_passed",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.657,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "runtime_proof_boundary_declared",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.848,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 3.078,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.615,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.989,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.14,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.541,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.617,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.526,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.192,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.834,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 3.023,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 3.729,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.636,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.86,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.059,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.072,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.064,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.982,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 2,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.066,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.152,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.685,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.586,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.676,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.57,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.417,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.298,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.273,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.079,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.071,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.018,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.872,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.011,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.054,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.857,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.95,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.251,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.717,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.849,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.347,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.046,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.34,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.647,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.349,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 0,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 0.65,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.034,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.983,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.921,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 0.95,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 0.963,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.924,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.024,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.043,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.479,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.143,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.104,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.048,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.373,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.236,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.192,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.136,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.103,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.285,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.93,
+      "performanceRegressionWarning": false
     }
-  ],
-  "economy": {
-    "status": "ECONOMY PROVEN",
-    "steps": 1000000
-  },
-  "endianness": {
-    "failures": [],
-    "formatSites": 371
-  },
-  "hashing": {
-    "collisionCount": 0,
-    "records": 1249
-  },
-  "schema": "H8.MetricPhi.DataTruthAudit.v1",
-  "status": "DATA_TRUTH_VERIFIED",
-  "summary": {
-    "failedChecks": 0,
-    "failedNames": [],
-    "totalChecks": 37
-  },
-  "tool": "Tools/VerifyMetricPhiDataTruth.py",
-  "verifySweep": {
-    "requiredFailures": 0,
-    "selfCheckPending": false,
-    "status": "VERIFY_SWEEP_PASS",
-    "totalCommands": 35
-  }
+  ]
 }
