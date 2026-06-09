@@ -694,6 +694,41 @@ def collect_core_contract_boundary_violations(assemblies: list[AssemblyDef]) -> 
     return violations
 
 
+def collect_core_contracts_first_party_references(assemblies: list[AssemblyDef]) -> list[dict[str, str]]:
+    violations: list[dict[str, str]] = []
+    for assembly in assemblies:
+        if assembly.name == CORE_CONTRACT_ASSEMBLY:
+            for reference in assembly.references:
+                if is_first_party(reference):
+                    violations.append(
+                        {
+                            "assembly": assembly.name,
+                            "reference": reference,
+                            "path": normalize_path(assembly.path),
+                        }
+                    )
+    return violations
+
+
+def collect_editor_referenced_by_runtime(assemblies: list[AssemblyDef]) -> list[dict[str, str]]:
+    by_name = {assembly.name: assembly for assembly in assemblies}
+    violations: list[dict[str, str]] = []
+    for assembly in assemblies:
+        if is_editor_assembly(assembly):
+            continue
+        for reference in assembly.references:
+            target = by_name.get(reference)
+            if target is not None and is_editor_assembly(target):
+                violations.append(
+                    {
+                        "assembly": assembly.name,
+                        "reference": reference,
+                        "path": normalize_path(assembly.path),
+                    }
+                )
+    return violations
+
+
 def collect_unresolved_references(assemblies: list[AssemblyDef]) -> list[dict[str, str]]:
     names = {assembly.name for assembly in assemblies}
     unresolved: list[dict[str, str]] = []
@@ -828,6 +863,8 @@ def build_payload(source_root: Path) -> dict[str, object]:
     assemblies = load_asmdefs(source_root)
     core_concrete, runtime_concrete = classify_edges(assemblies)
     contract_boundary = collect_core_contract_boundary_violations(assemblies)
+    core_contracts_first_party_references = collect_core_contracts_first_party_references(assemblies)
+    editor_referenced_by_runtime = collect_editor_referenced_by_runtime(assemblies)
     unresolved = collect_unresolved_references(assemblies)
     duplicates = collect_duplicate_assembly_names(assemblies)
     graph = build_graph(assemblies)
@@ -862,6 +899,10 @@ def build_payload(source_root: Path) -> dict[str, object]:
             "violationCount": len(contract_boundary),
             "violations": contract_boundary[:300],
         },
+        "coreContractsFirstPartyReferenceCount": len(core_contracts_first_party_references),
+        "coreContractsFirstPartyReferences": core_contracts_first_party_references[:300],
+        "editorReferencedByRuntimeCount": len(editor_referenced_by_runtime),
+        "editorReferencedByRuntime": editor_referenced_by_runtime[:300],
         "unresolvedFirstPartyReferenceCount": len(unresolved),
         "unresolvedFirstPartyReferences": unresolved[:200],
         "duplicateAssemblyNameCount": len(duplicates),
@@ -2915,11 +2956,17 @@ def hard_failures(payload: dict[str, object], args: argparse.Namespace) -> list[
             f"Core.Contracts boundary violations {boundary_violations} > "
             f"{args.max_core_contract_boundary_violations}"
         )
+    core_contracts_fp_refs = int(payload.get("coreContractsFirstPartyReferenceCount", 0))
+    if core_contracts_fp_refs > 0:
+        failures.append(f"Hecton8.Core.Contracts references first-party assemblies: {core_contracts_fp_refs}")
+    editor_referenced_count = int(payload.get("editorReferencedByRuntimeCount", 0))
+    if editor_referenced_count > 0:
+        failures.append(f"Runtime assemblies referencing Editor assemblies: {editor_referenced_count}")
     if args.fail_on_unresolved_first_party_refs and unresolved > 0:
         failures.append(f"Unresolved first-party/GUID asmdef refs: {unresolved}")
     if args.fail_on_duplicate_assembly_names and duplicate_names > 0:
         failures.append(f"Duplicate assembly names: {duplicate_names}")
-    if args.fail_on_cycles and cycles > 0:
+    if cycles > 0:
         failures.append(f"First-party asmdef cycles: {cycles}")
     return failures
 
@@ -2993,6 +3040,8 @@ def print_text(
             )
     if isinstance(boundary, dict):
         print(f"coreContractsBoundaryViolations={boundary['violationCount']}")
+    print(f"coreContractsFirstPartyReferences={payload.get('coreContractsFirstPartyReferenceCount', 0)}")
+    print(f"editorReferencedByRuntimeCount={payload.get('editorReferencedByRuntimeCount', 0)}")
     print(f"unresolvedFirstPartyReferences={payload['unresolvedFirstPartyReferenceCount']}")
     print(f"duplicateAssemblyNames={payload['duplicateAssemblyNameCount']}")
     print(f"runtimeConcreteSiblingReferences={payload['runtimeConcreteSiblingReferenceCount']}")

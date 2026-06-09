@@ -90,8 +90,48 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
             write_asmdef(root / "B.asmdef", "Hecton8.B", ["Hecton8.A"])
 
             payload = audit.build_payload(root)
+            args = audit.build_parser().parse_args(["--source-root", str(root)])
+            failures = audit.hard_failures(payload, args)
 
         self.assertEqual(payload["cycleCount"], 1)
+        self.assertEqual(len(failures), 1)
+
+    def test_detects_core_contracts_referencing_first_party(self) -> None:
+        with temporary_directory(prefix="h8_asm_audit_core_contract_") as tmp:
+            root = Path(tmp)
+            write_asmdef(root / "Hecton8.Core.Contracts.asmdef", "Hecton8.Core.Contracts", ["Hecton8.AI.Cognition"])
+            write_asmdef(root / "AI" / "Hecton8.AI.Cognition.asmdef", "Hecton8.AI.Cognition")
+
+            payload = audit.build_payload(root)
+            args = audit.build_parser().parse_args(["--source-root", str(root)])
+            failures = audit.hard_failures(payload, args)
+
+        self.assertEqual(payload["coreContractsFirstPartyReferenceCount"], 1)
+        self.assertEqual(payload["coreContractsFirstPartyReferences"][0]["reference"], "Hecton8.AI.Cognition")
+        self.assertEqual(len(failures), 1)
+
+    def test_detects_editor_referenced_by_runtime(self) -> None:
+        with temporary_directory(prefix="h8_asm_audit_editor_ref_") as tmp:
+            root = Path(tmp)
+            write_asmdef(
+                root / "Editor" / "Hecton8.World.Editor.asmdef",
+                "Hecton8.World.Editor",
+                [],
+                ["Editor"],
+            )
+            write_asmdef(
+                root / "World" / "Hecton8.World.Runtime.asmdef",
+                "Hecton8.World.Runtime",
+                ["Hecton8.World.Editor"],
+            )
+
+            payload = audit.build_payload(root)
+            args = audit.build_parser().parse_args(["--source-root", str(root)])
+            failures = audit.hard_failures(payload, args)
+
+        self.assertEqual(payload["editorReferencedByRuntimeCount"], 1)
+        self.assertEqual(payload["editorReferencedByRuntime"][0]["reference"], "Hecton8.World.Editor")
+        self.assertEqual(len(failures), 1)
 
     def test_detects_core_contract_boundary_violations(self) -> None:
         with temporary_directory(prefix="h8_asm_audit_contract_gate_") as tmp:
