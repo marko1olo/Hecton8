@@ -440,8 +440,8 @@ def build_dependency_edges(quests: Sequence[Quest]) -> Dict[str, List[str]]:
             if completion_enables_trigger(source, target):
                 edges[source.quest_id].append(target.quest_id)
 
-    for quest_id, destinations in list(edges.items()):
-        edges[quest_id] = sorted(dict.fromkeys(destinations))
+    for quest_id, destinations in edges.items():
+        edges[quest_id] = sorted(set(destinations))
     return dict(edges)
 
 
@@ -617,8 +617,8 @@ def build_runtime_nodes(quests: Sequence[Quest]) -> Dict[str, List[RuntimeNode]]
             nodes_by_kind[quest.completion_kind].append(
                 RuntimeNode(index, "Complete", quest.completion_kind, quest.completion_id, quest.completion_value, index * 2 + 1)
             )
-    for kind in list(nodes_by_kind.keys()):
-        nodes_by_kind[kind].sort(key=lambda node: node.order)
+    for nodes_list in nodes_by_kind.values():
+        nodes_list.sort(key=lambda node: node.order)
     return dict(nodes_by_kind)
 
 
