@@ -1,9 +1,9 @@
 import os
 import re
 
-base_dir = r"C:\hades\Hecton8\Docs\Lore\AppliedContent"
+base_dir = r"Docs/Lore/AppliedContent"
 rs_dir = os.path.join(base_dir, "release_sets")
-ext_dir = os.path.join(base_dir, r"external_site\_draft_backlog")
+ext_dir = os.path.join(base_dir, "external_site/_draft_backlog")
 qa_report = os.path.join(base_dir, "LORE_QA_REPORT_20260606.md")
 
 banned_phrases = [
