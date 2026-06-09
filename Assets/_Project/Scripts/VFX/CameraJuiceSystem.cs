@@ -233,6 +233,9 @@ namespace Hecton8.VFX
 
         // ═══ SETTINGS ═══
         [Header("── Settings ──────────────────")]
+        [SerializeField, Tooltip("Fallback biome profile used when transitioning to a null biome.")]
+        private BiomeProfile _fallbackBiomeProfile;
+
         [SerializeField, Range(0f, 2f), Tooltip("Camera shake intensity multiplier (0 = off, 1 = default, 2 = double)")]
         private float _shakeIntensityMultiplier = 1.0f;
 
@@ -1275,8 +1278,14 @@ namespace Hecton8.VFX
             if (biome == null)
             {
                 LogNullBiomeProfile();
-                // TODO: Use default fallback biome
-                return;
+                if (_fallbackBiomeProfile != null)
+                {
+                    biome = _fallbackBiomeProfile;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             if (!_postProcessingEnabled || _urpVolume == null) return;
