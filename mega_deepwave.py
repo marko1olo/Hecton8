@@ -10,7 +10,7 @@ backlog_dir = base_dir / "localization_backlog"
 route_cards_dir = base_dir / "route_cards"
 ext_site_dir = base_dir / "external_site" / "_draft_backlog"
 
-for d in [release_sets_dir, backlog_dir, route_cards_dir, ext_site_dir]:
+for d in (release_sets_dir, backlog_dir, route_cards_dir, ext_site_dir):
     d.mkdir(parents=True, exist_ok=True)
 
 packets_data = []
