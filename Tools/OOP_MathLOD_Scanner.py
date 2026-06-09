@@ -1747,7 +1747,7 @@ def main() -> int:
         "extremeKernelFinitenessProof": extreme_kernel_finiteness,
         "powerDestinationMaskEquivalenceProof": power_destination_mask_equivalence,
         "jacobiProof": {
-            "samples": [jacobi_sample(q) for q in [0.0, 0.1, 0.5, 1.0]],
+            "samples": [jacobi_sample(q) for q in (0.0, 0.1, 0.5, 1.0)],
             "boundednessStress": jacobi_boundedness,
             "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
             "convergenceClaimAtMinQuality": "not claimed",
