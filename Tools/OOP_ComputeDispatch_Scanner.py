@@ -17,7 +17,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 THREAD_LIMIT = 256
 MAX_DISPATCH_GROUPS_PER_DIMENSION = 65535
 GLES31_GUARANTEED_COMPUTE_BUFFER_LIMIT = 4
@@ -119,9 +118,7 @@ AGENT_1333_VENDOR_COMPUTE_INTEGRATION_CONTRACTS = {
             "GPUInstancerAPI.InitializePrototype",
             "GPUInstancerAPI.UpdateVisibilityBufferWithMatrix4x4Array",
         ),
-        "guarded_methods": (
-            "public void SlowTick()",
-        ),
+        "guarded_methods": ("public void SlowTick()",),
     },
     "Assets/_Project/Scripts/WorldProceduralScatterDirector.cs": {
         "required_fragments": (
@@ -458,8 +455,12 @@ AGENT_1333_COMPUTE_SUPPORT_GATE_CONTRACTS = {
 }
 AGENT_1333_COMPUTE_SUPPORT_GATE_CONTRACTS.update(
     {
-        "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs": ("SystemInfo.supportsComputeShaders",),
-        "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs": ("SystemInfo.supportsComputeShaders",),
+        "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs": (
+            "SystemInfo.supportsComputeShaders",
+        ),
+        "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs": (
+            "SystemInfo.supportsComputeShaders",
+        ),
     }
 )
 AGENT_1333_HIGH_RESOURCE_COMPUTE_API_GUARD_CONTRACTS = {
@@ -581,8 +582,8 @@ AGENT_1333_COMPUTE_TEXTURE_RANDOM_WRITE_CONTRACTS = {
     "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs": (
         "ShaderConstants.GatherId",
         "ShaderConstants.ResultId",
-        "\"_HectonBiolumSSGIGather\"",
-        "\"_HectonBiolumSSGITexture\"",
+        '"_HectonBiolumSSGIGather"',
+        '"_HectonBiolumSSGITexture"',
         "true,",
     ),
     "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs": (
@@ -593,19 +594,19 @@ AGENT_1333_COMPUTE_TEXTURE_RANDOM_WRITE_CONTRACTS = {
         "ShaderConstants.HalfResultId",
         "ShaderConstants.VolumeWriteId",
         "desc.enableRandomWrite = enableRandomWrite",
-        "\"_HectonVolumetricFogHalf\"",
-        "\"_HectonVolumetricFogFrustumGrid\"",
+        '"_HectonVolumetricFogHalf"',
+        '"_HectonVolumetricFogFrustumGrid"',
     ),
     "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs": (
         "ShaderConstants.ResultId",
-        "aoDesc.name = \"_HectonVoxelSSAOTexture\"",
+        'aoDesc.name = "_HectonVoxelSSAOTexture"',
         "aoDesc.enableRandomWrite = true",
     ),
     "Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs": (
         "ShaderConstants.HalfResultId",
         "ShaderConstants.CompositeResultId",
-        "\"_HectonVolumetricLightHalf\"",
-        "\"_HectonVolumetricLightComposite\"",
+        '"_HectonVolumetricLightHalf"',
+        '"_HectonVolumetricLightComposite"',
         "true,",
     ),
     "Assets/_Project/Scripts/VFX/HectonMarineSnowRenderer.cs": (
@@ -653,8 +654,7 @@ AGENT_1333_COMPUTE_TEXTURE_RANDOM_WRITE_CONTRACTS = {
     ),
 }
 AGENT_1333_FIND_KERNEL_FAIL_CLOSED_CONTRACTS = {
-    path: (".HasKernel(",)
-    for path in AGENT_1333_DYNAMIC_DISPATCH_FILES
+    path: (".HasKernel(",) for path in AGENT_1333_DYNAMIC_DISPATCH_FILES
 }
 AGENT_1333_SUPPORTED_KERNEL_RESOLVE_CONTRACTS = {
     "Assets/_Project/Scripts/HectonFluidEngine.cs": (
@@ -867,7 +867,9 @@ def safe_eval_int(expression: str, symbols: dict[str, int]) -> int | None:
 
 
 def parse_define(line: str) -> tuple[str, int] | None:
-    match = re.match(r"\s*#define\s+([A-Za-z_][A-Za-z0-9_]*)\s+([0-9A-Za-z_()+\-*/<>\s]+)", line)
+    match = re.match(
+        r"\s*#define\s+([A-Za-z_][A-Za-z0-9_]*)\s+([0-9A-Za-z_()+\-*/<>\s]+)", line
+    )
     if not match:
         return None
     name = match.group(1)
@@ -878,7 +880,9 @@ def parse_define(line: str) -> tuple[str, int] | None:
     return name, value
 
 
-def resolve_include_path(root: Path, current_file: Path, include_path: str) -> Path | None:
+def resolve_include_path(
+    root: Path, current_file: Path, include_path: str
+) -> Path | None:
     candidates = [
         current_file.parent / include_path,
         root / include_path,
@@ -890,7 +894,9 @@ def resolve_include_path(root: Path, current_file: Path, include_path: str) -> P
     return None
 
 
-def collect_included_defines(root: Path, path: Path, visited: set[Path] | None = None) -> dict[str, int]:
+def collect_included_defines(
+    root: Path, path: Path, visited: set[Path] | None = None
+) -> dict[str, int]:
     visited = visited or set()
     resolved = path.resolve()
     if resolved in visited:
@@ -984,7 +990,10 @@ def analyze_compute_file(root: Path, path: Path) -> dict[str, Any]:
         raw_args = split_args(match.group(1))
         kernel = "UNKNOWN"
         for next_line in lines[index + 1 : min(index + 8, len(lines))]:
-            function_match = re.search(r"\b(?:void|[A-Za-z_][A-Za-z0-9_<>,\s]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(", next_line)
+            function_match = re.search(
+                r"\b(?:void|[A-Za-z_][A-Za-z0-9_<>,\s]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+                next_line,
+            )
             if function_match:
                 kernel = function_match.group(1)
                 break
@@ -1016,7 +1025,12 @@ def analyze_compute_file(root: Path, path: Path) -> dict[str, Any]:
         "max_product": max_product,
         "unresolved_numthreads": unresolved_count,
         "groupshared_count": len(re.findall(r"\bgroupshared\b", text)),
-        "barrier_count": len(re.findall(r"\b(?:GroupMemoryBarrier|DeviceMemoryBarrier)(?:WithGroupSync)?\s*\(", text)),
+        "barrier_count": len(
+            re.findall(
+                r"\b(?:GroupMemoryBarrier|DeviceMemoryBarrier)(?:WithGroupSync)?\s*\(",
+                text,
+            )
+        ),
         "interlocked_count": len(re.findall(r"\bInterlocked[A-Za-z0-9_]*\s*\(", text)),
         "resource_count": len(resource_declarations),
         "resource_declarations": resource_declarations,
@@ -1046,7 +1060,12 @@ def is_compute_dispatch_expression(expression: str) -> bool:
 
 
 def uses_external_payload_sizing(expression: str) -> bool:
-    return bool(re.search(r"\b[A-Za-z_][A-Za-z0-9_\.]*\.[A-Za-z0-9_]*DispatchGroups[A-Za-z0-9_]*\b", expression))
+    return bool(
+        re.search(
+            r"\b[A-Za-z_][A-Za-z0-9_\.]*\.[A-Za-z0-9_]*DispatchGroups[A-Za-z0-9_]*\b",
+            expression,
+        )
+    )
 
 
 def normalize_snippet(text: str, limit: int = 220) -> str:
@@ -1068,7 +1087,9 @@ def strip_csharp_comments_and_strings(text: str) -> str:
         if char == "/" and next_char == "*":
             result.extend("  ")
             index += 2
-            while index + 1 < length and not (text[index] == "*" and text[index + 1] == "/"):
+            while index + 1 < length and not (
+                text[index] == "*" and text[index + 1] == "/"
+            ):
                 result.append("\n" if text[index] == "\n" else " ")
                 index += 1
             if index + 1 < length:
@@ -1098,7 +1119,9 @@ def strip_csharp_comments_and_strings(text: str) -> str:
     return "".join(result)
 
 
-def analyze_legacy_compute_buffer_contract(root: Path, path: Path) -> list[dict[str, Any]]:
+def analyze_legacy_compute_buffer_contract(
+    root: Path, path: Path
+) -> list[dict[str, Any]]:
     text = read_text(path)
     if "ComputeBuffer" not in text:
         return []
@@ -1123,7 +1146,9 @@ def analyze_legacy_compute_buffer_contract(root: Path, path: Path) -> list[dict[
     return violations
 
 
-def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[str, Any]]:
+def analyze_graphics_buffer_lock_contract(
+    root: Path, path: Path
+) -> list[dict[str, Any]]:
     text = read_text(path)
     if "GraphicsBuffer" not in text and "CopyCount" not in text:
         return []
@@ -1176,11 +1201,13 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
         r"\n\s*(?:private|internal|public|protected)\s+(?:static\s+)?(?:void|bool|int|uint|float|GraphicsBuffer)\s+[A-Za-z_][A-Za-z0-9_]*\s*\("
     )
     for match in non_generic_ref_helper_declaration_pattern.finditer(text):
-        body_slice = text[match.end(): match.end() + 2000]
+        body_slice = text[match.end() : match.end() + 2000]
         next_method = next_method_pattern.search(body_slice)
         if next_method:
             body_slice = body_slice[: next_method.start()]
-        non_generic_ref_helper_lock_usage[match.group("helper")] = "UsageFlags.LockBufferForWrite" in body_slice
+        non_generic_ref_helper_lock_usage[match.group("helper")] = (
+            "UsageFlags.LockBufferForWrite" in body_slice
+        )
 
     for match in allocation_pattern.finditer(text):
         body = match.group("body")
@@ -1198,7 +1225,9 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
             "line": text[: match.start()].count("\n") + 1,
             "has_lock_usage": match.group("lock") is not None,
             "is_append": False,
-            "raw": normalize_snippet(f"GraphicsBufferUploadUtility.CreateStructured{match.group('lock') or ''}Buffer<{allocation_type}>({body})"),
+            "raw": normalize_snippet(
+                f"GraphicsBufferUploadUtility.CreateStructured{match.group('lock') or ''}Buffer<{allocation_type}>({body})"
+            ),
         }
 
     for match in ref_helper_allocation_pattern.finditer(text):
@@ -1207,12 +1236,16 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
             "line": text[: match.start()].count("\n") + 1,
             "has_lock_usage": helper == "EnsureBuffer",
             "is_append": False,
-            "raw": normalize_snippet(f"{helper}<{match.group('type')}>(ref {match.group('field')})"),
+            "raw": normalize_snippet(
+                f"{helper}<{match.group('type')}>(ref {match.group('field')})"
+            ),
         }
 
     for match in non_generic_ref_helper_allocation_pattern.finditer(text):
         helper = match.group("helper")
-        helper_has_lock_usage = non_generic_ref_helper_lock_usage.get(helper, "GpuWrite" not in helper)
+        helper_has_lock_usage = non_generic_ref_helper_lock_usage.get(
+            helper, "GpuWrite" not in helper
+        )
         allocations[match.group("field")] = {
             "line": text[: match.start()].count("\n") + 1,
             "has_lock_usage": helper_has_lock_usage,
@@ -1264,7 +1297,9 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
                 "field": field,
                 "line": text[: match.start()].count("\n") + 1,
                 "allocationLine": allocations.get(field, {}).get("line", 0),
-                "allocation": allocations.get(field, {}).get("raw", "scanner-visible allocation missing"),
+                "allocation": allocations.get(field, {}).get(
+                    "raw", "scanner-visible allocation missing"
+                ),
             }
         )
 
@@ -1281,7 +1316,9 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
                 "field": field,
                 "line": text[: match.start()].count("\n") + 1,
                 "allocationLine": allocations.get(field, {}).get("line", 0),
-                "allocation": allocations.get(field, {}).get("raw", "scanner-visible allocation missing"),
+                "allocation": allocations.get(field, {}).get(
+                    "raw", "scanner-visible allocation missing"
+                ),
             }
         )
 
@@ -1347,7 +1384,9 @@ def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[s
     return violations
 
 
-def analyze_csharp_thread_group_contract(root: Path, path: Path) -> list[dict[str, Any]]:
+def analyze_csharp_thread_group_contract(
+    root: Path, path: Path
+) -> list[dict[str, Any]]:
     text = read_text(path)
     relative = repo_path(root, path)
     owner = "vendor" if is_vendor(relative) else "first_party"
@@ -1373,7 +1412,9 @@ def analyze_csharp_thread_group_contract(root: Path, path: Path) -> list[dict[st
     return violations
 
 
-def analyze_payload_owner_query_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_payload_owner_query_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_PAYLOAD_OWNER_QUERY_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1382,20 +1423,39 @@ def analyze_payload_owner_query_contract(root: Path, path: Path) -> dict[str, An
     text = read_text(path)
     missing = [fragment for fragment in required_fragments if fragment not in text]
     forbidden: list[str] = []
-    if "sizeX = math.max(1, fallbackX)" in text or "sizeX = Mathf.Max(1, fallbackX)" in text:
-        forbidden.append("3D kernel thread-size resolver keeps fallback X after invalid query")
-    if "sizeY = math.max(1, fallbackY)" in text or "sizeY = Mathf.Max(1, fallbackY)" in text:
-        forbidden.append("3D kernel thread-size resolver keeps fallback Y after invalid query")
-    if "sizeZ = math.max(1, fallbackZ)" in text or "sizeZ = Mathf.Max(1, fallbackZ)" in text:
-        forbidden.append("3D kernel thread-size resolver keeps fallback Z after invalid query")
+    if (
+        "sizeX = math.max(1, fallbackX)" in text
+        or "sizeX = Mathf.Max(1, fallbackX)" in text
+    ):
+        forbidden.append(
+            "3D kernel thread-size resolver keeps fallback X after invalid query"
+        )
+    if (
+        "sizeY = math.max(1, fallbackY)" in text
+        or "sizeY = Mathf.Max(1, fallbackY)" in text
+    ):
+        forbidden.append(
+            "3D kernel thread-size resolver keeps fallback Y after invalid query"
+        )
+    if (
+        "sizeZ = math.max(1, fallbackZ)" in text
+        or "sizeZ = Mathf.Max(1, fallbackZ)" in text
+    ):
+        forbidden.append(
+            "3D kernel thread-size resolver keeps fallback Z after invalid query"
+        )
     if "groupSizeX = FallbackThreadGroupSizeX" in text:
         forbidden.append("2D payload resolver keeps fallback X after invalid query")
     if "groupSizeY = FallbackThreadGroupSizeY" in text:
         forbidden.append("2D payload resolver keeps fallback Y after invalid query")
     if "_calculateThreadGroupSizeX = FallbackThreadGroupSizeX" in text:
-        forbidden.append("payload invalidation keeps fallback calculate X after invalid query")
+        forbidden.append(
+            "payload invalidation keeps fallback calculate X after invalid query"
+        )
     if "_clearThreadGroupSizeY = FallbackThreadGroupSizeY" in text:
-        forbidden.append("payload invalidation keeps fallback clear Y after invalid query")
+        forbidden.append(
+            "payload invalidation keeps fallback clear Y after invalid query"
+        )
     return {
         "path": relative,
         "sha256": file_sha256(path),
@@ -1405,7 +1465,9 @@ def analyze_payload_owner_query_contract(root: Path, path: Path) -> dict[str, An
     }
 
 
-def analyze_strict_thread_query_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_strict_thread_query_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_STRICT_THREAD_QUERY_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1421,9 +1483,13 @@ def analyze_strict_thread_query_contract(root: Path, path: Path) -> dict[str, An
     if re.search(r"return\s+(?:math|Mathf)\.max\(1,\s*fallback", text):
         forbidden.append("fallback masks invalid kernel thread-group contract")
     if "FallbackThreadGroupSize" in text:
-        forbidden.append("cached dispatch thread-group size initializes from fallback constant")
+        forbidden.append(
+            "cached dispatch thread-group size initializes from fallback constant"
+        )
     if re.search(r"\bconst\s+int\s+PhantomDroneThreadGroupSize\b", text):
-        forbidden.append("phantom drone dispatch thread-group size initializes from fallback constant")
+        forbidden.append(
+            "phantom drone dispatch thread-group size initializes from fallback constant"
+        )
     nonzero_thread_group_state = re.findall(
         r"\bprivate\s+(?:int|uint)\s+_[A-Za-z0-9_]*ThreadGroupSize[A-Za-z0-9_]*\s*=\s*(?!0\b)[^;]+;",
         text,
@@ -1448,18 +1514,22 @@ def analyze_strict_thread_query_contract(root: Path, path: Path) -> dict[str, An
     }
 
 
-def analyze_compute_support_gate_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_compute_support_gate_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_COMPUTE_SUPPORT_GATE_CONTRACTS.get(relative)
     if required_fragments is None:
         return None
 
     text = read_text(path)
-    dispatch_or_kernel = ".Dispatch(" in text or ".DispatchCompute(" in text or "FindKernel" in text
+    dispatch_or_kernel = (
+        ".Dispatch(" in text or ".DispatchCompute(" in text or "FindKernel" in text
+    )
     missing = []
     if dispatch_or_kernel and not (
-        any(fragment in text for fragment in required_fragments) or
-        "HardwareTierDetector.AllowHighResourceComputeShaders" in text
+        any(fragment in text for fragment in required_fragments)
+        or "HardwareTierDetector.AllowHighResourceComputeShaders" in text
     ):
         missing.extend(required_fragments)
     return {
@@ -1470,9 +1540,13 @@ def analyze_compute_support_gate_contract(root: Path, path: Path) -> dict[str, A
     }
 
 
-def analyze_high_resource_compute_api_guard_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_high_resource_compute_api_guard_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
-    required_fragments = AGENT_1333_HIGH_RESOURCE_COMPUTE_API_GUARD_CONTRACTS.get(relative)
+    required_fragments = AGENT_1333_HIGH_RESOURCE_COMPUTE_API_GUARD_CONTRACTS.get(
+        relative
+    )
     if required_fragments is None:
         return None
 
@@ -1487,7 +1561,9 @@ def analyze_high_resource_compute_api_guard_contract(root: Path, path: Path) -> 
 
 
 def extract_high_resource_backend_assignment(text: str) -> str:
-    assignments = re.findall(r"_allowHighResourceComputeShaders\s*=\s*(.*?);", text, re.DOTALL)
+    assignments = re.findall(
+        r"_allowHighResourceComputeShaders\s*=\s*(.*?);", text, re.DOTALL
+    )
     for assignment in assignments:
         if "SystemInfo.supportsComputeShaders" in assignment:
             return "_allowHighResourceComputeShaders = " + assignment + ";"
@@ -1520,7 +1596,9 @@ def analyze_high_resource_compute_backend_policy(root: Path) -> dict[str, Any]:
     }
 
 
-def analyze_compute_texture_random_write_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_compute_texture_random_write_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_COMPUTE_TEXTURE_RANDOM_WRITE_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1536,7 +1614,9 @@ def analyze_compute_texture_random_write_contract(root: Path, path: Path) -> dic
     }
 
 
-def analyze_find_kernel_fail_closed_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_find_kernel_fail_closed_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_FIND_KERNEL_FAIL_CLOSED_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1569,7 +1649,9 @@ def analyze_find_kernel_fail_closed_contract(root: Path, path: Path) -> dict[str
     }
 
 
-def analyze_supported_kernel_resolve_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_supported_kernel_resolve_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_SUPPORTED_KERNEL_RESOLVE_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1579,9 +1661,17 @@ def analyze_supported_kernel_resolve_contract(root: Path, path: Path) -> dict[st
     missing = [fragment for fragment in required_fragments if fragment not in text]
     forbidden: list[str] = []
     if re.search(r"return\s+[^;\n]+\?\s*[A-Za-z0-9_\.]+\.FindKernel\(", text):
-        forbidden.append("ResolveKernel returns FindKernel without kernel-level IsSupported proof")
-    if re.search(r"TryFindKernel\([^)]*\).*?return\s+[^;\n]+\?\s*shader\.FindKernel\(", text, re.DOTALL):
-        forbidden.append("TryFindKernel returns shader.FindKernel without kernel-level IsSupported proof")
+        forbidden.append(
+            "ResolveKernel returns FindKernel without kernel-level IsSupported proof"
+        )
+    if re.search(
+        r"TryFindKernel\([^)]*\).*?return\s+[^;\n]+\?\s*shader\.FindKernel\(",
+        text,
+        re.DOTALL,
+    ):
+        forbidden.append(
+            "TryFindKernel returns shader.FindKernel without kernel-level IsSupported proof"
+        )
     return {
         "path": relative,
         "sha256": file_sha256(path),
@@ -1591,7 +1681,9 @@ def analyze_supported_kernel_resolve_contract(root: Path, path: Path) -> dict[st
     }
 
 
-def analyze_dispatch_group_limit_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_dispatch_group_limit_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     required_fragments = AGENT_1333_DISPATCH_GROUP_LIMIT_CONTRACTS.get(relative)
     if required_fragments is None:
@@ -1601,17 +1693,47 @@ def analyze_dispatch_group_limit_contract(root: Path, path: Path) -> dict[str, A
     missing = [fragment for fragment in required_fragments if fragment not in text]
     forbidden: list[str] = []
     forbidden_patterns = (
-        (r"(?:math|Mathf)\.max\(1,\s*CeilDivPositive", "max(1, CeilDivPositive) masks zero/capped dispatch groups"),
-        (r"(?:math|Mathf)\.max\(1,\s*CeilDividePositive", "max(1, CeilDividePositive) masks zero/capped dispatch groups"),
+        (
+            r"(?:math|Mathf)\.max\(1,\s*CeilDivPositive",
+            "max(1, CeilDivPositive) masks zero/capped dispatch groups",
+        ),
+        (
+            r"(?:math|Mathf)\.max\(1,\s*CeilDividePositive",
+            "max(1, CeilDividePositive) masks zero/capped dispatch groups",
+        ),
         (r"safeDenominator\s*=", "safeDenominator masks invalid divisor"),
-        (r"safeGroupSize\s*=\s*(?:math|Mathf)\.max\(1,\s*groupSize\)", "safeGroupSize masks invalid group size"),
-        (r"(?:Mathf\.Max|math\.max)\(1u,\s*data\.threadGroupSize", "CommandBuffer dispatch renderfunc masks invalid uint thread groups"),
-        (r"Mathf\.CeilToInt\([^;\n]+/\s*Mathf\.Max\(1u", "CommandBuffer renderfunc computes dispatch through fallback uint divisor"),
-        (r"math\.rcp\(math\.max\(1f,\s*\(float\)_[A-Za-z0-9_]*ThreadGroup", "inverse thread group cache masks invalid kernel query"),
-        (r"DispatchCompute\([^;\n]+Mathf\.Max\(1,", "CommandBuffer DispatchCompute masks invalid dispatch axis"),
-        (r"return\s+1\s+\(\([A-Za-z0-9_]+\s*-\s*1\)\s*/", "old 1+ceil helper lacks dispatch group cap"),
-        (r"return\s+(?:math|Mathf)\.max\(1,\s*groups\)", "return max(1, groups) masks capped dispatch groups"),
-        (r"\(int\)\(\(\(long\)[^;\n]+\+\s*[^;\n]+-\s*1L\)\s*/\s*[^;\n]+\)", "direct long-backed dispatch ceil lacks max per-dimension cap"),
+        (
+            r"safeGroupSize\s*=\s*(?:math|Mathf)\.max\(1,\s*groupSize\)",
+            "safeGroupSize masks invalid group size",
+        ),
+        (
+            r"(?:Mathf\.Max|math\.max)\(1u,\s*data\.threadGroupSize",
+            "CommandBuffer dispatch renderfunc masks invalid uint thread groups",
+        ),
+        (
+            r"Mathf\.CeilToInt\([^;\n]+/\s*Mathf\.Max\(1u",
+            "CommandBuffer renderfunc computes dispatch through fallback uint divisor",
+        ),
+        (
+            r"math\.rcp\(math\.max\(1f,\s*\(float\)_[A-Za-z0-9_]*ThreadGroup",
+            "inverse thread group cache masks invalid kernel query",
+        ),
+        (
+            r"DispatchCompute\([^;\n]+Mathf\.Max\(1,",
+            "CommandBuffer DispatchCompute masks invalid dispatch axis",
+        ),
+        (
+            r"return\s+1\s+\(\([A-Za-z0-9_]+\s*-\s*1\)\s*/",
+            "old 1+ceil helper lacks dispatch group cap",
+        ),
+        (
+            r"return\s+(?:math|Mathf)\.max\(1,\s*groups\)",
+            "return max(1, groups) masks capped dispatch groups",
+        ),
+        (
+            r"\(int\)\(\(\(long\)[^;\n]+\+\s*[^;\n]+-\s*1L\)\s*/\s*[^;\n]+\)",
+            "direct long-backed dispatch ceil lacks max per-dimension cap",
+        ),
     )
     for pattern, reason in forbidden_patterns:
         if re.search(pattern, text):
@@ -1626,7 +1748,9 @@ def analyze_dispatch_group_limit_contract(root: Path, path: Path) -> dict[str, A
     }
 
 
-def analyze_literal_one_group_dispatch_contract(root: Path, path: Path) -> list[dict[str, Any]]:
+def analyze_literal_one_group_dispatch_contract(
+    root: Path, path: Path
+) -> list[dict[str, Any]]:
     text = read_text(path)
     if ".Dispatch(" not in text and ".DispatchCompute(" not in text:
         return []
@@ -1682,7 +1806,9 @@ def extract_csharp_method_body(text: str, signature: str) -> str:
     return text[brace_index:]
 
 
-def analyze_compute_service_bridge_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_compute_service_bridge_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     contract = AGENT_1333_COMPUTE_SERVICE_BRIDGE_CONTRACTS.get(relative)
     if contract is None:
@@ -1711,7 +1837,9 @@ def analyze_compute_service_bridge_contract(root: Path, path: Path) -> dict[str,
     }
 
 
-def analyze_vendor_compute_integration_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_vendor_compute_integration_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     contract = AGENT_1333_VENDOR_COMPUTE_INTEGRATION_CONTRACTS.get(relative)
     if contract is None:
@@ -1728,9 +1856,15 @@ def analyze_vendor_compute_integration_contract(root: Path, path: Path) -> dict[
             missing_fragments.append(signature)
             continue
 
-        if "GPUInstancerAPI." in body and "CanUseVendorGpuInstancerCompute()" not in body:
+        if (
+            "GPUInstancerAPI." in body
+            and "CanUseVendorGpuInstancerCompute()" not in body
+        ):
             forbidden_fragments.append(f"{signature} -> unguarded GPUInstancerAPI")
-        if signature.endswith("ShouldUseFloraGpuiPath(") and "CanUseVendorGpuInstancerCompute()" not in body:
+        if (
+            signature.endswith("ShouldUseFloraGpuiPath(")
+            and "CanUseVendorGpuInstancerCompute()" not in body
+        ):
             forbidden_fragments.append(f"{signature} -> unguarded GPUI path selection")
 
     return {
@@ -1759,11 +1893,15 @@ def extract_component_blocks(text: str, classifier: str) -> list[dict[str, Any]]
     for raw_block in re.split(r"\n(?=--- !u!)", text):
         if classifier not in raw_block:
             continue
-        game_object_match = re.search(r"m_GameObject:\s*\{fileID:\s*(-?\d+)\}", raw_block)
+        game_object_match = re.search(
+            r"m_GameObject:\s*\{fileID:\s*(-?\d+)\}", raw_block
+        )
         enabled_match = re.search(r"m_Enabled:\s*([01])", raw_block)
         blocks.append(
             {
-                "game_object_id": game_object_match.group(1) if game_object_match else "",
+                "game_object_id": (
+                    game_object_match.group(1) if game_object_match else ""
+                ),
                 "enabled": enabled_match.group(1) != "0" if enabled_match else True,
             }
         )
@@ -1793,7 +1931,9 @@ def vendor_gpui_manager_admission_guard_proven(root: Path) -> bool:
     return True
 
 
-def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict[str, Any] | None:
+def analyze_vendor_component_activation_contract(
+    root: Path, path: Path
+) -> dict[str, Any] | None:
     relative = repo_path(root, path)
     if path.suffix == ".unity":
         data = path.read_bytes()
@@ -1801,12 +1941,17 @@ def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict
             CREST_SHAPE_FFT_CLASSIFIER.encode("utf-8"),
             CREST_ADAPTER_CLASSIFIER.encode("utf-8"),
             VENDOR_PREFAB_MARKER_CLASSIFIER.encode("utf-8"),
-            *(classifier.encode("utf-8") for classifier in VENDOR_COMPONENT_MANAGER_CLASSIFIERS),
+            *(
+                classifier.encode("utf-8")
+                for classifier in VENDOR_COMPONENT_MANAGER_CLASSIFIERS
+            ),
         )
         if not any(classifier in data for classifier in classifier_bytes):
             return None
 
-        gpui_manager_admission_guard_proven = vendor_gpui_manager_admission_guard_proven(root)
+        gpui_manager_admission_guard_proven = (
+            vendor_gpui_manager_admission_guard_proven(root)
+        )
         crest_shape_count = data.count(CREST_SHAPE_FFT_CLASSIFIER.encode("utf-8"))
         crest_adapter_count = data.count(CREST_ADAPTER_CLASSIFIER.encode("utf-8"))
         manager_hits: list[str] = []
@@ -1819,16 +1964,22 @@ def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict
                     forbidden_fragments.append(classifier)
         missing_fragments: list[str] = []
         if crest_shape_count > 0 and crest_adapter_count < crest_shape_count:
-            missing_fragments.append("Crest4KinematicsAdapter on active Crest.ShapeFFT GameObject")
+            missing_fragments.append(
+                "Crest4KinematicsAdapter on active Crest.ShapeFFT GameObject"
+            )
         return {
             "path": relative,
             "sha256": file_sha256(path),
             "owner": "vendor" if is_vendor(relative) else "first_party",
             "crest_shape_fft_count": crest_shape_count,
-            "guarded_crest_shape_fft_count": min(crest_shape_count, crest_adapter_count),
+            "guarded_crest_shape_fft_count": min(
+                crest_shape_count, crest_adapter_count
+            ),
             "gpui_manager_hits": manager_hits,
             "gpui_manager_admission_guard_proven": gpui_manager_admission_guard_proven,
-            "gpui_prefab_marker_count": data.count(VENDOR_PREFAB_MARKER_CLASSIFIER.encode("utf-8")),
+            "gpui_prefab_marker_count": data.count(
+                VENDOR_PREFAB_MARKER_CLASSIFIER.encode("utf-8")
+            ),
             "missing_fragments": missing_fragments,
             "forbidden_fragments": forbidden_fragments,
         }
@@ -1837,7 +1988,9 @@ def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict
     if (
         CREST_SHAPE_FFT_CLASSIFIER not in text
         and VENDOR_PREFAB_MARKER_CLASSIFIER not in text
-        and not any(classifier in text for classifier in VENDOR_COMPONENT_MANAGER_CLASSIFIERS)
+        and not any(
+            classifier in text for classifier in VENDOR_COMPONENT_MANAGER_CLASSIFIERS
+        )
     ):
         return None
 
@@ -1850,15 +2003,22 @@ def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict
     }
     missing_fragments: list[str] = []
     forbidden_fragments: list[str] = []
-    gpui_manager_admission_guard_proven = vendor_gpui_manager_admission_guard_proven(root)
+    gpui_manager_admission_guard_proven = vendor_gpui_manager_admission_guard_proven(
+        root
+    )
     guarded_shape_count = 0
     for shape in crest_shape_blocks:
         if not shape["enabled"]:
             continue
-        if shape["game_object_id"] and shape["game_object_id"] in crest_adapter_game_objects:
+        if (
+            shape["game_object_id"]
+            and shape["game_object_id"] in crest_adapter_game_objects
+        ):
             guarded_shape_count += 1
         else:
-            missing_fragments.append("Crest4KinematicsAdapter on active Crest.ShapeFFT GameObject")
+            missing_fragments.append(
+                "Crest4KinematicsAdapter on active Crest.ShapeFFT GameObject"
+            )
 
     manager_hits: list[str] = []
     for classifier in VENDOR_COMPONENT_MANAGER_CLASSIFIERS:
@@ -1882,7 +2042,9 @@ def analyze_vendor_component_activation_contract(root: Path, path: Path) -> dict
         "path": relative,
         "sha256": file_sha256(path),
         "owner": "vendor" if is_vendor(relative) else "first_party",
-        "crest_shape_fft_count": len([block for block in crest_shape_blocks if block["enabled"]]),
+        "crest_shape_fft_count": len(
+            [block for block in crest_shape_blocks if block["enabled"]]
+        ),
         "guarded_crest_shape_fft_count": guarded_shape_count,
         "gpui_manager_hits": manager_hits,
         "gpui_manager_admission_guard_proven": gpui_manager_admission_guard_proven,
@@ -1905,7 +2067,9 @@ def analyze_cs_file(root: Path, path: Path) -> dict[str, Any] | None:
         expression = collect_dispatch_expression(lines, index)
         if not is_compute_dispatch_expression(expression):
             continue
-        sizing_context = "\n".join(lines[max(0, index - 6) : min(len(lines), index + 7)])
+        sizing_context = "\n".join(
+            lines[max(0, index - 6) : min(len(lines), index + 7)]
+        )
         hardcoded_evidence = bool(
             re.search(
                 r"(\+\s*(?:31|63|127|255|511)\)|>>\s*(?:5|6|7|8|9)|CeilToInt\([^)]*/\s*(?:32f?|64f?|128f?|256f?|512f?)|\b(?:CeilDiv(?:ide)?(?:Positive)?|ResolveDispatchGroups|CalculateDispatchGroups)\s*\([^;\n]*,\s*(?:32|64|128|256|512)\s*\))",
@@ -1932,7 +2096,8 @@ def analyze_cs_file(root: Path, path: Path) -> dict[str, Any] | None:
         "file_has_kernel_support_query": "IsSupported(" in text,
         "file_has_compute_support_gate": "SystemInfo.supportsComputeShaders" in text
         or "HardwareTierDetector.AllowHighResourceComputeShaders" in text,
-        "file_has_high_resource_compute_gate": "HardwareTierDetector.AllowHighResourceComputeShaders" in text,
+        "file_has_high_resource_compute_gate": "HardwareTierDetector.AllowHighResourceComputeShaders"
+        in text,
         "compute_asset_references": sorted(
             set(re.findall(r'"(Assets/_Project/[^"]+\.compute)"', text))
         ),
@@ -1944,13 +2109,15 @@ def analyze_cs_file(root: Path, path: Path) -> dict[str, Any] | None:
 
 
 def build_report(root: Path) -> dict[str, Any]:
-    compute_files = [analyze_compute_file(root, path) for path in iter_files(root / "Assets", ".compute")]
+    compute_files = [
+        analyze_compute_file(root, path)
+        for path in iter_files(root / "Assets", ".compute")
+    ]
     csharp_source_paths = iter_files(root / "Assets", ".cs")
     cs_files = [
         report
         for path in csharp_source_paths
-        for report in [analyze_cs_file(root, path)]
-        if report is not None
+        if (report := analyze_cs_file(root, path)) is not None
     ]
     graphics_buffer_lock_contract_violations = [
         violation
@@ -1970,14 +2137,12 @@ def build_report(root: Path) -> dict[str, Any]:
     payload_owner_query_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_payload_owner_query_contract(root, path)]
-        if report is not None
+        if (report := analyze_payload_owner_query_contract(root, path)) is not None
     ]
     strict_thread_query_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_strict_thread_query_contract(root, path)]
-        if report is not None
+        if (report := analyze_strict_thread_query_contract(root, path)) is not None
     ]
     kernel_support_contracts = [
         {
@@ -1986,71 +2151,72 @@ def build_report(root: Path) -> dict[str, Any]:
             "owner": report["owner"],
             "dispatch_count": report["dispatch_count"],
             "file_has_kernel_support_query": report["file_has_kernel_support_query"],
-            "file_uses_external_payload_sizing": report["file_uses_external_payload_sizing"],
-            "missing_fragments": []
-            if report["file_has_kernel_support_query"] or report["file_uses_external_payload_sizing"]
-            else ["ComputeShader.IsSupported(kernel)"],
+            "file_uses_external_payload_sizing": report[
+                "file_uses_external_payload_sizing"
+            ],
+            "missing_fragments": (
+                []
+                if report["file_has_kernel_support_query"]
+                or report["file_uses_external_payload_sizing"]
+                else ["ComputeShader.IsSupported(kernel)"]
+            ),
         }
         for report in cs_files
     ]
     compute_support_gate_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_support_gate_contract(root, path)]
-        if report is not None
+        if (report := analyze_compute_support_gate_contract(root, path)) is not None
     ]
     high_resource_compute_api_guard_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_high_resource_compute_api_guard_contract(root, path)]
-        if report is not None
+        if (report := analyze_high_resource_compute_api_guard_contract(root, path))
+        is not None
     ]
-    high_resource_compute_backend_policy = analyze_high_resource_compute_backend_policy(root)
+    high_resource_compute_backend_policy = analyze_high_resource_compute_backend_policy(
+        root
+    )
     compute_service_bridge_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_service_bridge_contract(root, path)]
-        if report is not None
+        if (report := analyze_compute_service_bridge_contract(root, path)) is not None
     ]
     vendor_compute_integration_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_vendor_compute_integration_contract(root, path)]
-        if report is not None
+        if (report := analyze_vendor_compute_integration_contract(root, path))
+        is not None
     ]
-    authored_asset_paths = (
-        iter_files(root / "Assets" / "_Project", ".prefab")
-        + iter_files(root / "Assets" / "_Project", ".unity")
-    )
+    authored_asset_paths = iter_files(
+        root / "Assets" / "_Project", ".prefab"
+    ) + iter_files(root / "Assets" / "_Project", ".unity")
     vendor_component_activation_contracts = [
         report
         for path in authored_asset_paths
-        for report in [analyze_vendor_component_activation_contract(root, path)]
-        if report is not None
+        if (report := analyze_vendor_component_activation_contract(root, path))
+        is not None
     ]
     compute_texture_random_write_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_compute_texture_random_write_contract(root, path)]
-        if report is not None
+        if (report := analyze_compute_texture_random_write_contract(root, path))
+        is not None
     ]
     find_kernel_fail_closed_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_find_kernel_fail_closed_contract(root, path)]
-        if report is not None
+        if (report := analyze_find_kernel_fail_closed_contract(root, path)) is not None
     ]
     supported_kernel_resolve_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_supported_kernel_resolve_contract(root, path)]
-        if report is not None
+        if (report := analyze_supported_kernel_resolve_contract(root, path)) is not None
     ]
     dispatch_group_limit_contracts = [
         report
         for path in csharp_source_paths
-        for report in [analyze_dispatch_group_limit_contract(root, path)]
-        if report is not None
+        if (report := analyze_dispatch_group_limit_contract(root, path)) is not None
     ]
     literal_one_group_dispatch_violations = [
         violation
@@ -2195,13 +2361,19 @@ def build_report(root: Path) -> dict[str, Any]:
             "resource_pressure_references": [
                 {
                     "path": compute_path,
-                    "resource_count": first_party_gles31_resource_pressure_by_path[compute_path],
+                    "resource_count": first_party_gles31_resource_pressure_by_path[
+                        compute_path
+                    ],
                 }
                 for compute_path in report["compute_asset_references"]
                 if compute_path in first_party_gles31_resource_pressure_by_path
             ],
-            "file_has_high_resource_compute_gate": report["file_has_high_resource_compute_gate"],
-            "file_uses_external_payload_sizing": report["file_uses_external_payload_sizing"],
+            "file_has_high_resource_compute_gate": report[
+                "file_has_high_resource_compute_gate"
+            ],
+            "file_uses_external_payload_sizing": report[
+                "file_uses_external_payload_sizing"
+            ],
             "missing_fragments": [],
         }
         for report in cs_files
@@ -2216,7 +2388,9 @@ def build_report(root: Path) -> dict[str, Any]:
             and not contract["file_uses_external_payload_sizing"]
             and not contract["file_has_high_resource_compute_gate"]
         ):
-            contract["missing_fragments"] = ["HardwareTierDetector.AllowHighResourceComputeShaders"]
+            contract["missing_fragments"] = [
+                "HardwareTierDetector.AllowHighResourceComputeShaders"
+            ]
     first_party_high_resource_compute_reference_violations = [
         report
         for report in high_resource_compute_reference_contracts
@@ -2248,10 +2422,16 @@ def build_report(root: Path) -> dict[str, Any]:
         }
         for report in cs_files
         if report["owner"] == "first_party"
-        and any(dispatch["hardcoded_sizing_evidence"] for dispatch in report["dispatches"])
+        and any(
+            dispatch["hardcoded_sizing_evidence"] for dispatch in report["dispatches"]
+        )
     ]
     sonar_map = next(
-        (report for report in compute_files if report["path"] == "Assets/_Project/Art/Shaders/Hecton_SonarMap.compute"),
+        (
+            report
+            for report in compute_files
+            if report["path"] == "Assets/_Project/Art/Shaders/Hecton_SonarMap.compute"
+        ),
         None,
     )
     sonar_raycast = None
@@ -2272,8 +2452,7 @@ def build_report(root: Path) -> dict[str, Any]:
             "agent_1333_modified": report["path"] in AGENT_1333_DYNAMIC_DISPATCH_FILES,
         }
         for report in cs_files
-        if report["owner"] == "first_party"
-        and report["file_has_thread_group_query"]
+        if report["owner"] == "first_party" and report["file_has_thread_group_query"]
     ]
     external_payload_bridges = [
         {
@@ -2299,8 +2478,12 @@ def build_report(root: Path) -> dict[str, Any]:
                     "kernel": "CSRaymarch",
                     "previous_numthreads": [8, 8, 8],
                     "previous_product": 512,
-                    "current_numthreads": sonar_raycast["resolved"] if sonar_raycast else None,
-                    "current_product": sonar_raycast["product"] if sonar_raycast else None,
+                    "current_numthreads": (
+                        sonar_raycast["resolved"] if sonar_raycast else None
+                    ),
+                    "current_product": (
+                        sonar_raycast["product"] if sonar_raycast else None
+                    ),
                     "sha256": sonar_map["sha256"] if sonar_map else None,
                 }
             ],
@@ -2328,44 +2511,82 @@ def build_report(root: Path) -> dict[str, Any]:
         "first_party_compute_over_limit_count": len(first_party_compute_over_limit),
         "first_party_dispatch_missing_query": first_party_dispatch_missing_query,
         "first_party_dispatch_hardcoded": first_party_dispatch_hardcoded,
-        "first_party_graphics_buffer_lock_contract_violation_count": len(first_party_graphics_buffer_lock_contract_violations),
+        "first_party_graphics_buffer_lock_contract_violation_count": len(
+            first_party_graphics_buffer_lock_contract_violations
+        ),
         "graphics_buffer_lock_contract_violations": graphics_buffer_lock_contract_violations,
-        "first_party_legacy_compute_buffer_violation_count": len(first_party_legacy_compute_buffer_violations),
+        "first_party_legacy_compute_buffer_violation_count": len(
+            first_party_legacy_compute_buffer_violations
+        ),
         "legacy_compute_buffer_violations": legacy_compute_buffer_violations,
-        "first_party_csharp_thread_group_contract_violation_count": len(first_party_csharp_thread_group_contract_violations),
+        "first_party_csharp_thread_group_contract_violation_count": len(
+            first_party_csharp_thread_group_contract_violations
+        ),
         "csharp_thread_group_contract_violations": csharp_thread_group_contract_violations,
-        "first_party_payload_owner_query_contract_violation_count": len(first_party_payload_owner_query_contract_violations),
+        "first_party_payload_owner_query_contract_violation_count": len(
+            first_party_payload_owner_query_contract_violations
+        ),
         "payload_owner_query_contract_violations": first_party_payload_owner_query_contract_violations,
-        "first_party_strict_thread_query_contract_violation_count": len(first_party_strict_thread_query_contract_violations),
+        "first_party_strict_thread_query_contract_violation_count": len(
+            first_party_strict_thread_query_contract_violations
+        ),
         "strict_thread_query_contract_violations": first_party_strict_thread_query_contract_violations,
-        "first_party_kernel_support_contract_violation_count": len(first_party_kernel_support_contract_violations),
+        "first_party_kernel_support_contract_violation_count": len(
+            first_party_kernel_support_contract_violations
+        ),
         "kernel_support_contract_violations": first_party_kernel_support_contract_violations,
-        "first_party_compute_support_gate_violation_count": len(first_party_compute_support_gate_violations),
+        "first_party_compute_support_gate_violation_count": len(
+            first_party_compute_support_gate_violations
+        ),
         "compute_support_gate_violations": first_party_compute_support_gate_violations,
-        "first_party_high_resource_compute_api_guard_violation_count": len(first_party_high_resource_compute_api_guard_violations),
+        "first_party_high_resource_compute_api_guard_violation_count": len(
+            first_party_high_resource_compute_api_guard_violations
+        ),
         "high_resource_compute_api_guard_violations": first_party_high_resource_compute_api_guard_violations,
-        "first_party_high_resource_compute_reference_violation_count": len(first_party_high_resource_compute_reference_violations),
+        "first_party_high_resource_compute_reference_violation_count": len(
+            first_party_high_resource_compute_reference_violations
+        ),
         "high_resource_compute_reference_violations": first_party_high_resource_compute_reference_violations,
-        "first_party_high_resource_compute_backend_policy_violation_count": len(first_party_high_resource_compute_backend_policy_violations),
+        "first_party_high_resource_compute_backend_policy_violation_count": len(
+            first_party_high_resource_compute_backend_policy_violations
+        ),
         "high_resource_compute_backend_policy_violations": first_party_high_resource_compute_backend_policy_violations,
-        "first_party_compute_service_bridge_violation_count": len(first_party_compute_service_bridge_violations),
+        "first_party_compute_service_bridge_violation_count": len(
+            first_party_compute_service_bridge_violations
+        ),
         "compute_service_bridge_violations": first_party_compute_service_bridge_violations,
-        "first_party_vendor_compute_integration_violation_count": len(first_party_vendor_compute_integration_violations),
+        "first_party_vendor_compute_integration_violation_count": len(
+            first_party_vendor_compute_integration_violations
+        ),
         "vendor_compute_integration_violations": first_party_vendor_compute_integration_violations,
-        "first_party_vendor_component_activation_violation_count": len(first_party_vendor_component_activation_violations),
+        "first_party_vendor_component_activation_violation_count": len(
+            first_party_vendor_component_activation_violations
+        ),
         "vendor_component_activation_violations": first_party_vendor_component_activation_violations,
         "vendor_component_activation_contracts": vendor_component_activation_contracts,
-        "first_party_compute_texture_random_write_violation_count": len(first_party_compute_texture_random_write_violations),
+        "first_party_compute_texture_random_write_violation_count": len(
+            first_party_compute_texture_random_write_violations
+        ),
         "compute_texture_random_write_violations": first_party_compute_texture_random_write_violations,
-        "first_party_find_kernel_fail_closed_violation_count": len(first_party_find_kernel_fail_closed_violations),
+        "first_party_find_kernel_fail_closed_violation_count": len(
+            first_party_find_kernel_fail_closed_violations
+        ),
         "find_kernel_fail_closed_violations": first_party_find_kernel_fail_closed_violations,
-        "first_party_supported_kernel_resolve_violation_count": len(first_party_supported_kernel_resolve_violations),
+        "first_party_supported_kernel_resolve_violation_count": len(
+            first_party_supported_kernel_resolve_violations
+        ),
         "supported_kernel_resolve_violations": first_party_supported_kernel_resolve_violations,
-        "first_party_dispatch_group_limit_violation_count": len(first_party_dispatch_group_limit_violations),
+        "first_party_dispatch_group_limit_violation_count": len(
+            first_party_dispatch_group_limit_violations
+        ),
         "dispatch_group_limit_violations": first_party_dispatch_group_limit_violations,
-        "first_party_literal_one_group_dispatch_violation_count": len(first_party_literal_one_group_dispatch_violations),
+        "first_party_literal_one_group_dispatch_violation_count": len(
+            first_party_literal_one_group_dispatch_violations
+        ),
         "literal_one_group_dispatch_violations": first_party_literal_one_group_dispatch_violations,
-        "first_party_gles31_resource_pressure_count": len(first_party_gles31_resource_pressure),
+        "first_party_gles31_resource_pressure_count": len(
+            first_party_gles31_resource_pressure
+        ),
         "first_party_gles31_resource_pressure": first_party_gles31_resource_pressure,
         "compute_files": compute_files,
         "csharp_dispatch_files": cs_files,
@@ -2373,7 +2594,9 @@ def build_report(root: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Audit HECTON-8 compute dispatch portability.")
+    parser = argparse.ArgumentParser(
+        description="Audit HECTON-8 compute dispatch portability."
+    )
     parser.add_argument("--root", default=".", help="Repository root.")
     parser.add_argument(
         "--json",
@@ -2386,33 +2609,79 @@ def main() -> int:
     report = build_report(root)
     output_path = (root / args.json).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"
+    )
 
     print(f"compute_files={report['compute_file_count']}")
     print(f"csharp_dispatch_files={report['csharp_dispatch_file_count']}")
-    print(f"first_party_compute_over_limit={report['first_party_compute_over_limit_count']}")
+    print(
+        f"first_party_compute_over_limit={report['first_party_compute_over_limit_count']}"
+    )
     print(f"compute_over_limit_total={len(report['compute_over_limit'])}")
-    print(f"first_party_dispatch_missing_query={len(report['first_party_dispatch_missing_query'])}")
-    print(f"first_party_dispatch_hardcoded={len(report['first_party_dispatch_hardcoded'])}")
-    print(f"first_party_graphics_buffer_lock_contract_violations={report['first_party_graphics_buffer_lock_contract_violation_count']}")
-    print(f"first_party_legacy_compute_buffer_violations={report['first_party_legacy_compute_buffer_violation_count']}")
-    print(f"first_party_csharp_thread_group_contract_violations={report['first_party_csharp_thread_group_contract_violation_count']}")
-    print(f"first_party_payload_owner_query_contract_violations={report['first_party_payload_owner_query_contract_violation_count']}")
-    print(f"first_party_strict_thread_query_contract_violations={report['first_party_strict_thread_query_contract_violation_count']}")
-    print(f"first_party_kernel_support_contract_violations={report['first_party_kernel_support_contract_violation_count']}")
-    print(f"first_party_compute_support_gate_violations={report['first_party_compute_support_gate_violation_count']}")
-    print(f"first_party_high_resource_compute_api_guard_violations={report['first_party_high_resource_compute_api_guard_violation_count']}")
-    print(f"first_party_high_resource_compute_reference_violations={report['first_party_high_resource_compute_reference_violation_count']}")
-    print(f"first_party_high_resource_compute_backend_policy_violations={report['first_party_high_resource_compute_backend_policy_violation_count']}")
-    print(f"first_party_compute_service_bridge_violations={report['first_party_compute_service_bridge_violation_count']}")
-    print(f"first_party_vendor_compute_integration_violations={report['first_party_vendor_compute_integration_violation_count']}")
-    print(f"first_party_vendor_component_activation_violations={report['first_party_vendor_component_activation_violation_count']}")
-    print(f"first_party_compute_texture_random_write_violations={report['first_party_compute_texture_random_write_violation_count']}")
-    print(f"first_party_find_kernel_fail_closed_violations={report['first_party_find_kernel_fail_closed_violation_count']}")
-    print(f"first_party_supported_kernel_resolve_violations={report['first_party_supported_kernel_resolve_violation_count']}")
-    print(f"first_party_dispatch_group_limit_violations={report['first_party_dispatch_group_limit_violation_count']}")
-    print(f"first_party_literal_one_group_dispatch_violations={report['first_party_literal_one_group_dispatch_violation_count']}")
-    print(f"first_party_gles31_resource_pressure={report['first_party_gles31_resource_pressure_count']}")
+    print(
+        f"first_party_dispatch_missing_query={len(report['first_party_dispatch_missing_query'])}"
+    )
+    print(
+        f"first_party_dispatch_hardcoded={len(report['first_party_dispatch_hardcoded'])}"
+    )
+    print(
+        f"first_party_graphics_buffer_lock_contract_violations={report['first_party_graphics_buffer_lock_contract_violation_count']}"
+    )
+    print(
+        f"first_party_legacy_compute_buffer_violations={report['first_party_legacy_compute_buffer_violation_count']}"
+    )
+    print(
+        f"first_party_csharp_thread_group_contract_violations={report['first_party_csharp_thread_group_contract_violation_count']}"
+    )
+    print(
+        f"first_party_payload_owner_query_contract_violations={report['first_party_payload_owner_query_contract_violation_count']}"
+    )
+    print(
+        f"first_party_strict_thread_query_contract_violations={report['first_party_strict_thread_query_contract_violation_count']}"
+    )
+    print(
+        f"first_party_kernel_support_contract_violations={report['first_party_kernel_support_contract_violation_count']}"
+    )
+    print(
+        f"first_party_compute_support_gate_violations={report['first_party_compute_support_gate_violation_count']}"
+    )
+    print(
+        f"first_party_high_resource_compute_api_guard_violations={report['first_party_high_resource_compute_api_guard_violation_count']}"
+    )
+    print(
+        f"first_party_high_resource_compute_reference_violations={report['first_party_high_resource_compute_reference_violation_count']}"
+    )
+    print(
+        f"first_party_high_resource_compute_backend_policy_violations={report['first_party_high_resource_compute_backend_policy_violation_count']}"
+    )
+    print(
+        f"first_party_compute_service_bridge_violations={report['first_party_compute_service_bridge_violation_count']}"
+    )
+    print(
+        f"first_party_vendor_compute_integration_violations={report['first_party_vendor_compute_integration_violation_count']}"
+    )
+    print(
+        f"first_party_vendor_component_activation_violations={report['first_party_vendor_component_activation_violation_count']}"
+    )
+    print(
+        f"first_party_compute_texture_random_write_violations={report['first_party_compute_texture_random_write_violation_count']}"
+    )
+    print(
+        f"first_party_find_kernel_fail_closed_violations={report['first_party_find_kernel_fail_closed_violation_count']}"
+    )
+    print(
+        f"first_party_supported_kernel_resolve_violations={report['first_party_supported_kernel_resolve_violation_count']}"
+    )
+    print(
+        f"first_party_dispatch_group_limit_violations={report['first_party_dispatch_group_limit_violation_count']}"
+    )
+    print(
+        f"first_party_literal_one_group_dispatch_violations={report['first_party_literal_one_group_dispatch_violation_count']}"
+    )
+    print(
+        f"first_party_gles31_resource_pressure={report['first_party_gles31_resource_pressure_count']}"
+    )
     print(f"json={output_path.relative_to(root).as_posix()}")
     return 0
 
