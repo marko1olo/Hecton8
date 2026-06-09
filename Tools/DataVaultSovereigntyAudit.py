@@ -9,6 +9,7 @@ import re
 import sys
 from dataclasses import dataclass
 from functools import lru_cache
+import functools
 from pathlib import Path
 from typing import Any, Container, Iterable, Sequence
 
@@ -52,6 +53,8 @@ NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = re.compile(
 NATIVE_ARRAY_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE = NATIVE_COLLECTION_CONSTRUCTOR_ASSIGNMENT_BLOCK_RE
 LATEST_CREATED_FALLBACK_RE = re.compile(r"\bGlobalDataVault\s*\.\s*TryGetLatestCreated\s*\(")
 NON_NEWLINE_RE = re.compile(r"[^\r\n]")
+REF_OUT_RE = re.compile(r"\b(ref|in|out)\s+")
+IDENTIFIER_RE = re.compile(r"[A-Za-z_]\w*")
 NATIVE_COLLECTION_DECLARATION_RE = re.compile(
     r"^\s*(?:\[[^\]]+\]\s*)*"
     r"(?:(?:public|private|protected|internal|static|readonly|volatile|unsafe|new)\s+)+"
@@ -297,6 +300,7 @@ def source_needs_sanitized_snapshot(source: str) -> bool:
     )
 
 
+@functools.lru_cache(maxsize=32)
 def read_csharp_source_files(source_root: Path) -> list[CSharpSourceFile]:
     if not source_root.exists():
         raise FileNotFoundError(f"source root not found: {source_root}")
@@ -421,6 +425,7 @@ def strip_line_comment(line: str) -> str:
     return line.split("//", 1)[0]
 
 
+@functools.lru_cache(maxsize=128)
 def sanitize_csharp_source(source: str) -> str:
     result: list[str] = []
     index = 0
@@ -885,14 +890,16 @@ def split_csharp_arguments(argument_text: str) -> list[str]:
     return arguments
 
 
+@functools.lru_cache(maxsize=1024)
 def csharp_argument_identifier(argument: str) -> str:
-    cleaned = re.sub(r"\b(ref|in|out)\s+", "", argument.strip())
-    identifiers = re.findall(r"[A-Za-z_]\w*", cleaned)
+    cleaned = REF_OUT_RE.sub("", argument.strip())
+    identifiers = IDENTIFIER_RE.findall(cleaned)
     return identifiers[-1] if identifiers else ""
 
 
+@functools.lru_cache(maxsize=1024)
 def csharp_reference_pattern(identifier: str) -> str:
-    parts = [part for part in re.findall(r"[A-Za-z_]\w*", identifier) if part]
+    parts = [part for part in IDENTIFIER_RE.findall(identifier) if part]
     if not parts:
         return re.escape(identifier)
 

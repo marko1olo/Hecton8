@@ -1,4 +1,5 @@
 import sys
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,7 +10,7 @@ if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
 import ValidateAudioImportMetaPolicy as validator  # noqa: E402
-
+import FixAudioImportMetaPolicy
 
 class ValidateAudioImportMetaPolicyTests(unittest.TestCase):
     def test_current_project_audio_import_meta_policy_is_rejected(self) -> None:
@@ -78,6 +79,55 @@ class ValidateAudioImportMetaPolicyTests(unittest.TestCase):
 
         self.assertTrue(validator.sample_rate_policy_mismatch(row, meta))
 
+    def test_fix_audio_meta_vorbis_q70(self) -> None:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.meta', delete=False) as f:
+            f.write("""fileFormatVersion: 2
+guid: 123456789
+AudioImporter:
+  forceToMono: 0
+  defaultSettings:
+    compressionFormat: 0
+    quality: 1
+""")
+            filepath = Path(f.name)
+
+        audio_info = {
+            filepath.name[:-5]: {"duration_sec": "3.0", "audio_class": "music"}
+        }
+
+        fixed = FixAudioImportMetaPolicy.parse_and_fix_meta(filepath, audio_info)
+        self.assertTrue(fixed)
+
+        content = filepath.read_text()
+        self.assertIn("compressionFormat: 1", content)
+        self.assertIn("quality: 0.7", content)
+
+        os.unlink(filepath)
+
+    def test_fix_audio_meta_adpcm_short_sfx(self) -> None:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.meta', delete=False) as f:
+            f.write("""fileFormatVersion: 2
+guid: 123456789
+AudioImporter:
+  forceToMono: 0
+  defaultSettings:
+    compressionFormat: 0
+    quality: 1
+""")
+            filepath = Path(f.name)
+
+        audio_info = {
+            filepath.name[:-5]: {"duration_sec": "1.0", "audio_class": "sfx"}
+        }
+
+        fixed = FixAudioImportMetaPolicy.parse_and_fix_meta(filepath, audio_info)
+        self.assertTrue(fixed)
+
+        content = filepath.read_text()
+        self.assertIn("forceToMono: 1", content)
+        self.assertIn("compressionFormat: 2", content)
+
+        os.unlink(filepath)
 
 def _write_meta(
     path: Path,
