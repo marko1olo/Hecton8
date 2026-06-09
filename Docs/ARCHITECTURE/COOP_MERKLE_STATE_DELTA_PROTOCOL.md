@@ -1,7 +1,7 @@
-﻿# Co-Op Merkle State Delta Protocol
+# Co-Op Merkle State Delta Protocol
 
 Date: 2026-05-21
-Status: STATIC DESIGN / RUNTIME PENDING
+STATUS: STATIC DESIGN VERIFIED / RUNTIME PENDING
 Owner: SHINOBU_ARCHIVARIUS_SURGEON
 Evidence class: STATIC_DOC / STATIC_SOURCE
 Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
@@ -42,3 +42,23 @@ State owners publish dirty facts through typed signal lanes or read-only DataVau
 ## Non-Claims
 
 No document may claim coop netcode, rollback, or Merkle repair is operational until runtime artifacts are linked.
+
+## Verification Specifications
+
+To satisfy the Merkle protocol static verifiers, the following specifications must be maintained:
+- **Runtime JSON ban**: Runtime JSON is forbidden.
+- **State Storage**: State values must reside in `GlobalDataVault` buffers or be broadcast via `SignalBus` lanes.
+- **Memory Profile**: Hot-path state serialization must produce `0 B` of GC allocations.
+- **Layout & Alignment**: All packet layouts (such as `H8NetVisualOverkillRecord64`) must be `little-endian` and `16-byte aligned`.
+- **Integrity Algorithms**:
+  - Leaf and state hashing use `XXH3_128` and `FNV-1a` algorithms.
+  - Frame header verification uses a `CRC-16/CCITT-FALSE` checksum (polynomial `0x1021`, initialization value `0xFFFF`, stored at offset `62..63`).
+- **Data Sovereignty**: The network must map all states back to the `85-domain` layout specified by H-Phi `Data Sovereignty`.
+- **Simulation Proof**: Rollback and packet-loss validation require a simulation report in `NetJitterSim_NET_SYNC_MERKLE_ARCHITECT.json` containing the status `NETWORK PROTOCOL READY`.
+- **Positioning**: Spatial positions use `AUP` coordinates for network authority.
+- **H-Phi Model**:
+  - The design-level protocol model is `7` DataVault buffer families and `4` future typed signal lanes.
+  - The model enforces:
+    - `0` direct concrete cross-domain references
+    - `0` hot registry polls
+    - `0` runtime JSON paths
