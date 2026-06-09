@@ -5,7 +5,12 @@ import argparse
 import json
 import os
 import re
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, ElementTree  # nosec B405
+
+ET.Element = Element
+ET.SubElement = SubElement
+ET.ElementTree = ElementTree
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable

@@ -16,13 +16,17 @@ import json
 import math
 import mmap
 import os
-import re
 import struct
 import sys
 import time
 import tempfile
 import threading
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, ElementTree  # nosec B405
+
+ET.Element = Element
+ET.SubElement = SubElement
+ET.ElementTree = ElementTree
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Iterator

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime, timedelta
 
 from H8VerifyCore import ROOT, count_atlas_domains, path

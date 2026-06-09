@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import argparse
 from pathlib import Path
 

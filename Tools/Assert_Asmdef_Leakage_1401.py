@@ -2,7 +2,7 @@
 import json
 import pathlib
 import sys
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
