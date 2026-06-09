@@ -6,6 +6,7 @@ uses .asmdef files as source-of-truth and writes deterministic SDK projects
 only for projects already referenced by the solution.
 """
 
+from H8VerifyCore import fromstring_xml_safe
 from __future__ import annotations
 
 import hashlib
@@ -97,7 +98,7 @@ def load_asmdefs(root: Path) -> list[AsmDef]:
 
 
 def project_paths_from_slnx(path: Path) -> list[str]:
-    xml = ET.fromstring(path.read_text(encoding="utf-8-sig"))
+    xml = fromstring_xml_safe(path.read_text(encoding="utf-8-sig"))
     return [node.attrib["Path"] for node in xml.findall("Project") if "Path" in node.attrib]
 
 
@@ -303,7 +304,7 @@ def main() -> int:
             continue
         refs = resolve_project_references(asmdef, by_guid, by_name, slnx_names)
         content = project_xml(project_name, asmdef, asmdefs, refs, slnx_names)
-        ET.fromstring(content)
+        fromstring_xml_safe(content)
         existed = target.exists()
         current = target.read_text(encoding="utf-8") if existed else None
         if current != content:

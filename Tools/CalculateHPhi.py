@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import xml.etree.ElementTree as ET
+from H8VerifyCore import parse_xml_safe
 from datetime import datetime, timedelta
 
 from H8VerifyCore import ROOT, count_atlas_domains, path
@@ -125,7 +126,7 @@ def load_shinobu_140_self_audit(relative_path: str) -> dict:
         }
 
     try:
-        root = ET.parse(candidate).getroot()
+        root = parse_xml_safe(candidate).getroot()
     except (OSError, ET.ParseError):
         return {
             "present": False,
