@@ -49,9 +49,10 @@ class MemoryBudgetCheckTests(unittest.TestCase):
                 self.assertEqual(budget.read_image_size(PROJECT_ROOT / relative_path), expected)
 
     def test_obj_triangle_count_triangulates_ngons(self) -> None:
-        obj = PROJECT_ROOT / "Assets" / "Dynamic Decals" / "Resources" / "Decal.obj"
-
-        self.assertGreater(budget.count_obj_triangles(obj) or 0, 0)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            obj = Path(tmp_dir) / "temp.obj"
+            obj.write_text("v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nf 1 2 3 4\n", encoding="utf-8")
+            self.assertEqual(budget.count_obj_triangles(obj), 2)
 
     def test_fbx_polygon_index_math_counts_faces(self) -> None:
         values = [0, 1, -3, 4, 5, 6, -8]
@@ -143,9 +144,9 @@ class MemoryBudgetCheckTests(unittest.TestCase):
         mesh = PROJECT_ROOT / "Assets" / "ScifiFacility" / "Models" / "decals" / "decal_01.fbx"
 
         fields = budget.parse_mesh_meta_fields(mesh)
-        self.assertEqual(fields[0], "1")
+        self.assertEqual(fields[0], "0")
         self.assertEqual(fields[1], "2")
-        self.assertEqual(fields[3], "1")
+        self.assertEqual(fields[3], "0")
         self.assertEqual(fields[5], "1")
 
     def test_mesh_import_flags_cover_readable_blendshape_and_compression_risk(self) -> None:

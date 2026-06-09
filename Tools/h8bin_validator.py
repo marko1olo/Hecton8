@@ -16,7 +16,6 @@ import json
 import math
 import mmap
 import os
-import re
 import struct
 import sys
 import time
@@ -2276,8 +2275,39 @@ def build_artifact_remediation(path: Path) -> tuple[str, list[str]]:
 
 def release_expression_can_be_true(expression: str) -> bool:
     """Return True when a C# preprocessor expression can be active in a player release."""
-    expression = re.sub(r"\bdefined\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)", r"\1", expression)
-    symbols = sorted(set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", expression)))
+    # Replace defined(SYMBOL) with SYMBOL without re
+    idx = expression.find("defined")
+    while idx >= 0:
+        left_ok = (idx == 0 or not (expression[idx - 1].isalnum() or expression[idx - 1] == '_'))
+        right_ok = (idx + 7 >= len(expression) or not (expression[idx + 7].isalnum() or expression[idx + 7] == '_'))
+        if left_ok and right_ok:
+            open_paren = expression.find("(", idx + 7)
+            if open_paren >= 0:
+                between = expression[idx + 7:open_paren].strip()
+                if not between:
+                    close_paren = expression.find(")", open_paren)
+                    if close_paren >= 0:
+                        symbol = expression[open_paren + 1:close_paren].strip()
+                        if symbol.isidentifier():
+                            expression = expression[:idx] + symbol + expression[close_paren + 1:]
+                            idx = expression.find("defined")
+                            continue
+        idx = expression.find("defined", idx + 1)
+
+    # Find symbols without re
+    words = []
+    curr = []
+    for c in expression:
+        if c.isalnum() or c == '_':
+            curr.append(c)
+        else:
+            if curr:
+                words.append("".join(curr))
+                curr = []
+    if curr:
+        words.append("".join(curr))
+    symbols = sorted(set(w for w in words if w.isidentifier() and not w.isdigit() and w not in {"defined", "true", "false", "and", "or", "not"}))
+
     fixed = {
         "UNITY_EDITOR": False,
         "DEVELOPMENT_BUILD": False,
@@ -2290,7 +2320,22 @@ def release_expression_can_be_true(expression: str) -> bool:
     python_expr = expression
     python_expr = python_expr.replace("&&", " and ")
     python_expr = python_expr.replace("||", " or ")
-    python_expr = re.sub(r"!(?!=)", " not ", python_expr)
+
+    # Replace ! (but not !=) with " not " Character-by-character
+    new_parts = []
+    i = 0
+    while i < len(python_expr):
+        if python_expr[i] == '!':
+            if i + 1 < len(python_expr) and python_expr[i + 1] == '=':
+                new_parts.append("!=")
+                i += 2
+            else:
+                new_parts.append(" not ")
+                i += 1
+        else:
+            new_parts.append(python_expr[i])
+            i += 1
+    python_expr = "".join(new_parts)
 
     for values in itertools.product((False, True), repeat=len(variable_symbols)):
         env = dict(fixed)

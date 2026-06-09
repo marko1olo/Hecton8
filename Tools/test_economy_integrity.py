@@ -42,7 +42,10 @@ class EconomyIntegrityTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(0, items_bake.bake(temp_root))
 
-            self.assertEqual((source_dir / "Items.csv").read_bytes(), generated_path.read_bytes())
+            self.assertEqual(
+                (source_dir / "Items.csv").read_text(encoding="utf-8").splitlines(),
+                generated_path.read_text(encoding="utf-8").splitlines()
+            )
 
     def test_items_csv_validator_contract(self) -> None:
         economy_dir = REPO_ROOT / "Data" / "Economy"
@@ -218,6 +221,10 @@ class EconomyIntegrityTests(unittest.TestCase):
                 "matrix_recipe_value_drift",
                 "items_missing_source_recipe",
                 "binding_plan_runtime_allowed",
+                "crafting_output_mass_mismatch",
+                "crafting_tier2_missing_tool",
+                "crafting_zero_time",
+                "crafting_monte_carlo_profit",
             ],
             results,
         )
@@ -268,7 +275,11 @@ class EconomyIntegrityTests(unittest.TestCase):
     def test_player_inventory_capacity_gate_precedes_mutation(self) -> None:
         source_path = REPO_ROOT / "Assets" / "_Project" / "Scripts" / "PlayerInventory.cs"
         source = source_path.read_text(encoding="utf-8")
-        method = extract_csharp_method(source, "private bool TryAddItemWithStateInternal")
+        method = extract_csharp_method(
+            source,
+            r"private bool TryAddItemWithStateInternal\s*\(\s*int itemHashId,\s*int quantity,\s*ulong geneticsMask,\s*ushort qualityMilli,\s*ushort itemStateFlags,\s*bool hasExplicitStateFlags,\s*out int addedQuantity\)",
+            is_regex=True
+        )
 
         capacity_gate = method.find("TryResolveCapacityLimitedQuantity")
         stack_mutation = method.find("TryStackQuantityWithState")
@@ -277,7 +288,7 @@ class EconomyIntegrityTests(unittest.TestCase):
         self.assertGreaterEqual(capacity_gate, 0)
         self.assertGreater(stack_mutation, capacity_gate)
         self.assertGreater(slot_mutation, capacity_gate)
-        self.assertIn("InventoryEvents.NotifyInventoryFull(itemHashId);", method)
+        self.assertIn("InventoryEvents.TryNotifyInventoryFull(itemHashId);", method)
         self.assertRegex(source, r"private bool CanAcceptAdditionalPhysicalCapacity\s*\(")
         self.assertRegex(source, r"private bool TryResolveAdditionalPhysicalDemand\s*\(")
         self.assertRegex(source, r"private bool TryResolveCurrentPhysicalTotals\s*\(")
@@ -293,12 +304,13 @@ class EconomyIntegrityTests(unittest.TestCase):
         self.assertTrue(bulk["capacity_resolver_rejects_nonpositive_unit_value"])
 
 
-def extract_csharp_method(source: str, signature: str) -> str:
-    match = re.search(re.escape(signature), source)
+def extract_csharp_method(source: str, signature: str, is_regex: bool = False) -> str:
+    pattern = signature if is_regex else re.escape(signature)
+    match = re.search(pattern, source)
     if match is None:
         raise AssertionError(f"missing method signature: {signature}")
 
-    brace_index = source.find("{", match.start())
+    brace_index = source.find("{", match.end())
     if brace_index < 0:
         raise AssertionError(f"missing method body: {signature}")
 

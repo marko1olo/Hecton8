@@ -19,8 +19,8 @@ MATRIX = DATA_DIR / "Water_Extinction_Matrix.bin"
 MANIFEST = DATA_DIR / "Water_Extinction_Matrix.json"
 HALF_DTYPE = np.dtype("<f2")
 HALF_PACK = "<e"
-SHAPE = (256, 256, 3)
-EXPECTED_BYTES = 256 * 256 * 3 * 2
+SHAPE = (256, 256, 256)
+EXPECTED_BYTES = 256 * 256 * 256 * 2
 
 
 def rel(path: Path) -> str:
@@ -36,14 +36,14 @@ def verify() -> dict[str, Any]:
     if matrix_bytes != EXPECTED_BYTES:
         raise AssertionError(f"{rel(MATRIX)} bytes={matrix_bytes} expected={EXPECTED_BYTES}")
     matrix = np.fromfile(MATRIX, dtype=HALF_DTYPE).reshape(SHAPE)
-    red_500 = float(matrix[255, 0, 0])
-    blue_500 = float(matrix[255, 0, 2])
+    red_500 = float(matrix[255, 0, 255])
+    blue_500 = float(matrix[255, 0, 0])
     if red_500 != 0.0:
         raise AssertionError("red at 500m is not exactly 0.0")
     if blue_500 <= 0.0:
         raise AssertionError("blue at 500m did not survive")
     raw = MATRIX.read_bytes()
-    blue_offset = ((255 * 256 * 3) + 2) * 2
+    blue_offset = ((255 * 256 * 256) + 0) * 2
     if raw[blue_offset : blue_offset + 2] != struct.pack(HALF_PACK, blue_500):
         raise AssertionError("matrix byte packing is not little-endian <e")
     hashes = manifest.get("artifactHashes", [])

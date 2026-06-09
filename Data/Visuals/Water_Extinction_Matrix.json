@@ -1,271 +1,300 @@
 {
-  "absorptionRgbMInv": {
-    "blue": 0.010599999688565731,
-    "green": 0.04340000078082085,
-    "red": 0.6240000128746033
+  "absorptionAnchorsMInv": {
+    "blue470": 0.0106,
+    "green530": 0.0434,
+    "red700": 0.624
   },
-  "absorptionSource": "Pope/Fry pure-water visible absorption anchors; Applied Optics 36(33), 8710-8723, doi:10.1364/AO.36.008710; rounded to four significant digits for deterministic half-float baking.",
-  "artifactHashCollisionCount": 0,
-  "artifactHashes": [
-    {
-      "fnv1a32AsciiLower": 3023128798,
-      "hashHex": "0xB43148DE",
-      "id": "Data.Visuals.WaterExtinction.Toaster"
-    },
-    {
-      "fnv1a32AsciiLower": 1239581203,
-      "hashHex": "0x49E28213",
-      "id": "Data.Visuals.WaterExtinction.Main"
-    },
-    {
-      "fnv1a32AsciiLower": 1319282506,
-      "hashHex": "0x4EA2A74A",
-      "id": "Data.Visuals.WaterExtinction.RtxOverkill"
-    },
-    {
-      "fnv1a32AsciiLower": 93352037,
-      "hashHex": "0x05907065",
-      "id": "Data.Visuals.WaterExtinction.Preview.Main"
-    },
-    {
-      "fnv1a32AsciiLower": 947856016,
-      "hashHex": "0x387F2290",
-      "id": "Data.Visuals.WaterExtinction.Preview.RtxOverkill"
-    },
-    {
-      "fnv1a32AsciiLower": 1549605707,
-      "hashHex": "0x5C5D1B4B",
-      "id": "Data.Visuals.WaterExtinction.Manifest"
-    }
-  ],
+  "allTurbidityProfileScan": {
+    "count": 216,
+    "firstFiles": [
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_001_01_Archipelago_Needles.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_001_North_01_Archipelago_Needles.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_002_01_Mesa_Plateaus.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_002_South_01_Mesa_Plateaus.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_003_01_The_Granite_Spine.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_003_East_01_The_Granite_Spine.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_West_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_005_02_Sea_Stack_Forest.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_005_North_02_Sea_Stack_Forest.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_006_02_White_Alabaster_Pools.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_006_South_02_White_Alabaster_Pools.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_007_02_The_Tectonic_Chute.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_007_East_02_The_Tectonic_Chute.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_008_02_Sand_Fan_Deltas.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_008_West_02_Sand_Fan_Deltas.asset"
+    ],
+    "max": 1.67621359,
+    "mean": 1.2165106659259257,
+    "min": 0.55,
+    "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
+  },
   "axes": {
     "depthMeters": {
       "count": 256,
-      "max": 500.0,
+      "max": 1500.0,
       "min": 0.0,
       "spacing": "linear"
     },
-    "rgb": [
-      "red",
-      "green",
-      "blue"
-    ],
-    "turbidity": {
-      "absorptionRule": "muRgb * (1 + turbidity)",
+    "turbidityMultiplier": {
       "count": 256,
       "max": 2.5,
       "min": 0.0,
       "spacing": "linear"
+    },
+    "wavelengthNm": {
+      "count": 256,
+      "max": 700.0,
+      "min": 470.0,
+      "spacing": "linear"
     }
   },
-  "axisOrder": [
-    "depth",
-    "turbidity",
-    "rgb"
-  ],
-  "binaryAlignmentBytes": 16,
   "binaryHeader": "none",
   "byteOrder": "little-endian",
-  "coefficientProvenance": [
-    {
-      "absorptionMInv": 0.6240000128746033,
-      "beerLambertAt10m": 0.0019498552718089743,
-      "beerLambertAt500m": 3.1631431782227995e-136,
-      "channel": "red",
-      "rounding": "four_significant_digits_before_fp16_bake",
-      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
-      "wavelengthNm": 700
-    },
-    {
-      "absorptionMInv": 0.04340000078082085,
-      "beerLambertAt10m": 0.6479122504263166,
-      "beerLambertAt500m": 3.7653866035648894e-10,
-      "channel": "green",
-      "rounding": "four_significant_digits_before_fp16_bake",
-      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
-      "wavelengthNm": 530
-    },
-    {
-      "absorptionMInv": 0.010599999688565731,
-      "beerLambertAt10m": 0.8994246508770406,
-      "beerLambertAt500m": 0.004991594684186976,
-      "channel": "blue",
-      "rounding": "four_significant_digits_before_fp16_bake",
-      "sourceReferenceId": "PopeFry1997PureWaterAbsorption",
-      "wavelengthNm": 470
-    }
-  ],
   "dataSovereignty": {
-    "globalRegistryRequired": false,
-    "hotPathJsonParsingAllowed": false,
-    "lookupModel": "stateless_binary_lookup",
-    "runtimePrivateStateRequired": false
+    "lookupModel": "stateless_binary_lookup"
   },
-  "formula": "I = I0 * exp(-mu * depthMeters)",
-  "loreLexicon": {
-    "approvedTerms": [
-      "bilge-silt",
-      "pressure glass",
-      "floodlamp bleed",
-      "bulkhead shadow",
-      "rust-haze"
+  "fogDensity": {
+    "abyssalSiltFogDensityPerMeter": 0.024,
+    "abyssalSiltFogDensitySource": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_AbyssalSilt.asset",
+    "axis": {
+      "depthMeters": {
+        "count": 1501,
+        "max": 1500,
+        "min": 0,
+        "step": 1
+      }
+    },
+    "baseFogDensityPerMeter": 0.0021,
+    "bytes": 3008,
+    "format": "float16",
+    "representativeSilt": 1.2657899742857144,
+    "representativeSiltSource": "named silt/sediment RuntimeVisualProfiles",
+    "shape": [
+      1501
+    ]
+  },
+  "fogDensityFile": "Water_Fog_Density_LUT.bin",
+  "giRelayContract": {
+    "allRequiredRulesPresent": true,
+    "appliedRules": {
+      "depthPaletteFake": true,
+      "fogGlobals": true,
+      "lowTierSnapStates": true,
+      "rejectRuntimeVolumetricGI": true,
+      "singleCubemapPath": true
+    },
+    "files": [
+      {
+        "bytes": 6516,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "B30151AAEE79E22B36E11CC0A8C976401FD06931120B12091BAB949EE6B8ABAD"
+      },
+      {
+        "bytes": 26915,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "775F899CD5417442387E308E1110EEC9EBA7887908FE1464B7DB28D79944921F"
+      },
+      {
+        "bytes": 10994,
+        "exists": true,
+        "path": "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md",
+        "sha256": "C1CE01110B957383B784A8C64338B28D93FE905DB6A4F1B35D30DC8F05B17585"
+      }
     ],
-    "rejectedToneClass": "showroom-polish wording is disallowed in shipped labels",
-    "tone": "NASA-Punk / Deep Sea Noir"
+    "summary": [
+      "Use a 1D cyan-to-black depth palette / LUT path rather than volumetric underwater GI.",
+      "Keep fog and atmosphere color as shader-global relay state.",
+      "Keep MX350 low tier on discrete snap-state math; spend high-tier budget on presentation overkill.",
+      "Use a single optional WaterVolume cubemap path, not realtime reflection probe churn."
+    ]
   },
-  "mathDerivation": {
-    "baseFormula": "I = I0 * exp(-mu * d)",
-    "baseLaw": "Beer-Lambert",
-    "coefficientUnits": "m^-1",
-    "depthUnits": "meters",
-    "runtimePolicy": "sample baked transmittance; do not recompute exponentials on LOW/MX350",
-    "turbidityRule": "muEffective = muPureWaterRgb * (1 + siltTurbidity)"
+  "inputSources": {
+    "atmosphereFogProfiles": [
+      {
+        "fogDensity": 0.024,
+        "name": "Atmos_AbyssalSilt",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_AbyssalSilt.asset"
+      },
+      {
+        "fogDensity": 0.028,
+        "name": "Atmos_ChemosyntheticBrine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_ChemosyntheticBrine.asset"
+      },
+      {
+        "fogDensity": 0.01,
+        "name": "Atmos_CrystalGrowth",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_CrystalGrowth.asset"
+      },
+      {
+        "fogDensity": 0.013,
+        "name": "Atmos_FossilReef",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_FossilReef.asset"
+      },
+      {
+        "fogDensity": 0.009,
+        "name": "Atmos_GraniteEscarpment",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_GraniteEscarpment.asset"
+      },
+      {
+        "fogDensity": 0.0065,
+        "name": "Atmos_LittoralKarst",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_LittoralKarst.asset"
+      },
+      {
+        "fogDensity": 0.032,
+        "name": "Atmos_MetallicHadal",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_MetallicHadal.asset"
+      },
+      {
+        "fogDensity": 0.03,
+        "name": "Atmos_RiftSpine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_RiftSpine.asset"
+      },
+      {
+        "fogDensity": 0.042,
+        "name": "Atmos_RiftVoid",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_RiftVoid.asset"
+      },
+      {
+        "fogDensity": 0.011,
+        "name": "Atmos_SedimentDrift",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_SedimentDrift.asset"
+      },
+      {
+        "fogDensity": 0.015,
+        "name": "Atmos_TectonicSpine",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_TectonicSpine.asset"
+      },
+      {
+        "fogDensity": 0.03,
+        "name": "Atmos_VolcanicGlass",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_VolcanicGlass.asset"
+      },
+      {
+        "fogDensity": 0.038,
+        "name": "Atmos_VolcanicHadal",
+        "path": "Assets/_Project/Data/Biomes/AtmosphereProfiles/Atmos_VolcanicHadal.asset"
+      }
+    ],
+    "giRelayLogsReadByCli": [
+      "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/AgentLogs/Rationale_RENDER_GI_RELAY_SYNC.md",
+      "Docs/Archive/Batch003/Tasks/Status_RENDER_GI_RELAY_SYNC.md"
+    ],
+    "opticalAnchorNote": "Rounded visible-water absorption anchors for 470nm, 530nm, and 700nm; gameplay silt extinction is a presentation scalar, not particle simulation.",
+    "siltProfileGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset",
+    "underwaterFogProfile": "Assets/_Project/Data/Atmosphere/Profile_Underwater.asset"
   },
   "matrixFile": "Water_Extinction_Matrix.bin",
-  "overkillMatrixFile": "Water_Extinction_Matrix_Overkill.bin",
-  "overkillPreviewFile": "Water_Extinction_GradientPreview_Overkill.png",
-  "physicsBasis": "BeerLambert / Beer-Lambert extinction with pure-water absorption anchors.",
+  "matrixShape": [
+    256,
+    256,
+    256
+  ],
+  "opticsModel": "BeerLambert",
+  "packedTexture2D": {
+    "bytes": 33554432,
+    "format": "R16F",
+    "height": 4096,
+    "width": 4096
+  },
   "previewFile": "Water_Extinction_GradientPreview.png",
-  "pythonPackingContract": "<e",
-  "rowMajorIndex": "((depthIndex * 256) + turbidityIndex) * 3 + channelIndex",
-  "scalability": {
-    "mainData": {
-      "intendedHardware": "default LOW/MIDDLE underwater pass",
-      "variant": "main_mx350"
-    },
-    "rtxOverkillData": {
-      "harmonicNoise": [
-        {
-          "amplitude": 0.5,
-          "band": 0,
-          "frequencyScale": 2.0,
-          "hashHex": "0xB51D1CDD",
-          "phase01": 0.11274891279468986,
-          "prime": 2
-        },
-        {
-          "amplitude": 0.3333333333333333,
-          "band": 1,
-          "frequencyScale": 3.0,
-          "hashHex": "0xB41D1B4A",
-          "phase01": 0.1065995269703212,
-          "prime": 3
-        },
-        {
-          "amplitude": 0.2,
-          "band": 2,
-          "frequencyScale": 5.0,
-          "hashHex": "0xAE1D11D8",
-          "phase01": 0.06970321202410926,
-          "prime": 5
-        },
-        {
-          "amplitude": 0.14285714285714285,
-          "band": 3,
-          "frequencyScale": 7.0,
-          "hashHex": "0xB01D14FE",
-          "phase01": 0.08200198367284657,
-          "prime": 7
-        }
-      ],
-      "intendedHardware": "HIGH/ULTRA visual overkill path",
-      "variant": "rtx_overkill"
-    },
-    "toasterData": {
-      "intendedHardware": "Celeron/i3/MX350 pressure path",
-      "sampleCost": "one bilinear RGB/RGBA texture sample or one raw R16F lane path",
-      "variant": "toaster_i3"
-    }
-  },
+  "readmeFile": "Water_Extinction_README.md",
+  "rtxOverkillMode": "rtx_overkill",
   "scalarFormat": "float16",
-  "schema": "H8.WaterExtinctionMatrix.v3",
-  "sha256": {
-    "Water_Extinction_GradientPreview.png": "C70AF374E4B7C2B76340F42E9C70620B338B8173760AB8B73FAE5AE62C0614DC",
-    "Water_Extinction_GradientPreview_Overkill.png": "6BC7812405E8548B4AA85D12E5BB4E6B1CDEFA2827E86588BD2A91E126FAD200",
-    "Water_Extinction_Matrix.bin": "99EB8631F64C15181E62E2C1E24CDA285A490330C0F04F99FB218EFEC9BBFF89",
-    "Water_Extinction_Matrix_Overkill.bin": "6D8D7ACF02A763A7096C681E5D734F3B37C2595E45977753DBCE1C5161A5A98C",
-    "Water_Extinction_Matrix_Toaster.bin": "8AD019294F763A3457AE2CDFCE024516BC3AF0E008A537680BEC8C44259F60D6"
-  },
-  "shape": [
-    256,
-    256,
-    3
-  ],
-  "sourceReferences": [
-    {
-      "authors": "Robin M. Pope; Edward S. Fry",
-      "doi": "10.1364/AO.36.008710",
-      "id": "PopeFry1997PureWaterAbsorption",
-      "issue": 33,
-      "journal": "Applied Optics",
-      "pages": "8710-8723",
-      "title": "Absorption spectrum (380-700 nm) of pure water. II. Integrating cavity measurements",
-      "usage": "RGB pure-water absorption anchor provenance; values are rounded before half-float baking.",
-      "volume": 36,
-      "year": 1997
-    }
-  ],
-  "status": "LUT BAKED",
-  "toasterMatrixFile": "Water_Extinction_Matrix_Toaster.bin",
-  "tool": "Tools/OpticsBaker.py",
-  "validation": {
-    "allFinite": true,
-    "allVariantBinariesAligned16": true,
-    "blueAt500mClear": 0.004993438720703125,
-    "blueAt500mSurvives": true,
-    "expectedMatrixBytes": 393216,
-    "fnvCollisionCount": 0,
-    "matrixAligned16": true,
-    "matrixBytes": 393216,
-    "redAt10mClearExactFloat32": 0.0019498552718089743,
-    "redAt500mClear": 0.0,
-    "redAt500mExactlyZero": true,
+  "schema": "H8.WaterExtinctionMatrix.v1",
+  "selfAudit": {
+    "previewTurbidity": 1.34,
+    "redAt500mRequirement": "exactly 0.0000 after float16 quantization",
+    "redMatrixAt500m": 0.0,
+    "redMatrixAt500mDepthIndex": 85,
+    "redTransmittanceAt10m": 0.0019502639770507812,
+    "redTransmittanceAt500m": 0.0,
+    "referenceChecks": [
+      {
+        "appliedCheck": "Red wavelengths are filtered early underwater; preview and LUT keep red below visible persistence after 10m.",
+        "source": "NOAA Ocean Explorer ocean color guidance",
+        "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/"
+      },
+      {
+        "appliedCheck": "Preserve the 1D depth-palette/fog-global premium approximation path instead of runtime volumetric GI.",
+        "source": "RENDER_GI_RELAY_SYNC batch logs",
+        "url": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md"
+      }
+    ],
     "status": "PASS"
   },
-  "variants": {
-    "main_mx350": {
-      "aligned16": true,
-      "bytes": 393216,
-      "expectedBytes": 393216,
-      "file": "Water_Extinction_Matrix.bin",
-      "role": "Primary MX350/LOW lookup required by the batch prompt.",
-      "sha256": "99EB8631F64C15181E62E2C1E24CDA285A490330C0F04F99FB218EFEC9BBFF89",
-      "shape": [
-        256,
-        256,
-        3
-      ]
-    },
-    "rtx_overkill": {
-      "aligned16": true,
-      "bytes": 1572864,
-      "expectedBytes": 1572864,
-      "file": "Water_Extinction_Matrix_Overkill.bin",
-      "role": "High-end visual-overkill lookup for denser fog/light blending.",
-      "sha256": "6D8D7ACF02A763A7096C681E5D734F3B37C2595E45977753DBCE1C5161A5A98C",
-      "shape": [
-        512,
-        512,
-        3
-      ]
-    },
-    "toaster_i3": {
-      "aligned16": true,
-      "bytes": 24576,
-      "expectedBytes": 24576,
-      "file": "Water_Extinction_Matrix_Toaster.bin",
-      "role": "Celeron/i3 stripped lookup for lowest bandwidth path.",
-      "sha256": "8AD019294F763A3457AE2CDFCE024516BC3AF0E008A537680BEC8C44259F60D6",
-      "shape": [
-        64,
-        64,
-        3
-      ]
-    }
+  "sha256": {
+    "Water_Extinction_GradientPreview.png": "D8B5956C9CAB5C900CE511D9D87A06BDF18ACCDCDCFCF6EB0237C1471B53971A",
+    "Water_Extinction_Hecton_CoreLit_Snippet.hlsl": "2D004C331CE98E21B3FC5CE04C5BE00EBDF2A94C16A618A3E7F4ED398FBCDC9E",
+    "Water_Extinction_Matrix.bin": "09AF9685E46C4B9B518C8E300690866700540C9074FD1D05E7EED61D4CA95BC4",
+    "Water_Extinction_README.md": "C6B409E879990736AB7E7B441C222C48A7581992763714C279541846103A247F",
+    "Water_Fog_Density_LUT.bin": "BB812DD9CBF90D4597C65C171C85EEEDB9C1A264D0D9FF7226E89C221719C3C1"
   },
-  "wavelengthNm": {
-    "blue": 470,
-    "green": 530,
-    "red": 700
+  "shaderSnippetFile": "Water_Extinction_Hecton_CoreLit_Snippet.hlsl",
+  "siltExtinctionAnchorsMInv": {
+    "blue470": 0.012,
+    "green530": 0.0105,
+    "red700": 0.009
+  },
+  "siltProfileScan": {
+    "count": 14,
+    "filter": "file path contains silt or sediment",
+    "firstFiles": [
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_004_West_01_The_Silt_Tongue.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_013_04_Silt_Dunes.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_013_North_04_Silt_Dunes.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_024_06_The_Silt_Cascades.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_024_West_06_The_Silt_Cascades.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_028_07_Meandering_Silt_Rivers.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_028_West_07_Meandering_Silt_Rivers.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_033_09_Silt_Catacombs.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_033_North_09_Silt_Catacombs.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_040_10_Silt_Void.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_040_West_10_Silt_Void.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_060_15_The_Silt_Shadows.asset",
+      "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/BiomeVisual_060_West_15_The_Silt_Shadows.asset"
+    ],
+    "max": 1.52716431,
+    "mean": 1.2657899742857144,
+    "min": 0.9072,
+    "sourceGlob": "Assets/_Project/Data/Biomes/RuntimeVisualProfiles/*.asset"
+  },
+  "sourceReferences": [
+    {
+      "source": "NOAA Ocean Explorer ocean color guidance",
+      "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/",
+      "usage": "External sanity check that red wavelengths disappear early underwater."
+    },
+    {
+      "source": "Pope/Fry visible pure-water absorption reference listing (10.1364/AO.36.008710)",
+      "url": "https://opg.optica.org/ao/issue.cfm?issue=33&volume=36",
+      "usage": "Reference trail for the rounded visible-water absorption anchor family used by the baker."
+    },
+    {
+      "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "source": "RENDER_GI_RELAY_SYNC batch logs",
+      "usage": "Preserves the depth-palette/fog-global premium approximation contract."
+    }
+  ],
+  "status": "OPTICS CALCULATED",
+  "validation": {
+    "fog0": 0.00241851806640625,
+    "fog1500": 0.0240020751953125,
+    "fog750": 0.01320648193359375,
+    "fogBytes": 3008,
+    "fogCount": 1501,
+    "fogExpectedBytes": 3008,
+    "giRelayContractAllRequiredRulesPresent": true,
+    "matrixBytes": 33554432,
+    "matrixExpectedBytes": 33554432,
+    "pngSignature": "89504E470D0A1A0A",
+    "snippetHasInt2Load": true,
+    "snippetHasNoRound": true,
+    "status": "PASS"
   }
 }

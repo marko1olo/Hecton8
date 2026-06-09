@@ -40,7 +40,7 @@ class LoreSemanticSyncTests(unittest.TestCase):
         self.assertRegex(resolver, r"HighCapacityTank\s*=\s*1UL\s*<<\s*0")
         self.assertIn('case "suit_oxygen_t1_aux_reservoir":', resolver)
         self.assertIn("return SuitUpgrades.HighCapacityTank;", resolver)
-        self.assertIn("stats.MaxO2 += 4f;", resolver)
+        self.assertIn("stats.MaxO2 += (4f * highCapacity)", resolver)
         self.assertIn("MaxO2 = 100f", resolver)
         self.assertIn("CrushDepth = 50f", resolver)
         self.assertIn("deltaMaxOxygen: 4", asset)

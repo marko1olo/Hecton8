@@ -148,6 +148,7 @@ class AppliedLoreIntegrationPreflightTests(unittest.TestCase):
             stale_files=0,
             missing_files=0,
             disabled_generated_pages=0,
+            integrity_issues=0,
             sample_issues=(),
         )
 

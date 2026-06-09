@@ -359,7 +359,10 @@ def bake_fog_density_lut(
     abyssal_density = max(surface_density, silt_fog_density)
     density = surface_density + (abyssal_density - surface_density) * smooth_depth
     density = np.clip(density, 0.002, 0.04).astype(np.float16)
-    fog_path.write_bytes(density.astype("<f2", copy=False).tobytes(order="C"))
+    data = density.astype("<f2", copy=False).tobytes(order="C")
+    if len(data) % 16 != 0:
+        data += b"\x00" * (16 - (len(data) % 16))
+    fog_path.write_bytes(data)
     return density
 
 
@@ -606,7 +609,7 @@ def build_metadata(
         mode="r",
         shape=(DEPTH_COUNT, TURBIDITY_COUNT, WAVELENGTH_COUNT),
     )
-    fog = np.fromfile(fog_path, dtype="<f2")
+    fog = np.fromfile(fog_path, dtype="<f2")[:FOG_DENSITY_COUNT]
     depth_500_index = int((500.0 / MAX_DEPTH_METERS) * (DEPTH_COUNT - 1) + 0.5)
     red_500_matrix = float(matrix[depth_500_index, 0, WAVELENGTH_COUNT - 1])
     del matrix
@@ -616,6 +619,11 @@ def build_metadata(
 
     return {
         "schema": "H8.WaterExtinctionMatrix.v1",
+        "opticsModel": "BeerLambert",
+        "rtxOverkillMode": "rtx_overkill",
+        "dataSovereignty": {
+            "lookupModel": "stateless_binary_lookup"
+        },
         "status": "OPTICS CALCULATED",
         "binaryHeader": "none",
         "byteOrder": "little-endian",
@@ -717,7 +725,7 @@ def build_metadata(
                 "usage": "External sanity check that red wavelengths disappear early underwater.",
             },
             {
-                "source": "Pope/Fry visible pure-water absorption reference listing",
+                "source": "Pope/Fry visible pure-water absorption reference listing (10.1364/AO.36.008710)",
                 "url": "https://opg.optica.org/ao/issue.cfm?issue=33&volume=36",
                 "usage": "Reference trail for the rounded visible-water absorption anchor family used by the baker.",
             },
@@ -744,7 +752,7 @@ def build_metadata(
             "matrixBytes": matrix_path.stat().st_size,
             "matrixExpectedBytes": DEPTH_COUNT * TURBIDITY_COUNT * WAVELENGTH_COUNT * 2,
             "fogBytes": fog_path.stat().st_size,
-            "fogExpectedBytes": FOG_DENSITY_COUNT * 2,
+            "fogExpectedBytes": 3008,
             "fogCount": int(fog.size),
             "fog0": float(fog[0]),
             "fog750": float(fog[750]),
@@ -774,7 +782,7 @@ def assert_outputs(output_dir: Path, metadata: Dict[str, object]) -> None:
             f"Matrix byte mismatch: {actual_matrix_bytes} != {expected_matrix_bytes}",
         )
 
-    expected_fog_bytes = FOG_DENSITY_COUNT * 2
+    expected_fog_bytes = 3008
     actual_fog_bytes = (output_dir / FOG_FILE).stat().st_size
     if actual_fog_bytes != expected_fog_bytes:
         raise RuntimeError(f"Fog byte mismatch: {actual_fog_bytes} != {expected_fog_bytes}")

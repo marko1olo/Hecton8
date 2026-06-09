@@ -46,7 +46,10 @@ function Get-UnityLogIssueSummary {{ }}
 Wait-AfterStaticPreflight
 Wait-Or-Assert-Gate
 Write-Host "startUtc="
-& $resolvedUnity
+$unityArguments = @(
+)
+$unityProcess = Start-Process -FilePath $resolvedUnity -ArgumentList $unityArguments -Wait -PassThru -NoNewWindow
+$unityExitCode = $unityProcess.ExitCode
 Write-Host "endUtc= exitCode=$unityExitCode warningCount=$($unityLogSummary.WarningCount) errorCount=$($unityLogSummary.ErrorCount) logExists=$($unityLogSummary.LogExists)"
 if ($unityExitCode -ne 0 -or -not $unityLogSummary.LogExists -or $unityLogSummary.ErrorCount -gt 0) {{ throw "failed" }}
 {validators}

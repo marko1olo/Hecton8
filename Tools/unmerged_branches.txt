@@ -1,0 +1,231 @@
+Total unmerged branches: 39
+Branch: origin/chore/remove-unused-debug-expands-10901583358684934306
+  Commit: ff95780b7 ðŸ§¹ [Code Health] Remove unused _debugTotalExpands field from ObjectPoolManager
+  Files modified (2):
+    Assets/_Project/Scenes/00_BOOTSTRAP.unity
+    Assets/_Project/Scripts/ObjectPoolManager.cs
+--------------------------------------------------
+Branch: origin/fix-camera-juice-biome-fallback-3824245438741197598
+  Commit: dfc92ea6b ðŸ§¹ [Code Health] Implement default fallback biome logic in CameraJuiceSystem
+  Files modified (1):
+    Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs
+--------------------------------------------------
+Branch: origin/fix-custom-mesh-color-1372846936262957591
+  Commit: 01a99a478 Implement transferring of color properties for MpbCustomMesh
+  Files modified (5):
+    Assets/Shapes/Scripts/Runtime/Immediate Mode/Draw.cs
+    Assets/Shapes/Scripts/Runtime/Immediate Mode/MetaMpb.cs
+    Data/Lore/Encyclopedia.h8bin
+    Data/Lore/Encyclopedia.manifest.json
+    Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json
+--------------------------------------------------
+Branch: origin/fix-fallback-biome-camera-juice-11692902013533063157
+  Commit: 02497a3eb Fix: Implement default fallback biome in CameraJuiceSystem
+  Files modified (1):
+    Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs
+--------------------------------------------------
+Branch: origin/jules-10073090428674453923-eb0ed26e
+  Commit: 5f773f6e0 âš¡ Optimize using_edges population in BuildArchitectureAtlas
+  Files modified (5):
+    Docs/Generated/DEPENDENCY_GRAPH.cache.json
+    Docs/Generated/DEPENDENCY_GRAPH.json
+    Docs/Generated/DEPENDENCY_GRAPH.md
+    benchmark.py
+    benchmark2.py
+--------------------------------------------------
+Branch: origin/jules-10152776640662366836-c8296cd7
+  Commit: edba3cb82 âš¡ Optimize iteration with tuple in mega_deepwave.py
+  Files modified (1):
+    mega_deepwave.py
+--------------------------------------------------
+Branch: origin/jules-10825461885313476250-1ed63783
+  Commit: 593764e27 Optimize list comprehension allocations
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-1177673646913512796-b586c634
+  Commit: 8da1176c5 chore(lore): rewrite AI-style fluff into concrete source-grounded artifacts
+  Files modified (4):
+    Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_en_US.md
+    "Lore/\320\273\320\276\321\2001.txt"
+    "Lore/\320\273\320\276\321\2002.txt"
+    "Lore/\320\273\320\276\321\2003 - \320\267\320\260\320\272\321\200\321\213\321\202\321\213\320\265 \320\277\321\200\320\276\320\261\320\265\320\273\321\213, propositions.txt"
+--------------------------------------------------
+Branch: origin/jules-11790424367789903530-ede635a8
+  Commit: c5fee07c1 ðŸ”’ Fix XXE vulnerability in generate_unity_slnx_projects
+  Files modified (1):
+    Tools/generate_unity_slnx_projects.py
+--------------------------------------------------
+Branch: origin/jules-12928254767378514722-d0c7c1c8
+  Commit: 0cd446c99 ðŸ”’ Security fix: Replace unsafe eval with ast.parse
+  Files modified (1):
+    Tools/OOP_Voxel_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-13052555289197762005-16c55b52
+  Commit: 6e01709a3 âš¡ Optimize File I/O and lookups in Lore Evidence Graph System
+  Files modified (1):
+    Lore_Evidence_Graph_System.py
+--------------------------------------------------
+Branch: origin/jules-1350198478133765064-528618ce
+  Commit: 5599ab2e1 âš¡ Replace static lists with tuples for iteration performance
+  Files modified (1):
+    Tools/OOP_MathLOD_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-13947537737081381042-f791f499
+  Commit: ed882245e âš¡ Optimize static iteration from lists to tuples
+  Files modified (1):
+    Tools/OOP_MathLOD_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-15573156610283231531-d44d8243
+  Commit: e41250c20 âš¡ Optimize list to tuple in generator expression in OOP_MathLOD_Scanner.py
+  Files modified (1):
+    Tools/OOP_MathLOD_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-1729375559135453232-1ff6f2b8
+  Commit: 48f1b3acd âš¡ Optimize iteration over fixed fields in h8_lda_pipeline
+  Files modified (4):
+    "C:\\hades\\Hecton8\\Docs\\Lore\\AppliedContent/localization_backlog/RS_LDA_TEST_15_LOCALE_ROWS_20260606.csv"
+    "C:\\hades\\Hecton8\\Docs\\Lore\\AppliedContent/localization_backlog/RS_LDA_TEST_LOCALIZATION_QA_MATRIX_20260606.csv"
+    "C:\\hades\\Hecton8\\Docs\\Lore\\AppliedContent/route_cards/RS_LDA_TEST_route_cards.csv"
+    h8_lda_pipeline.py
+--------------------------------------------------
+Branch: origin/jules-17785108215372927318-2bf915e5
+  Commit: d7d90b125 ðŸ”’ Remove unsafe eval() usage in OOP_Voxel_Scanner.py
+  Files modified (2):
+    Tools/OOP_Voxel_Scanner.py
+    pr_description.md
+--------------------------------------------------
+Branch: origin/jules-17884295021557010831-ed3ea214
+  Commit: 0208a2be7 Add fallback biome profile to CameraJuiceSystem
+  Files modified (1):
+    Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs
+--------------------------------------------------
+Branch: origin/jules-3535249009669897554-8ae3f36e
+  Commit: 21021f162 âš¡ Optimize dictionary iteration in build_runtime_nodes
+  Files modified (2):
+    Tools/QuestStressTest.py
+    pr_desc.txt
+--------------------------------------------------
+Branch: origin/jules-4174199934449373815-8c8589cd
+  Commit: 44ae6654c âš¡ Optimize compute dispatch scanner with walrus operator
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-4323316475025901252-58a2569d
+  Commit: 4098873b9 Optimize list comprehensions by replacing temporary lists with walrus operator
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-6572805282351922625-711dc5c4
+  Commit: 4ce4de9df âš¡ Optimize list comprehension instantiations
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-7678132555025927133-c2b55b76
+  Commit: e4527f57b Add tests for CurrentManager deterministic math
+  Files modified (1):
+    Assets/_Project/Tests/Editor/CurrentManagerEditTests.cs
+--------------------------------------------------
+Branch: origin/jules-842485701937444049-124447bc
+  Commit: e895cfc51 Optimize GetComponentsInChildren in Update loop for MantisLODEditor
+  Files modified (1):
+    Assets/MantisLODEditor/Runtime/ProgressiveMeshRuntime.cs
+--------------------------------------------------
+Branch: origin/jules-add-voxel-engine-tests-3534429464830529697
+  Commit: ffdd2a353 Add VoxelEngine tests
+  Files modified (1):
+    Assets/_Project/Tests/Editor/HectonVoxelEngineEditTests.cs
+--------------------------------------------------
+Branch: origin/jules-optimize-list-comprehensions-15547497365506743461
+  Commit: e9a6e4bf8 âš¡ Optimize list comprehensions by removing single-item list instantiation
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-perf-opt-list-comprehensions-8932257088140398168
+  Commit: 94eddd47f âš¡ Refactor list comprehension to use walrus operator
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/jules-performance-optimization-3257740209263231106
+  Commit: e71af3209 Optimize list comprehension allocations
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/optimize-quest-iteration-325573510775454650
+  Commit: 9d72cd8d3 âš¡ Optimize quest dependency graph iteration
+  Files modified (1):
+    Tools/QuestStressTest.py
+--------------------------------------------------
+Branch: origin/perf-improvement-14213444768182486035
+  Commit: 71d0be5bc Optimize list comprehension performance using walrus operator
+  Files modified (2):
+    Docs/Reports/COMPUTE_DISPATCH_OPTIMIZATION_REPORT_1333.json
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/perf-list-membership-3644277593406833469
+  Commit: 7c23ee9b7 Optimize dictionary iteration and list deduplication in Tools/QuestStressTest.py
+  Files modified (1):
+    Tools/QuestStressTest.py
+--------------------------------------------------
+Branch: origin/performance-improvement-list-to-tuple-17917574419859090993
+  Commit: 4a0659ca8 âš¡ Optimize temporary lists in comprehensions to tuples
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/performance-improvement-tuple-iteration-16311867597984817026
+  Commit: b7f9c32de Replace list literal with tuple literal for iteration
+  Files modified (1):
+    Tools/OOP_MathLOD_Scanner.py
+--------------------------------------------------
+Branch: origin/performance-walrus-comprehension-9679574353371129509
+  Commit: f2f47742f âš¡ Refactor list comprehensions to use walrus operator for performance
+  Files modified (1):
+    Tools/OOP_ComputeDispatch_Scanner.py
+--------------------------------------------------
+Branch: origin/security-fix-xxe-vulnerability-7015729271939136064
+  Commit: e33e300a7 ðŸ”’ Fix XXE vulnerabilities in XML parsers across Tools
+  Files modified (7):
+    Tools/Assert_Asmdef_Leakage_1401.py
+    Tools/CalculateHPhi.py
+    Tools/RunShinobu140StaticScanners.py
+    Tools/TestShinobu140StaticScanners.py
+    Tools/generate_unity_slnx_projects.py
+    Tools/h8bin_validator.py
+    Tools/test_h8bin_validator.py
+--------------------------------------------------
+Branch: origin/security-xxe-fix-17352094722924690327
+  Commit: 36c6be75f Fix XML External Entity (XXE) Vulnerabilities in XML imports
+  Files modified (8):
+    Docs/Reports/METRIC_PHI_DATA_TRUTH_AUDIT.json
+    Tools/Assert_Asmdef_Leakage_1401.py
+    Tools/CalculateHPhi.py
+    Tools/RunShinobu140StaticScanners.py
+    Tools/TestShinobu140StaticScanners.py
+    Tools/generate_unity_slnx_projects.py
+    Tools/h8bin_validator.py
+    Tools/test_h8bin_validator.py
+--------------------------------------------------
+Branch: origin/test-grand-library-loc-injector-14622236492340227527
+  Commit: 8a1f8f352 ðŸ§ª [testing improvement] Add tests for Grand_Library_Loc_Injector
+  Files modified (1):
+    Tools/test_grand_library_loc_injector.py
+--------------------------------------------------
+Branch: origin/test-hecton-noise-10164887292827740700
+  Commit: 261f8d4d6 Add unit tests for HectonNoise procedural generation helpers
+  Files modified (1):
+    Assets/_Project/Tests/Editor/HectonNoiseTests.cs
+--------------------------------------------------
+Branch: origin/test/h8-lda-pipeline-6039968220577620495
+  Commit: fa310cfc3 ðŸ§ª Add missing tests for h8_lda_pipeline.py
+  Files modified (1):
+    Tools/test_h8_lda_pipeline.py
+--------------------------------------------------
+Branch: origin/update-asmdef-checker-3908558392382122566
+  Commit: c6be58fdb Implement C# DTO alignment checks, audio meta fixer, and optimize vault audit
+  Files modified (5):
+    Tools/DataVaultSovereigntyAudit.py
+    Tools/FixAudioImportMetaPolicy.py
+    Tools/ValidateDtoAlignment.py
+    Tools/test_validate_audio_import_meta_policy.py
+    Tools/test_validate_dto_alignment.py
+--------------------------------------------------
