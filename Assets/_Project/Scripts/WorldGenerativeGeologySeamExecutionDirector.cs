@@ -232,6 +232,7 @@ namespace Hecton8.World
         private bool _registeredToLateFrame;
         private bool _pendingReconcileVisualSync;
         private bool _loggedMissingGapDitherMaterial;
+        private WorldProceduralFieldSampler _fieldSampler;
 
         internal static WorldGenerativeGeologySeamExecutionDirector ActiveRuntimeInstance { get; private set; }
 
@@ -559,6 +560,9 @@ namespace Hecton8.World
             if (!hasVoxelCenterAup || !hasTerrainContactAup)
                 return false;
 
+            WorldTerrainDetailEligibilityFlags eligibility = ResolveTerrainEligibilityAtContact(
+                plan.TerrainContactPosition, plan.hasTerrainSample);
+
             _voxelRequests.Add(new WorldGenerativeGeologyVoxelBlendRequest
             {
                 runtimeKey = plan.runtimeKey,
@@ -583,7 +587,8 @@ namespace Hecton8.World
                 caveBlendMode = plan.caveBlendMode,
                 chunkCoord = plan.ChunkCoord,
                 hasMacroZone = plan.hasMacroZone,
-                macroZoneCoord = plan.MacroZoneCoord
+                macroZoneCoord = plan.MacroZoneCoord,
+                eligibilityFlags = eligibility
             });
             return true;
         }
@@ -606,6 +611,25 @@ namespace Hecton8.World
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return absoluteAup.IsFinite();
+        }
+
+        private WorldTerrainDetailEligibilityFlags ResolveTerrainEligibilityAtContact(
+            Vector3 terrainContactPosition, bool hasTerrainSample)
+        {
+            if (!hasTerrainSample)
+                return WorldTerrainDetailEligibilityFlags.None;
+
+            if (_fieldSampler == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref _fieldSampler);
+
+            if (_fieldSampler == null ||
+                !_fieldSampler.TrySampleTerrainDetail(terrainContactPosition, out WorldTerrainDetailRuntimeSample sample) ||
+                !sample.IsValid)
+            {
+                return WorldTerrainDetailEligibilityFlags.None;
+            }
+
+            return sample.EligibilityFlags;
         }
 
         private void ConfigureGapDitherVfx(WorldGenerativeGeologySeamRuntime runtime, in WorldGenerativeGeologySeamPlan plan, float visualQualityWeight)

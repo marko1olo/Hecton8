@@ -26,6 +26,7 @@ namespace Hecton8.World
         public WorldChunkCoordinate chunkCoord;
         public bool hasMacroZone;
         public WorldMacroZoneCoordinate macroZoneCoord;
+        public WorldTerrainDetailEligibilityFlags eligibilityFlags;
         internal AbsoluteUniversePosition absoluteUniverseCenterAup;
         internal AbsoluteUniversePosition absoluteTerrainContactAup;
         internal bool hasAbsoluteUniverseCenterAup;

@@ -134,17 +134,49 @@ namespace Hecton8.World
 
         /// <summary>
         /// Cave mouths are reserved for hard cliff contacts that actually request a carved blend.
+        /// When terrain detail eligibility flags are available, additionally checks for
+        /// CaveMouthCandidate or VoxelAnchor+RockScatter to prevent cave mouths on unsuitable terrain.
+        /// </summary>
+        public static bool ShouldCreateCaveMouth(
+            bool hasTerrainSample,
+            float slopeDegrees,
+            WorldGenerativeGeologyProfile.CaveBlendMode caveBlendMode,
+            WorldTerrainDetailEligibilityFlags eligibilityFlags)
+        {
+            if (!hasTerrainSample || !math.isfinite(slopeDegrees) || slopeDegrees < CliffSlopeThresholdDegrees)
+                return false;
+
+            if (caveBlendMode != WorldGenerativeGeologyProfile.CaveBlendMode.SdfBlend &&
+                caveBlendMode != WorldGenerativeGeologyProfile.CaveBlendMode.CarvePortal)
+            {
+                return false;
+            }
+
+            // When eligibility flags are provided (non-None), require terrain-detail confirmation.
+            // This matches the gating logic in WorldCaveDirector.PassesTerrainDetailCaveCandidate.
+            if (eligibilityFlags != WorldTerrainDetailEligibilityFlags.None)
+            {
+                bool hasCaveMouth =
+                    (eligibilityFlags & WorldTerrainDetailEligibilityFlags.CaveMouthCandidate) != 0;
+                bool hasVoxelRockAnchor =
+                    (eligibilityFlags & (WorldTerrainDetailEligibilityFlags.VoxelAnchor | WorldTerrainDetailEligibilityFlags.RockScatter)) ==
+                    (WorldTerrainDetailEligibilityFlags.VoxelAnchor | WorldTerrainDetailEligibilityFlags.RockScatter);
+
+                return hasCaveMouth || hasVoxelRockAnchor;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Backward-compatible overload without eligibility flags. Falls back to slope-only gating.
         /// </summary>
         public static bool ShouldCreateCaveMouth(
             bool hasTerrainSample,
             float slopeDegrees,
             WorldGenerativeGeologyProfile.CaveBlendMode caveBlendMode)
         {
-            if (!hasTerrainSample || !math.isfinite(slopeDegrees) || slopeDegrees < CliffSlopeThresholdDegrees)
-                return false;
-
-            return caveBlendMode == WorldGenerativeGeologyProfile.CaveBlendMode.SdfBlend
-                || caveBlendMode == WorldGenerativeGeologyProfile.CaveBlendMode.CarvePortal;
+            return ShouldCreateCaveMouth(hasTerrainSample, slopeDegrees, caveBlendMode, WorldTerrainDetailEligibilityFlags.None);
         }
 
         /// <summary>

@@ -215,6 +215,9 @@ def validate_payload(lore_id: str, payload: bytes) -> None:
         raise ValueError(f"Lore source {lore_id} contains sterile sci-fi terms: {', '.join(hits)}")
 
 
+import functools
+
+@functools.lru_cache(maxsize=None)
 def load_source_entries(source_dir: Path = DEFAULT_SOURCE_DIR) -> list[SourceEntry]:
     root = resolve_repo_path(source_dir)
     if not root.is_dir():

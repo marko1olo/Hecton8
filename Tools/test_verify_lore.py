@@ -20,7 +20,8 @@ import LorePacker  # noqa: E402
 import VerifyLore  # noqa: E402
 
 
-TEMP_ROOT = Path(r"C:\Users\User\.codex\memories\h8_lore_tests")
+import tempfile
+TEMP_ROOT = Path(tempfile.gettempdir()) / "h8_lore_tests"
 
 
 @contextmanager

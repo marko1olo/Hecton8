@@ -1708,6 +1708,7 @@ namespace Hecton8.World
                 hash = (hash * 397) ^ Mathf.RoundToInt(request.slopeDegrees * 10f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(request.seamBlendRadius * 100f);
                 hash = (hash * 397) ^ Mathf.RoundToInt(request.suggestedTerrainCut * 100f);
+                hash = (hash * 397) ^ (int)request.eligibilityFlags;
                 return hash;
             }
         }
@@ -1715,7 +1716,7 @@ namespace Hecton8.World
         private bool TryBuildEntrance(in WorldGenerativeGeologyVoxelBlendRequest request, out CaveEntrance entrance)
         {
             entrance = default;
-            if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
+            if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode, request.eligibilityFlags))
                 return false;
 
             Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);

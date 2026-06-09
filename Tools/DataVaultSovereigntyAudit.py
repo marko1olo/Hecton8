@@ -297,6 +297,7 @@ def source_needs_sanitized_snapshot(source: str) -> bool:
     )
 
 
+@lru_cache(maxsize=None)
 def read_csharp_source_files(source_root: Path) -> list[CSharpSourceFile]:
     if not source_root.exists():
         raise FileNotFoundError(f"source root not found: {source_root}")
