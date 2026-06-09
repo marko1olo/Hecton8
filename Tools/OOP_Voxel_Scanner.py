@@ -154,6 +154,41 @@ def classify_native_allocation_hits(hits):
     return buckets
 
 
+import ast
+import operator
+
+def _safe_eval(expr_str):
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+        ast.LShift: operator.lshift,
+        ast.RShift: operator.rshift,
+        ast.BitAnd: operator.and_,
+        ast.BitOr: operator.or_,
+        ast.BitXor: operator.xor,
+        ast.Invert: operator.invert,
+    }
+
+    def _eval(node):
+        if isinstance(node, ast.Constant):
+            return node.value
+        elif isinstance(node, ast.BinOp):
+            return operators[type(node.op)](_eval(node.left), _eval(node.right))
+        elif isinstance(node, ast.UnaryOp):
+            return operators[type(node.op)](_eval(node.operand))
+        else:
+            raise TypeError(f"Unsupported AST node: {type(node)}")
+
+    try:
+        return _eval(ast.parse(expr_str, mode='eval').body)
+    except Exception as e:
+        raise ValueError("Failed to evaluate expression") from e
+
 def eval_int_expr(expr, constants):
     normalized = expr.strip()
     normalized = normalized.replace("<<", " << ")
@@ -164,7 +199,7 @@ def eval_int_expr(expr, constants):
     if not re.fullmatch(r"[0-9+\-*/()<> \t]+", normalized):
         return None
     try:
-        return int(eval(normalized, {"__builtins__": {}}, {}))
+        return int(_safe_eval(normalized))
     except Exception:
         return None
 
