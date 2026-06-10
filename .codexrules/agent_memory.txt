@@ -1,0 +1,6 @@
+[Jules][2026-06-09] Learned that when `VerifyCraftingCosts`, `VerifyOreLcgBaker`, `VerifyPdaTechnicalLogs`, `VerifyOpticsBaker`, `VerifySabineBaker`, `VerifyUpgradeCurveBaker` fail on `Tools/RunFullVerifySweep.py`, we should first make sure that pip dependency `numpy` is installed, and then re-bake missing artifacts and JSON manifest signatures by running:
+1. `python Tools/CraftingCostsBaker.py`
+2. `python Tools/OreLcgBaker.py`
+3. `python Tools/CalculateHPhi.py --workers 2 --json-output Docs/AgentLogs/HPhi_RESOURCE_SPAWN_LCG_TABLES.json`
+4. `python Tools/PackPdaTechnicalLogs.py`
+This regenerates and updates all dependent binary and metadata tables that the verify sweep expects.
