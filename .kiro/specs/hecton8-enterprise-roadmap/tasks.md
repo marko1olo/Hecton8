@@ -98,40 +98,40 @@
   - [ ] 2.1.4 Create filter dropdown (All/Utility/Construction/etc.)
   - [ ] 2.1.5 Create sort dropdown (Name/Tier/Durability)
 
-- [ ] 2.2 Create PDAToolsTab.cs
-  - [ ] 2.2.1 Implement Initialize() method
-  - [ ] 2.2.2 Implement FindAllToolsInInventory()
-  - [ ] 2.2.3 Implement RefreshToolList()
-  - [ ] 2.2.4 Implement FilterTools()
-  - [ ] 2.2.5 Implement SortTools()
-  - [ ] 2.2.6 Pre-allocate UI item pool (32 items)
+- [x] 2.2 Create PDAToolsTab.cs
+  - [x] 2.2.1 Implement Initialize() method
+  - [x] 2.2.2 Implement FindAllToolsInInventory()
+  - [x] 2.2.3 Implement RefreshToolList()
+  - [x] 2.2.4 Implement FilterTools()
+  - [x] 2.2.5 Implement SortTools()
+  - [x] 2.2.6 Pre-allocate UI item pool (32 items)
 
-- [ ] 2.3 Create PDAToolListItem.cs
+- [x] 2.3 Create PDAToolListItem.cs
   - [ ] 2.3.1 Create UI prefab (checkbox, icon, name, durability bar)
-  - [ ] 2.3.2 Implement SetTool() method
-  - [ ] 2.3.3 Implement OnClick() handler
-  - [ ] 2.3.4 Add broken indicator (red icon)
+  - [x] 2.3.2 Implement SetTool() method
+  - [x] 2.3.3 Implement OnClick() handler
+  - [x] 2.3.4 Add broken indicator (red icon)
 
-- [ ] 2.4 Create PDAToolDetailPanel.cs
-  - [ ] 2.4.1 Implement SetTool() method
-  - [ ] 2.4.2 Implement UpdateUI() method
-  - [ ] 2.4.3 Display tool name + tier badge
-  - [ ] 2.4.4 Display durability bar with color coding
-  - [ ] 2.4.5 Display stats (efficiency, speed, energy)
-  - [ ] 2.4.6 Display upgrade slots (3 slots)
+- [x] 2.4 Create PDAToolDetailPanel.cs
+  - [x] 2.4.1 Implement SetTool() method
+  - [x] 2.4.2 Implement UpdateUI() method
+  - [x] 2.4.3 Display tool name + tier badge
+  - [x] 2.4.4 Display durability bar with color coding
+  - [x] 2.4.5 Display stats (efficiency, speed, energy)
+  - [x] 2.4.6 Display upgrade slots (3 slots)
 
-- [ ] 2.5 Implement Upgrade Slot UI
-  - [ ] 2.5.1 Create PDAUpgradeSlot.cs
-  - [ ] 2.5.2 Implement SetUpgrade() method
-  - [ ] 2.5.3 Implement SetEmpty() method
-  - [ ] 2.5.4 Add upgrade icon display
-  - [ ] 2.5.5 Add remove upgrade button
+- [x] 2.5 Implement Upgrade Slot UI
+  - [x] 2.5.1 Create PDAUpgradeSlot.cs
+  - [x] 2.5.2 Implement SetUpgrade() method
+  - [x] 2.5.3 Implement SetEmpty() method
+  - [x] 2.5.4 Add upgrade icon display
+  - [x] 2.5.5 Add remove upgrade button
 
-- [ ] 2.6 Implement Durability History Graph
-  - [ ] 2.6.1 Add LineRenderer component
-  - [ ] 2.6.2 Implement UpdateDurabilityGraph() method
-  - [ ] 2.6.3 Store last 10 durability values
-  - [ ] 2.6.4 Draw graph with LineRenderer (zero GC)
+- [x] 2.6 Implement Durability History Graph
+  - [x] 2.6.1 Add LineRenderer component
+  - [x] 2.6.2 Implement UpdateDurabilityGraph() method
+  - [x] 2.6.3 Store last 10 durability values
+  - [x] 2.6.4 Draw graph with LineRenderer (zero GC)
 
 - [x] 2.7 Implement Repair System
   - [x] 2.7.1 Add repair button to detail panel
