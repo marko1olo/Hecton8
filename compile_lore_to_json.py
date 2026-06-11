@@ -71,17 +71,21 @@ def parse_markdown_to_json(filepath):
         
     return parsed_packets
 
-print("Compiling HECTON-8 Lore Database...")
+def main():
+    print("Compiling HECTON-8 Lore Database...")
 
-total_packets = 0
-for filename in os.listdir(rs_dir):
-    if filename.endswith(".md"):
-        filepath = os.path.join(rs_dir, filename)
-        packets = parse_markdown_to_json(filepath)
-        database["packets"].extend(packets)
-        total_packets += len(packets)
+    total_packets = 0
+    for filename in os.listdir(rs_dir):
+        if filename.endswith(".md"):
+            filepath = os.path.join(rs_dir, filename)
+            packets = parse_markdown_to_json(filepath)
+            database["packets"].extend(packets)
+            total_packets += len(packets)
 
-with open(out_json, "w", encoding="utf-8") as f:
-    json.dump(database, f, indent=4)
+    with open(out_json, "w", encoding="utf-8") as f:
+        json.dump(database, f, indent=4)
 
-print(f"Compilation complete. {total_packets} packets written to {out_json}")
+    print(f"Compilation complete. {total_packets} packets written to {out_json}")
+
+if __name__ == "__main__":
+    main()
