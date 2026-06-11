@@ -3,11 +3,11 @@
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] Player AUP is consumed through cached IPlayerRuntimeContext only.
-//   [FIX] Register: replaced Contains (O(n)) with HashSet-backed O(1) dedupe.
-//   [FIX] ApplyMotion: caches worldPos from CachedTransform.position once,
+//   [Patch] Player AUP is consumed through cached IPlayerRuntimeContext only.
+//   [Patch] Register: replaced Contains (O(n)) with HashSet-backed O(1) dedupe.
+//   [Patch] ApplyMotion: caches worldPos from CachedTransform.position once,
 //         then passes it to ShouldUpdate to avoid a second bridge position read.
-//   [FIX] ShouldUpdate: accepts worldPos as a parameter; repeated .position read removed.
+//   [Patch] ShouldUpdate: accepts worldPos as a parameter; repeated .position read removed.
 // ============================================================================
 
 using System.Collections.Generic;
