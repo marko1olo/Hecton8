@@ -1,0 +1,42 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.10f1 (feeafc12a938) revision 16706300'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 32407 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat" at "2026-06-10T23:44:54.4898124Z"
+Process architecture: x64
+Date: 2026-06-10T23:44:54Z
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 24596, path: "C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              e1c6a6bf2c5a4806a52b7554daa266b7
+  Correlation Id:          64305a94405cf93a06a3451935b62bce
+  External correlation Id: 1346998231155713864
+  Machine Id:              KXBg4HkLZwVfPhjJrzyzSmUVWFw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-danat" (connect: 0.00s, validation: 0.00s, handshake: 0.05s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-notifications" at "2026-06-10T23:44:54.5462226Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.07s
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe
+-projectPath
+C:\hades\Hecton8
+-batchmode
+-nographics
+-executeMethod
+Hecton8.BlackboxDiagnostics.H8CLI.RunBootstrapScenePlayMode
+-logFile
+C:\hades\Hecton8\unity_batch_log_6.txt
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+Exiting without the bug reporter. Application will terminate with return code 1

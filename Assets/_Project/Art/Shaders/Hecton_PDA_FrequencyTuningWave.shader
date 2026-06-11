@@ -100,6 +100,8 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
                 half4 color : COLOR0;
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

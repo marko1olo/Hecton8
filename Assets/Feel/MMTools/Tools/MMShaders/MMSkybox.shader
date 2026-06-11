@@ -71,6 +71,8 @@ Shader "MoreMountains/MMSkybox"
             uniform float _Intensity;
 
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             v2f vert(appdata v)
             {
                 v2f o;

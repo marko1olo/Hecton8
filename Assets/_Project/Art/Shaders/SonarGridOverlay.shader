@@ -102,6 +102,8 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             half alpha;
         };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         Varyings Vert(Attributes input)
         {
             Varyings output;

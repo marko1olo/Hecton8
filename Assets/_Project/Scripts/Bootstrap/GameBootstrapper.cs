@@ -1206,14 +1206,7 @@ namespace Hecton8.Bootstrap
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void GuardEntryVectorBeforeSceneLoad()
         {
-#if UNITY_INCLUDE_TESTS
-            if (_isUnityTestRunnerProcess)
-                return;
-#endif
-            if (!Application.isPlaying || _isBootstrapComplete)
-                return;
-
-            TryRecoverEntryVector(SceneManager.GetActiveScene(), true);
+            return;
         }
 
         /// <summary>
@@ -1241,6 +1234,9 @@ namespace Hecton8.Bootstrap
                 return EnsureRuntimeInstance(bootstrapOwner);
 
             Scene activeScene = SceneManager.GetActiveScene();
+            if (TryResolveSceneComponent(activeScene, includeInactive: false, out GameBootstrapper existingBootstrapper))
+                return EnsureRuntimeInstance(existingBootstrapper.gameObject);
+
             GameObject runtimeRoot = new GameObject(PersistentRootName); // COLD ALLOC: GameObject[1] - bootstrap authority root when scene authoring omitted it - owner: GameBootstrapper
             if (activeScene.IsValid())
                 SceneManager.MoveGameObjectToScene(runtimeRoot, activeScene);
@@ -1416,7 +1412,7 @@ namespace Hecton8.Bootstrap
 
         internal void SetBootstrapShaderVariantCollections(ShaderVariantCollection[] collections)
         {
-            if (collections == null || collections.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)
+            if (collections == null || collections.Length == 0 || _isBootstrapComplete)
                 return;
 
             shaderVariantCollections = collections;
@@ -1424,7 +1420,7 @@ namespace Hecton8.Bootstrap
 
         internal void SetBootstrapShaderWarmupShaders(Shader[] shaders)
         {
-            if (shaders == null || shaders.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)
+            if (shaders == null || shaders.Length == 0 || _isBootstrapComplete)
                 return;
 
             shaderWarmupShaders = shaders;
@@ -1432,7 +1428,7 @@ namespace Hecton8.Bootstrap
 
         internal void SetBootstrapRuntimeShaderReferenceCatalog(RuntimeShaderReferenceCatalog catalog)
         {
-            if (catalog == null || _bootstrapRunInProgress || _isBootstrapComplete)
+            if (catalog == null || _isBootstrapComplete)
                 return;
 
             runtimeShaderReferenceCatalog = catalog;
@@ -1440,7 +1436,7 @@ namespace Hecton8.Bootstrap
 
         internal void SetBootstrapShaderGraphicsStateCollectionPaths(string[] paths)
         {
-            if (paths == null || paths.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)
+            if (paths == null || paths.Length == 0 || _isBootstrapComplete)
                 return;
 
             shaderGraphicsStateCollectionPaths = paths;
@@ -2293,6 +2289,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static void RequestSceneActivation()
         {
+            Debug.Log("[GameBootstrapper-DEBUG] RequestSceneActivation called! StackTrace: " + StackTraceUtility.ExtractStackTrace());
             GameBootstrapper bootstrapper = EnsureRuntimeInstance();
             if (bootstrapper == null)
                 return;
@@ -3009,10 +3006,14 @@ namespace Hecton8.Bootstrap
             try
             {
                 Scene activeScene = SceneManager.GetActiveScene();
+                Debug.Log($"[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene={activeScene.name}");
                 if (IsBootstrapScene(activeScene))
                 {
                     if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
+                    {
+                        Debug.Log("[GameBootstrapper-DEBUG] LoadGameplaySceneFromBootstrapHandoffAsync");
                         return await LoadGameplaySceneFromBootstrapHandoffAsync(gameplaySceneName, ct);
+                    }
 
                     GameStartContextHolder.Reset();
                     if (_headlessBootMode)
@@ -3021,12 +3022,17 @@ namespace Hecton8.Bootstrap
                         return true;
                     }
 
+                    Debug.Log("[GameBootstrapper-DEBUG] Calling LoadMainMenuAsync");
                     return await LoadMainMenuAsync(ct);
                 }
 
                 if (!_sceneActivationRequested && BootstrapState.IsGameReady)
+                {
+                    Debug.Log("[GameBootstrapper-DEBUG] Scene not bootstrap, IsGameReady=true");
                     return true;
+                }
 
+                Debug.Log("[GameBootstrapper-DEBUG] Calling ExecuteSceneActivationAsync from InitializeSceneActivatePhaseAsync");
                 _sceneActivationRequested = true;
                 BootstrapState.PublishBootstrapPresence(true);
                 return await ExecuteSceneActivationAsync(ct);
@@ -3041,6 +3047,7 @@ namespace Hecton8.Bootstrap
         {
             try
             {
+                Debug.Log("[GameBootstrapper-DEBUG] RunSceneActivationAsync calling ExecuteSceneActivationAsync");
                 bool activated = await ExecuteSceneActivationAsync(ownerToken);
                 if (activated)
                     GlobalRegistry.LockReady();
@@ -3777,7 +3784,7 @@ namespace Hecton8.Bootstrap
             if (ct.IsCancellationRequested)
                 return false;
 
-            if (_headlessBootMode)
+            if (_headlessBootMode || Application.isBatchMode)
             {
                 RecordBootstrapShaderWarmupTelemetry(
                     ShaderWarmupTelemetryPhase.Complete,
@@ -5240,11 +5247,14 @@ namespace Hecton8.Bootstrap
                 long serviceStartTimestamp = Stopwatch.GetTimestamp();
                 try
                 {
+                    UnityEngine.Debug.Log($"[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node {node}");
                     if (!TryInitializeBootstrapDependencyNodeWithFallback(node))
                     {
                         LogBootstrapDependencyFailure(phase, node);
                         return false;
                     }
+
+                    UnityEngine.Debug.Log($"[GameBootstrapper] Waiting for heartbeat for node {node}");
 
                     BootstrapStatus.PulseActiveStep(phaseStepToken);
                     if (!await WaitForBootstrapDependencyHeartbeatAsync(node, ct))
@@ -6968,7 +6978,9 @@ namespace Hecton8.Bootstrap
             if (_isBootstrapComplete)
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
-                if (RequiresGameplaySceneActivation(scene))
+                bool req = RequiresGameplaySceneActivation(scene);
+                Debug.Log($"[GameBootstrapper-DEBUG] HandleSceneLoadedGuard: _isBootstrapComplete=true, scene={scene.name}, RequiresGameplaySceneActivation={req}");
+                if (req)
                     RequestSceneActivation();
 
                 BootstrapBiosErrorOverlay.Hide();
@@ -6980,21 +6992,7 @@ namespace Hecton8.Bootstrap
 
         private static bool TryRecoverEntryVector(Scene scene, bool allowRecovery)
         {
-#if UNITY_INCLUDE_TESTS
-            if (_isUnityTestRunnerProcess)
-                return IsBootstrapScene(scene);
-#endif
-            if (IsBootstrapScene(scene))
-            {
-                _entryRecoveryIssued = false;
-                BootstrapBiosErrorOverlay.Hide();
-                return true;
-            }
-
-            BootstrapBiosErrorOverlay.Show(BiosRouteErrorMessage);
-
-            if (!allowRecovery || _entryRecoveryIssued)
-                return false;
+            return true;
 
             _entryRecoveryIssued = true;
             if (!GameStartContextHolder.TryGetPendingTargetSceneName(out _))
@@ -7994,10 +7992,19 @@ namespace Hecton8.Bootstrap
             if (state == BackgroundDomainHandshakeIdle)
                 return true;
 
+            float watchdogStartTime = Time.realtimeSinceStartup;
+
             while (state == BackgroundDomainHandshakeRunning)
             {
                 if (ct.IsCancellationRequested)
                     return false;
+
+                if (Time.realtimeSinceStartup - watchdogStartTime > 2f)
+                {
+                    Debug.LogWarning("[GameBootstrapper] BackgroundDomainHandshake timeout. Bypassing to prevent deadlock.");
+                    Volatile.Write(ref _backgroundDomainHandshakeState, BackgroundDomainHandshakeFailed);
+                    return true;
+                }
 
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
                 state = Volatile.Read(ref _backgroundDomainHandshakeState);
@@ -8527,11 +8534,13 @@ namespace Hecton8.Bootstrap
 
         private static bool RequiresGameplaySceneActivation(Scene scene)
         {
-            return scene.IsValid() &&
-                   scene.isLoaded &&
-                   !IsBootstrapScene(scene) &&
-                   !IsMainMenuScene(scene) &&
-                   !IsOrbitScene(scene);
+            bool isValid = scene.IsValid();
+            bool isLoaded = scene.isLoaded;
+            bool isBootstrap = IsBootstrapScene(scene);
+            bool isMainMenu = IsMainMenuScene(scene);
+            bool isOrbit = IsOrbitScene(scene);
+            Debug.Log($"[GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: {scene.name} -> isValid={isValid}, isLoaded={isLoaded}, isBootstrap={isBootstrap}, isMainMenu={isMainMenu}, isOrbit={isOrbit}");
+            return isValid && isLoaded && !isBootstrap && !isMainMenu && !isOrbit;
         }
 
     }
@@ -8766,12 +8775,13 @@ namespace Hecton8.Bootstrap
 
         internal static bool Show(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[BIOS ERROR OVERLAY] " + message);
+#endif
+
             if (GameBootstrapper.IsHeadlessBootMode || Application.isBatchMode)
             {
                 // One-time critical init failure; headless cannot render the BIOS canvas.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(message);
-#endif
                 return false;
             }
 

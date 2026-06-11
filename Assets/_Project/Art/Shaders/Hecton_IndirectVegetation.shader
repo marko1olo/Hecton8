@@ -1679,6 +1679,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return emissionColor * (sparkleGate * pulse * edgeLaunchMask * energy * 0.42h);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

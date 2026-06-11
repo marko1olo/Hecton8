@@ -80,6 +80,8 @@ Shader "Hecton8/Submarine/MonitorOpaqueStencil"
                 return lerp(1.0, 0.62 + scanNoise * 0.38, lowPower);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

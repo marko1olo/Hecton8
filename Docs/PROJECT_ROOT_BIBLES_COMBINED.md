@@ -6149,7 +6149,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 ## Batch, Logs, And State
 
-[FORBID] Do not use `/goal`, `/Goal`, goal tools, or goal-tracking commands for this project.
+
 
 [RULE] Batch prompt protocol is explicit-only. Use it only when the user provides a master batch file path and an agent ID, or directly asks for a batch-agent run. Do not infer IDs from tabs, stale files, filenames, old logs, status files, or neighboring prompts.
 

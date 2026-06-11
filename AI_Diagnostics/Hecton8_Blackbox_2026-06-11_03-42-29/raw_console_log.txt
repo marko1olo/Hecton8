@@ -1,0 +1,11 @@
+﻿[Log] [General] [H8Blackbox] CLI starting RunEditMode...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8CLI:RunEditMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:37)
+
+
+[Log] [General] [H8Blackbox] Starting Edit Mode Diagnostic...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:RunEditMode (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:94)
+Hecton8.BlackboxDiagnostics.H8CLI:RunEditMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:40)
+
+

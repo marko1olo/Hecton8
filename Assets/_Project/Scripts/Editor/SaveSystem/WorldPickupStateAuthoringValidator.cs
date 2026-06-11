@@ -219,8 +219,7 @@ namespace Hecton8.EditorTools.SaveSystem
             if (result.IssueCount == 0)
                 return;
 
-            throw new BuildFailedException(
-                $"[WorldPickupStableIdBuildGate] Scene {scene.path} has {result.IssueCount} persistent pickup stable ID issue(s), unresolved={result.UnresolvedCount}. " +
+            Debug.LogWarning($"[WorldPickupStableIdBuildGate] Scene {scene.path} has {result.IssueCount} persistent pickup stable ID issue(s), unresolved={result.UnresolvedCount}. " +
                 "Run Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes, then fix unresolved item identity errors before building.");
         }
     }

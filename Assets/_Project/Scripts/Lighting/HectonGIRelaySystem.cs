@@ -48,6 +48,20 @@ namespace Hecton8.Lighting
         private static readonly int _WaterVolumeId = Shader.PropertyToID("_WaterVolume");
         private static readonly int _HectonGIRelaySHBufferId = Shader.PropertyToID("_HectonGIRelaySHBuffer");
 
+        private static GraphicsBuffer s_FallbackBuffer;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void BindFallbackBuffer()
+        {
+            if (s_FallbackBuffer == null)
+            {
+                s_FallbackBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, SHCoefficientCount, 4);
+                float[] dummy = new float[SHCoefficientCount];
+                s_FallbackBuffer.SetData(dummy);
+            }
+            Shader.SetGlobalBuffer(_HectonGIRelaySHBufferId, s_FallbackBuffer);
+        }
+
         [Header("Global Reflection")]
         [SerializeField] private Cubemap waterVolumeLowResCubemap;
 

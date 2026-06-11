@@ -836,24 +836,24 @@ PlayerSettings:
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
     Android: ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;BAKERY_INCLUDED;SHAPES_URP;VLB_URP
-    EmbeddedLinux:
-    GameCoreScarlett:
-    GameCoreXboxOne:
-    Kepler:
-    LinuxHeadlessSimulation:
-    Nintendo Switch:
-    Nintendo Switch 2:
-    PS4:
-    PS5:
-    QNX:
-    Server:
+    EmbeddedLinux: 
+    GameCoreScarlett: 
+    GameCoreXboxOne: 
+    Kepler: 
+    LinuxHeadlessSimulation: 
+    Nintendo Switch: 
+    Nintendo Switch 2: 
+    PS4: 
+    PS5: 
+    QNX: 
+    Server: 
     Standalone: CREST_OCEAN;CREST_URP;__MICROSPLAT__;MAPMAGIC2;MM_NATIVE;GPU_INSTANCER;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;SHAPES_URP;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;BAKERY_INCLUDED;VLB_URP;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3
-    VisionOS:
+    VisionOS: 
     WebGL: BAKERY_INCLUDED;GPU_INSTANCER;__MICROSPLAT__;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;SHAPES_URP
-    Windows Store Apps:
-    XboxOne:
-    iPhone:
-    tvOS:
+    Windows Store Apps: 
+    XboxOne: 
+    iPhone: 
+    tvOS: 
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -876,7 +876,7 @@ PlayerSettings:
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: Hecton8
-  metroPackageVersion: 
+  metroPackageVersion: 1.0.0.0
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
@@ -884,7 +884,7 @@ PlayerSettings:
   metroCertificateNotAfter: 0000000000000000
   metroApplicationDescription: Hecton8
   wsaImages: {}
-  metroTileShortName: 
+  metroTileShortName: Hecton8
   metroTileShowName: 0
   metroMediumTileShowName: 0
   metroLargeTileShowName: 0

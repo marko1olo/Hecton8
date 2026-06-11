@@ -1,0 +1,6 @@
+﻿[Log] [General] [H8Blackbox] Domain reload detected. Recovering PlayMode state machine...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:.cctor () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:37)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+

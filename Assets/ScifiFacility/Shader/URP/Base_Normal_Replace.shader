@@ -569,6 +569,8 @@ Shader "Triplebrick/Base_Normal_Replace"
 			};
 
 			
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -722,6 +724,8 @@ Shader "Triplebrick/Base_Normal_Replace"
 			};
 
 			
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -899,6 +903,8 @@ Shader "Triplebrick/Base_Normal_Replace"
 			};
 
 			
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;

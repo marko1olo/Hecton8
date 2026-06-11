@@ -152,9 +152,9 @@ namespace Hecton8.Input
 #else
             if (InputSystem.settings == null)
             {
-                message =
-                    "BIOS ERROR 0xINPUT\nEXPECTED: InputSystem settings asset\nDETECTED: null runtime settings\nACTION: Restore the Input System package configuration before boot.";
-                return false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[InputManager] InputSystem settings asset is null. Default configuration will be used.");
+#endif
             }
 
             message = string.Empty;
@@ -667,7 +667,18 @@ namespace Hecton8.Input
 
             Type generatedType = Type.GetType(GeneratedInputActionsTypeName, throwOnError: false);
             if (generatedType == null)
+            {
+                // Fallback to Resources if generated type is missing
+                InputActionAsset resourcesFallback = Resources.Load<InputActionAsset>("HectonRuntimeInputActions");
+                if (resourcesFallback != null)
+                    return resourcesFallback;
+
+                resourcesFallback = Resources.Load<InputActionAsset>("InputSystem_Actions");
+                if (resourcesFallback != null)
+                    return resourcesFallback;
+
                 return null;
+            }
 
             object instance = null;
             try

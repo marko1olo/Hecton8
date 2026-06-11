@@ -148,6 +148,8 @@ Shader "Hecton8/World/WreckIndirectLit"
             return positionWS + float3(waveA * swayMask, waveB * swayMask * 0.25h, waveB * swayMask * 0.45h);
         }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         Varyings Vert(Attributes input)
         {
             Varyings output;

@@ -153,6 +153,8 @@ Shader "Hecton8/Ambient/BiotaIndirect"
                 return SafeNormalize3(float3(UNITY_MATRIX_I_V[0].y, UNITY_MATRIX_I_V[1].y, UNITY_MATRIX_I_V[2].y), float3(0.0, 1.0, 0.0));
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

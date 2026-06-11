@@ -32,6 +32,12 @@ namespace Hecton8.Editor
             if (Application.isBatchMode)
                 return;
 
+            if (EditorPrefs.GetBool("ScreenshotTool_Waiting", false))
+            {
+                EditorSceneManager.playModeStartScene = null;
+                return;
+            }
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 
@@ -58,6 +64,12 @@ namespace Hecton8.Editor
 
         private static void EnsurePlayModeStartSceneConfigured()
         {
+            if (EditorPrefs.GetBool("ScreenshotTool_Waiting", false))
+            {
+                EditorSceneManager.playModeStartScene = null;
+                return;
+            }
+
             SceneAsset bootstrapScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(BootstrapScenePath);
             if (bootstrapScene == null)
                 return;

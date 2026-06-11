@@ -132,6 +132,8 @@ Shader "Hecton8/VFX/FlashlightConeSilt"
                 return (float2(col, row) + localUv) * rcp(grid);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

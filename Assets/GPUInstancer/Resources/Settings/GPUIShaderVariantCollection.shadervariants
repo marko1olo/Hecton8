@@ -22,6 +22,12 @@ ShaderVariantCollection:
         passType: 0
       - keywords: _QUALITY_MX350
         passType: 0
+  - first: {fileID: 4800000, guid: e95732a5801e4d34d8c85462a2045436, type: 3}
+    second:
+      variants:
+      - keywords: _ENVIRONMENTREFLECTIONS_OFF _METALLICSPECGLOSSMAP _NORMALMAP _OCCLUSIONMAP
+          _PARALLAXMAP _RECEIVE_SHADOWS_OFF _SPECULARHIGHLIGHTS_OFF
+        passType: 0
   - first: {fileID: 4800000, guid: 1a6ceac7f4c639b4096c21f11e4e7a56, type: 3}
     second:
       variants: []

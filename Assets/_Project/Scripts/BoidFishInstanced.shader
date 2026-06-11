@@ -410,6 +410,8 @@ Shader "Hecton8/BoidFishInstanced"
             //  VERTEX SHADER
             // ══════════════════════════════════════════════════════
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input, uint vertexID : SV_VertexID)
             {
                 Varyings output;

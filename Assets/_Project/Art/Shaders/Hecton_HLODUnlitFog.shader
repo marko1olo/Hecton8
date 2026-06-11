@@ -80,6 +80,8 @@ Shader "Hidden/Hecton8/World/HLODUnlitFog"
                 return saturate((half)floor(saturate(alpha) * 4.0h + 0.999h) * 0.25h);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

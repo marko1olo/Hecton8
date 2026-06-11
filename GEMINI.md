@@ -1,67 +1,64 @@
-# HECTON-8 Gemini / Antigravity Shim
+[GLOBAL GEMINI / ANTIGRAVITY ROUTER]
+Default rule: use the nearest project authority file first. Do not apply HECTON-8 rules to unrelated projects unless the user explicitly asks for HECTON-8 behavior.
 
-Status: THIRD-PARTY TOOL SHIM / NOT PROJECT LAW
-Evidence class: STATIC_DOC
+When an authority file, route bible, mandate, or important task document is selected as relevant, read it as a complete document before evaluating meaning. Text search is only for navigation, symbol lookup, and audit checks.
 
-This file is a one-way adapter for Gemini and Antigravity agents that open this repository.
-It points the tool into HECTON-8 authority. HECTON-8 authority documents must not depend on this file.
+[HECTON-8 ROUTE]
+When the workspace, request, or file path is under `C:\hades\Hecton8`, including nested Antigravity workspaces such as `C:\hades\Hecton8\Assets\MapMagic`, the canonical authority is:
 
-If this file conflicts with project authority, ignore this file and follow project authority.
+1. `C:\hades\Hecton8\GEMINI.md` when present, as the Gemini/Antigravity project shim.
+2. `C:\hades\Hecton8\AGENTS.md`
+3. `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md` for every non-trivial task
+4. `C:\hades\Hecton8\PROJECT_BIBLES.md` for domain/bible selection
+5. `C:\hades\Hecton8\VISION_LOCKS.md` for product vision, ambiguity, priority, or taste conflicts
+6. `C:\hades\Hecton8\TASTE.md` for player-visible work
+7. `C:\hades\Hecton8\.agents-skills\README.md` plus exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work
 
-## Required Route
+Do not hardcode an old mandate count. Read `.agents-skills\README.md` for the current inventory.
 
-Root law is `C:\hades\Hecton8\AGENTS.md`.
+Do not bulk-read unrelated docs, dated reports, task logs, old prompts, or archives as a substitute for routing. Current source, current assets, and fresh proof outrank stale prose.
 
-For non-trivial HECTON-8 work, read these as complete documents before judging the task:
+[HECTON-8 BOUNDARIES]
+- `C:\hades\Hecton8\AGENTS.md` overrides this file for HECTON-8.
+- `C:\hades\Hecton8\GEMINI.md` is a Gemini/Antigravity shim only; it must not duplicate divergent project law.
+- `.codexrules\AGENTS.md` and `.github\agents\AGENTS.md` must stay delegated to or byte-intent synced with root `AGENTS.md`.
+- `.agent\rules\AGENTS.md` delegates to root `AGENTS.md`.
+- Other `.agent\rules\*.md` files are historical/generic unless explicitly imported by root authority, `Docs\AGENT_AUTHORITY_ROUTING.md`, or a current route bible.
+- Antigravity brain, task, walkthrough, implementation_plan, resolved, and conversation files are assignment/proof evidence only. They cannot lower root standards.
+- Status, Rationale, LOG, Dump, batch, and controller artifacts are explicit-mode only. Ordinary work reports in chat and edits the relevant source.
+- Do not use Unity, dotnet, csc, import, profiler, or build actions unless the HECTON-8 root rules and current process gates allow them.
 
-1. `AGENTS.md`
-2. `Docs\AGENT_AUTHORITY_ROUTING.md`
-3. `PROJECT_BIBLES.md` for domain route selection when the task is major, player-facing, design-facing, system-facing, or ambiguous
-4. `VISION_LOCKS.md` only for product vision, ambiguity, priority, taste conflict, or scope interpretation
-5. `TASTE.md` for player-visible work
-6. `.agents-skills\README.md` and exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work
-7. Live source, current assets, and fresh proof for the edited owner route
+[SUBAGENTS]
+Internal subagents are a normal and encouraged HECTON-8 work tool. Any HECTON-8 agent may and should spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, implementation on a disjoint scope, alternative design review, or synthesis.
 
-Text search is navigation only. It is not a substitute for reading selected authority files as complete documents.
+Subagents inherit HECTON-8 law. Provide each subagent with the maximum relevant authority context, exact scope, expected output, and evidence requirements.
 
-## Tool Boundary
+The primary agent remains responsible for reading controlling docs, integrating results, resolving conflicts, and verifying final claims. Subagent output is evidence input, not authority.
 
-Gemini and Antigravity memory, brain files, tasks, implementation plans, resolved files, conversations, and transcripts are assignment/proof evidence only. They are not project law and cannot lower HECTON-8 standards.
+[ANTIGRAVITY LOCAL SAFETY]
+- Do not persist raw CSRF tokens, account tokens, or secrets in memory, reports, prompts, or chat.
+- Do not rely on stale Antigravity brain files after restart; re-derive current state from live project files and current task context.
+- If an API or GUI send path truncates a multiline prompt, verify the actual brain/message file contains the full task before treating it as delivered.
+- Always distinguish Antigravity/Gemini agent input from any Codex pane input before pasting prompts.
 
-Do not mine stale Antigravity brain files as standing memory. Use them only when the current user task, current orchestration front, or an explicit evidence packet names them.
+[LOCAL GUI / PROCESS CONTROL]
+Do not read local GUI/process-control docs or scripts for ordinary HECTON-8 work, ordinary project orchestration reasoning, or internal subagent spawning.
 
-Do not persist raw CSRF tokens, account tokens, API keys, cookies, or secrets in files, reports, prompts, memory, or chat.
+Use `C:\hades\Hecton8\HECTON8_ORCHESTRATOR.md` only when the user explicitly asks you to create/judge standalone agent batches, write task files, control other IDE/browser/GUI sessions, or operate local external-agent processes on this workstation.
 
-## Work Modes
+When real workstation GUI/process control is required, use:
 
-Ordinary work:
-- edit the relevant source/content/rule file directly;
-- report in chat;
-- do not create `Status_*`, `Rationale_*`, `LOG_*`, `Dump_*`, batch files, controller ledgers, route cards, or broad audit artifacts unless the user explicitly requested that mode.
+- `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`
+- `C:\hades\.codex_ops\AgentGuiOps.ps1`
+- `C:\hades\.codex_ops\ProbeAgents.ps1`
 
-Explicit standalone batch/controller work:
-- use the supplied ID or batch file only;
-- follow `HECTON8_ORCHESTRATOR.md`;
-- assign one `LANE_CLASS`, valid completion, invalid completion, kill switch, and evidence budget before dispatching or judging an agent.
+These are GUI/process-control tools, not subagent rules. Do not persist raw CSRF tokens or secrets in memory, reports, prompts, or chat.
 
-Subagents:
-- are a normal and encouraged HECTON-8 work tool for ordinary agents;
-- should be used when they materially improve correctness, parallel evidence gathering, bounded audits, implementation on a disjoint scope, alternative design review, or synthesis;
-- inherit HECTON-8 law;
-- are evidence input, not authority;
-- do not excuse the primary agent from reading controlling docs and verifying final claims.
-- do not require `HECTON8_ORCHESTRATOR.md` unless they are being exported as standalone task/batch agents or the user explicitly requested controller work.
+[NO-LOSS PROVENANCE]
+This file was reduced from a HECTON-8-specific always-on rule copy into a router on 2026-06-05. The full previous text is preserved at:
 
-## Unity And Proof
+`C:\Users\danat\.gemini\recovery_backups\GEMINI_full_before_router_20260605.md`
 
-Do not launch or trigger Unity, import, Play Mode, profiler, player build, `dotnet`, `csc`, or build actions unless root `AGENTS.md` and current process gates allow them.
+That preserved file is recovery/provenance material, not active authority, unless a current project authority explicitly imports it.
 
-Never claim Unity, runtime, profiler, GC, visual, platform, save/load, or build readiness from static text or agent confidence. Use project proof labels and artifact paths.
 
-For player-visible visuals, inspect the mandatory reference folder named in `AGENTS.md` before claiming visual direction or quality. Missing reference/proof keeps the claim `PENDING VERIFICATION`.
-
-## Output Discipline
-
-Be direct and evidence-backed.
-No fake metrics, fake hashes, invented paths, invented APIs, stale logs as proof, or "done" without artifacts.
-If blocked, name the exact external gate, missing source, missing proof, or owner-route conflict.

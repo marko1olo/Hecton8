@@ -106,6 +106,8 @@ Shader "Hecton8/Fabrication/HologramAssembly"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
             {
                 Varyings output;

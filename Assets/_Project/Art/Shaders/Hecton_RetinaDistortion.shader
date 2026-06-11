@@ -60,6 +60,8 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float2 screenUV : TEXCOORD0;
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

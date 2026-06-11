@@ -385,6 +385,8 @@ Shader "Hecton8/Flora/CoralMaster"
                 return rippleEnergy;
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

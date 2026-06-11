@@ -887,6 +887,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return color;
         }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         SurfaceVaryings Vert(Attributes input)
         {
             SurfaceVaryings output;

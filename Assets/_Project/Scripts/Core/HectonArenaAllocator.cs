@@ -391,7 +391,7 @@ namespace Hecton8.Core
             }
 
             ReleaseSafetyHandles();
-            H8Memory.FreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
+            H8Memory.TryFreeRaw(_basePtr, Allocator.Persistent, SystemID.H8Memory);
             if (_sentinelId > 0)
             {
                 NativeMemorySentinel.Unregister(_sentinelId);

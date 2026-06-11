@@ -154,6 +154,8 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                        _SkyColorNadir.rgb * downMask;
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

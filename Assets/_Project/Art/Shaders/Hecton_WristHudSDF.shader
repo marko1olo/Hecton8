@@ -143,6 +143,8 @@ Shader "Hecton8/UI/WristHudSDF"
                 return dot(delta, delta);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input, uint instanceId : SV_InstanceID)
             {
                 WristHudQuadData data = _WristHudQuads[instanceId];

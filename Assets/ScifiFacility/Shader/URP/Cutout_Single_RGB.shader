@@ -381,6 +381,8 @@ Shader "Triplebrick/Cutout_Single_RGB"
 			};
 
 			
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -546,6 +548,8 @@ Shader "Triplebrick/Cutout_Single_RGB"
 			}
 			
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;
@@ -733,6 +737,8 @@ Shader "Triplebrick/Cutout_Single_RGB"
 			}
 			
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
 			VertexOutput vert( VertexInput v  )
 			{
 				VertexOutput o = (VertexOutput)0;

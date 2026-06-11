@@ -440,7 +440,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher && serviceSlot != GlobalRegistryServiceSlot.TickManager)
                 return;
 
             TryUnregisterFromTickManager();

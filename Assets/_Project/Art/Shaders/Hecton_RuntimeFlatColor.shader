@@ -56,6 +56,8 @@ Shader "Hecton8/Runtime/FlatColor"
                 float4 positionCS : SV_POSITION;
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

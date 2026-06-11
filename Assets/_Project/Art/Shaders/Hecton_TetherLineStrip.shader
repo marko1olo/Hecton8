@@ -110,6 +110,8 @@ Shader "Hecton8/Physics/TetherLineStrip"
                 return saturate((occlusion * 0.0625) * (0.35 + stress01 * 0.65));
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;

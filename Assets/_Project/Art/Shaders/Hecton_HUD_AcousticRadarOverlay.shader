@@ -101,6 +101,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
             float _HectonTunnelingIntensity;
 
             float _H8GlobalQualityWeight;
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;

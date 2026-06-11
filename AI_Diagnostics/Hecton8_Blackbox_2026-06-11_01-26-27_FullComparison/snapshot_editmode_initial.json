@@ -1,0 +1,4599 @@
+﻿{
+    "timestamp": "2026-06-11 01:26:30",
+    "mode": "EditMode_Initial",
+    "sceneName": "02_HECTON_WORLD",
+    "playModeElapsedSeconds": 0.0,
+    "project": {
+        "unityVersion": "6000.4.10f1",
+        "projectPath": "C:\\hades\\Hecton8",
+        "platform": "WindowsEditor",
+        "buildTarget": "StandaloneWindows64",
+        "qualityLevelName": "Surface (Medium)",
+        "qualityLevelIndex": 0,
+        "currentRenderPipeline": "URP_Medium (PC_RPAsset)",
+        "defaultRenderPipeline": "URP_Medium (PC_RPAsset)",
+        "qualityRenderPipeline": "URP_Medium (PC_RPAsset)",
+        "packageVersions": [
+            {
+                "key": "com.unity.render-pipelines.universal",
+                "value": "17.4.0"
+            },
+            {
+                "key": "com.unity.addressables",
+                "value": "2.9.1"
+            },
+            {
+                "key": "com.unity.cinemachine",
+                "value": "3.1.6"
+            },
+            {
+                "key": "com.unity.inputsystem",
+                "value": "1.19.0"
+            },
+            {
+                "key": "Crest (folder)",
+                "value": "found"
+            },
+            {
+                "key": "MapMagic (folder)",
+                "value": "found"
+            }
+        ],
+        "buildScenes": [
+            "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
+            "Assets/_Project/Scenes/01_MAIN_MENU.unity",
+            "Assets/_Project/Scenes/01_ORBIT.unity",
+            "Assets/_Project/Scenes/02_HECTON_WORLD.unity"
+        ],
+        "activeScene": "02_HECTON_WORLD",
+        "loadedScenes": [
+            "02_HECTON_WORLD"
+        ]
+    },
+    "scenes": [
+        {
+            "name": "02_HECTON_WORLD",
+            "path": "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+            "buildIndex": 3,
+            "isLoaded": true,
+            "isDirty": false,
+            "rootCount": 16,
+            "totalGameObjects": 1527,
+            "activeGameObjects": 31,
+            "inactiveGameObjects": 1496,
+            "cameraCount": 1,
+            "rendererCount": 1080,
+            "terrainCount": 1,
+            "lightCount": 4
+        }
+    ],
+    "keyObjects": [
+        {
+            "exists": false,
+            "searchKey": "name:GameBootstrapper",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:GlobalRegistry",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:SystemDispatcher",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:GameTickManager",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": true,
+            "searchKey": "name:MapMagic",
+            "objectName": "MapMagic::MapMagic.Core.MapMagicObject",
+            "hierarchyPath": "MapMagic::MapMagic.Core.MapMagicObject",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "MapMagic.Core.MapMagicObject",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.Core.MapMagicRuntimeBridge",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": false,
+            "searchKey": "name:Ocean_Crest",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": true,
+            "searchKey": "name:H8_WORLD_CREST_OCEAN_RUNTIME_1428",
+            "objectName": "H8_WORLD_CREST_OCEAN_RUNTIME_1428",
+            "hierarchyPath": "H8_WORLD_CREST_OCEAN_RUNTIME_1428",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "parentChain": [],
+            "layerIndex": 4,
+            "layerName": "Water",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Crest.OceanRenderer",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldWaterLevelCalibrationAuthoring",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Crest.ShapeFFT",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.SargassumCrestDampingController",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.SargassumMicroFaunaBoids",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.Physics.Crest4KinematicsAdapter",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.HectonCrestOceanDepthCacheBootstrap",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.HectonCaveVoxelAmbientOcclusionController",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "name:Main Camera",
+            "objectName": "Main Camera",
+            "hierarchyPath": "Main Camera",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "MainCamera",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "UnityEngine.Camera",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "UnityEngine.AudioListener",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Crest.UnderwaterRenderer",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "name:DEPRECATED_STUFF",
+            "objectName": "DEPRECATED_STUFF",
+            "hierarchyPath": "DEPRECATED_STUFF",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": false,
+            "searchKey": "name:EnvironmentRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:WorldRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:LightingRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:WaterRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:OceanRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:TerrainRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:GameBootstrapper",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:HectonAtmosphereManager",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:HectonCelestialEngine",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_EndgameOps/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_EndgameOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ConstructionOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Resource_FieldSources/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Resource_FieldSources",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_PowerOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Starter_ReefField/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Starter_ReefField",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Resource_FieldSources/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Resource_FieldSources",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Resource_FieldSources/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Resource_FieldSources",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Starter_ReefField/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Starter_ReefField",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ServiceModules/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ServiceModules",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Starter_ReefField/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Starter_ReefField",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ConstructionOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Outpost/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Outpost",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_CombatContacts/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_CombatContacts",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_EndgameOps/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_EndgameOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_CombatContacts/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_CombatContacts",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ServiceModules/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ServiceModules",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_CombatContacts/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_CombatContacts",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_EndgameOps/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_EndgameOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_PowerOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Trial/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Trial",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Outpost/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Outpost",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Outpost/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Outpost",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__NearInteractive",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Trial/__NearInteractive",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Trial",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Fabrication_Trial/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Fabrication_Trial",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_PowerOps/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_PowerOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__MidVisual",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ConstructionOps/__MidVisual",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ConstructionOps",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": true,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "__FarSilhouette",
+            "hierarchyPath": "DEPRECATED_STUFF/--- WORLD ---/Tool_Staging/Tool_TrialRange/Lane_ServiceModules/__FarSilhouette",
+            "sceneName": "02_HECTON_WORLD",
+            "activeSelf": true,
+            "activeInHierarchy": false,
+            "parentChain": [
+                {
+                    "name": "Lane_ServiceModules",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_TrialRange",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "Tool_Staging",
+                    "activeSelf": true,
+                    "layer": 0
+                },
+                {
+                    "name": "--- WORLD ---",
+                    "activeSelf": false,
+                    "layer": 0
+                },
+                {
+                    "name": "DEPRECATED_STUFF",
+                    "activeSelf": false,
+                    "layer": 0
+                }
+            ],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.World.WorldFidelityRoot",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        }
+    ],
+    "bootstrap": {
+        "bootstrapperFound": true,
+        "instanceCount": 0,
+        "isBootstrapScene": false,
+        "activeSceneName": "02_HECTON_WORLD",
+        "activeSceneBuildIndex": 3,
+        "staticFields": [
+            {
+                "key": "BootstrapSceneName",
+                "value": "00_BOOTSTRAP"
+            },
+            {
+                "key": "MainMenuSceneName",
+                "value": "02_HECTON_WORLD"
+            },
+            {
+                "key": "DefaultGameplaySceneName",
+                "value": "02_HECTON_WORLD"
+            },
+            {
+                "key": "OrbitSceneName",
+                "value": "01_ORBIT"
+            },
+            {
+                "key": "BootstrapScenePath",
+                "value": "Assets/_Project/Scenes/00_BOOTSTRAP.unity"
+            },
+            {
+                "key": "MainMenuScenePath",
+                "value": "Assets/_Project/Scenes/01_MAIN_MENU.unity"
+            },
+            {
+                "key": "DefaultGameplayScenePath",
+                "value": "Assets/_Project/Scenes/02_HECTON_WORLD.unity"
+            },
+            {
+                "key": "OrbitScenePath",
+                "value": "Assets/_Project/Scenes/01_ORBIT.unity"
+            },
+            {
+                "key": "FatalBootCrashFileName",
+                "value": "fatal_boot_crash.log"
+            },
+            {
+                "key": "BootStateFileName",
+                "value": "boot.bin"
+            },
+            {
+                "key": "PersistentRootName",
+                "value": "[PROJECT_PERSISTENT_ROOT]"
+            },
+            {
+                "key": "BootstrapAudioListenerRuntimeName",
+                "value": "[BootstrapAudioListener]"
+            },
+            {
+                "key": "BootstrapPresentationRootName",
+                "value": "[BOOT_PRESENTATION_FALLBACK]"
+            },
+            {
+                "key": "BootstrapPresentationCameraName",
+                "value": "[BOOT_PRESENTATION_CAMERA]"
+            },
+            {
+                "key": "PrefabRegistryRuntimeName",
+                "value": "[PrefabRegistry]"
+            },
+            {
+                "key": "PersistentWorldRegistryRuntimeName",
+                "value": "[PersistentWorldRegistry]"
+            },
+            {
+                "key": "RuntimePerformanceProfilerRuntimeName",
+                "value": "[RuntimePerformanceProfiler]"
+            },
+            {
+                "key": "CrashTelemetryRuntimeName",
+                "value": "[CrashTelemetryBuffer]"
+            },
+            {
+                "key": "RuntimeWatchdogRuntimeName",
+                "value": "[RuntimeWatchdog]"
+            },
+            {
+                "key": "GCMonitorRuntimeName",
+                "value": "[GCMonitor]"
+            },
+            {
+                "key": "PluginsAssemblyName",
+                "value": "Hecton8.Plugins"
+            },
+            {
+                "key": "CrestBridgeAssemblyName",
+                "value": "Hecton8.Crest.Bridge"
+            },
+            {
+                "key": "DontDestroyOnLoadSceneName",
+                "value": "DontDestroyOnLoad"
+            },
+            {
+                "key": "HectonHeadlessCommandLineArg",
+                "value": "-h8headless"
+            },
+            {
+                "key": "HeadlessCommandLineArg",
+                "value": "-headless"
+            },
+            {
+                "key": "TierLowAddressableLabel",
+                "value": "Tier_Low"
+            },
+            {
+                "key": "TierHighAddressableLabel",
+                "value": "Tier_High"
+            },
+            {
+                "key": "OptionalServiceTimeoutMilliseconds",
+                "value": "5000"
+            },
+            {
+                "key": "ShaderWarmupBaseTimeoutMilliseconds",
+                "value": "5000"
+            },
+            {
+                "key": "ShaderWarmupMaxTimeoutMilliseconds",
+                "value": "60000"
+            },
+            {
+                "key": "ShaderWarmupPerShaderAttemptTimeoutMilliseconds",
+                "value": "20"
+            },
+            {
+                "key": "ShaderWarmupPerGraphicsStateCollectionTimeoutMilliseconds",
+                "value": "4000"
+            },
+            {
+                "key": "ShaderWarmupLowQualityTimeoutPaddingMilliseconds",
+                "value": "8000"
+            },
+            {
+                "key": "ShaderWarmupLowQualityFrameCadenceMilliseconds",
+                "value": "34"
+            },
+            {
+                "key": "ShaderWarmupHighQualityFrameCadenceMilliseconds",
+                "value": "17"
+            },
+            {
+                "key": "DataMonolithBootstrapMaxAttempts",
+                "value": "3"
+            },
+            {
+                "key": "SuspiciousGraphicsMemoryFallbackThresholdMb",
+                "value": "256"
+            },
+            {
+                "key": "UltraTierProcessorCount",
+                "value": "12"
+            },
+            {
+                "key": "BootstrapRunStartGraceSeconds",
+                "value": "2"
+            },
+            {
+                "key": "ObjectPoolWarmupFrameBudgetMilliseconds",
+                "value": "8"
+            },
+            {
+                "key": "BootStateRecordBytes",
+                "value": "32"
+            },
+            {
+                "key": "FatalBootCrashMessageByteCount",
+                "value": "66"
+            },
+            {
+                "key": "BootStateMagic",
+                "value": "944259656"
+            },
+            {
+                "key": "BootStateVersion",
+                "value": "1"
+            },
+            {
+                "key": "PendingEventCapacity",
+                "value": "12"
+            },
+            {
+                "key": "SceneRootGraphLimit",
+                "value": "512"
+            },
+            {
+                "key": "WarmupBatchSize",
+                "value": "8"
+            },
+            {
+                "key": "BootstrapShaderWarmupTelemetryCapacity",
+                "value": "300"
+            },
+            {
+                "key": "BootstrapTelemetryEntrySizeBytes",
+                "value": "64"
+            },
+            {
+                "key": "BootstrapShaderWarmupDumpBytes",
+                "value": "19200"
+            },
+            {
+                "key": "BootstrapShaderWarmupTelemetryRingBufferId",
+                "value": "76000"
+            },
+            {
+                "key": "BootstrapShaderWarmupDumpFileName",
+                "value": "Dump_1336_Bootstrapper.bin"
+            },
+            {
+                "key": "GraphicsStateCollectionExtension",
+                "value": ".graphicsstate"
+            },
+            {
+                "key": "AssetsPathPrefix",
+                "value": "Assets/"
+            },
+            {
+                "key": "ProjectSettingsPathPrefix",
+                "value": "ProjectSettings/"
+            },
+            {
+                "key": "StreamingAssetsProjectPathPrefix",
+                "value": "Assets/StreamingAssets/"
+            },
+            {
+                "key": "ShaderWarmupFailureReason",
+                "value": "BOOTSTRAP_SHADER_WARMUP_FAILED"
+            },
+            {
+                "key": "ShaderWarmupFailureOverlayMessage",
+                "value": "BIOS ERROR 0xSHADER\nEXPECTED: PRECOMPILED VARIANT WARMUP\nACTION: BOOT HALTED"
+            },
+            {
+                "key": "WorldReadyPollIntervalSec",
+                "value": "0.1"
+            },
+            {
+                "key": "WorldReadyThreshold",
+                "value": "100"
+            },
+            {
+                "key": "WorldReadyStagnationPollLimit",
+                "value": "40"
+            },
+            {
+                "key": "GroundCheckPollIntervalSec",
+                "value": "0.2"
+            },
+            {
+                "key": "GroundCheckRayOffset",
+                "value": "2"
+            },
+            {
+                "key": "GroundCheckRayLength",
+                "value": "1000"
+            },
+            {
+                "key": "GroundCheckLogIntervalSec",
+                "value": "5"
+            },
+            {
+                "key": "BytesPerMegabyte",
+                "value": "1048576"
+            },
+            {
+                "key": "LowMemorySystemThresholdMb",
+                "value": "8192"
+            },
+            {
+                "key": "LowMemoryVramThresholdMb",
+                "value": "2048"
+            },
+            {
+                "key": "MinimalTierTargetFrameRate",
+                "value": "30"
+            },
+            {
+                "key": "DefaultTargetFrameRate",
+                "value": "60"
+            },
+            {
+                "key": "BackgroundDomainHandshakeIdle",
+                "value": "0"
+            },
+            {
+                "key": "BackgroundDomainHandshakeRunning",
+                "value": "1"
+            },
+            {
+                "key": "BackgroundDomainHandshakeComplete",
+                "value": "2"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailed",
+                "value": "3"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureNone",
+                "value": "0"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureInvalidPath",
+                "value": "1"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureIo",
+                "value": "2"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureUnauthorized",
+                "value": "3"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureUnsupported",
+                "value": "4"
+            },
+            {
+                "key": "SurvivalAsyncUploadBufferMb",
+                "value": "64"
+            },
+            {
+                "key": "MidTierAsyncUploadBufferMb",
+                "value": "128"
+            },
+            {
+                "key": "HighTierAsyncUploadBufferMb",
+                "value": "256"
+            },
+            {
+                "key": "SurvivalAsyncUploadTimeSliceMs",
+                "value": "1"
+            },
+            {
+                "key": "MidTierAsyncUploadTimeSliceMs",
+                "value": "2"
+            },
+            {
+                "key": "HighTierAsyncUploadTimeSliceMs",
+                "value": "4"
+            },
+            {
+                "key": "SurfaceMediumQualityIndex",
+                "value": "0"
+            },
+            {
+                "key": "AbyssLowQualityIndex",
+                "value": "1"
+            },
+            {
+                "key": "OrbitHighQualityIndex",
+                "value": "2"
+            },
+            {
+                "key": "QuestVrQualityIndex",
+                "value": "3"
+            },
+            {
+                "key": "HandheldUmaQualityIndex",
+                "value": "4"
+            },
+            {
+                "key": "CompactPcQualityIndex",
+                "value": "5"
+            },
+            {
+                "key": "LeviathanUltraQualityIndex",
+                "value": "6"
+            },
+            {
+                "key": "SurfaceMediumQualityName",
+                "value": "Surface (Medium)"
+            },
+            {
+                "key": "AbyssLowQualityName",
+                "value": "Abyss (Low)"
+            },
+            {
+                "key": "OrbitHighQualityName",
+                "value": "Orbit (High)"
+            },
+            {
+                "key": "QuestVrQualityName",
+                "value": "Quest (VR)"
+            },
+            {
+                "key": "HandheldUmaQualityName",
+                "value": "Handheld (UMA)"
+            },
+            {
+                "key": "CompactPcQualityName",
+                "value": "Compact PC"
+            },
+            {
+                "key": "LeviathanUltraQualityName",
+                "value": "Leviathan (Ultra)"
+            },
+            {
+                "key": "HeartbeatFreezeSlowTickLimit",
+                "value": "3"
+            }
+        ],
+        "instanceFields": [],
+        "inferredState": "DIRECT_WORLD_START_DETECTED"
+    },
+    "registry": {
+        "typeFound": true,
+        "typeName": "Hecton8.Core.GlobalRegistry",
+        "registryPhase": 0,
+        "registryPhaseName": "Uninitialized",
+        "staticFields": [
+            {
+                "key": "_batteryChargerLogisticsRuntime",
+                "value": "null"
+            },
+            {
+                "key": "ServiceSlotMaskWordCount",
+                "value": "4"
+            },
+            {
+                "key": "MathPrecisionTransitionFrameCount",
+                "value": "60"
+            },
+            {
+                "key": "MathPrecisionBlendScale",
+                "value": "1000"
+            },
+            {
+                "key": "SystemKillSwitchBitsSignalSourceHash",
+                "value": "1263747671"
+            },
+            {
+                "key": "SystemKillSwitchLane4VfxMask",
+                "value": "16"
+            },
+            {
+                "key": "_mathLodLowBlendId",
+                "value": "2061"
+            },
+            {
+                "key": "_requestedServiceSlotMask",
+                "value": "<Int64[]>"
+            },
+            {
+                "key": "_registeredServiceSlotMask",
+                "value": "<Int64[]>"
+            },
+            {
+                "key": "_serviceSlotNames",
+                "value": "<String[]>"
+            },
+            {
+                "key": "_registryPhase",
+                "value": "0"
+            },
+            {
+                "key": "_registeringGetViolationLogged",
+                "value": "false"
+            },
+            {
+                "key": "_readyLockViolationLogged",
+                "value": "false"
+            },
+            {
+                "key": "_updatables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_renderables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_fastTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_fixedTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_slowTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_coldTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_frostTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_unscaledFastTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_hotSwapListeners",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_registryEventListeners",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_noOpInputService",
+                "value": "<NoOpInputService>"
+            },
+            {
+                "key": "_noOpVRSomaticProvider",
+                "value": "<PcVRSomaticProvider>"
+            },
+            {
+                "key": "_inputDependencyWarningHash",
+                "value": "2134552659"
+            },
+            {
+                "key": "_serviceReboundOverflowWarningHash",
+                "value": "2055784209"
+            },
+            {
+                "key": "_globalRegistryTelemetryContextHash",
+                "value": "2403716579"
+            },
+            {
+                "key": "MaxPendingServiceRebounds",
+                "value": "64"
+            },
+            {
+                "key": "PlayerResolutionMask",
+                "value": "7"
+            },
+            {
+                "key": "ForceOverrideTokenValue",
+                "value": "1213158483"
+            },
+            {
+                "key": "_resolutionMask",
+                "value": "0"
+            },
+            {
+                "key": "_threadInput",
+                "value": "null"
+            },
+            {
+                "key": "_threadPhysics",
+                "value": "null"
+            },
+            {
+                "key": "_threadTickManager",
+                "value": "null"
+            },
+            {
+                "key": "_threadTelemetry",
+                "value": "null"
+            },
+            {
+                "key": "_threadAudio",
+                "value": "null"
+            },
+            {
+                "key": "_threadAudioVirtualization",
+                "value": "null"
+            },
+            {
+                "key": "_activeBootProfile",
+                "value": "Normal"
+            },
+            {
+                "key": "_safeModeBootRequested",
+                "value": "false"
+            },
+            {
+                "key": "_lowMemoryProfileEnabled",
+                "value": "false"
+            },
+            {
+                "key": "_activeServiceTypeHash",
+                "value": "0"
+            },
+            {
+                "key": "_absoluteUniverseTimeBits",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionLevel",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTargetLevel",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTransitionFramesRemaining",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTransitionTotalFrames",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionLowBlendMilli",
+                "value": "1000"
+            },
+            {
+                "key": "_pendingMathPrecisionShaderLevel",
+                "value": "0"
+            },
+            {
+                "key": "_pendingMathPrecisionShaderLowBlendMilli",
+                "value": "1000"
+            },
+            {
+                "key": "_mathPrecisionShaderDirty",
+                "value": "0"
+            },
+            {
+                "key": "_sceneRuntimePublicationGateDepth",
+                "value": "0"
+            },
+            {
+                "key": "_currentDomain",
+                "value": "0"
+            },
+            {
+                "key": "_currentDomainOwner",
+                "value": "null"
+            },
+            {
+                "key": "_serviceReboundReferenceSlots",
+                "value": "<RegistryReboundReferenceSlot[]>"
+            },
+            {
+                "key": "_serviceReboundReferenceSlotOccupied",
+                "value": "<Boolean[]>"
+            },
+            {
+                "key": "_input",
+                "value": "null"
+            },
+            {
+                "key": "_inputBinding",
+                "value": "null"
+            },
+            {
+                "key": "_nativeInputManagerRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_raycastBatchRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_physics",
+                "value": "null"
+            },
+            {
+                "key": "_cablePhysics132Runtime",
+                "value": "null"
+            },
+            {
+                "key": "_audio",
+                "value": "null"
+            },
+            {
+                "key": "_audioVirtualization",
+                "value": "null"
+            },
+            {
+                "key": "_vocalWarningRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_scene",
+                "value": "null"
+            },
+            {
+                "key": "_save",
+                "value": "null"
+            },
+            {
+                "key": "_ui",
+                "value": "null"
+            },
+            {
+                "key": "_modalWindowRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_arWaypoint",
+                "value": "null"
+            },
+            {
+                "key": "_spatialTriggerSystem",
+                "value": "null"
+            },
+            {
+                "key": "_objectPool",
+                "value": "null"
+            },
+            {
+                "key": "_player",
+                "value": "null"
+            },
+            {
+                "key": "_playerMotor",
+                "value": "null"
+            },
+            {
+                "key": "_playerMovementContracts",
+                "value": "null"
+            },
+            {
+                "key": "_playerInventory",
+                "value": "null"
+            },
+            {
+                "key": "_playerInventoryMassKg",
+                "value": "0"
+            },
+            {
+                "key": "_modularEquipment",
+                "value": "null"
+            },
+            {
+                "key": "_playerSensory",
+                "value": "null"
+            },
+            {
+                "key": "_environment",
+                "value": "null"
+            },
+            {
+                "key": "_chemicalInfluence",
+                "value": "null"
+            },
+            {
+                "key": "_organicToolHits",
+                "value": "null"
+            },
+            {
+                "key": "_weather",
+                "value": "null"
+            },
+            {
+                "key": "_seismicDirectorRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_celestialRuntimeSnapshot",
+                "value": "<CelestialRuntimeSnapshot>"
+            },
+            {
+                "key": "_celestialRuntimeSnapshotSequence",
+                "value": "0"
+            },
+            {
+                "key": "_celestialLightReadabilitySnapshot",
+                "value": "<CelestialLightReadabilitySnapshot>"
+            },
+            {
+                "key": "_celestialLightReadabilitySequence",
+                "value": "0"
+            },
+            {
+                "key": "_oceanKinematics",
+                "value": "null"
+            },
+            {
+                "key": "_powerGrid",
+                "value": "null"
+            },
+            {
+                "key": "_submarine",
+                "value": "null"
+            },
+            {
+                "key": "_submarineState",
+                "value": "null"
+            },
+            {
+                "key": "_submarineHullBreach",
+                "value": "null"
+            },
+            {
+                "key": "_inertialNavigation",
+                "value": "null"
+            },
+            {
+                "key": "_dockingAutopilot",
+                "value": "null"
+            },
+            {
+                "key": "_interactionSignals",
+                "value": "null"
+            },
+            {
+                "key": "_debris",
+                "value": "null"
+            },
+            {
+                "key": "_debrisCompute",
+                "value": "null"
+            },
+            {
+                "key": "_ambientBiotaRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_ecosystemDirector",
+                "value": "null"
+            }
+        ],
+        "candidateStaticMembers": [
+            {
+                "key": "Field: _fastTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _fixedTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _slowTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _coldTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _frostTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _unscaledFastTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _noOpInputService",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _inputDependencyWarningHash",
+                "value": "UInt32"
+            },
+            {
+                "key": "Field: _threadInput",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _threadPhysics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Field: _threadTickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Field: _threadAudio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Field: _threadAudioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Field: _sceneRuntimePublicationGateDepth",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _input",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _inputBinding",
+                "value": "IInputBindingService"
+            },
+            {
+                "key": "Field: _nativeInputManagerRuntime",
+                "value": "INativeInputManagerRuntime"
+            },
+            {
+                "key": "Field: _physics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Field: _cablePhysics132Runtime",
+                "value": "ICablePhysics132Service"
+            },
+            {
+                "key": "Field: _audio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Field: _audioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Field: _scene",
+                "value": "ISceneService"
+            },
+            {
+                "key": "Field: _save",
+                "value": "ISaveService"
+            },
+            {
+                "key": "Field: _ui",
+                "value": "IUIService"
+            },
+            {
+                "key": "Field: _modularEquipment",
+                "value": "IModularEquipmentService"
+            },
+            {
+                "key": "Field: _celestialRuntimeSnapshot",
+                "value": "CelestialRuntimeSnapshot"
+            },
+            {
+                "key": "Field: _celestialRuntimeSnapshotSequence",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _celestialLightReadabilitySnapshot",
+                "value": "CelestialLightReadabilitySnapshot"
+            },
+            {
+                "key": "Field: _celestialLightReadabilitySequence",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _oceanKinematics",
+                "value": "IHectonOceanKinematicsService"
+            },
+            {
+                "key": "Field: _fluidSimulation",
+                "value": "IFluidSim"
+            },
+            {
+                "key": "Field: _fluidPipeGraph",
+                "value": "IFluidPipeGraphService"
+            },
+            {
+                "key": "Field: _geologyTerrainSeamRuntime",
+                "value": "WorldGenerativeGeologyTerrainSeamApplier"
+            },
+            {
+                "key": "Field: _celestialEngineRuntime",
+                "value": "HectonCelestialEngine"
+            },
+            {
+                "key": "Field: _fluidRuntime",
+                "value": "HectonFluidEngine"
+            },
+            {
+                "key": "Field: _audioLogRuntime",
+                "value": "AudioLogSystem"
+            },
+            {
+                "key": "Field: _atmosphereRuntime",
+                "value": "HectonAtmosphereManager"
+            },
+            {
+                "key": "Field: _terrainProviderRuntime",
+                "value": "ITerrainProvider"
+            },
+            {
+                "key": "Field: _mapMagicRuntime",
+                "value": "MapMagicBridge"
+            },
+            {
+                "key": "Field: _mapMagicVegetationRuntime",
+                "value": "HectonMapMagicVegetationBridge"
+            },
+            {
+                "key": "Field: _assetLoadDispatcherRuntime",
+                "value": "AssetLoadDispatcher"
+            },
+            {
+                "key": "Field: _abyssalFluidDecalRuntime",
+                "value": "AbyssalFluidDecalManager"
+            },
+            {
+                "key": "Field: _suitUpgradeRuntime",
+                "value": "SuitUpgradeManager"
+            },
+            {
+                "key": "Field: _uiAudioFeedbackRuntime",
+                "value": "UIAudioFeedback"
+            },
+            {
+                "key": "Field: _uiTooltipRuntime",
+                "value": "UITooltip"
+            },
+            {
+                "key": "Field: _cameraJuiceRuntime",
+                "value": "ICameraJuiceSystem"
+            },
+            {
+                "key": "Field: _uiRTRuntime",
+                "value": "UIRTManager"
+            },
+            {
+                "key": "Field: _playerCriticalAudioRuntime",
+                "value": "PlayerCriticalProceduralAudioRenderer"
+            },
+            {
+                "key": "Field: _tickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Field: _dispatcher",
+                "value": "SystemDispatcher"
+            },
+            {
+                "key": "Field: _renderDispatcher",
+                "value": "RenderDispatcher"
+            },
+            {
+                "key": "Field: _physicsStateManager",
+                "value": "GlobalPhysicsStateManager"
+            },
+            {
+                "key": "Field: _physicsCullingOverseer",
+                "value": "IPhysicsCullingOverseer"
+            },
+            {
+                "key": "Field: _sceneRuntime",
+                "value": "SceneRuntimeService"
+            },
+            {
+                "key": "Field: _sceneInstantiationGateRuntime",
+                "value": "SceneInstantiationGate"
+            },
+            {
+                "key": "Field: _oceanKinematicsRuntime",
+                "value": "OceanKinematicsRuntimeService"
+            },
+            {
+                "key": "Field: _dispatcherRegistrationErrorLogged",
+                "value": "Boolean"
+            },
+            {
+                "key": "Field: _inputFallbackWarningPublished",
+                "value": "Boolean"
+            },
+            {
+                "key": "Prop: IsDevelopmentBuild",
+                "value": "Boolean"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshot",
+                "value": "CelestialRuntimeSnapshot"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshotSequence",
+                "value": "UInt32"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshotReadModel",
+                "value": "ICelestialRuntimeSnapshotReadModel"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilitySnapshot",
+                "value": "CelestialLightReadabilitySnapshot"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilitySequence",
+                "value": "UInt32"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilityReadModel",
+                "value": "ICelestialLightReadabilityReadModel"
+            },
+            {
+                "key": "Prop: SceneRuntime",
+                "value": "SceneRuntimeService"
+            },
+            {
+                "key": "Prop: SceneInstantiationGateRuntime",
+                "value": "SceneInstantiationGate"
+            },
+            {
+                "key": "Prop: CablePhysics132",
+                "value": "ICablePhysics132Service"
+            },
+            {
+                "key": "Prop: OceanKinematicsRuntime",
+                "value": "OceanKinematicsRuntimeService"
+            },
+            {
+                "key": "Prop: Input",
+                "value": "IInputService"
+            },
+            {
+                "key": "Prop: InputDeterminism",
+                "value": "IInputDeterminismService"
+            },
+            {
+                "key": "Prop: RegisteredInput",
+                "value": "IInputService"
+            },
+            {
+                "key": "Prop: NativeInputRuntime",
+                "value": "INativeInputManagerRuntime"
+            },
+            {
+                "key": "Prop: InputBinding",
+                "value": "IInputBindingService"
+            },
+            {
+                "key": "Prop: PhysicsQueryTelemetry",
+                "value": "IPhysicsQueryTelemetryReadModel"
+            },
+            {
+                "key": "Prop: InputRebind",
+                "value": "IInputRebindService"
+            },
+            {
+                "key": "Prop: Physics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Prop: Audio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Prop: AudioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Prop: PlayerCriticalAudio",
+                "value": "PlayerCriticalProceduralAudioRenderer"
+            },
+            {
+                "key": "Prop: PlayerCriticalAudioSignals",
+                "value": "IPlayerCriticalAudioSignalSink"
+            },
+            {
+                "key": "Prop: Scene",
+                "value": "ISceneService"
+            },
+            {
+                "key": "Prop: Save",
+                "value": "ISaveService"
+            },
+            {
+                "key": "Prop: SaveRuntime",
+                "value": "SaveManager"
+            },
+            {
+                "key": "Prop: UI",
+                "value": "IUIService"
+            },
+            {
+                "key": "Prop: ModularEquipment",
+                "value": "IModularEquipmentService"
+            },
+            {
+                "key": "Prop: OceanKinematics",
+                "value": "IHectonOceanKinematicsService"
+            },
+            {
+                "key": "Prop: FluidSimulation",
+                "value": "IFluidSim"
+            },
+            {
+                "key": "Prop: FluidPipeGraph",
+                "value": "IFluidPipeGraphService"
+            },
+            {
+                "key": "Prop: BiomePhysicsInfluence",
+                "value": "IBiomePhysicsInfluenceReadModel"
+            },
+            {
+                "key": "Prop: BrineFluidDensity",
+                "value": "IBrineFluidDensityReadModel"
+            },
+            {
+                "key": "Prop: FluidAdvectionRenderGraph",
+                "value": "IFluidAdvectionRenderGraphDispatchSource"
+            },
+            {
+                "key": "Prop: FluidSurfaceCurrent",
+                "value": "IFluidSurfaceCurrentReadModel"
+            },
+            {
+                "key": "Prop: FluidBubbleBurstSink",
+                "value": "IFluidBubbleBurstSink"
+            },
+            {
+                "key": "Prop: FluidCurrentWriteSink",
+                "value": "IFluidCurrentWriteSink"
+            },
+            {
+                "key": "Prop: GeologyTerrainSeam",
+                "value": "WorldGenerativeGeologyTerrainSeamApplier"
+            },
+            {
+                "key": "Prop: Fluid",
+                "value": "HectonFluidEngine"
+            },
+            {
+                "key": "Prop: AudioLogs",
+                "value": "AudioLogSystem"
+            },
+            {
+                "key": "Prop: AudioLogRuntime",
+                "value": "IAudioLogRuntime"
+            },
+            {
+                "key": "Prop: Atmosphere",
+                "value": "HectonAtmosphereManager"
+            },
+            {
+                "key": "Prop: AtmosphereReadModel",
+                "value": "IAtmosphereReadModel"
+            },
+            {
+                "key": "Prop: CelestialEngine",
+                "value": "HectonCelestialEngine"
+            },
+            {
+                "key": "Prop: CelestialSkyDirection",
+                "value": "ICelestialSkyDirectionReadModel"
+            },
+            {
+                "key": "Prop: CelestialResonance",
+                "value": "ICelestialResonanceReadModel"
+            },
+            {
+                "key": "Prop: Terrain",
+                "value": "ITerrainProvider"
+            },
+            {
+                "key": "Prop: MapMagic",
+                "value": "MapMagicBridge"
+            },
+            {
+                "key": "Prop: MapMagicVegetation",
+                "value": "HectonMapMagicVegetationBridge"
+            },
+            {
+                "key": "Prop: TerrainHeightSamples",
+                "value": "ITerrainHeightSampleReadModel"
+            },
+            {
+                "key": "Prop: AssetLoadDispatcher",
+                "value": "AssetLoadDispatcher"
+            },
+            {
+                "key": "Prop: AbyssalFluidDecals",
+                "value": "AbyssalFluidDecalManager"
+            },
+            {
+                "key": "Prop: FluidDecalPresentation",
+                "value": "IFluidDecalPresentationSink"
+            },
+            {
+                "key": "Prop: SuitUpgrades",
+                "value": "SuitUpgradeManager"
+            },
+            {
+                "key": "Prop: UIAudioFeedback",
+                "value": "UIAudioFeedback"
+            },
+            {
+                "key": "Prop: UITooltip",
+                "value": "UITooltip"
+            },
+            {
+                "key": "Prop: CameraJuice",
+                "value": "ICameraJuiceSystem"
+            },
+            {
+                "key": "Prop: UIRT",
+                "value": "UIRTManager"
+            },
+            {
+                "key": "Prop: TickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Prop: Dispatcher",
+                "value": "SystemDispatcher"
+            },
+            {
+                "key": "Prop: TickDispatcher",
+                "value": "ITickDispatcher"
+            },
+            {
+                "key": "Prop: RenderDispatcher",
+                "value": "RenderDispatcher"
+            },
+            {
+                "key": "Prop: PhysicsStateManager",
+                "value": "GlobalPhysicsStateManager"
+            },
+            {
+                "key": "Prop: PhysicsStateEvents",
+                "value": "IPhysicsStateEventService"
+            },
+            {
+                "key": "Prop: PhysicsCullingOverseer",
+                "value": "IPhysicsCullingOverseer"
+            },
+            {
+                "key": "Prop: FixedTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Prop: SlowTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Prop: FrostTickables",
+                "value": "RegistryBucket`1"
+            }
+        ],
+        "slots": [
+            {
+                "slotName": "Input",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_input",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Physics",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_physics",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Audio",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_audio",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Scene",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_scene",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Save",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_save",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "UI",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_ui",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Player",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_player",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "OceanKinematics",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_oceanKinematics",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "AtmosphereRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_atmosphereRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "CelestialEngineRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_celestialEngineRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "MapMagicRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_mapMagicRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "TerrainProviderRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_terrainProviderRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "TickManager",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_tickManager",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Dispatcher",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_dispatcher",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "RenderDispatcher",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_renderDispatcher",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "ObjectPool",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_objectPool",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Environment",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_environment",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Weather",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_weather",
+                "memberKind": "Field"
+            }
+        ],
+        "inferredState": "EMPTY"
+    },
+    "mapMagic": {
+        "mapMagicObjectFound": true,
+        "mapMagicObjectActive": true,
+        "mapMagicObjectActiveInHierarchy": true,
+        "runtimeBridgeFound": true,
+        "runtimeBridgeActive": true,
+        "runtimeBridgeEnabled": true,
+        "graphAssigned": true,
+        "graphAssetName": "HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH",
+        "graphAssetPath": "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset",
+        "activeTerrainCount": 1,
+        "allTerrainCount": 1,
+        "terrainDetails": [
+            {
+                "key": "terrain[0]",
+                "value": "name=H8_WORLD_TERRAIN_SHELL_1428, hasData=True, size=(120.00, 6.00, 88.00), pos=(-60.00, -8.00, -4.00), material=MAT_H8TerrainLit_BasaltSediment_1428"
+            }
+        ],
+        "reflectedFields": [
+            {
+                "key": "graph",
+                "value": "Graph(\"HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH\")"
+            },
+            {
+                "key": "guiOpenObjectSelector",
+                "value": "false"
+            },
+            {
+                "key": "guiTiles",
+                "value": "true"
+            },
+            {
+                "key": "tiles",
+                "value": "<TerrainTileManager>"
+            },
+            {
+                "key": "tileSize",
+                "value": "<Vector2D>"
+            },
+            {
+                "key": "generationCamera",
+                "value": "Camera(\"Main Camera\", enabled=True)"
+            },
+            {
+                "key": "previewCoord",
+                "value": "<Coord>"
+            },
+            {
+                "key": "previewAssigned",
+                "value": "false"
+            },
+            {
+                "key": "tileResolution",
+                "value": "_129"
+            },
+            {
+                "key": "tileMargins",
+                "value": "16"
+            },
+            {
+                "key": "draftsInEditor",
+                "value": "false"
+            },
+            {
+                "key": "draftsInPlaymode",
+                "value": "true"
+            },
+            {
+                "key": "draftResolution",
+                "value": "_65"
+            },
+            {
+                "key": "draftMargins",
+                "value": "2"
+            },
+            {
+                "key": "guiLocks",
+                "value": "false"
+            },
+            {
+                "key": "locks",
+                "value": "<Lock[]>"
+            },
+            {
+                "key": "guiInfiniteTerrains",
+                "value": "false"
+            },
+            {
+                "key": "hideFarTerrains",
+                "value": "true"
+            },
+            {
+                "key": "mainRange",
+                "value": "2"
+            },
+            {
+                "key": "clearOnNodeRemove",
+                "value": "true"
+            },
+            {
+                "key": "terrainSettings",
+                "value": "<TerrainSettings>"
+            },
+            {
+                "key": "globals",
+                "value": "<Globals>"
+            },
+            {
+                "key": "guiSettings",
+                "value": "false"
+            },
+            {
+                "key": "guiTileSettings",
+                "value": "false"
+            },
+            {
+                "key": "guiOutputsSettings",
+                "value": "false"
+            },
+            {
+                "key": "guiExposedVariables",
+                "value": "false"
+            },
+            {
+                "key": "guiTerrainSettings",
+                "value": "false"
+            },
+            {
+                "key": "guiDraftSettings",
+                "value": "false"
+            },
+            {
+                "key": "guiTreesGrassSettings",
+                "value": "false"
+            },
+            {
+                "key": "instantGenerate",
+                "value": "false"
+            },
+            {
+                "key": "saveIntermediate",
+                "value": "false"
+            },
+            {
+                "key": "heightWeldMargins",
+                "value": "5"
+            },
+            {
+                "key": "splatsWeldMargins",
+                "value": "2"
+            },
+            {
+                "key": "guiHideWireframe",
+                "value": "false"
+            },
+            {
+                "key": "guiThreads",
+                "value": "false"
+            },
+            {
+                "key": "guiDraggingField",
+                "value": "false"
+            },
+            {
+                "key": "applyColliders",
+                "value": "false"
+            },
+            {
+                "key": "setDirty",
+                "value": "false"
+            },
+            {
+                "key": "shift",
+                "value": "false"
+            },
+            {
+                "key": "shiftThreshold",
+                "value": "4000"
+            },
+            {
+                "key": "shiftExcludeLayers",
+                "value": "0"
+            },
+            {
+                "key": "serializedMultithreading",
+                "value": "true"
+            },
+            {
+                "key": "serializedMaxThreads",
+                "value": "1"
+            },
+            {
+                "key": "serializedAutoMaxThreads",
+                "value": "false"
+            },
+            {
+                "key": "serializedMaxApplyTime",
+                "value": "1"
+            },
+            {
+                "key": "Graph",
+                "value": "Graph(\"HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH\")"
+            },
+            {
+                "key": "DraftRange",
+                "value": "2"
+            },
+            {
+                "key": "Globals",
+                "value": "<Globals>"
+            },
+            {
+                "key": "PreviewTile",
+                "value": "null"
+            },
+            {
+                "key": "PreviewData",
+                "value": "null"
+            },
+            {
+                "key": "PreviewTerrain",
+                "value": "null"
+            },
+            {
+                "key": "AssignedPreviewTile",
+                "value": "null"
+            },
+            {
+                "key": "AssignedPreviewData",
+                "value": "null"
+            },
+            {
+                "key": "AssignedPreviewTerrain",
+                "value": "null"
+            },
+            {
+                "key": "destroyCancellationToken",
+                "value": "<CancellationToken>"
+            },
+            {
+                "key": "useGUILayout",
+                "value": "true"
+            },
+            {
+                "key": "didStart",
+                "value": "false"
+            },
+            {
+                "key": "didAwake",
+                "value": "true"
+            },
+            {
+                "key": "runInEditMode",
+                "value": "true"
+            },
+            {
+                "key": "allowPrefabModeInPlayMode",
+                "value": "false"
+            },
+            {
+                "key": "mapMagicObject",
+                "value": "MapMagicObject(\"MapMagic::MapMagic.Core.MapMagicObject\", enabled=True)"
+            },
+            {
+                "key": "waterSurfaceLevel",
+                "value": "14.02"
+            },
+            {
+                "key": "playerTransform",
+                "value": "Transform(\"Player\", enabled=True)"
+            },
+            {
+                "key": "maxBiomeCount",
+                "value": "8"
+            },
+            {
+                "key": "sandboxProceduralTerrainOnly",
+                "value": "false"
+            },
+            {
+                "key": "sandboxUseBiomeMatrixAlphamapLayers",
+                "value": "true"
+            },
+            {
+                "key": "enableSandboxThermalWeathering",
+                "value": "true"
+            },
+            {
+                "key": "sandboxThermalWeatheringStrength",
+                "value": "0.18"
+            },
+            {
+                "key": "sandboxThermalWeatheringTalusAngleDegrees",
+                "value": "32"
+            },
+            {
+                "key": "enableSandboxTectonicSpineDisplacement",
+                "value": "true"
+            },
+            {
+                "key": "sandboxTectonicSpineStrength",
+                "value": "0.12"
+            },
+            {
+                "key": "sandboxTectonicSpineFrequency",
+                "value": "0.0065"
+            },
+            {
+                "key": "sandboxTectonicSpineRidgeSharpness",
+                "value": "3.25"
+            },
+            {
+                "key": "sandboxTectonicSpineSeed",
+                "value": "83117"
+            },
+            {
+                "key": "enableSandboxFakeCliffOverhangOffsets",
+                "value": "true"
+            },
+            {
+                "key": "sandboxFakeOverhangSlopeThresholdDegrees",
+                "value": "75"
+            },
+            {
+                "key": "sandboxFakeOverhangMaxOffsetMeters",
+                "value": "0.75"
+            },
+            {
+                "key": "sandboxFakeOverhangNoiseFrequency",
+                "value": "0.085"
+            },
+            {
+                "key": "sandboxFakeOverhangSeed",
+                "value": "42109"
+            },
+            {
+                "key": "enablePlanetaryCanvasTerrainFade",
+                "value": "true"
+            },
+            {
+                "key": "terrainFadeDistanceMeters",
+                "value": "2600"
+            },
+            {
+                "key": "terrainFadeWidthMeters",
+                "value": "420"
+            },
+            {
+                "key": "terrainFadeNoirFogBlend",
+                "value": "0.85"
+            },
+            {
+                "key": "enableDistantTerrainShadowMask",
+                "value": "true"
+            },
+            {
+                "key": "distantTerrainShadowMaskOverride",
+                "value": "null (destroyed)"
+            },
+            {
+                "key": "distantTerrainShadowMaskResolution",
+                "value": "256"
+            },
+            {
+                "key": "distantTerrainShadowMaskWorldSize",
+                "value": "4096"
+            },
+            {
+                "key": "distantTerrainShadowProbeDistanceMeters",
+                "value": "140"
+            },
+            {
+                "key": "distantTerrainShadowHeightScaleMeters",
+                "value": "90"
+            },
+            {
+                "key": "distantTerrainShadowStrength",
+                "value": "0.72"
+            },
+            {
+                "key": "_debugMapMagicFound",
+                "value": "true"
+            },
+            {
+                "key": "_debugTileCount",
+                "value": "0"
+            },
+            {
+                "key": "_debugCurrentBiome",
+                "value": "-1"
+            },
+            {
+                "key": "_debugPlayerFound",
+                "value": "true"
+            },
+            {
+                "key": "_debugBiomesAvailable",
+                "value": "false"
+            },
+            {
+                "key": "_lastBiomeID",
+                "value": "-1"
+            },
+            {
+                "key": "_registeredToTickManager",
+                "value": "false"
+            },
+            {
+                "key": "_registeredToLateFrameTickManager",
+                "value": "false"
+            },
+            {
+                "key": "_registeredMapMagicRuntime",
+                "value": "false"
+            },
+            {
+                "key": "_hotSwapRegistered",
+                "value": "false"
+            },
+            {
+                "key": "_pendingPlanetaryTerrainShaderGlobals",
+                "value": "false"
+            },
+            {
+                "key": "_pendingRuntimeMapMagicGenerationFence",
+                "value": "false"
+            },
+            {
+                "key": "_initialBiomePublished",
+                "value": "false"
+            },
+            {
+                "key": "_cachedTerrainTiles",
+                "value": "<List`1>"
+            },
+            {
+                "key": "_cachedTerrainTileRootCount",
+                "value": "-1"
+            },
+            {
+                "key": "_lastResolvedTerrainTile",
+                "value": "null"
+            },
+            {
+                "key": "_cachedVegetationBridge",
+                "value": "null"
+            },
+            {
+                "key": "_cachedBiomeTerrainData",
+                "value": "null"
+            },
+            {
+                "key": "_cachedBiomeAlphaTextures",
+                "value": "<Texture2D[]>"
+            },
+            {
+                "key": "_cachedBiomeTerrainLayers",
+                "value": "<TerrainLayer[]>"
+            },
+            {
+                "key": "_cachedBiomeAlphaTextureCount",
+                "value": "-1"
+            },
+            {
+                "key": "_cachedBiomeAlphaExpectedTextureCount",
+                "value": "-1"
+            },
+            {
+                "key": "_cachedBiomeTerrainLayerCount",
+                "value": "-1"
+            },
+            {
+                "key": "_cachedBiomeTerrainLayerExpectedCount",
+                "value": "-1"
+            },
+            {
+                "key": "_nextSceneBindingRefreshTime",
+                "value": "-Infinity"
+            },
+            {
+                "key": "_runtimeTerrainResolutionRepairPending",
+                "value": "false"
+            },
+            {
+                "key": "_terrainTileEventsSubscribed",
+                "value": "false"
+            },
+            {
+                "key": "_loggedMissingMapMagicBinding",
+                "value": "false"
+            },
+            {
+                "key": "_distantTerrainShadowMask",
+                "value": "null"
+            },
+            {
+                "key": "_distantTerrainShadowPixels",
+                "value": "<Color32[]>"
+            }
+        ],
+        "registeredInGlobalRegistry": false
+    },
+    "crest": {
+        "oceanCrestObjectFound": true,
+        "oceanCrestActive": true,
+        "oceanCrestActiveInHierarchy": true,
+        "oceanCrestHierarchyPath": "H8_WORLD_CREST_OCEAN_RUNTIME_1428",
+        "oceanRendererFound": true,
+        "oceanRendererActive": true,
+        "oceanRendererEnabled": true,
+        "viewCameraAssigned": false,
+        "viewpointAssigned": false,
+        "primaryLightAssigned": false,
+        "adapterFound": true,
+        "adapterActive": true,
+        "adapterEnabled": true,
+        "kinematicsRegistered": false,
+        "underwaterRendererFound": true,
+        "underwaterRendererEnabled": true,
+        "underwaterRendererCameraName": "",
+        "reflectedFields": [
+            {
+                "key": "_version",
+                "value": "0"
+            },
+            {
+                "key": "_globalWindSpeed",
+                "value": "28"
+            },
+            {
+                "key": "_viewpoint",
+                "value": "null (destroyed)"
+            },
+            {
+                "key": "_camera",
+                "value": "null (destroyed)"
+            },
+            {
+                "key": "_teleportThreshold",
+                "value": "10"
+            },
+            {
+                "key": "_teleportTimerForHeightQueries",
+                "value": "0"
+            },
+            {
+                "key": "_isFirstFrameSinceEnabled",
+                "value": "true"
+            },
+            {
+                "key": "_hasTeleportedThisFrame",
+                "value": "false"
+            },
+            {
+                "key": "_oldViewerPosition",
+                "value": "(0.00, 0.00, 0.00)"
+            },
+            {
+                "key": "<Root>k__BackingField",
+                "value": "null"
+            },
+            {
+                "key": "<Container>k__BackingField",
+                "value": "null"
+            },
+            {
+                "key": "_timeProviderStack",
+                "value": "<List`1>"
+            },
+            {
+                "key": "_timeProvider",
+                "value": "null"
+            },
+            {
+                "key": "_primaryLight",
+                "value": "null (destroyed)"
+            },
+            {
+                "key": "_searchForPrimaryLightOnStartup",
+                "value": "true"
+            },
+            {
+                "key": "_material",
+                "value": "Material(\"MAT_H8_SurfaceCrestOcean_1428\")"
+            },
+            {
+                "key": "_waterTilePrefab",
+                "value": "null (destroyed)"
+            },
+            {
+                "key": "_layerName",
+                "value": ""
+            },
+            {
+                "key": "_layer",
+                "value": "4"
+            },
+            {
+                "key": "_overrideGravity",
+                "value": "true"
+            },
+            {
+                "key": "_gravity",
+                "value": "-8.8"
+            },
+            {
+                "key": "_gravityMultiplier",
+                "value": "1"
+            },
+            {
+                "key": "_waterBodyCulling",
+                "value": "false"
+            },
+            {
+                "key": "_minScale",
+                "value": "8"
+            },
+            {
+                "key": "_maxScale",
+                "value": "4096"
+            },
+            {
+                "key": "_dropDetailHeightBasedOnWaves",
+                "value": "0.2"
+            },
+            {
+                "key": "_lodDataResolution",
+                "value": "256"
+            },
+            {
+                "key": "_geometryDownSampleFactor",
+                "value": "1"
+            },
+            {
+                "key": "_lodCount",
+                "value": "8"
+            },
+            {
+                "key": "_extentsSizeMultiplier",
+                "value": "1800"
+            },
+            {
+                "key": "_renderingLayerMask",
+                "value": "255"
+            },
+            {
+                "key": "_simSettingsAnimatedWaves",
+                "value": "SimSettingsAnimatedWaves(\"Sim_Settings_Animated_Waves\")"
+            },
+            {
+                "key": "_createSeaFloorDepthData",
+                "value": "false"
+            },
+            {
+                "key": "_simSettingsSeaFloorDepth",
+                "value": "SimSettingsSeaFloorDepth(\"Sim_Settings_Sea_Floor_Depth\")"
+            },
+            {
+                "key": "_createFoamSim",
+                "value": "true"
+            },
+            {
+                "key": "_simSettingsFoam",
+                "value": "SimSettingsFoam(\"Sim_Settings_Foam\")"
+            },
+            {
+                "key": "_createDynamicWaveSim",
+                "value": "false"
+            },
+            {
+                "key": "_simSettingsDynamicWaves",
+                "value": "null"
+            },
+            {
+                "key": "_createFlowSim",
+                "value": "false"
+            },
+            {
+                "key": "_simSettingsFlow",
+                "value": "null"
+            },
+            {
+                "key": "_createShadowData",
+                "value": "true"
+            },
+            {
+                "key": "_simSettingsShadow",
+                "value": "SimSettingsShadow(\"Sim_Settings_Shadow\")"
+            },
+            {
+                "key": "_createClipSurfaceData",
+                "value": "false"
+            },
+            {
+                "key": "_simSettingsClipSurface",
+                "value": "null"
+            },
+            {
+                "key": "_defaultClippingState",
+                "value": "NothingClipped"
+            },
+            {
+                "key": "_createAlbedoData",
+                "value": "false"
+            },
+            {
+                "key": "_settingsAlbedo",
+                "value": "null"
+            },
+            {
+                "key": "_surfaceSelfIntersectionFixMode",
+                "value": "Automatic"
+            },
+            {
+                "key": "_underwaterCullLimit",
+                "value": "0.001"
+            },
+            {
+                "key": "_verifyOpaqueAndDepthTexturesEnabled",
+                "value": "true"
+            },
+            {
+                "key": "_showOceanProxyPlane",
+                "value": "false"
+            },
+            {
+                "key": "_proxyPlane",
+                "value": "null"
+            },
+            {
+                "key": "_editModeFPS",
+                "value": "30"
+            },
+            {
+                "key": "_followSceneCamera",
+                "value": "false"
+            },
+            {
+                "key": "_heightQueries",
+                "value": "true"
+            },
+            {
+                "key": "_debug",
+                "value": "<DebugFields>"
+            },
+            {
+                "key": "<Scale>k__BackingField",
+                "value": "0"
+            },
+            {
+                "key": "<ViewerAltitudeLevelAlpha>k__BackingField",
+                "value": "0"
+            },
+            {
+                "key": "_lodTransform",
+                "value": "null"
+            },
+            {
+                "key": "_lodDataAnimWaves",
+                "value": "null"
+            }
+        ]
+    },
+    "atmosphere": {
+        "atmosphereManagerFound": false,
+        "atmosphereManagerActive": false,
+        "atmosphereManagerEnabled": false,
+        "celestialEngineFound": false,
+        "celestialEngineActive": false,
+        "celestialEngineEnabled": false,
+        "atmosphereRegistered": false,
+        "celestialRegistered": false,
+        "skyboxMaterialName": "Mat_HectonSky",
+        "skyboxAssigned": true,
+        "sunName": "null",
+        "sunAssigned": false,
+        "fogEnabled": false,
+        "fogColor": "RGBA(0.035, 0.300, 0.340, 1.000)",
+        "fogMode": "ExponentialSquared",
+        "directionalLightCount": 2,
+        "renderSettings": [
+            {
+                "key": "ambientMode",
+                "value": "Flat"
+            },
+            {
+                "key": "ambientLight",
+                "value": "RGBA(0.532, 0.570, 0.597, 1.000)"
+            },
+            {
+                "key": "ambientIntensity",
+                "value": "1.340"
+            },
+            {
+                "key": "ambientSkyColor",
+                "value": "RGBA(0.532, 0.570, 0.597, 1.000)"
+            },
+            {
+                "key": "ambientEquatorColor",
+                "value": "RGBA(0.420, 0.580, 0.580, 1.000)"
+            },
+            {
+                "key": "ambientGroundColor",
+                "value": "RGBA(0.240, 0.250, 0.210, 1.000)"
+            },
+            {
+                "key": "reflectionIntensity",
+                "value": "0.620"
+            },
+            {
+                "key": "fogDensity",
+                "value": "0.0100"
+            },
+            {
+                "key": "fogStartDistance",
+                "value": "90.0"
+            },
+            {
+                "key": "fogEndDistance",
+                "value": "620.0"
+            },
+            {
+                "key": "subtractiveShadowColor",
+                "value": "RGBA(0.020, 0.040, 0.045, 1.000)"
+            }
+        ],
+        "shaderGlobals": [
+            {
+                "key": "_SunDirection",
+                "value": "(0.00, 0.00, 0.00, 0.00)"
+            },
+            {
+                "key": "_HectonTimeOfDay01",
+                "value": "0.0000"
+            }
+        ],
+        "reflectedFields": []
+    },
+    "urp": {
+        "currentRenderPipelineAsset": "URP_Medium (PC_RPAsset)",
+        "defaultRenderPipelineAsset": "URP_Medium (PC_RPAsset)",
+        "qualityRenderPipelineAsset": "URP_Medium (PC_RPAsset)",
+        "activeUrpAssetName": "URP_Medium (PC_RPAsset)",
+        "activeRendererDataName": "PC_Renderer",
+        "rendererFeatures": [
+            {
+                "name": "ShapesRenderFeature",
+                "typeName": "ShapesRenderFeature",
+                "isActive": false
+            },
+            {
+                "name": "DecalRendererFeature",
+                "typeName": "DecalRendererFeature",
+                "isActive": false
+            },
+            {
+                "name": "ScreenSpaceShadows",
+                "typeName": "ScreenSpaceShadows",
+                "isActive": false
+            },
+            {
+                "name": "HectonScooterVolumetricShaftsFeature",
+                "typeName": "HectonScooterVolumetricShaftsFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonAbyssalSsdoFeature",
+                "typeName": "HectonAbyssalSsdoFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonDeferredCausticsFeature",
+                "typeName": "HectonDeferredCausticsFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVisorFluidDistortionFeature",
+                "typeName": "HectonVisorFluidDistortionFeature",
+                "isActive": false
+            },
+            {
+                "name": "SaveThumbnailCaptureFeature",
+                "typeName": "SaveThumbnailCaptureFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonRetinaDistortionFeature",
+                "typeName": "HectonRetinaDistortionFeature",
+                "isActive": false
+            },
+            {
+                "name": "HectonNoirDepthFogFeature",
+                "typeName": "HectonNoirDepthFogFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonFluidAdvectionRenderFeature",
+                "typeName": "HectonFluidAdvectionRenderFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonHalfResParticlesFeature",
+                "typeName": "HectonHalfResParticlesFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonAtmosphereSootFeature",
+                "typeName": "HectonAtmosphereSootFeature",
+                "isActive": true
+            },
+            {
+                "name": "WristPdaScreenProjectorFeature",
+                "typeName": "WristPdaScreenProjectorFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVisorUberPostFeature",
+                "typeName": "HectonVisorUberPostFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVisorTraumaFeature",
+                "typeName": "DeferredDecalPass",
+                "isActive": true
+            },
+            {
+                "name": "HectonVRBrownoutFeature",
+                "typeName": "HectonVRBrownoutFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonSinglePassOceanFeature",
+                "typeName": "HectonSinglePassOceanFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonBilateralDrsUpscalerFeature",
+                "typeName": "HectonBilateralDrsUpscalerFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVolumetricParticulateFogFeature",
+                "typeName": "HectonVolumetricParticulateFogFeature",
+                "isActive": true
+            }
+        ],
+        "urpSettings": [
+            {
+                "key": "assetTypeName",
+                "value": "UniversalRenderPipelineAsset"
+            },
+            {
+                "key": "rendererDataCount",
+                "value": "1"
+            },
+            {
+                "key": "shadowDistance",
+                "value": "30"
+            },
+            {
+                "key": "mainLightShadowResolution",
+                "value": "_2048"
+            },
+            {
+                "key": "additionalLightShadowResolution",
+                "value": "_2048"
+            },
+            {
+                "key": "supportsHDR",
+                "value": "true"
+            },
+            {
+                "key": "msaa",
+                "value": "Disabled"
+            },
+            {
+                "key": "renderScale",
+                "value": "1"
+            },
+            {
+                "key": "mainLightRenderingMode",
+                "value": "PerPixel"
+            },
+            {
+                "key": "additionalLightsRenderingMode",
+                "value": "PerPixel"
+            },
+            {
+                "key": "softShadows",
+                "value": "true"
+            },
+            {
+                "key": "hectonFeature:HectonSinglePassOceanFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonDeferredCausticsFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonVolumetricParticulateFogFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonNoirDepthFogFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonFluidAdvectionRenderFeature",
+                "value": "present"
+            }
+        ]
+    },
+    "cameras": [
+        {
+            "name": "Main Camera",
+            "hierarchyPath": "Main Camera",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "enabled": true,
+            "tag": "MainCamera",
+            "isMainCamera": true,
+            "clearFlags": "SolidColor",
+            "cullingMask": -1,
+            "culledLayerNames": [],
+            "visibleLayerNames": [
+                "Default",
+                "TransparentFX",
+                "Ignore Raycast",
+                "Interactable",
+                "Water",
+                "UI",
+                "Player ",
+                "Terrain ",
+                "BaseModule  ",
+                "DroppedItem ",
+                "Creature ",
+                "Vehicle ",
+                "VoxelCave ",
+                "TriggerZone ",
+                "Debris",
+                "Celestial ",
+                "PostProcess ",
+                "HUD_Internal",
+                "FirstPersonTools",
+                "Sockets",
+                "BrineToxicity",
+                "VoxelProxy",
+                "PlayerVehicle",
+                "ToolUI",
+                "Layer_24",
+                "Layer_25",
+                "Layer_26",
+                "Layer_27",
+                "Layer_28",
+                "Layer_29",
+                "Layer_30",
+                "Layer_31"
+            ],
+            "nearClip": 0.05000000074505806,
+            "farClip": 120000.0,
+            "fieldOfView": 58.0,
+            "orthographic": false,
+            "depth": 0.0,
+            "hasTargetTexture": false,
+            "targetTextureName": "",
+            "position": "(2504.00, 13.50, 2718.00)",
+            "rotation": "(4.1, 140.9, 0.0)",
+            "hasUrpAdditionalData": true,
+            "hasCinemachineBrain": false,
+            "hasUnderwaterRenderer": true,
+            "urpData": [
+                {
+                    "key": "renderType",
+                    "value": "Base"
+                },
+                {
+                    "key": "renderShadows",
+                    "value": "true"
+                },
+                {
+                    "key": "requiresDepthTexture",
+                    "value": "On"
+                },
+                {
+                    "key": "requiresOpaqueTexture",
+                    "value": "On"
+                },
+                {
+                    "key": "rendererIndex",
+                    "value": "-1"
+                },
+                {
+                    "key": "volumeLayerMask",
+                    "value": "<LayerMask>"
+                },
+                {
+                    "key": "antialiasing",
+                    "value": "None"
+                },
+                {
+                    "key": "antialiasingQuality",
+                    "value": "High"
+                },
+                {
+                    "key": "stopNaN",
+                    "value": "false"
+                },
+                {
+                    "key": "dithering",
+                    "value": "false"
+                }
+            ]
+        }
+    ],
+    "console": {
+        "totalErrors": 0,
+        "totalWarnings": 0,
+        "totalLogs": 2,
+        "entries": [
+            {
+                "type": "Log",
+                "message": "Generated GPUI support enabled version for shader: Hecton8/Flora/CoralMaster",
+                "stackTrace": "UnityEngine.Debug:Log (object,UnityEngine.Object)\nGPUInstancer.GPUInstancerUtility:CreateInstancedShader (UnityEngine.Shader,bool) (at Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3438)\nGPUInstancer.GPUInstancerShaderBindings:ClearEmptyShaderInstances () (at Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerShaderBindings.cs:189)\nGPUInstancer.GPUInstancerManager:CheckPrototypeChanges () (at Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:623)\nGPUInstancer.GPUInstancerPrefabManager:CheckPrototypeChanges () (at Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs:126)\nGPUInstancer.GPUInstancerManager:Awake () (at Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:136)\nGPUInstancer.GPUInstancerPrefabManager:Awake () (at Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs:32)\nUnityEditor.SceneManagement.EditorSceneManager:OpenScene (string,UnityEditor.SceneManagement.OpenSceneMode)\nHecton8.BlackboxDiagnostics.H8Runner:RunFullCo...",
+                "count": 1,
+                "category": "Shader"
+            },
+            {
+                "type": "Log",
+                "message": "Generated GPUI support enabled version for shader: Hecton8/Flora/KelpMaster",
+                "stackTrace": "UnityEngine.Debug:Log (object,UnityEngine.Object)\nGPUInstancer.GPUInstancerUtility:CreateInstancedShader (UnityEngine.Shader,bool) (at Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3438)\nGPUInstancer.GPUInstancerShaderBindings:ClearEmptyShaderInstances () (at Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerShaderBindings.cs:189)\nGPUInstancer.GPUInstancerManager:CheckPrototypeChanges () (at Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:623)\nGPUInstancer.GPUInstancerPrefabManager:CheckPrototypeChanges () (at Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs:126)\nGPUInstancer.GPUInstancerManager:Awake () (at Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:136)\nGPUInstancer.GPUInstancerPrefabManager:Awake () (at Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs:32)\nUnityEditor.SceneManagement.EditorSceneManager:OpenScene (string,UnityEditor.SceneManagement.OpenSceneMode)\nHecton8.BlackboxDiagnostics.H8Runner:RunFullCo...",
+                "count": 1,
+                "category": "Shader"
+            }
+        ],
+        "editorLogTail": "UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCameraInternal (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,UnityEngine.Rendering.Universal.UniversalAdditionalCameraData&,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:704)\r\nUnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCameraInternal (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:679)\r\nUnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:496)\r\nUnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)\r\nUnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)\r\nUnityEditor.Handles:Internal_DrawCameraWithGrid (UnityEngine.Camera,UnityEditor.DrawCameraMode,UnityEditor.DrawGridParameters&,bool,bool)\r\nUnityEditor.Handles:DrawCameraImpl (UnityEngine.Rect,UnityEngine.Camera,UnityEditor.DrawCameraMode,bool,UnityEditor.DrawGridParameters,bool,bool,bool,UnityEngine.GameObject[])\r\nUnityEditor.Handles:DrawCameraStep1 (UnityEngine.Rect,UnityEngine.Camera,UnityEditor.DrawCameraMode,UnityEditor.DrawGridParameters,bool,bool)\r\nUnityEditor.SceneView:DoDrawCamera (UnityEngine.Rect,UnityEngine.Rect,bool&)\r\nUnityEditor.SceneView:DoOnGUI ()\r\nUnityEditor.SceneView:OnSceneGUI ()\r\nUnityEngine.UIElements.IMGUIContainer:DoOnGUI (UnityEngine.Event,UnityEngine.Matrix4x4,UnityEngine.Rect,bool,UnityEngine.Rect,System.Action,bool)\r\nUnityEngine.UIElemen..."
+    },
+    "git": {
+        "gitAvailable": true,
+        "branch": "main",
+        "modifiedFiles": [
+            "M .codexrules/AGENTS.md",
+            "M .github/agents/AGENTS.md",
+            "M AGENTS.md",
+            "M Assets/Bakery/shader/BakeryStandard.shader",
+            "M Assets/Bakery/shader/BakeryStandardSpecular.shader",
+            "M Assets/Crest/Crest/Materials/Ocean-Underwater.mat",
+            "M Assets/Feel/MMTools/Tools/MMShaders/MMSkybox.shader",
+            "M Assets/GPUInstancer/Resources/Settings/GPUIShaderVariantCollection.shadervariants",
+            "M Assets/GPUInstancer/Shaders/Include/GPUI-ErrorShader.shader",
+            "M Assets/GPUInstancer/Shaders/Lit_GPUI.shader",
+            "M Assets/ScifiFacility/Shader/URP/Base_Normal_Blend.shader",
+            "M Assets/ScifiFacility/Shader/URP/Base_Normal_Replace.shader",
+            "M Assets/ScifiFacility/Shader/URP/Cutout_Single_Channel.shader",
+            "M Assets/ScifiFacility/Shader/URP/Cutout_Single_RGB.shader",
+            "M Assets/ScifiFacility/Shader/URP/DoubleEmission.shader",
+            "M Assets/ScifiFacility/Shader/URP/DoubleNormal.shader",
+            "M Assets/ScifiFacility/Shader/URP/Fluid.shader",
+            "M Assets/ScifiFacility/Shader/URP/Glass.shader",
+            "M Assets/ScifiFacility/Shader/URP/LightWarping.shader",
+            "M Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat",
+            "M Assets/_Project/Art/Shaders/AbyssalBlackSmoke.shader",
+            "M Assets/_Project/Art/Shaders/AbyssalFluidDecal.shader",
+            "M Assets/_Project/Art/Shaders/Bakers/Hecton_MraoAtlasLit.shader",
+            "M Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader",
+            "M Assets/_Project/Art/Shaders/H8_AegirGasGiantImpostor_1428.shader",
+            "M Assets/_Project/Art/Shaders/H8_AtmosphericCloudSheet_1428.shader",
+            "M Assets/_Project/Art/Shaders/H8_SurfaceCloudPanorama_1428.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AbyssalSSDO.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AcousticRadarVoxel.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AegirHazeOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CelestialMoon.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CollapseScavengerIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DamageHologramInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DroneFleetProcedural.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FillrateDepthOnly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FlashlightConeSilt.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FlexiblePipe.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_GeologyImpostorBillboard.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LaserCutRadianceDecal.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeakPlume.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeviathanOrganic.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeviathanTentacleIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_MarauderOutpostIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_MarineSnow.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_OceanRainRippleDecal.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PhantomDrones.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RuinSeepSheen.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RuntimeFlatColor.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SargassumMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SeamGapDitherIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SubmarineMonitorOpaqueStencil.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ToolDecayLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_VoxelBakeGhost.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_BiosDiagnostic.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_ScannerDepthProjection.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_CapsuleReentryPlasmaFake.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalCloudWhiteoutFake.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalPlanetRelativityFake.shader",
+            "M Assets/_Project/Art/Shaders/SG_GasGiant_Master.shader",
+            "M Assets/_Project/Art/Shaders/SonarGridOverlay.shader",
+            "M Assets/_Project/Art/Shaders/SuitVisor.shader",
+            "M Assets/_Project/Art/Shaders/Sun.shader",
+            "M Assets/_Project/Art/Shaders/TerrainMaster.shader",
+            "M \"Assets/_Project/Data/URP_Medium (PC_RPAsset).asset\"",
+            "M Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset",
+            "M Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+            "M Assets/_Project/Scripts/AI/Ambient/Hecton_AmbientBiotaIndirect.shader",
+            "M Assets/_Project/Scripts/BoidFishInstanced.shader",
+            "M Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+            "M Assets/_Project/Scripts/Editor/BootstrapPlayModeEntryGuard.cs",
+            "M Assets/_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs",
+            "M Assets/_Project/Scripts/HectonBiolumMaster.shader",
+            "M Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs",
+            "M Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+            "M Assets/_Project/Shaders/Hecton_Item_Highlight.shader",
+            "M Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader",
+            "M Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader",
+            "M Assets/_Project/Tests/Editor/HectonVoxelEngineEditTests.cs",
+            "M Assets/_Project/_Archive/HectonOcean.shader",
+            "M Data/Lore/Encyclopedia.h8bin",
+            "M Data/Lore/Encyclopedia.manifest.json",
+            "M Docs/AGENTS_RULE_DETAIL_LEDGER.md",
+            "M Docs/PROJECT_ROOT_BIBLES_COMBINED.md",
+            "M GEMINI.md",
+            "M ProjectSettings/EditorBuildSettings.asset",
+            "M ProjectSettings/EditorSettings.asset",
+            "M ProjectSettings/ProjectSettings.asset",
+            "?? AI_Diagnostics/",
+            "?? Assets/Editor/Hecton8BlackboxDiagnostics.meta",
+            "?? Assets/Editor/Hecton8BlackboxDiagnostics/",
+            "?? Assets/_Project/Editor/H8_SceneCleaner.cs",
+            "?? Assets/_Project/Editor/H8_SceneCleaner.cs.meta",
+            "?? Assets/_Project/Editor/H8_ScreenshotTaker.cs",
+            "?? Assets/_Project/Editor/H8_ScreenshotTaker.cs.meta",
+            "?? Assets/_Project/Scenes/010_TEST.unity",
+            "?? Assets/_Project/Scenes/010_TEST.unity.meta",
+            "?? Assets/_Project/Scripts/Editor/DestroyWaterBatch.cs",
+            "?? Assets/_Project/Scripts/Editor/DestroyWaterBatch.cs.meta",
+            "?? Assets/_Project/Scripts/Editor/HectonMacroGeologyBaseIntegrator.cs",
+            "?? Assets/_Project/Scripts/Editor/HectonMacroGeologyBaseIntegrator.cs.meta",
+            "?? Assets/_Project/Scripts/Runtime.meta",
+            "?? Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/CaptureScreenshotTool.cs",
+            "?? Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/CaptureScreenshotTool.cs.meta",
+            "?? Assets/_Project/Tests/Editor/CurrentManagerEditTests.cs.meta",
+            "?? Assets/_Project/Tests/Editor/HectonNoiseTests.cs.meta",
+            "?? Assets/_Project/Tests/Editor/HectonVoxelEngineEditTests.cs.meta",
+            "?? Assets/_Recovery.meta",
+            "?? CaptureUnity.ps1",
+            "?? DesktopScreenshot.png",
+            "?? DesktopScreenshot10.png",
+            "?? DesktopScreenshot11.png",
+            "?? DesktopScreenshot12.png",
+            "?? DesktopScreenshot13.png",
+            "?? DesktopScreenshot14.png",
+            "?? DesktopScreenshot15.png",
+            "?? DesktopScreenshot16.png",
+            "?? DesktopScreenshot17.png",
+            "?? DesktopScreenshot18.png",
+            "?? DesktopScreenshot19.png",
+            "?? DesktopScreenshot2.png",
+            "?? DesktopScreenshot4.png",
+            "?? DesktopScreenshot5.png",
+            "?? DesktopScreenshot6.png",
+            "?? DesktopScreenshot7.png",
+            "?? DesktopScreenshot8.png",
+            "?? DesktopScreenshot9.png",
+            "?? Docs/GeneratedAssets/Terrain/AutoScreenshot.png",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/Center/",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/East/",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/North/",
+            "?? Docs/GeneratedAssets/Terrain/RuntimeScreenshot.png",
+            "?? Docs/GeneratedAssets/Terrain/Screenshot.png",
+            "?? Fix010.py",
+            "?? FixYaml.py",
+            "?? InteractiveAutomation.bat",
+            "?? InteractiveAutomation.ps1",
+            "?? LaunchUnity.bat",
+            "?? McpQuery.py",
+            "?? McpQueryOut.txt",
+            "?? TakeUnityScreenshot.ps1",
+            "?? terrain_runtime_1.png",
+            "?? terrain_runtime_2.png"
+        ],
+        "targetedDiffs": [
+            {
+                "key": "GameBootstrapper.cs",
+                "value": ".../_Project/Scripts/Bootstrap/GameBootstrapper.cs | 27 +++-------------------\n 1 file changed, 3 insertions(+), 24 deletions(-)"
+            },
+            {
+                "key": "BootstrapPlayModeEntryGuard.cs",
+                "value": ".../_Project/Scripts/Editor/BootstrapPlayModeEntryGuard.cs   | 12 ++++++++++++\n 1 file changed, 12 insertions(+)"
+            },
+            {
+                "key": "02_HECTON_WORLD.unity",
+                "value": "Assets/_Project/Scenes/02_HECTON_WORLD.unity | 1069 +++++++++++++++++++-------\n 1 file changed, 781 insertions(+), 288 deletions(-)"
+            },
+            {
+                "key": "HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset",
+                "value": ".../HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset     | 1063 ++++++++++----------\n 1 file changed, 539 insertions(+), 524 deletions(-)"
+            },
+            {
+                "key": "PC_Renderer.asset",
+                "value": "no changes"
+            }
+        ]
+    }
+}

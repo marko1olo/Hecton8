@@ -1,0 +1,299 @@
+{
+  "areaSquareKilometers": 900.0,
+  "artifact": "WorldMacroGeologyPreview",
+  "artifactVersion": 6,
+  "authoringSeed": 880031,
+  "chunkCountAxis": 60,
+  "chunkCountX": 60,
+  "chunkCountZ": 59,
+  "chunkSizeMeters": 512.0,
+  "combinedSeed": 301469796,
+  "depthBandCountsMeters": {
+    "0-500": 0,
+    "1000-2000": 1166,
+    "2000-3000": 9242,
+    "3000-4000": 5806,
+    "4000+": 142,
+    "500-1000": 28
+  },
+  "depthMeters": {
+    "max": 4369.589949929667,
+    "min": 665.954005031351
+  },
+  "depthStrataCounts": {
+    "Abyssal": 15048,
+    "Bathyal": 1182,
+    "Hadal": 142,
+    "Mesophotic": 12,
+    "Photic": 0
+  },
+  "designConstraints": {
+    "gameplayCameraTruth": "bird-eye is proof only; player-scale approach waypoints drive scene cameras later",
+    "macroForms": [
+      "continental or volcanic shelves",
+      "soft and broken shelf breaks",
+      "fault-controlled ridge chains",
+      "reef-capable shelves as masks, not height blobs",
+      "rolling hills",
+      "sediment basins",
+      "localized brine trenches"
+    ],
+    "maxDepthMeters": 4600.0,
+    "reefAndCoralReefUse": "future eligibility/material/scatter masks only; not a circular height driver",
+    "typicalDepthMeters": "relative relief target; water level and exposed island count are calibrated later"
+  },
+  "extentMeters": 30000.0,
+  "files": {
+    "chunk_manifest": "Docs/GeneratedAssets/Terrain/MacroGeology/North/WorldMacroGeologyChunkManifest.json",
+    "contact_sheet": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_contact_sheet_4x3.png",
+    "curvature": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_curvature.png",
+    "depth_strata": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_depth_strata.png",
+    "erosion_flow": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_erosion_flow.png",
+    "geology_zones": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_geology_zones.png",
+    "height_bathymetry_legacy": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_height_bathymetry_legacy.png",
+    "hillshade": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_hillshade.png",
+    "local_relief": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_local_relief.png",
+    "material_regions": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_material_regions.png",
+    "meso_terrain_controls": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_meso_terrain_controls.png",
+    "raw_elevation": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_raw_elevation.png",
+    "relief_shading_legacy": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_relief_shading_legacy.png",
+    "ridge_fault_mask": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_ridge_fault_mask.png",
+    "scatter_eligibility": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_scatter_eligibility.png",
+    "sediment_seep_mask": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_sediment_seep_mask.png",
+    "shelf_mask": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_shelf_mask.png",
+    "slope": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_slope.png",
+    "terrain_contact_sheet": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_contact_sheet_terrain_4x3.png",
+    "terrain_control_rgba_fold": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_terrain_control_rgba_fold.png",
+    "terrain_relief_proof": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_terrain_relief_proof.png",
+    "trench_mask": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_trench_mask.png",
+    "voxel_seam_mask": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_voxel_seam_mask.png",
+    "waterline_sweep": "Docs/GeneratedAssets/Terrain/MacroGeology/North/MG_waterline_sweep.png"
+  },
+  "heightMeters": {
+    "max": -665.954005031351,
+    "min": -4369.589949929667
+  },
+  "metersPerPixel": 234.375,
+  "originMeters": {
+    "x": 0.0,
+    "z": 30000.0
+  },
+  "playerApproachProofWaypoints": [
+    {
+      "curvature01": 1.0,
+      "depthMeters": 873.56,
+      "erosionFlow01": 0.2812,
+      "heightMeters": -873.56,
+      "id": "ridge_flank",
+      "label": "Fault-controlled ridge flank traversal",
+      "masks": {
+        "basin": 0.2314,
+        "fault": 0.3036,
+        "ridge": 1.0,
+        "shelf": 0.0,
+        "shelfBreak": 0.0565,
+        "trench": 0.0
+      },
+      "sediment01": 0.0,
+      "seep01": 0.1945,
+      "slope01": 0.9215,
+      "worldX": 4370.08,
+      "worldZ": 15000.0,
+      "zone": "FaultRidge"
+    },
+    {
+      "curvature01": 0.4835,
+      "depthMeters": 4369.59,
+      "erosionFlow01": 0.8707,
+      "heightMeters": -4369.59,
+      "id": "trench_floor",
+      "label": "Brine trench floor",
+      "masks": {
+        "basin": 0.2675,
+        "fault": 0.5964,
+        "ridge": 0.1691,
+        "shelf": 0.0,
+        "shelfBreak": 0.0,
+        "trench": 0.9994
+      },
+      "sediment01": 0.4186,
+      "seep01": 0.5152,
+      "slope01": 0.1146,
+      "worldX": 15000.0,
+      "worldZ": 15708.66,
+      "zone": "BrineTrench"
+    },
+    {
+      "curvature01": 0.3951,
+      "depthMeters": 3567.47,
+      "erosionFlow01": 0.2745,
+      "heightMeters": -3567.47,
+      "id": "basin_floor",
+      "label": "Low-slope basin floor",
+      "masks": {
+        "basin": 0.0,
+        "fault": 0.1028,
+        "ridge": 0.025,
+        "shelf": 0.0,
+        "shelfBreak": 0.0,
+        "trench": 0.0
+      },
+      "sediment01": 0.5715,
+      "seep01": 0.0463,
+      "slope01": 0.0026,
+      "worldX": -2716.54,
+      "worldZ": 38149.61,
+      "zone": "AbyssalPlain"
+    },
+    {
+      "curvature01": 1.0,
+      "depthMeters": 2186.66,
+      "erosionFlow01": 0.6282,
+      "heightMeters": -2186.66,
+      "id": "voxel_seam_candidate",
+      "label": "High-curvature voxel overlay seam candidate",
+      "masks": {
+        "basin": 0.2549,
+        "fault": 0.6318,
+        "ridge": 0.8371,
+        "shelf": 0.0,
+        "shelfBreak": 0.0,
+        "trench": 0.5055
+      },
+      "sediment01": 0.0,
+      "seep01": 0.439,
+      "slope01": 0.6846,
+      "worldX": 14291.34,
+      "worldZ": 23267.72,
+      "zone": "ColdSeepField"
+    }
+  ],
+  "previewWindow": {
+    "boundsMaxMeters": {
+      "x": 15000.0,
+      "z": 45000.0
+    },
+    "boundsMinMeters": {
+      "x": -15000.0,
+      "z": 15000.0
+    },
+    "coordinateSpace": "AUP/world XZ meters",
+    "meaning": "minimum authored proof window, not the procedural world edge",
+    "originMeters": {
+      "x": 0.0,
+      "z": 30000.0
+    },
+    "proceduralContinuationBeyondWindow": true
+  },
+  "resolution": 128,
+  "runtimeContract": {
+    "failurePaths": [
+      "missing artifact",
+      "mismatched seed",
+      "mismatched artifactVersion",
+      "duplicate terrain owner",
+      "stale chunk handle",
+      "interrupted bake",
+      "bad dimensions",
+      "voxel overlay conflict"
+    ],
+    "owner": "WorldMacroGeologyFields",
+    "readers": [
+      "TerrainChunkPagerRuntime",
+      "MapMagicRuntimeBridge",
+      "WorldProceduralFieldSampler",
+      "WorldProceduralScatterDirector",
+      "VoxelTerrainSeamBinder",
+      "VoxelSurfaceNets",
+      "PDAMapTab",
+      "SaveManager seed validation",
+      "Crash/telemetry proof paths"
+    ]
+  },
+  "runtimeSeed": 0,
+  "sha256": {
+    "chunk_manifest": "89bb1b3bfedabc3ac69443c11bcbc2e9d00cf867f7a94a6a4bd3bdfa2045e78a",
+    "contact_sheet": "c8ec59a64bb6ebceda11910e3c4679cd04acab50714b435d880380082002515d",
+    "curvature": "eb9ddb27468be747fecb27db8563f12c63b2f90ce35efd28e3b4daba23a7bfb8",
+    "depth_strata": "403429c79fea496ed3472dfbbac3d0925134a79d752b023f64311b8ed44f2903",
+    "erosion_flow": "cf911c6f16d21158b74970017cfb42870cddb0812220063d17f8e428c198ed93",
+    "geology_zones": "1952c993af04ba6de9a8d3f820d1e68aa5a443223b18cb1e70b01ae56402ff62",
+    "height_bathymetry_legacy": "5105ea8455a3d752f3813ee18a8180ab41b088ccbb9f2a411299617d66d7bfdc",
+    "hillshade": "180e92e3dec924ae62c22bf961d177cf8e0b98b4dbc5d9aeaa719ef13151b9af",
+    "local_relief": "4dce76226d73481a9ae10408357aec9a5c978525747c7bb59cd8c134fc35b0b4",
+    "material_regions": "b07c70d412f5d2611a78cf30bb6256505ff25bbcc5aac6155ffa6caef60d5cc0",
+    "meso_terrain_controls": "4168c5f420e41ec3bbd95ec2ba24fe4595bb6c81e94fd1d0929d4acbb3df89db",
+    "raw_elevation": "2e087b7ad68dd05ee2fcb12c84ac21c4f88aaef21cfaeed0d45051318909bb8d",
+    "relief_shading_legacy": "83a7af09f239dd3c16153063e7c5eefd0e2dd1ed900c5c434eb5e7c4ded19b20",
+    "ridge_fault_mask": "b8e8206d0d649ef0ae6907c65bdc81a96d2165a9f926eb8456e5e97000fc32d3",
+    "scatter_eligibility": "de6a4881879fa318b2ff12ff55b1f5a890ebb233e1475f64ea36e4b12ffe4a85",
+    "sediment_seep_mask": "d2ff12625e0641f33e92b75385b9d786ddd63edc25963a8b9e147bd6214305f3",
+    "shelf_mask": "5c450eda12857d37d93326aa6cfbccd2edf39844df97ffff0003419079facbec",
+    "slope": "150f52fda606a9719df359b123ee092f07a61aad0000d155fc77d7e8e3d7b7b7",
+    "terrain_contact_sheet": "9bcd78785ae5f9dd0c4a1f333fae22f077cdf3002b8195e57be3211361b8613b",
+    "terrain_control_rgba_fold": "30d8079ed816c14b9f87fd432c08548e5cb5e4f743cf7f3dc93750bd3444aa5f",
+    "terrain_relief_proof": "ddc22ccaf2b045595adda3f3c94fea89a3be12aa271c418ce47eee6f9bd10408",
+    "trench_mask": "3edd39dcf86885f7275ce26301dd30c031a9c45417f0e8c38817f66cc1181d2c",
+    "voxel_seam_mask": "6484f0d6c6a88ce0b49d79bde059a62e07a30ac6e953defb3275d47c80305d47",
+    "waterline_sweep": "cf003b76c2de2e2c6c07d7fb3fb8e836224d3cfc4e6cb717f9c87d47aad9a98f"
+  },
+  "status": "PREVIEW_SOURCE_OF_TRUTH_CANDIDATE",
+  "surfaceMaterialContract": {
+    "dominantCounts": {
+      "brineSaltCrust": 286,
+      "claySilt": 9927,
+      "hardRock": 3697,
+      "limestoneShelf": 0,
+      "manganeseNodulePlain": 2474,
+      "reefRubble": 0,
+      "seepCrust": 0,
+      "shellSand": 0
+    },
+    "logicalClasses": [
+      "shellSand",
+      "limestoneShelf",
+      "claySilt",
+      "hardRock",
+      "brineSaltCrust",
+      "manganeseNodulePlain",
+      "reefRubble",
+      "seepCrust"
+    ],
+    "runtimePath": "WorldProceduralTerrainSlopeCavitySplatmapJob -> HectonTerrainSplatmapMapMagicNode -> TerrainMaster _TerrainControlRGBA",
+    "source": "WorldTerrainSurfaceMaterialResolver",
+    "terrainControlFold": "R=rock, G=sand, B=silt, A=deposition; preview stores RGB where blue=max(B,A)",
+    "version": 1
+  },
+  "waterLevelSweepMeters": {
+    "-100": {
+      "exposedPercent": 0.0,
+      "exposedPixels": 0,
+      "shallowPercent0To30m": 0.0,
+      "shallowPixels0To30m": 0
+    },
+    "0": {
+      "exposedPercent": 0.0,
+      "exposedPixels": 0,
+      "shallowPercent0To30m": 0.0,
+      "shallowPixels0To30m": 0
+    },
+    "100": {
+      "exposedPercent": 0.0,
+      "exposedPixels": 0,
+      "shallowPercent0To30m": 0.0,
+      "shallowPixels0To30m": 0
+    }
+  },
+  "workers": 1,
+  "zoneCounts": {
+    "AbyssalPlain": 14603,
+    "BrineTrench": 325,
+    "ColdSeepField": 76,
+    "FaultRidge": 1380,
+    "HadalBasin": 0,
+    "PhoticShelf": 0,
+    "SedimentFan": 0,
+    "ShelfBreak": 0,
+    "Unknown": 0
+  }
+}

@@ -120,6 +120,8 @@ Shader "Hecton/Item/Highlight"
                 return lenSq > 0.0001 ? value * rsqrt(lenSq) : fallback;
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;

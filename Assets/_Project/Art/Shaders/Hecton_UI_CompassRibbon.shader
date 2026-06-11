@@ -128,6 +128,8 @@ Shader "Hecton8/UI/CompassRibbon"
                 return saturate(max(ditheredTunnel, vrComfortBlackout));
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;

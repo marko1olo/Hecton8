@@ -85,6 +85,8 @@ Shader "HECTON/HUD/DamageHologramInstanced"
                 return saturate(_HectonDamageRoomWaterLevels[roomIndex]);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

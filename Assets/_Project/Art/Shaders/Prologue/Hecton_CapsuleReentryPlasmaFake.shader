@@ -64,6 +64,8 @@ Shader "Hecton/Prologue/Capsule Reentry Plasma Fake"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;

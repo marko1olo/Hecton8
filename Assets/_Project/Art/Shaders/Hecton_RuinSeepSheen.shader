@@ -82,6 +82,8 @@ Shader "HECTON/Environment/RuinSeepSheen"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

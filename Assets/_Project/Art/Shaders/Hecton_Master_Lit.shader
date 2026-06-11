@@ -284,6 +284,8 @@ Shader "Hecton8/Rendering/Hecton_Master_Lit"
             H8MasterClipAlpha(baseSample.a * (half)_MasterAlphaParams.y, positionCS, quality);
         }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         Varyings Vert(Attributes input)
         {
             Varyings output;

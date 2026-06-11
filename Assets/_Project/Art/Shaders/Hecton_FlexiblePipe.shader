@@ -121,6 +121,8 @@ Shader "Hecton/FlexiblePipe"
                 normal = SafeNormalize(cross(binormal, tangent), float3(0.0, 1.0, 0.0));
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

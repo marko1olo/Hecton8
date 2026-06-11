@@ -84,6 +84,8 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
                 return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

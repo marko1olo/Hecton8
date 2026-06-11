@@ -1,0 +1,1961 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.10f1 (feeafc12a938) revision 16706300'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Channel LicenseClient-danat doesn't exist
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 32407 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-06-10T23:42:56Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 24596)
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe
+-projectPath
+C:\hades\Hecton8
+-batchmode
+-nographics
+-executeMethod
+Hecton8.BlackboxDiagnostics.H8CLI.RunBootstrapScenePlayMode
+-logFile
+C:\hades\Hecton8\unity_batch_log_5.txt
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [26852]  Target information:
+
+Player connection [26852]  * "[IP] 192.168.1.130 [Port] 55504 [Flags] 2 [Guid] 114054359 [EditorId] 114054359 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [26852]  * "[IP] 172.18.0.1 [Port] 55504 [Flags] 2 [Guid] 114054359 [EditorId] 114054359 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [26852] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [26852] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat" at "2026-06-10T23:42:56.3848817Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 24596, path: "C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Package Manager] Connected to IPC stream "Upm-8268" after 0.3 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              81a2ded3ae864faf99b85b3defbefa02
+  Correlation Id:          64305a94405cf93a06a3451935b62bce
+  External correlation Id: 223863768680278983
+  Machine Id:              KXBg4HkLZwVfPhjJrzyzSmUVWFw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-danat" (connect: 0.37s, validation: 0.18s, handshake: 0.04s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-notifications" at "2026-06-10T23:42:56.6090215Z"
+[Licensing::Module] Connected to LicensingClient (PId: 24596, launch time: 0.00, total connection time: 0.60s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.64s
+[Licensing::Module] Licensing is initialized (took 0.13s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 202.60 ms, found 25 plugins.
+Initialize engine version: 6000.4.10f1 (feeafc12a938)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56268
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MetroSupport/UnityEditor.UWP.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
+Registered in 0.006483 seconds.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+[Licensing::Client] Successfully resolved entitlement details
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  5.005 seconds
+Domain Reload Profiling: 5465ms
+	BeginReloadAssembly (123ms)
+		CreateAndSetChildDomain (5ms)
+	RebuildCommonClasses (39ms)
+	RebuildNativeTypeToScriptingClass (14ms)
+	initialDomainReloadingComplete (65ms)
+	LoadAllAssembliesAndSetupDomain (217ms)
+		LoadAssemblies (117ms)
+		AnalyzeDomain (204ms)
+			TypeCache.Refresh (203ms)
+				TypeCache.ScanAssembly (189ms)
+	FinalizeReload (5007ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (66ms)
+			BeforeProcessingInitializeOnLoad (97ms)
+			ProcessInitializeOnLoadAttributes (116ms)
+			ProcessInitializeOnLoadMethodAttributes (4650ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 75 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.addressables@2.9.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.addressables@8460f1c9c927)
+    com.unity.ai.navigation@2.0.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591)
+    com.unity.cinemachine@3.1.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.cinemachine@285f38545487)
+    com.unity.collab-proxy@2.12.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collab-proxy@0b1559bcd34e)
+    com.unity.inputsystem@1.19.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.memoryprofiler@1.1.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.memoryprofiler@485b5ba42ef5)
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.probuilder@6.0.9 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.probuilder@1f279ab829b7)
+    com.unity.sharp-zip-lib@1.4.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.sharp-zip-lib@f6e4ef34e4d8)
+    com.unity.timeline@1.8.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.timeline@8cd8509afae5)
+    com.unity.visualscripting@1.9.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.xr.meta-openxr@2.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c)
+    com.unity.xr.openxr@1.17.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b)
+    com.unity.searcher@4.9.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.xr.core-utils@2.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.core-utils@a8b900321199)
+    com.unity.xr.legacyinputhelpers@3.0.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.legacyinputhelpers@3f62d634f63b)
+    com.unity.xr.arfoundation@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b)
+    com.unity.xr.compositionlayers@2.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.compositionlayers@461024b1d757)
+    com.unity.settings-manager@2.1.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.burst@1.8.29 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.mathematics@1.3.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.profiling.core@1.0.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.editorcoroutines@1.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.editorcoroutines@87a15ed012c2)
+    com.unity.splines@2.8.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.splines@9b00833aca09)
+    com.unity.scriptablebuildpipeline@2.6.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.scriptablebuildpipeline@36e3b5898ee2)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.2d.sprite@b95cc7beb645)
+    com.unity.render-pipelines.universal@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal@cdf909593d80)
+    com.unity.ugui@2.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ugui@1f2d1ab0d950)
+    com.unity.modules.accessibility@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@5aab14b68499)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@5b6ebd78ccc0)
+    com.unity.test-framework@1.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@996f223345ba)
+    com.unity.ext.nunit@2.0.5 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+  Embedded packages:
+    com.unity.xr.management@file:C:\hades\Hecton8\Packages\com.unity.xr.management (location: C:\hades\Hecton8\Packages\com.unity.xr.management)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+  Git packages:
+    com.coplaydev.unity-mcp@https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta (location: C:\hades\Hecton8\Library\PackageCache\com.coplaydev.unity-mcp@edb7113971fc)
+[Subsystems] Looking for new subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  inputs in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Package Manager] Done registering packages in 0.02 seconds
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 1s361ms
+[2742/3781  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+*** Tundra build success (1.33 seconds), 1 items updated, 3781 evaluated
+AssetDatabase: script compilation time: 2.109755s
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Editor.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ResourceManager.Tests.dll at Library/ScriptAssemblies/Unity.ResourceManager.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARSubsystems.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARSubsystems.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Ubuntu.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Ubuntu.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.TestTooling.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.TestTooling.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.XR.LegacyInputHelpers.Tests.dll at Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.SpatialTracking.Tests.dll at Library/ScriptAssemblies/UnityEngine.SpatialTracking.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 8.86 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Refreshing native plugins compatible for Editor in 8.96 ms, found 37 plugins.
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Hecton8
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 16.010 seconds
+Domain Reload Profiling: 17913ms
+	BeginReloadAssembly (324ms)
+		DisableScriptedObjects (25ms)
+		CreateAndSetChildDomain (151ms)
+	RebuildCommonClasses (38ms)
+	RebuildNativeTypeToScriptingClass (14ms)
+	initialDomainReloadingComplete (97ms)
+	LoadAllAssembliesAndSetupDomain (1431ms)
+		LoadAssemblies (705ms)
+		AnalyzeDomain (811ms)
+			TypeCache.Refresh (607ms)
+				TypeCache.ScanAssembly (567ms)
+			BuildScriptInfoCaches (161ms)
+			ResolveRequiredComponents (37ms)
+	FinalizeReload (16010ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (41ms)
+			BeforeProcessingInitializeOnLoad (441ms)
+			ProcessInitializeOnLoadAttributes (10064ms)
+			ProcessInitializeOnLoadMethodAttributes (1151ms)
+			AfterProcessingInitializeOnLoad (6ms)
+			EditorAssembliesLoaded (3ms)
+		AwakeInstancesAfterBackupRestoration (24ms)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0147148 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 13.30 ms, found 37 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=26823d9c0e28acc4e87d5486b6440ded): Total: 22.549 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=3 ms, native=17373 ms
+		Asset DB Callback time: managed=836 ms, native=43 ms
+		Scripting: domain reloads=1, domain reload time=1912 ms, compile time=2111 ms, other=268 ms
+		Project Asset Count: scripts=3800, non-scripts=12064
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 22.842ms
+	ApplyChangesToAssetFolders: 1.852ms
+	Scan: 240.267ms
+	CategorizeScriptCompilationAssets: 109.467ms
+	ProcessAssetsWithTransientArtifactChanges: 274.731ms
+	CategorizeAssets: 283.520ms
+	CompileScripts: 2111.048ms
+	ImportOutOfDateAssets: 16075.410ms (16044.745ms without children)
+		ImportManagerImport: 18.130ms (2.690ms without children)
+		ReloadNativeAssets: 0.133ms
+		UnloadImportedAssets: 5.098ms
+		ReloadImportedAssets: 0.214ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 4.836ms
+		OnDemandSchedulerStart: 2.411ms
+	PostProcessAllAssets: 841.250ms
+		XRBuildSystem.XRAssetImported 3.525ms
+		MonoPostProcessAllAssets: 836.277ms
+			AssetPostprocessor.OnPostprocessAllAssets 583.200ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 106.285ms
+			AssetCallbacks.OnPostprocessAllAssets 34.186ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 27.649ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 6.021ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 5.664ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 4.368ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 3.913ms
+			SyncVS.PostprocessSyncProject 2.798ms
+			TemplatePostProcessor.OnPostprocessAllAssets 2.612ms
+			AssetChangedListener.OnPostprocessAllAssets 2.383ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.229ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.807ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 1.722ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.695ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 1.625ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 1.282ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 1.188ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.142ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 1.083ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.940ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.808ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.753ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.719ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.664ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.660ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.631ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.609ms
+			CinemachineSettings.OnPostprocessAllAssets 0.603ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.560ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.535ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.515ms
+			PostProcessor.OnPostprocessAllAssets 0.515ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.468ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.462ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.439ms
+			AssetEvents.OnPostprocessAllAssets 0.418ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.404ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.382ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.334ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.325ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.311ms
+	PostAssetChangesProfiler: 18.117ms
+	UnloadStreamsBegin: 3.783ms
+	PersistCurrentRevisions: 0.866ms
+	GenerateScriptTypeHashes: 17.796ms
+	GenerateScriptTypeSerializationHashes: 22.059ms
+	Untracked: 2558.891ms
+
+Application.AssetDatabase Initial Refresh End
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Scanning for USB devices : 1.435ms
+Initializing Unity extensions:
+Unloading 509 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 14955 unused Assets / (66.1 MB). Loaded Objects now: 15593.
+Memory consumption went from 0.59 GB to 0.53 GB.
+Total: 81.751800 ms (FindLiveObjects: 2.333700 ms CreateObjectMapping: 1.740300 ms MarkObjects: 45.767900 ms  DeleteObjects: 31.906200 ms)
+
+[H8Blackbox] CLI starting RunBootstrapScenePlayMode...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8CLI:RunBootstrapScenePlayMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:60)
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs Line: 60)
+
+Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+	Deserialize:            11.150 ms
+	Integration:            13.988 ms
+	Integration of assets:  0.212 ms
+	Thread Wait Time:       0.074 ms
+	Total Operation Time:   25.424 ms
+Microsoft Media Foundation video decoding to texture disabled: graphics device is Null, only Direct3D 11 and Direct3D 12 (only on desktop) are supported for hardware-accelerated video decoding.
+[Project] Loading completed in 32.063 seconds
+	Project init time: 				30.367 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		0.458 seconds
+		Asset Database init time: 		0.708 seconds
+		Global illumination init time: 	0.003 seconds
+		Assemblies load time: 			5.496 seconds
+		Unity extensions init time: 	0.024 seconds
+		Asset Database refresh time: 	22.550 seconds
+	Scene opening time: 			1.551 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1781135008065,"processId":8268,"projectLoad":32.063254400000008,"projectInit":30.3674947,"templateInit":0.0,"packageManagerInit":0.4582985,"assetDatabaseInit":0.7083325,"globalIlluminationInit":0.0032629,"assembliesLoad":5.495844,"unityExtensionsInit":0.0237346,"assetDatabaseRefresh":22.5498915,"sceneOpening":1.5509018}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1781135008065,"processId":8268,"editorVersion":"6000.4.10f1 (feeafc12a938)","branch":"6000.4/staging","buildType":"Release","platform":"Windows"}
+Reloading assemblies for play mode.
+Reloading assemblies after forced synchronous recompile.
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Editor.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ResourceManager.Tests.dll at Library/ScriptAssemblies/Unity.ResourceManager.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARSubsystems.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARSubsystems.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Ubuntu.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Ubuntu.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.TestTooling.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.TestTooling.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.XR.LegacyInputHelpers.Tests.dll at Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.SpatialTracking.Tests.dll at Library/ScriptAssemblies/UnityEngine.SpatialTracking.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Editor.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ResourceManager.Tests.dll at Library/ScriptAssemblies/Unity.ResourceManager.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARSubsystems.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARSubsystems.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Ubuntu.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Ubuntu.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.TestTooling.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.TestTooling.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.XR.LegacyInputHelpers.Tests.dll at Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.SpatialTracking.Tests.dll at Library/ScriptAssemblies/UnityEngine.SpatialTracking.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Refreshing native plugins compatible for Editor in 8.76 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+[H8Blackbox] Domain reload detected. Recovering PlayMode state machine...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:.cctor () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:37)
+System.Runtime.CompilerServices.RuntimeHelpers:RunClassConstructor (System.RuntimeTypeHandle)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs Line: 37)
+
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 14.982 seconds
+Domain Reload Profiling: 16480ms
+	BeginReloadAssembly (465ms)
+		DisableScriptedObjects (34ms)
+		CreateAndSetChildDomain (188ms)
+	RebuildCommonClasses (46ms)
+	RebuildNativeTypeToScriptingClass (16ms)
+	initialDomainReloadingComplete (102ms)
+	LoadAllAssembliesAndSetupDomain (868ms)
+		LoadAssemblies (240ms)
+		AnalyzeDomain (704ms)
+			TypeCache.Refresh (20ms)
+			BuildScriptInfoCaches (636ms)
+			ResolveRequiredComponents (42ms)
+	FinalizeReload (14983ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (44ms)
+			BeforeProcessingInitializeOnLoad (432ms)
+			ProcessInitializeOnLoadAttributes (9314ms)
+			ProcessInitializeOnLoadMethodAttributes (1107ms)
+			AfterProcessingInitializeOnLoad (5ms)
+			EditorAssembliesLoaded (3ms)
+		AwakeInstancesAfterBackupRestoration (89ms)
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=649d1c3af6222834bbf63774595607cd): Total: 16.950 seconds - Initiated by StopAssetImportingV2(ForceSynchronousImport | ForceDomainReload)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=15314 ms
+		Asset DB Callback time: managed=36 ms, native=0 ms
+		Scripting: domain reloads=1, domain reload time=1597 ms, compile time=1 ms, other=0 ms
+		Project Asset Count: scripts=3800, non-scripts=12064
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 2.451ms
+	ApplyChangesToAssetFolders: 0.371ms
+	ProcessAssetsWithTransientArtifactChanges: 15.126ms
+	CategorizeAssets: 220.186ms
+	CompileScripts: 1.087ms
+	ImportOutOfDateAssets: 15019.898ms (15013.379ms without children)
+		CollectScriptTypesHashes: 2.684ms
+		ReloadNativeAssets: 1.823ms
+		UnloadImportedAssets: 0.137ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 3.223ms
+		OnDemandSchedulerStart: 1.283ms
+	PostProcessAllAssets: 36.351ms
+		MonoPostProcessAllAssets: 36.345ms
+			AssetPostprocessor.OnPostprocessAllAssets 583.200ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 106.285ms
+			AssetCallbacks.OnPostprocessAllAssets 34.186ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 13.025ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 6.021ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 5.664ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 2.638ms
+			TemplatePostProcessor.OnPostprocessAllAssets 2.612ms
+			AssetChangedListener.OnPostprocessAllAssets 2.383ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 2.272ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.229ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.807ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 1.722ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.695ms
+			SyncVS.PostprocessSyncProject 1.675ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 1.625ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 1.282ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 1.188ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 1.083ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.940ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.808ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.719ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.703ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.664ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.660ms
+			CinemachineSettings.OnPostprocessAllAssets 0.643ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.631ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.609ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.560ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.535ms
+			PostProcessor.OnPostprocessAllAssets 0.515ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.462ms
+			AssetEvents.OnPostprocessAllAssets 0.418ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.382ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.334ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.326ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.311ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.300ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.271ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.236ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.234ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.150ms
+	GatherAllCurrentPrimaryImportResultRevisions: 0.998ms
+	UnloadStreamsBegin: 0.179ms
+	PersistCurrentRevisions: 0.652ms
+	GenerateScriptTypeHashes: 17.400ms
+	GenerateScriptTypeSerializationHashes: 22.615ms
+	Untracked: 1643.613ms
+
+Asset Pipeline Refresh (id=4d03ba42211553048b7e29d4ba63614d): Total: 0.198 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=955017859bbed4147b68d9b555904208): Total: 0.015 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            4.556 ms
+	Integration:            2320.012 ms
+	Integration of assets:  0.051 ms
+	Thread Wait Time:       0.013 ms
+	Total Operation Time:   2324.632 ms
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0071332 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 8.36 ms, found 37 plugins.
+Asset Pipeline Refresh (id=f19bb5b920acd21469d901f8bc710423): Total: 0.167 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0045876 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 10.35 ms, found 37 plugins.
+Asset Pipeline Refresh (id=ed2834b566b8f7a4f84ba07d16b41670): Total: 0.072 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0031234 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 9.49 ms, found 37 plugins.
+Asset Pipeline Refresh (id=10a7c9705ec2f9243866aafbed817bb6): Total: 0.052 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0020631 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 9.60 ms, found 37 plugins.
+Asset Pipeline Refresh (id=3640eaf705b61b643b6394110ded2cbe): Total: 0.048 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+BIOS ERROR 0xSHADER
+EXPECTED: PRECOMPILED VARIANT WARMUP
+ACTION: BOOT HALTED
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+Hecton8.Bootstrap.HardwareErrorCanvas:Show (string) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:8761)
+Hecton8.Bootstrap.BootstrapBiosErrorOverlay:Show (string) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:8680)
+Hecton8.Bootstrap.GameBootstrapper:FailBootstrapShaderWarmup (Hecton8.Bootstrap.GameBootstrapper/ShaderWarmupErrorCode,uint,int,int,int,long) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:4222)
+Hecton8.Bootstrap.GameBootstrapper/<WarmConfiguredShaderVariantCollectionsAsync>d__411:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3823)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<WarmConfiguredShaderVariantCollectionsAsync>d__411>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<WarmConfiguredShaderVariantCollectionsAsync>d__411> (Hecton8.Bootstrap.GameBootstrapper/<WarmConfiguredShaderVariantCollectionsAsync>d__411&)
+Hecton8.Bootstrap.GameBootstrapper:WarmConfiguredShaderVariantCollectionsAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2605)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358> (Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358&)
+Hecton8.Bootstrap.GameBootstrapper:InitializePresentationBootstrapAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2910)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2421)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2336)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2451)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2565)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder:SetResult ()
+Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11:MoveNext () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:4826)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/DoubleBufferedAwaitableList:SwapAndComplete ()
+UnityEngine.Awaitable:OnUpdate ()
+
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 8761)
+
+[GameBootstrapper] CoreServices substep failed. substep=shader_variant_warmup
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+Hecton8.Bootstrap.GameBootstrapper:LogBootstrapCoreServicesSubstepFailure (string) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6340)
+Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2607)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358> (Hecton8.Bootstrap.GameBootstrapper/<InitializePresentationBootstrapAsync>d__358&)
+Hecton8.Bootstrap.GameBootstrapper:InitializePresentationBootstrapAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2910)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2421)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2336)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2451)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2565)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder:SetResult ()
+Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11:MoveNext () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:4826)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/DoubleBufferedAwaitableList:SwapAndComplete ()
+UnityEngine.Awaitable:OnUpdate ()
+
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 6340)
+
+[GameBootstrapper] CoreServices substep failed. substep=presentation_bootstrap
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+Hecton8.Bootstrap.GameBootstrapper:LogBootstrapCoreServicesSubstepFailure (string) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6340)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2912)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2421)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2336)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2451)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2565)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder:SetResult ()
+Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11:MoveNext () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:4826)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/DoubleBufferedAwaitableList:SwapAndComplete ()
+UnityEngine.Awaitable:OnUpdate ()
+
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 6340)
+
+[GameBootstrapper] Bootstrap phase failed. phase=CoreServices
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+Hecton8.Bootstrap.GameBootstrapper:LogBootstrapPhaseFailure (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6366)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2424)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2336)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__351>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2451)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable`1<bool>:SetResultAndRaiseContinuation (bool)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:SetResult (bool)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2565)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__357>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder:SetResult ()
+Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11:MoveNext () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:4826)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+UnityEngine.Awaitable/DoubleBufferedAwaitableList:SwapAndComplete ()
+UnityEngine.Awaitable:OnUpdate ()
+
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 6366)
+
+Created GICache directory at C:/Users/danat/AppData/LocalLow/Unity/Caches/GiCache. Took: 0.013s, timestamps: [52.031 - 52.044]
+[H8Blackbox/Collectors] Key object name search 'GameBootstrapper' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GlobalRegistry' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'SystemDispatcher' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GameTickManager' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagic' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagicObject' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Ocean_Crest' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'H8_WORLD_CREST_OCEAN_RUNTIME_1428' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Main Camera' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'DEPRECATED_STUFF' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'EnvironmentRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WorldRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'LightingRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WaterRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'OceanRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'TerrainRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] CollectBootstrapInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectBootstrapInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:368)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1278)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 368)
+
+[H8Blackbox/Collectors] CollectRegistryInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectRegistryInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:540)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1279)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 540)
+
+[H8Blackbox/Collectors] CollectMapMagicInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectMapMagicInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:641)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1280)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 641)
+
+[H8Blackbox/Collectors] CollectCameras failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectCameras (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1102)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1284)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1102)
+
+[H8Blackbox/Collectors] CollectConsoleInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectConsoleInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1182)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1285)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1182)
+
+[H8Blackbox/Collectors] CollectGitInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectGitInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1254)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1286)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:253)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1254)
+
+[H8Blackbox/Collectors] Key object name search 'GameBootstrapper' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GlobalRegistry' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'SystemDispatcher' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GameTickManager' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagic' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagicObject' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Ocean_Crest' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'H8_WORLD_CREST_OCEAN_RUNTIME_1428' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Main Camera' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'DEPRECATED_STUFF' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'EnvironmentRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WorldRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'LightingRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WaterRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'OceanRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'TerrainRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] CollectBootstrapInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectBootstrapInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:368)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1278)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 368)
+
+[H8Blackbox/Collectors] CollectRegistryInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectRegistryInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:540)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1279)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 540)
+
+[H8Blackbox/Collectors] CollectMapMagicInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectMapMagicInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:641)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1280)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 641)
+
+[H8Blackbox/Collectors] CollectCameras failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectCameras (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1102)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1284)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1102)
+
+[H8Blackbox/Collectors] CollectConsoleInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectConsoleInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1182)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1285)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1182)
+
+[H8Blackbox/Collectors] CollectGitInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectGitInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1254)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1286)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:259)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1254)
+
+[H8Blackbox/Collectors] Key object name search 'GameBootstrapper' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GlobalRegistry' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'SystemDispatcher' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'GameTickManager' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagic' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'MapMagicObject' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Ocean_Crest' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'H8_WORLD_CREST_OCEAN_RUNTIME_1428' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'Main Camera' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'DEPRECATED_STUFF' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'EnvironmentRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WorldRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'LightingRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'WaterRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'OceanRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] Key object name search 'TerrainRoot' failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectKeyObjects (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:271)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1277)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 271)
+
+[H8Blackbox/Collectors] CollectBootstrapInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectBootstrapInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:368)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1278)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 368)
+
+[H8Blackbox/Collectors] CollectRegistryInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectRegistryInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:540)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1279)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 540)
+
+[H8Blackbox/Collectors] CollectMapMagicInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectMapMagicInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:641)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1280)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 641)
+
+[H8Blackbox/Collectors] CollectCameras failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectCameras (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1102)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1284)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1102)
+
+[H8Blackbox/Collectors] CollectConsoleInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectConsoleInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1182)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1285)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1182)
+
+[H8Blackbox/Collectors] CollectGitInfo failed: Object reference not set to an instance of an object
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectGitInfo (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1254)
+Hecton8.BlackboxDiagnostics.H8Collectors:CollectFullSnapshot (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions,string) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs:1286)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:265)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCollectors.cs Line: 1254)
+
+InvalidOperationException: H8Memory failed to free raw pointer for requester H8Memory; pointer ownership remains unchanged.
+  at Hecton8.Core.Memory.H8Memory.FreeRaw (System.Void* pointer, Unity.Collections.Allocator allocator, Hecton8.Core.Memory.SystemID requester) [0x0000f] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3248 
+  at Hecton8.Core.HectonArenaAllocator.Shutdown () [0x00029] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:394 
+  at Hecton8.Core.NativeArenaAllocator.Shutdown () [0x00001] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\NativeArenaAllocator.cs:35 
+  at Hecton8.Bootstrap.GameBootstrapper.DisposeSessionNativeStateForShutdown () [0x0009d] in C:\hades\Hecton8\Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1726 
+  at Hecton8.Bootstrap.GameBootstrapper.HandleEditorBootstrapPlayModeStateChanged (UnityEditor.PlayModeStateChange stateChange) [0x0008c] in C:\hades\Hecton8\Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:878 
+  at UnityEditor.EditorApplication.Internal_PlayModeStateChanged (UnityEditor.PlayModeStateChange state) [0x000b3] in <39fd9ae84ee54089a488eb7156657a76>:0 
+UnityEditor.EditorApplication:set_isPlaying(Boolean)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate() (at Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxRunner.cs:270)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate() (at Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxRunner.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions()
+
+(Filename: Assets/_Project/Scripts/Core/Memory/H8Memory.cs Line: 3248)
+
+InvalidOperationException: H8Memory failed to free raw pointer for requester H8Memory; pointer ownership remains unchanged.
+  at Hecton8.Core.Memory.H8Memory.FreeRaw (System.Void* pointer, Unity.Collections.Allocator allocator, Hecton8.Core.Memory.SystemID requester) [0x0000f] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\Memory\H8Memory.cs:3248 
+  at Hecton8.Core.HectonArenaAllocator.Shutdown () [0x00029] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\HectonArenaAllocator.cs:394 
+  at Hecton8.Core.NativeArenaAllocator.Shutdown () [0x00001] in C:\hades\Hecton8\Assets\_Project\Scripts\Core\NativeArenaAllocator.cs:35 
+  at Hecton8.Bootstrap.GameBootstrapper.DisposeSessionNativeStateForShutdown () [0x0009d] in C:\hades\Hecton8\Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1726 
+  at Hecton8.Bootstrap.GameBootstrapper.OnDestroy () [0x0004d] in C:\hades\Hecton8\Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:1539 
+
+(Filename: Assets/_Project/Scripts/Core/Memory/H8Memory.cs Line: 3248)
+
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            2.260 ms
+	Integration:            1.714 ms
+	Integration of assets:  0.002 ms
+	Thread Wait Time:       0.104 ms
+	Total Operation Time:   4.080 ms
+[Licensing::Client] Successfully resolved entitlement details
+[UnityConnectServicesConfig] config is NOT valid, switching to default
+Asset Pipeline Refresh (id=88d73faec22a95241b7fd4de341f0909): Total: 0.169 seconds - Initiated by RefreshV2(ForceSynchronousImport)
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+TrimDiskCacheJob: Current cache size 0mb

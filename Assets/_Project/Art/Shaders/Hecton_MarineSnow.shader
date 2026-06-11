@@ -182,6 +182,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 return (float2(col, row) + ResolveMarineSnowFrameLocalUv(spriteUV)) * rcp(grid);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -432,6 +434,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 return (float2(col, row) + ResolveMarineSnowFrameLocalUv(spriteUV)) * rcp(grid);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;

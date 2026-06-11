@@ -86,6 +86,8 @@ Shader "Hecton8/VFX/AbyssalBlackSmoke"
                 return float2(1.0, -1.0);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings vert(Attributes input)
             {
                 Varyings output;

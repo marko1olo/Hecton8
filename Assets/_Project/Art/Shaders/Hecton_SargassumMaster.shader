@@ -380,6 +380,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 return half4(color, intensity);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

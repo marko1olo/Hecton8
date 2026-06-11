@@ -65,6 +65,8 @@ Shader "Hecton8/World/CollapseScavengerIndirect"
                 return lengthSq > 1e-6 ? value * rsqrt(lengthSq) : fallback;
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

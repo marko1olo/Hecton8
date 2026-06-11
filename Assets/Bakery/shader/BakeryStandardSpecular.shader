@@ -1,4 +1,4 @@
-﻿Shader "Bakery/Standard Specular"
+Shader "Bakery/Standard Specular"
 {
     Properties
 	{

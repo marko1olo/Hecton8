@@ -136,8 +136,6 @@ namespace Hecton8.Gameplay
                 s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
             }
 
-            EnsureModuleWaterLevelBuffers();
-            UploadModuleWaterLevelBuffers();
             Shader.SetGlobalInt(s_ModuleWaterLevelCountId, 0);
             Shader.SetGlobalFloat(s_BaseVoltageId, 1f);
             Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, 19f);
@@ -3383,6 +3381,7 @@ namespace Hecton8.Gameplay
                 s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
             }
 
+            EnsureModuleWaterLevelBuffers();
             UploadModuleWaterLevelBuffers();
             Shader.SetGlobalInt(s_ModuleWaterLevelCountId, moduleCount);
             Shader.SetGlobalFloat(s_BaseVoltageId, baseVoltage01);

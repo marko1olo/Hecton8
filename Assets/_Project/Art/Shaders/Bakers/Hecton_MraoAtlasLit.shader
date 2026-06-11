@@ -88,6 +88,8 @@ Shader "Hecton8/Bakers/MraoAtlasLit"
             half emissionMask;
         };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         Varyings Vert(Attributes input)
         {
             Varyings output = (Varyings)0;

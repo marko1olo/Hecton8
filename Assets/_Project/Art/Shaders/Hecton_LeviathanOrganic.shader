@@ -470,6 +470,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return albedo * lerp(half3(1.0h, 1.0h, 1.0h), tintColor, camouflage01);
         }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
         Varyings Vert(Attributes input)
         {
             Varyings output;

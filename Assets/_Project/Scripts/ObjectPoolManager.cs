@@ -333,10 +333,18 @@ namespace Hecton8.Core
 
             if (_warmupPresetsStarted)
             {
+                float watchdogStartTime = UnityEngine.Time.realtimeSinceStartup;
                 while (!_warmupPresetsCompleted)
                 {
                     if (_serviceShuttingDown)
                         return false;
+
+                    if (UnityEngine.Time.realtimeSinceStartup - watchdogStartTime > 5f)
+                    {
+                        UnityEngine.Debug.LogError("[ObjectPoolManager] WarmupPresetsAsync wait timed out. Original task likely crashed.");
+                        _warmupPresetsCompleted = true;
+                        return false;
+                    }
 
                     cancellationToken.ThrowIfCancellationRequested();
                     await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
@@ -401,6 +409,12 @@ namespace Hecton8.Core
             {
                 _warmupPresetsStarted = false;
                 throw;
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"[ObjectPoolManager] WarmupPresetsAsync crashed: {ex}");
+                _warmupPresetsCompleted = true;
+                return false;
             }
         }
 

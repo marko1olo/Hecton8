@@ -1621,11 +1621,18 @@ namespace Hecton8.Editor
 
         static CompileWallBlackBox()
         {
-            EnsureAllocated();
             AssemblyReloadEvents.beforeAssemblyReload -= Dispose;
             AssemblyReloadEvents.beforeAssemblyReload += Dispose;
             EditorApplication.quitting -= Dispose;
             EditorApplication.quitting += Dispose;
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingEditMode)
+                Dispose();
         }
 
         public static void RecordGraphScan(CompileWallGraphScan scan)

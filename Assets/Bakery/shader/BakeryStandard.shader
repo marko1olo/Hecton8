@@ -1,4 +1,4 @@
-﻿Shader "Bakery/Standard"
+Shader "Bakery/Standard"
 {
     Properties
     {

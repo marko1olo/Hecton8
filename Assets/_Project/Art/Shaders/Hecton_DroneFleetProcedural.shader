@@ -90,6 +90,8 @@ Shader "Hecton8/Construction/DroneFleetProcedural"
                 return float3(0.0, -1.0, 0.0);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
             {
                 Varyings output;

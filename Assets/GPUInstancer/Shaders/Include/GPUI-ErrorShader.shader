@@ -25,6 +25,8 @@ Shader "Hidden/GPUInstancer/InternalErrorShader"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             v2f vert (appdata_t v)
             {
                 v2f o;

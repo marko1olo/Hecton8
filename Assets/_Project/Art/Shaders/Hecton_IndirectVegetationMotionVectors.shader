@@ -595,6 +595,8 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return animatedPositionWS;
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

@@ -270,6 +270,21 @@ namespace Hecton8.Lighting
         private static readonly int InteriorGIRootAupId = Shader.PropertyToID("_H8InteriorGIProbeRootAup");
         private static readonly int InteriorGIGpuStateId = Shader.PropertyToID("_H8CustomLightProbeGridState");
 
+        private static GraphicsBuffer s_FallbackBuffer;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void BindFallbackBuffer()
+        {
+            if (s_FallbackBuffer == null)
+            {
+                s_FallbackBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, CustomLightProbeDtoSizeBytes);
+                CustomLightProbeDTO[] dummy = new CustomLightProbeDTO[1];
+                s_FallbackBuffer.SetData(dummy);
+            }
+            Shader.SetGlobalBuffer(InteriorGIProbeBufferId, s_FallbackBuffer);
+            Shader.SetGlobalVector(InteriorGIGpuStateId, Vector4.zero);
+        }
+
         [Header("Grid")]
         [SerializeField, Min(1f)] private float cellSizeMeters = 3.5f;
         [SerializeField, Range(MinResolution, MaxResolution)] private int editorPreviewResolution = 24;

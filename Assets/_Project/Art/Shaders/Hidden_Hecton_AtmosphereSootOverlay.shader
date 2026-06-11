@@ -50,6 +50,8 @@ Shader "Hidden/Hecton8/AtmosphereSootOverlay"
                 float2 sootRadial : TEXCOORD1;
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

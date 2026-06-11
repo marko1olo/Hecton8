@@ -126,6 +126,8 @@ Shader "HECTON/Celestial/H8_AegirGasGiantImpostor_1428"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;

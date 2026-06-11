@@ -69,6 +69,8 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 float4 _ClipRect;
             CBUFFER_END
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             v2f vert(appdata_t input)
             {
                 v2f output;

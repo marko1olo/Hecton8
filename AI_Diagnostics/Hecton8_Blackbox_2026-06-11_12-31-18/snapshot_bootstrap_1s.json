@@ -1,0 +1,2818 @@
+﻿{
+    "timestamp": "2026-06-11 12:31:54",
+    "mode": "PlayMode_Bootstrap_1s",
+    "sceneName": "00_BOOTSTRAP",
+    "playModeElapsedSeconds": 35.22782897949219,
+    "project": {
+        "unityVersion": "6000.4.10f1",
+        "projectPath": "C:\\hades\\Hecton8",
+        "platform": "WindowsEditor",
+        "buildTarget": "StandaloneWindows64",
+        "qualityLevelName": "Abyss (Low)",
+        "qualityLevelIndex": 1,
+        "currentRenderPipeline": "URP_Low (PC_RPAsset)",
+        "defaultRenderPipeline": "URP_Medium (PC_RPAsset)",
+        "qualityRenderPipeline": "URP_Low (PC_RPAsset)",
+        "packageVersions": [
+            {
+                "key": "com.unity.render-pipelines.universal",
+                "value": "17.4.0"
+            },
+            {
+                "key": "com.unity.addressables",
+                "value": "2.9.1"
+            },
+            {
+                "key": "com.unity.cinemachine",
+                "value": "3.1.6"
+            },
+            {
+                "key": "com.unity.inputsystem",
+                "value": "1.19.0"
+            },
+            {
+                "key": "Crest (folder)",
+                "value": "found"
+            },
+            {
+                "key": "MapMagic (folder)",
+                "value": "found"
+            }
+        ],
+        "buildScenes": [
+            "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
+            "Assets/_Project/Scenes/01_MAIN_MENU.unity",
+            "Assets/_Project/Scenes/01_ORBIT.unity",
+            "Assets/_Project/Scenes/02_HECTON_WORLD.unity"
+        ],
+        "activeScene": "00_BOOTSTRAP",
+        "loadedScenes": [
+            "00_BOOTSTRAP"
+        ]
+    },
+    "scenes": [
+        {
+            "name": "00_BOOTSTRAP",
+            "path": "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
+            "buildIndex": 0,
+            "isLoaded": true,
+            "isDirty": false,
+            "rootCount": 22,
+            "totalGameObjects": 74,
+            "activeGameObjects": 73,
+            "inactiveGameObjects": 1,
+            "cameraCount": 1,
+            "rendererCount": 50,
+            "terrainCount": 0,
+            "lightCount": 1
+        }
+    ],
+    "keyObjects": [
+        {
+            "exists": false,
+            "searchKey": "name:GameBootstrapper",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:GlobalRegistry",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:SystemDispatcher",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:GameTickManager",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:MapMagic",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:MapMagicObject",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:Ocean_Crest",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:H8_WORLD_CREST_OCEAN_RUNTIME_1428",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:Main Camera",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:DEPRECATED_STUFF",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:EnvironmentRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:WorldRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:LightingRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:WaterRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:OceanRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "name:TerrainRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": true,
+            "searchKey": "type:GameBootstrapper",
+            "objectName": "[PROJECT_PERSISTENT_ROOT]",
+            "hierarchyPath": "[PROJECT_PERSISTENT_ROOT]",
+            "sceneName": "DontDestroyOnLoad",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "Default",
+            "tag": "Untagged",
+            "components": [
+                {
+                    "typeName": "UnityEngine.Transform",
+                    "isBehaviour": false,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.Bootstrap.BootstrapController",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                },
+                {
+                    "typeName": "Hecton8.Bootstrap.GameBootstrapper",
+                    "isBehaviour": true,
+                    "enabled": true,
+                    "reflectedFields": []
+                }
+            ]
+        },
+        {
+            "exists": false,
+            "searchKey": "type:MapMagicRuntimeBridge",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:MapMagicBridge",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:HectonAtmosphereManager",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:HectonCelestialEngine",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        },
+        {
+            "exists": false,
+            "searchKey": "type:WorldFidelityRoot",
+            "objectName": "",
+            "hierarchyPath": "",
+            "sceneName": "",
+            "activeSelf": false,
+            "activeInHierarchy": false,
+            "parentChain": [],
+            "layerIndex": 0,
+            "layerName": "",
+            "tag": "",
+            "components": []
+        }
+    ],
+    "bootstrap": {
+        "bootstrapperFound": true,
+        "instanceCount": 1,
+        "isBootstrapScene": true,
+        "activeSceneName": "00_BOOTSTRAP",
+        "activeSceneBuildIndex": 0,
+        "staticFields": [
+            {
+                "key": "BootstrapSceneName",
+                "value": "00_BOOTSTRAP"
+            },
+            {
+                "key": "MainMenuSceneName",
+                "value": "01_MAIN_MENU"
+            },
+            {
+                "key": "DefaultGameplaySceneName",
+                "value": "02_HECTON_WORLD"
+            },
+            {
+                "key": "OrbitSceneName",
+                "value": "01_ORBIT"
+            },
+            {
+                "key": "BootstrapScenePath",
+                "value": "Assets/_Project/Scenes/00_BOOTSTRAP.unity"
+            },
+            {
+                "key": "MainMenuScenePath",
+                "value": "Assets/_Project/Scenes/01_MAIN_MENU.unity"
+            },
+            {
+                "key": "DefaultGameplayScenePath",
+                "value": "Assets/_Project/Scenes/02_HECTON_WORLD.unity"
+            },
+            {
+                "key": "OrbitScenePath",
+                "value": "Assets/_Project/Scenes/01_ORBIT.unity"
+            },
+            {
+                "key": "FatalBootCrashFileName",
+                "value": "fatal_boot_crash.log"
+            },
+            {
+                "key": "BootStateFileName",
+                "value": "boot.bin"
+            },
+            {
+                "key": "PersistentRootName",
+                "value": "[PROJECT_PERSISTENT_ROOT]"
+            },
+            {
+                "key": "BootstrapAudioListenerRuntimeName",
+                "value": "[BootstrapAudioListener]"
+            },
+            {
+                "key": "BootstrapPresentationRootName",
+                "value": "[BOOT_PRESENTATION_FALLBACK]"
+            },
+            {
+                "key": "BootstrapPresentationCameraName",
+                "value": "[BOOT_PRESENTATION_CAMERA]"
+            },
+            {
+                "key": "PrefabRegistryRuntimeName",
+                "value": "[PrefabRegistry]"
+            },
+            {
+                "key": "PersistentWorldRegistryRuntimeName",
+                "value": "[PersistentWorldRegistry]"
+            },
+            {
+                "key": "RuntimePerformanceProfilerRuntimeName",
+                "value": "[RuntimePerformanceProfiler]"
+            },
+            {
+                "key": "CrashTelemetryRuntimeName",
+                "value": "[CrashTelemetryBuffer]"
+            },
+            {
+                "key": "RuntimeWatchdogRuntimeName",
+                "value": "[RuntimeWatchdog]"
+            },
+            {
+                "key": "GCMonitorRuntimeName",
+                "value": "[GCMonitor]"
+            },
+            {
+                "key": "PluginsAssemblyName",
+                "value": "Hecton8.Plugins"
+            },
+            {
+                "key": "CrestBridgeAssemblyName",
+                "value": "Hecton8.Crest.Bridge"
+            },
+            {
+                "key": "DontDestroyOnLoadSceneName",
+                "value": "DontDestroyOnLoad"
+            },
+            {
+                "key": "HectonHeadlessCommandLineArg",
+                "value": "-h8headless"
+            },
+            {
+                "key": "HeadlessCommandLineArg",
+                "value": "-headless"
+            },
+            {
+                "key": "TierLowAddressableLabel",
+                "value": "Tier_Low"
+            },
+            {
+                "key": "TierHighAddressableLabel",
+                "value": "Tier_High"
+            },
+            {
+                "key": "OptionalServiceTimeoutMilliseconds",
+                "value": "5000"
+            },
+            {
+                "key": "ShaderWarmupBaseTimeoutMilliseconds",
+                "value": "5000"
+            },
+            {
+                "key": "ShaderWarmupMaxTimeoutMilliseconds",
+                "value": "60000"
+            },
+            {
+                "key": "ShaderWarmupPerShaderAttemptTimeoutMilliseconds",
+                "value": "20"
+            },
+            {
+                "key": "ShaderWarmupPerGraphicsStateCollectionTimeoutMilliseconds",
+                "value": "4000"
+            },
+            {
+                "key": "ShaderWarmupLowQualityTimeoutPaddingMilliseconds",
+                "value": "8000"
+            },
+            {
+                "key": "ShaderWarmupLowQualityFrameCadenceMilliseconds",
+                "value": "34"
+            },
+            {
+                "key": "ShaderWarmupHighQualityFrameCadenceMilliseconds",
+                "value": "17"
+            },
+            {
+                "key": "DataMonolithBootstrapMaxAttempts",
+                "value": "3"
+            },
+            {
+                "key": "SuspiciousGraphicsMemoryFallbackThresholdMb",
+                "value": "256"
+            },
+            {
+                "key": "UltraTierProcessorCount",
+                "value": "12"
+            },
+            {
+                "key": "BootstrapRunStartGraceSeconds",
+                "value": "2"
+            },
+            {
+                "key": "ObjectPoolWarmupFrameBudgetMilliseconds",
+                "value": "8"
+            },
+            {
+                "key": "BootStateRecordBytes",
+                "value": "32"
+            },
+            {
+                "key": "FatalBootCrashMessageByteCount",
+                "value": "66"
+            },
+            {
+                "key": "BootStateMagic",
+                "value": "944259656"
+            },
+            {
+                "key": "BootStateVersion",
+                "value": "1"
+            },
+            {
+                "key": "PendingEventCapacity",
+                "value": "12"
+            },
+            {
+                "key": "SceneRootGraphLimit",
+                "value": "512"
+            },
+            {
+                "key": "WarmupBatchSize",
+                "value": "8"
+            },
+            {
+                "key": "BootstrapShaderWarmupTelemetryCapacity",
+                "value": "300"
+            },
+            {
+                "key": "BootstrapTelemetryEntrySizeBytes",
+                "value": "64"
+            },
+            {
+                "key": "BootstrapShaderWarmupDumpBytes",
+                "value": "19200"
+            },
+            {
+                "key": "BootstrapShaderWarmupTelemetryRingBufferId",
+                "value": "76000"
+            },
+            {
+                "key": "BootstrapShaderWarmupDumpFileName",
+                "value": "Dump_1336_Bootstrapper.bin"
+            },
+            {
+                "key": "GraphicsStateCollectionExtension",
+                "value": ".graphicsstate"
+            },
+            {
+                "key": "AssetsPathPrefix",
+                "value": "Assets/"
+            },
+            {
+                "key": "ProjectSettingsPathPrefix",
+                "value": "ProjectSettings/"
+            },
+            {
+                "key": "StreamingAssetsProjectPathPrefix",
+                "value": "Assets/StreamingAssets/"
+            },
+            {
+                "key": "ShaderWarmupFailureReason",
+                "value": "BOOTSTRAP_SHADER_WARMUP_FAILED"
+            },
+            {
+                "key": "ShaderWarmupFailureOverlayMessage",
+                "value": "BIOS ERROR 0xSHADER\nEXPECTED: PRECOMPILED VARIANT WARMUP\nACTION: BOOT HALTED"
+            },
+            {
+                "key": "WorldReadyPollIntervalSec",
+                "value": "0.1"
+            },
+            {
+                "key": "WorldReadyThreshold",
+                "value": "100"
+            },
+            {
+                "key": "WorldReadyStagnationPollLimit",
+                "value": "40"
+            },
+            {
+                "key": "GroundCheckPollIntervalSec",
+                "value": "0.2"
+            },
+            {
+                "key": "GroundCheckRayOffset",
+                "value": "2"
+            },
+            {
+                "key": "GroundCheckRayLength",
+                "value": "1000"
+            },
+            {
+                "key": "GroundCheckLogIntervalSec",
+                "value": "5"
+            },
+            {
+                "key": "BytesPerMegabyte",
+                "value": "1048576"
+            },
+            {
+                "key": "LowMemorySystemThresholdMb",
+                "value": "8192"
+            },
+            {
+                "key": "LowMemoryVramThresholdMb",
+                "value": "2048"
+            },
+            {
+                "key": "MinimalTierTargetFrameRate",
+                "value": "30"
+            },
+            {
+                "key": "DefaultTargetFrameRate",
+                "value": "60"
+            },
+            {
+                "key": "BackgroundDomainHandshakeIdle",
+                "value": "0"
+            },
+            {
+                "key": "BackgroundDomainHandshakeRunning",
+                "value": "1"
+            },
+            {
+                "key": "BackgroundDomainHandshakeComplete",
+                "value": "2"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailed",
+                "value": "3"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureNone",
+                "value": "0"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureInvalidPath",
+                "value": "1"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureIo",
+                "value": "2"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureUnauthorized",
+                "value": "3"
+            },
+            {
+                "key": "BackgroundDomainHandshakeFailureUnsupported",
+                "value": "4"
+            },
+            {
+                "key": "SurvivalAsyncUploadBufferMb",
+                "value": "64"
+            },
+            {
+                "key": "MidTierAsyncUploadBufferMb",
+                "value": "128"
+            },
+            {
+                "key": "HighTierAsyncUploadBufferMb",
+                "value": "256"
+            },
+            {
+                "key": "SurvivalAsyncUploadTimeSliceMs",
+                "value": "1"
+            },
+            {
+                "key": "MidTierAsyncUploadTimeSliceMs",
+                "value": "2"
+            },
+            {
+                "key": "HighTierAsyncUploadTimeSliceMs",
+                "value": "4"
+            },
+            {
+                "key": "SurfaceMediumQualityIndex",
+                "value": "0"
+            },
+            {
+                "key": "AbyssLowQualityIndex",
+                "value": "1"
+            },
+            {
+                "key": "OrbitHighQualityIndex",
+                "value": "2"
+            },
+            {
+                "key": "QuestVrQualityIndex",
+                "value": "3"
+            },
+            {
+                "key": "HandheldUmaQualityIndex",
+                "value": "4"
+            },
+            {
+                "key": "CompactPcQualityIndex",
+                "value": "5"
+            },
+            {
+                "key": "LeviathanUltraQualityIndex",
+                "value": "6"
+            },
+            {
+                "key": "SurfaceMediumQualityName",
+                "value": "Surface (Medium)"
+            },
+            {
+                "key": "AbyssLowQualityName",
+                "value": "Abyss (Low)"
+            },
+            {
+                "key": "OrbitHighQualityName",
+                "value": "Orbit (High)"
+            },
+            {
+                "key": "QuestVrQualityName",
+                "value": "Quest (VR)"
+            },
+            {
+                "key": "HandheldUmaQualityName",
+                "value": "Handheld (UMA)"
+            },
+            {
+                "key": "CompactPcQualityName",
+                "value": "Compact PC"
+            },
+            {
+                "key": "LeviathanUltraQualityName",
+                "value": "Leviathan (Ultra)"
+            },
+            {
+                "key": "HeartbeatFreezeSlowTickLimit",
+                "value": "3"
+            }
+        ],
+        "instanceFields": [
+            {
+                "key": "shaderVariantCollections",
+                "value": "<ShaderVariantCollection[]>"
+            },
+            {
+                "key": "shaderWarmupShaders",
+                "value": "<Shader[]>"
+            },
+            {
+                "key": "runtimeShaderReferenceCatalog",
+                "value": "RuntimeShaderReferenceCatalog(\"RuntimeShaderReferenceCatalog\")"
+            },
+            {
+                "key": "shaderGraphicsStateCollectionPaths",
+                "value": "null"
+            },
+            {
+                "key": "vaultConfigurationAsset",
+                "value": "null"
+            },
+            {
+                "key": "expectedBiosRegistryFnv1a",
+                "value": "0"
+            },
+            {
+                "key": "addressableDependencyGroups",
+                "value": "null"
+            },
+            {
+                "key": "forceNewGame",
+                "value": "false"
+            },
+            {
+                "key": "prewarmProceduralScatterBeforePlayerActivation",
+                "value": "true"
+            },
+            {
+                "key": "scatterBootstrapPrimePasses",
+                "value": "2"
+            },
+            {
+                "key": "warmupEntries",
+                "value": "<List`1>"
+            },
+            {
+                "key": "playerSpawner",
+                "value": "null"
+            },
+            {
+                "key": "fallbackSpawnPosition",
+                "value": "(0.00, 10.00, 0.00)"
+            },
+            {
+                "key": "playerObject",
+                "value": "null"
+            },
+            {
+                "key": "playerController",
+                "value": "null"
+            },
+            {
+                "key": "underwaterVisuals",
+                "value": "null"
+            },
+            {
+                "key": "playerRigidbody",
+                "value": "null"
+            },
+            {
+                "key": "worldGenWaitTime",
+                "value": "2"
+            },
+            {
+                "key": "bootstrapTimeout",
+                "value": "30"
+            },
+            {
+                "key": "groundReadyTimeout",
+                "value": "15"
+            },
+            {
+                "key": "groundReadyLayerMask",
+                "value": "<LayerMask>"
+            },
+            {
+                "key": "verboseSceneActivationLogging",
+                "value": "true"
+            },
+            {
+                "key": "_debugSceneActivationStep",
+                "value": "Not started"
+            },
+            {
+                "key": "_debugSceneActivationCompleted",
+                "value": "false"
+            },
+            {
+                "key": "_debugStartupTextureMemoryMb",
+                "value": "0"
+            },
+            {
+                "key": "_debugStartupReservedMemoryMb",
+                "value": "0"
+            },
+            {
+                "key": "_debugStartupTextureMetric",
+                "value": "Unresolved"
+            },
+            {
+                "key": "_debugStartupReservedMetric",
+                "value": "Unresolved"
+            },
+            {
+                "key": "uiAddressablePrefabs",
+                "value": "null"
+            },
+            {
+                "key": "_bootstrapRunInProgress",
+                "value": "true"
+            },
+            {
+                "key": "_sceneActivationRunInProgress",
+                "value": "false"
+            },
+            {
+                "key": "_sceneActivationRequested",
+                "value": "false"
+            },
+            {
+                "key": "_sceneActivationStarted",
+                "value": "false"
+            },
+            {
+                "key": "_sceneActivationSceneHandle",
+                "value": "18446744073709551615"
+            },
+            {
+                "key": "_isLoadingSave",
+                "value": "false"
+            },
+            {
+                "key": "_slowTickableRegistered",
+                "value": "true"
+            },
+            {
+                "key": "_hotSwapRegistered",
+                "value": "true"
+            },
+            {
+                "key": "_bootstrapStartWatchdogActive",
+                "value": "false"
+            },
+            {
+                "key": "_runtimeOwnerAborted",
+                "value": "false"
+            },
+            {
+                "key": "_nextServiceHeartbeatPollTime",
+                "value": "0"
+            },
+            {
+                "key": "_worldProceduralScatterDirector",
+                "value": "null"
+            },
+            {
+                "key": "_backgroundDomainHandshakeState",
+                "value": "2"
+            },
+            {
+                "key": "_backgroundDomainHandshakePath",
+                "value": "C:\\Users\\danat\\AppData\\LocalLow\\Danat Games\\Hecton8\\Telemetry"
+            },
+            {
+                "key": "_backgroundDomainHandshakeFailureCode",
+                "value": "0"
+            },
+            {
+                "key": "_shippingCleanupRootObjects",
+                "value": "<List`1>"
+            },
+            {
+                "key": "_shippingCleanupTraversalStack",
+                "value": "<List`1>"
+            },
+            {
+                "key": "_uiPrefabInstanceHandles",
+                "value": "null"
+            },
+            {
+                "key": "_shaderWarmupTelemetryHandle",
+                "value": "<VaultGenerationHandle`1>"
+            },
+            {
+                "key": "_shaderWarmupTelemetryReady",
+                "value": "true"
+            },
+            {
+                "key": "_shaderWarmupTelemetryCursor",
+                "value": "1"
+            },
+            {
+                "key": "_shaderWarmupDumpQueued",
+                "value": "0"
+            },
+            {
+                "key": "_shaderWarmupDumpScratch",
+                "value": "<Byte[]>"
+            },
+            {
+                "key": "_shaderWarmupDumpPath",
+                "value": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_1336_Bootstrapper.bin"
+            },
+            {
+                "key": "_shaderWarmupDumpTempPath",
+                "value": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_1336_Bootstrapper.bin.tmp"
+            },
+            {
+                "key": "_shaderWarmupDumpPathCacheAttempted",
+                "value": "true"
+            },
+            {
+                "key": "_shaderWarmupDumpByteCount",
+                "value": "0"
+            },
+            {
+                "key": "_bootstrapExecutionOrder",
+                "value": "<BootstrapDependencyNode[]>"
+            },
+            {
+                "key": "_heartbeatTickSamples",
+                "value": "<Int32[]>"
+            },
+            {
+                "key": "_heartbeatFrozenSamples",
+                "value": "<Byte[]>"
+            },
+            {
+                "key": "_bootstrapExecutionOrderCount",
+                "value": "27"
+            }
+        ],
+        "inferredState": "BOOTSTRAP_IN_PROGRESS"
+    },
+    "registry": {
+        "typeFound": true,
+        "typeName": "Hecton8.Core.GlobalRegistry",
+        "registryPhase": 1,
+        "registryPhaseName": "Registering",
+        "staticFields": [
+            {
+                "key": "_batteryChargerLogisticsRuntime",
+                "value": "<BatteryChargerLogisticsRuntime>"
+            },
+            {
+                "key": "ServiceSlotMaskWordCount",
+                "value": "4"
+            },
+            {
+                "key": "MathPrecisionTransitionFrameCount",
+                "value": "60"
+            },
+            {
+                "key": "MathPrecisionBlendScale",
+                "value": "1000"
+            },
+            {
+                "key": "SystemKillSwitchBitsSignalSourceHash",
+                "value": "1263747671"
+            },
+            {
+                "key": "SystemKillSwitchLane4VfxMask",
+                "value": "16"
+            },
+            {
+                "key": "_mathLodLowBlendId",
+                "value": "2181"
+            },
+            {
+                "key": "_requestedServiceSlotMask",
+                "value": "<Int64[]>"
+            },
+            {
+                "key": "_registeredServiceSlotMask",
+                "value": "<Int64[]>"
+            },
+            {
+                "key": "_serviceSlotNames",
+                "value": "<String[]>"
+            },
+            {
+                "key": "_registryPhase",
+                "value": "1"
+            },
+            {
+                "key": "_registeringGetViolationLogged",
+                "value": "false"
+            },
+            {
+                "key": "_readyLockViolationLogged",
+                "value": "false"
+            },
+            {
+                "key": "_updatables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_renderables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_fastTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_fixedTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_slowTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_coldTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_frostTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_unscaledFastTickables",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_hotSwapListeners",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_registryEventListeners",
+                "value": "<RegistryBucket`1>"
+            },
+            {
+                "key": "_noOpInputService",
+                "value": "<NoOpInputService>"
+            },
+            {
+                "key": "_noOpVRSomaticProvider",
+                "value": "<PcVRSomaticProvider>"
+            },
+            {
+                "key": "_inputDependencyWarningHash",
+                "value": "2134552659"
+            },
+            {
+                "key": "_serviceReboundOverflowWarningHash",
+                "value": "2055784209"
+            },
+            {
+                "key": "_globalRegistryTelemetryContextHash",
+                "value": "2403716579"
+            },
+            {
+                "key": "MaxPendingServiceRebounds",
+                "value": "64"
+            },
+            {
+                "key": "PlayerResolutionMask",
+                "value": "7"
+            },
+            {
+                "key": "ForceOverrideTokenValue",
+                "value": "1213158483"
+            },
+            {
+                "key": "_resolutionMask",
+                "value": "0"
+            },
+            {
+                "key": "_threadInput",
+                "value": "null"
+            },
+            {
+                "key": "_threadPhysics",
+                "value": "null"
+            },
+            {
+                "key": "_threadTickManager",
+                "value": "GameTickManager(\"GameTickManager\", enabled=True)"
+            },
+            {
+                "key": "_threadTelemetry",
+                "value": "CrashTelemetryBuffer(\"[CrashTelemetryBuffer]\", enabled=True)"
+            },
+            {
+                "key": "_threadAudio",
+                "value": "null"
+            },
+            {
+                "key": "_threadAudioVirtualization",
+                "value": "null"
+            },
+            {
+                "key": "_activeBootProfile",
+                "value": "SafeMode"
+            },
+            {
+                "key": "_safeModeBootRequested",
+                "value": "true"
+            },
+            {
+                "key": "_lowMemoryProfileEnabled",
+                "value": "true"
+            },
+            {
+                "key": "_activeServiceTypeHash",
+                "value": "0"
+            },
+            {
+                "key": "_absoluteUniverseTimeBits",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionLevel",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTargetLevel",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTransitionFramesRemaining",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionTransitionTotalFrames",
+                "value": "0"
+            },
+            {
+                "key": "_mathPrecisionLowBlendMilli",
+                "value": "1000"
+            },
+            {
+                "key": "_pendingMathPrecisionShaderLevel",
+                "value": "0"
+            },
+            {
+                "key": "_pendingMathPrecisionShaderLowBlendMilli",
+                "value": "1000"
+            },
+            {
+                "key": "_mathPrecisionShaderDirty",
+                "value": "1"
+            },
+            {
+                "key": "_sceneRuntimePublicationGateDepth",
+                "value": "0"
+            },
+            {
+                "key": "_currentDomain",
+                "value": "0"
+            },
+            {
+                "key": "_currentDomainOwner",
+                "value": "null"
+            },
+            {
+                "key": "_serviceReboundReferenceSlots",
+                "value": "<RegistryReboundReferenceSlot[]>"
+            },
+            {
+                "key": "_serviceReboundReferenceSlotOccupied",
+                "value": "<Boolean[]>"
+            },
+            {
+                "key": "_input",
+                "value": "null"
+            },
+            {
+                "key": "_inputBinding",
+                "value": "null"
+            },
+            {
+                "key": "_nativeInputManagerRuntime",
+                "value": "InputManager(\"InputManager\", enabled=True)"
+            },
+            {
+                "key": "_raycastBatchRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_physics",
+                "value": "null"
+            },
+            {
+                "key": "_cablePhysics132Runtime",
+                "value": "<CablePhysics132Service>"
+            },
+            {
+                "key": "_audio",
+                "value": "null"
+            },
+            {
+                "key": "_audioVirtualization",
+                "value": "null"
+            },
+            {
+                "key": "_vocalWarningRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_scene",
+                "value": "SceneRuntimeService(\"[SceneRuntimeService]\", enabled=True)"
+            },
+            {
+                "key": "_save",
+                "value": "SaveManager(\"[SaveManager]\", enabled=True)"
+            },
+            {
+                "key": "_ui",
+                "value": "null"
+            },
+            {
+                "key": "_modalWindowRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_arWaypoint",
+                "value": "null"
+            },
+            {
+                "key": "_spatialTriggerSystem",
+                "value": "null"
+            },
+            {
+                "key": "_objectPool",
+                "value": "ObjectPoolManager(\"ObjectPoolManager\", enabled=True)"
+            },
+            {
+                "key": "_player",
+                "value": "null"
+            },
+            {
+                "key": "_playerMotor",
+                "value": "null"
+            },
+            {
+                "key": "_playerMovementContracts",
+                "value": "null"
+            },
+            {
+                "key": "_playerInventory",
+                "value": "null"
+            },
+            {
+                "key": "_playerInventoryMassKg",
+                "value": "0"
+            },
+            {
+                "key": "_modularEquipment",
+                "value": "null"
+            },
+            {
+                "key": "_playerSensory",
+                "value": "null"
+            },
+            {
+                "key": "_environment",
+                "value": "null"
+            },
+            {
+                "key": "_chemicalInfluence",
+                "value": "null"
+            },
+            {
+                "key": "_organicToolHits",
+                "value": "null"
+            },
+            {
+                "key": "_weather",
+                "value": "null"
+            },
+            {
+                "key": "_seismicDirectorRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_celestialRuntimeSnapshot",
+                "value": "<CelestialRuntimeSnapshot>"
+            },
+            {
+                "key": "_celestialRuntimeSnapshotSequence",
+                "value": "0"
+            },
+            {
+                "key": "_celestialLightReadabilitySnapshot",
+                "value": "<CelestialLightReadabilitySnapshot>"
+            },
+            {
+                "key": "_celestialLightReadabilitySequence",
+                "value": "0"
+            },
+            {
+                "key": "_oceanKinematics",
+                "value": "null"
+            },
+            {
+                "key": "_powerGrid",
+                "value": "null"
+            },
+            {
+                "key": "_submarine",
+                "value": "null"
+            },
+            {
+                "key": "_submarineState",
+                "value": "null"
+            },
+            {
+                "key": "_submarineHullBreach",
+                "value": "null"
+            },
+            {
+                "key": "_inertialNavigation",
+                "value": "null"
+            },
+            {
+                "key": "_dockingAutopilot",
+                "value": "null"
+            },
+            {
+                "key": "_interactionSignals",
+                "value": "EquipmentInteractionHandler(\"[EquipmentInteractionHandler]\", enabled=True)"
+            },
+            {
+                "key": "_debris",
+                "value": "null"
+            },
+            {
+                "key": "_debrisCompute",
+                "value": "null"
+            },
+            {
+                "key": "_ambientBiotaRuntime",
+                "value": "null"
+            },
+            {
+                "key": "_ecosystemDirector",
+                "value": "null"
+            }
+        ],
+        "candidateStaticMembers": [
+            {
+                "key": "Field: _fastTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _fixedTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _slowTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _coldTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _frostTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _unscaledFastTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Field: _noOpInputService",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _inputDependencyWarningHash",
+                "value": "UInt32"
+            },
+            {
+                "key": "Field: _threadInput",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _threadPhysics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Field: _threadTickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Field: _threadAudio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Field: _threadAudioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Field: _sceneRuntimePublicationGateDepth",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _input",
+                "value": "IInputService"
+            },
+            {
+                "key": "Field: _inputBinding",
+                "value": "IInputBindingService"
+            },
+            {
+                "key": "Field: _nativeInputManagerRuntime",
+                "value": "INativeInputManagerRuntime"
+            },
+            {
+                "key": "Field: _physics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Field: _cablePhysics132Runtime",
+                "value": "ICablePhysics132Service"
+            },
+            {
+                "key": "Field: _audio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Field: _audioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Field: _scene",
+                "value": "ISceneService"
+            },
+            {
+                "key": "Field: _save",
+                "value": "ISaveService"
+            },
+            {
+                "key": "Field: _ui",
+                "value": "IUIService"
+            },
+            {
+                "key": "Field: _modularEquipment",
+                "value": "IModularEquipmentService"
+            },
+            {
+                "key": "Field: _celestialRuntimeSnapshot",
+                "value": "CelestialRuntimeSnapshot"
+            },
+            {
+                "key": "Field: _celestialRuntimeSnapshotSequence",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _celestialLightReadabilitySnapshot",
+                "value": "CelestialLightReadabilitySnapshot"
+            },
+            {
+                "key": "Field: _celestialLightReadabilitySequence",
+                "value": "Int32"
+            },
+            {
+                "key": "Field: _oceanKinematics",
+                "value": "IHectonOceanKinematicsService"
+            },
+            {
+                "key": "Field: _fluidSimulation",
+                "value": "IFluidSim"
+            },
+            {
+                "key": "Field: _fluidPipeGraph",
+                "value": "IFluidPipeGraphService"
+            },
+            {
+                "key": "Field: _geologyTerrainSeamRuntime",
+                "value": "WorldGenerativeGeologyTerrainSeamApplier"
+            },
+            {
+                "key": "Field: _celestialEngineRuntime",
+                "value": "HectonCelestialEngine"
+            },
+            {
+                "key": "Field: _fluidRuntime",
+                "value": "HectonFluidEngine"
+            },
+            {
+                "key": "Field: _audioLogRuntime",
+                "value": "AudioLogSystem"
+            },
+            {
+                "key": "Field: _atmosphereRuntime",
+                "value": "HectonAtmosphereManager"
+            },
+            {
+                "key": "Field: _terrainProviderRuntime",
+                "value": "ITerrainProvider"
+            },
+            {
+                "key": "Field: _mapMagicRuntime",
+                "value": "MapMagicBridge"
+            },
+            {
+                "key": "Field: _mapMagicVegetationRuntime",
+                "value": "HectonMapMagicVegetationBridge"
+            },
+            {
+                "key": "Field: _assetLoadDispatcherRuntime",
+                "value": "AssetLoadDispatcher"
+            },
+            {
+                "key": "Field: _abyssalFluidDecalRuntime",
+                "value": "AbyssalFluidDecalManager"
+            },
+            {
+                "key": "Field: _suitUpgradeRuntime",
+                "value": "SuitUpgradeManager"
+            },
+            {
+                "key": "Field: _uiAudioFeedbackRuntime",
+                "value": "UIAudioFeedback"
+            },
+            {
+                "key": "Field: _uiTooltipRuntime",
+                "value": "UITooltip"
+            },
+            {
+                "key": "Field: _cameraJuiceRuntime",
+                "value": "ICameraJuiceSystem"
+            },
+            {
+                "key": "Field: _uiRTRuntime",
+                "value": "UIRTManager"
+            },
+            {
+                "key": "Field: _playerCriticalAudioRuntime",
+                "value": "PlayerCriticalProceduralAudioRenderer"
+            },
+            {
+                "key": "Field: _tickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Field: _dispatcher",
+                "value": "SystemDispatcher"
+            },
+            {
+                "key": "Field: _renderDispatcher",
+                "value": "RenderDispatcher"
+            },
+            {
+                "key": "Field: _physicsStateManager",
+                "value": "GlobalPhysicsStateManager"
+            },
+            {
+                "key": "Field: _physicsCullingOverseer",
+                "value": "IPhysicsCullingOverseer"
+            },
+            {
+                "key": "Field: _sceneRuntime",
+                "value": "SceneRuntimeService"
+            },
+            {
+                "key": "Field: _sceneInstantiationGateRuntime",
+                "value": "SceneInstantiationGate"
+            },
+            {
+                "key": "Field: _oceanKinematicsRuntime",
+                "value": "OceanKinematicsRuntimeService"
+            },
+            {
+                "key": "Field: _dispatcherRegistrationErrorLogged",
+                "value": "Boolean"
+            },
+            {
+                "key": "Field: _inputFallbackWarningPublished",
+                "value": "Boolean"
+            },
+            {
+                "key": "Prop: IsDevelopmentBuild",
+                "value": "Boolean"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshot",
+                "value": "CelestialRuntimeSnapshot"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshotSequence",
+                "value": "UInt32"
+            },
+            {
+                "key": "Prop: CelestialRuntimeSnapshotReadModel",
+                "value": "ICelestialRuntimeSnapshotReadModel"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilitySnapshot",
+                "value": "CelestialLightReadabilitySnapshot"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilitySequence",
+                "value": "UInt32"
+            },
+            {
+                "key": "Prop: CelestialLightReadabilityReadModel",
+                "value": "ICelestialLightReadabilityReadModel"
+            },
+            {
+                "key": "Prop: SceneRuntime",
+                "value": "SceneRuntimeService"
+            },
+            {
+                "key": "Prop: SceneInstantiationGateRuntime",
+                "value": "SceneInstantiationGate"
+            },
+            {
+                "key": "Prop: CablePhysics132",
+                "value": "ICablePhysics132Service"
+            },
+            {
+                "key": "Prop: OceanKinematicsRuntime",
+                "value": "OceanKinematicsRuntimeService"
+            },
+            {
+                "key": "Prop: Input",
+                "value": "IInputService"
+            },
+            {
+                "key": "Prop: InputDeterminism",
+                "value": "IInputDeterminismService"
+            },
+            {
+                "key": "Prop: RegisteredInput",
+                "value": "IInputService"
+            },
+            {
+                "key": "Prop: NativeInputRuntime",
+                "value": "INativeInputManagerRuntime"
+            },
+            {
+                "key": "Prop: InputBinding",
+                "value": "IInputBindingService"
+            },
+            {
+                "key": "Prop: PhysicsQueryTelemetry",
+                "value": "IPhysicsQueryTelemetryReadModel"
+            },
+            {
+                "key": "Prop: InputRebind",
+                "value": "IInputRebindService"
+            },
+            {
+                "key": "Prop: Physics",
+                "value": "IPhysicsService"
+            },
+            {
+                "key": "Prop: Audio",
+                "value": "IAudioService"
+            },
+            {
+                "key": "Prop: AudioVirtualization",
+                "value": "IAudioVirtualizationService"
+            },
+            {
+                "key": "Prop: PlayerCriticalAudio",
+                "value": "PlayerCriticalProceduralAudioRenderer"
+            },
+            {
+                "key": "Prop: PlayerCriticalAudioSignals",
+                "value": "IPlayerCriticalAudioSignalSink"
+            },
+            {
+                "key": "Prop: Scene",
+                "value": "ISceneService"
+            },
+            {
+                "key": "Prop: Save",
+                "value": "ISaveService"
+            },
+            {
+                "key": "Prop: SaveRuntime",
+                "value": "SaveManager"
+            },
+            {
+                "key": "Prop: UI",
+                "value": "IUIService"
+            },
+            {
+                "key": "Prop: ModularEquipment",
+                "value": "IModularEquipmentService"
+            },
+            {
+                "key": "Prop: OceanKinematics",
+                "value": "IHectonOceanKinematicsService"
+            },
+            {
+                "key": "Prop: FluidSimulation",
+                "value": "IFluidSim"
+            },
+            {
+                "key": "Prop: FluidPipeGraph",
+                "value": "IFluidPipeGraphService"
+            },
+            {
+                "key": "Prop: BiomePhysicsInfluence",
+                "value": "IBiomePhysicsInfluenceReadModel"
+            },
+            {
+                "key": "Prop: BrineFluidDensity",
+                "value": "IBrineFluidDensityReadModel"
+            },
+            {
+                "key": "Prop: FluidAdvectionRenderGraph",
+                "value": "IFluidAdvectionRenderGraphDispatchSource"
+            },
+            {
+                "key": "Prop: FluidSurfaceCurrent",
+                "value": "IFluidSurfaceCurrentReadModel"
+            },
+            {
+                "key": "Prop: FluidBubbleBurstSink",
+                "value": "IFluidBubbleBurstSink"
+            },
+            {
+                "key": "Prop: FluidCurrentWriteSink",
+                "value": "IFluidCurrentWriteSink"
+            },
+            {
+                "key": "Prop: GeologyTerrainSeam",
+                "value": "WorldGenerativeGeologyTerrainSeamApplier"
+            },
+            {
+                "key": "Prop: Fluid",
+                "value": "HectonFluidEngine"
+            },
+            {
+                "key": "Prop: AudioLogs",
+                "value": "AudioLogSystem"
+            },
+            {
+                "key": "Prop: AudioLogRuntime",
+                "value": "IAudioLogRuntime"
+            },
+            {
+                "key": "Prop: Atmosphere",
+                "value": "HectonAtmosphereManager"
+            },
+            {
+                "key": "Prop: AtmosphereReadModel",
+                "value": "IAtmosphereReadModel"
+            },
+            {
+                "key": "Prop: CelestialEngine",
+                "value": "HectonCelestialEngine"
+            },
+            {
+                "key": "Prop: CelestialSkyDirection",
+                "value": "ICelestialSkyDirectionReadModel"
+            },
+            {
+                "key": "Prop: CelestialResonance",
+                "value": "ICelestialResonanceReadModel"
+            },
+            {
+                "key": "Prop: Terrain",
+                "value": "ITerrainProvider"
+            },
+            {
+                "key": "Prop: MapMagic",
+                "value": "MapMagicBridge"
+            },
+            {
+                "key": "Prop: MapMagicVegetation",
+                "value": "HectonMapMagicVegetationBridge"
+            },
+            {
+                "key": "Prop: TerrainHeightSamples",
+                "value": "ITerrainHeightSampleReadModel"
+            },
+            {
+                "key": "Prop: AssetLoadDispatcher",
+                "value": "AssetLoadDispatcher"
+            },
+            {
+                "key": "Prop: AbyssalFluidDecals",
+                "value": "AbyssalFluidDecalManager"
+            },
+            {
+                "key": "Prop: FluidDecalPresentation",
+                "value": "IFluidDecalPresentationSink"
+            },
+            {
+                "key": "Prop: SuitUpgrades",
+                "value": "SuitUpgradeManager"
+            },
+            {
+                "key": "Prop: UIAudioFeedback",
+                "value": "UIAudioFeedback"
+            },
+            {
+                "key": "Prop: UITooltip",
+                "value": "UITooltip"
+            },
+            {
+                "key": "Prop: CameraJuice",
+                "value": "ICameraJuiceSystem"
+            },
+            {
+                "key": "Prop: UIRT",
+                "value": "UIRTManager"
+            },
+            {
+                "key": "Prop: TickManager",
+                "value": "GameTickManager"
+            },
+            {
+                "key": "Prop: Dispatcher",
+                "value": "SystemDispatcher"
+            },
+            {
+                "key": "Prop: TickDispatcher",
+                "value": "ITickDispatcher"
+            },
+            {
+                "key": "Prop: RenderDispatcher",
+                "value": "RenderDispatcher"
+            },
+            {
+                "key": "Prop: PhysicsStateManager",
+                "value": "GlobalPhysicsStateManager"
+            },
+            {
+                "key": "Prop: PhysicsStateEvents",
+                "value": "IPhysicsStateEventService"
+            },
+            {
+                "key": "Prop: PhysicsCullingOverseer",
+                "value": "IPhysicsCullingOverseer"
+            },
+            {
+                "key": "Prop: FixedTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Prop: SlowTickables",
+                "value": "RegistryBucket`1"
+            },
+            {
+                "key": "Prop: FrostTickables",
+                "value": "RegistryBucket`1"
+            }
+        ],
+        "slots": [
+            {
+                "slotName": "Input",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_input",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Physics",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_physics",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Audio",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_audio",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Scene",
+                "isNull": false,
+                "typeName": "SceneRuntimeService",
+                "objectName": "[SceneRuntimeService]",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_scene",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Save",
+                "isNull": false,
+                "typeName": "SaveManager",
+                "objectName": "[SaveManager]",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_save",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "UI",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_ui",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Player",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_player",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "OceanKinematics",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_oceanKinematics",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "AtmosphereRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_atmosphereRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "CelestialEngineRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_celestialEngineRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "MapMagicRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_mapMagicRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "TerrainProviderRuntime",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_terrainProviderRuntime",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "TickManager",
+                "isNull": false,
+                "typeName": "GameTickManager",
+                "objectName": "GameTickManager",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_tickManager",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Dispatcher",
+                "isNull": false,
+                "typeName": "SystemDispatcher",
+                "objectName": "[SystemDispatcher]",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_dispatcher",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "RenderDispatcher",
+                "isNull": false,
+                "typeName": "RenderDispatcher",
+                "objectName": "[RenderDispatcher]",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_renderDispatcher",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "ObjectPool",
+                "isNull": false,
+                "typeName": "ObjectPoolManager",
+                "objectName": "ObjectPoolManager",
+                "isActiveIfUnityObject": true,
+                "memberFound": true,
+                "memberName": "_objectPool",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Environment",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_environment",
+                "memberKind": "Field"
+            },
+            {
+                "slotName": "Weather",
+                "isNull": true,
+                "typeName": "null",
+                "objectName": "",
+                "isActiveIfUnityObject": false,
+                "memberFound": true,
+                "memberName": "_weather",
+                "memberKind": "Field"
+            }
+        ],
+        "inferredState": "PARTIAL (6/18 filled)"
+    },
+    "mapMagic": {
+        "mapMagicObjectFound": false,
+        "mapMagicObjectActive": false,
+        "mapMagicObjectActiveInHierarchy": false,
+        "runtimeBridgeFound": false,
+        "runtimeBridgeActive": false,
+        "runtimeBridgeEnabled": false,
+        "graphAssigned": false,
+        "graphAssetName": "",
+        "graphAssetPath": "",
+        "activeTerrainCount": 0,
+        "allTerrainCount": 0,
+        "terrainDetails": [],
+        "reflectedFields": [],
+        "registeredInGlobalRegistry": false
+    },
+    "crest": {
+        "oceanCrestObjectFound": false,
+        "oceanCrestActive": false,
+        "oceanCrestActiveInHierarchy": false,
+        "oceanCrestHierarchyPath": "",
+        "oceanRendererFound": false,
+        "oceanRendererActive": false,
+        "oceanRendererEnabled": false,
+        "viewCameraAssigned": false,
+        "viewpointAssigned": false,
+        "primaryLightAssigned": false,
+        "adapterFound": false,
+        "adapterActive": false,
+        "adapterEnabled": false,
+        "kinematicsRegistered": false,
+        "underwaterRendererFound": false,
+        "underwaterRendererEnabled": false,
+        "underwaterRendererCameraName": "",
+        "reflectedFields": []
+    },
+    "atmosphere": {
+        "atmosphereManagerFound": false,
+        "atmosphereManagerActive": false,
+        "atmosphereManagerEnabled": false,
+        "celestialEngineFound": false,
+        "celestialEngineActive": false,
+        "celestialEngineEnabled": false,
+        "atmosphereRegistered": false,
+        "celestialRegistered": false,
+        "skyboxMaterialName": "Mat_HectonSky",
+        "skyboxAssigned": true,
+        "sunName": "H8_Bootstrap_Key_Light",
+        "sunAssigned": true,
+        "fogEnabled": true,
+        "fogColor": "RGBA(0.014, 0.028, 0.032, 1.000)",
+        "fogMode": "ExponentialSquared",
+        "directionalLightCount": 1,
+        "renderSettings": [
+            {
+                "key": "ambientMode",
+                "value": "Flat"
+            },
+            {
+                "key": "ambientLight",
+                "value": "RGBA(0.085, 0.140, 0.150, 1.000)"
+            },
+            {
+                "key": "ambientIntensity",
+                "value": "1.000"
+            },
+            {
+                "key": "ambientSkyColor",
+                "value": "RGBA(0.085, 0.140, 0.150, 1.000)"
+            },
+            {
+                "key": "ambientEquatorColor",
+                "value": "RGBA(0.114, 0.125, 0.133, 1.000)"
+            },
+            {
+                "key": "ambientGroundColor",
+                "value": "RGBA(0.047, 0.043, 0.035, 1.000)"
+            },
+            {
+                "key": "reflectionIntensity",
+                "value": "1.000"
+            },
+            {
+                "key": "fogDensity",
+                "value": "0.0080"
+            },
+            {
+                "key": "fogStartDistance",
+                "value": "0.0"
+            },
+            {
+                "key": "fogEndDistance",
+                "value": "300.0"
+            },
+            {
+                "key": "subtractiveShadowColor",
+                "value": "RGBA(0.420, 0.478, 0.627, 1.000)"
+            }
+        ],
+        "shaderGlobals": [
+            {
+                "key": "_SunDirection",
+                "value": "(0.00, 0.00, 0.00, 0.00)"
+            },
+            {
+                "key": "_HectonTimeOfDay01",
+                "value": "0.0000"
+            }
+        ],
+        "reflectedFields": []
+    },
+    "urp": {
+        "currentRenderPipelineAsset": "URP_Low (PC_RPAsset)",
+        "defaultRenderPipelineAsset": "URP_Medium (PC_RPAsset)",
+        "qualityRenderPipelineAsset": "URP_Low (PC_RPAsset)",
+        "activeUrpAssetName": "URP_Low (PC_RPAsset)",
+        "activeRendererDataName": "Mobile_Renderer",
+        "rendererFeatures": [
+            {
+                "name": "ShapesRenderFeature",
+                "typeName": "ShapesRenderFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonScooterVolumetricShaftsFeature",
+                "typeName": "HectonScooterVolumetricShaftsFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonAbyssalSsdoFeature",
+                "typeName": "HectonAbyssalSsdoFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonDeferredCausticsFeature",
+                "typeName": "HectonDeferredCausticsFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVisorFluidDistortionFeature",
+                "typeName": "HectonVisorFluidDistortionFeature",
+                "isActive": false
+            },
+            {
+                "name": "HectonRetinaDistortionFeature",
+                "typeName": "HectonRetinaDistortionFeature",
+                "isActive": false
+            },
+            {
+                "name": "HectonNoirDepthFogFeature",
+                "typeName": "HectonNoirDepthFogFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonFluidAdvectionRenderFeature",
+                "typeName": "HectonFluidAdvectionRenderFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonHalfResParticlesFeature",
+                "typeName": "HectonHalfResParticlesFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonAtmosphereSootFeature",
+                "typeName": "HectonAtmosphereSootFeature",
+                "isActive": true
+            },
+            {
+                "name": "WristPdaScreenProjectorFeature",
+                "typeName": "WristPdaScreenProjectorFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVisorUberPostFeature",
+                "typeName": "HectonVisorUberPostFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVRBrownoutFeature",
+                "typeName": "HectonVRBrownoutFeature",
+                "isActive": true
+            },
+            {
+                "name": "HectonVolumetricParticulateFogFeature",
+                "typeName": "HectonVolumetricParticulateFogFeature",
+                "isActive": true
+            }
+        ],
+        "urpSettings": [
+            {
+                "key": "assetTypeName",
+                "value": "UniversalRenderPipelineAsset"
+            },
+            {
+                "key": "rendererDataCount",
+                "value": "1"
+            },
+            {
+                "key": "shadowDistance",
+                "value": "40"
+            },
+            {
+                "key": "mainLightShadowResolution",
+                "value": "_4096"
+            },
+            {
+                "key": "additionalLightShadowResolution",
+                "value": "_4096"
+            },
+            {
+                "key": "supportsHDR",
+                "value": "true"
+            },
+            {
+                "key": "msaa",
+                "value": "Disabled"
+            },
+            {
+                "key": "renderScale",
+                "value": "0.85"
+            },
+            {
+                "key": "mainLightRenderingMode",
+                "value": "PerPixel"
+            },
+            {
+                "key": "additionalLightsRenderingMode",
+                "value": "PerPixel"
+            },
+            {
+                "key": "softShadows",
+                "value": "false"
+            },
+            {
+                "key": "hectonFeature:HectonSinglePassOceanFeature",
+                "value": "not found"
+            },
+            {
+                "key": "hectonFeature:HectonDeferredCausticsFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonVolumetricParticulateFogFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonNoirDepthFogFeature",
+                "value": "present"
+            },
+            {
+                "key": "hectonFeature:HectonFluidAdvectionRenderFeature",
+                "value": "present"
+            }
+        ]
+    },
+    "cameras": [
+        {
+            "name": "H8_Bootstrap_Camera",
+            "hierarchyPath": "H8_BOOTSTRAP_VISUAL_FALLBACK/H8_Bootstrap_Camera",
+            "activeSelf": true,
+            "activeInHierarchy": true,
+            "enabled": true,
+            "tag": "MainCamera",
+            "isMainCamera": true,
+            "clearFlags": "SolidColor",
+            "cullingMask": -1,
+            "culledLayerNames": [],
+            "visibleLayerNames": [
+                "Default",
+                "TransparentFX",
+                "Ignore Raycast",
+                "Interactable",
+                "Water",
+                "UI",
+                "Player ",
+                "Terrain ",
+                "BaseModule  ",
+                "DroppedItem ",
+                "Creature ",
+                "Vehicle ",
+                "VoxelCave ",
+                "TriggerZone ",
+                "Debris",
+                "Celestial ",
+                "PostProcess ",
+                "HUD_Internal",
+                "FirstPersonTools",
+                "Sockets",
+                "BrineToxicity",
+                "VoxelProxy",
+                "PlayerVehicle",
+                "ToolUI",
+                "Layer_24",
+                "Layer_25",
+                "Layer_26",
+                "Layer_27",
+                "Layer_28",
+                "Layer_29",
+                "Layer_30",
+                "Layer_31"
+            ],
+            "nearClip": 0.029999999329447748,
+            "farClip": 80.0,
+            "fieldOfView": 40.0,
+            "orthographic": false,
+            "depth": 100.0,
+            "hasTargetTexture": false,
+            "targetTextureName": "",
+            "position": "(0.00, 0.55, -7.20)",
+            "rotation": "(0.0, 0.0, 0.0)",
+            "hasUrpAdditionalData": false,
+            "hasCinemachineBrain": false,
+            "hasUnderwaterRenderer": false,
+            "urpData": []
+        }
+    ],
+    "console": {
+        "totalErrors": 0,
+        "totalWarnings": 0,
+        "totalLogs": 17,
+        "entries": [
+            {
+                "type": "Log",
+                "message": "[H8Blackbox] Domain reload detected. Recovering PlayMode state machine...",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.BlackboxDiagnostics.H8Runner:.cctor () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:37)\nUnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])\n",
+                "count": 1,
+                "category": "General"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SystemDispatcher",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node SystemDispatcher",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node GameTickManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node GameTickManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SaveManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node SaveManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ObjectPoolManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node ObjectPoolManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node RenderDispatcher",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node RenderDispatcher",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SceneRuntimeService",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node SceneRuntimeService",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EquipmentInteractionHandler",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node EquipmentInteractionHandler",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ModWorldPersistenceManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5250)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            },
+            {
+                "type": "Log",
+                "message": "[GameBootstrapper] Waiting for heartbeat for node ModWorldPersistenceManager",
+                "stackTrace": "UnityEngine.Debug:Log (object)\nHecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5257)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)\nHecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)\nHecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3357)\nUnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)\nHecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...",
+                "count": 1,
+                "category": "Bootstrap"
+            }
+        ],
+        "editorLogTail": "\t\t\tAddressablesAssetPostProcessor.OnPostprocessAllAssets 3.515ms\r\n\t\t\tHectonAssetIntegrityGuard.OnPostprocessAllAssets 3.499ms\r\n\t\t\tSyncVS.PostprocessSyncProject 2.676ms\r\n\t\t\tMaterialPostprocessor.OnPostprocessAllAssets 2.356ms\r\n\t\t\tInputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 1.561ms\r\n\t\t\tRetainedModeAssetPostprocessor.OnPostprocessAllAssets 1.528ms\r\n\t\t\tPostProcessor.OnPostprocessAllAssets 1.447ms\r\n\t\t\tInputActionAssetPostprocessor.OnPostprocessAllAssets 1.359ms\r\n\t\t\tCinemachineSettings.OnPostprocessAllAssets 1.120ms\r\n\t\t\tTextAssetPostProcessor.OnPostprocessAllAssets 1.098ms\r\n\t\t\tUVCSAssetPostprocessor.OnPostprocessAllAssets 1.017ms\r\n\t\t\tArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.986ms\r\n\t\t\tRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.984ms\r\n\t\t\tTMPro_TexturePostProcessor.OnPostprocessAllAssets 0.823ms\r\n\t\t\tSpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.818ms\r\n\t\t\tAudioMixerPostprocessor.OnPostprocessAllAssets 0.814ms\r\n\t\t\tEnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.714ms\r\n\t\t\tAssetEvents.OnPostprocessAllAssets 0.666ms\r\n\t\t\tReferencedClipsPostProcessor.OnPostprocessAllAssets 0.614ms\r\n\t\t\tDomainReloadProcessor.OnPostprocessAllAssets 0.594ms\r\n\t\t\tAssetPathToTypes.OnPostprocessAllAssets 0.483ms\r\n\t\t\tConfigAssetsTracker.OnPostprocessAllAssets 0.444ms\r\n\t\t\tSamplePostprocessor.OnPostprocessAllAssets 0.381ms\r\n\t\t\tAssetDatabaseCallbacks.OnPostprocessAllAssets 0.367ms\r\n\t\t\tProjectSettingsPostprocessor.OnPostprocessAllAssets 0.357ms\r\n\t\t\tSpeedTreePostProcessor.OnPostprocessAllAssets 0.306ms\r\n\t\t\tScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.273ms\r\n\t\t\tAudioContainerPostProcessor.OnPostprocessAllAssets 0.230ms\r\n\t\t\tTerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.209ms\r\n\tPostAssetChangesProfiler: 13.918ms\r\n\tUnloadStreamsBegin: 5.557ms\r\n\tPersistCurrentRevisions: 1.795ms\r\n\tGenerateScriptTypeHashes: 21.399ms\r\n\tGenerateScriptTypeSerializationHashes: 26.904ms\r\n\tUntracked: 3328.432ms\r\n\r\nApplication.AssetDatabase Initi..."
+    },
+    "git": {
+        "gitAvailable": true,
+        "branch": "main",
+        "modifiedFiles": [
+            "M .codexrules/AGENTS.md",
+            "M .github/agents/AGENTS.md",
+            "M AGENTS.md",
+            "M Assets/Bakery/shader/BakeryStandard.shader",
+            "M Assets/Bakery/shader/BakeryStandardSpecular.shader",
+            "M Assets/Crest/Crest/Materials/Ocean-Underwater.mat",
+            "M Assets/Feel/MMTools/Tools/MMShaders/MMSkybox.shader",
+            "M Assets/GPUInstancer/Resources/Settings/GPUIShaderVariantCollection.shadervariants",
+            "M Assets/GPUInstancer/Resources/Settings/GPUInstancerShaderBindings.asset",
+            "M Assets/GPUInstancer/Shaders/Include/GPUI-ErrorShader.shader",
+            "M Assets/GPUInstancer/Shaders/Lit_GPUI.shader",
+            "M Assets/ScifiFacility/Shader/URP/Base_Normal_Blend.shader",
+            "M Assets/ScifiFacility/Shader/URP/Base_Normal_Replace.shader",
+            "M Assets/ScifiFacility/Shader/URP/Cutout_Single_Channel.shader",
+            "M Assets/ScifiFacility/Shader/URP/Cutout_Single_RGB.shader",
+            "M Assets/ScifiFacility/Shader/URP/DoubleEmission.shader",
+            "M Assets/ScifiFacility/Shader/URP/DoubleNormal.shader",
+            "M Assets/ScifiFacility/Shader/URP/Fluid.shader",
+            "M Assets/ScifiFacility/Shader/URP/Glass.shader",
+            "M Assets/ScifiFacility/Shader/URP/LightWarping.shader",
+            "M Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat",
+            "M Assets/_Project/Art/Shaders/AbyssalBlackSmoke.shader",
+            "M Assets/_Project/Art/Shaders/AbyssalFluidDecal.shader",
+            "M Assets/_Project/Art/Shaders/Bakers/Hecton_MraoAtlasLit.shader",
+            "M Assets/_Project/Art/Shaders/Core/Hecton8_UberNoir.shader",
+            "M Assets/_Project/Art/Shaders/H8_AegirGasGiantImpostor_1428.shader",
+            "M Assets/_Project/Art/Shaders/H8_AtmosphericCloudSheet_1428.shader",
+            "M Assets/_Project/Art/Shaders/H8_SurfaceCloudPanorama_1428.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AbyssalSSDO.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AcousticRadarVoxel.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AegirHazeOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_BlueprintWireInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CelestialMoon.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CollapseScavengerIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_CoralMaster_GPUI.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DamageHologramInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DroneFleetProcedural.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FillrateDepthOnly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FlashlightConeSilt.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_FlexiblePipe.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_GeologyImpostorBillboard.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HalfResParticleComposite.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_HologramAssembly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationMotionVectors.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_IndirectVegetationShadow.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_KelpMaster_GPUI.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LaserCutRadianceDecal.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeakPlume.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeviathanOrganic.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_LeviathanTentacleIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_MarauderOutpostIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_MarineSnow.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_Master_Lit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_NoirDepthFog.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_OceanRainRippleDecal.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_PhantomDrones.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ProceduralBio.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RuinSeepSheen.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_RuntimeFlatColor.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SargassumMaster.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScannerPulseInstanced.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SeamGapDitherIndirect.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SubmarineMonitorOpaqueStencil.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_TetherLineStrip.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ToolDecayLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_VoxelBakeGhost.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader",
+            "M Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_BiosDiagnostic.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_ScannerDepthProjection.shader",
+            "M Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_CapsuleReentryPlasmaFake.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalCloudWhiteoutFake.shader",
+            "M Assets/_Project/Art/Shaders/Prologue/Hecton_OrbitalPlanetRelativityFake.shader",
+            "M Assets/_Project/Art/Shaders/SG_GasGiant_Master.shader",
+            "M Assets/_Project/Art/Shaders/SonarGridOverlay.shader",
+            "M Assets/_Project/Art/Shaders/SuitVisor.shader",
+            "M Assets/_Project/Art/Shaders/Sun.shader",
+            "M Assets/_Project/Art/Shaders/TerrainMaster.shader",
+            "M \"Assets/_Project/Data/URP_Medium (PC_RPAsset).asset\"",
+            "M Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset",
+            "M Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+            "M Assets/_Project/Scripts/AI/Ambient/Hecton_AmbientBiotaIndirect.shader",
+            "M Assets/_Project/Scripts/BaseModule.cs",
+            "M Assets/_Project/Scripts/BoidFishInstanced.shader",
+            "M Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+            "M Assets/_Project/Scripts/Core/HectonArenaAllocator.cs",
+            "M Assets/_Project/Scripts/Editor/AssemblyGuard/CompileWallXRayWindow.cs",
+            "M Assets/_Project/Scripts/Editor/BootstrapPlayModeEntryGuard.cs",
+            "M Assets/_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs",
+            "M Assets/_Project/Scripts/HectonBiolumMaster.shader",
+            "M Assets/_Project/Scripts/Lighting/HectonGIRelaySystem.cs",
+            "M Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+            "M Assets/_Project/Scripts/ObjectPoolManager.cs",
+            "M Assets/_Project/Scripts/Plugins/MapMagic/MapMagicRuntimeBridge.cs",
+            "M Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+            "M Assets/_Project/Shaders/Hecton_Item_Highlight.shader",
+            "M Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader",
+            "M Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader",
+            "M Assets/_Project/Tests/Editor/HectonVoxelEngineEditTests.cs",
+            "M Assets/_Project/_Archive/HectonOcean.shader",
+            "M Data/Lore/Encyclopedia.h8bin",
+            "M Data/Lore/Encyclopedia.manifest.json",
+            "M Docs/AGENTS_RULE_DETAIL_LEDGER.md",
+            "M Docs/PROJECT_ROOT_BIBLES_COMBINED.md",
+            "M GEMINI.md",
+            "M ProjectSettings/EditorBuildSettings.asset",
+            "M ProjectSettings/ProjectSettings.asset",
+            "?? AI_Diagnostics/",
+            "?? Assets/Editor/BuildTest.cs",
+            "?? Assets/Editor/BuildTest.cs.meta",
+            "?? Assets/Editor/Hecton8BlackboxDiagnostics.meta",
+            "?? Assets/Editor/Hecton8BlackboxDiagnostics/",
+            "?? Assets/Editor/RestartPlayMode.cs",
+            "?? Assets/Editor/RestartPlayMode.cs.meta",
+            "?? Assets/_Project/Editor/H8_SceneCleaner.cs",
+            "?? Assets/_Project/Editor/H8_SceneCleaner.cs.meta",
+            "?? Assets/_Project/Editor/H8_ScreenshotTaker.cs",
+            "?? Assets/_Project/Editor/H8_ScreenshotTaker.cs.meta",
+            "?? Assets/_Project/Scenes/010_TEST.unity",
+            "?? Assets/_Project/Scenes/010_TEST.unity.meta",
+            "?? Assets/_Project/Scripts/Editor/DestroyWaterBatch.cs",
+            "?? Assets/_Project/Scripts/Editor/DestroyWaterBatch.cs.meta",
+            "?? Assets/_Project/Scripts/Editor/HectonMacroGeologyBaseIntegrator.cs",
+            "?? Assets/_Project/Scripts/Editor/HectonMacroGeologyBaseIntegrator.cs.meta",
+            "?? Assets/_Project/Scripts/Runtime.meta",
+            "?? Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/CaptureScreenshotTool.cs",
+            "?? Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/CaptureScreenshotTool.cs.meta",
+            "?? Assets/_Project/Tests/Editor/CurrentManagerEditTests.cs.meta",
+            "?? Assets/_Project/Tests/Editor/HectonNoiseTests.cs.meta",
+            "?? Assets/_Project/Tests/Editor/HectonVoxelEngineEditTests.cs.meta",
+            "?? Assets/_Recovery.meta",
+            "?? CaptureUnity.ps1",
+            "?? DesktopScreenshot.png",
+            "?? DesktopScreenshot10.png",
+            "?? DesktopScreenshot11.png",
+            "?? DesktopScreenshot12.png",
+            "?? DesktopScreenshot13.png",
+            "?? DesktopScreenshot14.png",
+            "?? DesktopScreenshot15.png",
+            "?? DesktopScreenshot16.png",
+            "?? DesktopScreenshot17.png",
+            "?? DesktopScreenshot18.png",
+            "?? DesktopScreenshot19.png",
+            "?? DesktopScreenshot2.png",
+            "?? DesktopScreenshot4.png",
+            "?? DesktopScreenshot5.png",
+            "?? DesktopScreenshot6.png",
+            "?? DesktopScreenshot7.png",
+            "?? DesktopScreenshot8.png",
+            "?? DesktopScreenshot9.png",
+            "?? Docs/GeneratedAssets/Terrain/AutoScreenshot.png",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/Center/",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/East/",
+            "?? Docs/GeneratedAssets/Terrain/MacroGeology/North/",
+            "?? Docs/GeneratedAssets/Terrain/RuntimeScreenshot.png",
+            "?? Docs/GeneratedAssets/Terrain/Screenshot.png",
+            "?? Fix010.py",
+            "?? FixYaml.py",
+            "?? InteractiveAutomation.bat",
+            "?? InteractiveAutomation.ps1",
+            "?? LaunchUnity.bat",
+            "?? McpQuery.py",
+            "?? McpQueryOut.txt",
+            "?? TakeUnityScreenshot.ps1",
+            "?? terrain_runtime_1.png",
+            "?? terrain_runtime_2.png",
+            "?? unity_batch_log_10.txt",
+            "?? unity_batch_log_11.txt",
+            "?? unity_batch_log_12.txt",
+            "?? unity_batch_log_4.txt",
+            "?? unity_batch_log_5.txt",
+            "?? unity_batch_log_6.txt",
+            "?? unity_batch_log_7.txt",
+            "?? unity_batch_log_8.txt",
+            "?? unity_batch_log_9.txt"
+        ],
+        "targetedDiffs": [
+            {
+                "key": "GameBootstrapper.cs",
+                "value": ".../_Project/Scripts/Bootstrap/GameBootstrapper.cs | 77 ++++++++++++----------\n 1 file changed, 43 insertions(+), 34 deletions(-)"
+            },
+            {
+                "key": "BootstrapPlayModeEntryGuard.cs",
+                "value": ".../_Project/Scripts/Editor/BootstrapPlayModeEntryGuard.cs   | 12 ++++++++++++\n 1 file changed, 12 insertions(+)"
+            },
+            {
+                "key": "02_HECTON_WORLD.unity",
+                "value": "Assets/_Project/Scenes/02_HECTON_WORLD.unity | 1125 +++++++++++++++++++-------\n 1 file changed, 838 insertions(+), 287 deletions(-)"
+            },
+            {
+                "key": "HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset",
+                "value": ".../HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset     | 1063 ++++++++++----------\n 1 file changed, 539 insertions(+), 524 deletions(-)"
+            },
+            {
+                "key": "PC_Renderer.asset",
+                "value": "no changes"
+            }
+        ]
+    }
+}

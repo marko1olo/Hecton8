@@ -30,7 +30,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private static GraphicsBuffer s_publishedWakeEventBuffer;
         private static int s_publishedWakeEventCount;
         private static float4 s_publishedWakeScrollOffset;
-        private static readonly bool s_supportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
+        private static bool s_supportsSetConstantBufferCold;
         private static int s_publishedWakeResolution = OceanSinglePassConstants.WakeMinResolution;
         private static float s_publishedWakeResolutionScale = OceanSinglePassConstants.WakeMinResolution * (1f / OceanSinglePassConstants.WakeMaxResolution);
         private static Texture s_publishedWakeTexture;
@@ -83,6 +83,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_supportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             if (s_mockConstantBuffer != null && s_mockConstantBuffer.IsValid())
                 s_mockConstantBuffer.Release();

@@ -88,6 +88,8 @@ Shader "Hecton8/UI/PDA Sonar Map"
             float _H8GlobalQualityWeight;
             static const int PDA_SONAR_MARCH_STEPS = 24;
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             v2f vert(appdata_t v)
             {
                 v2f o;

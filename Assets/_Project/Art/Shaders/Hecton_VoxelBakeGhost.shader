@@ -123,6 +123,8 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
                 clip(coverage - ResolveInterleavedGradientNoise(positionCS) * 0.125h);
             }
 
+            UNITY_INSTANCING_BUFFER_START(Props)
+            UNITY_INSTANCING_BUFFER_END(Props)
             Varyings Vert(Attributes input)
             {
                 Varyings output;
