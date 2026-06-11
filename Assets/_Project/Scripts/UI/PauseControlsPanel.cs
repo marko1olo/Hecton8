@@ -110,7 +110,7 @@ namespace Hecton8.UI
         private static readonly Color StatusBgReverted = new Color(0.08f, 0.22f, 0.34f, 0.9f);
         private static readonly Color StatusBgDefault = new Color(0.05f, 0.1f, 0.12f, 0.82f);
 
-        // ZERO-GC: Cached colors for selection visuals (FIX: hardcoded colors in RefreshSelectionVisuals)
+        // ZERO-GC: Cached colors for selection visuals (Patch: hardcoded colors in RefreshSelectionVisuals)
         private static readonly Color RowBgSelected = new Color(0.08f, 0.18f, 0.2f, 0.82f);
         private static readonly Color AccentDefault = new Color(0.18f, 0.32f, 0.34f, 0.78f);
         private static readonly Color AccentSelected = new Color(0.46f, 0.98f, 0.94f, 0.96f);

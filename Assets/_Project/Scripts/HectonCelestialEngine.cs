@@ -7135,7 +7135,7 @@ namespace Hecton8.Celestial
         }
 
         /// <summary>
-        /// v5.1 FIX: MULTIPLY, NOT OVERWRITE.
+        /// v5.1 Patch: MULTIPLY, NOT OVERWRITE.
         ///
         /// By this point in the tick chain:
         ///   - AtmosphereManager has computed ProfileSunIntensity + HorizonFade

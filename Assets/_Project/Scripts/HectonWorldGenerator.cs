@@ -2306,7 +2306,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     /// <summary>
     /// Destroys a chunk and all its associated voxel volumes.
     ///
-    /// v2.1 FIX: Voxel child objects are now destroyed through
+    /// v2.1 Patch: Voxel child objects are now destroyed through
     /// voxelEngine.DespawnVolume() instead of direct SafeDestroy().
     ///
     /// BYLO (v2.0, UTEChKA):
