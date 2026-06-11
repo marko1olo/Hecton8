@@ -2171,8 +2171,7 @@ def build_report(root: Path) -> dict[str, Any]:
     high_resource_compute_api_guard_contracts = [
         report
         for path in csharp_source_paths
-        if (report := analyze_high_resource_compute_api_guard_contract(root, path))
-        is not None
+        if (report := analyze_high_resource_compute_api_guard_contract(root, path)) is not None
     ]
     high_resource_compute_backend_policy = analyze_high_resource_compute_backend_policy(
         root
@@ -2185,8 +2184,7 @@ def build_report(root: Path) -> dict[str, Any]:
     vendor_compute_integration_contracts = [
         report
         for path in csharp_source_paths
-        if (report := analyze_vendor_compute_integration_contract(root, path))
-        is not None
+        if (report := analyze_vendor_compute_integration_contract(root, path)) is not None
     ]
     authored_asset_paths = iter_files(
         root / "Assets" / "_Project", ".prefab"
@@ -2194,14 +2192,12 @@ def build_report(root: Path) -> dict[str, Any]:
     vendor_component_activation_contracts = [
         report
         for path in authored_asset_paths
-        if (report := analyze_vendor_component_activation_contract(root, path))
-        is not None
+        if (report := analyze_vendor_component_activation_contract(root, path)) is not None
     ]
     compute_texture_random_write_contracts = [
         report
         for path in csharp_source_paths
-        if (report := analyze_compute_texture_random_write_contract(root, path))
-        is not None
+        if (report := analyze_compute_texture_random_write_contract(root, path)) is not None
     ]
     find_kernel_fail_closed_contracts = [
         report
