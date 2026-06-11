@@ -206,6 +206,9 @@ namespace Hecton8.VFX
         private bool _healthO2EffectsEnabled = true;
 
         // ═══ BIOME PROFILE ═══
+        [Header("Biome Settings")]
+        [SerializeField, Tooltip("Fallback biome profile used when no biome is specified or the target biome is invalid.")]
+        private BiomeProfile _defaultFallbackBiome;
         private BiomeProfile _currentBiome;
         private BiomeProfile _targetBiome;
         private BiomeProfile _biomeBlendFrom;
