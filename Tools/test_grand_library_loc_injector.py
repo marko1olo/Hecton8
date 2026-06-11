@@ -100,5 +100,38 @@ class TestGrandLibraryLocInjector(unittest.TestCase):
         self.assertEqual(data, {"strings": {}})
 
 
+    def test_inject_library_missing_grand_library_dir(self) -> None:
+        shutil.rmtree(self.grand_library_dir)
+        with mock.patch("sys.stdout"):
+            Grand_Library_Loc_Injector.inject_library()
+        self.assertFalse(os.path.exists(self.grand_library_dir))
+
+    def test_inject_library_invalid_language_format(self) -> None:
+        # Create a localization file that shouldn't be touched because the language format is invalid
+        loc_file = os.path.join(self.loc_dir, "en_US.json")
+        with open(loc_file, "w", encoding="utf-8") as f:
+            json.dump({"strings": {}}, f)
+
+        # Invalid formats
+        invalid_mds = [
+            "no_underscore.md",
+            "just_one_part.md",
+            "wrong_lang_format_en.md",  # length not 5
+            "wrong_lang_format_en-US.md", # lang[2] is not '_'
+        ]
+
+        for invalid_md in invalid_mds:
+            with open(os.path.join(self.grand_library_dir, invalid_md), "w", encoding="utf-8") as f:
+                f.write("# Content")
+
+        with mock.patch("sys.stdout"):
+            Grand_Library_Loc_Injector.inject_library()
+
+        # Check that no keys were added to the en_US loc file, since the language format was not detected
+        with open(loc_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self.assertEqual(data["strings"], {})
+
 if __name__ == "__main__":
     unittest.main()
