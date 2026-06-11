@@ -21,7 +21,7 @@ import sys
 import time
 import tempfile
 import threading
-import defusedxml.ElementTree as ET
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Iterator
